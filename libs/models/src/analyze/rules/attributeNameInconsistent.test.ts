@@ -1,9 +1,9 @@
 import {describe, expect, test} from "@jest/globals";
 import {Database, Entity} from "../../database";
-import {checkNamingConsistency, attributeNamingConsistencyRule} from "./attributeNamingConsistency";
+import {checkNamingConsistency, attributeNameInconsistentRule} from "./attributeNameInconsistent";
 import {ruleConf} from "../rule.test";
 
-describe('attributeNamingConsistency', () => {
+describe('attributeNameInconsistent', () => {
     test('empty', () => {
         expect(checkNamingConsistency([])).toEqual({convention: 'snake-lower', invalid: []})
     })
@@ -28,11 +28,11 @@ describe('attributeNamingConsistency', () => {
                 {name: 'Forms', attrs: [{name: 'FormId', type: 'uuid'}]},
             ]
         }
-        expect(attributeNamingConsistencyRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
+        expect(attributeNameInconsistentRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
             'Attribute Comments(CommentId) doesn\'t follow naming convention snake-lower.',
             'Attribute Forms(FormId) doesn\'t follow naming convention snake-lower.',
         ])
-        expect(attributeNamingConsistencyRule.analyze({...ruleConf, ignores: ['Forms(FormId)']}, db, []).map(v => v.message)).toEqual([
+        expect(attributeNameInconsistentRule.analyze({...ruleConf, ignores: ['Forms(FormId)']}, db, []).map(v => v.message)).toEqual([
             'Attribute Comments(CommentId) doesn\'t follow naming convention snake-lower.',
         ])
     })
@@ -44,7 +44,7 @@ describe('attributeNamingConsistency', () => {
                 {name: 'Comments', attrs: [{name: 'CommentId', type: 'uuid'}, {name: 'author', type: 'uuid'}]},
             ]
         }
-        expect(attributeNamingConsistencyRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
+        expect(attributeNameInconsistentRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
             'Attribute Comments(CommentId) doesn\'t follow naming convention snake-lower.'
         ])
     })

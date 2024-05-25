@@ -8,22 +8,28 @@ const ruleId: RuleId = 'entity-not-clean'
 const ruleName: RuleName = 'entity not clean'
 const CustomRuleConf = RuleConf.extend({
     ignores: EntityId.array().optional(),
+    maxDeadRows: z.number(),
+    maxVacuumLag: z.number(),
+    maxAnalyzeLag: z.number(),
+    maxVacuumDelayMs: z.number(),
+    maxAnalyzeDelayMs: z.number(),
 }).strict().describe('EntityNotCleanConf')
 type CustomRuleConf = z.infer<typeof CustomRuleConf>
+const oneDayMs = 24 * 60 * 60 * 1000
 export const entityNotCleanRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
-    conf: {level: RuleLevel.enum.high},
+    conf: {level: RuleLevel.enum.high, maxDeadRows: 30000, maxVacuumLag: 30000, maxAnalyzeLag: 30000, maxVacuumDelayMs: oneDayMs, maxAnalyzeDelayMs: oneDayMs},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
         const now = db.stats?.extractedAt ? new Date(db.stats.extractedAt).getTime() : Date.now()
         const ignores: EntityRef[] = conf.ignores?.map(entityRefFromId) || []
         return (db.entities || [])
-            .filter(e => isEntityNotClean(e, now))
+            .filter(e => isEntityNotClean(e, now, conf.maxDeadRows, conf.maxVacuumLag, conf.maxAnalyzeLag, conf.maxVacuumDelayMs, conf.maxAnalyzeDelayMs))
             .filter(e => !ignores.some(i => entityRefSame(i, entityToRef(e))))
             .map(e => {
-                const reason = isEntityNotClean(e, now)
-                const value = isEntityNotCleanValue(e, now)
+                const reason = isEntityNotClean(e, now, conf.maxDeadRows, conf.maxVacuumLag, conf.maxAnalyzeLag, conf.maxVacuumDelayMs, conf.maxAnalyzeDelayMs)
+                const value = isEntityNotCleanValue(e, now, conf.maxDeadRows, conf.maxVacuumLag, conf.maxAnalyzeLag, conf.maxVacuumDelayMs, conf.maxAnalyzeDelayMs)
                 return {
                     ruleId,
                     ruleName,
@@ -36,28 +42,26 @@ export const entityNotCleanRule: Rule<CustomRuleConf> = {
     }
 }
 
-export function isEntityNotClean(entity: Entity, now: number): string {
+export function isEntityNotClean(entity: Entity, now: number, maxDeadRows: number, maxVacuumLag: number, maxAnalyzeLag: number, maxVacuumDelayMs: number, maxAnalyzeDelayMs: number): string {
     if ((entity.kind === undefined || entity.kind === EntityKind.enum.table) && entity.stats) {
         const s = entity.stats
-        const oneDay = 24 * 60 * 60 * 1000
-        if (s.rowsDead && s.rowsDead > 30000) return 'many dead rows'
-        if (s.vacuumLag && s.vacuumLag > 30000) return 'high vacuum lag'
-        if (s.analyzeLag&& s.analyzeLag > 30000) return 'high analyze lag'
-        if (s.vacuumLast && now - new Date(s.vacuumLast).getTime() > oneDay) return 'old vacuum'
-        if (s.analyzeLast && now - new Date(s.analyzeLast).getTime() > oneDay) return 'old analyze'
+        if (s.rowsDead && s.rowsDead > maxDeadRows) return 'many dead rows'
+        if (s.vacuumLag && s.vacuumLag > maxVacuumLag) return 'high vacuum lag'
+        if (s.analyzeLag&& s.analyzeLag > maxAnalyzeLag) return 'high analyze lag'
+        if (s.vacuumLast && now - new Date(s.vacuumLast).getTime() > maxVacuumDelayMs) return 'old vacuum'
+        if (s.analyzeLast && now - new Date(s.analyzeLast).getTime() > maxAnalyzeDelayMs) return 'old analyze'
     }
     return ''
 }
 
-function isEntityNotCleanValue(entity: Entity, now: number): number | string {
+function isEntityNotCleanValue(entity: Entity, now: number, maxDeadRows: number, maxVacuumLag: number, maxAnalyzeLag: number, maxVacuumDelayMs: number, maxAnalyzeDelayMs: number): number | string {
     if ((entity.kind === undefined || entity.kind === EntityKind.enum.table) && entity.stats) {
         const s = entity.stats
-        const oneDay = 24 * 60 * 60 * 1000
-        if (s.rowsDead && s.rowsDead > 30000) return s.rowsDead
-        if (s.vacuumLag && s.vacuumLag > 30000) return s.vacuumLag
-        if (s.analyzeLag&& s.analyzeLag > 30000) return s.analyzeLag
-        if (s.vacuumLast && now - new Date(s.vacuumLast).getTime() > oneDay) return s.vacuumLast
-        if (s.analyzeLast && now - new Date(s.analyzeLast).getTime() > oneDay) return s.analyzeLast
+        if (s.rowsDead && s.rowsDead > maxDeadRows) return s.rowsDead
+        if (s.vacuumLag && s.vacuumLag > maxVacuumLag) return s.vacuumLag
+        if (s.analyzeLag&& s.analyzeLag > maxAnalyzeLag) return s.analyzeLag
+        if (s.vacuumLast && now - new Date(s.vacuumLast).getTime() > maxVacuumDelayMs) return s.vacuumLast
+        if (s.analyzeLast && now - new Date(s.analyzeLast).getTime() > maxAnalyzeDelayMs) return s.analyzeLast
     }
     return ''
 }

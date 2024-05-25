@@ -1,9 +1,9 @@
 import {describe, expect, test} from "@jest/globals";
 import {Database, Entity} from "../../database";
-import {checkNamingConsistency, entityNamingConsistencyRule} from "./entityNamingConsistency";
+import {checkNamingConsistency, entityNameInconsistentRule} from "./entityNameInconsistent";
 import {ruleConf} from "../rule.test";
 
-describe('entityNamingConsistency', () => {
+describe('entityNameInconsistent', () => {
     test('empty', () => {
         expect(checkNamingConsistency([])).toEqual({convention: 'snake-lower', invalid: []})
     })
@@ -28,11 +28,11 @@ describe('entityNamingConsistency', () => {
                 {name: 'Forms', attrs: [{name: 'FormId', type: 'uuid'}]},
             ]
         }
-        expect(entityNamingConsistencyRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
+        expect(entityNameInconsistentRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
             'Entity Comments doesn\'t follow naming convention snake-lower.',
             'Entity Forms doesn\'t follow naming convention snake-lower.',
         ])
-        expect(entityNamingConsistencyRule.analyze({...ruleConf, ignores: ['Forms']}, db, []).map(v => v.message)).toEqual([
+        expect(entityNameInconsistentRule.analyze({...ruleConf, ignores: ['Forms']}, db, []).map(v => v.message)).toEqual([
             'Entity Comments doesn\'t follow naming convention snake-lower.',
         ])
     })
@@ -44,7 +44,7 @@ describe('entityNamingConsistency', () => {
                 {name: 'Comments', attrs: [{name: 'CommentId', type: 'uuid'}, {name: 'author', type: 'uuid'}]},
             ]
         }
-        expect(entityNamingConsistencyRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
+        expect(entityNameInconsistentRule.analyze(ruleConf, db, []).map(v => v.message)).toEqual([
             'Entity Comments doesn\'t follow naming convention snake-lower.',
         ])
     })

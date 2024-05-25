@@ -1,35 +1,40 @@
 import {z} from "zod";
-import {Database, Entity, EntityId, EntityKind, EntityRef} from "../../database";
+import {Database, Entity, EntityId, EntityRef} from "../../database";
 import {entityRefFromId, entityRefSame, entityToId, entityToRef} from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
 import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
-const ruleId: RuleId = 'entity-no-index'
-const ruleName: RuleName = 'entity with no index'
+const ruleId: RuleId = 'entity-index-too-many'
+const ruleName: RuleName = 'entity with too many indexes'
 const CustomRuleConf = RuleConf.extend({
     ignores: EntityId.array().optional(),
-}).strict().describe('EntityNoIndexConf')
+    max: z.number(),
+}).strict().describe('EntityIndexTooManyConf')
 type CustomRuleConf = z.infer<typeof CustomRuleConf>
-export const entityNoIndexRule: Rule<CustomRuleConf> = {
+export const entityIndexTooManyRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
-    conf: {level: RuleLevel.enum.high},
+    conf: {level: RuleLevel.enum.medium, max: 20},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, db: Database, queries: DatabaseQuery[]): RuleViolation[] {
         const ignores: EntityRef[] = conf.ignores?.map(entityRefFromId) || []
-        return (db.entities || []).filter(hasEntityNoIndex)
+        return (db.entities || [])
+            .filter(e => hasTooManyIndexes(e, conf.max))
             .filter(e => !ignores.some(i => entityRefSame(i, entityToRef(e))))
             .map(e => ({
                 ruleId,
                 ruleName,
                 ruleLevel: conf.level,
-                message: `Entity ${entityToId(e)} has no index.`,
+                message: `Entity ${entityToId(e)} has too many indexes (${e.indexes?.length || 0}).`,
                 entity: entityToRef(e),
+                extra: {
+                    count: e.indexes?.length || 0,
+                    indexes: (e.indexes || []).map(({stats, extra, ...i}) => i)
+                }
             }))
     }
 }
 
-// same as frontend/src/PagesComponents/Organization_/Project_/Views/Modals/SchemaAnalysis/TableWithoutIndex.elm
-export function hasEntityNoIndex(entity: Entity): boolean {
-    return (entity.kind === undefined || entity.kind === EntityKind.enum.table) && entity.pk === undefined && (entity.indexes || []).length === 0
+export function hasTooManyIndexes(entity: Entity, max: number): boolean {
+    return (entity.indexes?.length || 0) > max
 }

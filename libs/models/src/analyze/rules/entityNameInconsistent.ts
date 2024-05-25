@@ -18,13 +18,13 @@ import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rul
  * Keeping the same naming convention for all your tables will help avoid typos and understand things.
  */
 
-const ruleId: RuleId = 'entity-naming-consistency'
-const ruleName: RuleName = 'entity naming consistency'
+const ruleId: RuleId = 'entity-name-inconsistent'
+const ruleName: RuleName = 'inconsistent entity name'
 const CustomRuleConf = RuleConf.extend({
     ignores: EntityId.array().optional(),
-}).strict().describe('EntityNamingConsistencyConf')
+}).strict().describe('EntityNameInconsistentConf')
 type CustomRuleConf = z.infer<typeof CustomRuleConf>
-export const entityNamingConsistencyRule: Rule<CustomRuleConf> = {
+export const entityNameInconsistentRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
     conf: {level: RuleLevel.enum.low},

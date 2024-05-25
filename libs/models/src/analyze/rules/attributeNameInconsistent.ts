@@ -11,19 +11,19 @@ import {
 } from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
 import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
-import {addCases, bestCase} from "./entityNamingConsistency";
+import {addCases, bestCase} from "./entityNameInconsistent";
 
 /**
  * Keeping the same naming convention for all your columns will help avoid typos and understand things.
  */
 
-const ruleId: RuleId = 'attribute-naming-consistency'
-const ruleName: RuleName = 'attribute naming consistency'
+const ruleId: RuleId = 'attribute-name-inconsistent'
+const ruleName: RuleName = 'inconsistent attribute name'
 const CustomRuleConf = RuleConf.extend({
     ignores: AttributeId.array().optional(),
-}).strict().describe('AttributeNamingConsistencyConf')
+}).strict().describe('AttributeNameInconsistentConf')
 type CustomRuleConf = z.infer<typeof CustomRuleConf>
-export const attributeNamingConsistencyRule: Rule<CustomRuleConf> = {
+export const attributeNameInconsistentRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
     conf: {level: RuleLevel.enum.low},

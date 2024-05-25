@@ -5,13 +5,14 @@ import {Database, EntityId} from "../database";
 import {entityRefToId} from "../databaseUtils";
 import {DatabaseQuery} from "../interfaces/connector";
 import {Rule, RuleConf, RuleId, RuleLevel, RuleViolation} from "./rule";
-import {attributeNamingConsistencyRule} from "./rules/attributeNamingConsistency";
+import {attributeNameInconsistentRule} from "./rules/attributeNameInconsistent";
 import {attributeTypeInconsistentRule} from "./rules/attributeTypeInconsistent";
-import {entityNamingConsistencyRule} from "./rules/entityNamingConsistency";
-import {entityNoIndexRule} from "./rules/entityNoIndex";
+import {entityIndexNoneRule} from "./rules/entityIndexNone";
+import {entityIndexTooHeavyRule} from "./rules/entityIndexTooHeavy";
+import {entityIndexTooManyRule} from "./rules/entityIndexTooMany";
+import {entityNameInconsistentRule} from "./rules/entityNameInconsistent";
 import {entityNotCleanRule} from "./rules/entityNotClean";
 import {entityTooLargeRule} from "./rules/entityTooLarge";
-import {entityTooManyIndexesRule} from "./rules/entityTooManyIndexes";
 import {indexDuplicatedRule} from "./rules/indexDuplicated";
 import {indexOnRelationRule} from "./rules/indexOnRelation";
 import {primaryKeyMissingRule} from "./rules/primaryKeyMissing";
@@ -26,13 +27,14 @@ import {relationMissingRule} from "./rules/relationMissing";
 
 export * from "./rule"
 export const analyzeRules: Rule[] = [
-    attributeNamingConsistencyRule,
+    attributeNameInconsistentRule,
     attributeTypeInconsistentRule,
-    entityNamingConsistencyRule,
-    entityNoIndexRule,
+    entityIndexNoneRule,
+    entityIndexTooHeavyRule,
+    entityIndexTooManyRule,
+    entityNameInconsistentRule,
     entityNotCleanRule,
     entityTooLargeRule,
-    entityTooManyIndexesRule,
     indexDuplicatedRule,
     indexOnRelationRule,
     primaryKeyMissingRule,
@@ -55,12 +57,16 @@ export type RuleAnalyzed = {rule: Rule, conf: RuleConf, violations: RuleViolatio
 
 // TODO: split rules by kind? (schema, query, data...)
 export function analyzeDatabase(conf: RulesConf, db: Database, queries: DatabaseQuery[], ruleNames: string[]): Record<RuleId, RuleAnalyzed> {
-    // TODO: tables with too heavy indexes (index storage > table storage)
     // TODO: entity/attribute empty
 
-    // TODO: use uuid or bigint pk, not int or varchar ones
+    // TODO: degrading queries mean time (absolute slow down & daily slow down)
+    // TODO: fast growing tables/indexes (absolute % growth, daily % growth)
+    // TODO: unused tables/indexes (flat count)
+
+    // TODO: use uuid or bigint for single primary key, not int or varchar ones
     // TODO: uuids not stored as CHAR(36) => field ending with `id` and with type CHAR(36) => suggest type `uuid`/`BINARY(16)` instead (depend on db)
     // TODO: warn on queries with ORDER BY RAND()
+
     // TODO: constraints should be deferrable (pk, fk, unique)
     // TODO: queries not using indexes
     // TODO: JSON columns with different schemas (% of similarity between schemas)

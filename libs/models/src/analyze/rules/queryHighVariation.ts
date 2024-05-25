@@ -3,7 +3,7 @@ import {removeUndefined} from "@azimutt/utils";
 import {Database} from "../../database";
 import {entityRefToId} from "../../databaseUtils";
 import {DatabaseQuery, QueryId} from "../../interfaces/connector";
-import {formatSql, getMainEntity} from "../../helpers/sql";
+import {formatSql, getEntities, getMainEntity} from "../../helpers/sql";
 import {formatMs} from "../../helpers/time";
 import {Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
@@ -34,7 +34,7 @@ export const queryHighVariationRule: Rule<CustomRuleConf> = {
                     ruleLevel: conf.level,
                     message: `Query ${q.id}${entity ? ` on ${entityRefToId(entity)}` : ''} has high variation, with ${sd} standard deviation and execution time ranging from ${min} to ${max} (${formatSql(q.query)})`,
                     entity,
-                    extra: {query: q}
+                    extra: {query: q, entities: getEntities(q.query)}
                 })
             })
     }
