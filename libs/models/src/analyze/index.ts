@@ -5,8 +5,10 @@ import {Database, EntityId} from "../database";
 import {entityRefToId} from "../databaseUtils";
 import {DatabaseQuery} from "../interfaces/connector";
 import {Rule, RuleConf, RuleId, RuleLevel, RuleViolation} from "./rule";
+import {attributeEmptyRule} from "./rules/attributeEmpty";
 import {attributeNameInconsistentRule} from "./rules/attributeNameInconsistent";
 import {attributeTypeInconsistentRule} from "./rules/attributeTypeInconsistent";
+import {entityEmptyRule} from "./rules/entityEmpty";
 import {entityIndexNoneRule} from "./rules/entityIndexNone";
 import {entityIndexTooHeavyRule} from "./rules/entityIndexTooHeavy";
 import {entityIndexTooManyRule} from "./rules/entityIndexTooMany";
@@ -27,8 +29,10 @@ import {relationMissingRule} from "./rules/relationMissing";
 
 export * from "./rule"
 export const analyzeRules: Rule[] = [
+    attributeEmptyRule,
     attributeNameInconsistentRule,
     attributeTypeInconsistentRule,
+    entityEmptyRule,
     entityIndexNoneRule,
     entityIndexTooHeavyRule,
     entityIndexTooManyRule,
@@ -50,15 +54,13 @@ export const analyzeRules: Rule[] = [
 
 export const RulesConf = z.object({
     rules: z.object(Object.fromEntries(analyzeRules.map(r => [r.id, r.zConf.optional()]))).optional()
-}).strict().describe('RuleConf')
+}).strict().describe('RulesConf')
 export type RulesConf = z.infer<typeof RulesConf>
 
 export type RuleAnalyzed = {rule: Rule, conf: RuleConf, violations: RuleViolation[]}
 
 // TODO: split rules by kind? (schema, query, data...)
 export function analyzeDatabase(conf: RulesConf, db: Database, queries: DatabaseQuery[], ruleNames: string[]): Record<RuleId, RuleAnalyzed> {
-    // TODO: entity/attribute empty
-
     // TODO: degrading queries mean time (absolute slow down & daily slow down)
     // TODO: fast growing tables/indexes (absolute % growth, daily % growth)
     // TODO: unused tables/indexes (flat count)

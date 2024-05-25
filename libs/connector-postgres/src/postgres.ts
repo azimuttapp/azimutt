@@ -263,7 +263,7 @@ function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], c
         def: table.table_definition || undefined,
         attrs: columns.slice(0)
             .sort((a, b) => a.column_index - b.column_index)
-            .map(c => buildAttribute(c, jsonColumns[c.column_name], polyColumns[c.column_name])),
+            .map(c => buildAttribute(c, jsonColumns[c.column_name], polyColumns[c.column_name], table.rows)),
         pk: constraints.filter(c => c.constraint_type === 'p').map(c => buildPrimaryKey(c, columnsByIndex))[0] || undefined,
         indexes: indexes.map(i => buildIndex(blockSize, i, columnsByIndex)),
         checks: constraints.filter(c => c.constraint_type === 'c').map(c => buildCheck(c, columnsByIndex)),
@@ -363,7 +363,7 @@ export const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
     ).catch(handleError(`Failed to get columns`, [], opts))
 }
 
-function buildAttribute(c: RawColumn, jsonColumn: ValueSchema | undefined, values: string[] | undefined): Attribute {
+function buildAttribute(c: RawColumn, jsonColumn: ValueSchema | undefined, values: string[] | undefined, rows: number | null): Attribute {
     return removeEmpty({
         name: c.column_name,
         type: c.column_type,
@@ -375,7 +375,7 @@ function buildAttribute(c: RawColumn, jsonColumn: ValueSchema | undefined, value
         stats: removeUndefined({
             nulls: c.nulls || undefined,
             bytesAvg: c.avg_len || undefined,
-            cardinality: c.cardinality && c.cardinality > 0 ? c.cardinality : undefined,
+            cardinality: c.cardinality === null ? undefined : c.cardinality >= 0 ? c.cardinality : rows !== null && rows > 0 ? rows * c.cardinality * -1 : undefined, // if <0, % of rows
             commonValues: c.common_vals && c.common_freqs ? zip(parseValues(c.common_vals, c.column_type_cat, c.column_type_name), c.common_freqs).map(([value, freq]) => ({value, freq})) : undefined,
             distinctValues: values,
             histogram: c.histogram ? parseValues(c.histogram, c.column_type_cat, c.column_type_name) : undefined,

@@ -117,7 +117,7 @@ async function loadConf(folder: string, logger: Logger): Promise<RulesConf> {
     const path = confPath(folder)
     if (fileExists(path)) {
         logger.log(`Loading conf from ${path}`)
-        return await fileReadJson<RulesConf>(path).then(zodParseAsync(RulesConf))
+        return await fileReadJson<RulesConf>(path).then(zodParseAsync(RulesConf, `RulesConf reading ${path}`))
     } else {
         mkParentDirs(path)
         const conf: RulesConf = {} // initial conf

@@ -66,6 +66,7 @@ export const attributeRefFromId = (id: AttributeId): AttributeRef => {
     return {...entity, attribute}
 }
 
+export const attributeRefToEntity = ({attribute, ...ref}: AttributeRef): EntityRef => ref
 export const attributeRefSame = (a: AttributeRef, b: AttributeRef): boolean => entityRefSame(a, b) && attributePathSame(a.attribute, b.attribute)
 
 export const attributesRefToId = (ref: AttributesRef): AttributeId => `${entityRefToId(ref)}(${ref.attributes.map(attributePathToId).join(', ')})`
