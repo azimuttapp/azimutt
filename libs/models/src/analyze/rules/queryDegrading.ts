@@ -40,7 +40,7 @@ export const queryDegradingRule: Rule<CustomRuleConf> = {
             .sort((a, b) => -(a.daily - b.daily))
             .map(r => {
                 const entity = getMainEntity(r.current.query)
-                const rate = r.duration > oneMonth ? `${showPercent(r.monthly)} monthly, ` : r.duration > oneDay ? `${showPercent(r.daily)} daily, ` : ''
+                const rate = r.period > oneMonth ? `${showPercent(r.monthly)} monthly, ` : r.period > oneDay ? `${showPercent(r.daily)} daily, ` : ''
                 return removeUndefined({
                     ruleId,
                     ruleName,
@@ -51,7 +51,7 @@ export const queryDegradingRule: Rule<CustomRuleConf> = {
                         queryId: r.current.id,
                         query: r.current.query,
                         degradationPercent: r.degradation,
-                        periodMillis: r.duration,
+                        periodMillis: r.period,
                         previousDate: new Date(r.date).toISOString(),
                         previousReport: r.report,
                         previousStats: queryStats(r.previous),
@@ -67,7 +67,7 @@ function queryStats({id, database, query, ...stats}: DatabaseQuery) {
     return stats
 }
 
-type DegradingQuery = {report: string, date: Timestamp, previous: DatabaseQuery, current: DatabaseQuery, degradation: Percent, duration: Duration, daily: Percent, monthly: Percent}
+type DegradingQuery = {report: string, date: Timestamp, previous: DatabaseQuery, current: DatabaseQuery, degradation: Percent, period: Duration, daily: Percent, monthly: Percent}
 
 export function getDegradingQuery(now: Timestamp, query: DatabaseQuery, history: {report: string, date: Timestamp, query: DatabaseQuery}[], minExec: number, maxDegradation: Percent, maxDegradationMonthly: Percent, maxDegradationDaily: Percent): DegradingQuery | undefined {
     const count = query.exec?.count
@@ -76,12 +76,12 @@ export function getDegradingQuery(now: Timestamp, query: DatabaseQuery, history:
         const meanTimeHistory: {report: string, date: Timestamp, query: DatabaseQuery, count: number, meanTime: Millis}[] =
             history.map(h => h.query.exec?.count && h.query.exec?.meanTime ? {report: h.report, date: h.date, query: h.query, count: h.query.exec.count, meanTime: h.query.exec.meanTime} : undefined).filter(isNotUndefined)
         const degradations: DegradingQuery[] = meanTimeHistory.filter(p => p.count >= minExec).map(previous => {
-            const duration = now - previous.date
+            const period = now - previous.date
             const degradation = computePercent(previous.meanTime, meanTime)
-            const daily = degradation / (duration / oneDay)
-            const monthly = degradation / (duration / oneMonth)
-            if (degradation >= maxDegradation || (duration > oneDay && daily >= maxDegradationDaily) || (duration > oneMonth && monthly >= maxDegradationMonthly)) {
-                return {report: previous.report, date: previous.date, previous: previous.query, current: query, degradation, duration, daily, monthly}
+            const daily = degradation / (period / oneDay)
+            const monthly = degradation / (period / oneMonth)
+            if (degradation >= maxDegradation || (period > oneDay && daily >= maxDegradationDaily) || (period > oneMonth && monthly >= maxDegradationMonthly)) {
+                return {report: previous.report, date: previous.date, previous: previous.query, current: query, degradation, period, daily, monthly}
             } else {
                 return undefined
             }

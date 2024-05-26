@@ -49,7 +49,8 @@ export const AnalyzeReportRule = z.object({
 export type AnalyzeReportRule = z.infer<typeof AnalyzeReportRule>
 
 export const AnalyzeReport = z.object({
-    rules: z.record(RuleId, AnalyzeReportRule),
+    analysis: z.record(RuleId, AnalyzeReportRule),
+    // TODO: insights: z.object({mostUsedEntities: z.object({entity: EntityRef, queries: QueryId.array()}).array().optional()}).optional()
     database: Database,
     queries: DatabaseQuery.array(),
 }).strict().describe('AnalyzeReport')

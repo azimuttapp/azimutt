@@ -10,6 +10,7 @@ import {attributeEmptyRule} from "./rules/attributeEmpty";
 import {attributeNameInconsistentRule} from "./rules/attributeNameInconsistent";
 import {attributeTypeInconsistentRule} from "./rules/attributeTypeInconsistent";
 import {entityEmptyRule} from "./rules/entityEmpty";
+import {entityGrowFastRule} from "./rules/entityGrowFast";
 import {entityIndexNoneRule} from "./rules/entityIndexNone";
 import {entityIndexTooHeavyRule} from "./rules/entityIndexTooHeavy";
 import {entityIndexTooManyRule} from "./rules/entityIndexTooMany";
@@ -44,6 +45,7 @@ export const analyzeRules: Rule[] = [
     attributeNameInconsistentRule,
     // medium rules
     entityUnusedRule,
+    entityGrowFastRule,
     entityTooLargeRule,
     entityIndexTooManyRule,
     entityIndexTooHeavyRule,

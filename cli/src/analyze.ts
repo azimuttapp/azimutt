@@ -212,7 +212,7 @@ function printReport(offRules: RuleAnalyzed[], rulesByLevel: Record<string, Rule
 
 function buildReport(database: Database, queries: DatabaseQuery[], rules: Record<RuleId, RuleAnalyzed>): AnalyzeReport {
     return zodParse(AnalyzeReport)({
-        rules: Object.fromEntries(Object.entries(rules)
+        analysis: Object.fromEntries(Object.entries(rules)
             .filter(([, r]) => r.violations.length > 0)
             .map(([id, r]) => [id, buildRuleReport(r)])),
         database,
