@@ -1,34 +1,48 @@
+import {z} from "zod";
 import {indexBy, isNotUndefined} from "@azimutt/utils";
+import {Timestamp} from "../../common";
 import {Database, Entity, EntityId, EntityRef, Relation} from "../../database";
-import {entityRefToId, entityToId, relationToId} from "../../databaseUtils";
-import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {entityRefFromId, entityRefSame, entityRefToId, entityToId, relationToId} from "../../databaseUtils";
+import {DatabaseQuery} from "../../interfaces/connector";
+import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'relation-miss-entity'
 const ruleName: RuleName = 'entity not found in relation'
-const ruleLevel: RuleLevel = RuleLevel.enum.high
-export const relationMissEntityRule: Rule = {
+const CustomRuleConf = RuleConf.extend({
+    ignores: EntityId.array().optional(),
+}).strict().describe('RelationMissEntityConf')
+type CustomRuleConf = z.infer<typeof CustomRuleConf>
+export const relationMissEntityRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
-    level: ruleLevel,
-    analyze(db: Database): RuleViolation[] {
+    conf: {level: RuleLevel.enum.high},
+    zConf: CustomRuleConf,
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
         const entities: Record<EntityId, Entity> = indexBy(db.entities || [], entityToId)
-        return (db.relations || []).map(r => getMissingEntityRelations(r, entities)).filter(isNotUndefined).map(violation => ({
-            ruleId,
-            ruleName,
-            ruleLevel,
-            entity: violation.relation.src,
-            message: `Relation ${relationName(violation.relation)}, not found entities: ${violation.missingEntities.map(entityRefToId).join(', ')}`
-        }))
+        const ignores: EntityRef[] = conf.ignores?.map(entityRefFromId) || []
+        return (db.relations || [])
+            .map(r => getMissingEntityRelations(r, entities))
+            .filter(isNotUndefined)
+            .map(v => ({...v, missingEntities: v?.missing?.filter(e => !ignores.some(i => entityRefSame(i, e)))}))
+            .filter(v => v.missingEntities.length > 0)
+            .map(violation => ({
+                ruleId,
+                ruleName,
+                ruleLevel: conf.level,
+                message: `Relation ${relationName(violation.relation)}, not found entities: ${violation.missingEntities.map(entityRefToId).join(', ')}`,
+                entity: violation.missingEntities[0],
+                extra: violation
+            }))
     }
 }
 
 const relationName = (r: Relation): string => r.name || relationToId(r)
 
-export type MissingEntityRelation = { relation: Relation, missingEntities: EntityRef[] }
+export type MissingEntityRelation = { relation: Relation, missing: EntityRef[] }
 
 export function getMissingEntityRelations(relation: Relation, entities: Record<EntityId, Entity>): MissingEntityRelation | undefined {
     const src = entities[entityRefToId(relation.src)]
     const ref = entities[entityRefToId(relation.ref)]
-    const missingEntities: EntityRef[] = [src ? undefined : relation.src, ref ? undefined : relation.ref].filter(isNotUndefined)
-    return missingEntities.length > 0 ? {relation, missingEntities} : undefined
+    const missing: EntityRef[] = [src ? undefined : relation.src, ref ? undefined : relation.ref].filter(isNotUndefined)
+    return missing.length > 0 ? {relation, missing} : undefined
 }

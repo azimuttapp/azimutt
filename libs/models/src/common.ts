@@ -9,6 +9,9 @@ export type Slug = z.infer<typeof Slug>
 export const Markdown = z.string()
 export type Markdown = z.infer<typeof Markdown>
 
+export const Percent = z.number()
+export type Percent = z.infer<typeof Percent>
+
 export const Millis = z.number() // milli-seconds
 export type Millis = z.infer<typeof Millis>
 

@@ -6,6 +6,7 @@ import clear from "clear";
 import figlet from "figlet";
 // https://github.com/SBoudrias/Inquirer.js
 import {errorToString, strictParseInt} from "@azimutt/utils";
+import {azimuttEmail} from "@azimutt/models";
 import {version} from "./version.js";
 import {logger} from "./utils/logger.js";
 import {exportDbSchema} from "./export.js";
@@ -15,7 +16,7 @@ import {launchAnalyze} from "./analyze.js";
 
 clear()
 logger.log(chalk.hex('#4F46E5').bold(figlet.textSync('Azimutt.app', {horizontalLayout: 'full'})))
-logger.log(chalk.hex('#3f3f46')(version))
+logger.log(chalk.grey('Version ' + version))
 logger.log('')
 
 // TODO: `azimutt infer --path ~/my_db` or `azimutt export --url ~/my_db` (no 'protocol://') => recursively list .json files and infer them as a collection
@@ -39,8 +40,11 @@ program.command('explore')
 program.command('analyze')
     .description('Analyze your database and give improvement suggestions.')
     .argument('<url>', 'the database url, including credentials')
-    .option('--size <number>', 'limit shown violations per rule', strictParseInt, 3)
-    .option('--only <rules>', 'limit analyze to a set of rules')
+    .option('--folder <folder>', 'where to read/write configuration and report files, default is ~/.azimutt/analyze/$db_name')
+    .option('--email <email>', 'provide your professional email to get the full analyze report as a JSON file')
+    .option('--size <number>', 'change shown violations limit per rule, default is 3', strictParseInt)
+    .option('--only <rules>', 'limit analyze to specified rules')
+    .option('--key <key>', `reach out to ${azimuttEmail} to buy a key for incremental rules: degrading queries, unused tables/indexes, fast growing tables/indexes and more...`)
     .action((url, args) => exec(launchAnalyze(url, args, logger), args))
 
 program.command('export')
@@ -72,7 +76,7 @@ if (!process.argv.slice(2).length) {
 function exec(res: Promise<void>, args: any) {
     if (!args.debug) {
         res.catch(e => {
-            logger.error(`Unexpected error: ${errorToString(e)}`)
+            logger.error(`Got error: ${errorToString(e)}`)
             logger.log(`(use --debug option to see the full error)`)
         })
     }

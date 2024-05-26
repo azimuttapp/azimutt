@@ -1,6 +1,9 @@
-import {Database, Entity} from "../../database";
-import {entityToId, entityToRef} from "../../databaseUtils";
-import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {z} from "zod";
+import {Timestamp} from "../../common";
+import {Database, Entity, EntityId, EntityRef} from "../../database";
+import {entityRefFromId, entityRefSame, entityToId, entityToRef} from "../../databaseUtils";
+import {DatabaseQuery} from "../../interfaces/connector";
+import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 /**
  * Primary Keys are the default unique way to get a single row in a table.
@@ -10,19 +13,27 @@ import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'primary-key-missing'
 const ruleName: RuleName = 'missing primary key'
-const ruleLevel: RuleLevel = RuleLevel.enum.high
-export const primaryKeyMissingRule: Rule = {
+const CustomRuleConf = RuleConf.extend({
+    ignores: EntityId.array().optional(),
+}).strict().describe('PrimaryKeyMissingConf')
+type CustomRuleConf = z.infer<typeof CustomRuleConf>
+export const primaryKeyMissingRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
-    level: ruleLevel,
-    analyze(db: Database): RuleViolation[] {
-        return (db.entities || []).filter(isPrimaryKeysMissing).map(e => ({
-            ruleId,
-            ruleName,
-            ruleLevel,
-            entity: entityToRef(e),
-            message: `Entity ${entityToId(e)} has no primary key.`
-        }))
+    conf: {level: RuleLevel.enum.high},
+    zConf: CustomRuleConf,
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
+        const ignores: EntityRef[] = conf.ignores?.map(entityRefFromId) || []
+        return (db.entities || [])
+            .filter(isPrimaryKeysMissing)
+            .filter(e => !ignores.some(i => entityRefSame(i, entityToRef(e))))
+            .map(e => ({
+                ruleId,
+                ruleName,
+                ruleLevel: conf.level,
+                message: `Entity ${entityToId(e)} has no primary key.`,
+                entity: entityToRef(e)
+            }))
     }
 }
 

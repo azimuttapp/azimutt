@@ -63,7 +63,7 @@ const routes: FastifyPluginAsync = async (server) => {
 
 function getDatabaseSchema(params: GetSchemaParams, res: FastifyReply): Promise<GetSchemaResponse | FastifyReply> {
     return withConnector(params.url, res, (url, conn) => {
-        track('gateway__database__get_schema', {database: url.kind}, 'gateway').then(() => {})
+        track('gateway__database__get_schema', {version, database: url.kind}, 'gateway').then(() => {})
         const urlOptions = url.options || {}
         return conn.getSchema(buildApp(params.user), url, {
             logger,

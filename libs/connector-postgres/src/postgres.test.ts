@@ -2,7 +2,7 @@ import {describe, expect, test} from "@jest/globals";
 import {ConnectorSchemaOpts, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/models";
 import {connect} from "./connect";
 import {execQuery} from "./query";
-import {getBlockSize, getColumns, getDatabase, getSchema, getTables, getTypes} from "./postgres";
+import {getBlockSize, getColumns, getDatabase, getDistinctValues, getSchema, getTables, getTypes} from "./postgres";
 import {application, logger} from "./constants.test";
 
 describe('postgres', () => {
@@ -44,5 +44,9 @@ describe('postgres', () => {
     test.skip('getTypes', async () => {
         const types = await connect(application, url, getTypes(opts), opts)
         console.log(`${types.length} types`, types)
+    })
+    test.skip('getDistinctValues', async () => {
+        const values = await connect(application, url, getDistinctValues({schema: 'public', entity: 'mat_view_events'}, ['item_kind'], opts), opts)
+        console.log(`${values.length} values`, values)
     })
 })

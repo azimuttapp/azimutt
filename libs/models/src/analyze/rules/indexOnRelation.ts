@@ -1,7 +1,27 @@
+import {z} from "zod";
 import {indexBy, isNotUndefined} from "@azimutt/utils";
-import {AttributePath, Database, Entity, EntityId, EntityRef, Relation} from "../../database";
-import {attributePathToId, entityAttributesToId, entityRefToId, entityToId, relationToId} from "../../databaseUtils";
-import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {Timestamp} from "../../common";
+import {
+    AttributePath,
+    AttributesId,
+    AttributesRef,
+    Database,
+    Entity,
+    EntityId,
+    EntityRef,
+    Relation
+} from "../../database";
+import {
+    attributePathToId,
+    attributesRefFromId,
+    attributesRefSame,
+    entityAttributesToId,
+    entityRefToId,
+    entityToId,
+    relationToId
+} from "../../databaseUtils";
+import {DatabaseQuery} from "../../interfaces/connector";
+import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 /**
  * Relations are often used on JOIN or WHERE clauses to fetch more data or limit rows.
@@ -10,20 +30,30 @@ import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'index-on-relation'
 const ruleName: RuleName = 'index on relation'
-const ruleLevel: RuleLevel = RuleLevel.enum.medium
-export const indexOnRelationRule: Rule = {
+const CustomRuleConf = RuleConf.extend({
+    ignores: AttributesId.array().optional()
+}).strict().describe('IndexOnRelationConf')
+type CustomRuleConf = z.infer<typeof CustomRuleConf>
+export const indexOnRelationRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
-    level: ruleLevel,
-    analyze(db: Database): RuleViolation[] {
+    conf: {level: RuleLevel.enum.medium},
+    zConf: CustomRuleConf,
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
         const entities: Record<EntityId, Entity> = indexBy(db.entities || [], entityToId)
-        return (db.relations || []).flatMap(r => getMissingIndexOnRelation(r, entities)).map(i => ({
-            ruleId,
-            ruleName,
-            ruleLevel,
-            entity: i.ref,
-            message: `Create an index on ${entityAttributesToId(i.ref, i.attrs)} to improve ${relationToId(i.relation)} relation.`
-        }))
+        const ignores: AttributesRef[] = conf.ignores?.map(attributesRefFromId) || []
+        return (db.relations || [])
+            .flatMap(r => getMissingIndexOnRelation(r, entities))
+            .filter(idx => !ignores.some(i => attributesRefSame(i, {...idx.ref, attributes: idx.attrs})))
+            .map(i => ({
+                ruleId,
+                ruleName,
+                ruleLevel: conf.level,
+                message: `Create an index on ${entityAttributesToId(i.ref, i.attrs)} to improve ${relationToId(i.relation)} relation.`,
+                entity: i.ref,
+                attribute: i.attrs[0],
+                extra: {indexAttrs: i.attrs, relation: i.relation}
+            }))
     }
 }
 

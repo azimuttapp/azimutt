@@ -1,7 +1,20 @@
+import {z} from "zod";
 import {groupBy, singular, splitWords} from "@azimutt/utils";
-import {AttributePath, AttributeValue, Database, Entity, EntityId, EntityRef, Relation} from "../../database";
+import {Timestamp} from "../../common";
+import {
+    AttributePath,
+    AttributesId,
+    AttributeValue,
+    Database,
+    Entity,
+    EntityId,
+    EntityRef,
+    Relation
+} from "../../database";
 import {
     attributePathToId,
+    attributesRefFromId,
+    attributesRefSame,
     attributeValueToString,
     entityAttributesToId,
     entityRefToId,
@@ -9,7 +22,8 @@ import {
     flattenAttribute,
     getPeerAttributes
 } from "../../databaseUtils";
-import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {DatabaseQuery} from "../../interfaces/connector";
+import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 /**
  * If relations are not defined as foreign key, it could be great to identify them
@@ -17,19 +31,28 @@ import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'relation-missing'
 const ruleName: RuleName = 'missing relation'
-const ruleLevel: RuleLevel = RuleLevel.enum.medium
-export const relationMissingRule: Rule = {
+const CustomRuleConf = RuleConf.extend({
+    ignores: z.object({src: AttributesId, ref: AttributesId}).array().optional()
+}).strict().describe('RelationMissingConf')
+type CustomRuleConf = z.infer<typeof CustomRuleConf>
+export const relationMissingRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
-    level: ruleLevel,
-    analyze(db: Database): RuleViolation[] {
-        return getMissingRelations(db.entities || [], db.relations || []).map(r => ({
-            ruleId,
-            ruleName,
-            ruleLevel,
-            entity: r.src,
-            message: `Create a relation from ${entityAttributesToId(r.src, r.attrs.map(a => a.src))} to ${entityAttributesToId(r.ref, r.attrs.map(a => a.ref))}.`
-        }))
+    conf: {level: RuleLevel.enum.medium},
+    zConf: CustomRuleConf,
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
+        const ignores = conf.ignores?.map(i => ({src: attributesRefFromId(i.src), ref: attributesRefFromId(i.ref)})) || []
+        return getMissingRelations(db.entities || [], db.relations || [])
+            .filter(r => !ignores.some(i => attributesRefSame(i.src, {...r.src, attributes: r.attrs.map(a => a.src)}) && attributesRefSame(i.ref, {...r.ref, attributes: r.attrs.map(a => a.ref)})))
+            .map(r => ({
+                ruleId,
+                ruleName,
+                ruleLevel: conf.level,
+                message: `Create a relation from ${entityAttributesToId(r.src, r.attrs.map(a => a.src))} to ${entityAttributesToId(r.ref, r.attrs.map(a => a.ref))}.`,
+                entity: r.src,
+                attribute: r.attrs[0].src,
+                extra: {relation: r}
+            }))
     }
 }
 

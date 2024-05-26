@@ -1,8 +1,10 @@
 import {describe, expect, test} from "@jest/globals";
 import {Database, Entity} from "../../database";
 import {isPrimaryKeyTechnical, primaryKeyNotBusinessRule} from "./primaryKeyNotBusiness";
+import {ruleConf} from "../rule.test";
 
 describe('primaryKeyNotBusiness', () => {
+    const now = Date.now()
     test('primary key ends with id', () => {
         const users: Entity = {name: 'users', attrs: [{name: 'id', type: 'uuid'}], pk: {attrs: [['id']]}}
         expect(isPrimaryKeyTechnical(users, [])).toEqual(true)
@@ -24,8 +26,21 @@ describe('primaryKeyNotBusiness', () => {
     })
     test('violation message', () => {
         const db: Database = {entities: [{name: 'users', attrs: [{name: 'email', type: 'varchar'}], pk: {attrs: [['email']]}}]}
-        expect(primaryKeyNotBusinessRule.analyze(db).map(v => v.message)).toEqual([
+        expect(primaryKeyNotBusinessRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
             'Entity users should have a technical primary key, current one is: (email).'
+        ])
+    })
+    test('ignores', () => {
+        const db: Database = {entities: [
+            {name: 'users', attrs: [{name: 'email', type: 'varchar'}], pk: {attrs: [['email']]}},
+            {name: 'posts', attrs: [{name: 'title', type: 'varchar'}], pk: {attrs: [['title']]}},
+        ]}
+        expect(primaryKeyNotBusinessRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+            'Entity users should have a technical primary key, current one is: (email).',
+            'Entity posts should have a technical primary key, current one is: (title).',
+        ])
+        expect(primaryKeyNotBusinessRule.analyze({...ruleConf, ignores: ['posts(title)']}, now, db, [], []).map(v => v.message)).toEqual([
+            'Entity users should have a technical primary key, current one is: (email).',
         ])
     })
 })

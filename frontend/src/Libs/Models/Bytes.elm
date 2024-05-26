@@ -24,7 +24,7 @@ humanize bytes =
         (fBytes / mo |> prettyNumber) ++ " Mo"
 
     else if fBytes > ko then
-        (fBytes / ko |> prettyNumber) ++ " Ko"
+        (fBytes / ko |> prettyNumber) ++ " ko"
 
     else
         bytes |> pluralize "byte"
@@ -33,24 +33,24 @@ humanize bytes =
 ko : Float
 ko =
     -- bytes
-    1024
+    1000
 
 
 mo : Float
 mo =
-    1024 * ko
+    1000 * ko
 
 
 go : Float
 go =
-    1024 * mo
+    1000 * mo
 
 
 to : Float
 to =
-    1024 * go
+    1000 * go
 
 
 po : Float
 po =
-    1024 * to
+    1000 * to

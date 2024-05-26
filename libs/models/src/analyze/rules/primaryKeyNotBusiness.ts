@@ -1,7 +1,17 @@
+import {z} from "zod";
 import {groupBy} from "@azimutt/utils";
-import {Database, Entity, Relation} from "../../database";
-import {attributePathToId, entityRefToId, entityToId, entityToRef} from "../../databaseUtils";
-import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {Timestamp} from "../../common";
+import {AttributesId, AttributesRef, Database, Entity, Relation} from "../../database";
+import {
+    attributePathToId,
+    attributesRefFromId,
+    attributesRefSame,
+    entityRefToId,
+    entityToId,
+    entityToRef
+} from "../../databaseUtils";
+import {DatabaseQuery} from "../../interfaces/connector";
+import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 /**
  * Primary Keys are the default unique way to get a single row in a table.
@@ -10,21 +20,34 @@ import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
  */
 
 const ruleId: RuleId = 'primary-key-not-business'
-const ruleName: RuleName = 'no business primary key'
-const ruleLevel: RuleLevel = RuleLevel.enum.medium
-export const primaryKeyNotBusinessRule: Rule = {
+const ruleName: RuleName = 'business primary key forbidden'
+const CustomRuleConf = RuleConf.extend({
+    ignores: AttributesId.array().optional()
+}).strict().describe('PrimaryKeyNotBusinessConf')
+type CustomRuleConf = z.infer<typeof CustomRuleConf>
+export const primaryKeyNotBusinessRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
-    level: ruleLevel,
-    analyze(db: Database): RuleViolation[] {
+    conf: {level: RuleLevel.enum.medium},
+    zConf: CustomRuleConf,
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
         const relations = groupBy(db.relations || [], r => entityRefToId(r.src))
-        return (db.entities || []).filter(e => !isPrimaryKeyTechnical(e, relations[entityToId(e)] || [])).map(e => ({
-            ruleId,
-            ruleName,
-            ruleLevel,
-            entity: entityToRef(e),
-            message: `Entity ${entityToId(e)} should have a technical primary key, current one is: (${e.pk?.attrs.map(attributePathToId).join(', ')}).`
-        }))
+        const ignores: AttributesRef[] = conf.ignores?.map(attributesRefFromId) || []
+        return (db.entities || [])
+            .filter(e => !isPrimaryKeyTechnical(e, relations[entityToId(e)] || []))
+            .filter(e => !ignores.some(i => attributesRefSame(i, {...entityToRef(e), attributes: e.pk?.attrs || []})))
+            .map(e => {
+                const {stats, extra, ...primaryKey} = e.pk || {}
+                return {
+                    ruleId,
+                    ruleName,
+                    ruleLevel: conf.level,
+                    message: `Entity ${entityToId(e)} should have a technical primary key, current one is: (${e.pk?.attrs.map(attributePathToId).join(', ')}).`,
+                    entity: entityToRef(e),
+                    attribute: e.pk?.attrs?.[0],
+                    extra: {primaryKey}
+                }
+            })
     }
 }
 

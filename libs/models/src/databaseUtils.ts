@@ -1,10 +1,11 @@
-import {filterValues, groupBy, indexBy, mapValues, removeUndefined} from "@azimutt/utils";
+import {arraySame, filterValues, groupBy, indexBy, mapValues, removeUndefined} from "@azimutt/utils";
 import {
     Attribute,
     AttributeId,
     AttributePath,
     AttributePathId,
     AttributeRef,
+    AttributesRef,
     AttributeType,
     AttributeTypeParsed,
     AttributeValue,
@@ -42,6 +43,8 @@ export const entityRefFromId = (id: EntityId): EntityRef => {
     return {...namespace, entity}
 }
 
+export const entityRefSame = (a: EntityRef, b: EntityRef): boolean => a.entity === b.entity && a.schema === b.schema && a.catalog === b.catalog && a.database === b.database
+
 export const entityToRef = (e: Entity): EntityRef => removeUndefined({database: e.database, catalog: e.catalog, schema: e.schema, entity: e.name})
 export const entityToId = (e: Entity): EntityId => entityRefToId(entityToRef(e))
 
@@ -52,8 +55,9 @@ export const entityRefFromAttribute = (a: AttributeRef): EntityRef => {
 
 export const attributePathToId = (path: AttributePath): AttributePathId => path.join('.')
 export const attributePathFromId = (path: AttributePathId): AttributePath => path.split('.')
+export const attributePathSame = (p1: AttributePath, p2: AttributePath): boolean => arraySame(p1, p2, (i1, i2) => i1 === i2)
 
-export const attributeRefToId = (ref: AttributeRef): AttributeId => `${entityRefToId(ref)}(${ref.attribute})`
+export const attributeRefToId = (ref: AttributeRef): AttributeId => `${entityRefToId(ref)}(${attributePathToId(ref.attribute)})`
 
 export const attributeRefFromId = (id: AttributeId): AttributeRef => {
     const [, entityId, attributeId] = id.match(/^(.*)\((.*)\)$/) || []
@@ -62,9 +66,21 @@ export const attributeRefFromId = (id: AttributeId): AttributeRef => {
     return {...entity, attribute}
 }
 
-export const attributeTypeParse = (type: AttributeType): AttributeTypeParsed => {
-    return {full: type, kind: 'unknown'}
+export const attributeRefToEntity = ({attribute, ...ref}: AttributeRef): EntityRef => ref
+export const attributeRefSame = (a: AttributeRef, b: AttributeRef): boolean => entityRefSame(a, b) && attributePathSame(a.attribute, b.attribute)
+
+export const attributesRefToId = (ref: AttributesRef): AttributeId => `${entityRefToId(ref)}(${ref.attributes.map(attributePathToId).join(', ')})`
+
+export const attributesRefFromId = (id: AttributeId): AttributesRef => {
+    const [, entityId, attributeId] = id.match(/^([^(]*)\(([^)]*)\)$/) || []
+    const entity = entityRefFromId(entityId || id)
+    const attributes = (attributeId || '').split(',').map(a => attributePathFromId(a.trim()))
+    return {...entity, attributes}
 }
+
+export const attributesRefSame = (a: AttributesRef, b: AttributesRef): boolean => entityRefSame(a, b) && arraySame(a.attributes, b.attributes, attributePathSame)
+
+export const attributeTypeParse = (type: AttributeType): AttributeTypeParsed => ({full: type, kind: 'unknown'})
 
 export const typeRefToId = (ref: TypeRef): TypeId => {
     const ns = namespaceToId(ref)

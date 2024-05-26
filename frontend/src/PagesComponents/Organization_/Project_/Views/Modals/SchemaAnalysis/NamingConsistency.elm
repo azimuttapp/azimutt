@@ -20,7 +20,7 @@ type alias Model =
 
 compute : Dict TableId Table -> List Model
 compute tables =
-    -- same as libs/models/src/analyze/rules/namingConsistency.ts
+    -- same as libs/models/src/analyze/rules/attributeNameInconsistent.ts & entityNameInconsistent.ts
     let
         ( ( camelUpper, camelLower ), ( snakeUpper, snakeLower ), kebab ) =
             tables

@@ -1,7 +1,10 @@
-import {filterValues, groupBy} from "@azimutt/utils";
-import {Attribute, AttributeName, AttributeRef, Database, Entity} from "../../database";
+import {z} from "zod";
+import {filterValues, groupBy, pluralize} from "@azimutt/utils";
+import {Timestamp} from "../../common";
+import {Attribute, AttributeName, AttributeRef, AttributeType, Database, Entity} from "../../database";
 import {attributeRefToId, entityToRef, flattenAttribute} from "../../databaseUtils";
-import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {DatabaseQuery} from "../../interfaces/connector";
+import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 /**
  * There is nothing wrong with inconsistent types on columns with identical name.
@@ -12,18 +15,25 @@ import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'attribute-type-inconsistent'
 const ruleName: RuleName = 'inconsistent attribute type'
-const ruleLevel: RuleLevel = RuleLevel.enum.hint
-export const attributeTypeInconsistentRule: Rule = {
+const CustomRuleConf = RuleConf.extend({
+    ignores: AttributeName.array().optional()
+}).strict().describe('AttributeTypeInconsistentConf')
+type CustomRuleConf = z.infer<typeof CustomRuleConf>
+export const attributeTypeInconsistentRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
-    level: ruleLevel,
-    analyze(db: Database): RuleViolation[] {
-        return Object.entries(getInconsistentAttributeTypes(db.entities || [])).map(([attrName, refs]) => {
-            const refsByType = Object.entries(groupBy(refs, r => r.value.type)).sort(([, a], [, b]) => a.length - b.length)
-            const {attribute, ...entity} = refsByType[0][1][0].ref
-            const message = `Attribute ${attrName} has several types: ${refsByType.map(([t, [r]]) => `${t} in ${attributeRefToId(r.ref)}`).join(', ')}.`
-            return {ruleId, ruleName, ruleLevel, entity, message}
-        })
+    conf: {level: RuleLevel.enum.hint},
+    zConf: CustomRuleConf,
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
+        return Object.entries(getInconsistentAttributeTypes(db.entities || []))
+            .filter(([name,]) => !conf.ignores?.some(i => i === name))
+            .map(([name, refs]) => {
+                const refsByType: [AttributeType, AttributeWithRef[]][] = Object.entries(groupBy(refs, r => r.value.type)).sort(([, a], [, b]) => a.length - b.length)
+                const message = `Attribute ${name} has several types: ${refsByType.map(([t, [r, ...others]]) => `${t} in ${attributeRefToId(r.ref)}${others.length > 0 ? ` and ${pluralize(others.length, 'other')}` : ''}`).join(', ')}.`
+                const {attribute, ...entity} = refsByType[0][1][0].ref
+                const attributes = refs.map(r => ({...r.ref, type: r.value.type}))
+                return {ruleId, ruleName, ruleLevel: conf.level, message, entity, attribute: [name], extra: {attributes}}
+            })
     }
 }
 

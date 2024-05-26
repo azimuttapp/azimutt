@@ -1,6 +1,15 @@
-import {Database, Entity, Index} from "../../database";
-import {attributePathToId, entityAttributesToId, entityToRef} from "../../databaseUtils";
-import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {z} from "zod";
+import {Timestamp} from "../../common";
+import {AttributesId, AttributesRef, Database, Entity, Index} from "../../database";
+import {
+    attributePathToId,
+    attributesRefFromId,
+    attributesRefSame,
+    entityAttributesToId,
+    entityToRef
+} from "../../databaseUtils";
+import {DatabaseQuery} from "../../interfaces/connector";
+import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 /**
  * Indexes are great to speed read performances, but they come at the cost of reducing write performances.
@@ -11,18 +20,27 @@ import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'index-duplicated'
 const ruleName: RuleName = 'duplicated index'
-const ruleLevel: RuleLevel = RuleLevel.enum.high
-export const indexDuplicatedRule: Rule = {
+const CustomRuleConf = RuleConf.extend({
+    ignores: AttributesId.array().optional()
+}).strict().describe('IndexDuplicatedConf')
+type CustomRuleConf = z.infer<typeof CustomRuleConf>
+export const indexDuplicatedRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
-    level: ruleLevel,
-    analyze(db: Database): RuleViolation[] {
-        return (db.entities || []).flatMap(getDuplicatedIndexes).map(i => {
-            const entity = entityToRef(i.entity)
-            const indexName = `${i.index.name ? i.index.name + ' ' : ''}on ${entityAttributesToId(entity, i.index.attrs)}`
-            const message = `Index ${indexName} can be deleted, it's covered by: ${i.coveredBy.map(by => `${by.name || ''}(${by.attrs.map(attributePathToId).join(', ')})`).join(', ')}.`
-            return {ruleId, ruleName, ruleLevel, entity, message}
-        })
+    conf: {level: RuleLevel.enum.high},
+    zConf: CustomRuleConf,
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
+        const ignores: AttributesRef[] = conf.ignores?.map(attributesRefFromId) || []
+        return (db.entities || []).flatMap(getDuplicatedIndexes)
+            .filter(idx => !ignores.some(i => attributesRefSame(i, {...entityToRef(idx.entity), attributes: idx.index.attrs})))
+            .map(i => {
+                const entity = entityToRef(i.entity)
+                const indexName = `${i.index.name ? i.index.name + ' ' : ''}on ${entityAttributesToId(entity, i.index.attrs)}`
+                const message = `Index ${indexName} can be deleted, it's covered by: ${i.coveredBy.map(by => `${by.name || ''}(${by.attrs.map(attributePathToId).join(', ')})`).join(', ')}.`
+                const {stats, extra, ...index} = i.index
+                const coveredBy = i.coveredBy.map(({stats, extra, ...index}) => index)
+                return {ruleId, ruleName, ruleLevel: conf.level, message, entity, attribute: i.index.attrs[0], extra: {index, coveredBy}}
+            })
     }
 }
 

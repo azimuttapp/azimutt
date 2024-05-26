@@ -20,7 +20,7 @@ export function scopeWhere(fields: ScopeFields, opts: ConnectorScopeOpts): SqlFr
     return [databaseFilter, catalogFilter, schemaFilter, entityFilter].filter(f => !!f).join(' AND ')
 }
 
-function scopeOp(scope: string): SqlFragment {
+export function scopeOp(scope: string): SqlFragment {
     if (scope.startsWith('!')) {
         return scope.includes('%') ? 'NOT LIKE' : '!='
     } else {
@@ -28,7 +28,7 @@ function scopeOp(scope: string): SqlFragment {
     }
 }
 
-function scopeValue(scope: string): SqlFragment {
+export function scopeValue(scope: string): SqlFragment {
     return scope.startsWith('!') ? scope.slice(1) : scope
 }
 

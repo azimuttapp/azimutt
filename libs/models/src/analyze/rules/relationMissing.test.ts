@@ -1,8 +1,10 @@
 import {describe, expect, test} from "@jest/globals";
 import {Database} from "../../database";
 import {getMissingRelations, relationMissingRule} from "./relationMissing";
+import {ruleConf} from "../rule.test";
 
 describe('relationMissing', () => {
+    const now = Date.now()
     test('empty', () => {
         expect(getMissingRelations([], [])).toEqual([])
     })
@@ -99,8 +101,24 @@ describe('relationMissing', () => {
                 {name: 'posts', attrs: [{name: 'id', type: 'uuid'}, {name: 'user_id', type: 'uuid'}]},
             ]
         }
-        expect(relationMissingRule.analyze(db).map(v => v.message)).toEqual([
+        expect(relationMissingRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
             'Create a relation from posts(user_id) to users(id).'
+        ])
+    })
+    test('ignores', () => {
+        const db: Database = {
+            entities: [
+                {name: 'users', attrs: [{name: 'id', type: 'uuid'}]},
+                {name: 'posts', attrs: [{name: 'id', type: 'uuid'}, {name: 'user_id', type: 'uuid'}]},
+                {name: 'events', attrs: [{name: 'id', type: 'uuid'}, {name: 'name', type: 'varchar'}, {name: 'created_by', type: 'uuid'}]},
+            ]
+        }
+        expect(relationMissingRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+            'Create a relation from posts(user_id) to users(id).',
+            'Create a relation from events(created_by) to users(id).',
+        ])
+        expect(relationMissingRule.analyze({...ruleConf, ignores: [{src: 'events(created_by)', ref: 'users(id)'}]}, now, db, [], []).map(v => v.message)).toEqual([
+            'Create a relation from posts(user_id) to users(id).',
         ])
     })
 })

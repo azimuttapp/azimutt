@@ -40,6 +40,8 @@ export const AttributePathId = z.string() // serialized AttributePath for nested
 export type AttributePathId = z.infer<typeof AttributePathId>
 export const AttributeId = z.string() // serialized AttributeRef (EntityId with AttributePathId), ex: 'table(id)', 'd.c.s.events(payload.address.no)'
 export type AttributeId = z.infer<typeof AttributeId>
+export const AttributesId = z.string() // serialized AttributesRef (EntityId with list of AttributePathId), ex: 'table(id, email)', 'd.c.s.events(payload.address.no, payload.address.street)'
+export type AttributesId = z.infer<typeof AttributesId>
 export const TypeId = z.string() // serialized TypeRef (type name with namespace), ex: 'public.post_status'
 export type TypeId = z.infer<typeof TypeId>
 export const RelationId = z.string() // serialized Relation link, ex: 'posts(author)->users(id)'
@@ -59,12 +61,15 @@ export const EntityRef = Namespace.extend({ entity: EntityName }).strict()
 export type EntityRef = z.infer<typeof EntityRef>
 export const AttributeRef = EntityRef.extend({ attribute: AttributePath }).strict()
 export type AttributeRef = z.infer<typeof AttributeRef>
+export const AttributesRef = EntityRef.extend({ attributes: AttributePath.array() }).strict()
+export type AttributesRef = z.infer<typeof AttributesRef>
 export const TypeRef = Namespace.extend({ type: TypeName }).strict()
 export type TypeRef = z.infer<typeof TypeRef>
 
 export const IndexStats = z.object({
     size: z.number().optional(), // used bytes
     scans: z.number().optional(), // number of index scans
+    scansLast: DateTime.optional(), // last index scan
 }).strict()
 export type IndexStats = z.infer<typeof IndexStats>
 
@@ -154,6 +159,7 @@ export type EntityKind = z.infer<typeof EntityKind>
 
 export const EntityStats = z.object({
     rows: z.number().optional(), // number of rows
+    rowsDead: z.number().optional(), // number of dead rows
     size: z.number().optional(), // used bytes
     sizeIdx: z.number().optional(), // used bytes for indexes
     sizeToast: z.number().optional(), // used bytes for toasts
@@ -163,7 +169,9 @@ export const EntityStats = z.object({
     scanIdx: z.number().optional(), // number of index scan
     scanIdxLast: DateTime.optional(),
     analyzeLast: DateTime.optional(),
+    analyzeLag: z.number().optional(),
     vacuumLast: DateTime.optional(),
+    vacuumLag: z.number().optional(),
 }).strict()
 export type EntityStats = z.infer<typeof EntityStats>
 

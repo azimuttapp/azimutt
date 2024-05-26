@@ -1,30 +1,56 @@
+import {z} from "zod";
 import {indexBy, isNotUndefined} from "@azimutt/utils";
-import {AttributeRef, Database, Entity, EntityId, Relation} from "../../database";
-import {attributeRefToId, entityRefToId, entityToId, getAttribute, relationToId} from "../../databaseUtils";
-import {Rule, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {Timestamp} from "../../common";
+import {AttributeId, AttributeRef, Database, Entity, EntityId, Relation} from "../../database";
+import {
+    attributeRefFromId,
+    attributeRefSame,
+    attributeRefToId,
+    entityRefToId,
+    entityToId,
+    getAttribute,
+    relationToId
+} from "../../databaseUtils";
+import {DatabaseQuery} from "../../interfaces/connector";
+import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'relation-miss-attribute'
 const ruleName: RuleName = 'attribute not found in relation'
-const ruleLevel: RuleLevel = RuleLevel.enum.high
-export const relationMissAttributeRule: Rule = {
+const CustomRuleConf = RuleConf.extend({
+    ignores: AttributeId.array().optional(),
+}).strict().describe('RelationMissAttributeConf')
+type CustomRuleConf = z.infer<typeof CustomRuleConf>
+export const relationMissAttributeRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
-    level: ruleLevel,
-    analyze(db: Database): RuleViolation[] {
+    conf: {level: RuleLevel.enum.high},
+    zConf: CustomRuleConf,
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
         const entities: Record<EntityId, Entity> = indexBy(db.entities || [], entityToId)
-        return (db.relations || []).map(r => getMissingAttributeRelations(r, entities)).filter(isNotUndefined).map(violation => ({
-            ruleId,
-            ruleName,
-            ruleLevel,
-            entity: violation.relation.src,
-            message: `Relation ${relationName(violation.relation)}, not found attributes: ${violation.missingAttrs.map(attributeRefToId).join(', ')}`
-        }))
+        const ignores: AttributeRef[] = conf.ignores?.map(attributeRefFromId) || []
+        return (db.relations || [])
+            .map(r => getMissingAttributeRelations(r, entities))
+            .filter(isNotUndefined)
+            .map(v => ({...v, missingAttrs: v?.missing?.filter(a => !ignores.some(i => attributeRefSame(i, a)))}))
+            .filter(v => v.missingAttrs.length > 0)
+            .map(violation => {
+                const {attribute, ...entity} = violation.missingAttrs[0]
+                return {
+                    ruleId,
+                    ruleName,
+                    ruleLevel: conf.level,
+                    message: `Relation ${relationName(violation.relation)}, not found attributes: ${violation.missingAttrs.map(attributeRefToId).join(', ')}`,
+                    entity,
+                    attribute,
+                    extra: violation
+                }
+            })
     }
 }
 
 const relationName = (r: Relation): string => r.name || relationToId(r)
 
-export type MissingAttributeRelation = { relation: Relation, missingAttrs: AttributeRef[] }
+export type MissingAttributeRelation = { relation: Relation, missing: AttributeRef[] }
 
 export function getMissingAttributeRelations(relation: Relation, entities: Record<EntityId, Entity>): MissingAttributeRelation | undefined {
     const src = entities[entityRefToId(relation.src)]
@@ -37,9 +63,9 @@ export function getMissingAttributeRelations(relation: Relation, entities: Recor
         ref: attr.ref,
         refAttr: getAttribute(ref.attrs, attr.ref),
     }))
-    const missingAttrs: AttributeRef[] = attrs.flatMap(attr => [
+    const missing: AttributeRef[] = attrs.flatMap(attr => [
         attr.srcAttr ? undefined : {...relation.src, attribute: attr.src},
         attr.refAttr ? undefined : {...relation.ref, attribute: attr.ref},
     ].filter(isNotUndefined))
-    return missingAttrs.length > 0 ? {relation, missingAttrs} : undefined
+    return missing.length > 0 ? {relation, missing} : undefined
 }

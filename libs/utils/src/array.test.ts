@@ -1,5 +1,18 @@
 import {describe, expect, test} from "@jest/globals";
-import {collect, collectOne, distinct, findLastIndex, groupBy, indexBy, mergeBy, partition, shuffle, zip} from "./array";
+import {
+    collect,
+    collectOne,
+    distinct,
+    findLastIndex,
+    groupBy,
+    indexBy,
+    maxBy,
+    mergeBy,
+    minBy,
+    partition,
+    shuffle,
+    zip
+} from "./array";
 
 describe('array', () => {
     test('collect', () => {
@@ -15,12 +28,17 @@ describe('array', () => {
         expect(findLastIndex([1, 1, 2, 3, 5, 3], i => i === 3)).toEqual(5)
         expect(findLastIndex([1, 1, 2, 3, 5, 3], i => i === 6)).toEqual(-1)
     })
+    test('groupBy', () => {
+        expect(groupBy([1, 2, 3], i => i % 2)).toEqual({0: [2], 1: [1, 3]})
+    })
     test('indexBy', () => {
         expect(indexBy([{id: 1}, {id: 2}], v => v.id)).toEqual({1: {id: 1}, 2: {id: 2}})
         expect(indexBy([1, 2, 3], i => i % 2)).toEqual({0: 2, 1: 3})
     })
-    test('partition', () => {
-        expect(partition([1, 2, 3, 4, 5], i => i % 2 === 0)).toEqual([[2, 4], [1, 3, 5]])
+    test('maxBy', () => {
+        expect(maxBy([] as string[], i => i.length)).toEqual(undefined)
+        expect(maxBy(['a'], i => i.length)).toEqual('a')
+        expect(maxBy(['abc', 'a', 'abcd', 'efgh', 'b'], i => i.length)).toEqual('abcd')
     })
     test('mergeBy', () => {
         type Item = {key: string, value?: string, item?: string}
@@ -36,8 +54,13 @@ describe('array', () => {
             {key: 'c', item: 'c'}
         ])
     })
-    test('groupBy', () => {
-        expect(groupBy([1, 2, 3], i => i % 2)).toEqual({0: [2], 1: [1, 3]})
+    test('minBy', () => {
+        expect(minBy([] as string[], i => i.length)).toEqual(undefined)
+        expect(minBy(['a'], i => i.length)).toEqual('a')
+        expect(minBy(['abc', 'a', 'abcd', 'efgh', 'b'], i => i.length)).toEqual('a')
+    })
+    test('partition', () => {
+        expect(partition([1, 2, 3, 4, 5], i => i % 2 === 0)).toEqual([[2, 4], [1, 3, 5]])
     })
     test('shuffle', () => {
         // use long array to reduce the probability to have the same one after shuffle ^^

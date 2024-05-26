@@ -1,8 +1,10 @@
 import {describe, expect, test} from "@jest/globals";
 import {Database, Entity, Relation} from "../../database";
 import {getMisalignedRelation, relationMisalignedRule} from "./relationMisaligned";
+import {ruleConf} from "../rule.test";
 
 describe('relationMisaligned', () => {
+    const now = Date.now()
     test('valid relation', () => {
         const postAuthor: Relation = {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]}
         const users: Entity = {name: 'users', attrs: [{name: 'id', type: 'uuid'}]}
@@ -27,7 +29,26 @@ describe('relationMisaligned', () => {
                 {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]},
             ]
         }
-        expect(relationMisalignedRule.analyze(db).map(v => v.message)).toEqual([
+        expect(relationMisalignedRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+            'Relation posts(author)->users(id) link attributes different types: posts(author): varchar != users(id): uuid',
+        ])
+    })
+    test('ignores', () => {
+        const db: Database = {
+            entities: [
+                {name: 'users', attrs: [{name: 'id', type: 'uuid'}]},
+                {name: 'posts', attrs: [{name: 'id', type: 'uuid'}, {name: 'author', type: 'varchar'}, {name: 'created_by', type: 'text'}]},
+            ],
+            relations: [
+                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]},
+                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}]},
+            ]
+        }
+        expect(relationMisalignedRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+            'Relation posts(author)->users(id) link attributes different types: posts(author): varchar != users(id): uuid',
+            'Relation posts(created_by)->users(id) link attributes different types: posts(created_by): text != users(id): uuid',
+        ])
+        expect(relationMisalignedRule.analyze({...ruleConf, ignores: [{src: 'posts(created_by)', ref: 'users(id)'}]}, now, db, [], []).map(v => v.message)).toEqual([
             'Relation posts(author)->users(id) link attributes different types: posts(author): varchar != users(id): uuid',
         ])
     })

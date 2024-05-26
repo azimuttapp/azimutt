@@ -1,8 +1,10 @@
 import {describe, expect, test} from "@jest/globals";
 import {Database, Entity, Relation} from "../../database";
 import {getMissingIndexOnRelation, indexOnRelationRule} from "./indexOnRelation";
+import {ruleConf} from "../rule.test";
 
 describe('indexOnRelation', () => {
+    const now = Date.now()
     test('empty', () => {
         const postAuthor: Relation = {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]}
         expect(getMissingIndexOnRelation(postAuthor, {})).toEqual([])
@@ -32,8 +34,27 @@ describe('indexOnRelation', () => {
                 {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]}
             ]
         }
-        expect(indexOnRelationRule.analyze(db).map(v => v.message)).toEqual([
+        expect(indexOnRelationRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
             'Create an index on posts(author) to improve posts(author)->users(id) relation.'
+        ])
+    })
+    test('ignores', () => {
+        const db: Database = {
+            entities: [
+                {name: 'users', attrs: [{name: 'id', type: 'uuid'}], pk: {attrs: [['id']]}},
+                {name: 'posts', attrs: [{name: 'id', type: 'uuid'}, {name: 'author', type: 'uuid'}, {name: 'created_by', type: 'uuid'}]},
+            ],
+            relations: [
+                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]},
+                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}]},
+            ]
+        }
+        expect(indexOnRelationRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+            'Create an index on posts(author) to improve posts(author)->users(id) relation.',
+            'Create an index on posts(created_by) to improve posts(created_by)->users(id) relation.',
+        ])
+        expect(indexOnRelationRule.analyze({...ruleConf, ignores: ['posts(created_by)']}, now, db, [], []).map(v => v.message)).toEqual([
+            'Create an index on posts(author) to improve posts(author)->users(id) relation.',
         ])
     })
 })

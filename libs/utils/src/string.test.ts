@@ -1,6 +1,8 @@
 import {describe, expect, test} from "@jest/globals";
 import {
     compatibleCases,
+    dateFromIsoFilename,
+    dateToIsoFilename,
     indent,
     isCamelLower,
     isCamelUpper,
@@ -10,6 +12,7 @@ import {
     isSnakeUpper,
     joinLast,
     joinLimit,
+    maxLen,
     pathJoin,
     pathParent,
     plural,
@@ -22,6 +25,12 @@ import {
 } from "./string";
 
 describe('string', () => {
+    test('dateToIsoFilename', () => {
+        const d = new Date(1716456672960)
+        expect(dateToIsoFilename(d)).toEqual('2024-05-23T09-31-12-960Z')
+        expect(dateFromIsoFilename('2024-05-23T09-31-12-960Z')).toEqual(d)
+        expect(() => dateFromIsoFilename('bad')).toThrow(new Error('Invalid filename iso date: bad'))
+    })
     test('indent', () => {
         expect(indent('some text')).toEqual('  some text')
         expect(indent(`
@@ -108,6 +117,15 @@ describe('string', () => {
         expect(joinLimit(['a', 'b', 'c', 'd', 'e', 'f'])).toEqual('a, b, c, d, e ...')
         expect(joinLimit(['a', 'b', 'c', 'd', 'e', 'f', 'g'])).toEqual('a, b, c, d, e ...')
     })
+    test('maxLen', () => {
+        expect(maxLen('a', 5)).toEqual('a')
+        expect(maxLen('ab', 5)).toEqual('ab')
+        expect(maxLen('abc', 5)).toEqual('abc')
+        expect(maxLen('abcd', 5)).toEqual('abcd')
+        expect(maxLen('abcde', 5)).toEqual('abcde')
+        expect(maxLen('abcdef', 5)).toEqual('ab...')
+        expect(maxLen('abcdef', 4)).toEqual('a...')
+    })
     test('pathJoin', () => {
         expect(pathJoin()).toEqual('./')
         expect(pathJoin('')).toEqual('./')
@@ -124,6 +142,7 @@ describe('string', () => {
         expect(pathJoin('./doc8', '../../aml.md')).toEqual('../aml.md') // keep parent when can't remove it
         // expect(pathJoin('./doc9/a/b/c/d', '../../../../aml.md')).toEqual('./doc9/aml.md') // many parents
         expect(pathJoin('./doc10///a/b', '../../aml.md')).toEqual('./doc10/aml.md') // repeating /
+        expect(pathJoin('~/doc11/a', 'b')).toEqual('~/doc11/a/b') // home
         // TODO: absolute paths
     })
     test('pathParent', () => {
@@ -132,6 +151,7 @@ describe('string', () => {
         expect(pathParent('./docs/folder')).toEqual('./docs')
         expect(pathParent('./docs/folder/')).toEqual('./docs')
         expect(pathParent('./')).toEqual('./')
+        expect(pathParent('~/docs/hello.json')).toEqual('~/docs')
     })
     test('plural', () => {
         expect(plural('cat')).toEqual('cats')
