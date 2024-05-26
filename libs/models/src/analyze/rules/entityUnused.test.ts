@@ -1,5 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
-import {Attribute, Database, Entity} from "../../database";
+import {Database, Entity} from "../../database";
 import {oneDay, oneHour} from "../../helpers/date";
 import {entityUnusedRule, isEntityUnused} from "./entityUnused";
 import {ruleConf} from "../rule.test";
@@ -34,7 +34,7 @@ describe('entityUnused', () => {
     test('violation message', () => {
         const db: Database = {entities: [{name: 'users', attrs: [{name: 'id', type: 'uuid'}], stats: {scanSeqLast: new Date(twoDaysAgo).toISOString()}}]}
         expect(entityUnusedRule.analyze({...ruleConf, minDays: 1}, now, db, [], []).map(v => v.message)).toEqual([
-            'Entity users is unused since 2024-05-23 (check all cluster nodes to be sure!).'
+            'Entity users is unused since 2024-05-23 (check all instances to be sure!).'
         ])
     })
     test('ignores', () => {
@@ -43,11 +43,11 @@ describe('entityUnused', () => {
             {name: 'posts', attrs: [{name: 'id', type: 'uuid'}], stats: {scanSeqLast: new Date(threeDaysAgo).toISOString()}},
         ]}
         expect(entityUnusedRule.analyze({...ruleConf, minDays: 1}, now, db, [], []).map(v => v.message)).toEqual([
-            'Entity users is unused since 2024-05-23 (check all cluster nodes to be sure!).',
-            'Entity posts is unused since 2024-05-22 (check all cluster nodes to be sure!).',
+            'Entity users is unused since 2024-05-23 (check all instances to be sure!).',
+            'Entity posts is unused since 2024-05-22 (check all instances to be sure!).',
         ])
         expect(entityUnusedRule.analyze({...ruleConf, minDays: 1, ignores: ['posts']}, now, db, [], []).map(v => v.message)).toEqual([
-            'Entity users is unused since 2024-05-23 (check all cluster nodes to be sure!).',
+            'Entity users is unused since 2024-05-23 (check all instances to be sure!).',
         ])
     })
 })

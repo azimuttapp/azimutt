@@ -37,7 +37,7 @@ export const entityUnusedRule: Rule<CustomRuleConf> = {
                 ruleId,
                 ruleName,
                 ruleLevel: conf.level,
-                message: `Entity ${entityToId(r.current)} is unused since ${showDate(r.date)} (check all cluster nodes to be sure!).`,
+                message: `Entity ${entityToId(r.current)} is unused since ${showDate(r.date)} (check all instances to be sure!).`,
                 entity: entityToRef(r.current),
                 extra: removeUndefined({
                     previousReport: r.report,
@@ -53,15 +53,11 @@ type UnusedEntity = {date: Timestamp, current: Entity, previous?: Entity, report
 
 export function isEntityUnused(now: Timestamp, current: Entity, history: {report: string, date: Timestamp, entity: Entity}[], minDays: number): UnusedEntity | undefined {
     const {scanSeq, scanIdx, scanSeqLast, scanIdxLast} = current.stats || {}
-    if (scanSeq || scanIdx) {
+    const scans = (scanSeq || 0) + (scanIdx || 0)
+    if (scans > 0) {
         const sameAsCurrent = history.filter(h => now - h.date > minDays * oneDay).map(h => {
-            if ((h.entity.stats?.scanSeq || h.entity.stats?.scanIdx) && // at least one should be defined
-                (h.entity.stats?.scanSeq ? h.entity.stats.scanSeq === scanSeq : true) && // if defined should be the same
-                (h.entity.stats?.scanIdx ? h.entity.stats.scanIdx === scanIdx : true) // if defined should be the same
-            ) {
-                return {date: h.date, current, previous: h.entity, report: h.report}
-            }
-            return undefined
+            const hScans = (h.entity.stats?.scanSeq || 0) + (h.entity.stats?.scanIdx || 0)
+            return hScans === scans ? {date: h.date, current, previous: h.entity, report: h.report} : undefined
         }).filter(isNotUndefined)
         const res = minBy(sameAsCurrent, d => d.date)
         if (res) return res

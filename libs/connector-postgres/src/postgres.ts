@@ -477,6 +477,7 @@ function buildCheck(c: RawConstraint, columns: { [i: number]: string }): Check {
 type RawIndex = {
     table_schema: string
     table_name: string
+    index_id: number
     index_name: string
     columns: number[]
     is_unique: boolean
@@ -501,6 +502,7 @@ export const getIndexes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
     return conn.query<RawIndex>(`
         SELECT s.schemaname                           AS table_schema
              , s.relname                              AS table_name
+             , s.indexrelid                           AS index_id
              , s.indexrelname                         AS index_name
              , i.indkey::integer[]                    AS columns
              , i.indisunique                          AS is_unique
@@ -509,7 +511,7 @@ export const getIndexes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
              , c.reltuples                            AS rows
              , c.relpages                             AS blocks
              , s.idx_scan                             AS idx_scan
-             , s.idx_tup_fetch                        AS idx_scan_reads
+             , s.idx_tup_read                         AS idx_scan_reads
              , ${sCols.includes('last_idx_scan') ? 's.last_idx_scan' : 'null           '}                        AS idx_scan_last
              , d.description                          AS index_comment
         FROM pg_index i
@@ -527,16 +529,17 @@ export const getIndexes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
 
 function buildIndex(blockSize: number, index: RawIndex, columns: { [i: number]: string }): Index {
     return removeUndefined({
-        name: index.index_name,
-        attrs: index.columns.map(i => [getColumnName(columns, i)]), // TODO: handle indexes on nested json columns
+        name: index.index_name || index.index_id.toString(),
+        attrs: index.columns.map(i => [getColumnName(columns, i)]), // TODO: handle indexes with functions or on nested json columns
         unique: index.is_unique || undefined,
         partial: index.partial || undefined,
         definition: index.definition,
         doc: index.index_comment || undefined,
-        stats: {
+        stats: removeUndefined({
             size: index.blocks * blockSize,
             scans: index.idx_scan,
-        },
+            scansLast: (index.idx_scan_last || undefined)?.toISOString(),
+        }),
         extra: undefined
     })
 }

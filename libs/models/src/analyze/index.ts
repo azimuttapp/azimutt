@@ -19,6 +19,7 @@ import {entityTooLargeRule} from "./rules/entityTooLarge";
 import {entityUnusedRule} from "./rules/entityUnused";
 import {indexDuplicatedRule} from "./rules/indexDuplicated";
 import {indexOnRelationRule} from "./rules/indexOnRelation";
+import {indexUnusedRule} from "./rules/indexUnused";
 import {primaryKeyMissingRule} from "./rules/primaryKeyMissing";
 import {primaryKeyNotBusinessRule} from "./rules/primaryKeyNotBusiness";
 import {queryDegradingRule} from "./rules/queryDegrading";
@@ -32,29 +33,34 @@ import {relationMissingRule} from "./rules/relationMissing";
 
 export * from "./rule"
 export const analyzeRules: Rule[] = [
-    attributeEmptyRule,
-    attributeNameInconsistentRule,
+    // hint rules
     attributeTypeInconsistentRule,
-    entityEmptyRule,
-    entityIndexNoneRule,
-    entityIndexTooHeavyRule,
-    entityIndexTooManyRule,
-    entityNameInconsistentRule,
-    entityNotCleanRule,
-    entityTooLargeRule,
-    entityUnusedRule,
-    indexDuplicatedRule,
-    indexOnRelationRule,
-    primaryKeyMissingRule,
-    primaryKeyNotBusinessRule,
-    queryDegradingRule,
     queryExpensiveRule,
     queryHighVariationRule,
+    // low rules
+    entityEmptyRule,
+    attributeEmptyRule,
+    entityNameInconsistentRule,
+    attributeNameInconsistentRule,
+    // medium rules
+    entityUnusedRule,
+    entityTooLargeRule,
+    entityIndexTooManyRule,
+    entityIndexTooHeavyRule,
+    primaryKeyNotBusinessRule,
+    indexOnRelationRule,
+    indexUnusedRule,
+    relationMissingRule,
+    // high rules
+    indexDuplicatedRule,
     queryTooSlowRule,
+    queryDegradingRule,
+    entityNotCleanRule,
+    primaryKeyMissingRule,
+    entityIndexNoneRule,
     relationMisalignedRule,
     relationMissAttributeRule,
     relationMissEntityRule,
-    relationMissingRule,
 ]
 
 export const RulesConf = z.object({
@@ -68,7 +74,6 @@ export type RuleAnalyzed = {rule: Rule, conf: RuleConf, violations: RuleViolatio
 // TODO: split rules by kind? (schema, query, data...)
 export function analyzeDatabase(conf: RulesConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], ruleNames: string[]): Record<RuleId, RuleAnalyzed> {
     // TODO: fast growing tables/indexes (absolute % growth, daily % growth)
-    // TODO: unused tables/indexes (flat count)
 
     // TODO: use uuid or bigint for single primary key, not int or varchar ones
     // TODO: uuids not stored as CHAR(36) => field ending with `id` and with type CHAR(36) => suggest type `uuid`/`BINARY(16)` instead (depend on db)

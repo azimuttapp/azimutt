@@ -69,6 +69,7 @@ export type TypeRef = z.infer<typeof TypeRef>
 export const IndexStats = z.object({
     size: z.number().optional(), // used bytes
     scans: z.number().optional(), // number of index scans
+    scansLast: DateTime.optional(), // last index scan
 }).strict()
 export type IndexStats = z.infer<typeof IndexStats>
 

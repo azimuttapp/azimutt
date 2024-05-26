@@ -78,16 +78,29 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
         printReport(offRules, rulesByLevel, maxShown, stats, logger)
         const report = buildReport(db, queries, rules)
         await writeReport(folder, report, logger)
-        if (!opts.key) {
-            logger.log(chalk.blue('Hope you like Azimutt analyze.'))
-            logger.log(chalk.blue('Get more from it with a license key, enabling historical analysis to find degrading queries and unused indexes for example.'))
-            logger.log(chalk.blue(`Reach out to ${azimuttEmail} to buy it.`))
+        if (opts.key) {
+            logger.log(chalk.blue('Thanks for using Azimutt analyze!'))
+            logger.log(chalk.blue(`For any question or suggestion, reach out to ${azimuttEmail}.`))
+            logger.log(chalk.blue(`Cheers!`))
+            logger.log('')
+        } else {
+            logger.log(chalk.blue('Hope you like Azimutt analyze!'))
+            logger.log(chalk.blue('Get even more from it with a license key, enabling historical analysis to identify:'))
+            logger.log(chalk.blue('- degrading queries'))
+            logger.log(chalk.blue('- unused indexes'))
+            logger.log(chalk.blue('- fastest growing tables'))
+            logger.log(chalk.blue('- and more...'))
+            logger.log(chalk.blue(`Reach out to ${azimuttEmail} to buy one.`))
+            logger.log(chalk.blue(`See you ;)`))
             logger.log('')
         }
     } else {
         const maxShown = 3
         printReport(offRules, rulesByLevel, maxShown, stats, logger)
-        logger.log(chalk.blue('Thanks for using Azimutt analyze, add your professional email (ex: `--email "your.name@company.com"`) to get the full report in JSON and use `size` and `only` options.'))
+        logger.log(chalk.blue('Had useful insights using Azimutt analyze?'))
+        logger.log(chalk.blue('Add your professional email (ex: `--email your.name@company.com`) to get the full report in JSON.'))
+        logger.log(chalk.blue(`Reach out to ${azimuttEmail} for feedback or suggest improvements ;)`))
+        logger.log(chalk.blue(`Cheers!`))
         logger.log('')
     }
 }
@@ -222,6 +235,7 @@ async function writeReport(folder: string, report: AnalyzeReport, logger: Logger
     const path = pathJoin(folder, `report_${dateToIsoFilename(new Date())}.azimutt.json`)
     await fileWriteJson(path, report)
     logger.log(`Analysis report written to ${path}`)
+    logger.log('')
 }
 
 async function loadHistory(folder: string, logger: Logger): Promise<AnalyzeHistory[]> {
