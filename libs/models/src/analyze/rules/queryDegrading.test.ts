@@ -17,7 +17,7 @@ describe('queryDegrading', () => {
     test('degrading query', () => {
         const current: DatabaseQuery = {id: '123', database: 'azimutt_dev', query: 'SELECT * FROM users;', rows: 1234, exec: {count: 5, minTime: 10, maxTime: 100, sumTime: 243, meanTime: 20, sdTime: 30}}
         const previous: DatabaseQuery = {id: '123', database: 'azimutt_dev', query: 'SELECT * FROM users;', rows: 1234, exec: {count: 5, minTime: 10, maxTime: 100, sumTime: 243, meanTime: 10, sdTime: 30}}
-        expect(getDegradingQuery(now, current, [{report, date: twoDaysAgo, query: previous}], 5, 1, 0.2, 0.1)).toEqual({report, date: twoDaysAgo, previous, current, degradation: 1, duration: 2 * oneDay, monthly: 15, daily: 0.5})
+        expect(getDegradingQuery(now, current, [{report, date: twoDaysAgo, query: previous}], 5, 1, 0.2, 0.1)).toEqual({report, date: twoDaysAgo, previous, current, degradation: 1, period: 2 * oneDay, monthly: 15, daily: 0.5})
     })
     test('violation message', () => {
         const query: DatabaseQuery = {id: '123', database: 'azimutt_dev', query: 'SELECT * FROM users;', rows: 1234, exec: {count: 5, minTime: 10, maxTime: 100, sumTime: 243, meanTime: 20, sdTime: 30}}

@@ -19,6 +19,7 @@ import {entityNotCleanRule} from "./rules/entityNotClean";
 import {entityTooLargeRule} from "./rules/entityTooLarge";
 import {entityUnusedRule} from "./rules/entityUnused";
 import {indexDuplicatedRule} from "./rules/indexDuplicated";
+import {indexGrowFastRule} from "./rules/indexGrowFast";
 import {indexOnRelationRule} from "./rules/indexOnRelation";
 import {indexUnusedRule} from "./rules/indexUnused";
 import {primaryKeyMissingRule} from "./rules/primaryKeyMissing";
@@ -45,13 +46,14 @@ export const analyzeRules: Rule[] = [
     attributeNameInconsistentRule,
     // medium rules
     entityUnusedRule,
+    indexUnusedRule,
     entityGrowFastRule,
+    indexGrowFastRule,
     entityTooLargeRule,
     entityIndexTooManyRule,
     entityIndexTooHeavyRule,
     primaryKeyNotBusinessRule,
     indexOnRelationRule,
-    indexUnusedRule,
     relationMissingRule,
     // high rules
     indexDuplicatedRule,
@@ -75,8 +77,6 @@ export type RuleAnalyzed = {rule: Rule, conf: RuleConf, violations: RuleViolatio
 
 // TODO: split rules by kind? (schema, query, data...)
 export function analyzeDatabase(conf: RulesConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], ruleNames: string[]): Record<RuleId, RuleAnalyzed> {
-    // TODO: fast growing tables/indexes (absolute % growth, daily % growth)
-
     // TODO: use uuid or bigint for single primary key, not int or varchar ones
     // TODO: uuids not stored as CHAR(36) => field ending with `id` and with type CHAR(36) => suggest type `uuid`/`BINARY(16)` instead (depend on db)
     // TODO: warn on queries with ORDER BY RAND()
