@@ -1,4 +1,5 @@
 import {z} from "zod";
+import {prettyNumber} from "@azimutt/utils";
 import {Timestamp} from "../../common";
 import {Database, Entity, EntityId, EntityRef} from "../../database";
 import {entityRefFromId, entityRefSame, entityToId, entityToRef} from "../../databaseUtils";
@@ -28,11 +29,12 @@ export const entityIndexTooHeavyRule: Rule<CustomRuleConf> = {
                     ruleId,
                     ruleName,
                     ruleLevel: conf.level,
-                    message: `Entity ${entityToId(e)} has too heavy indexes (${Math.round(10 * ratio) / 10}x data size).`,
+                    message: `Entity ${entityToId(e)} has too heavy indexes (${prettyNumber(ratio)}x data size).`,
                     entity: entityToRef(e),
                     extra: {ratio}
                 }
             })
+            .sort((a, b) => -(a.extra.ratio - b.extra.ratio))
     }
 }
 

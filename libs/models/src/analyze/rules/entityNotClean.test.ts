@@ -1,6 +1,6 @@
 import {describe, expect, test} from "@jest/globals";
 import {Database, Entity} from "../../database";
-import {oneDay} from "../../helpers/date";
+import {oneDay} from "../../helpers/duration";
 import {entityNotCleanRule, isEntityNotClean} from "./entityNotClean";
 import {ruleConf} from "../rule.test";
 

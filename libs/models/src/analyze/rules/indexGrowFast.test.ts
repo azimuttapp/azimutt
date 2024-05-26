@@ -1,7 +1,7 @@
 import {describe, expect, test} from "@jest/globals";
 import {Database, Entity, Index} from "../../database";
 import {Mo} from "../../helpers/bytes";
-import {oneDay, oneMonth} from "../../helpers/date";
+import {oneDay, oneMonth} from "../../helpers/duration";
 import {indexGrowFastRule, isIndexGrowingFast} from "./indexGrowFast";
 import {ruleConf} from "../rule.test";
 

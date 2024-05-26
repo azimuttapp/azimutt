@@ -20,7 +20,7 @@ import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolati
  */
 
 const ruleId: RuleId = 'primary-key-not-business'
-const ruleName: RuleName = 'no business primary key'
+const ruleName: RuleName = 'business primary key forbidden'
 const CustomRuleConf = RuleConf.extend({
     ignores: AttributesId.array().optional()
 }).strict().describe('PrimaryKeyNotBusinessConf')

@@ -3,9 +3,9 @@ import {removeUndefined} from "@azimutt/utils";
 import {Timestamp} from "../../common";
 import {Database} from "../../database";
 import {entityRefToId} from "../../databaseUtils";
-import {DatabaseQuery, QueryId} from "../../interfaces/connector";
+import {showDuration} from "../../helpers/duration";
 import {formatSql, getEntities, getMainEntity} from "../../helpers/sql";
-import {formatMs} from "../../helpers/time";
+import {DatabaseQuery, QueryId} from "../../interfaces/connector";
 import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'query-expensive'
@@ -31,7 +31,7 @@ export const queryExpensiveRule: Rule<CustomRuleConf> = {
                     ruleId,
                     ruleName,
                     ruleLevel: conf.level,
-                    message: `Query ${q.id}${entity ? ` on ${entityRefToId(entity)}` : ''} is one of the most expensive, cumulated ${formatMs(q.exec?.sumTime || 0)} (${formatSql(q.query)})`,
+                    message: `Query ${q.id}${entity ? ` on ${entityRefToId(entity)}` : ''} is one of the most expensive, cumulated ${showDuration(q.exec?.sumTime || 0)} exec time (${formatSql(q.query)})`,
                     entity,
                     extra: {queryId: id, query, stats, entities: getEntities(q.query)}
                 })

@@ -34,7 +34,7 @@ function extractEntityRegex(res: RegExpMatchArray | RegExpExecArray): EntityRef 
 
 export function formatSql(sql: string): string {
     const maxLength = 200
-    const singleLine = sql.split('\n')
+    const singleLine = sql.trim().split('\n')
         .map(line => line.replaceAll(/\s+/g, ' ').replaceAll(/--.*/g, '').trim())
         .map((line, i) => i === 0 || line.startsWith(',') ? line : ' ' + line)
         .join('')

@@ -1,6 +1,6 @@
 import {describe, expect, test} from "@jest/globals";
 import {Database, Entity} from "../../database";
-import {oneDay, oneHour} from "../../helpers/date";
+import {oneDay, oneHour} from "../../helpers/duration";
 import {entityUnusedRule, isEntityUnused} from "./entityUnused";
 import {ruleConf} from "../rule.test";
 

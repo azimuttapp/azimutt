@@ -3,9 +3,10 @@ import {indexBy, isNotUndefined, minBy, removeUndefined} from "@azimutt/utils";
 import {Timestamp} from "../../common";
 import {ConstraintName, Database, Entity, EntityId, EntityRef, Index} from "../../database";
 import {attributePathToId, entityRefFromId, entityRefSame, entityToId, entityToRef} from "../../databaseUtils";
+import {showDate} from "../../helpers/date";
+import {oneDay} from "../../helpers/duration";
 import {DatabaseQuery} from "../../interfaces/connector";
 import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
-import {oneDay, showDate} from "../../helpers/date";
 
 const ruleId: RuleId = 'index-unused'
 const ruleName: RuleName = 'unused index'

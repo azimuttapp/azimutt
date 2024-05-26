@@ -2,7 +2,7 @@ import {z} from "zod";
 import {Timestamp} from "../../common";
 import {Database, Entity, EntityId, EntityKind, EntityRef} from "../../database";
 import {entityRefFromId, entityRefSame, entityToId, entityToRef} from "../../databaseUtils";
-import {oneDay} from "../../helpers/date";
+import {oneDay} from "../../helpers/duration";
 import {DatabaseQuery} from "../../interfaces/connector";
 import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 

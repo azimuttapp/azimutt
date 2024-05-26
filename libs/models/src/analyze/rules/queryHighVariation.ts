@@ -3,9 +3,9 @@ import {removeUndefined} from "@azimutt/utils";
 import {Timestamp} from "../../common";
 import {Database} from "../../database";
 import {entityRefToId} from "../../databaseUtils";
-import {DatabaseQuery, QueryId} from "../../interfaces/connector";
+import {showDuration} from "../../helpers/duration";
 import {formatSql, getEntities, getMainEntity} from "../../helpers/sql";
-import {formatMs} from "../../helpers/time";
+import {DatabaseQuery, QueryId} from "../../interfaces/connector";
 import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
 const ruleId: RuleId = 'query-high-variation'
@@ -26,15 +26,15 @@ export const queryHighVariationRule: Rule<CustomRuleConf> = {
             .slice(0, 20)
             .map(q => {
                 const entity = getMainEntity(q.query)
-                const sd = formatMs(q.exec?.sdTime || 0)
-                const min = formatMs(q.exec?.minTime || 0)
-                const max = formatMs(q.exec?.maxTime || 0)
+                const sd = showDuration(q.exec?.sdTime || 0)
+                const min = showDuration(q.exec?.minTime || 0)
+                const max = showDuration(q.exec?.maxTime || 0)
                 const {id, database, query, ...stats} = q
                 return removeUndefined({
                     ruleId,
                     ruleName,
                     ruleLevel: conf.level,
-                    message: `Query ${q.id}${entity ? ` on ${entityRefToId(entity)}` : ''} has high variation, with ${sd} standard deviation and execution time ranging from ${min} to ${max} (${formatSql(q.query)})`,
+                    message: `Query ${q.id}${entity ? ` on ${entityRefToId(entity)}` : ''} has high variation, with ${sd} standard deviation and exec time ranging from ${min} to ${max} (${formatSql(q.query)})`,
                     entity,
                     extra: {queryId: id, query, stats, entities: getEntities(q.query)}
                 })

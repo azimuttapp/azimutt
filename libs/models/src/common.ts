@@ -15,9 +15,6 @@ export type Percent = z.infer<typeof Percent>
 export const Millis = z.number() // milli-seconds
 export type Millis = z.infer<typeof Millis>
 
-export const Duration = z.number() // in millis
-export type Duration = z.infer<typeof Duration>
-
 export const Timestamp = z.number() // timestamp in millis (ex: 1663007946750)
 export type Timestamp = z.infer<typeof Timestamp>
 

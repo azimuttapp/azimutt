@@ -1,11 +1,12 @@
 import {z} from "zod";
 import {indexBy, isNotUndefined, maxBy, pluralize, removeUndefined} from "@azimutt/utils";
-import {Duration, Percent, Timestamp} from "../../common";
+import {Percent, Timestamp} from "../../common";
 import {Database, Entity, EntityId, EntityRef} from "../../database";
 import {entityRefFromId, entityRefSame, entityToId, entityToRef} from "../../databaseUtils";
 import {Bytes, Mo, showBytes} from "../../helpers/bytes";
+import {showDate} from "../../helpers/date";
+import {Duration, oneDay, oneMonth, oneYear} from "../../helpers/duration";
 import {computePercent, showPercent} from "../../helpers/percent";
-import {oneDay, oneMonth, oneYear, showDate} from "../../helpers/date";
 import {DatabaseQuery} from "../../interfaces/connector";
 import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
 
