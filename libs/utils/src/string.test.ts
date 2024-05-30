@@ -13,6 +13,7 @@ import {
     joinLast,
     joinLimit,
     maxLen,
+    parseUuid,
     pathJoin,
     pathParent,
     plural,
@@ -21,6 +22,10 @@ import {
     slugify,
     slugifyGitHub,
     splitWords,
+    stringIsFloat,
+    stringIsInt,
+    stringIsISODate,
+    stringIsUuid,
     stripIndent
 } from "./string";
 
@@ -204,6 +209,39 @@ describe('string', () => {
         expect(splitWords('AZIMUTT-IS-AWESOME')).toEqual(['azimutt', 'is', 'awesome'])
         expect(splitWords('azimutt-is-awesome')).toEqual(['azimutt', 'is', 'awesome'])
         expect(splitWords('[Azimutt, is awesome!]')).toEqual(['azimutt', 'is', 'awesome'])
+    })
+    test('stringIsInt', () => {
+        expect(stringIsInt('1')).toBeTruthy()
+        expect(stringIsInt('12')).toBeTruthy()
+        expect(stringIsInt('1.2')).toBeFalsy()
+        expect(stringIsInt('a')).toBeFalsy()
+    })
+    test('stringIsFloat', () => {
+        expect(stringIsFloat('1')).toBeTruthy()
+        expect(stringIsFloat('12')).toBeTruthy()
+        expect(stringIsFloat('1.2')).toBeTruthy()
+        expect(stringIsFloat('a')).toBeFalsy()
+    })
+    test('stringIsISODate', () => {
+        expect(stringIsISODate('2024-05-30T09:49:58.068Z')).toBeTruthy()
+        expect(stringIsISODate('0000-00-00T00:00:00.000Z')).toBeTruthy()
+        expect(stringIsISODate('9999-99-99T99:99:99.999Z')).toBeFalsy()
+        expect(stringIsISODate('a')).toBeFalsy()
+    })
+    test('stringIsUuid', () => {
+        expect(stringIsUuid('123e4567-e89b-12d3-a456-426614174000')).toBeTruthy()
+        expect(stringIsUuid('00000000-0000-0000-0000-000000000000')).toBeTruthy()
+        expect(stringIsUuid('g0000000-0000-0000-0000-000000000000')).toBeFalsy()
+        expect(stringIsUuid('a')).toBeFalsy()
+    })
+    test('parseUuid', () => {
+        expect(parseUuid('c4f39518-1e6c-11ef-9262-0242ac120002')).toEqual({version: '1', variant: '9'}) // use time & mac address
+        expect(parseUuid('000003e8-1e6d-21ef-a900-325096b39f47')).toEqual({version: '2', variant: 'a'}) // use time, mac address, user & group ids
+        expect(parseUuid('b6602c76-f86e-32a2-ab42-71dd055ad3cc')).toEqual({version: '3', variant: 'a'}) // md5 hash of namespace & name
+        expect(parseUuid('6deea181-0a25-4a9d-b860-cec2e2f543e2')).toEqual({version: '4', variant: 'b'}) // fully random
+        expect(parseUuid('c952ea7d-b473-56da-8d80-0554dcb636fa')).toEqual({version: '5', variant: '8'}) // sha1 hash of namespace & name
+        expect(parseUuid('018fc8fa-8f5b-766b-ad46-6b1b0d8a4e2d')).toEqual({version: '7', variant: 'a'}) // use time, counter & random
+        expect(parseUuid('a')).toEqual({version: undefined, variant: undefined})
     })
     test('stripIndent', () => {
         expect(stripIndent('some text')).toEqual('some text')

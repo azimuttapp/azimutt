@@ -8,6 +8,7 @@ import {ConnectorSchemaDataOpts, ConnectorScopeOpts, DatabaseQuery} from "../int
 import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleViolation} from "./rule";
 import {attributeEmptyRule} from "./rules/attributeEmpty";
 import {attributeNameInconsistentRule} from "./rules/attributeNameInconsistent";
+import {attributeTypeBadRule} from "./rules/attributeTypeBad";
 import {attributeTypeInconsistentRule} from "./rules/attributeTypeInconsistent";
 import {entityEmptyRule} from "./rules/entityEmpty";
 import {entityGrowFastRule} from "./rules/entityGrowFast";
@@ -47,6 +48,7 @@ export const analyzeRules: Rule[] = [
     // medium rules
     entityUnusedRule,
     indexUnusedRule,
+    attributeTypeBadRule,
     entityGrowFastRule,
     indexGrowFastRule,
     entityTooLargeRule,
@@ -82,6 +84,9 @@ export function analyzeDatabase(conf: RulesConf, now: Timestamp, db: Database, q
     // TODO: warn on queries with ORDER BY RAND()
 
     // TODO: constraints should be deferrable (pk, fk, unique)
+    // TODO: tables/columns with incrementing names
+    // TODO: columns with no (or very few) null but no NOT NULL constraint => suggest add NOT NULL constraint
+    // TODO: columns with all (or mostly) different values but no UNIQUE constraint => suggest to add UNIQUE constraint
     // TODO: queries not using indexes
     // TODO: JSON columns with different schemas (% of similarity between schemas)
     // TODO: sequence/auto_increment exhaustion

@@ -13,6 +13,8 @@ import {exportDbSchema} from "./export.js";
 import {launchGateway} from "./gateway.js";
 import {launchExplore} from "./explore.js";
 import {launchAnalyze} from "./analyze.js";
+import {launchDiff} from "./diff.js";
+import {launchClustering} from "./clustering.js";
 
 clear()
 logger.log(chalk.hex('#4F46E5').bold(figlet.textSync('Azimutt.app', {horizontalLayout: 'full'})))
@@ -66,6 +68,17 @@ program.command('export')
     .option('-o, --output <output>', "Path to write the schema, ex: ~/azimutt.json")
     .option('--debug', 'Add debug logs and show the full stacktrace instead of a shorter error')
     .action((url, args) => exec(exportDbSchema(url, args), args))
+
+program.command('diff')
+    .description('Compare the schema of two databases')
+    .argument('<url_old>', 'the old database url, including credentials')
+    .argument('<url_new>', 'the new database url, including credentials')
+    .action((urlOld, urlNew, args) => exec(launchDiff(urlOld, urlNew, args, logger), args))
+
+program.command('clustering')
+    .description('WIP')
+    .argument('<url>', 'the database url, including credentials')
+    .action((url, args) => exec(launchClustering(url, args, logger), args))
 
 program.parse(process.argv)
 

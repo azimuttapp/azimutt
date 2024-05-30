@@ -163,8 +163,106 @@ describe('databaseUtils', () => {
         expect(attributesRefSame({entity: 'users', attributes: [['id']]}, {entity: 'users', attributes: [['id', 'name']]})).toBeFalsy()
         expect(attributesRefSame({entity: 'users', attributes: [['id']]}, {entity: 'users', attributes: [['name']]})).toBeFalsy()
     })
-    test('parse & format AttributeType', () => {
-        expect(attributeTypeParse('text')).toEqual({full: 'text', kind: 'unknown'})
+    test('parse AttributeType', () => {
+        // PostgreSQL: https://www.postgresql.org/docs/current/datatype.html
+        expect(attributeTypeParse('char')).toEqual({full: 'char', kind: 'string'})
+        expect(attributeTypeParse('char(10)')).toEqual({full: 'char(10)', kind: 'string', size: 10})
+        expect(attributeTypeParse('character')).toEqual({full: 'character', kind: 'string'})
+        expect(attributeTypeParse('character(10)')).toEqual({full: 'character(10)', kind: 'string', size: 10})
+        expect(attributeTypeParse('varchar')).toEqual({full: 'varchar', kind: 'string', variable: true})
+        expect(attributeTypeParse('varchar(10)')).toEqual({full: 'varchar(10)', kind: 'string', size: 10, variable: true})
+        expect(attributeTypeParse('varchar(10) CHARACTER SET utf8mb4')).toEqual({full: 'varchar(10) CHARACTER SET utf8mb4', kind: 'string', size: 10, variable: true, encoding: 'utf8mb4'}) // MySQL
+        expect(attributeTypeParse('character varying')).toEqual({full: 'character varying', kind: 'string', variable: true})
+        expect(attributeTypeParse('character varying(10)')).toEqual({full: 'character varying(10)', kind: 'string', size: 10, variable: true})
+        expect(attributeTypeParse('bpchar(10)')).toEqual({full: 'bpchar(10)', kind: 'string', size: 10})
+        expect(attributeTypeParse('nchar(10)')).toEqual({full: 'nchar(10)', kind: 'string', size: 10}) // SQL Server
+        expect(attributeTypeParse('nvarchar(10)')).toEqual({full: 'nvarchar(10)', kind: 'string', size: 10, variable: true}) // SQL Server
+        expect(attributeTypeParse('string')).toEqual({full: 'string', kind: 'string'}) // BigQuery
+        expect(attributeTypeParse('string(10)')).toEqual({full: 'string(10)', kind: 'string', size: 10}) // BigQuery
+        expect(attributeTypeParse('bit')).toEqual({full: 'bit', kind: 'string'}) // string in Postgres but int in MySQL :/
+        expect(attributeTypeParse('bit(5)')).toEqual({full: 'bit(5)', kind: 'string', size: 5})
+        expect(attributeTypeParse('varbit')).toEqual({full: 'varbit', kind: 'string', variable: true})
+        expect(attributeTypeParse('varbit(5)')).toEqual({full: 'varbit(5)', kind: 'string', size: 5, variable: true})
+        expect(attributeTypeParse('bit varying')).toEqual({full: 'bit varying', kind: 'string', variable: true})
+        expect(attributeTypeParse('bit varying(5)')).toEqual({full: 'bit varying(5)', kind: 'string', size: 5, variable: true})
+        expect(attributeTypeParse('text')).toEqual({full: 'text', kind: 'string', variable: true})
+        expect(attributeTypeParse('citext')).toEqual({full: 'citext', kind: 'string', variable: true})
+        expect(attributeTypeParse('tinytext')).toEqual({full: 'tinytext', kind: 'string', variable: true})
+        expect(attributeTypeParse('mediumtext')).toEqual({full: 'mediumtext', kind: 'string', variable: true})
+        expect(attributeTypeParse('longtext')).toEqual({full: 'longtext', kind: 'string', variable: true})
+        expect(attributeTypeParse('tinyint')).toEqual({full: 'tinyint', kind: 'int', size: 1}) // SQL Server
+        expect(attributeTypeParse('int2')).toEqual({full: 'int2', kind: 'int', size: 2})
+        expect(attributeTypeParse('smallint')).toEqual({full: 'smallint', kind: 'int', size: 2})
+        expect(attributeTypeParse('smallserial')).toEqual({full: 'smallserial', kind: 'int', size: 2})
+        expect(attributeTypeParse('serial2')).toEqual({full: 'serial2', kind: 'int', size: 2})
+        expect(attributeTypeParse('int')).toEqual({full: 'int', kind: 'int', size: 4})
+        expect(attributeTypeParse('int4')).toEqual({full: 'int4', kind: 'int', size: 4})
+        expect(attributeTypeParse('integer')).toEqual({full: 'integer', kind: 'int', size: 4})
+        expect(attributeTypeParse('serial')).toEqual({full: 'serial', kind: 'int', size: 4})
+        expect(attributeTypeParse('serial4')).toEqual({full: 'serial4', kind: 'int', size: 4})
+        expect(attributeTypeParse('int8')).toEqual({full: 'int8', kind: 'int', size: 8})
+        expect(attributeTypeParse('int64')).toEqual({full: 'int64', kind: 'int', size: 8}) // BigQuery
+        expect(attributeTypeParse('bigint')).toEqual({full: 'bigint', kind: 'int', size: 8})
+        expect(attributeTypeParse('bigint(20) unsigned')).toEqual({full: 'bigint(20) unsigned', kind: 'int', size: 8})
+        expect(attributeTypeParse('serial8')).toEqual({full: 'serial8', kind: 'int', size: 8})
+        expect(attributeTypeParse('bigserial')).toEqual({full: 'bigserial', kind: 'int', size: 8})
+        expect(attributeTypeParse('real')).toEqual({full: 'real', kind: 'float', size: 4})
+        expect(attributeTypeParse('float4')).toEqual({full: 'float4', kind: 'float', size: 4})
+        expect(attributeTypeParse('float8')).toEqual({full: 'float8', kind: 'float', size: 8})
+        expect(attributeTypeParse('double precision')).toEqual({full: 'double precision', kind: 'float', size: 8})
+        expect(attributeTypeParse('decimal')).toEqual({full: 'decimal', kind: 'float'})
+        expect(attributeTypeParse('decimal(2, 2)')).toEqual({full: 'decimal(2, 2)', kind: 'float'})
+        expect(attributeTypeParse('numeric')).toEqual({full: 'numeric', kind: 'float'})
+        expect(attributeTypeParse('numeric(2, 2)')).toEqual({full: 'numeric(2, 2)', kind: 'float'})
+        expect(attributeTypeParse('number')).toEqual({full: 'number', kind: 'float'})
+        expect(attributeTypeParse('number(2, 2)')).toEqual({full: 'number(2, 2)', kind: 'float'})
+        expect(attributeTypeParse('bool')).toEqual({full: 'bool', kind: 'bool'})
+        expect(attributeTypeParse('boolean')).toEqual({full: 'boolean', kind: 'bool'})
+        expect(attributeTypeParse('date')).toEqual({full: 'date', kind: 'date', size: 4})
+        expect(attributeTypeParse('time')).toEqual({full: 'time', kind: 'time', size: 8})
+        expect(attributeTypeParse('timetz')).toEqual({full: 'timetz', kind: 'time', size: 12})
+        expect(attributeTypeParse('time with time zone')).toEqual({full: 'time with time zone', kind: 'time', size: 12})
+        expect(attributeTypeParse('time without time zone')).toEqual({full: 'time without time zone', kind: 'time', size: 8})
+        expect(attributeTypeParse('timestamp')).toEqual({full: 'timestamp', kind: 'instant', size: 8})
+        expect(attributeTypeParse('timestamptz')).toEqual({full: 'timestamptz', kind: 'instant', size: 8})
+        expect(attributeTypeParse('timestamp with time zone')).toEqual({full: 'timestamp with time zone', kind: 'instant', size: 8})
+        expect(attributeTypeParse('timestamp without time zone')).toEqual({full: 'timestamp without time zone', kind: 'instant', size: 8})
+        expect(attributeTypeParse('timestamp(2) without time zone')).toEqual({full: 'timestamp(2) without time zone', kind: 'instant', size: 8})
+        expect(attributeTypeParse('datetime')).toEqual({full: 'datetime', kind: 'instant'})
+        expect(attributeTypeParse('interval')).toEqual({full: 'interval', kind: 'period', size: 16})
+        expect(attributeTypeParse('interval(6)')).toEqual({full: 'interval(6)', kind: 'period', size: 16})
+        expect(attributeTypeParse("interval '2 months ago'")).toEqual({full: "interval '2 months ago'", kind: 'period', size: 16})
+        expect(attributeTypeParse("interval '2Y 3M 15D 18H 25M 32S'")).toEqual({full: "interval '2Y 3M 15D 18H 25M 32S'", kind: 'period', size: 16})
+        expect(attributeTypeParse('bytea')).toEqual({full: 'bytea', kind: 'binary'})
+        expect(attributeTypeParse('blob')).toEqual({full: 'blob', kind: 'binary', variable: true}) // MySQL
+        expect(attributeTypeParse('tinyblob')).toEqual({full: 'tinyblob', kind: 'binary', variable: true}) // MySQL
+        expect(attributeTypeParse('mediumblob')).toEqual({full: 'mediumblob', kind: 'binary', variable: true}) // MySQL
+        expect(attributeTypeParse('longblob')).toEqual({full: 'longblob', kind: 'binary', variable: true}) // MySQL
+        expect(attributeTypeParse('uuid')).toEqual({full: 'uuid', kind: 'uuid'})
+        expect(attributeTypeParse('json')).toEqual({full: 'json', kind: 'json'})
+        expect(attributeTypeParse('jsonb')).toEqual({full: 'jsonb', kind: 'json'})
+        expect(attributeTypeParse('xml')).toEqual({full: 'xml', kind: 'xml'})
+        expect(attributeTypeParse('int[]')).toEqual({full: 'int', kind: 'int', size: 4, array: true})
+        expect(attributeTypeParse('character varying(255)[]')).toEqual({full: 'character varying(255)', kind: 'string', size: 255, variable: true, array: true})
+        expect(attributeTypeParse('array<string(12)>')).toEqual({full: 'string(12)', kind: 'string', size: 12, array: true}) // BigQuery
+        expect(attributeTypeParse('cidr')).toEqual({full: 'cidr', kind: 'unknown'}) // IPv4 or IPv6 network address
+        expect(attributeTypeParse('inet')).toEqual({full: 'inet', kind: 'unknown'}) // IPv4 or IPv6 host address
+        expect(attributeTypeParse('macaddr')).toEqual({full: 'macaddr', kind: 'unknown'}) // MAC address
+        expect(attributeTypeParse('macaddr8')).toEqual({full: 'macaddr8', kind: 'unknown'}) // MAC address
+        expect(attributeTypeParse('money')).toEqual({full: 'money', kind: 'unknown'}) // currency amount
+        expect(attributeTypeParse('point')).toEqual({full: 'point', kind: 'unknown'}) // geometric point on a plane
+        expect(attributeTypeParse('line')).toEqual({full: 'line', kind: 'unknown'}) // infinite line on a plane
+        expect(attributeTypeParse('lseg')).toEqual({full: 'lseg', kind: 'unknown'}) // line segment on a plane
+        expect(attributeTypeParse('box')).toEqual({full: 'box', kind: 'unknown'}) // rectangular box on a plane
+        expect(attributeTypeParse('circle')).toEqual({full: 'circle', kind: 'unknown'}) // circle on a plane
+        expect(attributeTypeParse('path')).toEqual({full: 'path', kind: 'unknown'}) // geometric path on a plane
+        expect(attributeTypeParse('polygon')).toEqual({full: 'polygon', kind: 'unknown'}) // closed geometric path on a plane
+        expect(attributeTypeParse('tsquery')).toEqual({full: 'tsquery', kind: 'unknown'})
+        expect(attributeTypeParse('tsvector')).toEqual({full: 'tsvector', kind: 'unknown'})
+        expect(attributeTypeParse('txid_snapshot')).toEqual({full: 'txid_snapshot', kind: 'unknown'})
+        expect(attributeTypeParse('pg_lsn')).toEqual({full: 'pg_lsn', kind: 'unknown'})
+        expect(attributeTypeParse('pg_snapshot')).toEqual({full: 'pg_snapshot', kind: 'unknown'})
+        expect(attributeTypeParse('bad')).toEqual({full: 'bad', kind: 'unknown'})
     })
     test('parse & format TypeRef', () => {
         const samples: { id: TypeId; ref: TypeRef }[] = [

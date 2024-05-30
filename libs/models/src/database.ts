@@ -104,13 +104,14 @@ export const PrimaryKey = z.object({
 }).strict()
 export type PrimaryKey = z.infer<typeof PrimaryKey>
 
-export const AttributeTypeKind = z.enum(['text', 'int', 'float', 'bool', 'uuid', 'date', 'time', 'instant', 'binary', 'json', 'array', 'unknown'])
+export const AttributeTypeKind = z.enum(['string', 'int', 'float', 'bool', 'date', 'time', 'instant', 'period', 'binary', 'uuid', 'json', 'xml', 'array', 'unknown'])
 export type AttributeTypeKind = z.infer<typeof AttributeTypeKind>
 
 export const AttributeTypeParsed = z.object({
     full: z.string(),
     kind: AttributeTypeKind,
     size: z.number().optional(),
+    variable: z.boolean().optional(),
     encoding: z.string().optional(),
     array: z.boolean().optional(),
 }).strict()

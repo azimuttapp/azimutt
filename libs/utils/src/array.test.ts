@@ -2,6 +2,7 @@ import {describe, expect, test} from "@jest/globals";
 import {
     collect,
     collectOne,
+    diffBy,
     distinct,
     findLastIndex,
     groupBy,
@@ -23,6 +24,17 @@ describe('array', () => {
     })
     test('distinct', () => {
         expect(distinct([1, 1, 2, 3, 5, 3])).toEqual([1, 2, 3, 5])
+    })
+    test('diffBy', () => {
+        expect(diffBy(
+            [{id: 1, name: 'a'}, {id: 2, name: 'b'}],
+            [{id: 1, name: 'c'}, {id: 3, name: 'd'}],
+            e => e.id
+        )).toEqual({
+            left: [{id: 2, name: 'b'}],
+            right: [{id: 3, name: 'd'}],
+            both: [{left: {id: 1, name: 'a'}, right: {id: 1, name: 'c'}}]
+        })
     })
     test('findLastIndex', () => {
         expect(findLastIndex([1, 1, 2, 3, 5, 3], i => i === 3)).toEqual(5)

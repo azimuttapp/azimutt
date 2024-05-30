@@ -80,7 +80,47 @@ export const attributesRefFromId = (id: AttributeId): AttributesRef => {
 
 export const attributesRefSame = (a: AttributesRef, b: AttributesRef): boolean => entityRefSame(a, b) && arraySame(a.attributes, b.attributes, attributePathSame)
 
-export const attributeTypeParse = (type: AttributeType): AttributeTypeParsed => ({full: type, kind: 'unknown'})
+// similar to frontend/src/Models/Project/ColumnType.elm
+export const attributeTypeParse = (type: AttributeType): AttributeTypeParsed => {
+    let res
+    if (type.endsWith('[]')) return {...attributeTypeParse(type.slice(0, -2)), array: true}
+    if (res = /^array<(.*)>$/gi.exec(type)) {
+        const [, subType] = res
+        return {...attributeTypeParse(subType), array: true}
+    }
+    if (res = /^(?:n)?(var)?(?:bit|string|(?:bp)?char(?:acter)?)(\s+varying)?(?:\((\d+)\))?(?:\s+character set ([^ ]+))?$/gi.exec(type)) {
+        const [, var1, var2, size, encoding] = res
+        return removeUndefined({full: type, kind: 'string' as const, size: size ? parseInt(size) : undefined, variable: var1 || var2 ? true : undefined, encoding})
+    }
+    if (/^(tiny|medium|long|ci)?text$/gi.exec(type)) return {full: type, kind: 'string', variable: true}
+    if (res = /^(tiny|small|big)?(?:int(?:eger)?|serial)(2|4|8|64)?(?:\((\d+)\))?(?:\s+unsigned)?$/gi.exec(type)) {
+        const [, textSize, size] = res
+        return removeUndefined({full: type, kind: 'int' as const, size: size === '64' ? 8 : size ? parseInt(size) : textSize ? parseSize(textSize) : 4})
+    }
+    if (res = /^(?:real|float)([248])?$/gi.exec(type)) {
+        const [, size] = res
+        return {full: type, kind: 'float', size: size ? parseInt(size) : 4}
+    }
+    if (/^double precision$/gi.exec(type)) return {full: type, kind: 'float', size: 8}
+    if (/^(?:decimal|numeric|number)(\s*\(\s*\d+\s*,\s*\d+\s*\))?$/gi.exec(type)) return {full: type, kind: 'float'}
+    if (/^bool(?:ean)?$/gi.exec(type)) return {full: type, kind: 'bool'}
+    if (/^date$/gi.exec(type)) return {full: type, kind: 'date', size: 4}
+    if (res = /^time(tz)?(\s+with time zone)?(\s+without time zone)?$/gi.exec(type)) {
+        const [, tz, hasTz] = res
+        return {full: type, kind: 'time', size: tz || hasTz ? 12 : 8}
+    }
+    if (/^timestamp(tz)?(?:\((\d+)\))?(\s+with time zone)?(\s+without time zone)?$/gi.exec(type)) return {full: type, kind: 'instant', size: 8}
+    if (/^datetime$/gi.exec(type)) return {full: type, kind: 'instant'}
+    if (/^interval(?:\((\d+)\))?(\s+'[^']+')?$/gi.exec(type)) return {full: type, kind: 'period', size: 16}
+    if (/^bytea$/gi.exec(type)) return {full: type, kind: 'binary'}
+    if (/^(tiny|medium|long)?blob$/gi.exec(type)) return {full: type, kind: 'binary', variable: true}
+    if (/^uuid$/gi.exec(type)) return {full: type, kind: 'uuid'}
+    if (/^jsonb?$/gi.exec(type)) return {full: type, kind: 'json'}
+    if (/^xml$/gi.exec(type)) return {full: type, kind: 'xml'}
+    return {full: type, kind: 'unknown'}
+}
+
+const parseSize = (textSize: string): number | undefined => textSize === 'tiny' ? 1 : textSize === 'small' ? 2 : textSize === 'big' ? 8 : undefined
 
 export const typeRefToId = (ref: TypeRef): TypeId => {
     const ns = namespaceToId(ref)

@@ -171,6 +171,15 @@ const isLowerChar = (code: number): boolean => 97 <= code && code <= 122
 const isUpperChar = (code: number): boolean => 65 <= code && code <= 90
 const isNumber = (code: number): boolean => 48 <= code && code <= 57
 
+export const stringIsInt = (value: string): boolean => value.match(/^\d+$/g) !== null
+export const stringIsFloat = (value: string): boolean => value.match(/^\d+(\.\d+)?$/g) !== null
+export const stringIsISODate = (value: string): boolean => value.match(/^\d\d\d\d-[01]\d-[0123]\dT[012]\d:[012345]\d:[012345]\d\.\d\d\dZ$/g) !== null
+export const stringIsUuid = (value: string): boolean => value.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/gi) !== null
+export const parseUuid = (value: string): {version: string | undefined, variant: string | undefined} => {
+    const [, version, variant] = /^[0-9a-f]{8}-[0-9a-f]{4}-([0-9a-f])[0-9a-f]{3}-([0-9a-f])[0-9a-f]{3}-[0-9a-f]{12}$/gi.exec(value) || []
+    return {version, variant}
+}
+
 export function stripIndent(value: string): string {
     const lines = value.split('\n')
     const lengths = lines.map(l => l.trim().length)

@@ -1,3 +1,5 @@
+import {removeEmpty} from "./object";
+
 // functions sorted alphabetically
 
 export const arraySame = <T>(a1: T[], a2: T[], eq: (a: T, b: T) => boolean): boolean =>
@@ -16,6 +18,25 @@ export const collectOne = <T, U>(arr: T[], f: (t: T) => U | undefined): U | unde
 }
 
 export const distinct = <T>(arr: T[]): T[] => arr.filter((t, i) => arr.indexOf(t) === i)
+
+export type Diff<T> = {left?: T[], right?: T[], both?: {left: T, right: T}[]}
+export const diffBy = <T, K extends keyof any>(arr1: T[], arr2: T[], f: (t: T) => K): Diff<T> => {
+    const left: T[] = []
+    const both: {left: T, right: T}[] = []
+    const obj2 = indexBy(arr2, f)
+    arr1.forEach(a1 => {
+        const k = f(a1)
+        const a2 = obj2[k]
+        if (a2 === undefined) {
+            left.push(a1)
+        } else {
+            both.push({left: a1, right: a2})
+        }
+        delete obj2[k]
+    })
+    const right: T[] = arr2.filter(a2 => obj2[f(a2)] !== undefined)
+    return removeEmpty({left, right, both})
+}
 
 export const findLastIndex = <T>(arr: T[], p: (t: T) => boolean): number => {
     let i = arr.length - 1
