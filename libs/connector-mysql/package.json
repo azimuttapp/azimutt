@@ -27,7 +27,7 @@
   "dependencies": {
     "@azimutt/models": "^0.1.4",
     "@azimutt/utils": "^0.1.1",
-    "mysql2": "3.3.3"
+    "mysql2": "3.9.8"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
