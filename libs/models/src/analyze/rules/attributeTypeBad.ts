@@ -6,6 +6,7 @@ import {
     AttributeId,
     AttributeRef,
     AttributeType,
+    AttributeTypeKind,
     AttributeTypeParsed,
     AttributeValue,
     Database,
@@ -64,7 +65,7 @@ export function suggestedAttributeType(a: Attribute): {suggestion: AttributeType
         ...a.stats?.histogram || [],
         ...a.stats?.distinctValues || [],
     ].filter((v: AttributeValue): v is string => typeof v === 'string')
-    if (type.kind === 'string' && values.length > 0) {
+    if (type.kind === AttributeTypeKind.enum.string && values.length > 0) {
         if (values.every(stringIsISODate)) return {suggestion: 'timestamp', values: values}
         if (values.every(stringIsUuid)) return {suggestion: 'uuid', values: values}
         if (values.every(stringIsInt)) return {suggestion: 'int', values: values}
