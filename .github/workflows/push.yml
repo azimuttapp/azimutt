@@ -36,24 +36,24 @@ jobs:
           --health-retries 5
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup elixir
         uses: erlef/setup-elixir@v1
         with:
           elixir-version: ${{ matrix.elixir }}
           otp-version: ${{ matrix.otp }}
       - name: Get deps cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: deps/
           key: deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
       - name: Get build cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: _build/test/
           key: build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
       - name: Install Dependencies
-        run: npm run setup
+        run: pnpm run setup
 
       - name: Check format
         run: npm run ex:install && npm run format
