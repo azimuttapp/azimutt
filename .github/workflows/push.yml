@@ -53,30 +53,20 @@ jobs:
           path: _build/test/
           key: build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
       - name: Install Dependencies
-        run: |
-          npm install
-          npm run libs:setup
-          npm run gateway:setup
-          npm run cli:setup
-          npm run fe:build
+        run: npm run setup
 
       - name: Check format
-        run: |
-          npm run ex:install
-          npm run format
+        run: npm run ex:install && npm run format
 
       - name: Check lint
-        run: |
-          npm run lint
+        run: npm run lint
 
       - name: Check build
-        run: |
-          npm run build
+        run: npm run build
 
       - name: Run tests
         env:
           PHX_HOST: localhost
           PORT: 4000
           FILE_STORAGE_ADAPTER: local
-        run: |
-          npm run test
+        run: npm test
