@@ -14,7 +14,7 @@ It's accessible through the [Desktop app](../../desktop) (soon), the [CLI](https
 ## Publish
 
 - update `package.json` version
-- update lib versions (`pnpm -w run update` + manual) 
+- update lib versions (`pnpm -w run update` + manual)
 - test with `pnpm run dry-publish` and check `azimutt-connector-bigquery-x.y.z.tgz` content
 - launch `npm publish --access public`
 
@@ -24,5 +24,5 @@ View it on [npm](https://www.npmjs.com/package/@azimutt/connector-bigquery).
 
 If you need to develop on multiple libs at the same time (ex: want to update a connector and try it through the CLI), depend on local libs but revert & publish before commit.
 
-- Depend on a local lib: `pnpm add <lib>`, ex: `pnpm add "@azimutt/models`
+- Depend on a local lib: `pnpm add <lib>`, ex: `pnpm add @azimutt/models`
 - "Publish" lib locally by building it: `pnpm run build`

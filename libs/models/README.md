@@ -17,7 +17,7 @@ Here are the main utilities:
 ## Publish
 
 - update `package.json` version
-- update lib versions (`pnpm -w run update` + manual) 
+- update lib versions (`pnpm -w run update` + manual)
 - test with `pnpm run dry-publish` and check `azimutt-models-x.y.z.tgz` content
 - launch `pnpm publish --access public`
 
@@ -27,5 +27,5 @@ View it on [npm](https://www.npmjs.com/package/@azimutt/models).
 
 If you need to develop on multiple libs at the same time (ex: want to update a connector and try it through the CLI), depend on local libs but publish & revert before commit.
 
-- Depend on a local lib: `pnpm add <lib>`, ex: `pnpm add "@azimutt/models`
+- Depend on a local lib: `pnpm add <lib>`, ex: `pnpm add @azimutt/utils`
 - "Publish" lib locally by building it: `pnpm run build`
