@@ -10,8 +10,8 @@ esbuild.build({
     plugins: [
         copy({
             assets: {
-                from: ['./public/*', 'manifest.json'],
-                to: ['./dist'],
+                from: ["./public/**/*"],
+                to: ["./"],
             }
         })
     ]

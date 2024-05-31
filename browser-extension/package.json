@@ -9,6 +9,7 @@
     "url": "https://loicknuchel.fr"
   },
   "license": "MIT",
+  "private": true,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/azimuttapp/azimutt.git",
@@ -16,8 +17,8 @@
   },
   "scripts": {
     "start": "./build.watch.js",
-    "build": "./build.js",
-    "update": "npm update --save-dev && npm update --save && npm install"
+    "lint": "tsc --noEmit",
+    "build": "./build.js"
   },
   "dependencies": {
     "webextension-polyfill": "^0.8.0"

@@ -2,15 +2,15 @@
 
 ## Installation
 
-- install `npm`, [Elm](https://guide.elm-lang.org/install/elm.html) & [elm-spa](https://www.elm-spa.dev)
-- run `npm install` to download npm dependencies
+- install `pnpm`, [Elm](https://guide.elm-lang.org/install/elm.html) & [elm-spa](https://www.elm-spa.dev)
+- run `pnpm install` to download npm dependencies
 - run `elm-spa build` to generate needed files (`.elm-spa/defaults` & `.elm-spa/generated`)
 
 ## Dev commands
 
-- launch dev server: `npm run dev` (needs `npm install -g elm-live` or use `npx`)
-- launch tests: `elm-test` (needs `npm install -g elm-test` or use `npx`)
-- run linter: `elm-review` (needs `npm install -g elm-review` or use `npx`)
+- launch dev server: `pnpm run dev` (needs `pnpm install -g elm-live` or use `npx`)
+- launch tests: `elm-test` (needs `pnpm install -g elm-test` or use `npx`)
+- run linter: `elm-review` (needs `pnpm install -g elm-review` or use `npx`)
 - check format: `elm-format src tests --validate` (needs `npm install -g elm-format` or use `npx`)
 - run coverage: `elm-coverage --open` (needs `npm install -g elm-coverage`) (**doesn't work with elm-spa**)
 - install deps `elm-json install author/package` (needs `npm install --g elm-json`)

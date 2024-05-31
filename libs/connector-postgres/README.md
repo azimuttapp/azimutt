@@ -14,9 +14,9 @@ It's accessible through the [Desktop app](../../desktop) (soon), the [CLI](https
 ## Publish
 
 - update `package.json` version
-- update lib versions (`npm run update` + manual) & run `npm install`
-- test with `npm run dry-publish` and check `azimutt-connector-postgres-x.y.z.tgz` content
-- launch `npm publish --access public`
+- update lib versions (`pnpm -w run update` + manual) 
+- test with `pnpm run dry-publish` and check `azimutt-connector-postgres-x.y.z.tgz` content
+- launch `pnpm publish --access public`
 
 View it on [npm](https://www.npmjs.com/package/@azimutt/connector-postgres).
 
@@ -24,5 +24,5 @@ View it on [npm](https://www.npmjs.com/package/@azimutt/connector-postgres).
 
 If you need to develop on multiple libs at the same time (ex: want to update a connector and try it through the CLI), depend on local libs but publish & revert before commit.
 
-- Depend on a local lib: `npm install <path>`, ex: `npm install ../models`
-- "Publish" lib locally by building it: `npm run build`
+- Depend on a local lib: `pnpm add <lib>`, ex: `pnpm add "@azimutt/models`
+- "Publish" lib locally by building it: `pnpm run build`

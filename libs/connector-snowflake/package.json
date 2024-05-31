@@ -18,15 +18,13 @@
   "main": "./out/index.js",
   "types": "./out/index.d.ts",
   "scripts": {
-    "setup": "npm install && npm run build",
     "test": "jest",
     "build": "rm -rf ./out && tsc",
-    "update": "npm update --save-dev && npm update --save && npm install",
-    "dry-publish": "npm run build && npm test && npm pack"
+    "dry-publish": "pnpm run build && pnpm test && pnpm pack"
   },
   "dependencies": {
-    "@azimutt/models": "^0.1.4",
-    "@azimutt/utils": "^0.1.1",
+    "@azimutt/models": "workspace:^",
+    "@azimutt/utils": "workspace:^",
     "snowflake-sdk": "1.10.1"
   },
   "devDependencies": {

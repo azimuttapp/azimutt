@@ -23,8 +23,8 @@ It's accessible through the [Desktop app](../../desktop) (soon), the [CLI](https
 ## Publish
 
 - update `package.json` version
-- update lib versions (`npm run update` + manual) & run `npm install`
-- test with `npm run dry-publish` and check `azimutt-connector-mariadb-x.y.z.tgz` content
-- launch `npm publish --access public`
+- update lib versions (`pnpm -w run update` + manual) 
+- test with `pnpm run dry-publish` and check `azimutt-connector-mariadb-x.y.z.tgz` content
+- launch `pnpm publish --access public`
 
 View it on [npm](https://www.npmjs.com/package/@azimutt/connector-mariadb).

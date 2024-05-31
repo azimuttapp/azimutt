@@ -16,6 +16,7 @@
     "url": "https://loicknuchel.fr"
   },
   "license": "MIT",
+  "private": true,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/azimuttapp/azimutt.git",
@@ -25,12 +26,14 @@
     "url": "https://github.com/azimuttapp/azimutt/issues"
   },
   "scripts": {
-    "setup": "npm install && npm run build",
-    "start": "concurrently \"npm run tailwind:start\" \"npm run ts:start\" \"npm run elm:start\"",
-    "test": "npm run elm:test && npm run ts:test",
-    "build": "npm install && npm run tailwind:build && npm run ts:build && npm run elm:build",
-    "docker": "npm install && npm run tailwind:docker && npm run ts:docker && npm run elm:docker",
-    "update": "npm update --save-dev && npm update --save && npm install && elm-json upgrade --unsafe --yes && cd review && elm-json upgrade --unsafe --yes",
+    "setup": "elm-spa build",
+    "start": "pnpm --parallel run \"/^\\w+:start$/\"",
+    "test": "pnpm run \"/^(ts|elm):test$/\"",
+    "format": "pnpm run elm:format",
+    "lint": "pnpm run \"/^(ts|elm):lint$/\"",
+    "build": "pnpm run \"/^\\w+:build$/\"",
+    "update": "elm-json upgrade --unsafe --yes && cd review && elm-json upgrade --unsafe --yes",
+    "docker": "pnpm run tailwind:docker && pnpm run ts:docker && pnpm run elm:docker",
     "elm:start": "elm-go ./src/Main.elm --dir=../backend/priv/static/elm --pushstate --no-server -- --output=../backend/priv/static/elm/dist/elm.js",
     "elm:start:alone": "elm-go ./src/Main.elm --dir=../backend/priv/static/elm --pushstate --port=4001 --proxy-prefix=/api --proxy-host=http://localhost:4000/api -- --output=../backend/priv/static/elm/dist/elm.js",
     "elm:test": "elm-test --fuzz 5",
@@ -40,7 +43,7 @@
     "elm:docker": "npx elm-spa gen && elm make src/Main.elm --optimize --output=../priv/static/elm/dist/elm.js",
     "ts:start": "./node_modules/.bin/esbuild ts-src/index.ts --outfile=../backend/priv/static/elm/script.js --bundle --sourcemap --watch",
     "ts:test": "jest",
-    "ts:lint": "tsc --project tsconfig.json && rm -rf ./public",
+    "ts:lint": "tsc --project tsconfig.json --noEmit && rm -rf ./public",
     "ts:build": "./node_modules/.bin/esbuild ts-src/index.ts --outfile=../backend/priv/static/elm/script.js --bundle --sourcemap --minify",
     "ts:docker": "./node_modules/.bin/esbuild ts-src/index.ts --outfile=../priv/static/elm/script.js --bundle --sourcemap --minify",
     "tailwind:start": "tailwindcss -i ../backend/priv/static/elm/styles.css -o ../backend/priv/static/elm/dist/styles.css --watch",
@@ -49,9 +52,9 @@
     "book": "elm-book src/Components/Book.elm --dir=../backend/priv/static/elm --start-page=book.html --port 4002 -- --output=../backend/priv/static/elm/dist/book.js"
   },
   "dependencies": {
-    "@azimutt/models": "^0.1.4",
-    "@azimutt/serde-prisma": "^0.1.1",
-    "@azimutt/utils": "^0.1.1",
+    "@azimutt/models": "workspace:^",
+    "@azimutt/serde-prisma": "workspace:^",
+    "@azimutt/utils": "workspace:^",
     "@sentry/browser": "7.114.0",
     "@sentry/tracing": "7.114.0",
     "canvas-confetti": "1.9.3",

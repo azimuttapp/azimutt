@@ -1,0 +1,8 @@
+packages:
+  - "backend"
+  - "browser-extension"
+  - "cli"
+  - "desktop"
+  - "frontend"
+  - "gateway"
+  - "libs/*"
