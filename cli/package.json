@@ -38,7 +38,6 @@
     "lint": "tsc --noEmit",
     "build": "rm -rf ./out && tsc",
     "exec": "pnpm exec azimutt",
-    "local": "sudo pnpm install -g && azimutt",
     "dry-publish": "pnpm run build && pnpm test && pnpm pack"
   },
   "dependencies": {
