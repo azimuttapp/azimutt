@@ -25,6 +25,7 @@ defmodule AzimuttWeb.Services.BillingSrv do
       |> Result.flat_map(fn orga_with_stripe ->
         StripeSrv.create_session(%{
           customer: orga_with_stripe.stripe_customer_id,
+          subscription: orga_with_stripe.stripe_subscription_id,
           success_url: success_url,
           cancel_url: cancel_url,
           # Get price_id from your Stripe dashboard for your product

@@ -87,11 +87,24 @@ export function analyzeDatabase(conf: RulesConf, now: Timestamp, db: Database, q
     // TODO: tables/columns with incrementing names
     // TODO: columns with no (or very few) null but no NOT NULL constraint => suggest add NOT NULL constraint
     // TODO: columns with all (or mostly) different values but no UNIQUE constraint => suggest to add UNIQUE constraint
+    // TODO: columns with all (or mostly) null values => suggest to remove (hint)
+    // TODO: columns with mostly the same data as an other one (common values & histogram) => is duplicate? suggest to remove? (hint)
     // TODO: queries not using indexes
     // TODO: JSON columns with different schemas (% of similarity between schemas)
     // TODO: sequence/auto_increment exhaustion
     // TODO: use varchar over char (https://youtu.be/ifEpT5STEU0?si=fcLBuwrgluG9crwt&t=90)
     // TODO: auto_explain: index creation (https://pganalyze.com/docs/explain/setup/self_managed/01_auto_explain_check)
+    // TODO: missing relations from JOIN clauses
+    // TODO: columns frequently used on JOIN, WHERE and ORDER BY clauses should have an index
+    // TODO: monitor index fragmentation
+    // TODO: monitor replication lag
+    // TODO: alert on deadlocks
+    // TODO: suggest partial indexes: when there is often IS NULL or IS NOT NULL on query where clauses
+    // TODO: detect n+1 queries?
+    // TODO: special case: soft delete => if deleted_at column, suggest index on `deleted_at IS NULL`
+    // TODO: if index on column with many nulls: suggest two indexes: one with values where not null and one is IS NULL (ex: `btree (org_id)` => `btree (org_id) WHERE org_id IS NOT NULL` & `btree (org_id IS NULL) WHERE org_id IS NULL`)
+    // TODO: single column indexes on low cardinality column => suggest bitmap index instead
+    // TODO: warn queries sans where clause ^^
     const rules = ruleNames.length > 0 ? analyzeRules.filter(r => ruleNames.indexOf(r.id) !== -1 || ruleNames.indexOf(r.name) !== -1) : analyzeRules
     return Object.fromEntries(rules.map(r => {
         const ruleConf = Object.assign({}, r.conf, conf.rules?.[r.id])

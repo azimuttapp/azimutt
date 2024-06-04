@@ -102,27 +102,27 @@ repos:
     - id: mix-format
       name: 'Elixir format'
       language: system
-      entry: bash -c 'cd backend && exec mix format --check-formatted'
+      entry: bash -c 'cd backend && exec mix format --check-formatted && exec mix format'
       files: \.exs*$
 
     - id: mix-build
       name: 'Elixir build'
       language: system
-      entry: npm run ex:build
+      entry: bash -c 'cd backend && exec mix compile --force'
       pass_filenames: false
       files: \.ex$
 
     - id: mix-lint
       name: 'Elixir lint'
       language: system
-      entry: npm run ex:lint
+      entry: bash -c 'cd backend && exec mix credo --strict'
       pass_filenames: false
       files: \.exs*$
 
     - id: mix-test
       name: 'Elixir test'
       language: system
-      entry: npm run ex:test
+      entry: bash -c 'cd backend && exec mix test'
       pass_filenames: false
       files: \.exs*$
 
