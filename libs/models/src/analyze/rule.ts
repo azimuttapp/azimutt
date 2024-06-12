@@ -8,7 +8,7 @@ export interface Rule<Conf extends RuleConf = RuleConf> {
     name: RuleName
     conf: Conf
     zConf: ZodType<Conf>
-    analyze(conf: Conf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[]
+    analyze(conf: Conf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[]
 }
 
 export const RuleId = z.string()
@@ -35,21 +35,27 @@ export const RuleViolation = z.object({
 }).strict()
 export type RuleViolation = z.infer<typeof RuleViolation>
 
+export const AnalyzeReportViolation = z.object({
+    message: z.string(),
+    entity: EntityRef.optional(),
+    attribute: AttributePath.optional(),
+    extra: z.record(z.any()).optional(),
+}).strict().describe('AnalyzeReportViolation')
+export type AnalyzeReportViolation = z.infer<typeof AnalyzeReportViolation>
+
 export const AnalyzeReportRule = z.object({
     name: z.string(),
     level: RuleLevel,
     conf: z.record(z.string(), z.any()),
-    violations: z.object({
-        message: z.string(),
-        entity: EntityRef.optional(),
-        attribute: AttributePath.optional(),
-        extra: z.record(z.any()).optional(),
-    }).array()
+    violations: AnalyzeReportViolation.array()
 }).strict().describe('AnalyzeReportRule')
 export type AnalyzeReportRule = z.infer<typeof AnalyzeReportRule>
 
+export const AnalyzeReportResult = z.record(RuleId, AnalyzeReportRule)
+export type AnalyzeReportResult = z.infer<typeof AnalyzeReportResult>
+
 export const AnalyzeReport = z.object({
-    analysis: z.record(RuleId, AnalyzeReportRule),
+    analysis: AnalyzeReportResult,
     // TODO: insights: z.object({mostUsedEntities: z.object({entity: EntityRef, queries: QueryId.array()}).array().optional()}).optional()
     database: Database,
     queries: DatabaseQuery.array(),

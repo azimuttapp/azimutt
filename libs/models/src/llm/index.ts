@@ -8,6 +8,8 @@ import {cleanSqlAnswer, dbToPrompt} from "./llmUtils";
 // 1 token ~ 4 chars: https://platform.openai.com/tokenizer
 export {OpenAIConnector, OpenAIKey, OpenAIModel} from "./openai";
 
+// TODO: suggest schema improvements: design, perf
+
 export async function textToSql(llm: OpenAIConnector, dialect: DatabaseKind, userPrompt: string, db: Database): Promise<SqlStatement> {
     // https://docs.anthropic.com/en/prompt-library/sql-sorcerer
     // https://dev.to/datalynx/llms-for-text-to-sql-problems-the-benchmark-vs-real-world-performance-2064
@@ -50,7 +52,6 @@ export async function explainQueryPlan(llm: OpenAIConnector, dialect: DatabaseKi
 
 // TODO: suggest tables for a specific topic (build layout)
 // TODO: chat with your db
-// TODO: suggest schema improvements
 // TODO: suggest schema changes for a new feature
 // TODO: function calling to interact with Azimutt (ex: "Show all the tables related to projects")
 // TODO: detect PII, https://docs.anthropic.com/en/prompt-library/pii-purifier

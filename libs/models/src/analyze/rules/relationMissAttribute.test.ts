@@ -32,7 +32,7 @@ describe('relationMissAttribute', () => {
                 {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}]},
             ]
         }
-        expect(relationMissAttributeRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+        expect(relationMissAttributeRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
             'Relation posts(created_by)->users(id), not found attributes: posts(created_by)',
         ])
     })
@@ -48,15 +48,18 @@ describe('relationMissAttribute', () => {
                 {src: {entity: 'events'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['email']}]},
             ]
         }
-        expect(relationMissAttributeRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+        expect(relationMissAttributeRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
             'Relation posts(created_by)->users(id), not found attributes: posts(created_by)',
             'Relation events(created_by)->users(email), not found attributes: events(created_by), users(email)',
         ])
-        expect(relationMissAttributeRule.analyze({...ruleConf, ignores: ['events(created_by)']}, now, db, [], []).map(v => v.message)).toEqual([
+        expect(relationMissAttributeRule.analyze({...ruleConf, ignores: ['events(created_by)']}, now, db, [], [], []).map(v => v.message)).toEqual([
             'Relation posts(created_by)->users(id), not found attributes: posts(created_by)',
             'Relation events(created_by)->users(email), not found attributes: users(email)',
         ])
-        expect(relationMissAttributeRule.analyze({...ruleConf, ignores: ['events(created_by)', 'users(email)']}, now, db, [], []).map(v => v.message)).toEqual([
+        expect(relationMissAttributeRule.analyze({...ruleConf, ignores: ['events(created_by)', 'users(email)']}, now, db, [], [], []).map(v => v.message)).toEqual([
+            'Relation posts(created_by)->users(id), not found attributes: posts(created_by)',
+        ])
+        expect(relationMissAttributeRule.analyze(ruleConf, now, db, [], [], [{message: '', extra: {relation: {src: {entity: 'events'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['email']}]}}}]).map(v => v.message)).toEqual([
             'Relation posts(created_by)->users(id), not found attributes: posts(created_by)',
         ])
     })

@@ -9,6 +9,8 @@ import {
     AttributeType,
     AttributeTypeParsed,
     AttributeValue,
+    ConstraintId,
+    ConstraintRef,
     Entity,
     EntityId,
     EntityRef,
@@ -16,6 +18,7 @@ import {
     NamespaceId,
     Relation,
     RelationId,
+    RelationRef,
     Type,
     TypeId,
     TypeRef
@@ -43,7 +46,11 @@ export const entityRefFromId = (id: EntityId): EntityRef => {
     return {...namespace, entity}
 }
 
-export const entityRefSame = (a: EntityRef, b: EntityRef): boolean => a.entity === b.entity && a.schema === b.schema && a.catalog === b.catalog && a.database === b.database
+export const entityRefSame = (a: EntityRef, b: EntityRef): boolean =>
+    (a.entity === b.entity || a.entity === '*' || b.entity === '*') &&
+    (a.schema === b.schema || a.schema === '*' || b.schema === '*') &&
+    (a.catalog === b.catalog || a.catalog === '*' || b.catalog === '*') &&
+    (a.database === b.database || a.database === '*' || b.database === '*')
 
 export const entityToRef = (e: Entity): EntityRef => removeUndefined({database: e.database, catalog: e.catalog, schema: e.schema, entity: e.name})
 export const entityToId = (e: Entity): EntityId => entityRefToId(entityToRef(e))
@@ -55,7 +62,7 @@ export const entityRefFromAttribute = (a: AttributeRef): EntityRef => {
 
 export const attributePathToId = (path: AttributePath): AttributePathId => path.join('.')
 export const attributePathFromId = (path: AttributePathId): AttributePath => path.split('.')
-export const attributePathSame = (p1: AttributePath, p2: AttributePath): boolean => arraySame(p1, p2, (i1, i2) => i1 === i2)
+export const attributePathSame = (p1: AttributePath, p2: AttributePath): boolean => arraySame(p1, p2, (i1, i2) => i1 === i2 || i1 === '*' || i2 === '*')
 
 export const attributeRefToId = (ref: AttributeRef): AttributeId => `${entityRefToId(ref)}(${attributePathToId(ref.attribute)})`
 
@@ -79,6 +86,16 @@ export const attributesRefFromId = (id: AttributeId): AttributesRef => {
 }
 
 export const attributesRefSame = (a: AttributesRef, b: AttributesRef): boolean => entityRefSame(a, b) && arraySame(a.attributes, b.attributes, attributePathSame)
+
+export const constraintRefToId = (ref: ConstraintRef): ConstraintId => `${entityRefToId(ref)}(${ref.constraint})`
+
+export const constraintRefFromId = (id: ConstraintId): ConstraintRef => {
+    const [, entityId, constraintName] = id.match(/^(.*)\((.*)\)$/) || []
+    const entity = entityRefFromId(entityId || id)
+    return {...entity, constraint: constraintName}
+}
+
+export const constraintRefSame = (a: ConstraintRef, b: ConstraintRef): boolean => entityRefSame(a, b) && (a.constraint === b.constraint || a.constraint === '*' || b.constraint === '*')
 
 // similar to frontend/src/Models/Project/ColumnType.elm
 export const attributeTypeParse = (type: AttributeType): AttributeTypeParsed => {
@@ -136,8 +153,17 @@ export const typeRefFromId = (id: TypeId): TypeRef => {
 export const typeToRef = (t: Type): TypeRef => removeUndefined({database: t.database, catalog: t.catalog, schema: t.schema, type: t.name})
 export const typeToId = (t: Type): TypeId => typeRefToId(typeToRef(t))
 
-export const entityAttributesToId = (entity: EntityRef, attributes: AttributePath[]): string => `${entityRefToId(entity)}(${attributes.map(attributePathToId).join(', ')})`
-export const relationToId = (r: Relation): RelationId => `${entityAttributesToId(r.src, r.attrs.map(a => a.src))}->${entityAttributesToId(r.ref, r.attrs.map(a => a.ref))}`
+export const relationToRef = (r: Relation): RelationRef => ({src: {...r.src, attributes: r.attrs.map(a => a.src)}, ref: {...r.ref, attributes: r.attrs.map(a => a.ref)}})
+export const relationToId = (r: Relation): RelationId => relationRefToId(relationToRef(r))
+
+export const relationRefToId = (ref: RelationRef): RelationId => `${attributesRefToId(ref.src)}->${attributesRefToId(ref.ref)}`
+
+export const relationRefFromId = (id: RelationId): RelationRef => {
+    const [, src, ref] = id.match(/^([^(]*\([^)]*\))->([^(]*\([^)]*\))$/) || []
+    return {src: attributesRefFromId(src), ref: attributesRefFromId(ref)}
+}
+
+export const relationRefSame = (a: RelationRef, b: RelationRef): boolean => attributesRefSame(a.src, b.src) && attributesRefSame(a.ref, b.ref)
 
 function addQuotes(value: string): string {
     if (value.match(/^\w*$/)) {
@@ -149,6 +175,10 @@ function addQuotes(value: string): string {
 
 function removeQuotes(value: string): string {
     if (value.startsWith('"') && value.endsWith('"')) {
+        return value.slice(1, -1)
+    } else if (value.startsWith("'") && value.endsWith("'")) {
+        return value.slice(1, -1)
+    } else if (value.startsWith("`") && value.endsWith("`")) {
         return value.slice(1, -1)
     } else {
         return value

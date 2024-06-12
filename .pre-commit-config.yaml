@@ -129,42 +129,42 @@ repos:
     - id: elm-format
       name: 'Elm format'
       language: system
-      entry: npm run elm:format
+      entry: bash -c 'cd frontend && exec npm run elm:format'
       pass_filenames: false
       files: \.elm*$
 
     - id: elm-build
       name: 'Elm build'
       language: system
-      entry: npm run elm:build
+      entry: bash -c 'cd frontend && exec npm run elm:build'
       pass_filenames: false
       files: \.elm*$
 
     - id: elm-lint
       name: 'Elm lint'
       language: system
-      entry: npm run elm:lint
+      entry: bash -c 'cd frontend && exec npm run elm:lint'
       pass_filenames: false
       files: \.elm*$
 
     - id: elm-test
       name: 'Elm test'
       language: system
-      entry: npm run elm:test
+      entry: bash -c 'cd frontend && exec npm run elm:test'
       pass_filenames: false
       files: \.elm*$
 
     - id: frontend-build
       name: 'Frontend TS build'
       language: system
-      entry: npm run ts:lint
+      entry: bash -c 'cd frontend && exec npm run ts:lint'
       pass_filenames: false
       files: frontend/.*\.ts*$
 
     - id: frontend-test
       name: 'Frontend TS test'
       language: system
-      entry: npm run ts:test
+      entry: bash -c 'cd frontend && exec npm run ts:test'
       pass_filenames: false
       files: frontend/.*\.ts*$
 

@@ -406,7 +406,7 @@ function keydownHotkey(e: KeyboardEvent) {
 }
 
 function llmGenerateSql(msg: LlmGenerateSql) {
-    const llm = new OpenAIConnector({apiKey: msg.apiKey, model: msg.model, logger})
+    const llm = new OpenAIConnector({apiKey: msg.apiKey, model: msg.model})
     textToSql(llm, msg.dialect, msg.prompt, sourceToDatabase(msg.source)).then(
         (query: SqlStatement) => app.gotLlmSqlGenerated(query),
         (err: any) => app.gotLlmSqlGeneratedError(errorToString(err))

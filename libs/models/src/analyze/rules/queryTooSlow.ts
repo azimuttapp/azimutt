@@ -1,12 +1,21 @@
 import {z} from "zod";
-import {removeUndefined} from "@azimutt/utils";
+import {isNotUndefined, removeUndefined} from "@azimutt/utils";
 import {Timestamp} from "../../common";
 import {Database} from "../../database";
 import {entityRefToId} from "../../databaseUtils";
 import {showDuration} from "../../helpers/duration";
 import {formatSql, getEntities, getMainEntity} from "../../helpers/sql";
 import {DatabaseQuery, QueryId} from "../../interfaces/connector";
-import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {
+    AnalyzeHistory,
+    AnalyzeReportViolation,
+    Rule,
+    RuleConf,
+    RuleId,
+    RuleLevel,
+    RuleName,
+    RuleViolation
+} from "../rule";
 
 const ruleId: RuleId = 'query-too-slow'
 const ruleName: RuleName = 'too slow query'
@@ -20,10 +29,12 @@ export const queryTooSlowRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.high, maxMs: 1000},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {
+        const refIgnores: QueryId[] = reference.map(r => r.extra?.queryId).filter(isNotUndefined)
+        const ignores: QueryId[] = refIgnores.concat(conf.ignores || [])
         return queries
             .filter(q => isQueryTooSlow(q, conf.maxMs))
-            .filter(q => !(conf.ignores || []).some(i => i === q.id))
+            .filter(q => !ignores.some(i => i === q.id))
             .sort((a, b) => -((a.exec?.meanTime || 0) - (b.exec?.meanTime || 0)))
             .map(q => {
                 const entity = getMainEntity(q.query)

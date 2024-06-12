@@ -8,7 +8,16 @@ import {Duration, oneDay, oneMonth, showDuration} from "../../helpers/duration";
 import {computePercent, showPercent} from "../../helpers/percent";
 import {formatSql, getEntities, getMainEntity} from "../../helpers/sql";
 import {DatabaseQuery, QueryId} from "../../interfaces/connector";
-import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {
+    AnalyzeHistory,
+    AnalyzeReportViolation,
+    Rule,
+    RuleConf,
+    RuleId,
+    RuleLevel,
+    RuleName,
+    RuleViolation
+} from "../rule";
 
 const ruleId: RuleId = 'query-degrading'
 const ruleName: RuleName = 'degrading query'
@@ -26,11 +35,13 @@ export const queryDegradingRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.high, minExec: 10, minDuration: 100, maxDegradation: 1, maxDegradationMonthly: 0.2, maxDegradationDaily: 0.1},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {
+        const refIgnores: QueryId[] = reference.map(r => r.extra?.queryId).filter(isNotUndefined)
+        const ignores: QueryId[] = refIgnores.concat(conf.ignores || [])
         const historyQueriesById: {report: string, date: Timestamp, queries: Record<QueryId, DatabaseQuery>}[] =
             history.map(h => ({report: h.report, date: h.date, queries: indexBy(h.queries, q => q.id)}))
         return queries
-            .filter(q => !(conf.ignores || []).some(i => i === q.id))
+            .filter(q => !ignores.some(i => i === q.id))
             .map(query => {
                 const previous: {report: string, date: Timestamp, query: DatabaseQuery}[] = historyQueriesById.map(h => {
                     const queryHist = h.queries[query.id]

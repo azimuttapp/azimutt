@@ -18,8 +18,8 @@ Here are the main utilities:
 
 - update `package.json` version
 - update lib versions (`pnpm -w run update` + manual) 
-- test with `pnpm run dry-publish` and check `azimutt-models-x.y.z.tgz` content
-- launch `pnpm publish --access public`
+- test with `npm run dry-publish` and check `azimutt-models-x.y.z.tgz` content
+- launch `npm publish azimutt-models-x.y.z.tgz --access public`
 
 View it on [npm](https://www.npmjs.com/package/@azimutt/models).
 

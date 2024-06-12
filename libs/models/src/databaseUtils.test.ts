@@ -95,6 +95,7 @@ describe('databaseUtils', () => {
         expect(entityRefSame({database: 'ax', catalog: 'gtm', schema: 'public', entity: 'users'}, {catalog: 'gtm', schema: 'public', entity: 'users'})).toBeFalsy()
         expect(entityRefSame({database: 'ax', catalog: 'gtm', schema: 'public', entity: 'users'}, {database: 'ax', schema: 'public', entity: 'users'})).toBeFalsy()
         expect(entityRefSame({database: 'ax', catalog: 'gtm', schema: 'public', entity: 'users'}, {database: 'ax', catalog: 'gtm', entity: 'users'})).toBeFalsy()
+        expect(entityRefSame({entity: '*'}, {entity: 'users'})).toBeTruthy() // wildcard
     })
     test('parse & format AttributePath', () => {
         const samples: { path: AttributePathId; names: AttributePath }[] = [
@@ -114,6 +115,7 @@ describe('databaseUtils', () => {
         expect(attributePathSame(['details', 'address', 'street'], ['details', 'address'])).toBeFalsy()
         expect(attributePathSame(['details', 'address', 'street'], ['details', 'address', 'city'])).toBeFalsy()
         expect(attributePathSame(['details', 'address', 'street'], ['details', 'place', 'street'])).toBeFalsy()
+        expect(attributePathSame(['details', '*', 'street'], ['details', 'place', 'street'])).toBeTruthy() // wildcard
     })
     test('parse & format AttributeRef', () => {
         const samples: { id: AttributeId; ref: AttributeRef }[] = [
@@ -156,12 +158,18 @@ describe('databaseUtils', () => {
             expect(attributesRefFromId(targetId)).toEqual(ref)
             expect(attributesRefToId(ref)).toEqual(targetId)
         })
+        expect(attributesRefFromId('*(created_by)')).toEqual({entity: '*', attributes: [['created_by']]}) // wildcard
+        expect(attributesRefFromId('"*"(created_by)')).toEqual({entity: '*', attributes: [['created_by']]}) // wildcard
+        expect(attributesRefFromId("'*'(created_by)")).toEqual({entity: '*', attributes: [['created_by']]}) // wildcard
+        expect(attributesRefToId({entity: '*', attributes: [['created_by']]})).toEqual('"*"(created_by)') // wildcard
     })
     test('attributesRefSame', () => {
         expect(attributesRefSame({entity: 'users', attributes: [['id']]}, {entity: 'users', attributes: [['id']]})).toBeTruthy()
         expect(attributesRefSame({entity: 'users', attributes: [['id'], ['name']]}, {entity: 'users', attributes: [['id'], ['name']]})).toBeTruthy()
         expect(attributesRefSame({entity: 'users', attributes: [['id']]}, {entity: 'users', attributes: [['id', 'name']]})).toBeFalsy()
         expect(attributesRefSame({entity: 'users', attributes: [['id']]}, {entity: 'users', attributes: [['name']]})).toBeFalsy()
+        expect(attributesRefSame({entity: '*', attributes: [['created_by']]}, {entity: 'users', attributes: [['created_by']]})).toBeTruthy() // wildcard
+        expect(attributesRefSame({entity: 'users', attributes: [['*']]}, {entity: 'users', attributes: [['created_by']]})).toBeTruthy() // wildcard
     })
     test('parse AttributeType', () => {
         // PostgreSQL: https://www.postgresql.org/docs/current/datatype.html

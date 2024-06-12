@@ -36,7 +36,7 @@ describe('attributeTypeInconsistent', () => {
                 {name: 'posts', attrs: [{name: 'id', type: 'int'}]},
                 {name: 'events', attrs: [{name: 'id', type: 'int'}]},
             ]}
-        expect(attributeTypeInconsistentRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+        expect(attributeTypeInconsistentRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
             `Attribute id has several types: uuid in users(id), int in posts(id) and 1 other.`
         ])
     })
@@ -45,11 +45,14 @@ describe('attributeTypeInconsistent', () => {
             {name: 'users', attrs: [{name: 'id', type: 'uuid'}, {name: 'name', type: 'varchar'}]},
             {name: 'posts', attrs: [{name: 'id', type: 'int'}, {name: 'name', type: 'text'}]}
         ]}
-        expect(attributeTypeInconsistentRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+        expect(attributeTypeInconsistentRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
             `Attribute id has several types: uuid in users(id), int in posts(id).`,
             `Attribute name has several types: varchar in users(name), text in posts(name).`,
         ])
-        expect(attributeTypeInconsistentRule.analyze({...ruleConf, ignores: ['name']}, now, db, [], []).map(v => v.message)).toEqual([
+        expect(attributeTypeInconsistentRule.analyze({...ruleConf, ignores: ['name']}, now, db, [], [], []).map(v => v.message)).toEqual([
+            `Attribute id has several types: uuid in users(id), int in posts(id).`,
+        ])
+        expect(attributeTypeInconsistentRule.analyze(ruleConf, now, db, [], [], [{message: '', attribute: ['name']}]).map(v => v.message)).toEqual([
             `Attribute id has several types: uuid in users(id), int in posts(id).`,
         ])
     })

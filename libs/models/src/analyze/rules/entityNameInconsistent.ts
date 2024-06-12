@@ -5,6 +5,7 @@ import {
     isCamelUpper,
     isKebabLower,
     isKebabUpper,
+    isNotUndefined,
     isSnakeLower,
     isSnakeUpper,
     StringCase
@@ -13,7 +14,16 @@ import {Timestamp} from "../../common";
 import {Database, Entity, EntityId, EntityRef} from "../../database";
 import {entityRefFromId, entityRefSame, entityRefToId, entityToRef} from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
-import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {
+    AnalyzeHistory,
+    AnalyzeReportViolation,
+    Rule,
+    RuleConf,
+    RuleId,
+    RuleLevel,
+    RuleName,
+    RuleViolation
+} from "../rule";
 
 /**
  * Keeping the same naming convention for all your tables will help avoid typos and understand things.
@@ -30,9 +40,10 @@ export const entityNameInconsistentRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.low},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {
+        const refIgnores: EntityRef[] = reference.map(r => r.entity).filter(isNotUndefined)
+        const ignores: EntityRef[] = refIgnores.concat(conf.ignores?.map(entityRefFromId) || [])
         const inconsistencies = checkNamingConsistency(db.entities || [])
-        const ignores: EntityRef[] = conf.ignores?.map(entityRefFromId) || []
         return inconsistencies.invalid
             .filter(e => !ignores.some(i => entityRefSame(i, e)))
             .map(entity => ({

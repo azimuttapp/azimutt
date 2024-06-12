@@ -1,7 +1,7 @@
 import {z} from "zod";
 import {indexBy, isNotUndefined} from "@azimutt/utils";
 import {Timestamp} from "../../common";
-import {AttributeId, AttributeRef, Database, Entity, EntityId, Relation} from "../../database";
+import {AttributeId, AttributeRef, Database, Entity, EntityId, Relation, RelationRef} from "../../database";
 import {
     attributeRefFromId,
     attributeRefSame,
@@ -9,10 +9,21 @@ import {
     entityRefToId,
     entityToId,
     getAttribute,
-    relationToId
+    relationRefSame,
+    relationToId,
+    relationToRef
 } from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
-import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {
+    AnalyzeHistory,
+    AnalyzeReportViolation,
+    Rule,
+    RuleConf,
+    RuleId,
+    RuleLevel,
+    RuleName,
+    RuleViolation
+} from "../rule";
 
 const ruleId: RuleId = 'relation-miss-attribute'
 const ruleName: RuleName = 'attribute not found in relation'
@@ -25,13 +36,15 @@ export const relationMissAttributeRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.high},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {
+        const relIgnores: RelationRef[] = reference.map(r => r.extra?.relation ? relationToRef(r.extra?.relation) : undefined).filter(isNotUndefined)
+        const attrIgnores: AttributeRef[] = conf.ignores?.map(attributeRefFromId) || []
         const entities: Record<EntityId, Entity> = indexBy(db.entities || [], entityToId)
-        const ignores: AttributeRef[] = conf.ignores?.map(attributeRefFromId) || []
         return (db.relations || [])
             .map(r => getMissingAttributeRelations(r, entities))
             .filter(isNotUndefined)
-            .map(v => ({...v, missingAttrs: v?.missing?.filter(a => !ignores.some(i => attributeRefSame(i, a)))}))
+            .filter(v => !relIgnores.some(i => relationRefSame(i, relationToRef(v.relation))))
+            .map(v => ({...v, missingAttrs: v?.missing?.filter(a => !attrIgnores.some(i => attributeRefSame(i, a)))}))
             .filter(v => v.missingAttrs.length > 0)
             .map(violation => {
                 const {attribute, ...entity} = violation.missingAttrs[0]

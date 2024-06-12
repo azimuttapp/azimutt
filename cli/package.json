@@ -1,6 +1,6 @@
 {
   "name": "azimutt",
-  "version": "0.1.10",
+  "version": "0.1.13",
   "description": "Export database schema from relational or document databases. Import it to https://azimutt.app",
   "keywords": [
     "database",
@@ -37,7 +37,7 @@
     "test": "jest",
     "lint": "tsc --noEmit",
     "build": "rm -rf ./out && tsc",
-    "exec": "pnpm exec azimutt",
+    "exec": "npm run build && node ./out/index.js",
     "local": "sudo pnpm install -g && azimutt",
     "dry-publish": "pnpm run build && pnpm test && pnpm pack"
   },

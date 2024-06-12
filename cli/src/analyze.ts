@@ -45,6 +45,7 @@ export type Opts = {
     size?: number
     only?: string
     key?: string
+    ignoreViolationsFrom?: string
 }
 
 export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Promise<void> {
@@ -60,13 +61,15 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
     const now = Date.now()
     const conf: RulesConf = await loadConf(folder, logger)
     const history = opts.key ? await loadHistory(folder, logger) : []
-    const db: Database = await connector.getSchema(app, dbUrl, {...conf.database, logger: loggerNoOp})
-    const queries: DatabaseQuery[] = await connector.getQueryHistory(app, dbUrl, {logger: loggerNoOp, database: dbUrl.db}).catch(err => {
+    const referenceReport: AnalyzeReport | undefined = opts.key && opts.ignoreViolationsFrom ? await loadReferenceReport(folder, opts.ignoreViolationsFrom, logger) : undefined
+    const connectorLogger = conf.database?.logQueries ? logger : loggerNoOp
+    const db: Database = await connector.getSchema(app, dbUrl, {...conf.database, logger: connectorLogger})
+    const queries: DatabaseQuery[] = await connector.getQueryHistory(app, dbUrl, {database: dbUrl.db, logger: connectorLogger}).catch(err => {
         if (typeof err === 'string' && err === 'Not implemented') logger.log(chalk.blue(`Query history is not supported yet on ${dbUrl.kind}, ping us ;)`))
         if (typeof err === 'object' && 'message' in err && err.message.indexOf('"pg_stat_statements" does not exist')) logger.log(chalk.blue(`Can't get query history as pg_stat_statements is not enabled. Enable it for a better db analysis.`))
         return []
     })
-    const rules: Record<RuleId, RuleAnalyzed> = analyzeDatabase(conf, now, db, queries, history, opts.only?.split(',') || [])
+    const rules: Record<RuleId, RuleAnalyzed> = analyzeDatabase(conf, now, db, queries, history, referenceReport?.analysis, opts.only?.split(',') || [])
     const [offRules, usedRules] = partition(Object.values(rules), r => r.conf.level === RuleLevel.enum.off)
     const rulesByLevel: Record<RuleLevel, RuleAnalyzed[]> = groupBy(usedRules, r => r.conf.level)
     const stats = buildStats(db, queries, rulesByLevel)
@@ -236,6 +239,13 @@ async function writeReport(folder: string, report: AnalyzeReport, logger: Logger
     await fileWriteJson(path, report)
     logger.log(`Analysis report written to ${path}`)
     logger.log('')
+}
+
+async function loadReferenceReport(folder: string, report: string, logger: Logger): Promise<AnalyzeReport> {
+    const path = pathJoin(folder, report)
+    const res = await fileReadJson<AnalyzeReport>(path).then(zodParseAsync(AnalyzeReport))
+    logger.log(`Loaded reference report from ${path}`)
+    return res
 }
 
 async function loadHistory(folder: string, logger: Logger): Promise<AnalyzeHistory[]> {

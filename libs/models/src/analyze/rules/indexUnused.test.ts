@@ -51,7 +51,7 @@ describe('indexUnused', () => {
     })
     test('violation message', () => {
         const db: Database = {entities: [{name: 'users', attrs: [{name: 'id', type: 'uuid'}], indexes: [{name: 'users_pk', attrs: [['id']], stats: {scansLast: new Date(twoDaysAgo).toISOString()}}]}]}
-        expect(indexUnusedRule.analyze({...ruleConf, minDays: 1}, now, db, [], []).map(v => v.message)).toEqual([
+        expect(indexUnusedRule.analyze({...ruleConf, minDays: 1}, now, db, [], [], []).map(v => v.message)).toEqual([
             'Index users_pk(id) on users is unused since 2024-05-23 (check all instances to be sure!).'
         ])
     })
@@ -60,11 +60,14 @@ describe('indexUnused', () => {
             {name: 'users', attrs: [{name: 'id', type: 'uuid'}], indexes: [{name: 'users_pk', attrs: [['id']], stats: {scansLast: new Date(twoDaysAgo).toISOString()}}]},
             {name: 'posts', attrs: [{name: 'id', type: 'uuid'}], indexes: [{name: 'posts_pk', attrs: [['id']], stats: {scansLast: new Date(threeDaysAgo).toISOString()}}]},
         ]}
-        expect(indexUnusedRule.analyze({...ruleConf, minDays: 1}, now, db, [], []).map(v => v.message)).toEqual([
+        expect(indexUnusedRule.analyze({...ruleConf, minDays: 1}, now, db, [], [], []).map(v => v.message)).toEqual([
             'Index users_pk(id) on users is unused since 2024-05-23 (check all instances to be sure!).',
             'Index posts_pk(id) on posts is unused since 2024-05-22 (check all instances to be sure!).',
         ])
-        expect(indexUnusedRule.analyze({...ruleConf, minDays: 1, ignores: [{entity: 'posts', indexes: ['posts_pk']}]}, now, db, [], []).map(v => v.message)).toEqual([
+        expect(indexUnusedRule.analyze({...ruleConf, minDays: 1, ignores: ['posts(posts_pk)']}, now, db, [], [], []).map(v => v.message)).toEqual([
+            'Index users_pk(id) on users is unused since 2024-05-23 (check all instances to be sure!).',
+        ])
+        expect(indexUnusedRule.analyze({...ruleConf, minDays: 1}, now, db, [], [], [{message: '', entity: {entity: 'posts'}, extra: {index: {name: 'posts_pk'}}}]).map(v => v.message)).toEqual([
             'Index users_pk(id) on users is unused since 2024-05-23 (check all instances to be sure!).',
         ])
     })

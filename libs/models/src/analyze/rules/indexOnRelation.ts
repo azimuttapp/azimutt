@@ -15,13 +15,22 @@ import {
     attributePathToId,
     attributesRefFromId,
     attributesRefSame,
-    entityAttributesToId,
+    attributesRefToId,
     entityRefToId,
     entityToId,
     relationToId
 } from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
-import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {
+    AnalyzeHistory,
+    AnalyzeReportViolation,
+    Rule,
+    RuleConf,
+    RuleId,
+    RuleLevel,
+    RuleName,
+    RuleViolation
+} from "../rule";
 
 /**
  * Relations are often used on JOIN or WHERE clauses to fetch more data or limit rows.
@@ -39,9 +48,10 @@ export const indexOnRelationRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.medium},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {
+        const refIgnores: AttributesRef[] = reference.map(r => r.entity && Array.isArray(r.extra?.indexAttrs) ? {...r.entity, attributes: r.extra.indexAttrs} : undefined).filter(isNotUndefined)
+        const ignores: AttributesRef[] = refIgnores.concat(conf.ignores?.map(attributesRefFromId) || [])
         const entities: Record<EntityId, Entity> = indexBy(db.entities || [], entityToId)
-        const ignores: AttributesRef[] = conf.ignores?.map(attributesRefFromId) || []
         return (db.relations || [])
             .flatMap(r => getMissingIndexOnRelation(r, entities))
             .filter(idx => !ignores.some(i => attributesRefSame(i, {...idx.ref, attributes: idx.attrs})))
@@ -49,7 +59,7 @@ export const indexOnRelationRule: Rule<CustomRuleConf> = {
                 ruleId,
                 ruleName,
                 ruleLevel: conf.level,
-                message: `Create an index on ${entityAttributesToId(i.ref, i.attrs)} to improve ${relationToId(i.relation)} relation.`,
+                message: `Create an index on ${attributesRefToId({...i.ref, attributes: i.attrs})} to improve ${relationToId(i.relation)} relation.`,
                 entity: i.ref,
                 attribute: i.attrs[0],
                 extra: {indexAttrs: i.attrs, relation: i.relation}

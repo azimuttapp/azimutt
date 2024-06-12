@@ -1,29 +1,40 @@
 import {z} from "zod";
-import {groupBy, singular, splitWords} from "@azimutt/utils";
+import {groupBy, isNotUndefined, singular, splitWords} from "@azimutt/utils";
 import {Timestamp} from "../../common";
 import {
     AttributePath,
-    AttributesId,
     AttributeValue,
     Database,
     Entity,
     EntityId,
     EntityRef,
-    Relation
+    Relation,
+    RelationId,
+    RelationRef
 } from "../../database";
 import {
     attributePathToId,
-    attributesRefFromId,
-    attributesRefSame,
+    attributesRefToId,
     attributeValueToString,
-    entityAttributesToId,
     entityRefToId,
     entityToRef,
     flattenAttribute,
-    getPeerAttributes
+    getPeerAttributes,
+    relationRefFromId,
+    relationRefSame,
+    relationToRef
 } from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
-import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {
+    AnalyzeHistory,
+    AnalyzeReportViolation,
+    Rule,
+    RuleConf,
+    RuleId,
+    RuleLevel,
+    RuleName,
+    RuleViolation
+} from "../rule";
 
 /**
  * If relations are not defined as foreign key, it could be great to identify them
@@ -32,7 +43,7 @@ import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolati
 const ruleId: RuleId = 'relation-missing'
 const ruleName: RuleName = 'missing relation'
 const CustomRuleConf = RuleConf.extend({
-    ignores: z.object({src: AttributesId, ref: AttributesId}).array().optional()
+    ignores: RelationId.array().optional(),
 }).strict().describe('RelationMissingConf')
 type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const relationMissingRule: Rule<CustomRuleConf> = {
@@ -40,15 +51,16 @@ export const relationMissingRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.medium},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
-        const ignores = conf.ignores?.map(i => ({src: attributesRefFromId(i.src), ref: attributesRefFromId(i.ref)})) || []
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {
+        const refIgnores: RelationRef[] = reference.map(r => r.extra?.relation ? relationToRef(r.extra?.relation) : undefined).filter(isNotUndefined)
+        const ignores: RelationRef[] = refIgnores.concat(conf.ignores?.map(relationRefFromId) || [])
         return getMissingRelations(db.entities || [], db.relations || [])
-            .filter(r => !ignores.some(i => attributesRefSame(i.src, {...r.src, attributes: r.attrs.map(a => a.src)}) && attributesRefSame(i.ref, {...r.ref, attributes: r.attrs.map(a => a.ref)})))
+            .filter(r => !ignores.some(i => relationRefSame(i, relationToRef(r))))
             .map(r => ({
                 ruleId,
                 ruleName,
                 ruleLevel: conf.level,
-                message: `Create a relation from ${entityAttributesToId(r.src, r.attrs.map(a => a.src))} to ${entityAttributesToId(r.ref, r.attrs.map(a => a.ref))}.`,
+                message: `Create a relation from ${attributesRefToId({...r.src, attributes: r.attrs.map(a => a.src)})} to ${attributesRefToId({...r.ref, attributes: r.attrs.map(a => a.ref)})}.`,
                 entity: r.src,
                 attribute: r.attrs[0].src,
                 extra: {relation: r}
@@ -64,7 +76,7 @@ export function getMissingRelations(entities: Entity[], relations: Relation[]): 
     const entitiesByPrefixName2: Record<EntityNameNormalized, Entity[]> = groupBy(tableEntities.filter(e => splitWords(e.name).length > 2), e => splitWords(e.name).slice(2).map(singular).join('_'))
     const relationsBySrc: Record<EntityId, Relation[]> = groupBy(relations, r => entityRefToId(r.src))
 
-    return entities.flatMap(entity => {
+    return tableEntities.flatMap(entity => {
         return entity.attrs.flatMap(a => flattenAttribute(a)).flatMap(({path, attr}) => {
             const attrWords = splitWords(attr.name).map(singular)
             const lastWord = attrWords[attrWords.length - 1]

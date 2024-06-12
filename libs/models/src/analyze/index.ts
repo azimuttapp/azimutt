@@ -4,8 +4,8 @@ import {Timestamp} from "../common";
 import {zodParse} from "../zod";
 import {Database, EntityId} from "../database";
 import {entityRefToId} from "../databaseUtils";
-import {ConnectorSchemaDataOpts, ConnectorScopeOpts, DatabaseQuery} from "../interfaces/connector";
-import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleViolation} from "./rule";
+import {ConnectorConfOpts, ConnectorSchemaDataOpts, ConnectorScopeOpts, DatabaseQuery} from "../interfaces/connector";
+import {AnalyzeHistory, AnalyzeReportResult, Rule, RuleConf, RuleId, RuleLevel, RuleViolation} from "./rule";
 import {attributeEmptyRule} from "./rules/attributeEmpty";
 import {attributeNameInconsistentRule} from "./rules/attributeNameInconsistent";
 import {attributeTypeBadRule} from "./rules/attributeTypeBad";
@@ -70,16 +70,17 @@ export const analyzeRules: Rule[] = [
 ]
 
 export const RulesConf = z.object({
-    database: ConnectorScopeOpts.merge(ConnectorSchemaDataOpts).optional(),
-    rules: z.object(Object.fromEntries(analyzeRules.map(r => [r.id, r.zConf.optional()]))).optional(),
+    database: ConnectorConfOpts.merge(ConnectorScopeOpts).merge(ConnectorSchemaDataOpts).strict().optional(),
+    rules: z.object(Object.fromEntries(analyzeRules.map(r => [r.id, r.zConf.optional()]))).strict().optional(),
 }).strict().describe('RulesConf')
 export type RulesConf = z.infer<typeof RulesConf>
 
 export type RuleAnalyzed = {rule: Rule, conf: RuleConf, violations: RuleViolation[]}
 
 // TODO: split rules by kind? (schema, query, data...)
-export function analyzeDatabase(conf: RulesConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], ruleNames: string[]): Record<RuleId, RuleAnalyzed> {
+export function analyzeDatabase(conf: RulesConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportResult | undefined, ruleNames: string[]): Record<RuleId, RuleAnalyzed> {
     // TODO: use uuid or bigint for single primary key, not int or varchar ones
+    // TODO: use uuidv7 for sorted uuids, not v4
     // TODO: uuids not stored as CHAR(36) => field ending with `id` and with type CHAR(36) => suggest type `uuid`/`BINARY(16)` instead (depend on db)
     // TODO: warn on queries with ORDER BY RAND()
 
@@ -101,15 +102,21 @@ export function analyzeDatabase(conf: RulesConf, now: Timestamp, db: Database, q
     // TODO: alert on deadlocks
     // TODO: suggest partial indexes: when there is often IS NULL or IS NOT NULL on query where clauses
     // TODO: detect n+1 queries?
+    // TODO: blocking queries (> 1 min)
     // TODO: special case: soft delete => if deleted_at column, suggest index on `deleted_at IS NULL`
     // TODO: if index on column with many nulls: suggest two indexes: one with values where not null and one is IS NULL (ex: `btree (org_id)` => `btree (org_id) WHERE org_id IS NOT NULL` & `btree (org_id IS NULL) WHERE org_id IS NULL`)
     // TODO: single column indexes on low cardinality column => suggest bitmap index instead
     // TODO: warn queries sans where clause ^^
+    // TODO: locks using https://www.postgresql.org/docs/current/view-pg-locks.html
     const rules = ruleNames.length > 0 ? analyzeRules.filter(r => ruleNames.indexOf(r.id) !== -1 || ruleNames.indexOf(r.name) !== -1) : analyzeRules
     return Object.fromEntries(rules.map(r => {
         const ruleConf = Object.assign({}, r.conf, conf.rules?.[r.id])
         return [r.id, zodParse(r.zConf, r.id)(ruleConf).fold(
-            ruleConf => ({rule: r, conf: ruleConf, violations: ruleConf.level === RuleLevel.enum.off ? [] : r.analyze(ruleConf, now, db, queries, history)}),
+            ruleConf => ({
+                rule: r,
+                conf: ruleConf,
+                violations: ruleConf.level === RuleLevel.enum.off ? [] : r.analyze(ruleConf, now, db, queries, history, reference?.[r.id]?.violations || [])
+            }),
             err => ({rule: r, conf: ruleConf, violations: [{ruleId: r.id, ruleName: r.name, ruleLevel: r.conf.level, message: `Invalid conf: ${err}`}]})
         )]
     }))

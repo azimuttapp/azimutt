@@ -1,10 +1,19 @@
 import {z} from "zod";
-import {filterValues, groupBy, pluralize} from "@azimutt/utils";
+import {filterValues, groupBy, isNotUndefined, pluralize} from "@azimutt/utils";
 import {Timestamp} from "../../common";
 import {Attribute, AttributeName, AttributeRef, AttributeType, Database, Entity} from "../../database";
 import {attributeRefToId, entityToRef, flattenAttribute} from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
-import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {
+    AnalyzeHistory,
+    AnalyzeReportViolation,
+    Rule,
+    RuleConf,
+    RuleId,
+    RuleLevel,
+    RuleName,
+    RuleViolation
+} from "../rule";
 
 /**
  * There is nothing wrong with inconsistent types on columns with identical name.
@@ -24,9 +33,11 @@ export const attributeTypeInconsistentRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.hint},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {
+        const refIgnores: AttributeName[] = reference.map(r => r.attribute?.[0]).filter(isNotUndefined)
+        const ignores: AttributeName[] = refIgnores.concat(conf.ignores || [])
         return Object.entries(getInconsistentAttributeTypes(db.entities || []))
-            .filter(([name,]) => !conf.ignores?.some(i => i === name))
+            .filter(([name,]) => !ignores.some(i => i === name))
             .map(([name, refs]) => {
                 const refsByType: [AttributeType, AttributeWithRef[]][] = Object.entries(groupBy(refs, r => r.value.type)).sort(([, a], [, b]) => a.length - b.length)
                 const message = `Attribute ${name} has several types: ${refsByType.map(([t, [r, ...others]]) => `${t} in ${attributeRefToId(r.ref)}${others.length > 0 ? ` and ${pluralize(others.length, 'other')}` : ''}`).join(', ')}.`
