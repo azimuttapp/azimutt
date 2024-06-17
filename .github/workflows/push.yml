@@ -5,7 +5,11 @@ on:
       - refs/tags/*
   pull_request:
     types: [ open ]
-
+env:
+  PHX_HOST: localhost
+  PORT: 4000
+  DATABASE_URL: postgresql://postgres:postgres@localhost/azimutt_dev
+  FILE_STORAGE_ADAPTER: local
 jobs:
   cancel:
     name: "❌ Cancel Previous Runs"
