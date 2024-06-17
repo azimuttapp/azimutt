@@ -28,7 +28,6 @@
     "url": "https://github.com/azimuttapp/azimutt/issues"
   },
   "scripts": {
-    "setup": "pnpm install && pnpm run build",
     "start": "tsx watch ./src/start.ts .env | pino-pretty --colorize",
     "test": "vitest run",
     "test:watch": "vitest watch",

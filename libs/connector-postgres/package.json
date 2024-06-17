@@ -20,6 +20,7 @@
   "scripts": {
     "test": "jest",
     "build": "rm -rf ./out && tsc",
+    "build:docker": "npx tsc",
     "dry-publish": "pnpm run build && pnpm test && pnpm pack"
   },
   "dependencies": {

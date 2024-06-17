@@ -1,22 +1,12 @@
-name: "👾 Azimutt CI"
+name: "⚒️ Build docker image"
 
 on:
-  push:
-    branches-ignore:
-      - refs/tags/*
   pull_request:
-    types: [open]
+    types: [ready_for_review]
 
 jobs:
-  cancel:
-    name: "❌ Cancel Previous Runs"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: styfle/cancel-workflow-action@0.10.0
-        with:
-          access_token: ${{ github.token }}
-  test:
-    name: "🛠 Build and test"
+  build_docker:
+    name: "⚒️ Build docker image"
     runs-on: ubuntu-latest
     env:
       MIX_ENV: test
@@ -69,18 +59,5 @@ jobs:
           FILE_STORAGE_ADAPTER: local
         run: pnpm run setup
 
-      - name: Check build
-        run: npm run build
-
-      - name: Check format
-        run: npm run format
-
-      - name: Check lint
-        run: npm run lint
-
-      - name: Run tests
-        env:
-          PHX_HOST: localhost
-          PORT: 4000
-          FILE_STORAGE_ADAPTER: local
-        run: npm test
+      - name: Build docker image
+        run: docker build -t azimutt .

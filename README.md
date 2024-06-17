@@ -85,7 +85,7 @@ We have a lot of projects with a lot of commands, here is how they are structure
 - `format` allows to run execute code formatting
 - `lint` allows to run execute linters
 - `build` generate compilation output
-- `docker` same as `build` but in the docker image (paths are different 😕)
+- `build:docker` same as `build` but in the docker image (paths are different 😕)
 - `update` bumps library versions
 
 ### Development commands

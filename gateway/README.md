@@ -10,7 +10,6 @@ The other way is to use the [desktop app](../desktop) for this, keeping everythi
 - run `pnpm install` to install dependencies
 - start dev server with `pnpm start`
 
-
 ## Env vars
 
 Loaded from `.env` file, with schema validation
@@ -19,12 +18,12 @@ Loaded from `.env` file, with schema validation
 
 There are a number of handy commands you can run to help with development.
 
-| Command              | Action                                                            |
-|----------------------|-------------------------------------------------------------------|
+| Command              | Action                                                             |
+|----------------------|--------------------------------------------------------------------|
 | `pnpm start`          | Run the server in dev mode, automatically restarts on file change |
 | `pnpm run build`      | Compile TypeScript to JavaScript                                  |
 | `pnpm run preview`    | Start JavaScript from 'build' directory                           |
-| `pnpm test`           | Run unit tests (run `pnpm run build` before)                       |
+| `pnpm test`           | Run unit tests (run `pnpm run build` before)                      |
 | `pnpm run test:watch` | Run backend tests in watch mode, running on changed test files    |
 | `pnpm run lint`       | Run eslint                                                        |
 | `pnpm run lint:fix`   | Run eslint in fix mode                                            |
@@ -37,7 +36,7 @@ Check `.github/workflows/CI.yml`
 ## Publish
 
 - update `package.json` and `src/version.ts` versions
-- update lib versions (`pnpm -w run update` + manual) 
+- update lib versions (`pnpm -w run update` + manual)
 - test with `pnpm run dry-publish` and check `azimutt-gateway-x.y.z.tgz` content
 - launch `pnpm publish --access public`
 
@@ -47,5 +46,5 @@ View it on [npm](https://www.npmjs.com/package/@azimutt/gateway).
 
 If you need to develop on multiple libs at the same time (ex: want to update a connector and try it through the CLI), depend on local libs but publish & revert before commit.
 
-- Depend on a local lib: `pnpm add <lib>`, ex: `pnpm add "@azimutt/models`
+- Depend on a local lib: `pnpm add <lib>`, ex: `pnpm add @azimutt/models`
 - "Publish" lib locally by building it: `pnpm run build`
