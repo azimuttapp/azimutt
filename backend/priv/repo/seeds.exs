@@ -1,12 +1,20 @@
 alias Azimutt.Accounts.User
 alias Azimutt.CleverCloud
+alias Azimutt.Gallery.Sample
 alias Azimutt.Heroku
+alias Azimutt.Heroku.Resource, as: HerokuResource
 alias Azimutt.Organizations.Organization
 alias Azimutt.Organizations.OrganizationMember
 alias Azimutt.Organizations.OrganizationInvitation
 alias Azimutt.Projects.Project
+alias Azimutt.Projects.ProjectToken
 alias Azimutt.Projects.Project.Storage
+alias Azimutt.Tracking.Event
 
+Azimutt.Repo.delete_all(Event)
+Azimutt.Repo.delete_all(HerokuResource)
+Azimutt.Repo.delete_all(Sample)
+Azimutt.Repo.delete_all(ProjectToken)
 Azimutt.Repo.delete_all(Project)
 Azimutt.Repo.delete_all(OrganizationInvitation)
 Azimutt.Repo.delete_all(OrganizationMember)

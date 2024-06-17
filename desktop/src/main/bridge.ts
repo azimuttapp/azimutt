@@ -28,8 +28,10 @@ export const setupBridge = (): void => {
             withConnector(url, (conn, parsedUrl) => conn.getSchema(application, parsedUrl, {...opts, inferRelations: true, ignoreErrors: true})),
         getQueryHistory: (url: DatabaseUrl): Promise<DatabaseQuery[]> =>
             withConnector(url, (conn, parsedUrl) => conn.getQueryHistory(application, parsedUrl, opts)),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         execute: (url: DatabaseUrl, query: string, parameters: any[]): Promise<QueryResults> =>
             withConnector(url, (conn, parsedUrl) => conn.execute(application, parsedUrl, query, parameters, opts)),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         analyze: (url: DatabaseUrl, query: string, parameters: any[]): Promise<QueryAnalyze> =>
             withConnector(url, (conn, parsedUrl) => conn.analyze(application, parsedUrl, query, parameters, opts)),
         getEntityStats: (url: DatabaseUrl, ref: EntityRef): Promise<ConnectorEntityStats> =>
@@ -40,7 +42,9 @@ export const setupBridge = (): void => {
     ipcMain.handle('ping', () => bridge.ping())
     ipcMain.handle('getSchema', (e: IpcMainInvokeEvent, url: DatabaseUrl) => bridge.getSchema(url))
     ipcMain.handle('getQueryHistory', (e: IpcMainInvokeEvent, url: DatabaseUrl) => bridge.getQueryHistory(url))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcMain.handle('execute', (e: IpcMainInvokeEvent, url: DatabaseUrl, query: string, parameters: any[]) => bridge.execute(url, query, parameters))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcMain.handle('analyze', (e: IpcMainInvokeEvent, url: DatabaseUrl, query: string, parameters: any[]) => bridge.analyze(url, query, parameters))
     ipcMain.handle('getEntityStats', (e: IpcMainInvokeEvent, url: DatabaseUrl, ref: EntityRef) => bridge.getEntityStats(url, ref))
     ipcMain.handle('getAttributeStats', (e: IpcMainInvokeEvent, url: DatabaseUrl, ref: AttributeRef) => bridge.getAttributeStats(url, ref))

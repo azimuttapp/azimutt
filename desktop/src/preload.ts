@@ -14,6 +14,7 @@ import {
     QueryResults
 } from "@azimutt/models";
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const {contextBridge, ipcRenderer} = require('electron')
 
 /* eslint @typescript-eslint/no-explicit-any: 0 */
@@ -26,7 +27,9 @@ contextBridge.exposeInMainWorld('desktop', {
     ping: () => ipcRenderer.invoke('ping'),
     getSchema: (url: DatabaseUrl): Promise<Database> => ipcRenderer.invoke('getSchema', url),
     getQueryHistory: (url: DatabaseUrl): Promise<DatabaseQuery[]> => ipcRenderer.invoke('getQueryHistory', url),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     execute: (url: DatabaseUrl, query: string, parameters: any[]): Promise<QueryResults> => ipcRenderer.invoke('execute', url, query, parameters),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     analyze: (url: DatabaseUrl, query: string, parameters: any[]): Promise<QueryAnalyze> => ipcRenderer.invoke('analyze', url, query, parameters),
     getEntityStats: (url: DatabaseUrl, ref: EntityRef): Promise<ConnectorEntityStats> => ipcRenderer.invoke('getEntityStats', url, ref),
     getAttributeStats: (url: DatabaseUrl, ref: AttributeRef): Promise<ConnectorAttributeStats> => ipcRenderer.invoke('getAttributeStats', url, ref),
