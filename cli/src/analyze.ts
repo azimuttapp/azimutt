@@ -37,7 +37,8 @@ import {
 import {getConnector, track} from "@azimutt/gateway";
 import {version} from "./version.js";
 import {loggerNoOp} from "./utils/logger.js";
-import {fileExists, fileList, fileReadJson, fileWriteJson, mkParentDirs} from "./utils/file.js";
+import {fileExists, fileList, fileReadJson, fileWrite, fileWriteJson, mkParentDirs} from "./utils/file.js";
+import { rootHtml } from "./utils/html.js";
 
 export type Opts = {
     folder?: string
@@ -77,8 +78,8 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
     track('cli__analyze__run', removeUndefined({version, database: dbUrl.kind, ...stats, email: opts.email, key: opts.key}), 'cli').then(() => {})
     await updateConf(folder, conf, rules)
 
+    const maxShown = opts.email ? opts.size || 3 : 3
     if (opts.email) {
-        const maxShown = opts.size || 3
         printReport(offRules, rulesByLevel, maxShown, stats, logger)
         const report = buildReport(db, queries, rules)
         await writeReport(folder, report, logger)
@@ -99,7 +100,6 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
             logger.log('')
         }
     } else {
-        const maxShown = 3
         printReport(offRules, rulesByLevel, maxShown, stats, logger)
         logger.log(chalk.blue('Had useful insights using Azimutt analyze?'))
         logger.log(chalk.blue('Add your professional email (ex: `--email your.name@company.com`) to get the full report in JSON.'))
@@ -107,6 +107,9 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
         logger.log(chalk.blue(`Cheers!`))
         logger.log('')
     }
+
+    // TODO: manage html option
+    await writeHtmlReport(folder, rulesByLevel, maxShown, logger)
 }
 
 function isValidEmail(dbUrl: DatabaseUrlParsed, email: string, logger: Logger): boolean {
@@ -188,6 +191,10 @@ function buildStats(db: Database, queries: DatabaseQuery[], rulesByLevel: Record
     }
 }
 
+function ruleIgnores(rule: RuleAnalyzed): string{
+    return 'ignores' in rule.conf && Array.isArray(rule.conf.ignores) ? ` (${pluralize(rule.conf.ignores.length, 'ignore')})` : ''
+}
+
 function printReport(offRules: RuleAnalyzed[], rulesByLevel: Record<string, RuleAnalyzed[]>, maxShown: number, stats: AnalyzeStats, logger: Logger): void {
     logger.log('')
     if (offRules.length > 0) {
@@ -198,7 +205,7 @@ function printReport(offRules: RuleAnalyzed[], rulesByLevel: Record<string, Rule
         const levelViolationsCount = levelRules.reduce((acc, r) => acc + r.violations.length, 0)
         logger.log(`${levelViolationsCount} ${level} violations (${pluralizeL(levelRules, 'rule')}):`)
         levelRules.forEach(rule => {
-            const ignores = 'ignores' in rule.conf && Array.isArray(rule.conf.ignores) ? ` (${pluralize(rule.conf.ignores.length, 'ignore')})` : ''
+            const ignores = ruleIgnores(rule)
             logger.log(`  ${rule.violations.length} ${rule.rule.name}${ignores}${rule.violations.length > 0 ? ':' : ''}`)
             rule.violations.slice(0, maxShown).forEach(violation => {
                 logger.log(`    - ${violation.message}`)
@@ -238,6 +245,29 @@ function buildRuleReport(rule: RuleAnalyzed): AnalyzeReportRule {
 async function writeReport(folder: string, report: AnalyzeReport, logger: Logger): Promise<void> {
     const path = pathJoin(folder, `report_${dateToIsoFilename(new Date())}.azimutt.json`)
     await fileWriteJson(path, report)
+    logger.log(`Analysis report written to ${path}`)
+    logger.log('')
+}
+
+async function writeHtmlReport(folder: string, rulesByLevel: Record<string, RuleAnalyzed[]>, maxShown: number, logger: Logger): Promise<void> {
+    const path = pathJoin(folder, `report_${dateToIsoFilename(new Date())}.azimutt.html`)
+
+    const rules = ruleLevelsShown.map(level => {
+        const levelRules = rulesByLevel[level] || []
+        const levelViolationsCount = levelRules.reduce((acc, r) => acc + r.violations.length, 0)
+        return {level, levelViolationsCount, rules: levelRules.map((rule) => {
+            const ignores = ruleIgnores(rule)
+            return ({
+                rule: rule.rule.name, 
+                ruleViolationsCount: rule.violations.length,
+                violations: rule.violations.slice(0, maxShown).map((violation) => violation.message),
+                ignores: Boolean(ignores) ? ignores : undefined
+            })
+        })}
+    }, {})
+
+    const html = rootHtml(rules)
+    await fileWrite(path, html)
     logger.log(`Analysis report written to ${path}`)
     logger.log('')
 }
