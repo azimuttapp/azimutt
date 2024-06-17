@@ -61,6 +61,10 @@ jobs:
           version: 9.1.4+sha256.30a1801ac4e723779efed13a21f4c39f9eb6c9fbb4ced101bce06b422593d7c9
 
       - name: Install Dependencies
+        env: # needs env for `mix ecto.setup`
+          PHX_HOST: localhost
+          PORT: 4000
+          FILE_STORAGE_ADAPTER: local
         run: pnpm run setup
 
       - name: Check build
