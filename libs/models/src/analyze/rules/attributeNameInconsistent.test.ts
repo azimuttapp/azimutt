@@ -27,7 +27,7 @@ describe('attributeNameInconsistent', () => {
                 {name: 'Comments', attrs: [{name: 'CommentId', type: 'uuid'}, {name: 'author', type: 'uuid'}]},
             ]
         }
-        expect(attributeNameInconsistentRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+        expect(attributeNameInconsistentRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
             'Attribute Comments(CommentId) doesn\'t follow naming convention snake-lower.'
         ])
     })
@@ -41,11 +41,14 @@ describe('attributeNameInconsistent', () => {
                 {name: 'Forms', attrs: [{name: 'FormId', type: 'uuid'}]},
             ]
         }
-        expect(attributeNameInconsistentRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+        expect(attributeNameInconsistentRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
             'Attribute Comments(CommentId) doesn\'t follow naming convention snake-lower.',
             'Attribute Forms(FormId) doesn\'t follow naming convention snake-lower.',
         ])
-        expect(attributeNameInconsistentRule.analyze({...ruleConf, ignores: ['Forms(FormId)']}, now, db, [], []).map(v => v.message)).toEqual([
+        expect(attributeNameInconsistentRule.analyze({...ruleConf, ignores: ['Forms(FormId)']}, now, db, [], [], []).map(v => v.message)).toEqual([
+            'Attribute Comments(CommentId) doesn\'t follow naming convention snake-lower.',
+        ])
+        expect(attributeNameInconsistentRule.analyze(ruleConf, now, db, [], [], [{message: '', entity: {entity: 'Forms'}, attribute: ['FormId']}]).map(v => v.message)).toEqual([
             'Attribute Comments(CommentId) doesn\'t follow naming convention snake-lower.',
         ])
     })

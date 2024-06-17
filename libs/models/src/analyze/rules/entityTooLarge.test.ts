@@ -16,7 +16,7 @@ describe('entityTooLarge', () => {
     test('violation message', () => {
         const attrs: Attribute[] = [...new Array(40)].map((a, i) => ({name: `a${i}`, type: 'varchar'}))
         const db: Database = {entities: [{name: 'users', attrs: [{name: 'id', type: 'uuid'}, ...attrs]}]}
-        expect(entityTooLargeRule.analyze({...ruleConf, max: 30}, now, db, [], []).map(v => v.message)).toEqual([
+        expect(entityTooLargeRule.analyze({...ruleConf, max: 30}, now, db, [], [], []).map(v => v.message)).toEqual([
             'Entity users has too many attributes (41).'
         ])
     })
@@ -25,11 +25,14 @@ describe('entityTooLarge', () => {
             {name: 'users', attrs: [{name: 'id', type: 'uuid'}, {name: 'name', type: 'varchar'}, {name: 'email', type: 'varchar'}]},
             {name: 'posts', attrs: [{name: 'id', type: 'uuid'}, {name: 'title', type: 'varchar'}, {name: 'content', type: 'text'}, {name: 'tags', type: 'varchar[]'}]},
         ]}
-        expect(entityTooLargeRule.analyze({...ruleConf, max: 2}, now, db, [], []).map(v => v.message)).toEqual([
+        expect(entityTooLargeRule.analyze({...ruleConf, max: 2}, now, db, [], [], []).map(v => v.message)).toEqual([
             'Entity users has too many attributes (3).',
             'Entity posts has too many attributes (4).',
         ])
-        expect(entityTooLargeRule.analyze({...ruleConf, max: 2, ignores: ['posts']}, now, db, [], []).map(v => v.message)).toEqual([
+        expect(entityTooLargeRule.analyze({...ruleConf, max: 2, ignores: ['posts']}, now, db, [], [], []).map(v => v.message)).toEqual([
+            'Entity users has too many attributes (3).',
+        ])
+        expect(entityTooLargeRule.analyze({...ruleConf, max: 2}, now, db, [], [], [{message: '', entity: {entity: 'posts'}}]).map(v => v.message)).toEqual([
             'Entity users has too many attributes (3).',
         ])
     })

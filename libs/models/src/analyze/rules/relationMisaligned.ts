@@ -1,18 +1,37 @@
 import {z} from "zod";
 import {indexBy, isNotUndefined} from "@azimutt/utils";
 import {Timestamp} from "../../common";
-import {AttributeRef, AttributesId, AttributeType, Database, Entity, EntityId, Relation} from "../../database";
+import {
+    AttributeRef,
+    AttributeType,
+    Database,
+    Entity,
+    EntityId,
+    Relation,
+    RelationId,
+    RelationRef
+} from "../../database";
 import {
     attributeRefToId,
-    attributesRefFromId,
-    attributesRefSame,
     entityRefToId,
     entityToId,
     getAttribute,
-    relationToId
+    relationRefFromId,
+    relationRefSame,
+    relationToId,
+    relationToRef
 } from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
-import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {
+    AnalyzeHistory,
+    AnalyzeReportViolation,
+    Rule,
+    RuleConf,
+    RuleId,
+    RuleLevel,
+    RuleName,
+    RuleViolation
+} from "../rule";
 
 /**
  * Relations are made to link entities by referencing a target record from a source record, mostly using the primary key.
@@ -23,7 +42,7 @@ import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolati
 const ruleId: RuleId = 'relation-misaligned-type'
 const ruleName: RuleName = 'misaligned relation'
 const CustomRuleConf = RuleConf.extend({
-    ignores: z.object({src: AttributesId, ref: AttributesId}).array().optional()
+    ignores: RelationId.array().optional()
 }).strict().describe('RelationMisalignedConf')
 type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const relationMisalignedRule: Rule<CustomRuleConf> = {
@@ -31,13 +50,14 @@ export const relationMisalignedRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.high},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {
+        const refIgnores: RelationRef[] = reference.map(r => r.extra?.relation ? relationToRef(r.extra?.relation) : undefined).filter(isNotUndefined)
+        const ignores: RelationRef[] = refIgnores.concat(conf.ignores?.map(relationRefFromId) || [])
         const entities: Record<EntityId, Entity> = indexBy(db.entities || [], entityToId)
-        const ignores = conf.ignores?.map(i => ({src: attributesRefFromId(i.src), ref: attributesRefFromId(i.ref)})) || []
         return (db.relations || [])
             .map(r => getMisalignedRelation(r, entities))
             .filter(isNotUndefined)
-            .filter(v => !ignores.some(i => attributesRefSame(i.src, {...v.relation.src, attributes: v.relation.attrs.map(a => a.src)}) && attributesRefSame(i.ref, {...v.relation.ref, attributes: v.relation.attrs.map(a => a.ref)})))
+            .filter(v => !ignores.some(i => relationRefSame(i, relationToRef(v.relation))))
             .map(violation => {
                 const {extra, ...relation} = violation.relation
                 return {

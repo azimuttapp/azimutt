@@ -18,7 +18,7 @@ describe('attributeTypeBad', () => {
     })
     test('violation message', () => {
         const db: Database = {entities: [{name: 'users', attrs: [{name: 'age', type: 'varchar(3)', stats: {distinctValues: ['12']}}]}]}
-        expect(attributeTypeBadRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+        expect(attributeTypeBadRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
             'Attribute users(age) with type varchar(3) could have type int.'
         ])
     })
@@ -28,11 +28,14 @@ describe('attributeTypeBad', () => {
             {name: 'age', type: 'varchar(3)', stats: {distinctValues: ['12']}},
             {name: 'created_at', type: 'varchar(24)', stats: {distinctValues: ['2024-05-30T09:49:58.068Z']}},
         ]}]}
-        expect(attributeTypeBadRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+        expect(attributeTypeBadRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
             'Attribute users(age) with type varchar(3) could have type int.',
             'Attribute users(created_at) with type varchar(24) could have type timestamp.',
         ])
-        expect(attributeTypeBadRule.analyze({...ruleConf, ignores: ['users(created_at)']}, now, db, [], []).map(v => v.message)).toEqual([
+        expect(attributeTypeBadRule.analyze({...ruleConf, ignores: ['users(created_at)']}, now, db, [], [], []).map(v => v.message)).toEqual([
+            'Attribute users(age) with type varchar(3) could have type int.',
+        ])
+        expect(attributeTypeBadRule.analyze(ruleConf, now, db, [], [], [{message: '', entity: {entity: 'users'}, attribute: ['created_at']}]).map(v => v.message)).toEqual([
             'Attribute users(age) with type varchar(3) could have type int.',
         ])
     })

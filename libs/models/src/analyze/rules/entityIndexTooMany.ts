@@ -1,9 +1,19 @@
 import {z} from "zod";
+import {isNotUndefined} from "@azimutt/utils";
 import {Timestamp} from "../../common";
 import {Database, Entity, EntityId, EntityRef} from "../../database";
 import {entityRefFromId, entityRefSame, entityToId, entityToRef} from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
-import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {
+    AnalyzeHistory,
+    AnalyzeReportViolation,
+    Rule,
+    RuleConf,
+    RuleId,
+    RuleLevel,
+    RuleName,
+    RuleViolation
+} from "../rule";
 
 const ruleId: RuleId = 'entity-index-too-many'
 const ruleName: RuleName = 'entity with too many indexes'
@@ -17,8 +27,9 @@ export const entityIndexTooManyRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.medium, max: 20},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
-        const ignores: EntityRef[] = conf.ignores?.map(entityRefFromId) || []
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {
+        const refIgnores: EntityRef[] = reference.map(r => r.entity).filter(isNotUndefined)
+        const ignores: EntityRef[] = refIgnores.concat(conf.ignores?.map(entityRefFromId) || [])
         return (db.entities || [])
             .filter(e => hasTooManyIndexes(e, conf.max))
             .filter(e => !ignores.some(i => entityRefSame(i, entityToRef(e))))

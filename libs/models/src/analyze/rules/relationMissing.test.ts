@@ -101,7 +101,7 @@ describe('relationMissing', () => {
                 {name: 'posts', attrs: [{name: 'id', type: 'uuid'}, {name: 'user_id', type: 'uuid'}]},
             ]
         }
-        expect(relationMissingRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+        expect(relationMissingRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
             'Create a relation from posts(user_id) to users(id).'
         ])
     })
@@ -113,11 +113,14 @@ describe('relationMissing', () => {
                 {name: 'events', attrs: [{name: 'id', type: 'uuid'}, {name: 'name', type: 'varchar'}, {name: 'created_by', type: 'uuid'}]},
             ]
         }
-        expect(relationMissingRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+        expect(relationMissingRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
             'Create a relation from posts(user_id) to users(id).',
             'Create a relation from events(created_by) to users(id).',
         ])
-        expect(relationMissingRule.analyze({...ruleConf, ignores: [{src: 'events(created_by)', ref: 'users(id)'}]}, now, db, [], []).map(v => v.message)).toEqual([
+        expect(relationMissingRule.analyze({...ruleConf, ignores: ['events(created_by)->users(id)']}, now, db, [], [], []).map(v => v.message)).toEqual([
+            'Create a relation from posts(user_id) to users(id).',
+        ])
+        expect(relationMissingRule.analyze(ruleConf, now, db, [], [], [{message: '', extra: {relation: {src: {entity: 'events'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}]}}}]).map(v => v.message)).toEqual([
             'Create a relation from posts(user_id) to users(id).',
         ])
     })

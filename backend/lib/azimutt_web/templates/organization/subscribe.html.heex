@@ -25,7 +25,11 @@
             <Icon.bell class="flex-shrink-0 text-indigo-400" />
         </div>
         <div class="ml-3">
-          <p class="text-sm font-medium text-indigo-800">Try it now with 14 days free trial, no credit card required !</p>
+          <%= if @organization.stripe_subscription_id do %>
+            <p class="text-sm font-medium text-indigo-800">Your trial ended.</p>
+          <% else %>
+            <p class="text-sm font-medium text-indigo-800">Try it now with 14 days free trial, no credit card required !</p>
+          <% end %>
         </div>
       </div>
     </div>

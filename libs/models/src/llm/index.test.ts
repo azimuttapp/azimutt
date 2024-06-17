@@ -3,13 +3,11 @@ import * as fs from "node:fs";
 import {Database, DatabaseKind} from "../database";
 import {sqlToText, textToSql} from "./index";
 import {OpenAIConnector} from "./openai";
-import {logger} from "../constants.test";
 
 describe('llm', () => {
     const openai = new OpenAIConnector({
         apiKey: 'sk-proj-...',
         model: 'gpt-3.5-turbo',
-        logger,
     })
     const smallDb: Database = {entities: [
         {name: 'users', attrs: [{name: 'id', type: 'uuid'}, {name: 'name', type: 'varchar'}, {name: 'created_at', type: 'timestamp'}]}

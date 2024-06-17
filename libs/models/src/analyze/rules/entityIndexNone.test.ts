@@ -19,17 +19,20 @@ describe('entityIndexNone', () => {
     })
     test('violation message', () => {
         const db: Database = {entities: [{name: 'users', attrs: [{name: 'id', type: 'uuid'}]}]}
-        expect(entityIndexNoneRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+        expect(entityIndexNoneRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
             'Entity users has no index.'
         ])
     })
     test('ignores', () => {
         const db: Database = {entities: [{name: 'users', attrs: [{name: 'id', type: 'uuid'}]}, {name: 'posts', attrs: [{name: 'id', type: 'uuid'}]}]}
-        expect(entityIndexNoneRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+        expect(entityIndexNoneRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
             'Entity users has no index.',
             'Entity posts has no index.',
         ])
-        expect(entityIndexNoneRule.analyze({...ruleConf, ignores: ['posts']}, now, db, [], []).map(v => v.message)).toEqual([
+        expect(entityIndexNoneRule.analyze({...ruleConf, ignores: ['posts']}, now, db, [], [], []).map(v => v.message)).toEqual([
+            'Entity users has no index.',
+        ])
+        expect(entityIndexNoneRule.analyze(ruleConf, now, db, [], [], [{message: '', entity: {entity: 'posts'}}]).map(v => v.message)).toEqual([
             'Entity users has no index.',
         ])
     })

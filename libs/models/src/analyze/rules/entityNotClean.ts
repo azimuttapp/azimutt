@@ -1,10 +1,20 @@
 import {z} from "zod";
+import {isNotUndefined} from "@azimutt/utils";
 import {Timestamp} from "../../common";
 import {Database, Entity, EntityId, EntityKind, EntityRef} from "../../database";
 import {entityRefFromId, entityRefSame, entityToId, entityToRef} from "../../databaseUtils";
 import {oneDay} from "../../helpers/duration";
 import {DatabaseQuery} from "../../interfaces/connector";
-import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {
+    AnalyzeHistory,
+    AnalyzeReportViolation,
+    Rule,
+    RuleConf,
+    RuleId,
+    RuleLevel,
+    RuleName,
+    RuleViolation
+} from "../rule";
 
 const ruleId: RuleId = 'entity-not-clean'
 const ruleName: RuleName = 'entity not clean'
@@ -22,9 +32,10 @@ export const entityNotCleanRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.high, maxDeadRows: 30000, maxVacuumLag: 30000, maxAnalyzeLag: 30000, maxVacuumDelayMs: oneDay, maxAnalyzeDelayMs: oneDay},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {
+        const refIgnores: EntityRef[] = reference.map(r => r.entity).filter(isNotUndefined)
+        const ignores: EntityRef[] = refIgnores.concat(conf.ignores?.map(entityRefFromId) || [])
         const dbDate = db.stats?.extractedAt ? new Date(db.stats.extractedAt).getTime() : now
-        const ignores: EntityRef[] = conf.ignores?.map(entityRefFromId) || []
         return (db.entities || [])
             .filter(e => isEntityNotClean(e, dbDate, conf.maxDeadRows, conf.maxVacuumLag, conf.maxAnalyzeLag, conf.maxVacuumDelayMs, conf.maxAnalyzeDelayMs))
             .filter(e => !ignores.some(i => entityRefSame(i, entityToRef(e))))

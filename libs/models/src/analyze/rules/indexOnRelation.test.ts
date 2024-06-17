@@ -34,7 +34,7 @@ describe('indexOnRelation', () => {
                 {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]}
             ]
         }
-        expect(indexOnRelationRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+        expect(indexOnRelationRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
             'Create an index on posts(author) to improve posts(author)->users(id) relation.'
         ])
     })
@@ -49,11 +49,14 @@ describe('indexOnRelation', () => {
                 {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}]},
             ]
         }
-        expect(indexOnRelationRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+        expect(indexOnRelationRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
             'Create an index on posts(author) to improve posts(author)->users(id) relation.',
             'Create an index on posts(created_by) to improve posts(created_by)->users(id) relation.',
         ])
-        expect(indexOnRelationRule.analyze({...ruleConf, ignores: ['posts(created_by)']}, now, db, [], []).map(v => v.message)).toEqual([
+        expect(indexOnRelationRule.analyze({...ruleConf, ignores: ['posts(created_by)']}, now, db, [], [], []).map(v => v.message)).toEqual([
+            'Create an index on posts(author) to improve posts(author)->users(id) relation.',
+        ])
+        expect(indexOnRelationRule.analyze(ruleConf, now, db, [], [], [{message: '', entity: {entity: 'posts'}, extra: {indexAttrs: [['created_by']]}}]).map(v => v.message)).toEqual([
             'Create an index on posts(author) to improve posts(author)->users(id) relation.',
         ])
     })

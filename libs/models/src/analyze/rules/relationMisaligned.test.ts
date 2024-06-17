@@ -29,7 +29,7 @@ describe('relationMisaligned', () => {
                 {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]},
             ]
         }
-        expect(relationMisalignedRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+        expect(relationMisalignedRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
             'Relation posts(author)->users(id) link attributes different types: posts(author): varchar != users(id): uuid',
         ])
     })
@@ -44,11 +44,14 @@ describe('relationMisaligned', () => {
                 {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}]},
             ]
         }
-        expect(relationMisalignedRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+        expect(relationMisalignedRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
             'Relation posts(author)->users(id) link attributes different types: posts(author): varchar != users(id): uuid',
             'Relation posts(created_by)->users(id) link attributes different types: posts(created_by): text != users(id): uuid',
         ])
-        expect(relationMisalignedRule.analyze({...ruleConf, ignores: [{src: 'posts(created_by)', ref: 'users(id)'}]}, now, db, [], []).map(v => v.message)).toEqual([
+        expect(relationMisalignedRule.analyze({...ruleConf, ignores: ['posts(created_by)->users(id)']}, now, db, [], [], []).map(v => v.message)).toEqual([
+            'Relation posts(author)->users(id) link attributes different types: posts(author): varchar != users(id): uuid',
+        ])
+        expect(relationMisalignedRule.analyze(ruleConf, now, db, [], [], [{message: '', extra: {relation: {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}]}}}]).map(v => v.message)).toEqual([
             'Relation posts(author)->users(id) link attributes different types: posts(author): varchar != users(id): uuid',
         ])
     })

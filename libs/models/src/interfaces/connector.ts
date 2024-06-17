@@ -27,12 +27,16 @@ export interface Connector {
     getAttributeStats(application: string, url: DatabaseUrlParsed, ref: AttributeRef, opts: ConnectorDefaultOpts): Promise<ConnectorAttributeStats>
 }
 
-export type ConnectorDefaultOpts = {
-    // dependencies
+export type ConnectorDeps = {
     logger: Logger
-    // behavior
-    logQueries?: boolean // default: false, log executed queries using the provided logger
 }
+
+export const ConnectorConfOpts = z.object({
+    logQueries: z.boolean().optional() // default: false, log executed queries using the provided logger
+}).strict()
+export type ConnectorConfOpts = z.infer<typeof ConnectorConfOpts>
+
+export type ConnectorDefaultOpts = ConnectorDeps & ConnectorConfOpts
 
 export const ConnectorScopeOpts = z.object({
     // filters: limit the scope of the extraction

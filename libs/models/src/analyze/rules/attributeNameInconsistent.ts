@@ -1,5 +1,5 @@
 import {z} from "zod";
-import {StringCase} from "@azimutt/utils";
+import {isNotUndefined, StringCase} from "@azimutt/utils";
 import {Timestamp} from "../../common";
 import {AttributeId, AttributeRef, Database, Entity} from "../../database";
 import {
@@ -11,7 +11,16 @@ import {
     flattenAttribute
 } from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
-import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {
+    AnalyzeHistory,
+    AnalyzeReportViolation,
+    Rule,
+    RuleConf,
+    RuleId,
+    RuleLevel,
+    RuleName,
+    RuleViolation
+} from "../rule";
 import {addCases, bestCase} from "./entityNameInconsistent";
 
 /**
@@ -29,9 +38,10 @@ export const attributeNameInconsistentRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.low},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {
+        const refIgnores: AttributeRef[] = reference.map(r => r.entity && r.attribute ? {...r.entity, attribute: r.attribute} : undefined).filter(isNotUndefined)
+        const ignores: AttributeRef[] = refIgnores.concat(conf.ignores?.map(attributeRefFromId) || [])
         const inconsistencies = checkNamingConsistency(db.entities || [])
-        const ignores: AttributeRef[] = conf.ignores?.map(attributeRefFromId) || []
         return inconsistencies.invalid
             .filter(a => !ignores.some(i => attributeRefSame(i, a)))
             .map(attribute => ({

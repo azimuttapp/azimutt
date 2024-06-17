@@ -24,7 +24,7 @@ describe('relationMissEntity', () => {
     })
     test('violation message', () => {
         const db: Database = {entities: [], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]},]}
-        expect(relationMissEntityRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+        expect(relationMissEntityRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
             'Relation posts(author)->users(id), not found entities: posts, users',
         ])
     })
@@ -33,12 +33,15 @@ describe('relationMissEntity', () => {
             {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]},
             {src: {entity: 'events'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}]},
         ]}
-        expect(relationMissEntityRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+        expect(relationMissEntityRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
             'Relation posts(author)->users(id), not found entities: posts, users',
             'Relation events(created_by)->users(id), not found entities: events, users',
         ])
-        expect(relationMissEntityRule.analyze({...ruleConf, ignores: ['events', 'users']}, now, db, [], []).map(v => v.message)).toEqual([
+        expect(relationMissEntityRule.analyze({...ruleConf, ignores: ['events', 'users']}, now, db, [], [], []).map(v => v.message)).toEqual([
             'Relation posts(author)->users(id), not found entities: posts',
+        ])
+        expect(relationMissEntityRule.analyze(ruleConf, now, db, [], [], [{message: '', extra: {relation: {src: {entity: 'events'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}]}}}]).map(v => v.message)).toEqual([
+            'Relation posts(author)->users(id), not found entities: posts, users',
         ])
     })
 })

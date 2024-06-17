@@ -19,7 +19,7 @@ describe('primaryKeyMissing', () => {
     })
     test('violation message', () => {
         const db: Database = {entities: [{name: 'users', attrs: [{name: 'id', type: 'uuid'}]}]}
-        expect(primaryKeyMissingRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+        expect(primaryKeyMissingRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
             'Entity users has no primary key.'
         ])
     })
@@ -28,11 +28,14 @@ describe('primaryKeyMissing', () => {
             {name: 'users', attrs: [{name: 'id', type: 'uuid'}]},
             {name: 'posts', attrs: [{name: 'id', type: 'uuid'}]},
         ]}
-        expect(primaryKeyMissingRule.analyze(ruleConf, now, db, [], []).map(v => v.message)).toEqual([
+        expect(primaryKeyMissingRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
             'Entity users has no primary key.',
             'Entity posts has no primary key.',
         ])
-        expect(primaryKeyMissingRule.analyze({...ruleConf, ignores: ['posts']}, now, db, [], []).map(v => v.message)).toEqual([
+        expect(primaryKeyMissingRule.analyze({...ruleConf, ignores: ['posts']}, now, db, [], [], []).map(v => v.message)).toEqual([
+            'Entity users has no primary key.',
+        ])
+        expect(primaryKeyMissingRule.analyze(ruleConf, now, db, [], [], [{message: '', entity: {entity: 'posts'}}]).map(v => v.message)).toEqual([
             'Entity users has no primary key.',
         ])
     })

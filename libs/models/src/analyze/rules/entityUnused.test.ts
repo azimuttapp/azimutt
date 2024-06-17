@@ -33,7 +33,7 @@ describe('entityUnused', () => {
     })
     test('violation message', () => {
         const db: Database = {entities: [{name: 'users', attrs: [{name: 'id', type: 'uuid'}], stats: {scanSeqLast: new Date(twoDaysAgo).toISOString()}}]}
-        expect(entityUnusedRule.analyze({...ruleConf, minDays: 1}, now, db, [], []).map(v => v.message)).toEqual([
+        expect(entityUnusedRule.analyze({...ruleConf, minDays: 1}, now, db, [], [], []).map(v => v.message)).toEqual([
             'Entity users is unused since 2024-05-23 (check all instances to be sure!).'
         ])
     })
@@ -42,11 +42,14 @@ describe('entityUnused', () => {
             {name: 'users', attrs: [{name: 'id', type: 'uuid'}], stats: {scanSeqLast: new Date(twoDaysAgo).toISOString()}},
             {name: 'posts', attrs: [{name: 'id', type: 'uuid'}], stats: {scanSeqLast: new Date(threeDaysAgo).toISOString()}},
         ]}
-        expect(entityUnusedRule.analyze({...ruleConf, minDays: 1}, now, db, [], []).map(v => v.message)).toEqual([
+        expect(entityUnusedRule.analyze({...ruleConf, minDays: 1}, now, db, [], [], []).map(v => v.message)).toEqual([
             'Entity users is unused since 2024-05-23 (check all instances to be sure!).',
             'Entity posts is unused since 2024-05-22 (check all instances to be sure!).',
         ])
-        expect(entityUnusedRule.analyze({...ruleConf, minDays: 1, ignores: ['posts']}, now, db, [], []).map(v => v.message)).toEqual([
+        expect(entityUnusedRule.analyze({...ruleConf, minDays: 1, ignores: ['posts']}, now, db, [], [], []).map(v => v.message)).toEqual([
+            'Entity users is unused since 2024-05-23 (check all instances to be sure!).',
+        ])
+        expect(entityUnusedRule.analyze({...ruleConf, minDays: 1}, now, db, [], [], [{message: '', entity: {entity: 'posts'}}]).map(v => v.message)).toEqual([
             'Entity users is unused since 2024-05-23 (check all instances to be sure!).',
         ])
     })

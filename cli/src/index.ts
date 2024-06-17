@@ -47,6 +47,7 @@ program.command('analyze')
     .option('--size <number>', 'change shown violations limit per rule, default is 3', strictParseInt)
     .option('--only <rules>', 'limit analyze to specified rules')
     .option('--key <key>', `reach out to ${azimuttEmail} to buy a key for incremental rules: degrading queries, unused tables/indexes, fast growing tables/indexes and more...`)
+    .option('--ignore-violations-from <folder-relative-path>', 'ignore violations present in existing report, path is relative to report folder, needs --key argument')
     .action((url, args) => exec(launchAnalyze(url, args, logger), args))
 
 program.command('export')

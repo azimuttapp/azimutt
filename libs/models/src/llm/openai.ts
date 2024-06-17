@@ -1,7 +1,6 @@
 import {z} from "zod";
 import "openai/shims/web"; // FIXME 'web' fails on frontend/ts-src/types/ports.test.disabled.ts tests :/
 import OpenAI from "openai";
-import {Logger} from "@azimutt/utils";
 
 // create a key: https://platform.openai.com/api-keys
 export const OpenAIKey = z.string()
@@ -13,13 +12,13 @@ export type OpenAIModel = z.infer<typeof OpenAIModel>
 export class OpenAIConnector {
     private openai: OpenAI
 
-    constructor(private opts: { apiKey: OpenAIKey, model: OpenAIModel, logger: Logger }) {
+    constructor(private opts: { apiKey: OpenAIKey, model: OpenAIModel }) {
         this.openai = new OpenAI({apiKey: opts.apiKey, dangerouslyAllowBrowser: true})
     }
 
     query = async (system: string, user: string): Promise<string> => {
-        this.opts.logger.debug(`system: ${system}`)
-        this.opts.logger.debug(`user: ${user}`)
+        // console.log(`system: ${system}`)
+        // console.log(`user: ${user}`)
         // https://platform.openai.com/docs/api-reference/chat/create
         const completion = await this.openai.chat.completions.create({
             model: this.opts.model,
@@ -29,7 +28,7 @@ export class OpenAIConnector {
             ].filter(m => m.content),
         })
         const answer = completion.choices?.[0].message.content
-        this.opts.logger.debug(`answer ${this.opts.model}: ${answer}`)
+        // console.log(`answer ${this.opts.model}: ${answer}`)
         return answer || 'Invalid LLM answer :/'
     }
 }

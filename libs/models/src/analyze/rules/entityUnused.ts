@@ -6,7 +6,16 @@ import {entityRefFromId, entityRefSame, entityToId, entityToRef} from "../../dat
 import {showDate} from "../../helpers/date";
 import {oneDay} from "../../helpers/duration";
 import {DatabaseQuery} from "../../interfaces/connector";
-import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {
+    AnalyzeHistory,
+    AnalyzeReportViolation,
+    Rule,
+    RuleConf,
+    RuleId,
+    RuleLevel,
+    RuleName,
+    RuleViolation
+} from "../rule";
 
 const ruleId: RuleId = 'entity-unused'
 const ruleName: RuleName = 'unused entity'
@@ -20,8 +29,9 @@ export const entityUnusedRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.medium, minDays: 10},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
-        const ignores: EntityRef[] = conf.ignores?.map(entityRefFromId) || []
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {
+        const refIgnores: EntityRef[] = reference.map(r => r.entity).filter(isNotUndefined)
+        const ignores: EntityRef[] = refIgnores.concat(conf.ignores?.map(entityRefFromId) || [])
         const historyEntitiesById: {report: string, date: Timestamp, entities: Record<EntityId, Entity>}[] =
             history.map(h => ({report: h.report, date: h.date, entities: indexBy(h.database.entities || [], entityToId)}))
         return (db.entities || [])

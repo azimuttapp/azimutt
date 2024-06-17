@@ -12,6 +12,7 @@ describe('entityNotClean', () => {
     const maxAnalyzeLag = 30000
     const maxVacuumDelayMs = oneDay
     const maxAnalyzeDelayMs = oneDay
+    const conf = {...ruleConf, maxDeadRows, maxVacuumLag, maxAnalyzeLag, maxVacuumDelayMs, maxAnalyzeDelayMs}
 
     test('entity with many dead rows', () => {
         const users: Entity = {name: 'users', attrs: [{name: 'id', type: 'uuid'}], stats: {rowsDead: 42000}}
@@ -35,7 +36,7 @@ describe('entityNotClean', () => {
     })
     test('violation message', () => {
         const db: Database = {entities: [{name: 'users', attrs: [{name: 'id', type: 'uuid'}], stats: {rowsDead: 42000}}]}
-        expect(entityNotCleanRule.analyze({...ruleConf, maxDeadRows, maxVacuumLag, maxAnalyzeLag, maxVacuumDelayMs, maxAnalyzeDelayMs}, now, db, [], []).map(v => v.message)).toEqual([
+        expect(entityNotCleanRule.analyze(conf, now, db, [], [], []).map(v => v.message)).toEqual([
             'Entity users has many dead rows (42000).',
         ])
     })
@@ -44,11 +45,14 @@ describe('entityNotClean', () => {
             {name: 'users', attrs: [{name: 'id', type: 'uuid'}], stats: {rowsDead: 42000}},
             {name: 'posts', attrs: [{name: 'id', type: 'uuid'}], stats: {vacuumLag: 41000}}
         ]}
-        expect(entityNotCleanRule.analyze({...ruleConf, maxDeadRows, maxVacuumLag, maxAnalyzeLag, maxVacuumDelayMs, maxAnalyzeDelayMs}, now, db, [], []).map(v => v.message)).toEqual([
+        expect(entityNotCleanRule.analyze(conf, now, db, [], [], []).map(v => v.message)).toEqual([
             'Entity users has many dead rows (42000).',
             'Entity posts has high vacuum lag (41000).',
         ])
-        expect(entityNotCleanRule.analyze({...ruleConf, ignores: ['posts'], maxDeadRows, maxVacuumLag, maxAnalyzeLag, maxVacuumDelayMs, maxAnalyzeDelayMs}, now, db, [], []).map(v => v.message)).toEqual([
+        expect(entityNotCleanRule.analyze({...conf, ignores: ['posts']}, now, db, [], [], []).map(v => v.message)).toEqual([
+            'Entity users has many dead rows (42000).',
+        ])
+        expect(entityNotCleanRule.analyze(conf, now, db, [], [], [{message: '', entity: {entity: 'posts'}}]).map(v => v.message)).toEqual([
             'Entity users has many dead rows (42000).',
         ])
     })

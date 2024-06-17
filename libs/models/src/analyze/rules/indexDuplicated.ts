@@ -1,15 +1,25 @@
 import {z} from "zod";
+import {isNotUndefined} from "@azimutt/utils";
 import {Timestamp} from "../../common";
 import {AttributesId, AttributesRef, Database, Entity, Index} from "../../database";
 import {
     attributePathToId,
     attributesRefFromId,
     attributesRefSame,
-    entityAttributesToId,
+    attributesRefToId,
     entityToRef
 } from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
-import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {
+    AnalyzeHistory,
+    AnalyzeReportViolation,
+    Rule,
+    RuleConf,
+    RuleId,
+    RuleLevel,
+    RuleName,
+    RuleViolation
+} from "../rule";
 
 /**
  * Indexes are great to speed read performances, but they come at the cost of reducing write performances.
@@ -29,13 +39,14 @@ export const indexDuplicatedRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.high},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
-        const ignores: AttributesRef[] = conf.ignores?.map(attributesRefFromId) || []
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {
+        const refIgnores: AttributesRef[] = reference.map(r => r.entity && Array.isArray(r.extra?.index?.attrs) ? {...r.entity, attributes: r.extra.index.attrs} : undefined).filter(isNotUndefined)
+        const ignores: AttributesRef[] = refIgnores.concat(conf.ignores?.map(attributesRefFromId) || [])
         return (db.entities || []).flatMap(getDuplicatedIndexes)
             .filter(idx => !ignores.some(i => attributesRefSame(i, {...entityToRef(idx.entity), attributes: idx.index.attrs})))
             .map(i => {
                 const entity = entityToRef(i.entity)
-                const indexName = `${i.index.name ? i.index.name + ' ' : ''}on ${entityAttributesToId(entity, i.index.attrs)}`
+                const indexName = `${i.index.name ? i.index.name + ' ' : ''}on ${attributesRefToId({...entity, attributes: i.index.attrs})}`
                 const message = `Index ${indexName} can be deleted, it's covered by: ${i.coveredBy.map(by => `${by.name || ''}(${by.attrs.map(attributePathToId).join(', ')})`).join(', ')}.`
                 const {stats, extra, ...index} = i.index
                 const coveredBy = i.coveredBy.map(({stats, extra, ...index}) => index)

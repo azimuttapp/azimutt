@@ -1,10 +1,19 @@
 import {z} from "zod";
-import {prettyNumber} from "@azimutt/utils";
+import {isNotUndefined, prettyNumber} from "@azimutt/utils";
 import {Timestamp} from "../../common";
 import {Database, Entity, EntityId, EntityRef} from "../../database";
 import {entityRefFromId, entityRefSame, entityToId, entityToRef} from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
-import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {
+    AnalyzeHistory,
+    AnalyzeReportViolation,
+    Rule,
+    RuleConf,
+    RuleId,
+    RuleLevel,
+    RuleName,
+    RuleViolation
+} from "../rule";
 
 const ruleId: RuleId = 'entity-index-too-heavy'
 const ruleName: RuleName = 'entity with too heavy indexes'
@@ -18,8 +27,9 @@ export const entityIndexTooHeavyRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.medium, ratio: 1},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
-        const ignores: EntityRef[] = conf.ignores?.map(entityRefFromId) || []
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {
+        const refIgnores: EntityRef[] = reference.map(r => r.entity).filter(isNotUndefined)
+        const ignores: EntityRef[] = refIgnores.concat(conf.ignores?.map(entityRefFromId) || [])
         return (db.entities || [])
             .filter(e => hasTooHeavyIndexes(e, conf.ratio))
             .filter(e => !ignores.some(i => entityRefSame(i, entityToRef(e))))
@@ -29,7 +39,7 @@ export const entityIndexTooHeavyRule: Rule<CustomRuleConf> = {
                     ruleId,
                     ruleName,
                     ruleLevel: conf.level,
-                    message: `Entity ${entityToId(e)} has too heavy indexes (${prettyNumber(ratio)}x data size).`,
+                    message: `Entity ${entityToId(e)} has too heavy indexes (${prettyNumber(ratio)}x data size, ${(e.pk ? 1 : 0) + (e.indexes?.length || 0)} indexes).`,
                     entity: entityToRef(e),
                     extra: {ratio}
                 }

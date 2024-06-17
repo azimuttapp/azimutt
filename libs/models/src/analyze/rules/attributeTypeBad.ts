@@ -21,7 +21,16 @@ import {
     entityToRef
 } from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
-import {AnalyzeHistory, Rule, RuleConf, RuleId, RuleLevel, RuleName, RuleViolation} from "../rule";
+import {
+    AnalyzeHistory,
+    AnalyzeReportViolation,
+    Rule,
+    RuleConf,
+    RuleId,
+    RuleLevel,
+    RuleName,
+    RuleViolation
+} from "../rule";
 
 const ruleId: RuleId = 'attribute-type-bad'
 const ruleName: RuleName = 'bad attribute type'
@@ -34,8 +43,9 @@ export const attributeTypeBadRule: Rule<CustomRuleConf> = {
     name: ruleName,
     conf: {level: RuleLevel.enum.medium},
     zConf: CustomRuleConf,
-    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[]): RuleViolation[] {
-        const ignores: AttributeRef[] = conf.ignores?.map(attributeRefFromId) || []
+    analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {
+        const refIgnores: AttributeRef[] = reference.map(r => r.entity && r.attribute ? {...r.entity, attribute: r.attribute} : undefined).filter(isNotUndefined)
+        const ignores: AttributeRef[] = refIgnores.concat(conf.ignores?.map(attributeRefFromId) || [])
         return (db.entities || [])
             .flatMap(getAttributesWithBadType)
             .filter(r => !ignores.some(i => attributeRefSame(i, r.ref)))

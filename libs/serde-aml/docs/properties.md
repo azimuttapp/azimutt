@@ -27,7 +27,8 @@ Some specific keys are standardized for certain objects and can be interpreted b
 
 Here are the standardized properties for [entities](./entity.md):
 
-- `color`, to define the default Azimutt color, the value should be one of: red, orange, amber, yellow, lime, green, emerald, teal, cyan, sky, blue, indigo, violet, purple, fuchsia, pink, rose, gray
+- `color`, to define the default Azimutt color, values: red, orange, amber, yellow, lime, green, emerald, teal, cyan, sky, blue, indigo, violet, purple, fuchsia, pink, rose, gray
+- `icon`, show a nice icon in the entity header, values: email, folder, home, user, users...
 - `position`, to define the default position when added to a layout, the value should be an array with two numbers
 - `notes`, to define default notes for the entity
 - `tags`, to define default tags for the entity
