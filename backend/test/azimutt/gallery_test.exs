@@ -1,6 +1,7 @@
 defmodule Azimutt.GalleryTest do
   use Azimutt.DataCase
   alias Azimutt.Gallery
+  alias Azimutt.Gallery.Sample
   alias Azimutt.Utils.Result
 
   describe "samples" do
@@ -10,6 +11,7 @@ defmodule Azimutt.GalleryTest do
     import Azimutt.GalleryFixtures
 
     test "list_samples/0 returns all samples" do
+      Azimutt.Repo.delete_all(Sample)
       assert [] == Gallery.list_samples()
       user = user_fixture()
       organization = organization_fixture(user)
