@@ -208,7 +208,7 @@ viewProjectSourceTab htmlId zone projects model =
     div []
         [ viewHeading "Import an existing project" [ text "If you have an Azimutt project, you can load it here." ]
         , div [ class "mt-6" ] [ ProjectSource.viewLocalInput ProjectSourceMsg Noop (htmlId ++ "-remote-file") ]
-        , p [ css [ "mt-1 text-sm text-gray-500" ] ] [ text "Download your project with the button on the bottom of the settings (top right cog)." ]
+        , p [ css [ "mt-1 text-sm text-gray-500" ] ] [ text "Export your project: ⚡️ > Export your schema > Full project (top right)." ]
         , ProjectSource.viewParsing ProjectSourceMsg zone Nothing model
         , model.parsedProject
             |> Maybe.andThen Result.toMaybe

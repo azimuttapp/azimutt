@@ -295,3 +295,9 @@ order_lines
 ```
 
 Hope you enjoyed AML, happy hacking on [Azimutt](https://azimutt.app)!
+
+## Similar DSLs
+
+https://dbml.dbdiagram.io
+https://docs.eraser.io/docs/syntax-1
+https://www.quickdatabasediagrams.com

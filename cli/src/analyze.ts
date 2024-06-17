@@ -54,6 +54,7 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
     if (!connector) return Promise.reject(`Invalid connector for ${dbUrl.kind ? `${dbUrl.kind} db` : `unknown db (${dbUrl.full})`}`)
     if (opts.email && !isValidEmail(dbUrl, opts.email, logger)) return Promise.reject(`Invalid email (${opts.email})`)
     if (opts.key && !isValidKey(dbUrl, opts.email, opts.key, logger)) return Promise.reject(`Invalid key (${opts.key})`)
+    if (opts.ignoreViolationsFrom && !opts.key) return Promise.reject(`You need a 'key' to ignore violations from a report`)
 
     // TODO: extend config for user, database, queries, data... ({user: {}, database: {}, queries: {}, data: {}, rules: {}})
     const app = 'azimutt-analyze'
@@ -61,7 +62,7 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
     const now = Date.now()
     const conf: RulesConf = await loadConf(folder, logger)
     const history = opts.key ? await loadHistory(folder, logger) : []
-    const referenceReport: AnalyzeReport | undefined = opts.key && opts.ignoreViolationsFrom ? await loadReferenceReport(folder, opts.ignoreViolationsFrom, logger) : undefined
+    const referenceReport: AnalyzeReport | undefined = opts.ignoreViolationsFrom ? await loadReferenceReport(folder, opts.ignoreViolationsFrom, logger) : undefined
     const connectorLogger = conf.database?.logQueries ? logger : loggerNoOp
     const db: Database = await connector.getSchema(app, dbUrl, {...conf.database, logger: connectorLogger})
     const queries: DatabaseQuery[] = await connector.getQueryHistory(app, dbUrl, {database: dbUrl.db, logger: connectorLogger}).catch(err => {
