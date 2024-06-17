@@ -10,6 +10,7 @@ defmodule Azimutt.GalleryTest do
     import Azimutt.GalleryFixtures
 
     test "list_samples/0 returns all samples" do
+      assert [] == Gallery.list_samples()
       user = user_fixture()
       organization = organization_fixture(user)
       project = project_fixture(organization, user)
