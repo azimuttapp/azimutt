@@ -69,7 +69,7 @@ jobs:
         run: pnpm run setup
 
       - name: Check format
-        run: npm run ex:install && npm run format
+        run: npm run format
 
       - name: Check lint
         run: npm run lint
