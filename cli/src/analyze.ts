@@ -37,8 +37,7 @@ import {
 import {getConnector, track} from "@azimutt/gateway";
 import {version} from "./version.js";
 import {loggerNoOp} from "./utils/logger.js";
-import {fileExists, fileList, fileReadJson, fileWrite, fileWriteJson, mkParentDirs} from "./utils/file.js";
-import { rootHtml } from "./utils/html.js";
+import {fileExists, fileList, fileRead, fileReadJson, fileWrite, fileWriteJson, mkParentDirs, __dirname} from "./utils/file.js";
 
 export type Opts = {
     folder?: string
@@ -266,7 +265,8 @@ async function writeHtmlReport(folder: string, rulesByLevel: Record<string, Rule
         })}
     }, {})
 
-    const html = rootHtml(rules)
+    let html = await fileRead('./src/report.html')
+    html = html.replace("const report = []", `const report = ${JSON.stringify(rules)}`)
     await fileWrite(path, html)
     logger.log(`Analysis report written to ${path}`)
     logger.log('')
