@@ -80,7 +80,7 @@ COPY pnpm-lock.yaml .
 COPY libs/ libs
 COPY frontend/ frontend
 
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9.1.4
 RUN npm run build:docker
 
 # Compile the release
