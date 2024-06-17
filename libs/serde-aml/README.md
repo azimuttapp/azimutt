@@ -104,7 +104,7 @@ Other concepts:
   - `type bug_status enum(new, in progress, done)`
   - `type bug_value range(subtype = float8, subtype_diff = float8mi)`
   - `type address {number: int, street: varchar}`
-- if a fk column don't have a type, it takes the type of the referenced column
+- if a fk column doesn't have a type, it takes the type of the referenced column
 
 ## Publish
 

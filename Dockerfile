@@ -75,10 +75,13 @@ COPY backend/priv priv
 COPY backend/assets assets
 
 COPY package.json .
+COPY pnpm-workspace.yaml .
+COPY pnpm-lock.yaml .
 COPY libs/ libs
 COPY frontend/ frontend
 
-RUN npm run docker
+RUN npm install -g pnpm
+RUN npm run build:docker
 
 # Compile the release
 COPY backend/lib lib
