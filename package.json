@@ -29,7 +29,7 @@
     "test": "pnpm -r run test",
     "format": "pnpm -r run format",
     "lint": "pnpm -r run lint",
-    "build": "pnpm -r run build",
+    "build": "pnpm --filter=!\"./desktop\" -r run build",
     "update": "pnpm -r update && pnpm install && pnpm -r --if-present run update",
     "docker": "pnpm --filter \"azimutt-backend\" run setup && pnpm --filter \"./libs/**\" run build && pnpm --filter \"azimutt-editor\" run docker"
   },

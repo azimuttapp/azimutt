@@ -44,6 +44,7 @@
     "@electron-forge/maker-zip": "^7.4.0",
     "@electron-forge/plugin-webpack": "^7.4.0",
     "@electron-forge/publisher-github": "^7.4.0",
+    "@electron-forge/shared-types": "^7.4.0",
     "@typescript-eslint/eslint-plugin": "^7.7.1",
     "@typescript-eslint/parser": "^7.7.1",
     "@vercel/webpack-asset-relocator-loader": "^1.7.3",
