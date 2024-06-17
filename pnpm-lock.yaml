@@ -150,7 +150,7 @@ importers:
         version: 1.7.4
       css-loader:
         specifier: ^7.1.1
-        version: 7.1.2(webpack@5.91.0)
+        version: 7.1.2(webpack@5.92.0)
       electron:
         specifier: 29.3.0
         version: 29.3.0
@@ -162,22 +162,25 @@ importers:
         version: 2.29.1(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.4.5))(eslint@8.57.0)
       fork-ts-checker-webpack-plugin:
         specifier: ^9.0.2
-        version: 9.0.2(typescript@5.4.5)(webpack@5.91.0)
+        version: 9.0.2(typescript@5.4.5)(webpack@5.92.0)
       node-loader:
         specifier: ^2.0.0
-        version: 2.0.0(webpack@5.91.0)
+        version: 2.0.0(webpack@5.92.0)
       style-loader:
         specifier: ^4.0.0
-        version: 4.0.0(webpack@5.91.0)
+        version: 4.0.0(webpack@5.92.0)
       ts-loader:
         specifier: ^9.5.1
-        version: 9.5.1(typescript@5.4.5)(webpack@5.91.0)
+        version: 9.5.1(typescript@5.4.5)(webpack@5.92.0)
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.12.13)(typescript@5.4.5)
       typescript:
         specifier: ^5.4.5
         version: 5.4.5
+      webpack:
+        specifier: ^5.92.0
+        version: 5.92.0
 
   frontend:
     dependencies:
@@ -2731,8 +2734,8 @@ packages:
   acorn-globals@7.0.1:
     resolution: {integrity: sha512-umOSDSDrfHbTNPuNpC2NSnnA3LUrqpevPb4T9jRx4MagXNS0rs+gwiTcAvqCRmsD6utzsrzNt+ebm00SNWiC3Q==}
 
-  acorn-import-assertions@1.9.0:
-    resolution: {integrity: sha512-cmMwop9x+8KFhxvKrKfPYmN6/pKTYYHBqLa0DfvVZcKMJWNyWLnaqND7dx/qn66R7ewM1UX5XMaDVP5wlVTaVA==}
+  acorn-import-attributes@1.9.5:
+    resolution: {integrity: sha512-n02Vykv5uA3eHGM/Z2dQrcD56kL8TyDb2p1+0P83PClMnC/nc+anbQRhIOWnSq4Ke/KvDPrY3C9hDtC/A3eHnQ==}
     peerDependencies:
       acorn: ^8
 
@@ -3926,6 +3929,10 @@ packages:
 
   enhanced-resolve@5.16.1:
     resolution: {integrity: sha512-4U5pNsuDl0EhuZpq46M5xPslstkviJuhrdobaRDBk2Jy2KO37FDAJl4lb2KlNabxT0m4MTK2UHNrsAcphE8nyw==}
+    engines: {node: '>=10.13.0'}
+
+  enhanced-resolve@5.17.0:
+    resolution: {integrity: sha512-dwDPwZL0dmye8Txp2gzFmA6sxALaSvdRDjPH0viLcKrtlOL3tw62nWWweVD1SdILDTJrbrL6tdWVN58Wo6U3eA==}
     engines: {node: '>=10.13.0'}
 
   entities@2.2.0:
@@ -7944,8 +7951,8 @@ packages:
     resolution: {integrity: sha512-/DyMEOrDgLKKIG0fmvtz+4dUX/3Ghozwgm6iPp8KRhvn+eQf9+Q7GWxVNMk3+uCPWfdXYC4ExGBckIXdFEfH1w==}
     engines: {node: '>=10.13.0'}
 
-  webpack@5.91.0:
-    resolution: {integrity: sha512-rzVwlLeBWHJbmgTC/8TvAcu5vpJNII+MelQpylD4jNERPwpBJOE2lEcko1zJX3QJeLjTTAnQxn/OJ8bjDzVQaw==}
+  webpack@5.92.0:
+    resolution: {integrity: sha512-Bsw2X39MYIgxouNATyVpCNVWBCuUwDgWtN78g6lSdPJRLaQ/PUVm/oXcaRAyY/sMFoKFQrsPeqvTizWtq7QPCA==}
     engines: {node: '>=10.13.0'}
     hasBin: true
     peerDependencies:
@@ -9175,7 +9182,7 @@ snapshots:
       '@electron/get': 3.0.0
       chalk: 4.1.2
       commander: 4.1.1
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       fs-extra: 10.1.0
       listr2: 7.0.2
       semver: 7.6.2
@@ -9190,7 +9197,7 @@ snapshots:
       '@electron/rebuild': 3.6.0
       '@malept/cross-spawn-promise': 2.0.0
       chalk: 4.1.2
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       find-up: 5.0.0
       fs-extra: 10.1.0
       log-symbols: 4.1.0
@@ -9218,7 +9225,7 @@ snapshots:
       '@electron/rebuild': 3.6.0
       '@malept/cross-spawn-promise': 2.0.0
       chalk: 4.1.2
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       fast-glob: 3.3.2
       filenamify: 4.3.0
       find-up: 5.0.0
@@ -9307,13 +9314,13 @@ snapshots:
       '@electron-forge/shared-types': 7.4.0
       '@electron-forge/web-multi-logger': 7.4.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       chalk: 4.1.2
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       fast-glob: 3.3.2
       fs-extra: 10.1.0
-      html-webpack-plugin: 5.6.0(webpack@5.91.0)
+      html-webpack-plugin: 5.6.0(webpack@5.92.0)
       listr2: 7.0.2
-      webpack: 5.91.0
-      webpack-dev-server: 4.15.2(bufferutil@4.0.8)(debug@4.3.4)(utf-8-validate@5.0.10)(webpack@5.91.0)
+      webpack: 5.92.0
+      webpack-dev-server: 4.15.2(bufferutil@4.0.8)(debug@4.3.4)(utf-8-validate@5.0.10)(webpack@5.92.0)
       webpack-merge: 5.10.0
     transitivePeerDependencies:
       - '@rspack/core'
@@ -9343,7 +9350,7 @@ snapshots:
       '@octokit/rest': 18.12.0(encoding@0.1.13)
       '@octokit/types': 6.41.0
       chalk: 4.1.2
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       fs-extra: 10.1.0
       log-symbols: 4.1.0
       mime-types: 2.1.35
@@ -9366,7 +9373,7 @@ snapshots:
     dependencies:
       '@electron-forge/shared-types': 7.4.0
       '@malept/cross-spawn-promise': 2.0.0
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       fs-extra: 10.1.0
       username: 5.1.0
     transitivePeerDependencies:
@@ -9433,7 +9440,7 @@ snapshots:
 
   '@electron/get@2.0.3':
     dependencies:
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       env-paths: 2.2.1
       fs-extra: 8.1.0
       got: 11.8.6
@@ -9447,7 +9454,7 @@ snapshots:
 
   '@electron/get@3.0.0':
     dependencies:
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       env-paths: 2.2.1
       fs-extra: 8.1.0
       got: 11.8.6
@@ -9461,7 +9468,7 @@ snapshots:
 
   '@electron/notarize@2.3.2':
     dependencies:
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       fs-extra: 9.1.0
       promise-retry: 2.0.1
     transitivePeerDependencies:
@@ -9470,7 +9477,7 @@ snapshots:
   '@electron/osx-sign@1.3.0':
     dependencies:
       compare-version: 0.1.2
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       fs-extra: 10.1.0
       isbinaryfile: 4.0.10
       minimist: 1.2.8
@@ -9486,7 +9493,7 @@ snapshots:
       '@electron/osx-sign': 1.3.0
       '@electron/universal': 2.0.1
       '@electron/windows-sign': 1.1.2
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       extract-zip: 2.0.1
       filenamify: 4.3.0
       fs-extra: 11.2.0
@@ -9506,7 +9513,7 @@ snapshots:
     dependencies:
       '@malept/cross-spawn-promise': 2.0.0
       chalk: 4.1.2
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       detect-libc: 2.0.3
       fs-extra: 10.1.0
       got: 11.8.6
@@ -9526,7 +9533,7 @@ snapshots:
     dependencies:
       '@electron/asar': 3.2.10
       '@malept/cross-spawn-promise': 2.0.0
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       dir-compare: 4.2.0
       fs-extra: 11.2.0
       minimatch: 9.0.4
@@ -9537,7 +9544,7 @@ snapshots:
   '@electron/windows-sign@1.1.2':
     dependencies:
       cross-dirname: 0.1.0
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       fs-extra: 11.2.0
       minimist: 1.2.8
       postject: 1.0.0-alpha.6
@@ -9707,7 +9714,7 @@ snapshots:
   '@eslint/eslintrc@2.1.4':
     dependencies:
       ajv: 6.12.6
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       espree: 9.6.1
       globals: 13.24.0
       ignore: 5.3.1
@@ -9810,7 +9817,7 @@ snapshots:
   '@humanwhocodes/config-array@0.11.14':
     dependencies:
       '@humanwhocodes/object-schema': 2.0.3
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       minimatch: 3.1.2
     transitivePeerDependencies:
       - supports-color
@@ -10977,7 +10984,7 @@ snapshots:
       '@typescript-eslint/types': 7.11.0
       '@typescript-eslint/typescript-estree': 7.11.0(typescript@5.4.5)
       '@typescript-eslint/visitor-keys': 7.11.0
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       eslint: 8.57.0
     optionalDependencies:
       typescript: 5.4.5
@@ -10993,7 +11000,7 @@ snapshots:
     dependencies:
       '@typescript-eslint/typescript-estree': 7.11.0(typescript@5.4.5)
       '@typescript-eslint/utils': 7.11.0(eslint@8.57.0)(typescript@5.4.5)
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       eslint: 8.57.0
       ts-api-utils: 1.3.0(typescript@5.4.5)
     optionalDependencies:
@@ -11007,7 +11014,7 @@ snapshots:
     dependencies:
       '@typescript-eslint/types': 7.11.0
       '@typescript-eslint/visitor-keys': 7.11.0
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       globby: 11.1.0
       is-glob: 4.0.3
       minimatch: 9.0.4
@@ -11171,7 +11178,7 @@ snapshots:
       acorn: 8.11.3
       acorn-walk: 8.3.2
 
-  acorn-import-assertions@1.9.0(acorn@8.11.3):
+  acorn-import-attributes@1.9.5(acorn@8.11.3):
     dependencies:
       acorn: 8.11.3
 
@@ -11185,7 +11192,7 @@ snapshots:
 
   agent-base@6.0.2:
     dependencies:
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -12100,7 +12107,7 @@ snapshots:
 
   crypt@0.0.2: {}
 
-  css-loader@7.1.2(webpack@5.91.0):
+  css-loader@7.1.2(webpack@5.92.0):
     dependencies:
       icss-utils: 5.1.0(postcss@8.4.38)
       postcss: 8.4.38
@@ -12111,7 +12118,7 @@ snapshots:
       postcss-value-parser: 4.2.0
       semver: 7.6.2
     optionalDependencies:
-      webpack: 5.91.0
+      webpack: 5.92.0
 
   css-select@4.3.0:
     dependencies:
@@ -12179,10 +12186,6 @@ snapshots:
   debug@3.2.7:
     dependencies:
       ms: 2.1.3
-
-  debug@4.3.4:
-    dependencies:
-      ms: 2.1.2
 
   debug@4.3.4(supports-color@5.5.0):
     dependencies:
@@ -12360,7 +12363,7 @@ snapshots:
     dependencies:
       '@malept/cross-spawn-promise': 1.1.1
       asar: 3.2.0
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       fs-extra: 9.1.0
       glob: 7.2.3
       lodash: 4.17.21
@@ -12376,7 +12379,7 @@ snapshots:
   electron-installer-debian@3.2.0:
     dependencies:
       '@malept/cross-spawn-promise': 1.1.1
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       electron-installer-common: 0.10.3
       fs-extra: 9.1.0
       get-folder-size: 2.0.1
@@ -12390,7 +12393,7 @@ snapshots:
   electron-installer-redhat@3.4.0:
     dependencies:
       '@malept/cross-spawn-promise': 1.1.1
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       electron-installer-common: 0.10.3
       fs-extra: 9.1.0
       lodash: 4.17.21
@@ -12411,7 +12414,7 @@ snapshots:
   electron-winstaller@5.3.1:
     dependencies:
       '@electron/asar': 3.2.10
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       fs-extra: 7.0.1
       lodash: 4.17.21
       temp: 0.9.4
@@ -12624,6 +12627,11 @@ snapshots:
       once: 1.4.0
 
   enhanced-resolve@5.16.1:
+    dependencies:
+      graceful-fs: 4.2.11
+      tapable: 2.2.1
+
+  enhanced-resolve@5.17.0:
     dependencies:
       graceful-fs: 4.2.11
       tapable: 2.2.1
@@ -13012,7 +13020,7 @@ snapshots:
       ajv: 6.12.6
       chalk: 4.1.2
       cross-spawn: 7.0.3
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       doctrine: 3.0.0
       escape-string-regexp: 4.0.0
       eslint-scope: 7.2.2
@@ -13194,7 +13202,7 @@ snapshots:
 
   extract-zip@2.0.1:
     dependencies:
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       get-stream: 5.2.0
       yauzl: 2.10.0
     optionalDependencies:
@@ -13393,7 +13401,7 @@ snapshots:
 
   flora-colossus@2.0.0:
     dependencies:
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       fs-extra: 10.1.0
     transitivePeerDependencies:
       - supports-color
@@ -13414,7 +13422,7 @@ snapshots:
 
   follow-redirects@1.15.6(debug@4.3.4):
     optionalDependencies:
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
 
   for-each@0.3.3:
     dependencies:
@@ -13427,7 +13435,7 @@ snapshots:
 
   forever-agent@0.6.1: {}
 
-  fork-ts-checker-webpack-plugin@9.0.2(typescript@5.4.5)(webpack@5.91.0):
+  fork-ts-checker-webpack-plugin@9.0.2(typescript@5.4.5)(webpack@5.92.0):
     dependencies:
       '@babel/code-frame': 7.24.6
       chalk: 4.1.2
@@ -13442,7 +13450,7 @@ snapshots:
       semver: 7.6.2
       tapable: 2.2.1
       typescript: 5.4.5
-      webpack: 5.91.0
+      webpack: 5.92.0
 
   form-data-encoder@1.7.2: {}
 
@@ -13542,7 +13550,7 @@ snapshots:
 
   galactus@1.0.0:
     dependencies:
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       flora-colossus: 2.0.0
       fs-extra: 10.1.0
     transitivePeerDependencies:
@@ -13861,7 +13869,7 @@ snapshots:
       relateurl: 0.2.7
       terser: 5.31.0
 
-  html-webpack-plugin@5.6.0(webpack@5.91.0):
+  html-webpack-plugin@5.6.0(webpack@5.92.0):
     dependencies:
       '@types/html-minifier-terser': 6.1.0
       html-minifier-terser: 6.1.0
@@ -13869,7 +13877,7 @@ snapshots:
       pretty-error: 4.0.0
       tapable: 2.2.1
     optionalDependencies:
-      webpack: 5.91.0
+      webpack: 5.92.0
 
   htmlparser2@6.1.0:
     dependencies:
@@ -13911,7 +13919,7 @@ snapshots:
     dependencies:
       '@tootallnate/once': 2.0.0
       agent-base: 6.0.2
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -13972,7 +13980,7 @@ snapshots:
   https-proxy-agent@5.0.1:
     dependencies:
       agent-base: 6.0.2
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -15346,10 +15354,10 @@ snapshots:
 
   node-int64@0.4.0: {}
 
-  node-loader@2.0.0(webpack@5.91.0):
+  node-loader@2.0.0(webpack@5.92.0):
     dependencies:
       loader-utils: 2.0.4
-      webpack: 5.91.0
+      webpack: 5.92.0
 
   node-releases@2.0.14: {}
 
@@ -16002,7 +16010,7 @@ snapshots:
 
   read-binary-file-arch@1.0.6:
     dependencies:
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -16527,7 +16535,7 @@ snapshots:
   socks-proxy-agent@7.0.0:
     dependencies:
       agent-base: 6.0.2
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       socks: 2.8.3
     transitivePeerDependencies:
       - supports-color
@@ -16583,7 +16591,7 @@ snapshots:
 
   spdy-transport@3.0.0:
     dependencies:
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       detect-node: 2.1.0
       hpack.js: 2.1.6
       obuf: 1.1.2
@@ -16594,7 +16602,7 @@ snapshots:
 
   spdy@4.0.2:
     dependencies:
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
       handle-thing: 2.0.1
       http-deceiver: 1.2.7
       select-hose: 2.0.0
@@ -16738,9 +16746,9 @@ snapshots:
 
   stubs@3.0.0: {}
 
-  style-loader@4.0.0(webpack@5.91.0):
+  style-loader@4.0.0(webpack@5.92.0):
     dependencies:
-      webpack: 5.91.0
+      webpack: 5.92.0
 
   sucrase@3.35.0:
     dependencies:
@@ -16756,7 +16764,7 @@ snapshots:
 
   sumchecker@3.0.1:
     dependencies:
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@5.5.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -16892,14 +16900,14 @@ snapshots:
       ansi-escapes: 4.3.2
       supports-hyperlinks: 2.3.0
 
-  terser-webpack-plugin@5.3.10(webpack@5.91.0):
+  terser-webpack-plugin@5.3.10(webpack@5.92.0):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.25
       jest-worker: 27.5.1
       schema-utils: 3.3.0
       serialize-javascript: 6.0.2
       terser: 5.31.0
-      webpack: 5.91.0
+      webpack: 5.92.0
 
   terser@5.3.8:
     dependencies:
@@ -17073,7 +17081,7 @@ snapshots:
       '@jest/types': 29.6.3
       babel-jest: 29.7.0(@babel/core@7.24.6)
 
-  ts-loader@9.5.1(typescript@5.4.5)(webpack@5.91.0):
+  ts-loader@9.5.1(typescript@5.4.5)(webpack@5.92.0):
     dependencies:
       chalk: 4.1.2
       enhanced-resolve: 5.16.1
@@ -17081,7 +17089,7 @@ snapshots:
       semver: 7.6.2
       source-map: 0.7.4
       typescript: 5.4.5
-      webpack: 5.91.0
+      webpack: 5.92.0
 
   ts-node@10.9.2(@types/node@20.12.13)(typescript@5.4.5):
     dependencies:
@@ -17384,16 +17392,16 @@ snapshots:
 
   webidl-conversions@7.0.0: {}
 
-  webpack-dev-middleware@5.3.4(webpack@5.91.0):
+  webpack-dev-middleware@5.3.4(webpack@5.92.0):
     dependencies:
       colorette: 2.0.20
       memfs: 3.5.3
       mime-types: 2.1.35
       range-parser: 1.2.1
       schema-utils: 4.2.0
-      webpack: 5.91.0
+      webpack: 5.92.0
 
-  webpack-dev-server@4.15.2(bufferutil@4.0.8)(debug@4.3.4)(utf-8-validate@5.0.10)(webpack@5.91.0):
+  webpack-dev-server@4.15.2(bufferutil@4.0.8)(debug@4.3.4)(utf-8-validate@5.0.10)(webpack@5.92.0):
     dependencies:
       '@types/bonjour': 3.5.13
       '@types/connect-history-api-fallback': 1.5.4
@@ -17423,10 +17431,10 @@ snapshots:
       serve-index: 1.9.1
       sockjs: 0.3.24
       spdy: 4.0.2
-      webpack-dev-middleware: 5.3.4(webpack@5.91.0)
+      webpack-dev-middleware: 5.3.4(webpack@5.92.0)
       ws: 8.17.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
     optionalDependencies:
-      webpack: 5.91.0
+      webpack: 5.92.0
     transitivePeerDependencies:
       - bufferutil
       - debug
@@ -17441,7 +17449,7 @@ snapshots:
 
   webpack-sources@3.2.3: {}
 
-  webpack@5.91.0:
+  webpack@5.92.0:
     dependencies:
       '@types/eslint-scope': 3.7.7
       '@types/estree': 1.0.5
@@ -17449,10 +17457,10 @@ snapshots:
       '@webassemblyjs/wasm-edit': 1.12.1
       '@webassemblyjs/wasm-parser': 1.12.1
       acorn: 8.11.3
-      acorn-import-assertions: 1.9.0(acorn@8.11.3)
+      acorn-import-attributes: 1.9.5(acorn@8.11.3)
       browserslist: 4.23.0
       chrome-trace-event: 1.0.3
-      enhanced-resolve: 5.16.1
+      enhanced-resolve: 5.17.0
       es-module-lexer: 1.5.3
       eslint-scope: 5.1.1
       events: 3.3.0
@@ -17464,7 +17472,7 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 3.3.0
       tapable: 2.2.1
-      terser-webpack-plugin: 5.3.10(webpack@5.91.0)
+      terser-webpack-plugin: 5.3.10(webpack@5.92.0)
       watchpack: 2.4.1
       webpack-sources: 3.2.3
     transitivePeerDependencies:
