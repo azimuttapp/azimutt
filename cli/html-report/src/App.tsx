@@ -1,5 +1,6 @@
 import { useEffect } from "react"
 import { REPORT } from "./constants/report.constants"
+import { Button } from "./components/ui/button"
 
 function App() {
 
@@ -9,7 +10,7 @@ function App() {
 
   return (
     <>
-      Hello Azimutt
+      <Button>Azimutt</Button>
     </>
   )
 }
