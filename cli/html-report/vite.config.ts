@@ -11,4 +11,11 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    outDir: '../resources',
+    emptyOutDir: false,
+    rollupOptions: {
+      input: 'report.html'
+    }
+  },
 })

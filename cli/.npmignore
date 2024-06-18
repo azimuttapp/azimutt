@@ -6,4 +6,3 @@ jest.config.js
 tsconfig.json
 *.tgz
 html-report
-!html-report/dist
