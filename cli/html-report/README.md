@@ -1,30 +1,42 @@
-# React + TypeScript + Vite
+# Azimutt Html Report
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Azimutt Html Report generates the html template file for the `analyze cli`
 
-Currently, two official plugins are available:
+## Developing
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The project uses ViteJS + React.
 
-## Expanding the ESLint configuration
+Start by installing dependencies
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
+```bash
+pnpm install
 ```
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+Launch developer mode to visualize changes with hot reload
+
+```bash
+pnpm run dev
+```
+
+Launch tests with
+
+```bash
+pnpm run test
+```
+
+### Customize mock data
+
+In development mode, the app loads report data from the file `src/constants/report.constants.ts`
+
+## Publish
+
+
+Build the react app
+
+```bash
+pnpm run build
+```
+
+In production mode, the data is set in the global variable `__REPORT__` each time the `analyze cli` is called.
+
+Todo: define e2e process with cli
