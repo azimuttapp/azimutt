@@ -12,10 +12,13 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: '../resources',
+    outDir: "../resources",
     emptyOutDir: false,
     rollupOptions: {
-      input: 'report.html'
-    }
+      input: "report.html",
+    },
+  },
+  server: {
+    open: "report.html",
   },
 })
