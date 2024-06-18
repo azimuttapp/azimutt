@@ -265,8 +265,8 @@ async function writeHtmlReport(folder: string, rulesByLevel: Record<string, Rule
         })}
     }, {})
 
-    let html = await fileRead('./src/report.html')
-    html = html.replace("const report = []", `const report = ${JSON.stringify(rules)}`)
+    let html = await fileRead('./html-report/dist/index.html')
+    html = html.replace('<script id="data"></script>', `<script id="data">const __REPORT__ = ${JSON.stringify(rules)}</script>`)
     await fileWrite(path, html)
     logger.log(`Analysis report written to ${path}`)
     logger.log('')
