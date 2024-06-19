@@ -1,6 +1,6 @@
 import { REPORT } from "./constants/report.constants"
 import { Button } from "./components/ui/button"
-import { MainLayout } from "./components/layout/MainLayout"
+import { MainLayout } from "./components/layout/MainLayout/MainLayout"
 import { ReportSidebar } from "./components/report/ReportSidebar/ReportSidebar"
 import { ReportContext } from "./context/ReportContext"
 
