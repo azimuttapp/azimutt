@@ -47,9 +47,17 @@ export const AnalyzeReportRule = z.object({
     name: z.string(),
     level: RuleLevel,
     conf: z.record(z.string(), z.any()),
-    violations: AnalyzeReportViolation.array()
+    violations: AnalyzeReportViolation.array(),
+    totalViolations: z.number()
 }).strict().describe('AnalyzeReportRule')
 export type AnalyzeReportRule = z.infer<typeof AnalyzeReportRule>
+
+
+export const AnalyzeReportRuleSummary = z.object({
+    name: z.string(),
+    totalViolations: z.number()
+}).strict().describe('AnalyzeReportRuleSummary')
+export type AnalyzeReportRuleSummary = z.infer<typeof AnalyzeReportRuleSummary>
 
 export const AnalyzeReportResult = z.record(RuleId, AnalyzeReportRule)
 export type AnalyzeReportResult = z.infer<typeof AnalyzeReportResult>
@@ -76,3 +84,10 @@ export const AnalyzeReportLevel = z.object({
     rules: z.array(AnalyzeReportRule)
 })
 export type AnalyzeReportLevel = z.infer<typeof AnalyzeReportLevel>
+
+export const AnalyzeReportHtmlResult = z.object({
+    levels: z.array(AnalyzeReportLevel),
+    rules: z.array(AnalyzeReportRuleSummary)
+})
+export type AnalyzeReportHtmlResult = z.infer<typeof AnalyzeReportHtmlResult>
+

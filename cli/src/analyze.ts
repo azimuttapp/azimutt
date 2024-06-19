@@ -32,7 +32,8 @@ import {
     ruleLevelsShown,
     RulesConf,
     zodParse,
-    zodParseAsync
+    zodParseAsync,
+    AnalyzeReportHtmlResult
 } from "@azimutt/models"
 import { getConnector, track } from "@azimutt/gateway"
 import { version } from "./version.js"
@@ -238,7 +239,7 @@ function buildRuleReport(rule: RuleAnalyzed): AnalyzeReportRule {
         attribute: v.attribute,
         extra: v.extra,
     }))
-    return {name: rule.rule.name, level, conf, violations}
+    return {name: rule.rule.name, level, conf, violations, totalViolations: violations.length}
 }
 
 async function writeReport(folder: string, report: AnalyzeReport, logger: Logger): Promise<void> {
@@ -258,16 +259,22 @@ async function writeHtmlReport(folder: string, report: AnalyzeReport, maxShown: 
     const reportByLevel: AnalyzeReportLevel[] = ruleLevelsShown.map(level => {
         const levelRules = rules.filter((rule) => rule.level === level)
         const levelViolationsCount = levelRules.reduce((acc, r) => acc + r.violations.length, 0)
-        return {level, levelViolationsCount, rules: levelRules.map((rule) => {
+        const rulesWithViolations = levelRules.filter((rule) => rule.totalViolations > 0).map((rule) => {
             return ({
                 ...rule,
                 violations: rule.violations.slice(0, maxShown)
             })
-        })}
+        })
+        return {level, levelViolationsCount, rules: rulesWithViolations }
     }, {})
 
+    const reportResult : AnalyzeReportHtmlResult = {
+        levels: reportByLevel,
+        rules: rules.map((rule) => ({name: rule.name, totalViolations: rule.totalViolations}))
+    }
+
     let html = await fileRead('./resources/report.html')
-    html = html.replace('<script id="data"></script>', `<script id="data">const __REPORT__ = ${JSON.stringify(reportByLevel)}</script>`)
+    html = html.replace('<script id="data"></script>', `<script id="data">const __REPORT__ = ${JSON.stringify(reportResult)}</script>`)
     await fileWrite(path, html)
     logger.log(`Analysis report written to ${path}`)
     logger.log('')
