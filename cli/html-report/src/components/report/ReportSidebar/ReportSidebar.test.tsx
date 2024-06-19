@@ -5,11 +5,12 @@ import { ReportSidebar } from "./ReportSidebar"
 
 describe("ReportSidebar", () => {
   test("Should render with context", () => {
-    const contextValues: any[] = [{ level: "test" }]
+    const contextValues: any[] = [{ level: "test", levelViolationsCount: 12 }]
     vi.spyOn(ReportContext, "useReportContext").mockImplementation(
       () => contextValues
     )
     render(<ReportSidebar />)
     expect(screen.getByText("test")).toBeDefined()
+    expect(screen.getByText("12")).toBeDefined()
   })
 })
