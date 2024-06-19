@@ -1,6 +1,7 @@
 import { PROD } from "./env.constants"
+import { AnalyzeReportLevel } from '@azimutt/models'
 
-export const REPORT = PROD
+export const REPORT: AnalyzeReportLevel[] = PROD
   ? //@ts-ignore
     __REPORT__
   : [

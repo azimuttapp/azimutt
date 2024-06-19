@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import chalk from "chalk"
 import {
     dateFromIsoFilename,
     dateToIsoFilename,
@@ -14,12 +14,12 @@ import {
     publicEmailDomains,
     removeEmpty,
     removeUndefined
-} from "@azimutt/utils";
+} from "@azimutt/utils"
 import {
     analyzeDatabase,
     AnalyzeHistory,
-    AnalyzeReport,
-    AnalyzeReportRule,
+    AnalyzeReportLevel,
+    AnalyzeReport, AnalyzeReportRule,
     azimuttEmail,
     Connector,
     Database,
@@ -33,11 +33,11 @@ import {
     RulesConf,
     zodParse,
     zodParseAsync
-} from "@azimutt/models";
-import {getConnector, track} from "@azimutt/gateway";
-import {version} from "./version.js";
-import {loggerNoOp} from "./utils/logger.js";
-import {fileExists, fileList, fileRead, fileReadJson, fileWrite, fileWriteJson, mkParentDirs, __dirname} from "./utils/file.js";
+} from "@azimutt/models"
+import { getConnector, track } from "@azimutt/gateway"
+import { version } from "./version.js"
+import { loggerNoOp } from "./utils/logger.js"
+import { fileExists, fileList, fileRead, fileReadJson, fileWrite, fileWriteJson, mkParentDirs } from "./utils/file.js"
 
 export type Opts = {
     folder?: string
@@ -78,9 +78,9 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
     await updateConf(folder, conf, rules)
 
     const maxShown = opts.email ? opts.size || 3 : 3
+    const report = buildReport(db, queries, rules)
     if (opts.email) {
         printReport(offRules, rulesByLevel, maxShown, stats, logger)
-        const report = buildReport(db, queries, rules)
         await writeReport(folder, report, logger)
         if (opts.key) {
             logger.log(chalk.blue('Thanks for using Azimutt analyze!'))
@@ -108,7 +108,7 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
     }
 
     // TODO: manage html option
-    await writeHtmlReport(folder, rulesByLevel, maxShown, logger)
+    await writeHtmlReport(folder, report, maxShown, logger)
 }
 
 function isValidEmail(dbUrl: DatabaseUrlParsed, email: string, logger: Logger): boolean {
@@ -194,7 +194,7 @@ function ruleIgnores(rule: RuleAnalyzed): string{
     return 'ignores' in rule.conf && Array.isArray(rule.conf.ignores) ? ` (${pluralize(rule.conf.ignores.length, 'ignore')})` : ''
 }
 
-function printReport(offRules: RuleAnalyzed[], rulesByLevel: Record<string, RuleAnalyzed[]>, maxShown: number, stats: AnalyzeStats, logger: Logger): void {
+function printReport(offRules: RuleAnalyzed[], rulesByLevel: Record<RuleLevel, RuleAnalyzed[]>, maxShown: number, stats: AnalyzeStats, logger: Logger): void {
     logger.log('')
     if (offRules.length > 0) {
         logger.log(`${pluralizeL(offRules, 'off rule')}: ${offRules.map(r => r.rule.name).join(', ')}`)
@@ -248,25 +248,26 @@ async function writeReport(folder: string, report: AnalyzeReport, logger: Logger
     logger.log('')
 }
 
-async function writeHtmlReport(folder: string, rulesByLevel: Record<string, RuleAnalyzed[]>, maxShown: number, logger: Logger): Promise<void> {
+async function writeHtmlReport(folder: string, report: AnalyzeReport, maxShown: number, logger: Logger): Promise<void> {
     const path = pathJoin(folder, `report_${dateToIsoFilename(new Date())}.azimutt.html`)
 
-    const rules = ruleLevelsShown.map(level => {
-        const levelRules = rulesByLevel[level] || []
+    const {analysis} = report
+
+    const rules = Object.values(analysis) 
+
+    const reportByLevel: AnalyzeReportLevel[] = ruleLevelsShown.map(level => {
+        const levelRules = rules.filter((rule) => rule.level === level)
         const levelViolationsCount = levelRules.reduce((acc, r) => acc + r.violations.length, 0)
         return {level, levelViolationsCount, rules: levelRules.map((rule) => {
-            const ignores = ruleIgnores(rule)
             return ({
-                rule: rule.rule.name, 
-                ruleViolationsCount: rule.violations.length,
-                violations: rule.violations.slice(0, maxShown).map((violation) => violation.message),
-                ignores: Boolean(ignores) ? ignores : undefined
+                ...rule,
+                violations: rule.violations.slice(0, maxShown)
             })
         })}
     }, {})
 
     let html = await fileRead('./resources/report.html')
-    html = html.replace('<script id="data"></script>', `<script id="data">const __REPORT__ = ${JSON.stringify(rules)}</script>`)
+    html = html.replace('<script id="data"></script>', `<script id="data">const __REPORT__ = ${JSON.stringify(reportByLevel)}</script>`)
     await fileWrite(path, html)
     logger.log(`Analysis report written to ${path}`)
     logger.log('')

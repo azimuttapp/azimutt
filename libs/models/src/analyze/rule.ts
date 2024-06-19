@@ -1,4 +1,4 @@
-import {z, ZodType} from "zod";
+import {number, z, ZodType} from "zod";
 import {Timestamp} from "../common";
 import {AttributePath, Database, EntityRef} from "../database";
 import {DatabaseQuery} from "../interfaces/connector";
@@ -69,3 +69,10 @@ export const AnalyzeHistory = z.object({
     queries: DatabaseQuery.array(),
 }).strict().describe('AnalyzeHistory')
 export type AnalyzeHistory = z.infer<typeof AnalyzeHistory>
+
+export const AnalyzeReportLevel = z.object({
+    level: RuleLevel,
+    levelViolationsCount: z.number(),
+    rules: z.array(AnalyzeReportRule)
+})
+export type AnalyzeReportLevel = z.infer<typeof AnalyzeReportLevel>
