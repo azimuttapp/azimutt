@@ -27,8 +27,75 @@ defmodule Azimutt do
     Application.put_env(:azimutt, key, value)
   end
 
+  def new_plans,
+    do: %{
+      free: %{
+        id: :free,
+        name: "Free",
+        description: "Quickly explore your db with one command. No long term save.",
+        monthly: "Free",
+        annually: "Free",
+        features: [
+          "Unlimited tables",
+          "Schema exploration",
+          "Data exploration"
+        ],
+        cta: "Try it",
+        link: "#"
+      },
+      solo: %{
+        id: :solo,
+        name: "Solo",
+        description: "Personal usage with one project. Allows design and custom colors.",
+        monthly: 9,
+        annually: 7,
+        unit: "€ / month",
+        features: [
+          "Free plan features",
+          "Database design",
+          "Schema export",
+          "Long term usage"
+        ],
+        cta: "Buy this plan",
+        link: "#"
+      },
+      team: %{
+        id: :team,
+        name: "Team",
+        description: "Collaborate on Azimutt with all database features.",
+        monthly: 42,
+        annually: 35,
+        unit: "€ / user / month",
+        features: [
+          "Solo plan features",
+          "Database analysis",
+          "Collaboration",
+          "Documentation",
+          "AI capabilities",
+          "Export project"
+        ],
+        cta: "Buy this plan",
+        link: "#"
+      },
+      enterprise: %{
+        id: :enterprise,
+        name: "Enterprise",
+        description: "Getting serious: higher limits, security, control and automation.",
+        monthly: "Custom",
+        annually: "Custom",
+        features: [
+          "Team plan features",
+          "Unlimited usage",
+          "User management",
+          "Custom integrations"
+        ],
+        cta: "Contact us",
+        link: "#"
+      }
+    }
+
   def plans do
-    # Next ones: Explore ($3), Expand ($13), Extend ($25)
+    # FIXME: do remove (from onboarding)
     [
       %{
         id: :free,
