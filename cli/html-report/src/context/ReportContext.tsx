@@ -1,4 +1,7 @@
 import { REPORT } from "@/constants/report.constants"
-import { createContext } from "react"
+import { createContext, useContext } from "react"
 
-export const ReportContext = createContext<any[]>(REPORT)
+const ReportContext = createContext<any[]>(REPORT)
+
+export const useReportContext = () => useContext(ReportContext)
+export default ReportContext

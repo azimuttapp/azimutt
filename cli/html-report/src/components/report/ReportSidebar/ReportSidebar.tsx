@@ -1,12 +1,11 @@
 import { Badge } from "@/components/ui/badge"
-import { ReportContext } from "@/context/ReportContext"
+import { useReportContext } from "@/context/ReportContext"
 import { cn } from "@/lib/utils"
-import { useContext } from "react"
 
 export interface ReportSidebarProps {}
 
 export const ReportSidebar = ({}: ReportSidebarProps) => {
-  const report = useContext(ReportContext)
+  const report = useReportContext()
   return (
     <div className="px-1">
       <ul>
@@ -16,8 +15,7 @@ export const ReportSidebar = ({}: ReportSidebarProps) => {
             className={cn(
               { "opacity-30": levelViolationsCount === 0 },
               "flex space-y-1"
-            )}
-          >
+            )}>
             <p className="grow">{level}</p>
             <Badge>{levelViolationsCount}</Badge>
           </li>
