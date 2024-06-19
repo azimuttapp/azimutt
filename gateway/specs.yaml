@@ -1,3 +1,4 @@
+# Define app settings, see "App Spec" in digital ocean settings
 alerts:
 - rule: DEPLOYMENT_FAILED
 - rule: DOMAIN_FAILED
@@ -36,17 +37,17 @@ ingress:
 name: gateway
 region: fra
 services:
-- build_command: npm run setup
-  environment_slug: node-js
+- name: gateway
   github:
     repo: azimuttapp/azimutt
     branch: main
     deploy_on_push: true
+  source_dir: gateway
+  environment_slug: node-js
+  build_command: npm run build:do
+  run_command: npm run preview
+  instance_count: 1
+  instance_size_slug: apps-s-1vcpu-0.5gb
+  http_port: 8080
   health_check:
     http_path: /ping
-  http_port: 8080
-  instance_count: 1
-  instance_size_slug: basic-xxs
-  name: gateway
-  run_command: npm run preview
-  source_dir: gateway
