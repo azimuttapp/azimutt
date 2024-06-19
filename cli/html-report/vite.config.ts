@@ -1,5 +1,3 @@
-/// <reference types="vitest" />
-
 import { defineConfig } from "vite"
 import react from "@vitejs/plugin-react-swc"
 import { viteSingleFile } from "vite-plugin-singlefile"
@@ -22,10 +20,5 @@ export default defineConfig({
   },
   server: {
     open: "report.html",
-  },
-  test: {
-    globals: true,
-    setupFiles: ["./setup-vitest.ts"],
-    environment: "jsdom",
   },
 })

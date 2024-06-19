@@ -24,8 +24,8 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "types": ["vitest/globals"]
+    "esModuleInterop": true
   },
-  "include": ["src", "./setup-vitest.ts"],
+  "include": ["src", "setup-test.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

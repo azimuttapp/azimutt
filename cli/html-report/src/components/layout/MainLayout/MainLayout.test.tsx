@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react"
 import { MainLayout } from "./MainLayout"
 
-describe("MainLayout", async () => {
+describe("MainLayout", () => {
   test("Should render content", () => {
     render(
       <MainLayout>

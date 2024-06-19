@@ -1,6 +1,8 @@
-export const REPORT = import.meta.env.PROD
-    //@ts-ignore
-  ? __REPORT__
+import { PROD } from "./env.constants"
+
+export const REPORT = PROD
+  ? //@ts-ignore
+    __REPORT__
   : [
       {
         level: "high",
@@ -174,4 +176,4 @@ export const REPORT = import.meta.env.PROD
           },
         ],
       },
-    ];
+    ]
