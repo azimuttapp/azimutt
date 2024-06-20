@@ -47,6 +47,7 @@ export type Opts = {
     only?: string
     key?: string
     ignoreViolationsFrom?: string
+    html?: boolean
 }
 
 export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Promise<void> {
@@ -78,10 +79,11 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
     track('cli__analyze__run', removeUndefined({version, database: dbUrl.kind, ...stats, email: opts.email, key: opts.key}), 'cli').then(() => {})
     await updateConf(folder, conf, rules)
 
-    const maxShown = opts.email ? opts.size || 3 : 3
-    const report = buildReport(db, queries, rules)
+    const maxShown = opts.email ? opts.size ?? 3 : 3
+    let report : AnalyzeReport | null = null
     if (opts.email) {
         printReport(offRules, rulesByLevel, maxShown, stats, logger)
+        report = buildReport(db, queries, rules)
         await writeReport(folder, report, logger)
         if (opts.key) {
             logger.log(chalk.blue('Thanks for using Azimutt analyze!'))
@@ -108,8 +110,11 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
         logger.log('')
     }
 
-    // TODO: manage html option
-    await writeHtmlReport(folder, report, maxShown, logger)
+    if(opts.html){
+        if(!report) report = buildReport(db, queries, rules)
+        await writeHtmlReport(folder, report, maxShown, logger)
+    }
+
 }
 
 function isValidEmail(dbUrl: DatabaseUrlParsed, email: string, logger: Logger): boolean {
