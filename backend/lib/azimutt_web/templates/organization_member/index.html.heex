@@ -14,9 +14,9 @@
             <h2 class="mt-2 text-lg font-medium text-gray-900">Add new members</h2>
             <p class="mt-1 text-sm text-gray-500">
                 <%= cond do %>
-                    <% @plan.id == :free && used_seats == 1 -> %>
+                    <% @plan.id == :free && used_seats == 1 && Azimutt.limits.users.free > used_seats -> %>
                         You haven’t added any other member to your organization yet.<br>
-                        As a free organization, you can add <%= Azimutt.config(:free_plan_seats) - 1 %> other members.
+                        As a free organization, you can add <%= Azimutt.limits.users.free - 1 %> other members.
                     <% @plan.id == :free && remaining_seats != nil && remaining_seats > 0 -> %>
                         You still have <b><%= remaining_seats %> remaining seats</b> in your free organization.
                     <% @plan.id == :free && remaining_seats != nil -> %>

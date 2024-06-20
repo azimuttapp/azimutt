@@ -41,7 +41,7 @@ free =
     , privateLinks = Conf.features.privateLinks.free
     , sqlExport = Conf.features.sqlExport.free
     , dbAnalysis = Conf.features.dbAnalysis.free
-    , dbAccess = Conf.features.dbAnalysis.free
+    , dbAccess = Conf.features.dbAccess.free
     , streak = 0
     }
 

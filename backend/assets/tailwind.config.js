@@ -13,6 +13,10 @@ module.exports = {
 
   ],
   safelist: [
+    'w-1/4',
+    'w-1/5',
+    'grid-cols-4',
+    'grid-cols-5',
     {
       pattern: /(bg|text|border|from|via|to)-(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-.*/,
     },

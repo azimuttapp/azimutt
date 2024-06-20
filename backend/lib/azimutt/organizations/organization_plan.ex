@@ -25,19 +25,19 @@ defmodule Azimutt.Organizations.OrganizationPlan do
   def free do
     # MUST stay in sync with frontend/src/Models/Plan.elm#free
     %OrganizationPlan{
-      id: :free,
-      name: "Free",
-      projects: Azimutt.config(:free_plan_projects),
-      layouts: Azimutt.config(:free_plan_layouts),
-      layout_tables: Azimutt.config(:free_plan_layout_tables),
-      memos: Azimutt.config(:free_plan_memos),
-      groups: Azimutt.config(:free_plan_groups),
-      colors: Azimutt.config(:free_plan_colors),
-      local_save: Azimutt.config(:free_plan_local_save),
-      private_links: Azimutt.config(:free_plan_private_links),
-      sql_export: Azimutt.config(:free_plan_sql_export),
-      db_analysis: Azimutt.config(:free_plan_db_analysis),
-      db_access: Azimutt.config(:free_plan_db_access),
+      id: Azimutt.new_plans().free.id,
+      name: Azimutt.new_plans().free.name,
+      projects: Azimutt.limits().projects.free,
+      layouts: Azimutt.limits().project_layouts.free,
+      layout_tables: Azimutt.limits().layout_tables.free,
+      memos: Azimutt.limits().project_doc.free,
+      groups: Azimutt.limits().project_doc.free,
+      colors: Azimutt.limits().colors.free,
+      local_save: false,
+      private_links: Azimutt.limits().project_share.free,
+      sql_export: Azimutt.limits().schema_export.free,
+      db_analysis: Azimutt.limits().analysis.free != "preview",
+      db_access: Azimutt.limits().data_exploration.free,
       streak: 0
     }
   end

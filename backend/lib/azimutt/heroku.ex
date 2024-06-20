@@ -19,7 +19,7 @@ defmodule Azimutt.Heroku do
     if team_members do
       String.to_integer(team_members["members"])
     else
-      Azimutt.config(:free_plan_seats)
+      Azimutt.limits().users.free
     end
   end
 

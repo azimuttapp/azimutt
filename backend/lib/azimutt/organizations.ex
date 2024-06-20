@@ -320,7 +320,7 @@ defmodule Azimutt.Organizations do
         nil
 
       true ->
-        Azimutt.config(:free_plan_seats)
+        Azimutt.limits().users.free
     end
   end
 

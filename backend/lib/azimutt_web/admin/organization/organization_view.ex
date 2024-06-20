@@ -23,12 +23,12 @@ defmodule AzimuttWeb.Admin.OrganizationView do
   def format_data(%Organization.Data{} = data), do: data |> Map.from_struct() |> Jason.encode!()
 
   def display_number(list) do
-    threshold = Azimutt.config(:free_plan_seats)
+    x = Enum.count(list)
 
-    case Enum.count(list) do
-      1 -> content_tag(:span, "1")
-      x when x <= threshold -> content_tag(:span, x, class: "text-scheme-blue")
-      x when x > threshold -> content_tag(:span, x, class: "text-scheme-red")
+    case x do
+      1 -> content_tag(:span, x)
+      2 -> content_tag(:span, x, class: "text-scheme-blue")
+      true -> content_tag(:span, x, class: "text-scheme-red")
     end
   end
 end

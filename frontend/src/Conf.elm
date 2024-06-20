@@ -125,18 +125,19 @@ type alias Feature a =
 
 features : Features
 features =
-    -- MUST stay in sync with backend/config/config.exs (`free_plan_layouts`)
-    { projects = { name = "projects", free = 2 }
-    , layouts = { name = "layouts", free = 2 }
+    -- FIXME: remove this? get it from backend!
+    -- MUST stay in sync with backend/lib/azimutt.ex (`limits`)
+    { projects = { name = "projects", free = 0 }
+    , layouts = { name = "layouts", free = 1 }
     , layoutTables = { name = "layout_tables", free = 10 }
-    , memos = { name = "memos", free = 3 }
-    , groups = { name = "groups", free = 1 }
+    , memos = { name = "memos", free = 10 }
+    , groups = { name = "groups", free = 10 }
     , tableColor = { name = "table_color", free = False }
     , localSave = { name = "local_save", free = False }
     , privateLinks = { name = "private_links", free = False }
     , sqlExport = { name = "sql_export", free = False }
     , dbAnalysis = { name = "analysis", free = False }
-    , dbAccess = { name = "data_access", free = False }
+    , dbAccess = { name = "data_access", free = True }
     }
 
 
