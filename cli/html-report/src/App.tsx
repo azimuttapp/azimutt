@@ -2,9 +2,9 @@ import { REPORT } from "./constants/report.constants"
 import { MainLayout } from "./components/layout/MainLayout/MainLayout"
 import { ReportSidebar } from "./components/report/ReportSidebar/ReportSidebar"
 import { ReportContext } from "./context/ReportContext"
-import { ViolationsList } from "./components/report/ViolationsList/ViolationsList"
 import { RuleLevel } from "@azimutt/models"
 import { useState } from "react"
+import { ViolationsTable } from "./components/report/ViolationsTable/ViolationsTable"
 
 function App() {
   const [selectedLevels, setSelectedLevels] = useState<RuleLevel[]>([])
@@ -36,7 +36,7 @@ function App() {
           <ReportSidebar onLevelClick={toggleLevel} onRuleClick={toggleRule} />
         }
       >
-        <ViolationsList />
+        <ViolationsTable />
       </MainLayout>
     </ReportContext.Provider>
   )
