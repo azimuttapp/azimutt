@@ -30,7 +30,6 @@ In development mode, the app loads report data from the file `src/constants/repo
 
 ## Publish
 
-
 Build the react app
 
 ```bash
@@ -38,5 +37,3 @@ pnpm run build
 ```
 
 In production mode, the data is set in the global variable `__REPORT__` each time the `analyze cli` is called.
-
-Todo: define e2e process with cli

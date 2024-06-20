@@ -17,7 +17,7 @@ function App() {
         : [...current, level]
     )
 
-  const tootleRule = (rule: string) =>
+  const toggleRule = (rule: string) =>
     setSelectedRules((current) =>
       current.includes(rule.trim())
         ? current.filter((item) => item !== rule.trim())
@@ -33,7 +33,7 @@ function App() {
     >
       <MainLayout
         sidebar={
-          <ReportSidebar onLevelClick={toggleLevel} onRuleClick={tootleRule} />
+          <ReportSidebar onLevelClick={toggleLevel} onRuleClick={toggleRule} />
         }
       >
         <ViolationsList />

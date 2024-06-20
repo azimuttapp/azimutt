@@ -34,7 +34,10 @@ export function useReport() {
   const filteredRules = useMemo(
     () =>
       levels
-        .reduce<AnalyzeReportRule[]>((acc, { rules }) => [...acc, ...rules], [])
+        .reduce<AnalyzeReportRule[]>((acc, { rules }) => {
+          acc.push(...rules)
+          return acc
+        }, [])
         .filter(({ totalViolations }) => totalViolations > 0)
         .filter(
           (rule) => !filters?.rules?.length || filters.rules.includes(rule.name)
