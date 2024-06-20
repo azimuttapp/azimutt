@@ -25,8 +25,8 @@ defmodule Azimutt.Organizations.OrganizationPlan do
   def free do
     # MUST stay in sync with frontend/src/Models/Plan.elm#free
     %OrganizationPlan{
-      id: Azimutt.new_plans().free.id,
-      name: Azimutt.new_plans().free.name,
+      id: Azimutt.plans().free.id,
+      name: Azimutt.plans().free.name,
       projects: Azimutt.limits().projects.free,
       layouts: Azimutt.limits().project_layouts.free,
       layout_tables: Azimutt.limits().layout_tables.free,

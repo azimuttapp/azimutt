@@ -27,7 +27,7 @@ defmodule Azimutt do
     Application.put_env(:azimutt, key, value)
   end
 
-  def new_plans do
+  def plans do
     %{
       free: %{
         id: :free,
@@ -40,8 +40,8 @@ defmodule Azimutt do
           "Schema exploration",
           "Data exploration"
         ],
-        cta: "Try it",
-        link: "#"
+        cta: "Explore your db",
+        link: "/new"
       },
       solo: %{
         id: :solo,
@@ -56,8 +56,8 @@ defmodule Azimutt do
           "Schema export",
           "Long term usage"
         ],
-        cta: "Buy this plan",
-        link: "#"
+        cta: "Start free trial",
+        link: "/subscribe/solo"
       },
       team: %{
         id: :team,
@@ -74,8 +74,8 @@ defmodule Azimutt do
           "AI capabilities",
           "Export project"
         ],
-        cta: "Buy this plan",
-        link: "#"
+        cta: "Start free trial",
+        link: "/subscribe/team"
       },
       enterprise: %{
         id: :enterprise,
@@ -90,15 +90,20 @@ defmodule Azimutt do
           "Custom integrations"
         ],
         cta: "Contact us",
-        link: "#"
+        link: "mailto:#{Azimutt.config(:support_email)}"
       },
       pro: %{
         id: :pro,
         name: "Pro",
-        monthly: 13
+        monthly: 13,
+        annually: 13,
+        features: [],
+        cta: "Start free trial"
       }
     }
   end
+
+  def active_plans, do: [plans.free, plans.solo, plans.team, plans.enterprise]
 
   # MUST stay in sync with frontend/src/Conf.elm (`features`)
   def limits do
@@ -141,64 +146,6 @@ defmodule Azimutt do
       consulting: %{name: "1h expert consulting", free: false, solo: false, team: false, enterprise: true},
       roadmap: %{name: "Roadmap impact", free: "suggestions", solo: "suggestions", team: "suggestions", enterprise: "discussions"}
     }
-  end
-
-  def plans do
-    # FIXME: do remove (from onboarding)
-    [
-      %{
-        id: :free,
-        name: "Explorer",
-        description: "Design or Explore any kind of database, seamlessly.",
-        monthly: 0,
-        annually: 0,
-        features: [
-          "Schema & Data exploration",
-          "Database design with AML",
-          "Unlimited Tables",
-          "2 projects with 2 layouts of 10 tables",
-          "2 collaborators"
-        ],
-        cta: "Select this plan",
-        buy: "/login?plan=free",
-        selected: false
-      },
-      %{
-        id: :pro,
-        name: "Pro",
-        description: "Remove limits, make Azimutt a central space for collaboration.",
-        monthly: 13,
-        annually: 130,
-        features: [
-          "Everything included in Explorer",
-          "Unlimited projects",
-          "Unlimited layouts",
-          "Unlimited notes & memos",
-          "Full database analysis",
-          "Premium support"
-        ],
-        cta: "Try this plan",
-        buy: "/login?plan=pro",
-        selected: true
-      },
-      %{
-        id: :enterprise,
-        name: "Enterprise",
-        description: "Features you only dreamed of to ease database understanding and management.",
-        monthly: nil,
-        annually: nil,
-        features: [
-          "Everything included in Pro",
-          "User roles",
-          "Schema change alerting",
-          "Advanced data access",
-          "AI query generation"
-        ],
-        cta: "Contact us",
-        buy: "mailto:#{Azimutt.config(:support_email)}",
-        selected: false
-      }
-    ]
   end
 
   def use_cases do

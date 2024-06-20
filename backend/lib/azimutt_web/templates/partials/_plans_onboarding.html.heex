@@ -1,23 +1,18 @@
 <div class="flow-root">
-  <div class="grid max-w-sm grid-cols-1 divide-y divide-gray-300 isolate gap-y-8 sm:gap-y-16 sm:mx-auto lg:-mx-8 lg:mt-0 lg:max-w-none lg:grid-cols-3 lg:divide-x lg:divide-y-0 xl:-mx-4">
+  <div class={"grid max-w-sm grid-cols-1 divide-y divide-gray-300 isolate gap-y-8 sm:gap-y-16 sm:mx-auto lg:-mx-8 lg:mt-0 lg:max-w-none lg:grid-cols-#{length(@plans)} lg:divide-x lg:divide-y-0 xl:-mx-4"}>
     <%= for plan <- @plans do %>
       <div id={"#{plan.id}-plan-onboarding"} class="pt-2 lg:px-8 lg:pt-0 xl:px-14">
-        <h3 id="tier-basic" class="text-base font-semibold leading-7 text-gray-900"><%= plan.name %></h3>
+        <h3 id={"#{plan.id}-plan"} class="text-base font-semibold leading-7 text-gray-900"><%= plan.name %></h3>
         <p class="flex items-baseline gap-x-1">
-        <%= cond do %>
-          <% plan.monthly == 0 -> %>
-            <span class="text-2xl font-bold tracking-tight text-gray-900">Free</span>
-          <% plan.monthly == nil -> %>
-            <span class="text-2xl font-bold tracking-tight text-gray-900">Contact us</span>
-          <% true -> %>
-            <div class="flex items-center">
-              <p class="text-2xl font-bold tracking-tight text-gray-900" x-text={"annual ? '$#{plan.annually}' : '$#{plan.monthly}'"}>$<%= plan.monthly %></p>
-              <div class="pl-4 text-sm leading-5">
-                <p class="font-semibold leading-6 text-gray-600">/user</p>
-                <p class="text-gray-400" x-text="annual ? 'Billed annually' : 'Billed monthly'">Billed monthly</p>
-              </div>
+          <div class="flex items-center">
+            <p class="text-2xl font-bold tracking-tight text-gray-900" x-text={"annual ? '$#{plan.annually}' : '$#{plan.monthly}'"}><%= plan.monthly %></p>
+            <%= if is_number(plan.monthly) do %>
+            <div class="pl-4 text-sm leading-5">
+              <p class="font-semibold leading-6 text-gray-600"><%= plan.unit %></p>
+              <p class="text-gray-400" x-text="annual ? 'Billed annually' : 'Billed monthly'">Billed monthly</p>
             </div>
-          <% end %>
+            <% end %>
+          </div>
         </p>
         <ul role="list" class="mt-4 space-y-3 text-sm leading-6 text-gray-600">
           <%= for feature <- plan.features do %>

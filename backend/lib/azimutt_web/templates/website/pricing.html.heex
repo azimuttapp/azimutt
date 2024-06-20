@@ -31,16 +31,15 @@
             </defs>
           </svg>
           <div class="hidden lg:absolute lg:inset-x-px lg:bottom-0 lg:top-4 lg:block lg:rounded-t-2xl lg:bg-gray-800/80 lg:ring-1 lg:ring-white/10" aria-hidden="true"></div>
-          <%= render AzimuttWeb.PartialsView, "_pricing_plan_dark.html", plan: Azimutt.new_plans.free %>
-          <%= render AzimuttWeb.PartialsView, "_pricing_plan_dark.html", plan: Azimutt.new_plans.solo %>
-          <%= render AzimuttWeb.PartialsView, "_pricing_plan_light.html", plan: Azimutt.new_plans.team %>
-          <%= render AzimuttWeb.PartialsView, "_pricing_plan_dark.html", plan: Azimutt.new_plans.enterprise %>
+          <%= render AzimuttWeb.PartialsView, "_pricing_plan_dark.html", plan: Azimutt.plans.free %>
+          <%= render AzimuttWeb.PartialsView, "_pricing_plan_dark.html", plan: Azimutt.plans.solo %>
+          <%= render AzimuttWeb.PartialsView, "_pricing_plan_light.html", plan: Azimutt.plans.team %>
+          <%= render AzimuttWeb.PartialsView, "_pricing_plan_dark.html", plan: Azimutt.plans.enterprise %>
         </div>
       </div>
     </div>
     <div class="relative bg-gray-50 lg:pt-14">
       <div class="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
-        <% plans = [Azimutt.new_plans.free, Azimutt.new_plans.solo, Azimutt.new_plans.team, Azimutt.new_plans.enterprise] %>
         <% feature_categories = [%{name: "Database features", features: [
           Azimutt.limits.schema_exploration,
           Azimutt.limits.data_exploration,
@@ -69,8 +68,8 @@
           Azimutt.limits.consulting,
           Azimutt.limits.roadmap,
         ]}] %>
-        <%= render AzimuttWeb.PartialsView, "_pricing_features_mobile.html", plans: plans, feature_categories: feature_categories, selected: :team %>
-        <%= render AzimuttWeb.PartialsView, "_pricing_features_desktop.html", plans: plans, feature_categories: feature_categories, selected: :team %>
+        <%= render AzimuttWeb.PartialsView, "_pricing_features_mobile.html", plans: Azimutt.active_plans, feature_categories: feature_categories, selected: :team %>
+        <%= render AzimuttWeb.PartialsView, "_pricing_features_desktop.html", plans: Azimutt.active_plans, feature_categories: feature_categories, selected: :team %>
       </div>
     </div>
   </div>
