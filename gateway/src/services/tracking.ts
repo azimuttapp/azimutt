@@ -1,4 +1,3 @@
-import fetch from "node-fetch";
 import crypto from "node:crypto";
 
 export async function track(name: string, details: object, instance: string, environment: string = 'prod'): Promise<void> {
