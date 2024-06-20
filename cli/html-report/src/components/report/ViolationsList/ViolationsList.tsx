@@ -21,9 +21,11 @@ export const ViolationsList = ({}: ViolationsListProps) => {
             <Badge>{rule.level}</Badge>
           </CardHeader>
           <CardContent>
-            {rule.violations.map(({ message }) => (
-              <pre key={message}>{message}</pre>
-            ))}
+            <div className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm flex flex-col">
+              {rule.violations.map(({ message }) => (
+                <code key={message}>{message}</code>
+              ))}
+            </div>
           </CardContent>
         </Card>
       ))}
