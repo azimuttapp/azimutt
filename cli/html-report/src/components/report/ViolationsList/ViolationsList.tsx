@@ -3,7 +3,7 @@ import { ViolationsListItem } from "./ViolationsListItem"
 
 export interface ViolationsListProps {}
 
-export const ViolationsList = ({}: ViolationsListProps) => {
+export const ViolationsList = () => {
   const { filteredRules } = useReport()
 
   return (

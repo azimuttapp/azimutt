@@ -7,9 +7,8 @@ export function useReport() {
 
   const filterByLevel = useCallback(
     (rule: AnalyzeReportLevel) =>
-      !Boolean(filters?.levels?.length) ||
-      filters?.levels?.includes(rule.level),
-    [filters, report]
+      !filters?.levels?.length || filters?.levels?.includes(rule.level),
+    [filters]
   )
 
   const filterRule = useCallback(
@@ -20,7 +19,7 @@ export function useReport() {
       }
       return true
     },
-    [filters, report]
+    [filters]
   )
 
   const levels = useMemo(() => {
@@ -30,7 +29,7 @@ export function useReport() {
     return report.levels.filter(
       (item) => filterByLevel(item) && filterRule(item)
     )
-  }, [report, filters])
+  }, [report, filters, filterByLevel, filterRule])
 
   const filteredRules = useMemo(
     () =>
