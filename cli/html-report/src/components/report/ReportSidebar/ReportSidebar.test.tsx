@@ -7,7 +7,10 @@ import { AnalyzeReportHtmlResult } from "@azimutt/models"
 describe("ReportSidebar", () => {
   test("Should render levels from context", () => {
     const contextValues: AnalyzeReportHtmlResult = {
-      levels: [{ level: "high", levelViolationsCount: 12, rules: [] }],
+      levels: [
+        { level: "high", levelViolationsCount: 12, rules: [] },
+        { level: "medium", levelViolationsCount: 19, rules: [] },
+      ],
       rules: [],
     }
     jest

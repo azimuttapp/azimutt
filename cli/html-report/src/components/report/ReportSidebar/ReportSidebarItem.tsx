@@ -8,9 +8,9 @@ export interface ReportSidebarItemProps {
 
 export const ReportSidebarItem = ({ label, count }: ReportSidebarItemProps) => {
   return (
-    <li className={cn({ "opacity-30": count === 0 }, "flex space-y-1")}>
-      <p className="grow">{label}</p>
+    <div className={cn({ "opacity-30": count === 0 }, "flex space-y-1 w-full")}>
+      <p className="grow text-left">{label}</p>
       <Badge>{count}</Badge>
-    </li>
+    </div>
   )
 }

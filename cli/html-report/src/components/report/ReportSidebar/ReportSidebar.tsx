@@ -1,32 +1,47 @@
 import { useReportContext } from "@/context/ReportContext"
 import { ReportSidebarItem } from "./ReportSidebarItem"
+import { Button } from "@/components/ui/button"
 
 export interface ReportSidebarProps {}
 
 export const ReportSidebar = ({}: ReportSidebarProps) => {
   const report = useReportContext()
+
+  const totalLevelViolationsCount = report.levels.reduce(
+    (sum, { levelViolationsCount }) => sum + levelViolationsCount,
+    0
+  )
+
   return (
     <div className="px-2">
-      <div className="m-1">
+      <div className="mx-1 my-4">
         <h4>Levels</h4>
       </div>
-      <ul>
+      <nav className="grid gap-1 px-2 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2">
+        <Button variant="default" disabled={!totalLevelViolationsCount}>
+          <ReportSidebarItem label={"all"} count={totalLevelViolationsCount} />
+        </Button>
         {report.levels.map(({ level, levelViolationsCount }) => (
-          <ReportSidebarItem
+          <Button
             key={level}
-            label={level}
-            count={levelViolationsCount}
-          />
+            variant="outline"
+            disabled={!levelViolationsCount}
+          >
+            <ReportSidebarItem label={level} count={levelViolationsCount} />
+          </Button>
         ))}
-      </ul>
-      <div className="m-1">
+      </nav>
+
+      <div className="mx-1 my-4">
         <h4>Rules</h4>
       </div>
-      <ul>
+      <nav className="grid gap-1 px-2 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2">
         {report.rules.map(({ name, totalViolations }) => (
-          <ReportSidebarItem key={name} label={name} count={totalViolations} />
+          <Button key={name} variant="outline" disabled={!totalViolations}>
+            <ReportSidebarItem label={name} count={totalViolations} />
+          </Button>
         ))}
-      </ul>
+      </nav>
     </div>
   )
 }
