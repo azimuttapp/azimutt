@@ -12,15 +12,26 @@ export const REPORT: AnalyzeReportHtmlResult = PROD
           rules: [
             {
               name: "duplicated index",
+              level: "high",
               totalViolations: 5,
               violations: [
-                "Index mfa_factors_user_id_idx on auth.mfa_factors(user_id) can be deleted, it's covered by: factor_id_created_at_idx(user_id, created_at).",
-                "Index refresh_tokens_instance_id_idx on auth.refresh_tokens(instance_id) can be deleted, it's covered by: refresh_tokens_instance_id_user_id_idx(instance_id, user_id).",
-                "Index sessions_user_id_idx on auth.sessions(user_id) can be deleted, it's covered by: user_id_created_at_idx(user_id, created_at).",
+                {
+                  message:
+                    "Index mfa_factors_user_id_idx on auth.mfa_factors(user_id) can be deleted, it's covered by: factor_id_created_at_idx(user_id, created_at).",
+                },
+                {
+                  message:
+                    "Index refresh_tokens_instance_id_idx on auth.refresh_tokens(instance_id) can be deleted, it's covered by: refresh_tokens_instance_id_user_id_idx(instance_id, user_id).",
+                },
+                {
+                  message:
+                    "Index sessions_user_id_idx on auth.sessions(user_id) can be deleted, it's covered by: user_id_created_at_idx(user_id, created_at).",
+                },
               ],
             },
             {
               name: "entity not clean",
+              level: "high",
               totalViolations: 1,
               violations: [
                 "Entity public.events has old analyze (2024-06-17T10:18:35.009Z).",
@@ -34,6 +45,7 @@ export const REPORT: AnalyzeReportHtmlResult = PROD
           rules: [
             {
               name: "entity too large",
+              level: "medium",
               totalViolations: 2,
               violations: [
                 "Entity auth.users has too many attributes (35).",
@@ -43,6 +55,7 @@ export const REPORT: AnalyzeReportHtmlResult = PROD
 
             {
               name: "entity with too heavy indexes",
+              level: "medium",
               totalViolations: 15,
               violations: [
                 "Entity auth.users has too heavy indexes (10x data size, 11 indexes).",
@@ -52,6 +65,7 @@ export const REPORT: AnalyzeReportHtmlResult = PROD
             },
             {
               name: "business primary key forbidden",
+              level: "medium",
               totalViolations: 3,
               violations: [
                 "Entity auth.schema_migrations should have a technical primary key, current one is: (version).",
@@ -61,6 +75,7 @@ export const REPORT: AnalyzeReportHtmlResult = PROD
             },
             {
               name: "index on relation",
+              level: "medium",
               totalViolations: 26,
               violations: [
                 "Create an index on auth.mfa_challenges(factor_id) to improve auth.mfa_challenges(factor_id)->auth.mfa_factors(id) relation.",
@@ -70,6 +85,7 @@ export const REPORT: AnalyzeReportHtmlResult = PROD
             },
             {
               name: "missing relation",
+              level: "medium",
               totalViolations: 42,
               violations: [
                 "Create a relation from auth.audit_log_entries(instance_id) to auth.instances(id).",
@@ -90,6 +106,7 @@ export const REPORT: AnalyzeReportHtmlResult = PROD
           rules: [
             {
               name: "inconsistent attribute type",
+              level: "hint",
               totalViolations: 17,
               violations: [
                 "Attribute id has several types: integer in storage.migrations(id), text in storage.buckets(id) and 1 other, bigint in auth.refresh_tokens(id) and 2 others, uuid in auth.audit_log_entries(id) and 32 others.",
@@ -99,6 +116,7 @@ export const REPORT: AnalyzeReportHtmlResult = PROD
             },
             {
               name: "expensive query",
+              level: "hint",
               totalViolations: 20,
               violations: [
                 "Query 1374137181295181600 is one of the most expensive, cumulated 5085 ms exec time in 46 executions (SELECT name FROM pg_timezone_names)",
@@ -108,6 +126,7 @@ export const REPORT: AnalyzeReportHtmlResult = PROD
             },
             {
               name: "query with high variation",
+              level: "hint",
               totalViolations: 20,
               violations: [
                 "Query 1374137181295181600 has high variation, with 194 ms standard deviation and exec time ranging from 59 ms to 999 ms (SELECT name FROM pg_timezone_names)",
