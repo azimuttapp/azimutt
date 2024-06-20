@@ -1,25 +1,15 @@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { useReport } from "@/hooks/useReport"
-import { AnalyzeReportRule } from "@azimutt/models"
 
 export interface ViolationsListProps {}
 
 export const ViolationsList = ({}: ViolationsListProps) => {
-  const {
-    report: { levels },
-    filters,
-  } = useReport()
-  const rules = levels
-    .reduce<AnalyzeReportRule[]>((acc, { rules }) => [...acc, ...rules], [])
-    .filter(({ totalViolations }) => totalViolations > 0)
-    .filter(
-      (rule) => !filters?.rules?.length || filters.rules.includes(rule.name)
-    )
+  const { filteredRules } = useReport()
 
   return (
     <div className="grid gap-4">
-      {rules.map((rule) => (
+      {filteredRules.map((rule) => (
         <Card key={rule.name}>
           <CardHeader className="flex flex-row justify-between items-center">
             <p>{rule.name}</p>
