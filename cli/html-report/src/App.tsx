@@ -3,11 +3,39 @@ import { MainLayout } from "./components/layout/MainLayout/MainLayout"
 import { ReportSidebar } from "./components/report/ReportSidebar/ReportSidebar"
 import { ReportContext } from "./context/ReportContext"
 import { ViolationsList } from "./components/report/ViolationsList/ViolationsList"
+import { RuleLevel } from "@azimutt/models"
+import { useState } from "react"
 
 function App() {
+  const [selectedLevels, setSelectedLevels] = useState<RuleLevel[]>([])
+  const [selectedRules, setSelectedRules] = useState<string[]>([])
+
+  const toggleLevel = (level: RuleLevel) =>
+    setSelectedLevels((current) =>
+      current.includes(level)
+        ? current.filter((item) => item !== level)
+        : [...current, level]
+    )
+
+  const tootleRule = (rule: string) =>
+    setSelectedRules((current) =>
+      current.includes(rule.trim())
+        ? current.filter((item) => item !== rule.trim())
+        : [...current, rule.trim()]
+    )
+
   return (
-    <ReportContext.Provider value={REPORT}>
-      <MainLayout sidebar={<ReportSidebar />}>
+    <ReportContext.Provider
+      value={{
+        report: REPORT,
+        filters: { levels: selectedLevels, rules: selectedRules },
+      }}
+    >
+      <MainLayout
+        sidebar={
+          <ReportSidebar onLevelClick={toggleLevel} onRuleClick={tootleRule} />
+        }
+      >
         <ViolationsList />
       </MainLayout>
     </ReportContext.Provider>
