@@ -3,15 +3,15 @@
         <h3 id={"#{@plan.id}-plan"} class="text-sm font-semibold leading-6 text-white"><%= @plan.name %></h3>
         <div class="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between lg:flex-col lg:items-stretch">
             <div class="mt-2 flex items-center gap-x-4">
-                <p class="text-4xl font-bold tracking-tight text-white" x-text={"annual ? '#{@plan.annually}' : '#{@plan.monthly}'"}><%= @plan.annually %></p>
-                <%= if is_number(@plan.annually) do %>
+                <p class="text-4xl font-bold tracking-tight text-white" x-text={"annual ? '#{@plan.yearly}' : '#{@plan.monthly}'"}><%= @plan.yearly %></p>
+                <%= if is_number(@plan.yearly) do %>
                 <div class="text-sm leading-5">
                     <p class="text-white"><%= @plan.unit %></p>
                     <p class="text-gray-400" x-text="annual ? 'Billed annually' : 'Billed monthly'">Billed annually</p>
                 </div>
                 <% end %>
             </div>
-            <a href={@plan.link} aria-describedby={"#{@plan.id}-plan"} class="rounded-md bg-white/10 px-3 py-2 text-center text-sm font-semibold leading-6 text-white hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"><%= @plan.cta %></a>
+            <a href={@plan.link} x-bind:href={"annual ? '#{String.replace(@plan.link, ":freq", "yearly")}' : '#{String.replace(@plan.link, ":freq", "monthly")}'"} aria-describedby={"#{@plan.id}-plan"} class="rounded-md bg-white/10 px-3 py-2 text-center text-sm font-semibold leading-6 text-white hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"><%= @plan.cta %></a>
         </div>
         <div class="mt-8 flow-root sm:mt-10">
             <ul role="list" class="-my-2 divide-y divide-white/5 border-t border-white/5 text-sm leading-6 text-white lg:border-t-0">

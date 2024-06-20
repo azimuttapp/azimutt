@@ -5,11 +5,11 @@
         <h3 id={"#{plan.id}-plan"} class="text-base font-semibold leading-7 text-gray-900"><%= plan.name %></h3>
         <p class="flex items-baseline gap-x-1">
           <div class="flex items-center">
-            <p class="text-2xl font-bold tracking-tight text-gray-900" x-text={"annual ? '$#{plan.annually}' : '$#{plan.monthly}'"}><%= plan.monthly %></p>
-            <%= if is_number(plan.monthly) do %>
+            <p class="text-2xl font-bold tracking-tight text-gray-900" x-text={"annual ? '$#{plan.yearly}' : '$#{plan.monthly}'"}><%= plan.yearly %></p>
+            <%= if is_number(plan.yearly) do %>
             <div class="pl-4 text-sm leading-5">
               <p class="font-semibold leading-6 text-gray-600"><%= plan.unit %></p>
-              <p class="text-gray-400" x-text="annual ? 'Billed annually' : 'Billed monthly'">Billed monthly</p>
+              <p class="text-gray-400" x-text="annual ? 'Billed annually' : 'Billed monthly'">Billed annually</p>
             </div>
             <% end %>
           </div>

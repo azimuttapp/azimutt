@@ -136,18 +136,18 @@ defmodule Azimutt.Tracking do
   def billing_loaded(%User{} = current_user, %Organization{} = org, source),
     do: create_event("billing_loaded", org_data(org), %{source: source}, current_user, org.id, nil)
 
-  def subscribe_init(%User{} = current_user, %Organization{} = org, plan, price, quantity),
-    do: create_event("subscribe_init", org_data(org), %{plan: plan, price: price, quantity: quantity}, current_user, org.id, nil)
+  def subscribe_init(%User{} = current_user, %Organization{} = org, plan, freq, price, quantity),
+    do: create_event("subscribe_init", org_data(org), %{plan: plan, freq: freq, price: price, quantity: quantity}, current_user, org.id, nil)
 
-  def subscribe_start(%User{} = current_user, %Organization{} = org, plan, price, quantity),
-    do: create_event("subscribe_start", org_data(org), %{plan: plan, price: price, quantity: quantity}, current_user, org.id, nil)
+  def subscribe_start(%User{} = current_user, %Organization{} = org, plan, freq, price, quantity),
+    do: create_event("subscribe_start", org_data(org), %{plan: plan, freq: freq, price: price, quantity: quantity}, current_user, org.id, nil)
 
-  def subscribe_error(%User{} = current_user, %Organization{} = org, plan, price, quantity, %Stripe.Error{} = error),
+  def subscribe_error(%User{} = current_user, %Organization{} = org, plan, freq, price, quantity, %Stripe.Error{} = error),
     do:
       create_event(
         "subscribe_error",
         org_data(org),
-        %{plan: plan, price: price, quantity: quantity, error: error.message},
+        %{plan: plan, freq: freq, price: price, quantity: quantity, error: error.message},
         current_user,
         org.id,
         nil

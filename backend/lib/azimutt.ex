@@ -34,7 +34,7 @@ defmodule Azimutt do
         name: "Free",
         description: "Quickly explore your db with one command. No long term save.",
         monthly: "Free",
-        annually: "Free",
+        yearly: "Free",
         features: [
           "Unlimited tables",
           "Schema exploration",
@@ -48,7 +48,7 @@ defmodule Azimutt do
         name: "Solo",
         description: "Personal usage with one project. Allows design and custom colors.",
         monthly: 9,
-        annually: 7,
+        yearly: 7,
         unit: "€ / month",
         features: [
           "Free plan features",
@@ -57,14 +57,14 @@ defmodule Azimutt do
           "Long term usage"
         ],
         cta: "Start free trial",
-        link: "/subscribe/solo"
+        link: "/subscribe/solo/:freq"
       },
       team: %{
         id: :team,
         name: "Team",
         description: "Collaborate on Azimutt with all database features.",
         monthly: 42,
-        annually: 35,
+        yearly: 35,
         unit: "€ / user / month",
         features: [
           "Solo plan features",
@@ -75,14 +75,14 @@ defmodule Azimutt do
           "Export project"
         ],
         cta: "Start free trial",
-        link: "/subscribe/team"
+        link: "/subscribe/team/:freq"
       },
       enterprise: %{
         id: :enterprise,
         name: "Enterprise",
         description: "Getting serious: higher limits, security, control and automation.",
         monthly: "Custom",
-        annually: "Custom",
+        yearly: "Custom",
         features: [
           "Team plan features",
           "Unlimited usage",
@@ -96,14 +96,14 @@ defmodule Azimutt do
         id: :pro,
         name: "Pro",
         monthly: 13,
-        annually: 13,
+        yearly: 13,
         features: [],
         cta: "Start free trial"
       }
     }
   end
 
-  def active_plans, do: [plans.free, plans.solo, plans.team, plans.enterprise]
+  def active_plans, do: [plans().free, plans().solo, plans().team, plans().enterprise]
 
   # MUST stay in sync with frontend/src/Conf.elm (`features`)
   def limits do

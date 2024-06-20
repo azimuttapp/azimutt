@@ -207,7 +207,10 @@ At least one of authentication methods should be defined:
 - `STRIPE` (optional): if `true`, allow to purchase plans with [Stripe](https://stripe.com), you probably don't need it ^^
     - `STRIPE_API_KEY` (required): Stripe api key (ex: `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`)
     - `STRIPE_WEBHOOK_SIGNING_SECRET` (required): Stripe webhook secret (ex: `whsec_ayZAyKqOLy34UKNeI3eq4icXVWJam0IW`)
-    - `STRIPE_PRICE_PRO_MONTHLY` (required): the Stripe price for the pro plan (ex: `price_uJINukB78aAbajUQHy6Ra523`)
+    - `STRIPE_PRICE_SOLO_MONTHLY` (required): Stripe price for the monthly solo plan (ex: `price_uJINukB78aAbajUQHy6Ra523`)
+    - `STRIPE_PRICE_SOLO_YEARLY` (required): Stripe price for the yearly solo plan (ex: `price_uJINukB78aAbajUQHy6Ra523`)
+    - `STRIPE_PRICE_TEAM_MONTHLY` (required): Stripe price for the monthly team plan (ex: `price_uJINukB78aAbajUQHy6Ra523`)
+    - `STRIPE_PRICE_TEAM_YEARLY` (required): Stripe price for the yearly team plan (ex: `price_uJINukB78aAbajUQHy6Ra523`)
 - `CLEVER_CLOUD` (optional): if `true`, enable auth & hooks for [Clever Cloud Add-on](https://www.clever-cloud.com/doc/extend/add-ons-api)
     - `CLEVER_CLOUD_ADDON_ID` (required)
     - `CLEVER_CLOUD_PASSWORD` (required)

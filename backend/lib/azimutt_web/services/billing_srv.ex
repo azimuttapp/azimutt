@@ -9,12 +9,24 @@ defmodule AzimuttWeb.Services.BillingSrv do
   alias Azimutt.Tracking
   alias Azimutt.Utils.Result
 
+  # FIXME: to delete, call directly subscribe
   def subscribe_pro(conn, %User{} = user, organization_id, success_url, cancel_url, error_path) do
+    subscribe(conn, user, organization_id, "solo", "monthly", success_url, cancel_url, error_path)
+  end
+
+  def subscribe(conn, %User{} = user, organization_id, plan, freq, success_url, cancel_url, error_path) do
     {:ok, %Organization{} = organization} = Organizations.get_organization(organization_id, user)
-    plan = "pro"
-    price = Azimutt.config(:stripe_price_pro_monthly)
+
+    price =
+      case {plan, freq} do
+        {"solo", "monthly"} -> Azimutt.config(:stripe_price_solo_monthly)
+        {"solo", "yearly"} -> Azimutt.config(:stripe_price_solo_yearly)
+        {"team", "monthly"} -> Azimutt.config(:stripe_price_team_monthly)
+        {"team", "yearly"} -> Azimutt.config(:stripe_price_team_yearly)
+      end
+
     quantity = get_organization_seats(organization)
-    Tracking.subscribe_init(user, organization, plan, price, quantity)
+    Tracking.subscribe_init(user, organization, plan, freq, price, quantity)
 
     result =
       if organization.stripe_customer_id == nil do
@@ -37,12 +49,12 @@ defmodule AzimuttWeb.Services.BillingSrv do
     case result do
       {:ok, session} ->
         Logger.info("Stripe session is create with success")
-        Tracking.subscribe_start(user, organization, plan, price, quantity)
+        Tracking.subscribe_start(user, organization, plan, freq, price, quantity)
         redirect(conn, external: session.url)
 
       {:error, %Stripe.Error{} = stripe_error} ->
         Logger.error("Cannot create Stripe Session for organization #{organization.id}: #{stripe_error.message}")
-        Tracking.subscribe_error(user, organization, plan, price, quantity, stripe_error)
+        Tracking.subscribe_error(user, organization, plan, freq, price, quantity, stripe_error)
 
         conn
         |> put_flash(
