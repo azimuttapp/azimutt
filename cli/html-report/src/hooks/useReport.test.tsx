@@ -1,18 +1,16 @@
 import { renderHook } from "@testing-library/react"
 import { useReport } from "./useReport"
 import * as ReportContext from "@/context/ReportContext"
+import { reportContextFactory } from "@/context/reportContextTestTool"
 
 describe("useReport", () => {
   test("should return levels by default", () => {
-    const contextValues: ReportContext.ReportContext = {
-      report: {
-        levels: [
-          { level: "high", levelViolationsCount: 12, rules: [] },
-          { level: "medium", levelViolationsCount: 19, rules: [] },
-        ],
-        rules: [],
-      },
-    }
+    const contextValues = reportContextFactory({
+      levels: [
+        { level: "high", levelViolationsCount: 12, rules: [] },
+        { level: "medium", levelViolationsCount: 19, rules: [] },
+      ],
+    })
     jest
       .spyOn(ReportContext, "useReportContext")
       .mockImplementation(() => contextValues)
@@ -23,16 +21,15 @@ describe("useReport", () => {
   })
 
   test("should filter by level", () => {
-    const contextValues: ReportContext.ReportContext = {
-      report: {
+    const contextValues = reportContextFactory(
+      {
         levels: [
           { level: "high", levelViolationsCount: 12, rules: [] },
           { level: "medium", levelViolationsCount: 19, rules: [] },
         ],
-        rules: [],
       },
-      filters: { levels: ["high"] },
-    }
+      { levels: ["high"] }
+    )
     jest
       .spyOn(ReportContext, "useReportContext")
       .mockImplementation(() => contextValues)
@@ -43,8 +40,8 @@ describe("useReport", () => {
   })
 
   test("should filter by rule", () => {
-    const contextValues: ReportContext.ReportContext = {
-      report: {
+    const contextValues = reportContextFactory(
+      {
         levels: [
           {
             level: "high",
@@ -83,10 +80,10 @@ describe("useReport", () => {
             ],
           },
         ],
-        rules: [],
       },
-      filters: { rules: ["duplicated index"] },
-    }
+      { rules: ["duplicated index"] }
+    )
+
     jest
       .spyOn(ReportContext, "useReportContext")
       .mockImplementation(() => contextValues)
@@ -98,8 +95,8 @@ describe("useReport", () => {
   })
 
   test("should filter and flat rules", () => {
-    const contextValues: ReportContext.ReportContext = {
-      report: {
+    const contextValues = reportContextFactory(
+      {
         levels: [
           {
             level: "high",
@@ -138,10 +135,9 @@ describe("useReport", () => {
             ],
           },
         ],
-        rules: [],
       },
-      filters: { rules: ["duplicated index", "entity not clean"] },
-    }
+      { rules: ["duplicated index", "entity not clean"] }
+    )
     jest
       .spyOn(ReportContext, "useReportContext")
       .mockImplementation(() => contextValues)
@@ -158,8 +154,8 @@ describe("useReport", () => {
   })
 
   test("Should extract entities", () => {
-    const contextValues: ReportContext.ReportContext = {
-      report: {
+    const contextValues = reportContextFactory(
+      {
         levels: [
           {
             level: "high",
@@ -198,10 +194,9 @@ describe("useReport", () => {
             ],
           },
         ],
-        rules: [],
       },
-      filters: { rules: ["duplicated index", "entity not clean"] },
-    }
+      { rules: ["duplicated index", "entity not clean"] }
+    )
     jest
       .spyOn(ReportContext, "useReportContext")
       .mockImplementation(() => contextValues)
@@ -212,8 +207,8 @@ describe("useReport", () => {
   })
 
   test("Should extract distinct entities", () => {
-    const contextValues: ReportContext.ReportContext = {
-      report: {
+    const contextValues = reportContextFactory(
+      {
         levels: [
           {
             level: "high",
@@ -262,10 +257,10 @@ describe("useReport", () => {
             ],
           },
         ],
-        rules: [],
       },
-      filters: { rules: ["duplicated index", "entity not clean"] },
-    }
+      { rules: ["duplicated index", "entity not clean"] }
+    )
+
     jest
       .spyOn(ReportContext, "useReportContext")
       .mockImplementation(() => contextValues)
