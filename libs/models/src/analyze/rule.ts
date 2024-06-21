@@ -87,7 +87,9 @@ export type AnalyzeReportLevel = z.infer<typeof AnalyzeReportLevel>
 
 export const AnalyzeReportHtmlResult = z.object({
     levels: z.array(AnalyzeReportLevel),
-    rules: z.array(AnalyzeReportRuleSummary)
+    rules: z.array(AnalyzeReportRuleSummary),
+    database: Database,
+    queries: DatabaseQuery.array(),
 })
 export type AnalyzeReportHtmlResult = z.infer<typeof AnalyzeReportHtmlResult>
 
