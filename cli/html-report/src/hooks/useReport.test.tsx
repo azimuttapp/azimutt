@@ -156,4 +156,122 @@ describe("useReport", () => {
     expect(filteredNames).toContain("duplicated index")
     expect(filteredNames).toContain("entity not clean")
   })
+
+  test("Should extract entities", () => {
+    const contextValues: ReportContext.ReportContext = {
+      report: {
+        levels: [
+          {
+            level: "high",
+            levelViolationsCount: 12,
+            rules: [
+              {
+                name: "duplicated index",
+                level: "high",
+                conf: {},
+                violations: [],
+                totalViolations: 12,
+              },
+            ],
+          },
+          {
+            level: "medium",
+            levelViolationsCount: 19,
+            rules: [
+              {
+                name: "entity not clean",
+                level: "high",
+                conf: {},
+                violations: [
+                  {
+                    message:
+                      "Entity public.events has old analyze (2024-06-17T10:18:35.009Z).",
+                    entity: { schema: "public", entity: "events" },
+                    extra: {
+                      reason: "old analyze",
+                      value: "2024-06-17T10:18:35.009Z",
+                    },
+                  },
+                ],
+                totalViolations: 1,
+              },
+            ],
+          },
+        ],
+        rules: [],
+      },
+      filters: { rules: ["duplicated index", "entity not clean"] },
+    }
+    jest
+      .spyOn(ReportContext, "useReportContext")
+      .mockImplementation(() => contextValues)
+
+    const { result } = renderHook(() => useReport())
+    expect(result.current.entities).toHaveLength(1)
+    expect(result.current.entities).toContain("public.events")
+  })
+
+  test("Should extract distinct entities", () => {
+    const contextValues: ReportContext.ReportContext = {
+      report: {
+        levels: [
+          {
+            level: "high",
+            levelViolationsCount: 12,
+            rules: [
+              {
+                name: "duplicated index",
+                level: "high",
+                conf: {},
+                violations: [
+                  {
+                    message:
+                      "Entity public.events has old analyze (2024-06-17T10:18:35.009Z).",
+                    entity: { schema: "public", entity: "events" },
+                    extra: {
+                      reason: "old analyze",
+                      value: "2024-06-17T10:18:35.009Z",
+                    },
+                  },
+                ],
+                totalViolations: 12,
+              },
+            ],
+          },
+          {
+            level: "medium",
+            levelViolationsCount: 19,
+            rules: [
+              {
+                name: "entity not clean",
+                level: "high",
+                conf: {},
+                violations: [
+                  {
+                    message:
+                      "Entity public.events has old analyze (2024-06-17T10:18:35.009Z).",
+                    entity: { schema: "public", entity: "events" },
+                    extra: {
+                      reason: "old analyze",
+                      value: "2024-06-17T10:18:35.009Z",
+                    },
+                  },
+                ],
+                totalViolations: 1,
+              },
+            ],
+          },
+        ],
+        rules: [],
+      },
+      filters: { rules: ["duplicated index", "entity not clean"] },
+    }
+    jest
+      .spyOn(ReportContext, "useReportContext")
+      .mockImplementation(() => contextValues)
+
+    const { result } = renderHook(() => useReport())
+    expect(result.current.entities).toHaveLength(1)
+    expect(result.current.entities).toContain("public.events")
+  })
 })

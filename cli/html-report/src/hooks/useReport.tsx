@@ -1,5 +1,9 @@
 import { useReportContext } from "@/context/ReportContext"
-import { AnalyzeReportLevel, AnalyzeReportRule } from "@azimutt/models"
+import {
+  AnalyzeReportLevel,
+  AnalyzeReportRule,
+  AnalyzeReportViolation,
+} from "@azimutt/models"
 import { useCallback, useMemo } from "react"
 
 export function useReport() {
@@ -45,5 +49,28 @@ export function useReport() {
     [levels, filters]
   )
 
-  return { levels, filteredRules }
+  const entities = useMemo(() => {
+    const { levels } = report
+    const rules = levels.reduce<AnalyzeReportRule[]>((acc, level) => {
+      acc.push(...level.rules)
+      return acc
+    }, [])
+    const violations = rules.reduce<AnalyzeReportViolation[]>((acc, rule) => {
+      acc.push(...rule.violations)
+      return acc
+    }, [])
+    const entities = violations.reduce<string[]>((acc, violation) => {
+      if (!violation?.entity) return acc
+      const fullName = [violation.entity.schema, violation.entity.entity].join(
+        "."
+      )
+      if (!acc.includes(fullName)) {
+        acc.push(fullName)
+      }
+      return acc
+    }, [])
+    return entities
+  }, [report])
+
+  return { levels, filteredRules, entities }
 }
