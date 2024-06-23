@@ -6,5 +6,22 @@
     <p class="mt-3 text-sm text-gray-500">
         Azimutt partner with Stripe to handle subscriptions, you can manage it with the link below. You can cancel your subscription anytime.
     </p>
+    <p class="mt-3">
+        <span class="text-base font-semibold leading-7 text-gray-900">Current plan</span>: <%= AzimuttWeb.LayoutView.generate_organization_plan_badge(@plan) %>
+    </p>
+    <p class="mt-1">
+        <%= cond do %>
+            <% length(@subscriptions) == 0 -> %>
+                <span class="text-base font-semibold leading-7 text-gray-900">No subscriptions</span>
+            <% length(@subscriptions) == 1 -> %>
+                <span class="text-base font-semibold leading-7 text-gray-900">Current subscription</span>:
+                <%= render "_subscription_show.html", subscription: hd(@subscriptions) %>
+            <% true -> %>
+                <span class="text-base font-semibold leading-7 text-gray-900">Subscriptions</span>:
+                <%= for subscription <- @subscriptions do %>
+                    <div><%= render "_subscription_show.html", subscription: subscription %></div>
+                <% end %>
+        <% end %>
+    </p>
     <%= link "Manage your subscription", to: Routes.organization_billing_path(@conn, :edit, @organization.id), method: :post, class: "mt-6 inline-flex items-center px-4 py-2 border border-transparent shadow-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm" %>
 </div>

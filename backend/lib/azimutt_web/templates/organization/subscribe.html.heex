@@ -1,42 +1,49 @@
-<div class="mt-12 max-w-lg mx-auto">
-    <h3 class="text-xl leading-6 font-medium text-gray-900">Billing</h3>
-    <p class="mt-6 text-sm text-gray-500">
-        Azimutt empowers developers all around the world to understand better their database.
-        The <b>schema exploration is and will remain free</b>.
-        You can subscribe to a paid plan to support us and go beyond this initial use case with
-        <%= if !@organization.is_personal do %>team collaboration, <% end %>documentation, full analysis and all the features that will continue to be added.
-        <%= if @organization.is_personal do %><br>If you want to share projects with other people, please create an organization (top left select) and invite them.<% end %>
-    </p>
-    <h4 class="mt-6 text-lg leading-6 font-medium text-gray-900">
-        Setup pro plan: $<%= Azimutt.plans.pro.monthly %><span class="text-xs text-gray-500"> / month<%= if !@organization.is_personal do %> / user<% end %></span>
-    </h4>
-    <ul role="list" class="mt-6 space-y-2">
-        <li class="flex space-x-3"><Icon.check class="flex-shrink-0 text-green-500" /><span class="text-sm text-gray-500">Cancel any time</span></li>
-        <li class="flex space-x-3"><Icon.check class="flex-shrink-0 text-green-500" /><span class="text-sm text-gray-500">Unlimited projects</span></li>
-        <li class="flex space-x-3"><Icon.check class="flex-shrink-0 text-green-500" /><span class="text-sm text-gray-500">Unlimited layouts</span></li>
-        <li class="flex space-x-3"><Icon.check class="flex-shrink-0 text-green-500" /><span class="text-sm text-gray-500">Unlimited notes & memos</span></li>
-        <li class="flex space-x-3"><Icon.check class="flex-shrink-0 text-green-500" /><span class="text-sm text-gray-500">Full database analysis</span></li>
-        <%= if !@organization.is_personal do %><li class="flex space-x-3"><Icon.check class="flex-shrink-0 text-green-500" /><span class="text-sm text-gray-500">As many collaborators as you want</span></li><% end %>
-        <li class="flex space-x-3"><Icon.heart class="flex-shrink-0 text-rose-500" /><span class="text-sm text-gray-500">Support Azimutt development</span></li>
-    </ul>
-    <div class="rounded-md bg-indigo-50 p-4 mt-6">
-      <div class="flex">
-        <div class="flex-shrink-0">
-            <Icon.bell class="flex-shrink-0 text-indigo-400" />
-        </div>
-        <div class="ml-3">
-          <%= if @organization.stripe_subscription_id do %>
-            <p class="text-sm font-medium text-indigo-800">Your trial ended.</p>
-          <% else %>
-            <p class="text-sm font-medium text-indigo-800">Try it now with 14 days free trial, no credit card required !</p>
-          <% end %>
-        </div>
+<div x-data="{annual: true}" class="px-3 py-12">
+  <h2 class="text-base font-semibold leading-7 text-indigo-600 text-center">Billing</h2>
+  <p class="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-600">
+    <b>Recurrent Azimutt user?</b>
+    Choose the plan that suit you more.<br>
+    More details on <a href={Routes.website_path(@conn, :pricing)} target="_blank" rel="noopener noreferrer" class="underline">pricing page</a>.
+    Don't hesitate to <a href={"mailto:#{Azimutt.config(:azimutt_email)}"} class="underline">reach out</a> for any question.
+  </p>
+  <div class="mt-16 flex justify-center">
+    <fieldset aria-label="Payment frequency">
+      <div class="grid grid-cols-2 gap-x-1 rounded-full p-1 text-center text-xs font-semibold leading-5 ring-1 ring-inset ring-gray-200">
+        <label @click="annual = false" :class="{'bg-indigo-600 text-white': !annual, 'text-gray-500': annual}" class="cursor-pointer rounded-full px-2.5 py-1">
+          <input type="radio" name="frequency" value="monthly" class="sr-only">
+          <span>Monthly</span>
+        </label>
+        <label @click="annual = true" :class="{'bg-indigo-600 text-white': annual, 'text-gray-500': !annual}" class="cursor-pointer rounded-full px-2.5 py-1">
+          <input type="radio" name="frequency" value="annually" class="sr-only">
+          <span>Annually</span>
+        </label>
       </div>
-    </div>
-    <div class="mt-6 sm:flex sm:items-start sm:justify-between">
-        <!-- FIXME: could be a link? -->
-        <.form for={@conn} action={Routes.organization_billing_path(@conn, :new, @organization.id)}>
-            <%= submit "Subscribe", class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm" %>
-        </.form>
-    </div>
+    </fieldset>
+  </div>
+  <div class="isolate mx-auto mt-10 grid max-w-md grid-cols-1 gap-3 md:max-w-2xl md:grid-cols-2 lg:max-w-4xl xl:mx-0 xl:max-w-none xl:grid-cols-3">
+    <%= render AzimuttWeb.PartialsView, "_pricing_plan_light.html", plan: Azimutt.plans.solo, cta: "Start free trial", sub: fn plan, freq -> Routes.organization_billing_path(@conn, :new, @organization.id, plan: plan, freq: freq) end %>
+    <%= render AzimuttWeb.PartialsView, "_pricing_plan_light.html", plan: Azimutt.plans.team, cta: "Start free trial", sub: fn plan, freq -> Routes.organization_billing_path(@conn, :new, @organization.id, plan: plan, freq: freq) end %>
+    <%= render AzimuttWeb.PartialsView, "_pricing_plan_light.html", plan: Azimutt.plans.enterprise, cta: "Contact us", sub: fn plan, freq -> "mailto:#{Azimutt.config(:support_email)}" end %>
+  </div>
+</div>
+
+<p class="mt-6">
+  <%= cond do %>
+      <% length(@subscriptions) == 0 -> %>
+          <span class="text-base font-semibold leading-7 text-gray-900">No subscriptions</span>
+      <% length(@subscriptions) == 1 -> %>
+          <span class="text-base font-semibold leading-7 text-gray-900">Current subscription</span>:
+          <%= render "_subscription_show.html", subscription: hd(@subscriptions) %>
+      <% true -> %>
+          <span class="text-base font-semibold leading-7 text-gray-900">Subscriptions</span>:
+          <%= for subscription <- @subscriptions do %>
+              <div><%= render "_subscription_show.html", subscription: subscription %></div>
+          <% end %>
+  <% end %>
+</p>
+
+<div class="mt-6 sm:flex sm:items-start sm:justify-between">
+    <a href={Routes.organization_billing_path(@conn, :new, @organization.id, plan: "pro", freq: "monthly")} class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm">
+        Subscribe pro
+    </a>
 </div>

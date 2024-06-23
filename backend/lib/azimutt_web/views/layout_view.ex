@@ -70,7 +70,9 @@ defmodule AzimuttWeb.LayoutView do
     case plan.id do
       :free -> content_tag(:span, "Free plan", class: "#{classes} bg-gray-100 text-gray-800")
       :pro -> content_tag(:span, "Pro plan", class: "#{classes} bg-yellow-100 text-yellow-800")
-      :enterprise -> content_tag(:span, "Enterprise plan", class: "#{classes} bg-purple-100 text-purple-800")
+      :solo -> content_tag(:span, "Solo plan", class: "#{classes} bg-yellow-100 text-yellow-800")
+      :team -> content_tag(:span, "Team plan", class: "#{classes} bg-emerald-100 text-emerald-800")
+      :enterprise -> content_tag(:span, "Enterprise plan", class: "#{classes} bg-indigo-100 text-indigo-800")
       _ -> content_tag(:span, "Unknown plan #{plan.id}", class: "#{classes} bg-red-100 text-red-800")
     end
   end

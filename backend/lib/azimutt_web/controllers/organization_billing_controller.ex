@@ -64,20 +64,23 @@ defmodule AzimuttWeb.OrganizationBillingController do
   end
 
   defp generate_billing_view(conn, file, organization, %User{} = current_user, message) do
-    with {:ok, plan} <- Organizations.get_organization_plan(organization, current_user) do
+    with {:ok, plan} <- Organizations.get_organization_plan(organization, current_user),
+         {:ok, subscriptions} <- Organizations.get_subscriptions(organization) do
       conn
       |> put_view(AzimuttWeb.OrganizationView)
-      |> render(file, organization: organization, plan: plan, message: message)
+      |> render(file, organization: organization, plan: plan, subscriptions: subscriptions, message: message)
     end
   end
 
-  def new(conn, %{"organization_organization_id" => organization_id}) do
+  def new(conn, %{"organization_organization_id" => organization_id} = params) do
     current_user = conn.assigns.current_user
 
     conn
-    |> BillingSrv.subscribe_pro(
+    |> BillingSrv.subscribe(
       current_user,
       organization_id,
+      params["plan"],
+      params["freq"],
       Routes.organization_billing_url(conn, :success, organization_id),
       Routes.organization_billing_url(conn, :cancel, organization_id),
       Routes.organization_billing_path(conn, :index, organization_id, source: "billing-error")
@@ -128,7 +131,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
     Tracking.subscribe_abort(current_user, organization)
 
     conn
-    |> put_flash(:info, "Sorry you didn't like our stuff.")
+    |> put_flash(:info, "Did you changed your mind? Let us know if you need clarifications: #{Azimutt.config(:azimutt_email)}")
     |> redirect(to: Routes.organization_billing_path(conn, :index, organization, source: "billing-cancel"))
   end
 end

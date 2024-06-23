@@ -11,7 +11,7 @@
                 </div>
                 <% end %>
             </div>
-            <a href={@plan.link} x-bind:href={"annual ? '#{String.replace(@plan.link, ":freq", "yearly")}' : '#{String.replace(@plan.link, ":freq", "monthly")}'"} aria-describedby={"#{@plan.id}-plan"} class="rounded-md bg-white/10 px-3 py-2 text-center text-sm font-semibold leading-6 text-white hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"><%= @plan.cta %></a>
+            <a href={@sub.(@plan.id, "yearly")} x-bind:href={"annual ? '#{@sub.(@plan.id, "yearly")}' : '#{@sub.(@plan.id, "monthly")}'"} aria-describedby={"#{@plan.id}-plan"} class="rounded-md bg-white/10 px-3 py-2 text-center text-sm font-semibold leading-6 text-white hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"><%= @cta %></a>
         </div>
         <div class="mt-8 flow-root sm:mt-10">
             <ul role="list" class="-my-2 divide-y divide-white/5 border-t border-white/5 text-sm leading-6 text-white lg:border-t-0">

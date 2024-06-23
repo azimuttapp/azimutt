@@ -69,6 +69,10 @@ defmodule Azimutt.Services.StripeSrv do
     end
   end
 
+  def get_subscriptions(customer_id) when is_bitstring(customer_id) do
+    Stripe.Subscription.list(%{customer: customer_id})
+  end
+
   def get_subscription(subscription_id) when is_bitstring(subscription_id) do
     if stripe_configured?() do
       # FIXME: add cache to limit Stripe reads: https://github.com/sasa1977/con_cache
@@ -127,6 +131,26 @@ defmodule Azimutt.Services.StripeSrv do
       })
     else
       {:error, "Stripe not configured"}
+    end
+  end
+
+  def get_price(plan, freq) do
+    case {plan, freq} do
+      {"solo", "monthly"} -> Azimutt.config(:stripe_price_solo_monthly)
+      {"solo", "yearly"} -> Azimutt.config(:stripe_price_solo_yearly)
+      {"team", "monthly"} -> Azimutt.config(:stripe_price_team_monthly)
+      {"team", "yearly"} -> Azimutt.config(:stripe_price_team_yearly)
+      {"pro", "monthly"} -> Azimutt.config(:stripe_price_pro_monthly)
+    end
+  end
+
+  def get_plan(price) do
+    cond do
+      price == Azimutt.config(:stripe_price_solo_monthly) -> {"solo", "monthly"}
+      price == Azimutt.config(:stripe_price_solo_yearly) -> {"solo", "yearly"}
+      price == Azimutt.config(:stripe_price_team_monthly) -> {"team", "monthly"}
+      price == Azimutt.config(:stripe_price_team_yearly) -> {"team", "yearly"}
+      price == Azimutt.config(:stripe_price_pro_monthly) -> {"pro", "monthly"}
     end
   end
 

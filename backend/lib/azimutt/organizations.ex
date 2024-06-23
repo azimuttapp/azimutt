@@ -276,6 +276,27 @@ defmodule Azimutt.Organizations do
     |> Repo.update()
   end
 
+  def get_subscriptions(%Organization{} = organization) do
+    StripeSrv.get_subscriptions(organization.stripe_customer_id)
+    |> Result.map(fn subs ->
+      subs.data
+      |> Enum.map(fn sub ->
+        %{
+          id: sub.id,
+          customer: sub.customer,
+          status: sub.status,
+          promotion_code: sub.promotion_code,
+          price: sub.plan.id,
+          product: sub.plan.product,
+          freq: sub.plan.interval,
+          quantity: sub.quantity,
+          cancel_at: if(sub.cancel_at != nil, do: DateTime.from_unix!(sub.cancel_at), else: nil),
+          created: DateTime.from_unix!(sub.created)
+        }
+      end)
+    end)
+  end
+
   def get_subscription_status(stripe_subscription_id) when is_bitstring(stripe_subscription_id) do
     with {:ok, subscription} <- StripeSrv.get_subscription(stripe_subscription_id) do
       case subscription.status do
@@ -361,8 +382,15 @@ defmodule Azimutt.Organizations do
   defp stripe_plan(plans, subscription_id) do
     StripeSrv.get_subscription(subscription_id)
     |> Result.map(fn s ->
-      if (s.status == "trialing" || s.status == "active" || s.status == "past_due" || s.status == "unpaid") && plans |> Enum.member?("pro") do
-        OrganizationPlan.pro()
+      {plan, _} = StripeSrv.get_plan(s.plan.id)
+
+      if (s.status == "trialing" || s.status == "active" || s.status == "past_due" || s.status == "unpaid") && plans |> Enum.member?(plan) do
+        case plan do
+          "solo" -> OrganizationPlan.solo()
+          "team" -> OrganizationPlan.team()
+          "enterprise" -> OrganizationPlan.enterprise()
+          "pro" -> OrganizationPlan.pro()
+        end
       else
         OrganizationPlan.free()
       end

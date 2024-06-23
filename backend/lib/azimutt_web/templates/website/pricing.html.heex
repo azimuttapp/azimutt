@@ -1,6 +1,6 @@
 <main>
   <div class="isolate overflow-hidden">
-    <div class="flow-root bg-gray-900 pb-16 pt-24 sm:pt-32 lg:pb-0">
+    <div class="flow-root bg-gray-900 pb-16 pt-24 sm:pt-28 lg:pb-0">
       <div x-data="{annual: true}" class="mx-auto max-w-7xl px-6 lg:px-8">
         <div class="relative z-10">
           <h2 class="mx-auto max-w-4xl text-center text-5xl font-bold tracking-tight text-white">A price for everyone.</h2>
@@ -31,10 +31,10 @@
             </defs>
           </svg>
           <div class="hidden lg:absolute lg:inset-x-px lg:bottom-0 lg:top-4 lg:block lg:rounded-t-2xl lg:bg-gray-800/80 lg:ring-1 lg:ring-white/10" aria-hidden="true"></div>
-          <%= render AzimuttWeb.PartialsView, "_pricing_plan_dark.html", plan: Azimutt.plans.free %>
-          <%= render AzimuttWeb.PartialsView, "_pricing_plan_dark.html", plan: Azimutt.plans.solo %>
-          <%= render AzimuttWeb.PartialsView, "_pricing_plan_light.html", plan: Azimutt.plans.team %>
-          <%= render AzimuttWeb.PartialsView, "_pricing_plan_dark.html", plan: Azimutt.plans.enterprise %>
+          <%= render AzimuttWeb.PartialsView, "_pricing_plan_dark.html", plan: Azimutt.plans.free, cta: "Explore your db", sub: fn plan, freq -> "/new" end %>
+          <%= render AzimuttWeb.PartialsView, "_pricing_plan_dark.html", plan: Azimutt.plans.solo, cta: "Start free trial", sub: fn plan, freq -> Routes.subscribe_path(@conn, :index, plan, freq) end %>
+          <%= render AzimuttWeb.PartialsView, "_pricing_plan_light.html", plan: Azimutt.plans.team, cta: "Start free trial", sub: fn plan, freq -> Routes.subscribe_path(@conn, :index, plan, freq) end %>
+          <%= render AzimuttWeb.PartialsView, "_pricing_plan_dark.html", plan: Azimutt.plans.enterprise, cta: "Contact us", sub: fn plan, freq -> "mailto:#{Azimutt.config(:support_email)}" end %>
         </div>
       </div>
     </div>

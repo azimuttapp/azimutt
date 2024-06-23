@@ -42,6 +42,63 @@ defmodule Azimutt.Organizations.OrganizationPlan do
     }
   end
 
+  def solo do
+    %OrganizationPlan{
+      id: :solo,
+      name: "Solo",
+      projects: nil,
+      layouts: nil,
+      layout_tables: nil,
+      memos: nil,
+      groups: nil,
+      colors: true,
+      local_save: true,
+      private_links: true,
+      sql_export: true,
+      db_analysis: true,
+      db_access: true,
+      streak: 0
+    }
+  end
+
+  def team do
+    %OrganizationPlan{
+      id: :team,
+      name: "Team",
+      projects: nil,
+      layouts: nil,
+      layout_tables: nil,
+      memos: nil,
+      groups: nil,
+      colors: true,
+      local_save: true,
+      private_links: true,
+      sql_export: true,
+      db_analysis: true,
+      db_access: true,
+      streak: 0
+    }
+  end
+
+  def enterpprise do
+    %OrganizationPlan{
+      id: :enterpprise,
+      name: "Enterprise",
+      projects: nil,
+      layouts: nil,
+      layout_tables: nil,
+      memos: nil,
+      groups: nil,
+      colors: true,
+      local_save: true,
+      private_links: true,
+      sql_export: true,
+      db_analysis: true,
+      db_access: true,
+      streak: 0
+    }
+  end
+
   def pro do
     %OrganizationPlan{
       id: :pro,

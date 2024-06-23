@@ -92,7 +92,7 @@ defmodule Azimutt.StripeHandler do
   # Return HTTP 200 for unhandled events
   @impl true
   def handle_event(%Stripe.Event{} = event) do
-    # IO.inspect(event, label: "Got Stripe event")
+    # IO.inspect(event, label: "stripe_unhandled_event")
     Tracking.stripe_unhandled_event(event)
     :ok
   end

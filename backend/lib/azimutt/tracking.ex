@@ -206,7 +206,7 @@ defmodule Azimutt.Tracking do
     do: create_event("stripe_invoice_payment_failed", stripe_event_data(event), nil, current_user, org.id, nil)
 
   def stripe_unhandled_event(%Stripe.Event{} = event),
-    do: create_event("stripe_unhandled_event", stripe_event_data(event), nil, nil, nil, nil)
+    do: create_event("stripe__unhandled__#{event.type}", stripe_event_data(event), stripe_event_details(event), stripe_event_user(event), stripe_event_organization(event), nil)
 
   def allow_table_color(%User{} = current_user, %Organization{} = org, tweet_url),
     do: create_event("allow_table_color", org_data(org), %{tweet_url: tweet_url}, current_user, org.id, nil)
@@ -315,8 +315,45 @@ defmodule Azimutt.Tracking do
   defp stripe_event_data(%Stripe.Event{} = event) do
     %{
       id: event.id,
+      object: event.object,
+      url: stripe_object_url(event),
       type: event.type
     }
+  rescue
+    _ -> nil
+  end
+
+  defp stripe_event_details(%Stripe.Event{} = event) do
+    if event.data && event.data[:object] && event.data[:object].id do
+      %{
+        id: event.data.object.id,
+        object: event.data.object.object,
+        url: stripe_object_url(event.data.object),
+        metadata: event.data.object.metadata
+      }
+    else
+      nil
+    end
+  rescue
+    _ -> nil
+  end
+
+  defp stripe_object_url(object) do
+    "https://dashboard.stripe.com" <> if(object.livemode, do: "", else: "/test") <> "/#{object.object}s/#{object.id}"
+  end
+
+  defp stripe_event_organization(%Stripe.Event{} = event) do
+    if event.data && event.data[:object] && event.data[:object].metadata && event.data[:object].metadata["organization_id"] do
+      event.data.object.metadata["organization_id"]
+    else
+      nil
+    end
+  rescue
+    _ -> nil
+  end
+
+  defp stripe_event_user(%Stripe.Event{} = event) do
+    nil
   end
 
   def event_to_action(%{name: name, created_by: user, project: project}) do

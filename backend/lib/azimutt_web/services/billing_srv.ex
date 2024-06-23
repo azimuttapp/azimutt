@@ -16,15 +16,7 @@ defmodule AzimuttWeb.Services.BillingSrv do
 
   def subscribe(conn, %User{} = user, organization_id, plan, freq, success_url, cancel_url, error_path) do
     {:ok, %Organization{} = organization} = Organizations.get_organization(organization_id, user)
-
-    price =
-      case {plan, freq} do
-        {"solo", "monthly"} -> Azimutt.config(:stripe_price_solo_monthly)
-        {"solo", "yearly"} -> Azimutt.config(:stripe_price_solo_yearly)
-        {"team", "monthly"} -> Azimutt.config(:stripe_price_team_monthly)
-        {"team", "yearly"} -> Azimutt.config(:stripe_price_team_yearly)
-      end
-
+    price = StripeSrv.get_price(plan, freq)
     quantity = get_organization_seats(organization)
     Tracking.subscribe_init(user, organization, plan, freq, price, quantity)
 

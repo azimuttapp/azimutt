@@ -39,9 +39,7 @@ defmodule Azimutt do
           "Unlimited tables",
           "Schema exploration",
           "Data exploration"
-        ],
-        cta: "Explore your db",
-        link: "/new"
+        ]
       },
       solo: %{
         id: :solo,
@@ -52,12 +50,10 @@ defmodule Azimutt do
         unit: "€ / month",
         features: [
           "Free plan features",
+          "Long term usage",
           "Database design",
-          "Schema export",
-          "Long term usage"
-        ],
-        cta: "Start free trial",
-        link: "/subscribe/solo/:freq"
+          "Schema export"
+        ]
       },
       team: %{
         id: :team,
@@ -73,9 +69,7 @@ defmodule Azimutt do
           "Documentation",
           "AI capabilities",
           "Export project"
-        ],
-        cta: "Start free trial",
-        link: "/subscribe/team/:freq"
+        ]
       },
       enterprise: %{
         id: :enterprise,
@@ -88,17 +82,14 @@ defmodule Azimutt do
           "Unlimited usage",
           "User management",
           "Custom integrations"
-        ],
-        cta: "Contact us",
-        link: "mailto:#{Azimutt.config(:support_email)}"
+        ]
       },
       pro: %{
         id: :pro,
         name: "Pro",
         monthly: 13,
         yearly: 13,
-        features: [],
-        cta: "Start free trial"
+        features: []
       }
     }
   end
@@ -129,7 +120,7 @@ defmodule Azimutt do
       project_export: %{name: "Export project", free: false, solo: false, team: true, enterprise: true},
       # Product quotas
       users: %{name: "Max users", free: 1, solo: 1, team: 5, enterprise: nil},
-      projects: %{name: "Max projects", free: 1, solo: 1, team: 5, enterprise: nil, description: "0 means you can create a project but can't save it."},
+      projects: %{name: "Max projects", free: 0, solo: 1, team: 5, enterprise: nil, description: "0 means you can create a project but can't save it."},
       project_dbs: %{name: "Max db/project", free: 1, solo: 1, team: 3, enterprise: nil},
       project_layouts: %{name: "Max layout/project", free: 1, solo: 3, team: 20, enterprise: nil},
       layout_tables: %{name: "Max table/layout", free: 10, solo: 10, team: 40, enterprise: nil},

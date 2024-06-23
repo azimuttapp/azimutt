@@ -12,7 +12,7 @@ defmodule AzimuttWeb.OrganizationControllerTest do
     @tag :skip
     test "renders form", %{conn: conn} do
       conn = get(conn, Routes.organization_path(conn, :new))
-      assert html_response(conn, 200) =~ "Set up your organization"
+      assert html_response(conn, 200) =~ "Create your organization"
     end
   end
 
@@ -31,7 +31,7 @@ defmodule AzimuttWeb.OrganizationControllerTest do
     @tag :skip
     test "renders errors when data is invalid", %{conn: conn} do
       conn = post(conn, Routes.organization_path(conn, :create), organization: @invalid_attrs)
-      assert html_response(conn, 200) =~ "Set up your organization"
+      assert html_response(conn, 200) =~ "Create your organization"
     end
   end
 
