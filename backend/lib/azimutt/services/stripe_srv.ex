@@ -77,23 +77,6 @@ defmodule Azimutt.Services.StripeSrv do
     end
   end
 
-  def get_subscription(subscription_id) when is_bitstring(subscription_id) do
-    if stripe_configured?() do
-      # FIXME: add cache to limit Stripe reads: https://github.com/sasa1977/con_cache
-      # https://medium.com/@toddresudek/caching-in-an-elixir-phoenix-app-a499cdf91046
-      case Stripe.Subscription.retrieve(subscription_id) do
-        {:ok, %Stripe.Subscription{} = subscription} ->
-          {:ok, subscription}
-
-        {:error, %Stripe.Error{} = error} ->
-          Logger.error(error.message)
-          {:error, error.message}
-      end
-    else
-      {:error, "Stripe not configured"}
-    end
-  end
-
   def create_session(%{customer: customer, subscription: subscription, success_url: success_url, cancel_url: cancel_url, price_id: price_id, quantity: quantity}) do
     if stripe_configured?() do
       Stripe.Session.create(%{

@@ -297,37 +297,6 @@ defmodule Azimutt.Organizations do
     end)
   end
 
-  def get_subscription_status(stripe_subscription_id) when is_bitstring(stripe_subscription_id) do
-    with {:ok, subscription} <- StripeSrv.get_subscription(stripe_subscription_id) do
-      case subscription.status do
-        "active" ->
-          {:ok, :active}
-
-        "past_due" ->
-          {:ok, :past_due}
-
-        "unpaid" ->
-          {:ok, :unpaid}
-
-        "canceled" ->
-          {:ok, :canceled}
-
-        "incomplete" ->
-          {:ok, :incomplete}
-
-        "incomplete_expired" ->
-          {:ok, :incomplete_expired}
-
-        "trialing" ->
-          {:ok, :trialing}
-
-        other ->
-          Logger.warning("Get unexpected subscription status : #{other}")
-          {:ok, :incomplete}
-      end
-    end
-  end
-
   def get_allowed_members(%Organization{} = organization, %OrganizationPlan{} = plan) do
     cond do
       organization.clever_cloud_resource ->
@@ -357,39 +326,51 @@ defmodule Azimutt.Organizations do
     cond do
       organization.clever_cloud_resource -> clever_cloud_plan(plans, organization.clever_cloud_resource)
       organization.heroku_resource -> heroku_plan(plans, organization.heroku_resource)
-      organization.stripe_subscription_id && StripeSrv.stripe_configured?() -> stripe_plan(plans, organization.stripe_subscription_id)
+      organization.stripe_customer_id && StripeSrv.stripe_configured?() -> stripe_plan(plans, organization.stripe_customer_id)
       true -> default_plan(plans)
     end
     |> Result.map(fn plan -> plan_overrides(plans, organization, plan, maybe_current_user) end)
   end
 
-  defp clever_cloud_plan(plans, %CleverCloud.Resource{} = resource) do
-    if resource.plan |> String.starts_with?("pro-") && plans |> Enum.member?("pro") do
-      {:ok, OrganizationPlan.pro()}
+  def clever_cloud_plan(plans, %CleverCloud.Resource{} = resource) do
+    if resource.plan do
+      cond do
+        resource.plan |> String.starts_with?("solo") -> {:ok, get_plan(plans, "solo")}
+        resource.plan |> String.starts_with?("team") -> {:ok, get_plan(plans, "team")}
+        resource.plan |> String.starts_with?("enterprise") -> {:ok, get_plan(plans, "enterprise")}
+        resource.plan |> String.starts_with?("pro") -> {:ok, get_plan(plans, "pro")}
+        true -> {:ok, OrganizationPlan.free()}
+      end
     else
       {:ok, OrganizationPlan.free()}
     end
   end
 
-  defp heroku_plan(plans, %Heroku.Resource{} = resource) do
-    if (resource.plan |> String.starts_with?("pro-") || resource.plan == "test") && plans |> Enum.member?("pro") do
-      {:ok, OrganizationPlan.pro()}
+  def heroku_plan(plans, %Heroku.Resource{} = resource) do
+    if resource.plan do
+      cond do
+        resource.plan |> String.starts_with?("solo") -> {:ok, get_plan(plans, "solo")}
+        resource.plan |> String.starts_with?("team") -> {:ok, get_plan(plans, "team")}
+        resource.plan |> String.starts_with?("enterprise") || resource.plan == "test" -> {:ok, get_plan(plans, "enterprise")}
+        resource.plan |> String.starts_with?("pro") -> {:ok, get_plan(plans, "pro")}
+        true -> {:ok, OrganizationPlan.free()}
+      end
     else
       {:ok, OrganizationPlan.free()}
     end
   end
 
-  defp stripe_plan(plans, subscription_id) do
-    StripeSrv.get_subscription(subscription_id)
-    |> Result.map(fn s ->
-      {plan, _} = StripeSrv.get_plan(s.plan.id)
+  defp stripe_plan(plans, customer_id) do
+    StripeSrv.get_subscriptions(customer_id)
+    |> Result.map(fn subs ->
+      if length(subs.data) > 0 do
+        sub = hd(subs.data)
+        {plan, _} = StripeSrv.get_plan(sub.plan.id)
 
-      if (s.status == "trialing" || s.status == "active" || s.status == "past_due" || s.status == "unpaid") && plans |> Enum.member?(plan) do
-        case plan do
-          "solo" -> OrganizationPlan.solo()
-          "team" -> OrganizationPlan.team()
-          "enterprise" -> OrganizationPlan.enterprise()
-          "pro" -> OrganizationPlan.pro()
+        if ["trialing", "active", "past_due", "unpaid"] |> Enum.member?(sub.status) do
+          get_plan(plans, plan)
+        else
+          OrganizationPlan.free()
         end
       else
         OrganizationPlan.free()
@@ -398,12 +379,20 @@ defmodule Azimutt.Organizations do
   end
 
   def default_plan(plans) do
-    plan = Azimutt.config(:organization_default_plan)
+    get_plan(plans, Azimutt.config(:organization_default_plan))
+  end
 
-    if plan == "pro" && plans |> Enum.member?("pro") do
-      {:ok, OrganizationPlan.pro()}
+  defp get_plan(plans, plan) do
+    if plans |> Enum.member?(plan) do
+      case plan do
+        "free" -> OrganizationPlan.free()
+        "solo" -> OrganizationPlan.solo()
+        "team" -> OrganizationPlan.team()
+        "enterprise" -> OrganizationPlan.enterprise()
+        "pro" -> OrganizationPlan.pro()
+      end
     else
-      {:ok, OrganizationPlan.free()}
+      OrganizationPlan.free()
     end
   end
 
