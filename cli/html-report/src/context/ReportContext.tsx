@@ -4,7 +4,9 @@ import { createContext, useContext } from "react"
 
 export interface ReportContextFilters {
   levels?: RuleLevel[]
+  categories?: string[]
   rules?: string[]
+  tables?: string[]
 }
 
 export interface ReportContext {

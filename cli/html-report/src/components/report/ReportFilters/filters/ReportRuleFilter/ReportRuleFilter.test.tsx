@@ -6,7 +6,7 @@ describe("ReportRuleFilter", () => {
     const rules = [
       { label: "Missing primary key", value: "missing-primary-key" },
     ]
-    render(<ReportRuleFilter rules={rules} selectedRules={[]} />)
+    render(<ReportRuleFilter rules={rules} selected={[]} />)
     expect(screen.getByText("Rules")).toBeDefined()
   })
 })

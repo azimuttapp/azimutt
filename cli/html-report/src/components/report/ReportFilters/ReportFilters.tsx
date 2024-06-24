@@ -2,40 +2,36 @@ import { ReportCategoryFilter } from "./filters/ReportCategoryFilter/ReportCateg
 import { ReportRuleFilter } from "./filters/ReportRuleFilter/ReportRuleFilter"
 import { ReportSeverityFilter } from "./filters/ReportSeverityFilter/ReportSeverityFilter"
 import { ReportTableFilter } from "./filters/ReportTableFilter/ReportTableFilter"
+import { useReportContext } from "@/context/ReportContext"
 
-export interface ReportFiltersProps {}
+export interface ReportFiltersProps {
+  onSeveritiesChange: (severities: string[]) => void
+  onCategoriesChange: (categories: string[]) => void
+  onRulesChange: (rules: string[]) => void
+  onTablesChange: (tables: string[]) => void
+}
 
-export const ReportFilters = ({}: ReportFiltersProps) => {
-  const handleSeverityChange = (severities: string[]) => {
-    console.log(severities)
-  }
-
-  const handleCategoryChange = (categories: string[]) => {
-    console.log(categories)
-  }
-
-  const handleRuleChange = (rules: string[]) => {
-    console.log(rules)
-  }
-
-  const handleTableChange = (tables: string[]) => {
-    console.log(tables)
-  }
+export const ReportFilters = ({
+  onSeveritiesChange,
+  onCategoriesChange,
+  onRulesChange,
+  onTablesChange,
+}: ReportFiltersProps) => {
+  const { filters } = useReportContext()
 
   return (
     <div className="grid gap-4 grid-cols-1 sm:grid-cols-4">
-      <ReportSeverityFilter onChange={handleSeverityChange} />
-      <ReportCategoryFilter onChange={handleCategoryChange} />
+      <ReportSeverityFilter
+        selected={filters?.levels ?? []}
+        onChange={onSeveritiesChange}
+      />
+      <ReportCategoryFilter selected={[]} onChange={onCategoriesChange} />
       <ReportRuleFilter
         rules={[]}
-        selectedRules={[]}
-        onChange={handleRuleChange}
+        selected={filters?.rules ?? []}
+        onChange={onRulesChange}
       />
-      <ReportTableFilter
-        tables={[]}
-        selectedTables={[]}
-        onChange={handleTableChange}
-      />
+      <ReportTableFilter tables={[]} selected={[]} onChange={onTablesChange} />
     </div>
   )
 }

@@ -2,19 +2,19 @@ import { MultiSelect } from "@/components/ui/multi-select"
 
 export interface ReportTableFilterProps {
   tables: string[]
-  selectedTables: string[]
+  selected: string[]
   onChange?: (values: string[]) => void
 }
 
 export const ReportTableFilter = ({
   tables,
-  selectedTables,
+  selected,
   onChange,
 }: ReportTableFilterProps) => {
   return (
     <MultiSelect
       options={tables.map((table) => ({ label: table, value: table }))}
-      defaultValue={selectedTables}
+      defaultValue={selected}
       onValueChange={(value) => onChange?.(value)}
       placeholder="Tables"
     />
