@@ -1,7 +1,7 @@
 import { PROD } from "./env.constants"
 import { AnalyzeReportHtmlResult } from "@azimutt/models"
 
-declare var __REPORT__: AnalyzeReportHtmlResult
+declare let __REPORT__: AnalyzeReportHtmlResult
 
 export const REPORT: AnalyzeReportHtmlResult = PROD
   ? __REPORT__

@@ -3,7 +3,7 @@ import { ReportStatsGrid } from "./ReportStatsGrid"
 
 export interface ReportStatsProps {}
 
-export const ReportStats = ({}: ReportStatsProps) => {
+export const ReportStats = () => {
   const { dbStats, violationStats } = useReport()
 
   return (

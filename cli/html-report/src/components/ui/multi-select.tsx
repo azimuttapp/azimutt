@@ -60,7 +60,6 @@ interface MultiSelectProps
   placeholder?: string
   animation?: number
   maxCount?: number
-  asChild?: boolean
   className?: string
 }
 
@@ -77,7 +76,6 @@ export const MultiSelect = React.forwardRef<
       placeholder = "Select options",
       animation = 0,
       maxCount = 3,
-      asChild = false,
       className,
       ...props
     },

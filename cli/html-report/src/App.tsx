@@ -14,6 +14,7 @@ function App() {
   const [selectedTables, setSelectedTables] = useState<string[]>([])
 
   const handleChange =
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (setter: React.Dispatch<React.SetStateAction<any[]>>) => (value: any[]) => {
       setter(value)
     }
