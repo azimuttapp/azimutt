@@ -6,12 +6,12 @@ import { ReportTableFilter } from "./filters/ReportTableFilter/ReportTableFilter
 export interface ReportFiltersProps {}
 
 export const ReportFilters = ({}: ReportFiltersProps) => {
-  const handleSeverityChange = (severity: string) => {
-    console.log(severity)
+  const handleSeverityChange = (severities: string[]) => {
+    console.log(severities)
   }
 
-  const handleCategoryChange = (category: string) => {
-    console.log(category)
+  const handleCategoryChange = (categories: string[]) => {
+    console.log(categories)
   }
 
   const handleRuleChange = (rules: string[]) => {

@@ -1,10 +1,4 @@
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { MultiSelect } from "@/components/ui/multi-select"
 
 const CATEGORIES = [
   {
@@ -22,24 +16,20 @@ const CATEGORIES = [
 ]
 
 export interface ReportCategoryFilterProps {
-  onChange?: (value: string) => void
+  selected?: string[]
+  onChange?: (value: string[]) => void
 }
 
 export const ReportCategoryFilter = ({
+  selected,
   onChange,
 }: ReportCategoryFilterProps) => {
   return (
-    <Select onValueChange={onChange}>
-      <SelectTrigger>
-        <SelectValue placeholder="Categories" />
-      </SelectTrigger>
-      <SelectContent>
-        {CATEGORIES.map(({ label, value }) => (
-          <SelectItem key={value} value={value}>
-            {label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <MultiSelect
+      options={CATEGORIES}
+      defaultValue={selected ?? []}
+      onValueChange={(value) => onChange?.(value)}
+      placeholder="Categories"
+    />
   )
 }
