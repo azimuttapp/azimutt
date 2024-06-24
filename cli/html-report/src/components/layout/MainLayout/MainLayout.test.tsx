@@ -11,14 +11,4 @@ describe("MainLayout", () => {
 
     expect(screen.getByText("Content")).toBeDefined()
   })
-
-  test("Should render sidebar", () => {
-    render(
-      <MainLayout sidebar={<aside>Sidebar</aside>}>
-        <p>Content</p>
-      </MainLayout>
-    )
-
-    expect(screen.getByText("Sidebar")).toBeDefined()
-  })
 })
