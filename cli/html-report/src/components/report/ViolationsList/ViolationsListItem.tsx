@@ -1,11 +1,12 @@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { pluralize } from "@/lib/utils"
+import { AnalyzeReportViolation } from "@azimutt/models"
 
 export interface ViolationsListItemProps {
   name: string
   level: string
-  violations?: { message: string }[]
+  violations?: AnalyzeReportViolation[]
   totalViolations?: number
 }
 

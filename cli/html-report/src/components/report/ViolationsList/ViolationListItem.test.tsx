@@ -1,7 +1,8 @@
 import { render, screen } from "@testing-library/react"
 import { ViolationsListItem } from "./ViolationsListItem"
+import { AnalyzeReportViolation } from "@azimutt/models"
 
-const violations = [
+const violations: AnalyzeReportViolation[] = [
   {
     message:
       "Index mfa_factors_user_id_idx on auth.mfa_factors(user_id) can be deleted, it's covered by: factor_id_created_at_idx(user_id, created_at).",
@@ -109,6 +110,8 @@ describe("ViolationsListItem", () => {
         totalViolations={5}
       />
     )
-    expect(screen.getByText(`${5 - violations.length} more`)).toBeDefined()
+    expect(
+      screen.getByText(`${5 - violations.length} more violations`)
+    ).toBeDefined()
   })
 })
