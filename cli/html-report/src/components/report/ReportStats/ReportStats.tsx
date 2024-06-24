@@ -1,27 +1,25 @@
-export interface ReportStatsProps {
-  entities: number
-  relations: number
-  queries: number
-  types: number
-  violations: number
-  rules: {
-    count: number
-    high: number
-    medium: number
-    low: number
-    hint: number
-  }
-}
+import { ReportStatsGrid } from "./ReportStatsGrid"
+import { useReportContext } from "@/context/ReportContext"
 
-export const ReportStats = ({ entities }: ReportStatsProps) => {
+export interface ReportStatsProps {}
+
+export const ReportStats = ({}: ReportStatsProps) => {
+  const { report } = useReportContext()
+
+  const violations = {
+    high: report.stats.violations.high ?? 0,
+    medium: report.stats.violations.medium ?? 0,
+    low: report.stats.violations.low ?? 0,
+    hint: report.stats.violations.hint ?? 0,
+  }
   return (
-    <dl className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
-      <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-        <dt className="truncate text-sm font-medium text-gray-500">Entities</dt>
-        <dd className="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
-          {entities}
-        </dd>
-      </div>
-    </dl>
+    <ReportStatsGrid
+      entities={report.stats.nb_entities ?? 0}
+      relations={report.stats.nb_relations ?? 0}
+      queries={report.stats.nb_queries ?? 0}
+      types={report.stats.nb_types ?? 0}
+      violations={violations}
+      rules={report.stats.nb_rules ?? 0}
+    />
   )
 }

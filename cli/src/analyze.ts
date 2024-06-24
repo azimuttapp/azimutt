@@ -35,6 +35,7 @@ import {
   zodParse,
   zodParseAsync,
   AnalyzeReportHtmlResult,
+  AnalyzeStats,
 } from "@azimutt/models"
 import { getConnector, track } from "@azimutt/gateway"
 import { version } from "./version.js"
@@ -196,7 +197,7 @@ export async function launchAnalyze(
 
   if (opts.html) {
     if (!report) report = buildReport(db, queries, rules)
-    await writeHtmlReport(folder, report, maxShown, logger)
+    await writeHtmlReport(folder, report, stats, maxShown, logger)
   }
 }
 
@@ -303,16 +304,6 @@ async function updateConf(
     ),
   })
   await fileWriteJson(path, usedConf)
-}
-
-type AnalyzeStats = {
-  nb_entities: number
-  nb_relations: number
-  nb_queries: number
-  nb_types: number
-  nb_rules: number
-  nb_violations: number
-  violations: Record<RuleLevel, number>
 }
 
 function buildStats(
@@ -447,6 +438,7 @@ async function writeReport(
 async function writeHtmlReport(
   folder: string,
   report: AnalyzeReport,
+  stats: AnalyzeStats,
   maxShown: number,
   logger: Logger
 ): Promise<void> {
@@ -484,6 +476,7 @@ async function writeHtmlReport(
     })),
     database,
     queries,
+    stats,
   }
 
   let html = await fileRead("./resources/report.html")

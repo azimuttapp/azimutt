@@ -5,6 +5,7 @@ import { ReportContext } from "./context/ReportContext"
 import { RuleLevel } from "@azimutt/models"
 import { useState } from "react"
 import { ViolationsTable } from "./components/report/ViolationsTable/ViolationsTable"
+import { ReportStats } from "./components/report/ReportStats/ReportStats"
 
 function App() {
   const [selectedLevels, setSelectedLevels] = useState<RuleLevel[]>([])
@@ -36,6 +37,7 @@ function App() {
           <ReportSidebar onLevelClick={toggleLevel} onRuleClick={toggleRule} />
         }
       >
+        <ReportStats />
         <ViolationsTable />
       </MainLayout>
     </ReportContext.Provider>

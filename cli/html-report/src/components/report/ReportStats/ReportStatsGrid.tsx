@@ -28,12 +28,15 @@ export const ReportStatsGrid = ({
     [violations]
   )
 
-  const items: ReportStatCellProps[] = [
+  const databaseStats: ReportStatCellProps[] = [
     { label: "Entities", value: String(entities) },
     { label: "Relatons", value: String(relations) },
     { label: "Queries", value: String(queries) },
     { label: "Types", value: String(types) },
     { label: "Rules", value: String(rules) },
+  ]
+
+  const violationsStats: ReportStatCellProps[] = [
     { label: "Total violations", value: String(totalViolations) },
     { label: "High", value: String(violations.high) },
     { label: "Medium", value: String(violations.medium) },
@@ -42,12 +45,17 @@ export const ReportStatsGrid = ({
   ]
 
   return (
-    <dl className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
-      <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-        {items.map((cellProps) => (
+    <div>
+      <dl className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-5">
+        {databaseStats.map((cellProps) => (
           <ReportStatCell key={cellProps.label} {...cellProps} />
         ))}
-      </div>
-    </dl>
+      </dl>
+      <dl className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-5">
+        {violationsStats.map((cellProps) => (
+          <ReportStatCell key={cellProps.label} {...cellProps} />
+        ))}
+      </dl>
+    </div>
   )
 }

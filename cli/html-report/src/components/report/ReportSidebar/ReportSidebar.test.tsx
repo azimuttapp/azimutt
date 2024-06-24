@@ -6,17 +6,12 @@ import { reportContextFactory } from "@/context/reportContextTestTool"
 
 describe("ReportSidebar", () => {
   test("Should render levels from context", () => {
-    const contextValues: ReportContext.ReportContext = {
-      report: {
-        levels: [
-          { level: "high", levelViolationsCount: 12, rules: [] },
-          { level: "medium", levelViolationsCount: 19, rules: [] },
-        ],
-        rules: [],
-        database: {},
-        queries: [],
-      },
-    }
+    const contextValues = reportContextFactory({
+      levels: [
+        { level: "high", levelViolationsCount: 12, rules: [] },
+        { level: "medium", levelViolationsCount: 19, rules: [] },
+      ],
+    })
     jest
       .spyOn(ReportContext, "useReportContext")
       .mockImplementation(() => contextValues)

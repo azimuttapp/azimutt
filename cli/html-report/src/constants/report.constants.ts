@@ -12850,4 +12850,18 @@ export const REPORT: AnalyzeReportHtmlResult = PROD
           },
         },
       ],
+      stats: {
+        nb_entities: 34,
+        nb_relations: 45,
+        nb_queries: 193,
+        nb_types: 46,
+        nb_rules: 29,
+        nb_violations: 140,
+        violations: {
+          high: 12,
+          medium: 38,
+          low: 4,
+          hint: 86,
+        },
+      },
     } as AnalyzeReportHtmlResult)
