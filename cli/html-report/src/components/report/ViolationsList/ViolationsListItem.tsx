@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { pluralize } from "@/lib/utils"
 
 export interface ViolationsListItemProps {
   name: string
@@ -20,8 +21,11 @@ export const ViolationsListItem = ({
   return (
     <Card>
       <CardHeader className="flex flex-row justify-between items-center">
-        <p>{name}</p>
-        <Badge>{level}</Badge>
+        <div className="flex items-center gap-2">
+          <p className="font-semibold text-lg">{name}</p>
+          <Badge>{level}</Badge>
+        </div>
+        <p>{pluralize(totalViolations ?? 0, "violation")}</p>
       </CardHeader>
       <CardContent>
         {Boolean(violations?.length) && (
@@ -31,10 +35,13 @@ export const ViolationsListItem = ({
                 {message}
               </code>
             ))}
+
+            {moreViolations > 0 && (
+              <code className="my-2 font-sm">
+                {pluralize(moreViolations ?? 0, "more violation")}
+              </code>
+            )}
           </div>
-        )}
-        {moreViolations > 0 && (
-          <div className="my-2 font-sm">{moreViolations} more</div>
         )}
       </CardContent>
     </Card>
