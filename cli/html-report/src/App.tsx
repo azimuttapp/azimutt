@@ -38,9 +38,11 @@ function App() {
           <ReportSidebar onLevelClick={toggleLevel} onRuleClick={toggleRule} />
         }
       >
-        <ReportStats />
-        <ReportFilters />
-        <ViolationsTable />
+        <div className="grid gap-5 grid-cols-1">
+          <ReportStats />
+          <ReportFilters />
+          <ViolationsTable />
+        </div>
       </MainLayout>
     </ReportContext.Provider>
   )

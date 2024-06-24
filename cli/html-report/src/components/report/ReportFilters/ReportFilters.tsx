@@ -23,7 +23,7 @@ export const ReportFilters = ({}: ReportFiltersProps) => {
   }
 
   return (
-    <div>
+    <div className="grid gap-4 grid-cols-1 sm:grid-cols-4">
       <ReportSeverityFilter onChange={handleSeverityChange} />
       <ReportCategoryFilter onChange={handleCategoryChange} />
       <ReportRuleFilter
