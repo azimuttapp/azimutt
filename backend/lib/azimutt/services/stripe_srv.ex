@@ -70,7 +70,11 @@ defmodule Azimutt.Services.StripeSrv do
   end
 
   def get_subscriptions(customer_id) when is_bitstring(customer_id) do
-    Stripe.Subscription.list(%{customer: customer_id})
+    if stripe_configured?() do
+      Stripe.Subscription.list(%{customer: customer_id})
+    else
+      {:error, "Stripe not configured"}
+    end
   end
 
   def get_subscription(subscription_id) when is_bitstring(subscription_id) do
