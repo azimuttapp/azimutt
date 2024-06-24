@@ -44,57 +44,57 @@ defmodule Azimutt.Organizations.OrganizationPlan do
 
   def solo do
     %OrganizationPlan{
-      id: :solo,
-      name: "Solo",
-      projects: nil,
-      layouts: nil,
-      layout_tables: nil,
-      memos: nil,
-      groups: nil,
-      colors: true,
+      id: Azimutt.plans().solo.id,
+      name: Azimutt.plans().solo.name,
+      projects: Azimutt.limits().projects.solo,
+      layouts: Azimutt.limits().project_layouts.solo,
+      layout_tables: Azimutt.limits().layout_tables.solo,
+      memos: Azimutt.limits().project_doc.solo,
+      groups: Azimutt.limits().project_doc.solo,
+      colors: Azimutt.limits().colors.solo,
       local_save: true,
-      private_links: true,
-      sql_export: true,
-      db_analysis: true,
-      db_access: true,
+      private_links: Azimutt.limits().project_share.solo,
+      sql_export: Azimutt.limits().schema_export.solo,
+      db_analysis: Azimutt.limits().analysis.solo != "preview",
+      db_access: Azimutt.limits().data_exploration.solo,
       streak: 0
     }
   end
 
   def team do
     %OrganizationPlan{
-      id: :team,
-      name: "Team",
-      projects: nil,
-      layouts: nil,
-      layout_tables: nil,
-      memos: nil,
-      groups: nil,
-      colors: true,
+      id: Azimutt.plans().team.id,
+      name: Azimutt.plans().team.name,
+      projects: Azimutt.limits().projects.team,
+      layouts: Azimutt.limits().project_layouts.team,
+      layout_tables: Azimutt.limits().layout_tables.team,
+      memos: Azimutt.limits().project_doc.team,
+      groups: Azimutt.limits().project_doc.team,
+      colors: Azimutt.limits().colors.team,
       local_save: true,
-      private_links: true,
-      sql_export: true,
-      db_analysis: true,
-      db_access: true,
+      private_links: Azimutt.limits().project_share.team,
+      sql_export: Azimutt.limits().schema_export.team,
+      db_analysis: Azimutt.limits().analysis.team != "preview",
+      db_access: Azimutt.limits().data_exploration.team,
       streak: 0
     }
   end
 
   def enterpprise do
     %OrganizationPlan{
-      id: :enterpprise,
-      name: "Enterprise",
-      projects: nil,
-      layouts: nil,
-      layout_tables: nil,
-      memos: nil,
-      groups: nil,
-      colors: true,
+      id: Azimutt.plans().enterpprise.id,
+      name: Azimutt.plans().enterpprise.name,
+      projects: Azimutt.limits().projects.enterpprise,
+      layouts: Azimutt.limits().project_layouts.enterpprise,
+      layout_tables: Azimutt.limits().layout_tables.enterpprise,
+      memos: Azimutt.limits().project_doc.enterpprise,
+      groups: Azimutt.limits().project_doc.enterpprise,
+      colors: Azimutt.limits().colors.enterpprise,
       local_save: true,
-      private_links: true,
-      sql_export: true,
-      db_analysis: true,
-      db_access: true,
+      private_links: Azimutt.limits().project_share.enterpprise,
+      sql_export: Azimutt.limits().schema_export.enterpprise,
+      db_analysis: Azimutt.limits().analysis.enterpprise != "preview",
+      db_access: Azimutt.limits().data_exploration.enterpprise,
       streak: 0
     }
   end

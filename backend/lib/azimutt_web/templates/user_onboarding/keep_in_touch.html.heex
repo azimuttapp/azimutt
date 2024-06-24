@@ -12,7 +12,7 @@
             <.form let={f} for={@changeset} action={Routes.user_onboarding_path(@conn, :keep_in_touch_next)}>
                 <div class="relative flex items-start mt-6">
                     <div class="flex items-center h-6">
-                        <%= checkbox f, :product_updates, "aria-describedby": "product_updates-description", class: "w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-gray-600" %>
+                        <%= checkbox f, :product_updates, value: true, "aria-describedby": "product_updates-description", class: "w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-gray-600" %>
                     </div>
                     <div class="ml-3 text-sm leading-6">
                         <%= label f, :product_updates, "Keep me updated on Azimutt big changes", class: "font-medium text-gray-900" %>

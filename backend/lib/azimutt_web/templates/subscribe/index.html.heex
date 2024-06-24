@@ -12,8 +12,6 @@
                 <img class="h-10 w-10 rounded-full" src={organization.logo} alt="">
             </div>
             <div class="min-w-0 flex-1">
-                <!-- TODO: test if apply (members < Azimutt.limits().users[@plan.id]) -->
-                <!-- TODO: show if already has a subscription -->
                 <a href={Routes.organization_billing_path(@conn, :new, organization.id, plan: @plan.id, freq: @freq)} class="focus:outline-none">
                     <span class="absolute inset-0" aria-hidden="true"></span>
                     <p class="text-sm font-medium text-gray-900"><%= organization.name %></p>

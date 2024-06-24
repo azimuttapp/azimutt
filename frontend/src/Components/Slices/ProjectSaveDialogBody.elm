@@ -133,7 +133,7 @@ selectSave wrap modalClose save titleId organizations projects projectName model
                         (\fieldId -> radioCards fieldId (stringToStorage >> UpdateStorage >> wrap) projects model.organization model.storage)
                     , model.organization
                         |> Maybe.filter (\o -> o.plan.id == "free")
-                        |> Maybe.map (\_ -> p [ class "mt-3 text-sm text-gray-500" ] [ text "If you upgraded to pro, refresh this page, your changes are saved." ])
+                        |> Maybe.map (\_ -> p [ class "mt-3 text-sm text-gray-500" ] [ text "If you just upgraded, refresh this page, your changes are saved." ])
                         |> Maybe.withDefault (text "")
                     ]
                 ]
@@ -171,9 +171,9 @@ radioCards fieldId fieldChange projects chosenOrg fieldValue =
 
                                     else
                                         ( False
-                                        , [ text ("Already saved " ++ (orgProjects |> pluralize "project") ++ ", you need a ")
-                                          , a [ href (Backend.organizationBillingUrl o.id Conf.features.projects.name), target "_blank", rel "noopener", class "link" ] [ text "pro organization" ]
-                                          , text " now"
+                                        , [ text ("Already saved " ++ (orgProjects |> pluralize "project") ++ ", you need ")
+                                          , a [ href (Backend.organizationBillingUrl o.id Conf.features.projects.name), target "_blank", rel "noopener", class "link" ] [ text "to upgrade" ]
+                                          , text " for more."
                                           ]
                                         )
                                 )
@@ -191,11 +191,11 @@ radioCards fieldId fieldChange projects chosenOrg fieldValue =
                         else
                             ( False
                             , [ text "Needs "
-                              , a [ href (Backend.organizationBillingUrl o.id Conf.features.localSave.name), target "_blank", rel "noopener", class "link" ] [ text "pro organization" ]
+                              , a [ href (Backend.organizationBillingUrl o.id Conf.features.localSave.name), target "_blank", rel "noopener", class "link" ] [ text "higher plan" ]
                               ]
                             )
                     )
-                    ( False, [ text "Needs pro organization" ] )
+                    ( False, [ text "Needs higher plan" ] )
     in
     div [ class "grid grid-cols-1 gap-y-2" ]
         ([ Card ProjectStorage.Remote "Save on Azimutt servers, share with your team." removeNotes remoteAllowed

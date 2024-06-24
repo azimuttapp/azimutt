@@ -9,11 +9,6 @@ defmodule AzimuttWeb.Services.BillingSrv do
   alias Azimutt.Tracking
   alias Azimutt.Utils.Result
 
-  # FIXME: to delete, call directly subscribe
-  def subscribe_pro(conn, %User{} = user, organization_id, success_url, cancel_url, error_path) do
-    subscribe(conn, user, organization_id, "solo", "monthly", success_url, cancel_url, error_path)
-  end
-
   def subscribe(conn, %User{} = user, organization_id, plan, freq, success_url, cancel_url, error_path) do
     {:ok, %Organization{} = organization} = Organizations.get_organization(organization_id, user)
     price = StripeSrv.get_price(plan, freq)

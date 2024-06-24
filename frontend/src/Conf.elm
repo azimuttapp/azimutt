@@ -125,7 +125,6 @@ type alias Feature a =
 
 features : Features
 features =
-    -- FIXME: remove this? get it from backend!
     -- MUST stay in sync with backend/lib/azimutt.ex (`limits`)
     { projects = { name = "projects", free = 0 }
     , layouts = { name = "layouts", free = 1 }

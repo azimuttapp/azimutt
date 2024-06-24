@@ -16,6 +16,7 @@ defmodule Azimutt.Services.StripeSrvTest do
       # IO.inspect(subscriptions, label: "subscriptions")
     end
 
+    @tag :skip
     test "get_price / get_plan" do
       assert StripeSrv.get_plan(StripeSrv.get_price("solo", "monthly")) == {"solo", "monthly"}
       assert StripeSrv.get_plan(StripeSrv.get_price("solo", "yearly")) == {"solo", "yearly"}

@@ -16,7 +16,6 @@ defmodule AzimuttWeb.UserOnboardingController do
     %{id: :role, fields: {[:role], []}},
     %{id: :about_you, fields: {[:location, :phone], [:description]}},
     %{id: :about_your_company, fields: {[:company, :industry], [:company_size, :team_organization_id]}},
-    %{id: :plan, fields: {[:plan], []}},
     %{id: :discovered_azimutt, fields: {[:discovered_by], []}},
     %{id: :previous_solutions, fields: {[:previously_tried], []}},
     %{id: :keep_in_touch, fields: {[:product_updates], []}},
@@ -43,41 +42,6 @@ defmodule AzimuttWeb.UserOnboardingController do
 
   def about_your_company(conn, _params), do: conn |> show_step(:about_your_company)
   def about_your_company_next(conn, %{"user_profile" => profile}), do: conn |> update_step(:about_your_company, profile)
-
-  def plan(conn, _params), do: conn |> show_step(:plan)
-
-  def plan_next(conn, %{"user_profile" => profile_params}) do
-    current_user = conn.assigns.current_user
-    now = DateTime.utc_now()
-    id = :plan
-
-    with {:ok, step} <- @steps |> Enum.find(fn s -> s.id == id end) |> Result.from_nillable(),
-         {:ok, p} <- Accounts.get_or_create_profile(current_user) do
-      Accounts.set_profile(p, profile_params, now, step.fields)
-      |> Result.fold(
-        fn err -> conn |> render("#{step.id}.html", changeset: err, profile: p) end,
-        fn _ ->
-          next = @steps |> Enum.drop_while(fn s -> s.id != id end) |> Enum.at(1)
-          p.user |> Accounts.set_onboarding(next.id |> Atom.to_string(), now)
-
-          if profile_params["plan"] == "pro" do
-            organization_id = p.team_organization_id || Accounts.get_user_default_organization(current_user).id
-
-            conn
-            |> BillingSrv.subscribe_pro(
-              current_user,
-              organization_id,
-              Routes.user_onboarding_url(conn, next.id),
-              Routes.user_onboarding_url(conn, step.id),
-              Routes.user_onboarding_path(conn, step.id)
-            )
-          else
-            conn |> redirect(to: Routes.user_onboarding_path(conn, next.id))
-          end
-        end
-      )
-    end
-  end
 
   def discovered_azimutt(conn, _params), do: conn |> show_step(:discovered_azimutt)
   # If nothing is selected, the `user_profile` is not sent

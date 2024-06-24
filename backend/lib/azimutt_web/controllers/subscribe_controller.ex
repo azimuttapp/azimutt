@@ -5,7 +5,7 @@ defmodule AzimuttWeb.SubscribeController do
   alias Azimutt.Utils.Result
   action_fallback AzimuttWeb.FallbackController
 
-  def index(conn, %{"plan" => plan_id, "freq" => freq} = _params) do
+  def index(conn, %{"plan" => plan_id, "freq" => freq}) do
     current_user = conn.assigns.current_user
     organizations = Organizations.list_organizations(current_user)
 

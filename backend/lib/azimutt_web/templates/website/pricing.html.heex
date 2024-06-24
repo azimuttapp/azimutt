@@ -31,7 +31,7 @@
             </defs>
           </svg>
           <div class="hidden lg:absolute lg:inset-x-px lg:bottom-0 lg:top-4 lg:block lg:rounded-t-2xl lg:bg-gray-800/80 lg:ring-1 lg:ring-white/10" aria-hidden="true"></div>
-          <%= render AzimuttWeb.PartialsView, "_pricing_plan_dark.html", plan: Azimutt.plans.free, cta: "Explore your db", sub: fn plan, freq -> "/new" end %>
+          <%= render AzimuttWeb.PartialsView, "_pricing_plan_dark.html", plan: Azimutt.plans.free, cta: "Explore your db", sub: fn plan, freq -> Routes.elm_path(@conn, :new) end %>
           <%= render AzimuttWeb.PartialsView, "_pricing_plan_dark.html", plan: Azimutt.plans.solo, cta: "Start free trial", sub: fn plan, freq -> Routes.subscribe_path(@conn, :index, plan, freq) end %>
           <%= render AzimuttWeb.PartialsView, "_pricing_plan_light.html", plan: Azimutt.plans.team, cta: "Start free trial", sub: fn plan, freq -> Routes.subscribe_path(@conn, :index, plan, freq) end %>
           <%= render AzimuttWeb.PartialsView, "_pricing_plan_dark.html", plan: Azimutt.plans.enterprise, cta: "Contact us", sub: fn plan, freq -> "mailto:#{Azimutt.config(:support_email)}" end %>
