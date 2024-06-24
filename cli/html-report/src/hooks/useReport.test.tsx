@@ -153,7 +153,7 @@ describe("useReport", () => {
     expect(filteredNames).toContain("entity not clean")
   })
 
-  test("Should extract entities", () => {
+  test("Should extract tables", () => {
     const contextValues = reportContextFactory(
       {
         levels: [
@@ -202,11 +202,11 @@ describe("useReport", () => {
       .mockImplementation(() => contextValues)
 
     const { result } = renderHook(() => useReport())
-    expect(result.current.entities).toHaveLength(1)
-    expect(result.current.entities).toContain("public.events")
+    expect(result.current.tables).toHaveLength(1)
+    expect(result.current.tables).toContain("public.events")
   })
 
-  test("Should extract distinct entities", () => {
+  test("Should extract distinct tables", () => {
     const contextValues = reportContextFactory(
       {
         levels: [
@@ -266,7 +266,7 @@ describe("useReport", () => {
       .mockImplementation(() => contextValues)
 
     const { result } = renderHook(() => useReport())
-    expect(result.current.entities).toHaveLength(1)
-    expect(result.current.entities).toContain("public.events")
+    expect(result.current.tables).toHaveLength(1)
+    expect(result.current.tables).toContain("public.events")
   })
 })

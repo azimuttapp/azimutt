@@ -15,11 +15,36 @@ export function useReport() {
     [filters]
   )
 
-  const filterRule = useCallback(
+  const filterByRule = useCallback(
     (rule: AnalyzeReportLevel) => {
       if (filters?.rules?.length) {
         const ruleNames = rule.rules.map(({ name }) => name)
         return filters.rules.some((name) => ruleNames.includes(name))
+      }
+      return true
+    },
+    [filters]
+  )
+
+  const filterByEntity = useCallback(
+    (rule: AnalyzeReportLevel) => {
+      if (filters?.tables?.length) {
+        const entities = rule.rules.reduce<string[]>((acc, rule) => {
+          const { violations } = rule
+          acc.push(
+            ...violations
+              .filter((violation) => Boolean(violation.entity))
+              .reduce<string[]>((tables, violation) => {
+                const table = `${violation.entity!.schema}.${violation.entity!.entity}`
+                if (!tables.includes(table)) {
+                  tables.push(table)
+                }
+                return tables
+              }, [])
+          )
+          return acc
+        }, [])
+        return filters.tables.some((table) => entities.includes(table))
       }
       return true
     },
@@ -31,9 +56,10 @@ export function useReport() {
       return [...report.levels]
 
     return report.levels.filter(
-      (item) => filterByLevel(item) && filterRule(item)
+      (item) =>
+        filterByLevel(item) && filterByRule(item) && filterByEntity(item)
     )
-  }, [report, filters, filterByLevel, filterRule])
+  }, [report, filters, filterByLevel, filterByRule, filterByEntity])
 
   const filteredRules = useMemo(
     () =>
@@ -49,7 +75,16 @@ export function useReport() {
     [levels, filters]
   )
 
-  const entities = useMemo(() => {
+  const rules = useMemo(() => {
+    const { levels } = report
+    const rules = levels.reduce<string[]>((acc, level) => {
+      acc.push(...level.rules.map((rule) => rule.name))
+      return acc
+    }, [])
+    return rules.sort()
+  }, [report])
+
+  const tables = useMemo(() => {
     const { levels } = report
     const rules = levels.reduce<AnalyzeReportRule[]>((acc, level) => {
       acc.push(...level.rules)
@@ -59,7 +94,7 @@ export function useReport() {
       acc.push(...rule.violations)
       return acc
     }, [])
-    const entities = violations.reduce<string[]>((acc, violation) => {
+    const tables = violations.reduce<string[]>((acc, violation) => {
       if (!violation?.entity) return acc
       const fullName = [violation.entity.schema, violation.entity.entity].join(
         "."
@@ -69,8 +104,8 @@ export function useReport() {
       }
       return acc
     }, [])
-    return entities
+    return tables
   }, [report])
 
-  return { levels, filteredRules, entities }
+  return { filters, levels, filteredRules, rules, tables }
 }

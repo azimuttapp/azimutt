@@ -1,7 +1,7 @@
 import { MultiSelect } from "@/components/ui/multi-select"
 
 export interface ReportRuleFilterProps {
-  rules: { label: string; value: string }[]
+  rules: string[]
   selected: string[]
   onChange?: (values: string[]) => void
 }
@@ -13,7 +13,7 @@ export const ReportRuleFilter = ({
 }: ReportRuleFilterProps) => {
   return (
     <MultiSelect
-      options={rules}
+      options={rules.map((rule) => ({ label: rule, value: rule }))}
       defaultValue={selected}
       onValueChange={(value) => onChange?.(value)}
       placeholder="Rules"
