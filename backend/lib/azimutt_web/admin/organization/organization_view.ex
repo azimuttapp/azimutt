@@ -26,9 +26,10 @@ defmodule AzimuttWeb.Admin.OrganizationView do
     x = Enum.count(list)
 
     case x do
+      0 -> content_tag(:span, x)
       1 -> content_tag(:span, x)
       2 -> content_tag(:span, x, class: "text-scheme-blue")
-      true -> content_tag(:span, x, class: "text-scheme-red")
+      _ -> content_tag(:span, x, class: "text-scheme-red")
     end
   end
 end

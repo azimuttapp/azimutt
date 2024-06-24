@@ -77,7 +77,7 @@ defmodule Azimutt.Services.StripeSrv do
     end
   end
 
-  def create_session(%{customer: customer, subscription: subscription, success_url: success_url, cancel_url: cancel_url, price_id: price_id, quantity: quantity}) do
+  def create_session(%{customer: customer, success_url: success_url, cancel_url: cancel_url, price_id: price_id, quantity: quantity, free_trial: free_trial}) do
     if stripe_configured?() do
       Stripe.Session.create(%{
         mode: "subscription",
@@ -89,16 +89,16 @@ defmodule Azimutt.Services.StripeSrv do
           }
         ],
         subscription_data:
-          if(subscription,
-            do: %{},
-            else: %{
-              trial_period_days: 14,
+          if(free_trial,
+            do: %{
+              trial_period_days: free_trial,
               trial_settings: %{
                 end_behavior: %{
                   missing_payment_method: "cancel"
                 }
               }
-            }
+            },
+            else: %{}
           ),
         payment_method_collection: "if_required",
         allow_promotion_codes: true,
@@ -141,8 +141,8 @@ defmodule Azimutt.Services.StripeSrv do
     end
   end
 
-  def subscription_url(stripe_sub_id) do
-    "https://dashboard.stripe.com/subscriptions/#{stripe_sub_id}"
+  def customer_url(customer_id) do
+    "https://dashboard.stripe.com/customers/#{customer_id}"
   end
 
   def stripe_configured?, do: !!Application.get_env(:stripity_stripe, :api_key)

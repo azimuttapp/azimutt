@@ -44,8 +44,7 @@ defmodule Azimutt.Organizations.Organization do
       :description,
       :github_username,
       :twitter_username,
-      :stripe_customer_id,
-      :stripe_subscription_id
+      :stripe_customer_id
     ]
 
   @doc false

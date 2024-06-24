@@ -4,9 +4,9 @@
             <%= img_tag(@organization.logo, class: "mt-2 h-24 w-24 rounded-md") %>
             <div class="mt-2 pl-3">
                 <div class="text-xl font-bold text-slate-100 truncate">
-                    <%= @organization.name %>
-                    <%= if @organization.stripe_subscription_id do %>
-                        - <%= link "Stripe", to: StripeSrv.subscription_url(@organization.stripe_subscription_id), class: "underline" %>
+                    <%= @organization.name %> - <%= @plan.name %> plan
+                    <%= if @organization.stripe_customer_id do %>
+                        - <%= link "Stripe", to: StripeSrv.customer_url(@organization.stripe_customer_id), target: "_blank", class: "underline" %>
                     <% end %>
                     <%= if @organization.clever_cloud_resource do %>
                         - <span title={@organization.clever_cloud_resource.owner_name}>Clever Cloud</span>
@@ -34,7 +34,6 @@
                     <% end %>
                 </div>
                 <div class="mt-1 text-xs font-medium text-slate-300">
-                    <span class="font-bold"><%= @plan.name %></span>:
                     <%= @plan.projects || "∞" %> projects,
                     <%= @plan.layouts || "∞" %> layouts (<%= @plan.layout_tables || "∞" %> tables),
                     <%= @plan.memos || "∞" %> memos,

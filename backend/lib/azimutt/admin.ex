@@ -17,7 +17,7 @@ defmodule Azimutt.Admin do
   def count_organizations, do: Organization |> Repo.aggregate(:count, :id)
   def count_personal_organizations, do: Organization |> where([o], o.is_personal == true) |> Repo.aggregate(:count, :id)
   def count_non_personal_organizations, do: Organization |> where([o], o.is_personal == false) |> Repo.aggregate(:count, :id)
-  def count_stripe_subscriptions, do: Organization |> where([o], not is_nil(o.stripe_subscription_id)) |> Repo.aggregate(:count, :id)
+  def count_paid_organizations, do: Organization |> where([o], not is_nil(o.stripe_subscription_id)) |> Repo.aggregate(:count, :id)
   def count_clever_cloud_resources, do: CleverCloud.Resource |> Repo.aggregate(:count, :id)
   def count_heroku_resources, do: Heroku.Resource |> Repo.aggregate(:count, :id)
   def count_projects, do: Project |> Repo.aggregate(:count, :id)

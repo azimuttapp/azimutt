@@ -42,8 +42,8 @@
                             <% end %>
                         </td>
                         <td class="p-1">
-                            <%= if organization.stripe_subscription_id do %>
-                                <%= link "Stripe", to: StripeSrv.subscription_url(organization.stripe_subscription_id), class: "underline" %>
+                            <%= if organization.stripe_customer_id do %>
+                                <%= link "Stripe", to: StripeSrv.customer_url(organization.stripe_customer_id), target: "_blank", class: "underline" %>
                             <% end %>
                             <%= if organization.clever_cloud_resource do %>
                                 <span title={organization.clever_cloud_resource.owner_name}>Clever Cloud</span>

@@ -264,7 +264,6 @@ defmodule Azimutt.Tracking do
       github_username: org.github_username,
       twitter_username: org.twitter_username,
       stripe_customer_id: org.stripe_customer_id,
-      stripe_subscription_id: org.stripe_subscription_id,
       is_personal: org.is_personal,
       clever_cloud: if(Ecto.assoc_loaded?(org.clever_cloud_resource) && org.clever_cloud_resource, do: org.clever_cloud_resource.id, else: nil),
       heroku: if(Ecto.assoc_loaded?(org.heroku_resource) && org.heroku_resource, do: org.heroku_resource.id, else: nil),
