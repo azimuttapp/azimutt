@@ -447,36 +447,24 @@ async function writeHtmlReport(
     `report_${dateToIsoFilename(new Date())}.azimutt.html`
   )
 
-  const { analysis, database, queries } = report
+  const { analysis } = report
 
-  const rules = Object.values(analysis)
+  const rules = Object.values(analysis).map(({ violations, ...rule }) => ({
+    ...rule,
+    violations: violations.slice(0, maxShown),
+  }))
 
-  const reportByLevel: AnalyzeReportLevel[] = ruleLevelsShown.map((level) => {
-    const levelRules = rules.filter((rule) => rule.level === level)
-    const levelViolationsCount = levelRules.reduce(
-      (acc, r) => acc + r.violations.length,
-      0
-    )
-    const rulesWithViolations = levelRules
-      .filter((rule) => rule.totalViolations > 0)
-      .map((rule) => {
-        return {
-          ...rule,
-          violations: rule.violations.slice(0, maxShown),
-        }
-      })
-    return { level, levelViolationsCount, rules: rulesWithViolations }
-  }, {})
+  const { nb_entities, nb_relations, nb_queries, nb_types, nb_rules } = stats
 
   const reportResult: AnalyzeReportHtmlResult = {
-    levels: reportByLevel,
-    rules: rules.map((rule) => ({
-      name: rule.name,
-      totalViolations: rule.totalViolations,
-    })),
-    database,
-    queries,
-    stats,
+    rules,
+    stats: {
+      nb_entities,
+      nb_relations,
+      nb_queries,
+      nb_types,
+      nb_rules,
+    },
   }
 
   let html = await fileRead("./resources/report.html")

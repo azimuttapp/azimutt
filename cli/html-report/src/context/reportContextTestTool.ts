@@ -6,24 +6,15 @@ export const reportContextFactory = (
   filters?: Partial<ReportContextFilters>
 ): ReportContext => ({
   report: {
-    levels: [],
     rules: [],
-    queries: [],
     ...(report ?? {}),
 
-    database: {
-      ...(report?.database ?? {}),
-    },
     stats: {
       nb_entities: 0,
       nb_relations: 0,
       nb_queries: 0,
       nb_types: 0,
       nb_rules: 0,
-      nb_violations: 0,
-      violations: {
-        ...(report?.stats?.violations ?? {}),
-      },
       ...(report?.stats ?? {}),
     },
   },

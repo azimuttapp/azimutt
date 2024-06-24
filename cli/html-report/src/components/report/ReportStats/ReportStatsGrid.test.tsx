@@ -52,21 +52,21 @@ describe("ReportStat", () => {
 
   test("should render high violations count", () => {
     render(<ReportStatsGrid {...props} />)
-    expect(screen.getByText(props.violations.high)).toBeDefined()
+    expect(screen.getByText(props.violations.high!)).toBeDefined()
   })
 
   test("should render medium violations count", () => {
     render(<ReportStatsGrid {...props} />)
-    expect(screen.getByText(props.violations.medium)).toBeDefined()
+    expect(screen.getByText(props.violations.medium!)).toBeDefined()
   })
 
   test("should render low violations count", () => {
     render(<ReportStatsGrid {...props} />)
-    expect(screen.getByText(props.violations.low)).toBeDefined()
+    expect(screen.getByText(props.violations.low!)).toBeDefined()
   })
 
   test("should render hint violations count", () => {
     render(<ReportStatsGrid {...props} />)
-    expect(screen.getByText(props.violations.hint)).toBeDefined()
+    expect(screen.getByText(props.violations.hint!)).toBeDefined()
   })
 })

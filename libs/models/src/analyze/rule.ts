@@ -124,11 +124,17 @@ export const AnalyzeStats = z.object({
 })
 export type AnalyzeStats = z.infer<typeof AnalyzeStats>
 
+export const AnalyzeReportHtmlStats = z.object({
+  nb_entities: z.number(),
+  nb_relations: z.number(),
+  nb_queries: z.number(),
+  nb_types: z.number(),
+  nb_rules: z.number(),
+})
+export type AnalyzeReportHtmlStats = z.infer<typeof AnalyzeReportHtmlStats>
+
 export const AnalyzeReportHtmlResult = z.object({
-  levels: z.array(AnalyzeReportLevel),
-  rules: z.array(AnalyzeReportRuleSummary),
-  database: Database,
-  queries: DatabaseQuery.array(),
-  stats: AnalyzeStats,
+  rules: z.array(AnalyzeReportRule),
+  stats: AnalyzeReportHtmlStats,
 })
 export type AnalyzeReportHtmlResult = z.infer<typeof AnalyzeReportHtmlResult>

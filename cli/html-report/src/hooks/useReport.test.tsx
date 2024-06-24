@@ -4,80 +4,66 @@ import * as ReportContext from "@/context/ReportContext"
 import { reportContextFactory } from "@/context/reportContextTestTool"
 
 describe("useReport", () => {
-  test("should return levels by default", () => {
-    const contextValues = reportContextFactory({
-      levels: [
-        { level: "high", levelViolationsCount: 12, rules: [] },
-        { level: "medium", levelViolationsCount: 19, rules: [] },
-      ],
-    })
-    jest
-      .spyOn(ReportContext, "useReportContext")
-      .mockImplementation(() => contextValues)
-
-    const { result } = renderHook(() => useReport())
-    expect(result.current.levels).toBeDefined()
-    expect(result.current.levels).toHaveLength(2)
-  })
-
   test("should filter by level", () => {
     const contextValues = reportContextFactory(
       {
-        levels: [
-          { level: "high", levelViolationsCount: 12, rules: [] },
-          { level: "medium", levelViolationsCount: 19, rules: [] },
+        rules: [
+          {
+            level: "high",
+            name: "Rule1",
+            conf: {},
+            violations: [],
+            totalViolations: 1,
+          },
+          {
+            level: "medium",
+            name: "Rule2",
+            conf: {},
+            violations: [],
+            totalViolations: 1,
+          },
         ],
       },
-      { levels: ["high"] }
+      {
+        levels: ["high"],
+      }
     )
     jest
       .spyOn(ReportContext, "useReportContext")
       .mockImplementation(() => contextValues)
 
     const { result } = renderHook(() => useReport())
-    expect(result.current.levels).toHaveLength(1)
-    expect(result.current.levels[0].level).toBe("high")
+    expect(result.current.filteredRules).toHaveLength(1)
+    expect(result.current.filteredRules[0].level).toBe("high")
   })
 
   test("should filter by rule", () => {
     const contextValues = reportContextFactory(
       {
-        levels: [
+        rules: [
           {
+            name: "duplicated index",
             level: "high",
-            levelViolationsCount: 12,
-            rules: [
-              {
-                name: "duplicated index",
-                level: "high",
-                conf: {},
-                violations: [],
-                totalViolations: 12,
-              },
-            ],
+            conf: {},
+            violations: [],
+            totalViolations: 12,
           },
           {
+            name: "entity not clean",
             level: "medium",
-            levelViolationsCount: 19,
-            rules: [
+            conf: {},
+            violations: [
               {
-                name: "entity not clean",
-                level: "high",
-                conf: {},
-                violations: [
-                  {
-                    message:
-                      "Entity public.events has old analyze (2024-06-17T10:18:35.009Z).",
-                    entity: { schema: "public", entity: "events" },
-                    extra: {
-                      reason: "old analyze",
-                      value: "2024-06-17T10:18:35.009Z",
-                    },
-                  },
-                ],
-                totalViolations: 1,
+                message:
+                  "Entity public.events has old analyze (2024-06-17T10:18:35.009Z).",
+                entity: { schema: "public", entity: "events" },
+                extra: {
+                  reason: "old analyze",
+                  value: "2024-06-17T10:18:35.009Z",
+                },
               },
             ],
+            totalViolations: 1,
           },
         ],
       },
@@ -89,114 +75,84 @@ describe("useReport", () => {
       .mockImplementation(() => contextValues)
 
     const { result } = renderHook(() => useReport())
-    expect(result.current.levels).toHaveLength(1)
-    expect(result.current.levels[0].rules).toHaveLength(1)
-    expect(result.current.levels[0].rules[0].name).toBe("duplicated index")
+    expect(result.current.filteredRules).toHaveLength(1)
+    expect(result.current.filteredRules[0].name).toBe("duplicated index")
   })
 
-  test("should filter and flat rules", () => {
+  test("Should filter by tables", () => {
     const contextValues = reportContextFactory(
       {
-        levels: [
+        rules: [
           {
+            name: "duplicated index",
             level: "high",
-            levelViolationsCount: 12,
-            rules: [
+            conf: {},
+            violations: [
               {
-                name: "duplicated index",
-                level: "high",
-                conf: {},
-                violations: [],
-                totalViolations: 12,
+                message:
+                  "Entity public.events has old analyze (2024-06-17T10:18:35.009Z).",
+                entity: { schema: "private", entity: "logs" },
+                extra: {
+                  reason: "old analyze",
+                  value: "2024-06-17T10:18:35.009Z",
+                },
               },
             ],
+            totalViolations: 12,
           },
           {
+            name: "entity not clean",
             level: "medium",
-            levelViolationsCount: 19,
-            rules: [
+            conf: {},
+            violations: [
               {
-                name: "entity not clean",
-                level: "high",
-                conf: {},
-                violations: [
-                  {
-                    message:
-                      "Entity public.events has old analyze (2024-06-17T10:18:35.009Z).",
-                    entity: { schema: "public", entity: "events" },
-                    extra: {
-                      reason: "old analyze",
-                      value: "2024-06-17T10:18:35.009Z",
-                    },
-                  },
-                ],
-                totalViolations: 1,
+                message:
+                  "Entity public.events has old analyze (2024-06-17T10:18:35.009Z).",
+                entity: { schema: "public", entity: "events" },
+                extra: {
+                  reason: "old analyze",
+                  value: "2024-06-17T10:18:35.009Z",
+                },
               },
             ],
+            totalViolations: 1,
           },
         ],
       },
-      { rules: ["duplicated index", "entity not clean"] }
+      { tables: ["public.events"] }
     )
+
     jest
       .spyOn(ReportContext, "useReportContext")
       .mockImplementation(() => contextValues)
 
     const { result } = renderHook(() => useReport())
-    const filteredNames = Array.from(
-      new Set(result.current.filteredRules.map(({ name }) => name))
-    )
-
-    expect(result.current.filteredRules).toHaveLength(2)
-    expect(filteredNames).toHaveLength(2)
-    expect(filteredNames).toContain("duplicated index")
-    expect(filteredNames).toContain("entity not clean")
+    expect(result.current.filteredRules).toHaveLength(1)
+    expect(result.current.filteredRules[0].name).toBe("entity not clean")
   })
 
   test("Should extract tables", () => {
-    const contextValues = reportContextFactory(
-      {
-        levels: [
-          {
-            level: "high",
-            levelViolationsCount: 12,
-            rules: [
-              {
-                name: "duplicated index",
-                level: "high",
-                conf: {},
-                violations: [],
-                totalViolations: 12,
+    const contextValues = reportContextFactory({
+      rules: [
+        {
+          name: "entity not clean",
+          level: "medium",
+          conf: {},
+          violations: [
+            {
+              message:
+                "Entity public.events has old analyze (2024-06-17T10:18:35.009Z).",
+              entity: { schema: "public", entity: "events" },
+              extra: {
+                reason: "old analyze",
+                value: "2024-06-17T10:18:35.009Z",
               },
-            ],
-          },
-          {
-            level: "medium",
-            levelViolationsCount: 19,
-            rules: [
-              {
-                name: "entity not clean",
-                level: "high",
-                conf: {},
-                violations: [
-                  {
-                    message:
-                      "Entity public.events has old analyze (2024-06-17T10:18:35.009Z).",
-                    entity: { schema: "public", entity: "events" },
-                    extra: {
-                      reason: "old analyze",
-                      value: "2024-06-17T10:18:35.009Z",
-                    },
-                  },
-                ],
-                totalViolations: 1,
-              },
-            ],
-          },
-        ],
-      },
-      { rules: ["duplicated index", "entity not clean"] }
-    )
+            },
+          ],
+          totalViolations: 1,
+        },
+      ],
+    })
     jest
       .spyOn(ReportContext, "useReportContext")
       .mockImplementation(() => contextValues)
@@ -207,59 +163,44 @@ describe("useReport", () => {
   })
 
   test("Should extract distinct tables", () => {
-    const contextValues = reportContextFactory(
-      {
-        levels: [
-          {
-            level: "high",
-            levelViolationsCount: 12,
-            rules: [
-              {
-                name: "duplicated index",
-                level: "high",
-                conf: {},
-                violations: [
-                  {
-                    message:
-                      "Entity public.events has old analyze (2024-06-17T10:18:35.009Z).",
-                    entity: { schema: "public", entity: "events" },
-                    extra: {
-                      reason: "old analyze",
-                      value: "2024-06-17T10:18:35.009Z",
-                    },
-                  },
-                ],
-                totalViolations: 12,
+    const contextValues = reportContextFactory({
+      rules: [
+        {
+          level: "high",
+          name: "duplicated index",
+          conf: {},
+          violations: [
+            {
+              message:
+                "Entity public.events has old analyze (2024-06-17T10:18:35.009Z).",
+              entity: { schema: "public", entity: "events" },
+              extra: {
+                reason: "old analyze",
+                value: "2024-06-17T10:18:35.009Z",
               },
-            ],
-          },
-          {
-            level: "medium",
-            levelViolationsCount: 19,
-            rules: [
-              {
-                name: "entity not clean",
-                level: "high",
-                conf: {},
-                violations: [
-                  {
-                    message:
-                      "Entity public.events has old analyze (2024-06-17T10:18:35.009Z).",
-                    entity: { schema: "public", entity: "events" },
-                    extra: {
-                      reason: "old analyze",
-                      value: "2024-06-17T10:18:35.009Z",
-                    },
-                  },
-                ],
-                totalViolations: 1,
+            },
+          ],
+          totalViolations: 12,
+        },
+        {
+          level: "medium",
+          name: "entity not clean",
+          conf: {},
+          violations: [
+            {
+              message:
+                "Entity public.events has old analyze (2024-06-17T10:18:35.009Z).",
+              entity: { schema: "public", entity: "events" },
+              extra: {
+                reason: "old analyze",
+                value: "2024-06-17T10:18:35.009Z",
               },
-            ],
-          },
-        ],
-      },
-      { rules: ["duplicated index", "entity not clean"] }
-    )
+            },
+          ],
+          totalViolations: 1,
+        },
+      ],
+    })
 
     jest
       .spyOn(ReportContext, "useReportContext")

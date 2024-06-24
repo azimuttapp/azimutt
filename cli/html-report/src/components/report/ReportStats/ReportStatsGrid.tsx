@@ -1,17 +1,13 @@
 import { useMemo } from "react"
 import { ReportStatCell, ReportStatCellProps } from "./ReportStatCell"
+import { ViolationStats } from "@/hooks/useReport"
 
 export interface ReportStatsGridProps {
   entities: number
   relations: number
   queries: number
   types: number
-  violations: {
-    high: number
-    medium: number
-    low: number
-    hint: number
-  }
+  violations: ViolationStats
   rules: number
 }
 
@@ -38,10 +34,10 @@ export const ReportStatsGrid = ({
 
   const violationsStats: ReportStatCellProps[] = [
     { label: "Total violations", value: String(totalViolations) },
-    { label: "High", value: String(violations.high) },
-    { label: "Medium", value: String(violations.medium) },
-    { label: "Low", value: String(violations.low) },
-    { label: "Hint", value: String(violations.hint) },
+    { label: "High", value: String(violations.high ?? 0) },
+    { label: "Medium", value: String(violations.medium ?? 0) },
+    { label: "Low", value: String(violations.low ?? 0) },
+    { label: "Hint", value: String(violations.hint ?? 0) },
   ]
 
   return (
