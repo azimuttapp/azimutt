@@ -23,7 +23,7 @@
   <div class="isolate mx-auto mt-10 grid max-w-md grid-cols-1 gap-3 md:max-w-2xl md:grid-cols-2 lg:max-w-4xl xl:mx-0 xl:max-w-none xl:grid-cols-3">
     <%= render AzimuttWeb.PartialsView, "_pricing_plan_light.html", plan: Azimutt.plans.solo, cta: "Start free trial", sub: fn plan, freq -> Routes.organization_billing_path(@conn, :new, @organization.id, plan: plan, freq: freq) end %>
     <%= render AzimuttWeb.PartialsView, "_pricing_plan_light.html", plan: Azimutt.plans.team, cta: "Start free trial", sub: fn plan, freq -> Routes.organization_billing_path(@conn, :new, @organization.id, plan: plan, freq: freq) end %>
-    <%= render AzimuttWeb.PartialsView, "_pricing_plan_light.html", plan: Azimutt.plans.enterprise, cta: "Contact us", sub: fn plan, freq -> "mailto:#{Azimutt.config(:support_email)}" end %>
+    <%= render AzimuttWeb.PartialsView, "_pricing_plan_light.html", plan: Azimutt.plans.enterprise, cta: "Contact us", sub: fn _, _ -> "mailto:#{Azimutt.config(:support_email)}" end %>
   </div>
 </div>
 

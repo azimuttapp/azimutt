@@ -57,6 +57,15 @@ defmodule AzimuttWeb.OrganizationBillingController do
     end
   end
 
+  def refresh(conn, %{"organization_organization_id" => organization_id}) do
+    current_user = conn.assigns.current_user
+
+    with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user) do
+      Organizations.validate_organization_plan(organization)
+      conn |> redirect(to: Routes.organization_billing_path(conn, :index, organization_id, source: "refresh"))
+    end
+  end
+
   def new(conn, %{"organization_organization_id" => organization_id} = params) do
     current_user = conn.assigns.current_user
 

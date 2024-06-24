@@ -1,6 +1,5 @@
 defmodule Azimutt.Services.StripeSrv do
   @moduledoc false
-  alias Azimutt.Utils.Result
   require Logger
 
   def create_customer(organization_id, name, email, description, is_personal, creator_name, creator_email) do
@@ -54,16 +53,6 @@ defmodule Azimutt.Services.StripeSrv do
     if stripe_configured?() do
       # https://stripe.com/docs/api/customers/delete
       Stripe.Customer.delete(customer.id)
-    else
-      {:error, "Stripe not configured"}
-    end
-  end
-
-  def update_quantity(subscription_id, quantity) when is_bitstring(subscription_id) do
-    if stripe_configured?() do
-      Stripe.Subscription.update(subscription_id, %{quantity: quantity})
-      |> Result.map_error(fn error -> error.message end)
-      |> Result.tap_error(&Logger.error/1)
     else
       {:error, "Stripe not configured"}
     end

@@ -40,6 +40,8 @@ defmodule Azimutt.Organizations do
     # |> preload([:created_by])
     Organization
     |> where([o], o.stripe_customer_id == ^customer_id)
+    |> preload(:clever_cloud_resource)
+    |> preload(:heroku_resource)
     |> preload(:created_by)
     |> Repo.one()
     |> Result.from_nillable()
@@ -112,15 +114,6 @@ defmodule Azimutt.Organizations do
     organization
     |> Organization.update_changeset(attrs, current_user)
     |> Repo.update()
-  end
-
-  def update_organization_subscription(%Organization{} = organization, subscription_id) do
-    if organization.stripe_subscription_id do
-      Logger.error("Organization #{organization.id} as already a subscription #{organization.stripe_subscription_id}, it will be replaced")
-    end
-
-    organization = Ecto.Changeset.change(organization, stripe_subscription_id: subscription_id)
-    Repo.update!(organization)
   end
 
   # Organization members
@@ -320,80 +313,32 @@ defmodule Azimutt.Organizations do
     |> Repo.update()
   end
 
+  def use_free_trial(%Organization{} = organization, now) do
+    organization |> Organization.free_trial_changeset(now) |> Repo.update()
+  end
+
   def get_organization_plan(%Organization{} = organization, maybe_current_user) do
-    plans = Azimutt.config(:instance_plans) || ["free"]
+    plans = Azimutt.config(:instance_plans) || ["free", "solo", "team", "enterprise", "pro"]
 
-    cond do
-      organization.clever_cloud_resource -> clever_cloud_plan(plans, organization.clever_cloud_resource)
-      organization.heroku_resource -> heroku_plan(plans, organization.heroku_resource)
-      organization.stripe_customer_id && StripeSrv.stripe_configured?() -> stripe_plan(plans, organization.stripe_customer_id)
-      true -> default_plan(plans)
-    end
-    |> Result.map(fn plan -> plan_overrides(plans, organization, plan, maybe_current_user) end)
-  end
-
-  def clever_cloud_plan(plans, %CleverCloud.Resource{} = resource) do
-    if resource.plan do
-      cond do
-        resource.plan |> String.starts_with?("solo") -> {:ok, get_plan(plans, "solo")}
-        resource.plan |> String.starts_with?("team") -> {:ok, get_plan(plans, "team")}
-        resource.plan |> String.starts_with?("enterprise") -> {:ok, get_plan(plans, "enterprise")}
-        resource.plan |> String.starts_with?("pro") -> {:ok, get_plan(plans, "pro")}
-        true -> {:ok, OrganizationPlan.free()}
-      end
+    if organization.plan == nil || Date.compare(organization.plan_validated, Timex.shift(DateTime.utc_now(), days: -1)) == :lt do
+      validate_organization_plan(organization)
     else
-      {:ok, OrganizationPlan.free()}
+      {:ok, organization.plan}
     end
-  end
-
-  def heroku_plan(plans, %Heroku.Resource{} = resource) do
-    if resource.plan do
-      cond do
-        resource.plan |> String.starts_with?("solo") -> {:ok, get_plan(plans, "solo")}
-        resource.plan |> String.starts_with?("team") -> {:ok, get_plan(plans, "team")}
-        resource.plan |> String.starts_with?("enterprise") || resource.plan == "test" -> {:ok, get_plan(plans, "enterprise")}
-        resource.plan |> String.starts_with?("pro") -> {:ok, get_plan(plans, "pro")}
-        true -> {:ok, OrganizationPlan.free()}
-      end
-    else
-      {:ok, OrganizationPlan.free()}
-    end
-  end
-
-  defp stripe_plan(plans, customer_id) do
-    StripeSrv.get_subscriptions(customer_id)
-    |> Result.map(fn subs ->
-      if length(subs.data) > 0 do
-        sub = hd(subs.data)
-        {plan, _} = StripeSrv.get_plan(sub.plan.id)
-
-        if ["trialing", "active", "past_due", "unpaid"] |> Enum.member?(sub.status) do
-          get_plan(plans, plan)
-        else
-          OrganizationPlan.free()
+    |> Result.map(fn plan ->
+      if plans |> Enum.member?(plan) do
+        case plan do
+          "free" -> OrganizationPlan.free()
+          "solo" -> OrganizationPlan.solo()
+          "team" -> OrganizationPlan.team()
+          "enterprise" -> OrganizationPlan.enterprise()
+          "pro" -> OrganizationPlan.pro()
         end
       else
         OrganizationPlan.free()
       end
     end)
-  end
-
-  def default_plan(plans) do
-    get_plan(plans, Azimutt.config(:organization_default_plan))
-  end
-
-  defp get_plan(plans, plan) do
-    if plans |> Enum.member?(plan) do
-      case plan do
-        "free" -> OrganizationPlan.free()
-        "solo" -> OrganizationPlan.solo()
-        "team" -> OrganizationPlan.team()
-        "enterprise" -> OrganizationPlan.enterprise()
-        "pro" -> OrganizationPlan.pro()
-      end
-    else
-      OrganizationPlan.free()
-    end
+    |> Result.map(fn plan -> plan_overrides(plans, organization, plan, maybe_current_user) end)
   end
 
   defp plan_overrides(plans, %Organization{} = organization, %OrganizationPlan{} = plan, maybe_current_user) do
@@ -492,6 +437,78 @@ defmodule Azimutt.Organizations do
   end
 
   defp override_streak(%OrganizationPlan{} = plan, maybe_current_user) when is_nil(maybe_current_user), do: plan
+
+  def validate_organization_plan(%Organization{} = organization) do
+    cond do
+      organization.clever_cloud_resource -> validate_clever_cloud_plan(organization.clever_cloud_resource)
+      organization.heroku_resource -> validate_heroku_plan(organization.heroku_resource)
+      organization.stripe_customer_id && StripeSrv.stripe_configured?() -> validate_stripe_plan(organization.stripe_customer_id)
+      true -> validate_default_plan()
+    end
+    |> Result.tap(fn validated -> organization |> Organization.validate_plan_changeset(validated, DateTime.utc_now()) |> Repo.update() end)
+    |> Result.map(fn validated -> validated.plan end)
+  end
+
+  def validate_clever_cloud_plan(%CleverCloud.Resource{} = resource) do
+    {plan, seats} =
+      if resource.plan do
+        seats = resource.plan |> String.split("-") |> Enum.at(1, "1") |> String.to_integer()
+
+        cond do
+          resource.plan |> String.starts_with?("solo") -> {"solo", seats}
+          resource.plan |> String.starts_with?("team") -> {"team", seats}
+          resource.plan |> String.starts_with?("enterprise") -> {"enterprise", seats}
+          resource.plan |> String.starts_with?("pro") -> {"pro", seats}
+          true -> {"free", 1}
+        end
+      else
+        {"free", 1}
+      end
+
+    {:ok, %{plan: plan, plan_freq: "monthly", plan_status: "manual", plan_seats: seats}}
+  end
+
+  def validate_heroku_plan(%Heroku.Resource{} = resource) do
+    {plan, seats} =
+      if resource.plan do
+        seats = resource.plan |> String.split("-") |> Enum.at(1, "1") |> String.to_integer()
+
+        cond do
+          resource.plan |> String.starts_with?("solo") -> {"solo", seats}
+          resource.plan |> String.starts_with?("team") -> {"team", seats}
+          resource.plan |> String.starts_with?("enterprise") || resource.plan == "test" -> {"enterprise", seats}
+          resource.plan |> String.starts_with?("pro") -> {"pro", seats}
+          true -> {"free", 1}
+        end
+      else
+        {"free", 1}
+      end
+
+    {:ok, %{plan: plan, plan_freq: "monthly", plan_status: "manual", plan_seats: seats}}
+  end
+
+  defp validate_stripe_plan(customer_id) do
+    StripeSrv.get_subscriptions(customer_id)
+    |> Result.map(fn subs ->
+      if length(subs.data) > 0 do
+        sub = hd(subs.data)
+        {plan, freq} = StripeSrv.get_plan(sub.plan.id)
+
+        if ["trialing", "active", "past_due", "unpaid"] |> Enum.member?(sub.status) do
+          %{plan: plan, plan_freq: freq, plan_status: sub.status, plan_seats: sub.quantity}
+        else
+          %{plan: "free", plan_freq: freq, plan_status: sub.status, plan_seats: 1}
+        end
+      else
+        %{plan: "free", plan_freq: "monthly", plan_status: "no_subscription", plan_seats: 1}
+      end
+    end)
+  end
+
+  def validate_default_plan do
+    plan = Azimutt.config(:organization_default_plan) || "free"
+    {:ok, %{plan: plan, plan_freq: "monthly", plan_status: "no_stripe", plan_seats: 1}}
+  end
 
   defp best_limit(a, b) do
     cond do

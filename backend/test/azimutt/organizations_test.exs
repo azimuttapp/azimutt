@@ -103,14 +103,10 @@ defmodule Azimutt.OrganizationsTest do
       assert {:error, %Ecto.Changeset{}} = Organizations.create_organization_invitation(%{sent_to: nil}, "url", organization.id, user, now)
     end
 
-    test "clever_cloud_plan" do
-      plans = ["free", "solo", "team", "enterprise", "pro"]
-      {:ok, free} = Organizations.clever_cloud_plan(plans, %CleverCloud.Resource{})
-      assert free.id == :free
-      {:ok, pro} = Organizations.clever_cloud_plan(plans, %CleverCloud.Resource{plan: "pro"})
-      assert pro.id == :pro
-      {:ok, pro5} = Organizations.clever_cloud_plan(plans, %CleverCloud.Resource{plan: "pro-5"})
-      assert pro5.id == :pro
+    test "validate_clever_cloud_plan" do
+      assert {:ok, %{plan: "free", plan_freq: "monthly", plan_status: "manual", plan_seats: 1}} = Organizations.validate_clever_cloud_plan(%CleverCloud.Resource{})
+      assert {:ok, %{plan: "pro", plan_freq: "monthly", plan_status: "manual", plan_seats: 1}} = Organizations.validate_clever_cloud_plan(%CleverCloud.Resource{plan: "pro"})
+      assert {:ok, %{plan: "pro", plan_freq: "monthly", plan_status: "manual", plan_seats: 5}} = Organizations.validate_clever_cloud_plan(%CleverCloud.Resource{plan: "pro-5"})
     end
   end
 end

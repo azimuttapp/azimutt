@@ -12,7 +12,7 @@ defmodule Azimutt.Services.StripeSrvTest do
 
     @tag :skip
     test "get_subscriptions" do
-      subscriptions = StripeSrv.get_subscriptions("cus_QL9FfSWaeSCvu2")
+      subscriptions = StripeSrv.get_subscriptions("cus_QLWuSJQsP5COgx")
       # IO.inspect(subscriptions, label: "subscriptions")
     end
 

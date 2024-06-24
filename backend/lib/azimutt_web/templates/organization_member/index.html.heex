@@ -31,10 +31,8 @@
                     <% @organization.heroku_resource -> %>
                         All your Heroku seats are used. To add more people, please go to your Heroku Add-on and upgrade your plan (click on "Billing" menu on the left).
                     <% true -> %>
-                        Invite new members in your organization to share projects with them.<br>
-                        <%= if StripeSrv.stripe_configured?() && @organization.stripe_subscription_id do %>
-                            Your billing will adjust accordingly.
-                        <% end %>
+                        You have <%= @organization.plan_seats %> seat in your organization.<br>
+                        Adjust them in the billing protal.
                 <% end %>
             </p>
         </div>

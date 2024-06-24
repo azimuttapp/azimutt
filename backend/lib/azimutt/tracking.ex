@@ -48,16 +48,6 @@ defmodule Azimutt.Tracking do
     |> Result.from_nillable()
   end
 
-  def last_billing_loaded(%Organization{} = org) do
-    Event
-    |> where([e], e.name == "billing_loaded" and e.organization_id == ^org.id)
-    |> order_by([e], desc: e.created_at)
-    |> preload(:created_by)
-    |> limit(1)
-    |> Repo.one()
-    |> Result.from_nillable()
-  end
-
   def last_subscribe_start(%User{} = current_user), do: last_user_event(current_user, "subscribe_start")
 
   defp last_user_event(%User{} = current_user, event_name) do
@@ -159,27 +149,37 @@ defmodule Azimutt.Tracking do
   def subscribe_abort(%User{} = current_user, %Organization{} = org),
     do: create_event("subscribe_abort", org_data(org), nil, current_user, org.id, nil)
 
-  def stripe_subscription_created(%Stripe.Event{} = event, %Organization{} = org, %User{} = current_user, quantity, subscription_id),
-    do:
-      create_event(
-        "stripe_subscription_created",
-        stripe_event_data(event),
-        %{quantity: quantity, subscription_id: subscription_id},
-        current_user,
-        org.id,
-        nil
-      )
+  def stripe_subscription_created(%Stripe.Event{} = event, %Organization{} = org, subscription_id, status, price, freq, quantity) do
+    create_event(
+      "stripe_subscription_created",
+      stripe_event_data(event),
+      %{subscription_id: subscription_id, status: status, price: price, freq: freq, quantity: quantity},
+      nil,
+      org.id,
+      nil
+    )
+  end
 
-  def stripe_subscription_canceled(%Stripe.Event{} = event, %Organization{} = org, %User{} = current_user, quantity),
-    do: create_event("stripe_subscription_canceled", stripe_event_data(event), %{quantity: quantity}, current_user, org.id, nil)
+  def stripe_subscription_deleted(%Stripe.Event{} = event, %Organization{} = org, subscription_id, status, price, freq, quantity) do
+    create_event(
+      "stripe_subscription_deleted",
+      stripe_event_data(event),
+      %{subscription_id: subscription_id, status: status, price: price, freq: freq, quantity: quantity},
+      nil,
+      org.id,
+      nil
+    )
+  end
 
-  def stripe_subscription_renewed(%Stripe.Event{} = event, %Organization{} = org, %User{} = current_user, quantity),
-    do: create_event("stripe_subscription_renewed", stripe_event_data(event), %{quantity: quantity}, current_user, org.id, nil)
+  def stripe_subscription_canceled(%Stripe.Event{} = event, %Organization{} = org, quantity),
+    do: create_event("stripe_subscription_canceled", stripe_event_data(event), %{quantity: quantity}, nil, org.id, nil)
+
+  def stripe_subscription_renewed(%Stripe.Event{} = event, %Organization{} = org, quantity),
+    do: create_event("stripe_subscription_renewed", stripe_event_data(event), %{quantity: quantity}, nil, org.id, nil)
 
   def stripe_subscription_quantity_updated(
         %Stripe.Event{} = event,
         %Organization{} = org,
-        %User{} = current_user,
         quantity,
         previous_quantity
       ),
@@ -188,22 +188,22 @@ defmodule Azimutt.Tracking do
           "stripe_subscription_quantity_updated",
           stripe_event_data(event),
           %{quantity: quantity, previous_quantity: previous_quantity},
-          current_user,
+          nil,
           org.id,
           nil
         )
 
-  def stripe_subscription_updated(%Stripe.Event{} = event, %Organization{} = org, %User{} = current_user, quantity),
-    do: create_event("stripe_subscription_updated", stripe_event_data(event), %{quantity: quantity}, current_user, org.id, nil)
+  def stripe_subscription_updated(%Stripe.Event{} = event, %Organization{} = org, previous),
+    do: create_event("stripe_subscription_updated", stripe_event_data(event), %{previous: previous}, nil, org.id, nil)
 
-  def stripe_open_billing_portal(%Stripe.Event{} = event, %Organization{} = org, %User{} = current_user),
-    do: create_event("stripe_open_billing_portal", stripe_event_data(event), nil, current_user, org.id, nil)
+  def stripe_open_billing_portal(%Stripe.Event{} = event, %Organization{} = org),
+    do: create_event("stripe_open_billing_portal", stripe_event_data(event), nil, nil, org.id, nil)
 
-  def stripe_invoice_paid(%Stripe.Event{} = event, %Organization{} = org, %User{} = current_user),
-    do: create_event("stripe_invoice_paid", stripe_event_data(event), nil, current_user, org.id, nil)
+  def stripe_invoice_paid(%Stripe.Event{} = event, %Organization{} = org),
+    do: create_event("stripe_invoice_paid", stripe_event_data(event), nil, nil, org.id, nil)
 
-  def stripe_invoice_payment_failed(%Stripe.Event{} = event, %Organization{} = org, %User{} = current_user),
-    do: create_event("stripe_invoice_payment_failed", stripe_event_data(event), nil, current_user, org.id, nil)
+  def stripe_invoice_payment_failed(%Stripe.Event{} = event, %Organization{} = org),
+    do: create_event("stripe_invoice_payment_failed", stripe_event_data(event), nil, nil, org.id, nil)
 
   def stripe_unhandled_event(%Stripe.Event{} = event),
     do: create_event("stripe__unhandled__#{event.type}", stripe_event_data(event), stripe_event_details(event), stripe_event_user(event), stripe_event_organization(event), nil)
@@ -351,7 +351,7 @@ defmodule Azimutt.Tracking do
     _ -> nil
   end
 
-  defp stripe_event_user(%Stripe.Event{} = event) do
+  defp stripe_event_user(%Stripe.Event{} = _) do
     nil
   end
 

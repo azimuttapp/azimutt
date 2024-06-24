@@ -29,7 +29,7 @@ defmodule AzimuttWeb.Services.BillingSrv do
           # Get price_id from your Stripe dashboard for your product
           price_id: price,
           quantity: quantity,
-          free_trial: if(orga_with_stripe.stripe_subscription_id, do: nil, else: 14)
+          free_trial: if(orga_with_stripe.free_trial_used == nil, do: 14, else: nil)
         })
       end)
 

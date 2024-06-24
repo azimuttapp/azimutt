@@ -135,6 +135,7 @@ defmodule AzimuttWeb.Router do
 
     resources "/organizations", OrganizationController, param: "organization_id", except: [:index] do
       get("/billing", OrganizationBillingController, :index, as: :billing)
+      post("/billing/refresh", OrganizationBillingController, :refresh, as: :billing)
       get("/billing/new", OrganizationBillingController, :new, as: :billing)
       post("/billing/edit", OrganizationBillingController, :edit, as: :billing)
       get("/billing/success", OrganizationBillingController, :success, as: :billing)
