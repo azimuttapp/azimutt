@@ -127,6 +127,8 @@ defmodule Azimutt.Services.StripeSrv do
       price == Azimutt.config(:stripe_price_team_monthly) -> {"team", "monthly"}
       price == Azimutt.config(:stripe_price_team_yearly) -> {"team", "yearly"}
       price == Azimutt.config(:stripe_price_pro_monthly) -> {"pro", "monthly"}
+      # TODO: remove, it's useful in dev because I used several team plans :/
+      true -> {"team", "yearly"}
     end
   end
 

@@ -80,7 +80,7 @@ defmodule Azimutt.Organizations.OrganizationPlan do
     }
   end
 
-  def enterpprise do
+  def enterprise do
     %OrganizationPlan{
       id: Azimutt.plans().enterpprise.id,
       name: Azimutt.plans().enterpprise.name,

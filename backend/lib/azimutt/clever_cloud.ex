@@ -13,16 +13,6 @@ defmodule Azimutt.CleverCloud do
   def app_addons_url, do: "#TODO"
   def app_settings_url, do: "#TODO"
 
-  def allowed_members(plan) do
-    team_members = Regex.named_captures(~r/pro-(?<members>[0-9]+)/, plan)
-
-    if team_members do
-      String.to_integer(team_members["members"])
-    else
-      Azimutt.limits().users.free
-    end
-  end
-
   # use only for CleverCloudController.index local helper
   def all_resources do
     Resource
@@ -63,18 +53,17 @@ defmodule Azimutt.CleverCloud do
     end
   end
 
-  def add_member_if_needed(%Resource{} = resource, %Organization{} = organization, %User{} = current_user) do
-    slots_in_plan = allowed_members(resource.plan)
+  def add_member_if_needed(%Organization{} = organization, %User{} = current_user) do
     existing_members = Organizations.count_member(organization)
 
     cond do
-      existing_members > slots_in_plan ->
+      existing_members > organization.plan_seats ->
         {:error, :too_many_members}
 
       Organizations.has_member?(organization, current_user) ->
         {:ok, :already_member}
 
-      existing_members < slots_in_plan ->
+      existing_members < organization.plan_seats ->
         OrganizationMember.new_member_changeset(organization.id, current_user)
         |> Repo.insert()
         |> Result.map(fn _ -> :member_added end)

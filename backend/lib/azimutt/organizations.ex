@@ -290,23 +290,6 @@ defmodule Azimutt.Organizations do
     end)
   end
 
-  def get_allowed_members(%Organization{} = organization, %OrganizationPlan{} = plan) do
-    cond do
-      organization.clever_cloud_resource ->
-        CleverCloud.allowed_members(organization.clever_cloud_resource.plan)
-
-      organization.heroku_resource ->
-        Heroku.allowed_members(organization.heroku_resource.plan)
-
-      plan.id == :pro ->
-        # means no limit
-        nil
-
-      true ->
-        Azimutt.limits().users.free
-    end
-  end
-
   def allow_table_color(%Organization{} = organization, tweet_url) when is_binary(tweet_url) do
     organization
     |> Organization.allow_table_color_changeset(tweet_url)
