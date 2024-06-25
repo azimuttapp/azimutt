@@ -3,7 +3,6 @@ defmodule AzimuttWeb.LayoutView do
   alias Azimutt.Accounts
   alias Azimutt.CleverCloud
   alias Azimutt.Heroku
-  alias Azimutt.Organizations.OrganizationPlan
   alias Azimutt.Services.StripeSrv
 
   # Phoenix LiveDashboard is available only in development by default,

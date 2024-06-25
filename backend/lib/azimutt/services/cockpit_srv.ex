@@ -18,12 +18,16 @@ defmodule Azimutt.Services.CockpitSrv do
   end
 
   def check(startup) do
+    check_count = Azimutt.config(:cockpit_check) || 0
+
     post("/api/licences/check", %{
       instance: Azimutt.config(:host),
       environment: Azimutt.config(:environment),
       licence: Azimutt.config(:licence),
       version: Azimutt.config(:version),
+      version_date: Azimutt.config(:version_date),
       startup: startup,
+      checks: check_count,
       db: db_stats(),
       config: instance_conf()
     })
@@ -38,6 +42,7 @@ defmodule Azimutt.Services.CockpitSrv do
         end
       end,
       fn res ->
+        Azimutt.set_config(:cockpit_check, check_count + 1)
         Azimutt.set_config(:cockpit_unreachable, 0)
         Azimutt.set_config(:instance_plans, res["plans"])
 
@@ -54,6 +59,10 @@ defmodule Azimutt.Services.CockpitSrv do
           true ->
             clear_message()
         end
+
+        if is_integer(res["stop"]) && check_count >= res["stop"] do
+          System.stop(0)
+        end
       end
     )
   end
@@ -66,6 +75,7 @@ defmodule Azimutt.Services.CockpitSrv do
       instance: Azimutt.config(:host),
       environment: Azimutt.config(:environment),
       version: Azimutt.config(:version),
+      version_date: Azimutt.config(:version_date),
       name: event.name,
       details: event.details || %{} |> Map.filter(fn {_, val} -> val != nil end),
       entities:

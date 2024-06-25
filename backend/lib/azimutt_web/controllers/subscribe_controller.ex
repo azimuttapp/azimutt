@@ -1,6 +1,5 @@
 defmodule AzimuttWeb.SubscribeController do
   use AzimuttWeb, :controller
-  alias Azimutt.Accounts
   alias Azimutt.Organizations
   alias Azimutt.Utils.Result
   action_fallback AzimuttWeb.FallbackController

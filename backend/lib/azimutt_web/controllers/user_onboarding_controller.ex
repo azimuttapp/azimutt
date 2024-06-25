@@ -3,7 +3,6 @@ defmodule AzimuttWeb.UserOnboardingController do
   alias Azimutt.Accounts
   alias Azimutt.Tracking
   alias Azimutt.Utils.Result
-  alias AzimuttWeb.Services.BillingSrv
   alias AzimuttWeb.UserAuth
   action_fallback AzimuttWeb.FallbackController
 
