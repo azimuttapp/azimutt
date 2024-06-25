@@ -50,6 +50,14 @@ Azimutt goal is to be your ultimate tool to understand your database.
 
 You can use our [Docker image](https://github.com/azimuttapp/azimutt/pkgs/container/azimutt) to easily deploy it. Here is the [full guide](INSTALL.md).
 
+## Deploy on Heroku
+
+You can use our Heroku template which includes Azimutt web app and a postgres database.
+
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://www.heroku.com/deploy)
+
+- Customize the `PHX_HOST` config var by replacing `{{app-name}}` with the same `app-name` of your Heroku app or set the custom domain of your app.
+- Connect to Stackhero S3 from your Heroku dashboard, and create a bucket named `azimutt`
 
 ## Local development
 
@@ -72,7 +80,6 @@ Other things:
 - API documentation is accessible at [`/api/v1/swagger`](http://localhost:4000/api/v1/swagger)
 - You can use `pnpm --filter "azimutt-editor" run book` to start Elm design system & components, and access it with [localhost:4002](http://localhost:4002)
 
-
 ### command semantics
 
 We have a lot of projects with a lot of commands, here is how they are structured:
@@ -92,7 +99,6 @@ We have a lot of projects with a lot of commands, here is how they are structure
 
 - `pnpm --filter "azimutt-editor" run book` to launch the Elm design system
 
-
 ### Setup Stripe
 
 #### Config
@@ -101,7 +107,6 @@ We have a lot of projects with a lot of commands, here is how they are structure
 - Run `stripe listen --forward-to localhost:4000/webhook/stripe`
 - Copy your webhook signing secret to `STRIPE_WEBHOOK_SIGNING_SECRET` variable in your `.env` file (looks like `whsec_...`)
 - Go to [your Stripe dashboard](https://dashboard.stripe.com/test/apikeys) to obtain your API Key and copy it into `STRIPE_API_KEY` in your `.env` file (looks like: `sk_test_...`)
-
 
 #### Payments
 
@@ -112,13 +117,12 @@ Use any value you like for other form fields.
 
 See more in the [stripe testing documentation](https://stripe.com/docs/testing)
 
-
 ## Stack
 
-* [Production](https://azimutt.app) & [Staging](https://azimutt.dev)
-* [Error logs](https://sentry.io/organizations/azimuttapp/issues/?project=6635088) with [Sentry](https://sentry.io)
-* Design using [TailwindCSS Framework](https://tailwindcss.com)
-* [Credo](http://credo-ci.org) for static code analysis (automatically run with pre-commit)
+- [Production](https://azimutt.app) & [Staging](https://azimutt.dev)
+- [Error logs](https://sentry.io/organizations/azimuttapp/issues/?project=6635088) with [Sentry](https://sentry.io)
+- Design using [TailwindCSS Framework](https://tailwindcss.com)
+- [Credo](http://credo-ci.org) for static code analysis (automatically run with pre-commit)
 
 ## License
 

@@ -1,0 +1,62 @@
+{
+  "name": "Azimutt",
+  "description": "Next-Gen ERD: Design, Explore, Document and Analyze your database.",
+  "repository": "https://github.com/azimuttapp/azimutt",
+  "logo": "https://azimutt.app/images/logo_dark.svg",
+  "keywords": [
+    "erd",
+    "entity-relationship diagram",
+    "database tool",
+    "database schema",
+    "diagram"
+  ],
+  "stack": "container",
+  "addons": [
+    { "plan": "heroku-postgresql", "as": "DATABASE" },
+    { "plan": "ah-s3-object-storage-stackhero", "as": "S3" },
+    { "plan": "mailgun" }
+  ],
+  "env": {
+    "PHX_SERVER": "true",
+    "PHX_HOST": {
+      "description": "{{app-name}}.herokuapp.com or custom domain",
+      "value": ""
+    },
+    "PORT": {
+      "description": "The port on which the server runs",
+      "value": "4000"
+    },
+    "SECRET_KEY_BASE": {
+      "generator": "secret"
+    },
+    "FILE_STORAGE_ADAPTER": "s3",
+    "AUTH_PASSWORD": {
+      "description": "Enable password-based authentication",
+      "value": "true"
+    },
+    "DATABASE_ENABLE_SSL": {
+      "description": "Enable SSL for database connections",
+      "value": "true"
+    },
+    "SKIP_ONBOARDING_FUNNEL": {
+      "description": "Skip the onboarding funnel for quicker testing",
+      "value": "true"
+    },
+    "SKIP_EMAIL_CONFIRMATION": {
+      "description": "Skip email confirmation for quicker access",
+      "value": "true"
+    },
+    "PUBLIC_SITE": {
+      "description": "Flag to control if the site should be public",
+      "value": "false"
+    },
+    "EMAIL_ADAPTER": {
+      "description": "Email service adapter",
+      "value": "mailgun"
+    },
+    "MAILGUN_BASE_URL": {
+      "description": "Mailgun  base url",
+      "value": "https://api.eu.mailgun.net/v3"
+    }
+  }
+}
