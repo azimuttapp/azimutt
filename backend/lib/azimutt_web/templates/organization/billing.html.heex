@@ -19,6 +19,22 @@
                 Change you seats using the "Manage your subscription" button.
             <% end %>
         </p>
+        <%= if @organization.plan == "pro" do %>
+            <div class="mt-3 max-w-xl mx-auto rounded bg-yellow-50 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <Icon.exclamation_triangle kind="mini" class="h-5 w-5 text-yellow-400" />
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="my-0 text-sm font-medium text-yellow-800">This is a legacy plan.</h3>
+                        <div class="mt-2 text-sm text-yellow-700">
+                            Please migrate to the <a href={Routes.website_path(@conn, :pricing)} target="_blank" class="underline text-yellow-800 hover:text-yellow-900">new ones</a> as mentionned in the email.<br>
+                            You will have to cancel ("Manage your subscription") it and subscribe again.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% end %>
         <div class="max-w-lg mx-auto">
             <%= if length(@subscriptions) > 1 do %>
                 <div class="mt-3 rounded-md bg-yellow-50 p-4">

@@ -62,7 +62,10 @@ defmodule AzimuttWeb.OrganizationBillingController do
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user) do
       Organizations.validate_organization_plan(organization)
-      conn |> redirect(to: Routes.organization_billing_path(conn, :index, organization_id, source: "refresh"))
+
+      conn
+      |> put_flash(:info, "Plan refreshed!")
+      |> redirect(to: Routes.organization_billing_path(conn, :index, organization_id, source: "refresh"))
     end
   end
 
