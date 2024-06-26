@@ -82,19 +82,19 @@ defmodule Azimutt.Organizations.OrganizationPlan do
 
   def enterprise do
     %OrganizationPlan{
-      id: Azimutt.plans().enterpprise.id,
-      name: Azimutt.plans().enterpprise.name,
-      projects: Azimutt.limits().projects.enterpprise,
-      layouts: Azimutt.limits().project_layouts.enterpprise,
-      layout_tables: Azimutt.limits().layout_tables.enterpprise,
-      memos: Azimutt.limits().project_doc.enterpprise,
-      groups: Azimutt.limits().project_doc.enterpprise,
-      colors: Azimutt.limits().colors.enterpprise,
+      id: Azimutt.plans().enterprise.id,
+      name: Azimutt.plans().enterprise.name,
+      projects: Azimutt.limits().projects.enterprise,
+      layouts: Azimutt.limits().project_layouts.enterprise,
+      layout_tables: Azimutt.limits().layout_tables.enterprise,
+      memos: Azimutt.limits().project_doc.enterprise,
+      groups: Azimutt.limits().project_doc.enterprise,
+      colors: Azimutt.limits().colors.enterprise,
       local_save: true,
-      private_links: Azimutt.limits().project_share.enterpprise,
-      sql_export: Azimutt.limits().schema_export.enterpprise,
-      db_analysis: Azimutt.limits().analysis.enterpprise != "preview",
-      db_access: Azimutt.limits().data_exploration.enterpprise,
+      private_links: Azimutt.limits().project_share.enterprise,
+      sql_export: Azimutt.limits().schema_export.enterprise,
+      db_analysis: Azimutt.limits().analysis.enterprise != "preview",
+      db_access: Azimutt.limits().data_exploration.enterprise,
       streak: 0
     }
   end

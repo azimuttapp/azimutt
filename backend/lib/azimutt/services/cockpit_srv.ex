@@ -157,8 +157,8 @@ defmodule Azimutt.Services.CockpitSrv do
       organization_default_plan: System.get_env("ORGANIZATION_DEFAULT_PLAN"),
       global_organization: System.get_env("GLOBAL_ORGANIZATION"),
       global_organization_alone: System.get_env("GLOBAL_ORGANIZATION_ALONE"),
-      support: System.get_env("SUPPORT_EMAIL"),
       sender: System.get_env("SENDER_EMAIL"),
+      support: System.get_env("SUPPORT_EMAIL"),
       gateway: System.get_env("GATEWAY_URL"),
       auth:
         %{
@@ -231,7 +231,7 @@ defmodule Azimutt.Services.CockpitSrv do
   end
 
   defp contact_us do
-    "contact us at <a href=\"mailto:#{Azimutt.config(:azimutt_email)}\" class=\"font-bold underline\">#{Azimutt.config(:azimutt_email)}</a>"
+    "contact us at <a href=\"mailto:#{Azimutt.config(:contact_email)}\" class=\"font-bold underline\">#{Azimutt.config(:contact_email)}</a>"
   end
 
   defp set_error_message(message) do

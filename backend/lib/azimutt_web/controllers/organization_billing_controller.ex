@@ -125,7 +125,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
     Tracking.subscribe_abort(current_user, organization)
 
     conn
-    |> put_flash(:info, "Did you changed your mind? Let us know if you need clarifications: #{Azimutt.config(:azimutt_email)}")
+    |> put_flash(:info, "Did you changed your mind? Let us know if you need clarifications: #{Azimutt.config(:contact_email)}")
     |> redirect(to: Routes.organization_billing_path(conn, :index, organization, source: "billing-cancel"))
   end
 end

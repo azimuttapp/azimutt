@@ -67,6 +67,7 @@ defmodule Azimutt.Services.StripeSrv do
   end
 
   def create_session(%{customer: customer, success_url: success_url, cancel_url: cancel_url, price_id: price_id, quantity: quantity, free_trial: free_trial}) do
+    # https://docs.stripe.com/api/checkout/sessions/create
     if stripe_configured?() do
       Stripe.Session.create(%{
         mode: "subscription",
@@ -89,6 +90,7 @@ defmodule Azimutt.Services.StripeSrv do
             },
             else: %{}
           ),
+        automatic_tax: %{enabled: true},
         payment_method_collection: "if_required",
         allow_promotion_codes: true,
         success_url: success_url,
@@ -120,15 +122,14 @@ defmodule Azimutt.Services.StripeSrv do
     end
   end
 
-  def get_plan(price) do
+  def get_plan(product, price) do
     cond do
       price == Azimutt.config(:stripe_price_solo_monthly) -> {"solo", "monthly"}
       price == Azimutt.config(:stripe_price_solo_yearly) -> {"solo", "yearly"}
       price == Azimutt.config(:stripe_price_team_monthly) -> {"team", "monthly"}
       price == Azimutt.config(:stripe_price_team_yearly) -> {"team", "yearly"}
       price == Azimutt.config(:stripe_price_pro_monthly) -> {"pro", "monthly"}
-      # TODO: remove, it's useful in dev because I used several team plans :/
-      true -> {"team", "yearly"}
+      product == Azimutt.config(:stripe_product_enterprise) -> {"enterprise", "yearly"}
     end
   end
 

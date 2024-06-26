@@ -16,27 +16,27 @@
                 <%= cond do %>
                   <% plan_seats > max_seats -> %>
                     Your plan has more seats than its maximum 😅<br>
-                    Please <a href={"mailto:#{Azimutt.config(:azimutt_email)}"} class="underline text-indigo-600 hover:text-indigo-900">contact us</a> to find out why ^^
+                    Please <a href={"mailto:#{Azimutt.config(:support_email)}"} class="underline text-indigo-600 hover:text-indigo-900">contact us</a> to find out why ^^
                   <% used_seats > plan_seats -> %>
                     You are using more seats than allowed by your plan 😅<br>
                     Please <a href={Routes.organization_billing_path(@conn, :index, @organization, source: "members")} class="underline text-indigo-600 hover:text-indigo-900">adjust it</a>
-                    or <a href={"mailto:#{Azimutt.config(:azimutt_email)}"} class="underline text-indigo-600 hover:text-indigo-900">contact us</a> to find out why ^^
+                    or <a href={"mailto:#{Azimutt.config(:support_email)}"} class="underline text-indigo-600 hover:text-indigo-900">contact us</a> to find out why ^^
                   <% max_seats == 1 -> %>
                     Your plan does not allow collaboration, <a href={Routes.organization_billing_path(@conn, :index, @organization, source: "members")} class="underline text-indigo-600 hover:text-indigo-900">upgrade</a> to invite people.
                   <% used_seats == plan_seats && plan_seats == max_seats -> %>
                     You are using all the available seats of your plan.<br>
                     <a href={Routes.organization_billing_path(@conn, :index, @organization, source: "members")} class="underline text-indigo-600 hover:text-indigo-900">Upgrade</a>
-                    or <a href={"mailto:#{Azimutt.config(:azimutt_email)}"} class="underline text-indigo-600 hover:text-indigo-900">contact us</a>
+                    or <a href={"mailto:#{Azimutt.config(:support_email)}"} class="underline text-indigo-600 hover:text-indigo-900">contact us</a>
                     to invite more people.
                   <% used_seats == plan_seats && plan_seats < max_seats -> %>
                     You are using all of your seats.<br>
                     <a href={Routes.organization_billing_path(@conn, :index, @organization, source: "members")} class="underline text-indigo-600 hover:text-indigo-900">Add some</a> to invite more people.
                   <% used_seats < plan_seats -> %>
-                    You have <b><%= Azimutt.Utils.Stringx.pluralize(plan_seats - used_seats, "seat") %></b> remaining in your plan.<br>
+                    You have <b><%= Azimutt.Utils.Stringx.pluralize(plan_seats - used_seats, "remaining seat") %></b> in your plan.<br>
                     You can invite more people.
                   <% true -> %>
                     You are in an <b>unexpected situation</b> 😱<br>
-                    Please <a href={"mailto:#{Azimutt.config(:azimutt_email)}"} class="underline text-indigo-600 hover:text-indigo-900">contact us</a> to find out why ^^
+                    Please <a href={"mailto:#{Azimutt.config(:support_email)}"} class="underline text-indigo-600 hover:text-indigo-900">contact us</a> to find out why ^^
                 <% end %>
             </p>
         </div>

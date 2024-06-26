@@ -154,8 +154,10 @@ These are the basic variables you will **need** to set up Azimutt:
         - `SMTP_USERNAME` (required)
         - `SMTP_PASSWORD` (required)
         - `SMTP_PORT` (required)
-- `SUPPORT_EMAIL` (optional, default `contact@azimutt.app`): email shown in Azimutt when users need support
 - `SENDER_EMAIL` (optional, default `contact@azimutt.app`): email Azimutt will us to send emails
+- `CONTACT_EMAIL` (optional, default `contact@azimutt.app`): email shown in Azimutt to reach out
+- `SUPPORT_EMAIL` (optional, default `contact@azimutt.app`): email shown in Azimutt when users need support
+- `ENTERPRISE_SUPPORT_EMAIL` (optional, default `contact@azimutt.app`): email shown in Azimutt for high priority support
 
 
 ### Key features
@@ -211,6 +213,7 @@ At least one of authentication methods should be defined:
     - `STRIPE_PRICE_SOLO_YEARLY` (required): Stripe price for the yearly solo plan (ex: `price_uJINukB78aAbajUQHy6Ra523`)
     - `STRIPE_PRICE_TEAM_MONTHLY` (required): Stripe price for the monthly team plan (ex: `price_uJINukB78aAbajUQHy6Ra523`)
     - `STRIPE_PRICE_TEAM_YEARLY` (required): Stripe price for the yearly team plan (ex: `price_uJINukB78aAbajUQHy6Ra523`)
+    - `STRIPE_PRODUCT_ENTERPRISE` (required): Stripe product for enterprise plan (ex: `prod_eBlQLUZPVprdAo`)
     - `STRIPE_PRICE_PRO_MONTHLY` (required): Stripe price for the monthly legacy pro plan (ex: `price_uJINukB78aAbajUQHy6Ra523`)
 - `CLEVER_CLOUD` (optional): if `true`, enable auth & hooks for [Clever Cloud Add-on](https://www.clever-cloud.com/doc/extend/add-ons-api)
     - `CLEVER_CLOUD_ADDON_ID` (required)

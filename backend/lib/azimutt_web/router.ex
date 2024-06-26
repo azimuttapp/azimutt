@@ -266,7 +266,7 @@ defmodule AzimuttWeb.Router do
         description: "API Documentation for Azimutt Backend",
         contact: %{
           name: "Azimutt",
-          email: Azimutt.config(:azimutt_email)
+          email: Azimutt.config(:contact_email)
         }
       },
       basePath: "/api/v1",

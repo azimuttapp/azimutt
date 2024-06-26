@@ -271,23 +271,7 @@ defmodule Azimutt.Organizations do
 
   def get_subscriptions(%Organization{} = organization) do
     StripeSrv.get_subscriptions(organization.stripe_customer_id)
-    |> Result.map(fn subs ->
-      subs.data
-      |> Enum.map(fn sub ->
-        %{
-          id: sub.id,
-          customer: sub.customer,
-          status: sub.status,
-          promotion_code: sub.promotion_code,
-          price: sub.plan.id,
-          product: sub.plan.product,
-          freq: sub.plan.interval,
-          quantity: sub.quantity,
-          cancel_at: if(sub.cancel_at != nil, do: DateTime.from_unix!(sub.cancel_at), else: nil),
-          created: DateTime.from_unix!(sub.created)
-        }
-      end)
-    end)
+    |> Result.map(fn subs -> subs.data |> Enum.map(fn sub -> subscription_to_hash(sub) end) end)
   end
 
   def allow_table_color(%Organization{} = organization, tweet_url) when is_binary(tweet_url) do
@@ -470,15 +454,20 @@ defmodule Azimutt.Organizations do
     {:ok, %{plan: plan, plan_freq: "monthly", plan_status: "manual", plan_seats: seats}}
   end
 
+  # credo:disable-for-lines:20 Credo.Check.Refactor.Nesting
   defp validate_stripe_plan(customer_id) do
     StripeSrv.get_subscriptions(customer_id)
     |> Result.map(fn subs ->
       if length(subs.data) > 0 do
-        sub = hd(subs.data)
-        {plan, freq} = StripeSrv.get_plan(sub.plan.id)
+        sub = subscription_to_hash(hd(subs.data))
+        {plan, freq} = StripeSrv.get_plan(sub.product, sub.price)
 
         if ["trialing", "active", "past_due", "unpaid"] |> Enum.member?(sub.status) do
-          %{plan: plan, plan_freq: freq, plan_status: sub.status, plan_seats: sub.quantity}
+          if plan == "enterprise" do
+            %{plan: plan, plan_freq: freq, plan_status: sub.status, plan_seats: sub.metadata.seats || sub.quantity}
+          else
+            %{plan: plan, plan_freq: freq, plan_status: sub.status, plan_seats: sub.quantity}
+          end
         else
           %{plan: "free", plan_freq: freq, plan_status: sub.status, plan_seats: 1}
         end
@@ -500,5 +489,25 @@ defmodule Azimutt.Organizations do
       is_integer(a) -> a
       is_integer(b) -> b
     end
+  end
+
+  defp subscription_to_hash(sub) do
+    %{
+      id: sub.id,
+      customer: sub.customer,
+      status: sub.status,
+      promotion_code: sub.promotion_code,
+      price: sub.plan.id,
+      product: sub.plan.product,
+      freq: sub.plan.interval,
+      quantity: sub.quantity,
+      metadata: %{
+        seats: if(is_binary(sub.metadata["seats"]), do: String.to_integer(sub.metadata["seats"]), else: nil),
+        projects: if(is_binary(sub.metadata["projects"]), do: String.to_integer(sub.metadata["projects"]), else: nil),
+        databases: if(is_binary(sub.metadata["databases"]), do: String.to_integer(sub.metadata["databases"]), else: nil)
+      },
+      cancel_at: if(sub.cancel_at != nil, do: DateTime.from_unix!(sub.cancel_at), else: nil),
+      created: DateTime.from_unix!(sub.created)
+    }
   end
 end
