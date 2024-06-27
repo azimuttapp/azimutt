@@ -18,10 +18,6 @@
   ],
   "env": {
     "PHX_SERVER": "true",
-    "PHX_HOST": {
-      "description": "URL of Azimutt app.",
-      "value": "$(app-name).herokuapp.com"
-    },
     "PORT": {
       "description": "The port on which the server runs",
       "value": "4000"
@@ -30,14 +26,6 @@
       "generator": "secret"
     },
     "FILE_STORAGE_ADAPTER": "s3",
-    "S3_KEY_ID": {
-      "description": "S3 Access Key",
-      "value": "$(S3_ACCESSS_KEY)"
-    },
-    "S3_KEY_SECRET": {
-      "description": "S3 Secret Key",
-      "value": "$(S3_SECRET_KEY)"
-    },
     "AUTH_PASSWORD": {
       "description": "Enable password-based authentication",
       "value": "true"
@@ -66,8 +54,5 @@
       "description": "Mailgun  base url",
       "value": "https://api.eu.mailgun.net/v3"
     }
-  },
-  "scripts": {
-    "postdeploy": "heroku-postdeploy.sh"
   }
 }

@@ -52,12 +52,31 @@ You can use our [Docker image](https://github.com/azimuttapp/azimutt/pkgs/contai
 
 ## Deploy on Heroku
 
-You can use our Heroku template which includes Azimutt web app and a postgres database.
+You can use our Heroku template which includes Azimutt web app, a Postgres database, Stackhero S3 storage and Mailgun.
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://www.heroku.com/deploy)
 
-- Customize the `PHX_HOST` config var by replacing `{{app-name}}` with the same `app-name` of your Heroku app or set the custom domain of your app.
-- Connect to Stackhero S3 from your Heroku dashboard, and create a bucket named `azimutt`
+After succeed deployment, you will need to configure config vars
+
+```bash
+# Replace with your app-name
+HEROKU_APP=<app-name>
+
+# Set PHX_HOST with the URL of the app
+heroku config:set PHX_HOST=$(heroku info -s | grep "web_url" | sed 's|web_url=https://||; s|/$||')
+
+# Copy Stackhero access key to S3_KEY_ID
+heroku config:set S3_KEY_ID=$(heroku config:get S3_ROOT_ACCESS_KEY)
+
+# Copy Stackhero secret key to S3_KEY_SECRET
+heroku config:set S3_KEY_SECRET=$(heroku config:get S3_ROOT_SECRET_KEY)
+```
+
+Finally you will need to create the `azimutt` bucket on Stackhero:
+
+- connect to Stackhero from your Heroku dashboard
+- use values of `S3_ROOT_ACCESS_KEY` and `S3_ROOT_SECRET_KEY` to log in
+- create a bucket named `azimutt`
 
 ## Local development
 
