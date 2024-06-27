@@ -19,8 +19,8 @@
   "env": {
     "PHX_SERVER": "true",
     "PHX_HOST": {
-      "description": "{{app-name}}.herokuapp.com or custom domain",
-      "value": ""
+      "description": "URL of Azimutt app.",
+      "value": "$(app-name).herokuapp.com"
     },
     "PORT": {
       "description": "The port on which the server runs",
@@ -30,6 +30,14 @@
       "generator": "secret"
     },
     "FILE_STORAGE_ADAPTER": "s3",
+    "S3_KEY_ID": {
+      "description": "S3 Access Key",
+      "value": "$(S3_ACCESSS_KEY)"
+    },
+    "S3_KEY_SECRET": {
+      "description": "S3 Secret Key",
+      "value": "$(S3_SECRET_KEY)"
+    },
     "AUTH_PASSWORD": {
       "description": "Enable password-based authentication",
       "value": "true"
