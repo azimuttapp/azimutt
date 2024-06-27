@@ -66,5 +66,8 @@
       "description": "Mailgun  base url",
       "value": "https://api.eu.mailgun.net/v3"
     }
+  },
+  "scripts": {
+    "postdeploy": "heroku-postdeploy.sh"
   }
 }
