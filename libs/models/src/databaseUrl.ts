@@ -26,6 +26,7 @@ const postgresRe = /^(?:jdbc:)?postgres(?:ql)?:\/\/(?:([^:]+):([^@]*)@)?([^:/?&]
 const sqlserver = /^(?:jdbc:)?sqlserver(?:ql)?:\/\/(?:([^:]+):([^@]*)@)?([^:/?&]+)(?::(\d+))?(?:\/([^?]+))?(?:\?(.+))?$/
 const snowflakeRegexxx = /^(?:jdbc:)?snowflake:\/\/(?:([^:]+):([^@]*)@)?([^:/?&]+)(?::(\d+))?(?:\/([^?]+))?(?:\?(.+))?$/
 const snowflakeRegexxxxxxxxxxxxxx = /^https:\/\/(?:([^:]+):([^@]*)@)?(.+?(?:\.privatelink)?\.snowflakecomputing\.com)(?::(\d+))?(?:\/([^?]+))?$/
+const oracleRegexxxxx = /^(?:jdbc:)?oracle:thin:(?:([^\/]+)\/([^@]+)@\/\/)?([^:\/]+)(?::(\d+))?(?:\/([^?]+))?$/ 
 
 export function parseDatabaseUrl(rawUrl: DatabaseUrl): DatabaseUrlParsed {
     const url = rawUrl.trim()
@@ -90,6 +91,14 @@ export function parseDatabaseUrl(rawUrl: DatabaseUrl): DatabaseUrlParsed {
     if (sqlserverMatches) {
         const kind: DatabaseKind = 'sqlserver'
         const [, user, pass, host, port, db, optionsStr] = sqlserverMatches
+        const options = optionsStr ? parseDatabaseOptions(optionsStr) : undefined
+        return removeUndefined({full: url, kind, user, pass, host, port: port ? parseInt(port) : undefined, db, options})
+    }
+
+    const oracleMatches = url.match(oracleRegexxxxx)
+    if (oracleMatches) {
+        const kind: DatabaseKind = 'oracle'
+        const [, user, pass, host, port, db, optionsStr] = oracleMatches
         const options = optionsStr ? parseDatabaseOptions(optionsStr) : undefined
         return removeUndefined({full: url, kind, user, pass, host, port: port ? parseInt(port) : undefined, db, options})
     }
