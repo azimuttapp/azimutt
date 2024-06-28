@@ -2,6 +2,7 @@ packages:
   - "backend"
   - "browser-extension"
   - "cli"
+  - "cli/html-report"
   - "desktop"
   - "frontend"
   - "gateway"
