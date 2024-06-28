@@ -214,14 +214,15 @@ function buildEntity(
   jsonColumns: Record<AttributeName, ValueSchema>,
   polyColumns: Record<AttributeName, string[]>
 ): Entity {
-  return removeEmpty({
+  return {
     schema: table.table_schema,
     name: table.table_name,
 
-    attrs: columns
-      .slice(0)
-      .sort((a, b) => a.column_index - b.column_index)
-      .map((c) => buildAttribute(c, jsonColumns[c.column_name])),
+    attrs:
+      columns
+        ?.slice(0)
+        ?.sort((a, b) => a.column_index - b.column_index)
+        ?.map((c) => buildAttribute(c, jsonColumns[c.column_name])) ?? [],
     pk:
       constraints
         .filter((c) => c.constraint_type === "P")
@@ -231,7 +232,7 @@ function buildEntity(
       .filter((c) => c.constraint_type === "C")
       .map((c) => buildCheck(c, columnsByIndex)),
     extra: undefined,
-  })
+  }
 }
 
 export type RawColumn = {
@@ -546,6 +547,7 @@ export const getTypes =
             t.type_name
         FROM
             all_types t
+        WHERE t.owner IS NOT NULL
         ORDER BY type_schema, type_name`,
         [],
         "getTypes"
