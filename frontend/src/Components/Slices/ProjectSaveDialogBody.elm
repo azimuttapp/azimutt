@@ -3,6 +3,7 @@ module Components.Slices.ProjectSaveDialogBody exposing (DocState, Model, Msg(..
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon
 import Components.Atoms.Link as Link
+import Components.Molecules.Alert as Alert
 import Components.Molecules.FormLabel as FormLabel
 import Components.Molecules.InputText as InputText
 import Components.Molecules.Select as Select
@@ -91,6 +92,40 @@ signIn modalClose loginUrl titleId =
 
 selectSave : (Msg -> msg) -> msg -> (ProjectName -> Organization -> ProjectStorage -> msg) -> HtmlId -> List Organization -> List ProjectInfo -> ProjectName -> Model -> Html msg
 selectSave wrap modalClose save titleId organizations projects projectName model =
+    let
+        curProjects : Int
+        curProjects =
+            projects |> List.filter (\p -> Maybe.any2 (\o po -> o.id == po.id) model.organization p.organization) |> List.length
+
+        tooManyProjects : Maybe (Html msg)
+        tooManyProjects =
+            model.organization
+                |> Maybe.andThen
+                    (\o ->
+                        if o.plan.projects == Just 0 then
+                            div [ class "mt-3" ]
+                                [ Alert.withDescription { color = Tw.yellow, icon = Icon.Exclamation, title = "Can't save project" }
+                                    [ text ("You plan (" ++ o.plan.name ++ ") can't save projects. ")
+                                    , a [ href (Backend.organizationBillingUrl o.id Conf.features.projects.name), target "_blank", rel "noopener", class "link" ] [ text "Please upgrade" ]
+                                    , text "."
+                                    ]
+                                ]
+                                |> Just
+
+                        else if o.plan.projects |> Maybe.any (\p -> curProjects >= p) then
+                            div [ class "mt-3" ]
+                                [ Alert.withDescription { color = Tw.yellow, icon = Icon.Exclamation, title = "Can't save project" }
+                                    [ text ("You already saved " ++ (curProjects |> pluralize "project") ++ ", you need ")
+                                    , a [ href (Backend.organizationBillingUrl o.id Conf.features.projects.name), target "_blank", rel "noopener", class "link" ] [ text "to upgrade" ]
+                                    , text " for more."
+                                    ]
+                                ]
+                                |> Just
+
+                        else
+                            Nothing
+                    )
+    in
     div [ class "px-4 p-6 max-w-2xl" ]
         [ div []
             [ div [ class "mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-primary-100" ]
@@ -127,12 +162,19 @@ selectSave wrap modalClose save titleId organizations projects projectName model
                                 (model.organization |> Maybe.mapOrElse .id "")
                                 (\orgId -> organizations |> List.findBy .id orgId |> UpdateOrganization |> wrap)
                         )
-                    , FormLabel.bold "mt-3"
-                        (model.id ++ "-storage")
-                        "How do you want to save?"
-                        (\fieldId -> radioCards fieldId (stringToStorage >> UpdateStorage >> wrap) projects model.organization model.storage)
-                    , model.organization
-                        |> Maybe.filter (\o -> o.plan.id == "free")
+                    , tooManyProjects
+                        |> Maybe.withDefault
+                            (model.organization
+                                |> Maybe.map
+                                    (\o ->
+                                        FormLabel.bold "mt-3"
+                                            (model.id ++ "-storage")
+                                            ("How do you want to save?" ++ (o.plan.projects |> Maybe.map (\p -> " (" ++ ((p - curProjects) |> pluralize "remaining project") ++ ")") |> Maybe.withDefault ""))
+                                            (\fieldId -> radioCards fieldId (stringToStorage >> UpdateStorage >> wrap) model.storage)
+                                    )
+                                |> Maybe.withDefault (div [] [])
+                            )
+                    , tooManyProjects
                         |> Maybe.map (\_ -> p [ class "mt-3 text-sm text-gray-500" ] [ text "If you just upgraded, refresh this page, your changes are saved." ])
                         |> Maybe.withDefault (text "")
                     ]
@@ -151,55 +193,11 @@ type alias Card msg =
     { value : ProjectStorage, description : String, notes : List (Html msg), enabled : Bool }
 
 
-radioCards : HtmlId -> (String -> msg) -> List ProjectInfo -> Maybe Organization -> Maybe ProjectStorage -> Html msg
-radioCards fieldId fieldChange projects chosenOrg fieldValue =
-    let
-        ( remoteAllowed, removeNotes ) =
-            chosenOrg
-                |> Maybe.mapOrElse
-                    (\o ->
-                        o.plan.projects
-                            |> Maybe.mapOrElse
-                                (\max ->
-                                    let
-                                        orgProjects : Int
-                                        orgProjects =
-                                            projects |> List.filter (\p -> p.organization |> Maybe.any (\po -> po.id == o.id)) |> List.length
-                                    in
-                                    if max > orgProjects then
-                                        ( True, [ text (((max - orgProjects) |> pluralize "project") ++ " remaining") ] )
-
-                                    else
-                                        ( False
-                                        , [ text ("Already saved " ++ (orgProjects |> pluralize "project") ++ ", you need ")
-                                          , a [ href (Backend.organizationBillingUrl o.id Conf.features.projects.name), target "_blank", rel "noopener", class "link" ] [ text "to upgrade" ]
-                                          , text " for more."
-                                          ]
-                                        )
-                                )
-                                ( True, [ text "Enjoy collaboration!" ] )
-                    )
-                    ( False, [ text "2 free projects" ] )
-
-        ( localAllowed, localNotes ) =
-            chosenOrg
-                |> Maybe.mapOrElse
-                    (\o ->
-                        if o.plan.localSave then
-                            ( True, [ text "Only this browser can access it." ] )
-
-                        else
-                            ( False
-                            , [ text "Needs "
-                              , a [ href (Backend.organizationBillingUrl o.id Conf.features.localSave.name), target "_blank", rel "noopener", class "link" ] [ text "higher plan" ]
-                              ]
-                            )
-                    )
-                    ( False, [ text "Needs higher plan" ] )
-    in
+radioCards : HtmlId -> (String -> msg) -> Maybe ProjectStorage -> Html msg
+radioCards fieldId fieldChange fieldValue =
     div [ class "grid grid-cols-1 gap-y-2" ]
-        ([ Card ProjectStorage.Remote "Save on Azimutt servers, share with your team." removeNotes remoteAllowed
-         , Card ProjectStorage.Local "Save in your browser, highest privacy, but no sharing." localNotes localAllowed
+        ([ Card ProjectStorage.Remote "Save project on Azimutt servers, share with your team." [ text "Enjoy collaboration!" ] True
+         , Card ProjectStorage.Local "Save in your browser, highest privacy, but no sharing." [ text "Only this browser can access it." ] True
          ]
             |> List.indexedMap (radioCardLabel fieldId (storageToString fieldValue) fieldChange)
         )

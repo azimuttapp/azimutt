@@ -14,6 +14,8 @@
                 with <b><%= @organization.plan_seats %> seats</b>.
             <% end %>
             <br>
+            More details on <a href={Routes.website_path(@conn, :pricing)} target="_blank" rel="noopener noreferrer" class="underline">pricing page</a>.
+            Don't hesitate to <a href={"mailto:#{Azimutt.config(:contact_email)}"} class="underline">reach out</a> for any question.<br>
             <% max_seats = Azimutt.limits().users[String.to_atom(@organization.plan)] %>
             <%= if max_seats == nil || max_seats > 1 do %>
                 Change you seats using the "Manage your subscription" button.
@@ -60,6 +62,7 @@
                     </div>
                 </div>
             <% end %>
+            <!-- TODO: warn on trialing or cancel status -->
             <%= link "Manage your subscription", to: Routes.organization_billing_path(@conn, :edit, @organization.id), method: :post, class: "mt-6 inline-flex items-center px-4 py-2 border border-transparent shadow-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm" %>
             <%= link "Refresh plan", to: Routes.organization_billing_path(@conn, :refresh, @organization.id), method: :post, title: "If your plan is out of sync, you can manually refresh it by clicking here.", class: "mt-3 block text-sm underline" %>
         </div>

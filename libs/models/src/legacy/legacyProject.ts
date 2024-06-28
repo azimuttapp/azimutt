@@ -563,8 +563,8 @@ export type LegacyOrganizationSlug = Slug
 export const LegacyOrganizationSlug = Slug
 export type LegacyOrganizationName = string
 export const LegacyOrganizationName = z.string()
-export type LegacyPlanId = 'free' | 'pro'
-export const LegacyPlanId = z.enum(['free', 'pro'])
+export type LegacyPlanId = 'free' | 'solo' | 'team' | 'enterprise' | 'pro'
+export const LegacyPlanId = z.enum(['free', 'solo', 'team', 'enterprise', 'pro'])
 
 // MUST stay in sync with frontend/src/Models/Plan.elm & backend/lib/azimutt/organizations/organization_plan.ex
 export interface LegacyPlan {
