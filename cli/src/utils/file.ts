@@ -1,8 +1,8 @@
 import * as fs from "node:fs";
+import {dirname} from "node:path";
+import {fileURLToPath} from "node:url";
 import os from "os";
 import {pathParent} from "@azimutt/utils";
-import { fileURLToPath } from "node:url";
-import { dirname } from "node:path";
 
 export type FilePath = string
 export type FileFormat = 'json' | 'sql'

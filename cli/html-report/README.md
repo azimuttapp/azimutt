@@ -1,8 +1,8 @@
-# Azimutt Html Report
+# Azimutt Analysis: Html Report Template
 
-Azimutt Html Report generates the html template file for the `analyze cli`
+Generates the html template file for the `analyze` cli.
 
-## Developing
+## Development
 
 The project uses ViteJS + React.
 
@@ -30,10 +30,10 @@ In development mode, the app loads report data from the file `src/constants/repo
 
 ## Publish
 
-Build the react app
+Build the React app
 
 ```bash
 pnpm run build
 ```
 
-In production mode, the data is set in the global variable `__REPORT__` each time the `analyze cli` is called.
+In production mode, the data is set in the global variable `__REPORT__` each time the `analyze` cli is called.

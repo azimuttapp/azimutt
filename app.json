@@ -23,15 +23,16 @@
       "value": "4000"
     },
     "SECRET_KEY_BASE": {
+      "description": "Secret for encryption of cookies",
       "generator": "secret"
     },
     "FILE_STORAGE_ADAPTER": "s3",
-    "AUTH_PASSWORD": {
-      "description": "Enable password-based authentication",
-      "value": "true"
-    },
     "DATABASE_ENABLE_SSL": {
       "description": "Enable SSL for database connections",
+      "value": "true"
+    },
+    "AUTH_PASSWORD": {
+      "description": "Enable password-based authentication",
       "value": "true"
     },
     "SKIP_ONBOARDING_FUNNEL": {
@@ -51,7 +52,7 @@
       "value": "mailgun"
     },
     "MAILGUN_BASE_URL": {
-      "description": "Mailgun  base url",
+      "description": "Mailgun base url",
       "value": "https://api.eu.mailgun.net/v3"
     }
   }
