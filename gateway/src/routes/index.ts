@@ -1,3 +1,4 @@
+import process from "process";
 import {TSchema} from "@sinclair/typebox"
 import {FastifyPluginAsync, FastifyReply} from "fastify"
 import {RouteShorthandOptions} from "fastify/types/route"
@@ -44,6 +45,7 @@ const routes: FastifyPluginAsync = async (server) => {
     server.get('/', async () => ({status: 200, version}))
     server.get('/ping', async () => ({status: 200}))
     server.get('/health', async () => ({status: 200, version}))
+    server.get('/status', async () => ({status: 200, version, package: process.env.npm_package_version, node: process.versions.node}))
 
     server.get<Get<ParseUrlParams, ParseUrlResponse>>('/gateway/parse-url', get(ParseUrlParams, ParseUrlResponse), async req => parseDatabaseUrl(req.query.url))
     server.post<Post<ParseUrlParams, ParseUrlResponse>>('/gateway/parse-url', post(ParseUrlParams, ParseUrlResponse), async req => parseDatabaseUrl(req.body.url))

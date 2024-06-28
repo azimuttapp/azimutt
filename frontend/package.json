@@ -66,6 +66,7 @@
     "@tailwindcss/typography": "^0.5.13",
     "@types/canvas-confetti": "^1.6.4",
     "@types/jest": "^29.5.12",
+    "@types/node": "^20.14.5",
     "concurrently": "^8.2.2",
     "elm-book": "^1.0.1",
     "elm-coverage": "^0.4.1",
