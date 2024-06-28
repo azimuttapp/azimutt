@@ -118,7 +118,7 @@ function buildConfig(
 ): ConnectionAttributes {
   return {
     connectionString: `${url.host}:${url.port}/${url.db}`,
-    user: "sys",
+    user: url.user,
     password: url.pass || undefined,
     privilege: SYSDBA,
   }
