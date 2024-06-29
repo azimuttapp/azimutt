@@ -11,13 +11,13 @@ defmodule Azimutt.StripeHandler do
     subscription = event.data.object
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization_by_customer(subscription.customer) do
-      Tracking.stripe_subscription_created(event, organization, subscription.id, subscription.status, subscription.plan.id, subscription.plan.interval, subscription.quantity)
+      Organizations.validate_organization_plan(organization)
 
       if subscription.status == "trialing" do
         organization |> Organizations.use_free_trial(DateTime.utc_now())
       end
 
-      Organizations.validate_organization_plan(organization)
+      Tracking.stripe_subscription_created(event, organization, subscription.id, subscription.status, subscription.plan.id, subscription.plan.interval, subscription.quantity)
     end
 
     :ok
@@ -28,8 +28,8 @@ defmodule Azimutt.StripeHandler do
     subscription = event.data.object
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization_by_customer(subscription.customer) do
-      Tracking.stripe_subscription_deleted(event, organization, subscription.id, subscription.status, subscription.plan.id, subscription.plan.interval, subscription.quantity)
       Organizations.validate_organization_plan(organization)
+      Tracking.stripe_subscription_deleted(event, organization, subscription.id, subscription.status, subscription.plan.id, subscription.plan.interval, subscription.quantity)
     end
 
     :ok
@@ -41,6 +41,8 @@ defmodule Azimutt.StripeHandler do
     previous = event.data.previous_attributes
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization_by_customer(subscription.customer) do
+      Organizations.validate_organization_plan(organization)
+
       cond do
         previous[:cancel_at] == nil && subscription.cancel_at != nil ->
           Tracking.stripe_subscription_canceled(event, organization, subscription.quantity)
@@ -52,10 +54,9 @@ defmodule Azimutt.StripeHandler do
           Tracking.stripe_subscription_quantity_updated(event, organization, subscription.quantity, previous.quantity)
 
         true ->
+          # TODO: fails when previous is Stripe.SubscriptionItem :/
           Tracking.stripe_subscription_updated(event, organization, previous)
       end
-
-      Organizations.validate_organization_plan(organization)
     end
 
     :ok

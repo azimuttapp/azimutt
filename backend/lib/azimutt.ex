@@ -140,6 +140,19 @@ defmodule Azimutt do
     }
   end
 
+  # MUST stay sync with backend/lib/azimutt_web/templates/partials/_streak.html.heex
+  def streak do
+    [
+      %{goal: 4, feature: :colors, limit: true},
+      %{goal: 6, feature: :aml, limit: true},
+      %{goal: 10, feature: :ai, limit: true},
+      %{goal: 15, feature: :project_layouts, limit: nil},
+      %{goal: 25, feature: :schema_export, limit: true},
+      %{goal: 40, feature: :analysis, limit: "trends"},
+      %{goal: 60, feature: :project_share, limit: true}
+    ]
+  end
+
   def use_cases do
     [
       %{

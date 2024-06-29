@@ -17,6 +17,7 @@ defmodule Azimutt.Services.CockpitSrv do
     Runner.start_link()
   end
 
+  # credo:disable-for-lines:52 Credo.Check.Refactor.CyclomaticComplexity
   def check(startup) do
     check_count = Azimutt.config(:cockpit_check) || 0
 
@@ -58,6 +59,10 @@ defmodule Azimutt.Services.CockpitSrv do
 
           true ->
             clear_message()
+        end
+
+        if is_boolean(res["overrides"]) do
+          Azimutt.set_config(:plan_overrides, res["overrides"])
         end
 
         if is_integer(res["stop"]) && check_count >= res["stop"] do

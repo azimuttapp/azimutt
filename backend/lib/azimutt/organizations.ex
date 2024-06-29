@@ -314,11 +314,12 @@ defmodule Azimutt.Organizations do
         streak: 0
       }
     end)
-    |> Result.map(fn plan -> plan_overrides(plans, organization, plan, maybe_current_user) end)
+    |> Result.map(fn plan -> organization_overrides(organization, plan) end)
+    |> Result.map(fn plan -> streak_overrides(maybe_current_user, plan) end)
   end
 
-  defp plan_overrides(plans, %Organization{} = organization, %OrganizationPlan{} = plan, maybe_current_user) do
-    if organization.data != nil && plans |> Enum.member?("pro") do
+  defp organization_overrides(%Organization{} = organization, %OrganizationPlan{} = plan) do
+    if organization.data != nil && Azimutt.config(:plan_overrides) do
       plan
       |> override_int(organization.data, :projects, :allowed_projects)
       |> override_int(organization.data, :project_layouts, :allowed_layouts)
@@ -329,7 +330,6 @@ defmodule Azimutt.Organizations do
     else
       plan
     end
-    |> override_streak(maybe_current_user)
   end
 
   defp override_int(%OrganizationPlan{} = plan, %Organization.Data{} = data, plan_key, data_key),
@@ -338,18 +338,17 @@ defmodule Azimutt.Organizations do
   defp override_bool(%OrganizationPlan{} = plan, %Organization.Data{} = data, plan_key, data_key),
     do: if(data[data_key], do: plan |> Map.put(plan_key, true), else: plan)
 
-  defp override_streak(%OrganizationPlan{} = plan, %User{} = maybe_current_user) do
-    # MUST stay sync with backend/lib/azimutt_web/templates/partials/_streak.html.heex
+  defp streak_overrides(%User{} = maybe_current_user, %OrganizationPlan{} = plan) do
     streak = Tracking.get_streak(maybe_current_user) |> Result.or_else(0)
-    plan = %{plan | streak: streak}
-    plan = if(streak >= 4, do: %{plan | colors: true}, else: plan)
-    plan = if(streak >= 6, do: %{plan | project_doc: nil}, else: plan)
-    plan = if(streak >= 10, do: %{plan | project_layouts: nil}, else: plan)
-    plan = if(streak >= 15, do: %{plan | project_doc: nil}, else: plan)
-    plan = if(streak >= 25, do: %{plan | schema_export: true}, else: plan)
-    plan = if(streak >= 40, do: %{plan | analysis: true}, else: plan)
-    plan = if(streak >= 60, do: %{plan | project_share: true}, else: plan)
-    plan
+
+    Azimutt.streak()
+    |> Enum.reduce(%{plan | streak: streak}, fn step, plan ->
+      if streak >= step.goal do
+        plan |> Map.put(step.feature, step.limit)
+      else
+        plan
+      end
+    end)
   end
 
   defp override_streak(%OrganizationPlan{} = plan, maybe_current_user) when is_nil(maybe_current_user), do: plan
