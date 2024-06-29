@@ -23,7 +23,7 @@ import Libs.String as String exposing (pluralize)
 import Libs.Tailwind as Tw
 import Libs.Time as Time
 import Models.Feature as Feature
-import Models.Organization exposing (Organization)
+import Models.Organization as Organization exposing (Organization)
 import Models.Plan as Plan exposing (Plan)
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
@@ -93,8 +93,8 @@ signIn modalClose loginUrl titleId =
 selectSave : (Msg -> msg) -> msg -> (ProjectName -> Organization -> ProjectStorage -> msg) -> HtmlId -> List Organization -> List ProjectInfo -> ProjectName -> Model -> Html msg
 selectSave wrap modalClose save titleId organizations projects projectName model =
     let
-        curProjects : Int
-        curProjects =
+        orgProjects : Int
+        orgProjects =
             projects |> List.filter (\p -> Maybe.any2 (\o po -> o.id == po.id) model.organization p.organization) |> List.length
 
         tooManyProjects : Maybe (Html msg)
@@ -106,17 +106,17 @@ selectSave wrap modalClose save titleId organizations projects projectName model
                             div [ class "mt-3" ]
                                 [ Alert.withDescription { color = Tw.yellow, icon = Icon.Exclamation, title = "Can't save project" }
                                     [ text ("You plan (" ++ o.plan.name ++ ") can't save projects. ")
-                                    , a [ href (Backend.organizationBillingUrl o.id Feature.projects.name), target "_blank", rel "noopener", class "link" ] [ text "Please upgrade" ]
+                                    , a [ href (Backend.organizationBillingUrl (Just o.id) Feature.projects.name), target "_blank", rel "noopener", class "link" ] [ text "Please upgrade" ]
                                     , text "."
                                     ]
                                 ]
                                 |> Just
 
-                        else if o.plan.projects |> Maybe.any (\p -> curProjects >= p) then
+                        else if o |> Organization.canSaveProject orgProjects |> not then
                             div [ class "mt-3" ]
                                 [ Alert.withDescription { color = Tw.yellow, icon = Icon.Exclamation, title = "Can't save project" }
-                                    [ text ("You already saved " ++ (curProjects |> pluralize "project") ++ ", you need ")
-                                    , a [ href (Backend.organizationBillingUrl o.id Feature.projects.name), target "_blank", rel "noopener", class "link" ] [ text "to upgrade" ]
+                                    [ text ("You already saved " ++ (orgProjects |> pluralize "project") ++ ", you need ")
+                                    , a [ href (Backend.organizationBillingUrl (Just o.id) Feature.projects.name), target "_blank", rel "noopener", class "link" ] [ text "to upgrade" ]
                                     , text " for more."
                                     ]
                                 ]
@@ -169,7 +169,7 @@ selectSave wrap modalClose save titleId organizations projects projectName model
                                     (\o ->
                                         FormLabel.bold "mt-3"
                                             (model.id ++ "-storage")
-                                            ("How do you want to save?" ++ (o.plan.projects |> Maybe.map (\p -> " (" ++ ((p - curProjects) |> pluralize "remaining project") ++ ")") |> Maybe.withDefault ""))
+                                            ("How do you want to save?" ++ (o.plan.projects |> Maybe.map (\p -> " (" ++ ((p - orgProjects) |> pluralize "remaining project") ++ ")") |> Maybe.withDefault ""))
                                             (\fieldId -> radioCards fieldId (stringToStorage >> UpdateStorage >> wrap) model.storage)
                                     )
                                 |> Maybe.withDefault (div [] [])

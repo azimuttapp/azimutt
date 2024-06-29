@@ -26,6 +26,7 @@
   "scripts": {
     "setup": "pnpm install && pnpm -r --if-present run setup",
     "start": "pnpm --parallel --filter \"@azimutt/gateway\" --filter \"azimutt-backend\" --filter \"azimutt-editor\" run start",
+    "elm:book": "pnpm --filter \"azimutt-editor\" run book",
     "test": "pnpm -r run test",
     "format": "pnpm -r run format",
     "lint": "pnpm -r run lint",

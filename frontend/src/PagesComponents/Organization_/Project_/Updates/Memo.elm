@@ -1,12 +1,9 @@
 module PagesComponents.Organization_.Project_.Updates.Memo exposing (Model, handleMemo)
 
 import Browser.Dom as Dom
-import Components.Slices.ProPlan as ProPlan
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Task as T
 import Models.ErdProps exposing (ErdProps)
-import Models.Feature as Feature
 import Models.Position as Position
 import Models.UrlInfos exposing (UrlInfos)
 import PagesComponents.Organization_.Project_.Models exposing (MemoEdit, MemoMsg(..), Msg(..))
@@ -60,18 +57,14 @@ handleMemo now urlInfos msg model =
 
 
 createMemo : Time.Posix -> Position.Grid -> UrlInfos -> Erd -> Model x -> ( Model x, Extra Msg )
-createMemo now position urlInfos erd model =
-    if model.erd |> Erd.canCreateMemo then
-        ErdLayout.createMemo (erd |> Erd.currentLayout) position
-            |> (\memo ->
-                    model
-                        |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemos (List.append [ memo ] >> List.sortBy .id)))
-                        |> editMemo True memo
-                        |> Extra.addCmdT (Ports.observeMemoSize memo.id)
-               )
-
-    else
-        ( model, Extra.cmdL [ erd |> Erd.getProjectRef urlInfos |> ProPlan.memosModalBody |> CustomModalOpen |> T.send, Track.planLimit Feature.projectDoc (Just erd) ] )
+createMemo now position _ erd model =
+    ErdLayout.createMemo (erd |> Erd.currentLayout) position
+        |> (\memo ->
+                model
+                    |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapMemos (List.append [ memo ] >> List.sortBy .id)))
+                    |> editMemo True memo
+                    |> Extra.addCmdT (Ports.observeMemoSize memo.id)
+           )
 
 
 editMemo : Bool -> Memo -> Model x -> ( Model x, Extra Msg )

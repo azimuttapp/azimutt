@@ -182,11 +182,11 @@ viewBottomSheet model =
 
 
 viewModal : Url -> UrlInfos -> Shared.Model -> Model -> Cmd Msg -> Html Msg
-viewModal currentUrl urlInfos shared model _ =
+viewModal curUrl urlInfos shared model _ =
     let
-        project : ProjectRef
-        project =
-            model.erd |> Erd.getProjectRefM urlInfos
+        projectRef : ProjectRef
+        projectRef =
+            model.erd |> Erd.getProjectRef urlInfos shared.organizations
 
         isOpen : { a | id : HtmlId } -> Bool
         isOpen =
@@ -197,14 +197,14 @@ viewModal currentUrl urlInfos shared model _ =
         ([ model.modal |> Maybe.map (\m -> ( m.id, Modals.view (isOpen m) m ))
          , model.confirm |> Maybe.map (\m -> ( m.id, Modals.viewConfirm (isOpen m) m ))
          , model.prompt |> Maybe.map (\m -> ( m.id, Modals.viewPrompt (isOpen m) m ))
-         , model.newLayout |> Maybe.map2 (\e m -> ( m.id, NewLayout.view NewLayoutMsg ModalClose project (e.layouts |> Dict.keys) (isOpen m) m )) model.erd
+         , model.newLayout |> Maybe.map2 (\e m -> ( m.id, NewLayout.view NewLayoutMsg ModalClose projectRef (e.layouts |> Dict.keys) (isOpen m) m )) model.erd
          , model.editNotes |> Maybe.map2 (\e m -> ( m.id, viewEditNotes (isOpen m) e m )) model.erd
          , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (isOpen m) model.openedDropdown e.settings.defaultSchema e.tables e.settings.findPath m )) model.erd
          , model.llmGenerateSql |> Maybe.map2 (\e m -> ( m.id, LlmGenerateSqlDialog.view LlmGenerateSqlDialogMsg Send Batch (Toasts.success >> Toast) (\source q -> DataExplorer.Open (Just source) (Just q) |> DataExplorerMsg) ModalClose (isOpen m) e m )) model.erd
-         , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis project (isOpen m) e.settings.defaultSchema e.sources e.tables e.relations e.ignoredRelations m )) model.erd
-         , model.exportDialog |> Maybe.map (\m -> ( m.id, ExportDialog.view ExportDialogMsg Send ModalClose (isOpen m) project m ))
-         , model.sharing |> Maybe.map2 (\e m -> ( m.id, ProjectSharing.view SharingMsg Send ModalClose confirmDanger shared.zone currentUrl urlInfos (isOpen m) e m )) model.erd
-         , model.save |> Maybe.map2 (\e m -> ( m.id, ProjectSaveDialog.view ProjectSaveMsg ModalClose CreateProject currentUrl shared.user shared.organizations shared.projects (isOpen m) e m )) model.erd
+         , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis projectRef (isOpen m) e.settings.defaultSchema e.sources e.tables e.relations e.ignoredRelations m )) model.erd
+         , model.exportDialog |> Maybe.map (\m -> ( m.id, ExportDialog.view ExportDialogMsg Send ModalClose (isOpen m) projectRef m ))
+         , model.sharing |> Maybe.map2 (\e m -> ( m.id, ProjectSharing.view SharingMsg Send ModalClose confirmDanger shared.zone curUrl projectRef (isOpen m) e m )) model.erd
+         , model.save |> Maybe.map2 (\e m -> ( m.id, ProjectSaveDialog.view ProjectSaveMsg ModalClose CreateProject curUrl shared.user shared.organizations shared.projects (isOpen m) e m )) model.erd
          , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings shared.zone (isOpen m) e m )) model.erd
          , model.sourceUpdate |> Maybe.map (\m -> ( m.id, SourceUpdateDialog.view (PSSourceUpdate >> ProjectSettingsMsg) (PSSourceSet >> ProjectSettingsMsg) ModalClose Noop shared.zone shared.now (isOpen m) m ))
          , model.embedSourceParsing |> Maybe.map (\m -> ( m.id, EmbedSourceParsingDialog.view EmbedSourceParsingMsg SourceParsed ModalClose Noop (isOpen m) m ))

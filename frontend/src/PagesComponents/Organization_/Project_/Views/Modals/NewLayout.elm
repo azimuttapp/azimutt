@@ -2,16 +2,16 @@ module PagesComponents.Organization_.Project_.Views.Modals.NewLayout exposing (G
 
 import Components.Molecules.Modal as Modal
 import Components.Slices.NewLayoutBody as NewLayoutBody
-import Components.Slices.ProPlan as ProPlan
+import Components.Slices.PlanDialog as PlanDialog
 import Dict
 import Html exposing (Html)
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Task as T
 import Models.Feature as Feature
+import Models.Organization as Organization
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.ProjectRef exposing (ProjectRef)
-import Models.UrlInfos exposing (UrlInfos)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout
@@ -48,15 +48,15 @@ type Msg
     | Cancel
 
 
-update : (Msg -> msg) -> (List msg -> msg) -> (HtmlId -> msg) -> (Toasts.Msg -> msg) -> ((msg -> String -> Html msg) -> msg) -> (LayoutName -> msg) -> (LayoutName -> msg) -> Time.Posix -> UrlInfos -> Msg -> GlobalModel x -> ( GlobalModel x, Extra msg )
-update wrap batch modalOpen toast customModalOpen loadLayout deleteLayout now urlInfos msg model =
+update : (Msg -> msg) -> (List msg -> msg) -> (HtmlId -> msg) -> (Toasts.Msg -> msg) -> ((msg -> String -> Html msg) -> msg) -> (LayoutName -> msg) -> (LayoutName -> msg) -> Time.Posix -> ProjectRef -> Msg -> GlobalModel x -> ( GlobalModel x, Extra msg )
+update wrap batch modalOpen toast customModalOpen loadLayout deleteLayout now projectRef msg model =
     case msg of
         Open from ->
-            if model.erd |> Erd.canCreateLayout then
+            if projectRef |> Organization.canCreateLayout (model.erd |> Erd.countLayouts) then
                 ( model |> setNewLayout (Just (NewLayoutBody.init dialogId from)), modalOpen dialogId |> T.sendAfter 1 |> Extra.cmd )
 
             else
-                ( model, Extra.cmdL [ model.erd |> Erd.getProjectRefM urlInfos |> ProPlan.layoutsModalBody |> customModalOpen |> T.send, Track.planLimit Feature.projectLayouts model.erd ] )
+                ( model, Extra.cmdL [ projectRef |> PlanDialog.layoutsModalBody |> customModalOpen |> T.send, Track.planLimit Feature.projectLayouts model.erd ] )
 
         BodyMsg m ->
             model |> mapNewLayoutMT (NewLayoutBody.update m) |> Extra.defaultT

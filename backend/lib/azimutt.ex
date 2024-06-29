@@ -127,15 +127,7 @@ defmodule Azimutt do
       layout_tables: %{name: "Max table/layout", free: 10, solo: 10, team: 40, enterprise: nil, pro: nil},
       project_doc: %{name: "Max doc/project", free: 10, solo: 10, team: 1000, enterprise: nil, pro: nil},
       # Extended integration
-      project_share: %{
-        name: "Sharing project",
-        free: false,
-        solo: false,
-        team: false,
-        enterprise: true,
-        pro: true,
-        description: "Use private links and embed to share with guest users."
-      },
+      project_share: %{name: "Sharing project", free: false, solo: false, team: false, enterprise: true, pro: true, description: "Use private links & embed to share with guest."},
       api: %{name: "API access", free: false, solo: false, team: false, enterprise: true, pro: true, description: "Fetch and update sources and documentation programmatically."},
       sso: %{name: "SSO", free: false, solo: false, team: false, enterprise: true, pro: false, description: "Soon..."},
       user_rights: %{name: "User rights", free: false, solo: false, team: false, enterprise: true, pro: false, description: "Soon... Have read-only users in your organization."},

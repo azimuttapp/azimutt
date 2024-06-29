@@ -4,7 +4,7 @@ import Array
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Radio as Radio
-import Components.Slices.ProPlan as ProPlan
+import Components.Slices.PlanDialog as PlanDialog
 import Conf exposing (constants)
 import DataSources.AmlMiner.AmlAdapter as AmlAdapter
 import DataSources.AmlMiner.AmlGenerator as AmlGenerator
@@ -30,7 +30,7 @@ import Libs.Task as T
 import Libs.Time as Time
 import Libs.Tuple3 as Tuple3
 import Models.Feature as Feature
-import Models.Organization exposing (Organization)
+import Models.Organization as Organization
 import Models.Position as Position
 import Models.Project as Project exposing (Project)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPathStr)
@@ -40,7 +40,6 @@ import Models.Project.TableId as TableId exposing (TableIdStr)
 import Models.ProjectRef as ProjectRef exposing (ProjectRef)
 import Models.Size as Size
 import Models.SourceInfo as SourceInfo
-import Models.UrlInfos as UrlInfos exposing (UrlInfos)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
@@ -85,8 +84,8 @@ init id =
     { id = id, input = Nothing, format = Nothing, output = Pending }
 
 
-update : (Msg -> msg) -> UrlInfos -> Erd -> Msg -> Model -> ( Model, Extra msg )
-update wrap urlInfos erd msg model =
+update : (Msg -> msg) -> ProjectRef -> Erd -> Msg -> Model -> ( Model, Extra msg )
+update wrap projectRef erd msg model =
     case msg of
         SetInput source ->
             { model | input = Just source } |> shouldGetOutput wrap
@@ -95,7 +94,7 @@ update wrap urlInfos erd msg model =
             { model | format = Just format } |> shouldGetOutput wrap
 
         GetOutput source format ->
-            ( { model | output = Fetching }, getOutput wrap urlInfos erd source format )
+            ( { model | output = Fetching }, getOutput wrap projectRef erd source format )
 
         GotOutput file content ->
             ( { model | output = Fetched ( file, content ) }, Extra.none )
@@ -116,26 +115,21 @@ shouldGetOutput wrap model =
         ( model, Extra.none )
 
 
-getOutput : (Msg -> msg) -> UrlInfos -> Erd -> ExportInput -> ExportFormat -> Extra msg
-getOutput wrap urlInfos erd input format =
-    let
-        sqlExportAllowed : Bool
-        sqlExportAllowed =
-            erd |> Erd.getOrganization urlInfos.organization |> .plan |> .schemaExport
-    in
+getOutput : (Msg -> msg) -> ProjectRef -> Erd -> ExportInput -> ExportFormat -> Extra msg
+getOutput wrap projectRef erd input format =
     case input of
         Project ->
             erd |> Erd.unpack |> Project.downloadContent |> (GotOutput (erd.project.name ++ ".azimutt.json") >> wrap >> Extra.msg)
 
         AllTables ->
-            if format /= AML && format /= JSON && not sqlExportAllowed then
+            if format /= AML && format /= JSON && not (Organization.canExportSchema projectRef) then
                 Extra.cmdL [ GotOutput "" "plan_limit" |> wrap |> T.send, Track.planLimit Feature.schemaExport (Just erd) ]
 
             else
                 erd |> Erd.toSchema |> generateTables format |> (\( output, ext ) -> output |> GotOutput (erd.project.name ++ "." ++ ext) |> wrap |> Extra.msg)
 
         CurrentLayout ->
-            if format /= AML && format /= JSON && not sqlExportAllowed then
+            if format /= AML && format /= JSON && not (Organization.canExportSchema projectRef) then
                 Extra.cmdL [ GotOutput "" "plan_limit" |> wrap |> T.send, Track.planLimit Feature.schemaExport (Just erd) ]
 
             else
@@ -216,7 +210,7 @@ view wrap send onClose titleId project model =
                             (\e -> viewCode ("Error: " ++ e))
                             (\( _, content ) ->
                                 if content == "plan_limit" then
-                                    div [ class "mt-3" ] [ ProPlan.sqlExportWarning project ]
+                                    div [ class "mt-3" ] [ PlanDialog.sqlExportWarning project ]
 
                                 else if model.format == Just PostgreSQL then
                                     div [] [ viewCode content, viewSuggestPR "https://github.com/azimuttapp/azimutt/blob/main/frontend/src/DataSources/SqlMiner/PostgreSqlGenerator.elm#L26" ]
@@ -276,13 +270,12 @@ type alias SharedDocState x =
 
 
 type alias DocState =
-    { free : Model, pro : Model }
+    { free : Model }
 
 
 docInit : DocState
 docInit =
     { free = { id = "free-modal-id", input = Nothing, format = Nothing, output = Pending }
-    , pro = { id = "pro-modal-id", input = Nothing, format = Nothing, output = Pending }
     }
 
 
@@ -292,19 +285,14 @@ updateDocState project get set msg =
         (\s ->
             s.exportDialogDocState
                 |> get
-                |> update (updateDocState project get set) UrlInfos.empty (sampleErd |> mapProject (setOrganization (Just project.organization))) msg
+                |> update (updateDocState project get set) ProjectRef.zero (sampleErd |> mapProject (setOrganization project.organization)) msg
                 |> Tuple.mapBoth (\r -> { s | exportDialogDocState = s.exportDialogDocState |> set r }) .cmd
         )
 
 
 updateDocFreeState : Msg -> ElmBook.Msg (SharedDocState x)
 updateDocFreeState msg =
-    updateDocState sampleFreePlan .free (\m s -> { s | free = m }) msg
-
-
-updateDocProState : Msg -> ElmBook.Msg (SharedDocState x)
-updateDocProState msg =
-    updateDocState sampleProPlan .pro (\m s -> { s | pro = m }) msg
+    updateDocState samplePlanFree .free (\m s -> { s | free = m }) msg
 
 
 sampleOnClose : ElmBook.Msg state
@@ -344,14 +332,9 @@ organization_members
         |> setCurrentLayout "init layout"
 
 
-sampleFreePlan : ProjectRef
-sampleFreePlan =
+samplePlanFree : ProjectRef
+samplePlanFree =
     ProjectRef.zero
-
-
-sampleProPlan : ProjectRef
-sampleProPlan =
-    sampleFreePlan
 
 
 component : String -> (DocState -> Html msg) -> ( String, SharedDocState x -> Html msg )
@@ -363,8 +346,7 @@ doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "ExportDialogBody"
         |> Chapter.renderStatefulComponentList
-            [ component "exportDialog" (\model -> view updateDocFreeState (\_ -> logAction "Download file") sampleOnClose sampleTitleId sampleFreePlan model.free)
-            , component "exportDialog with pro org" (\model -> view updateDocProState (\_ -> logAction "Download file") sampleOnClose sampleTitleId sampleProPlan model.pro)
+            [ component "exportDialog" (\model -> view updateDocFreeState (\_ -> logAction "Download file") sampleOnClose sampleTitleId samplePlanFree model.free)
             ]
 
 

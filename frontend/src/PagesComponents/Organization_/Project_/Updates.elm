@@ -6,7 +6,7 @@ import Components.Slices.DataExplorer as DataExplorer
 import Components.Slices.DataExplorerDetails as DataExplorerDetails
 import Components.Slices.DataExplorerQuery as DataExplorerQuery
 import Components.Slices.LlmGenerateSqlBody as LlmGenerateSqlBody
-import Components.Slices.ProPlan as ProPlan
+import Components.Slices.PlanDialog as PlanDialog
 import Conf
 import Dict
 import Json.Decode as Decode
@@ -24,7 +24,7 @@ import Libs.Task as T
 import Libs.Time as Time
 import Models.Area as Area
 import Models.Feature as Feature
-import Models.Organization exposing (Organization)
+import Models.Organization as Organization exposing (Organization)
 import Models.Position as Position
 import Models.Project as Project
 import Models.Project.ColumnId as ColumnId
@@ -36,6 +36,7 @@ import Models.Project.SourceKind as SourceKind
 import Models.Project.TableId as TableId
 import Models.Project.TableRow as TableRow exposing (TableRow)
 import Models.ProjectInfo exposing (ProjectInfo)
+import Models.ProjectRef exposing (ProjectRef)
 import Models.QueryResult exposing (QueryResult)
 import Models.Size as Size
 import Models.SourceInfo as SourceInfo
@@ -93,6 +94,11 @@ import Track
 
 update : Maybe LayoutName -> Time.Zone -> Time.Posix -> UrlInfos -> List Organization -> List ProjectInfo -> Msg -> Model -> ( Model, Extra Msg )
 update urlLayout zone now urlInfos organizations projects msg model =
+    let
+        projectRef : ProjectRef
+        projectRef =
+            model.erd |> Erd.getProjectRef urlInfos organizations
+    in
     case msg of
         ToggleMobileMenu ->
             ( model |> mapNavbar (mapMobileMenuOpen not), Extra.none )
@@ -125,7 +131,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdMT (goToTable now id model.erdElem) |> setDirtyM
 
         ShowTable id hint from ->
-            if model.erd |> Erd.canShowTables 1 then
+            if projectRef |> Organization.canShowTables 1 (model.erd |> Erd.countLayoutTables) then
                 if model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables) [] |> List.any (\t -> t.id == id) then
                     ( model, GoToTable id |> Extra.msg )
 
@@ -133,21 +139,21 @@ update urlLayout zone now urlInfos organizations projects msg model =
                     model |> mapErdMT (showTable now id hint from) |> setDirtyM
 
             else
-                ( model, Extra.cmdL [ ProPlan.layoutTablesModalBody (model.erd |> Erd.getProjectRefM urlInfos) |> CustomModalOpen |> T.send, Track.planLimit Feature.layoutTables model.erd ] )
+                ( model, Extra.cmdL [ PlanDialog.layoutTablesModalBody projectRef |> CustomModalOpen |> T.send, Track.planLimit Feature.layoutTables model.erd ] )
 
         ShowTables ids hint from ->
-            if model.erd |> Erd.canShowTables (ids |> List.length) then
+            if projectRef |> Organization.canShowTables (ids |> List.length) (model.erd |> Erd.countLayoutTables) then
                 model |> mapErdMT (showTables now ids hint from) |> setDirtyM
 
             else
-                ( model, Extra.cmdL [ ProPlan.layoutTablesModalBody (model.erd |> Erd.getProjectRefM urlInfos) |> CustomModalOpen |> T.send, Track.planLimit Feature.layoutTables model.erd ] )
+                ( model, Extra.cmdL [ PlanDialog.layoutTablesModalBody projectRef |> CustomModalOpen |> T.send, Track.planLimit Feature.layoutTables model.erd ] )
 
         ShowAllTables from ->
-            if model.erd |> Erd.canShowTables (model.erd |> Maybe.mapOrElse (.tables >> Dict.size) 0) then
+            if projectRef |> Organization.canShowTables (model.erd |> Maybe.mapOrElse (.tables >> Dict.size) 0) (model.erd |> Erd.countLayoutTables) then
                 model |> mapErdMT (showAllTables now from) |> setDirtyM
 
             else
-                ( model, Extra.cmdL [ ProPlan.layoutTablesModalBody (model.erd |> Erd.getProjectRefM urlInfos) |> CustomModalOpen |> T.send, Track.planLimit Feature.layoutTables model.erd ] )
+                ( model, Extra.cmdL [ PlanDialog.layoutTablesModalBody projectRef |> CustomModalOpen |> T.send, Track.planLimit Feature.layoutTables model.erd ] )
 
         HideTable id ->
             model |> mapErdMT (hideTable now id) |> Tuple.mapFirst (mapHoverTable (Maybe.filter (\( t, _ ) -> t /= id))) |> setDirtyM
@@ -160,11 +166,11 @@ update urlLayout zone now urlInfos organizations projects msg model =
                 model |> mapErdMT (unHideTable now index table) |> setDirtyM
 
         ShowRelatedTables id ->
-            if model.erd |> Erd.canShowTables 1 then
+            if projectRef |> Organization.canShowTables 1 (model.erd |> Erd.countLayoutTables) then
                 model |> mapErdMT (showRelatedTables now id) |> setDirtyM
 
             else
-                ( model, Extra.cmdL [ ProPlan.layoutTablesModalBody (model.erd |> Erd.getProjectRefM urlInfos) |> CustomModalOpen |> T.send, Track.planLimit Feature.layoutTables model.erd ] )
+                ( model, Extra.cmdL [ PlanDialog.layoutTablesModalBody projectRef |> CustomModalOpen |> T.send, Track.planLimit Feature.layoutTables model.erd ] )
 
         HideRelatedTables id ->
             model |> mapErdMT (hideRelatedTables now id) |> setDirtyM
@@ -261,11 +267,11 @@ update urlLayout zone now urlInfos organizations projects msg model =
                 |> setDirtyM
 
         TableColor id color extendToSelected ->
-            if model.erd |> Erd.canChangeColor then
+            if Organization.canChangeColor projectRef then
                 model |> mapErdMTM (\erd -> erd |> Erd.mapCurrentLayoutTWithTime now (mapTablesT (mapTablePropOrSelectedTE erd.settings.defaultSchema extendToSelected id (\t -> t |> mapPropsT (mapColorT (\c -> ( color, Extra.history ( TableColor t.id c False, TableColor t.id color False ) ))))))) |> setDirtyM
 
             else
-                ( model, Extra.cmdL [ ProPlan.colorsModalBody (model.erd |> Erd.getProjectRefM urlInfos) ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit Feature.colors model.erd ] )
+                ( model, Extra.cmdL [ PlanDialog.colorsModalBody projectRef PlanDialogColors PlanDialog.colorsInit |> CustomModalOpen |> T.send, Track.planLimit Feature.colors model.erd ] )
 
         MoveColumn column position ->
             model
@@ -323,7 +329,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdMT (Erd.mapIgnoredRelationsT (Dict.updateT col.table (\cols -> ( cols |> Maybe.map (List.filter (\c -> c /= col.column)), Extra.history ( IgnoreRelation col, msg ) )))) |> Extra.defaultT
 
         NewLayoutMsg message ->
-            model |> NewLayout.update NewLayoutMsg Batch ModalOpen Toast CustomModalOpen (LLoad "" >> LayoutMsg) (LDelete >> LayoutMsg) now urlInfos message
+            model |> NewLayout.update NewLayoutMsg Batch ModalOpen Toast CustomModalOpen (LLoad "" >> LayoutMsg) (LDelete >> LayoutMsg) now projectRef message
 
         LayoutMsg message ->
             model |> handleLayout message
@@ -341,7 +347,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdMTM (Erd.mapCurrentLayoutT (\l -> ( layout, Extra.new (Ports.observeLayout layout) ( SetLayout_ l, SetLayout_ layout ) ))) |> setDirtyM
 
         GroupMsg message ->
-            model |> handleGroups now urlInfos message
+            model |> handleGroups now projectRef message
 
         NotesMsg message ->
             model |> handleNotes message
@@ -394,10 +400,10 @@ update urlLayout zone now urlInfos organizations projects msg model =
             ( model |> setSchemaAnalysis Nothing, Extra.none )
 
         ExportDialogMsg message ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> mapExportDialogT (ExportDialog.update ExportDialogMsg ModalOpen urlInfos erd message)) ( model, Extra.none )
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapExportDialogT (ExportDialog.update ExportDialogMsg ModalOpen projectRef erd message)) ( model, Extra.none )
 
         SharingMsg message ->
-            model |> mapSharingT (ProjectSharing.update SharingMsg ModalOpen Toast zone now model.erd message)
+            model |> mapSharingT (ProjectSharing.update SharingMsg ModalOpen Toast zone now projectRef model.erd message)
 
         ProjectSaveMsg message ->
             model |> mapSaveT (ProjectSaveDialog.update ModalOpen message)
@@ -411,11 +417,11 @@ update urlLayout zone now urlInfos organizations projects msg model =
         SourceParsed source ->
             ( model, source |> Project.create projects source.name |> Ok |> Just |> GotProject "load" |> JsMessage |> Extra.msg )
 
-        ProPlanColors _ ProPlan.EnableTableChangeColor ->
+        PlanDialogColors _ PlanDialog.EnableTableChangeColor ->
             ( model |> mapErdM (mapProject (mapOrganizationM (mapPlan (setColors True)))), Ports.fireworks |> Extra.cmd )
 
-        ProPlanColors state message ->
-            state |> ProPlan.colorsUpdate ProPlanColors message |> Tuple.mapFirst (\s -> model |> mapModalMF (setContentF (ProPlan.colorsModalBody (model.erd |> Erd.getProjectRefM urlInfos) ProPlanColors s)))
+        PlanDialogColors state message ->
+            state |> PlanDialog.colorsUpdate PlanDialogColors message |> Tuple.mapFirst (\s -> model |> mapModalMF (setContentF (PlanDialog.colorsModalBody projectRef PlanDialogColors s)))
 
         HelpMsg message ->
             model |> handleHelp message

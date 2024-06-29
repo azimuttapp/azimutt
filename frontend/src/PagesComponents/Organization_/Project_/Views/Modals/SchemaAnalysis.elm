@@ -3,7 +3,7 @@ module PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis exposi
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Modal as Modal
-import Components.Slices.ProPlan as ProPlan
+import Components.Slices.PlanDialog as PlanDialog
 import Dict exposing (Dict)
 import Html exposing (Html, div, h3, h4, p, span, text)
 import Html.Attributes exposing (class, id)
@@ -13,8 +13,7 @@ import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (css)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (sm)
-import Models.Feature as Feature
-import Models.Organization exposing (Organization)
+import Models.Organization as Organization exposing (Organization)
 import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
@@ -62,11 +61,11 @@ viewSchemaAnalysis project opened defaultSchema sources tables relations ignored
     in
     Modal.modal { id = model.id, titleId = titleId, isOpen = opened, onBackgroundClick = ModalClose (SchemaAnalysisMsg SAClose) }
         [ viewHeader titleId
-        , if project.organization.plan.analysis /= Feature.analysis.preview then
+        , if Organization.canAnalyse project then
             div [] []
 
           else
-            div [ class "max-w-5xl px-6 mt-3" ] [ ProPlan.analysisWarning project ]
+            div [ class "max-w-5xl px-6 mt-3" ] [ PlanDialog.analysisWarning project ]
         , viewAnalysis project model.opened defaultSchema sources tables relations ignoredRelations
         , viewFooter
         ]

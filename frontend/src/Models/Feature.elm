@@ -1,4 +1,4 @@
-module Models.Feature exposing (ai, aml, analysis, colors, dataExploration, groups, layoutTables, memos, projectDbs, projectDoc, projectExport, projectLayouts, projectShare, projects, schemaExport)
+module Models.Feature exposing (ai, aml, analysis, colors, dataExploration, layoutTables, projectDbs, projectDoc, projectExport, projectLayouts, projectShare, projects, schemaExport)
 
 
 ai : { name : String }
@@ -11,9 +11,9 @@ aml =
     { name = "aml" }
 
 
-analysis : { name : String, preview : String, snapshot : String, trends : String }
+analysis : { name : String, preview : String, snapshot : String, trends : String, limit : Int }
 analysis =
-    { name = "analysis", preview = "preview", snapshot = "snapshot", trends = "trends" }
+    { name = "analysis", preview = "preview", snapshot = "snapshot", trends = "trends", limit = 3 }
 
 
 colors : { name : String }
@@ -29,16 +29,6 @@ dataExploration =
 layoutTables : { name : String, default : Int }
 layoutTables =
     { name = "layout_tables", default = 3 }
-
-
-memos : { name : String, default : Int }
-memos =
-    { name = "memos", default = 3 }
-
-
-groups : { name : String, default : Int }
-groups =
-    { name = "groups", default = 3 }
 
 
 projects : { name : String, default : Int }

@@ -5,7 +5,7 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Alert as Alert
 import Components.Molecules.Modal as Modal
 import Components.Molecules.Tooltip as Tooltip
-import Components.Slices.ProPlan as ProPlan
+import Components.Slices.PlanDialog as PlanDialog
 import Conf
 import Dict
 import Gen.Route as Route
@@ -26,8 +26,7 @@ import Libs.Task as T
 import Libs.Time as Time
 import Libs.Url as Url
 import Models.Feature as Feature
-import Models.Organization exposing (Organization)
-import Models.Plan exposing (Plan)
+import Models.Organization as Organization exposing (Organization)
 import Models.Project as Project exposing (Project)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectStorage as ProjectStorage
@@ -36,7 +35,6 @@ import Models.Project.SourceKind as SourceKind
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.ProjectRef exposing (ProjectRef)
 import Models.ProjectToken exposing (ProjectToken)
-import Models.UrlInfos exposing (UrlInfos)
 import PagesComponents.Organization_.Project_.Models.EmbedKind as EmbedKind exposing (EmbedKind)
 import PagesComponents.Organization_.Project_.Models.EmbedMode as EmbedMode exposing (EmbedModeId)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
@@ -128,8 +126,8 @@ initTokenForm =
 -- UPDATE
 
 
-update : (Msg -> msg) -> (HtmlId -> msg) -> (Toasts.Msg -> msg) -> Time.Zone -> Time.Posix -> Maybe Erd -> Msg -> Maybe Model -> ( Maybe Model, Extra msg )
-update wrap modalOpen toast zone now erd msg model =
+update : (Msg -> msg) -> (HtmlId -> msg) -> (Toasts.Msg -> msg) -> Time.Zone -> Time.Posix -> ProjectRef -> Maybe Erd -> Msg -> Maybe Model -> ( Maybe Model, Extra msg )
+update wrap modalOpen toast zone now projectRef erd msg model =
     case msg of
         Open ->
             ( Just (init Conf.ids.sharingDialog erd), modalOpen Conf.ids.sharingDialog |> T.sendAfter 1 |> Extra.cmd )
@@ -148,7 +146,7 @@ update wrap modalOpen toast zone now erd msg model =
 
         EnableTokenForm ->
             ( model |> Maybe.map (setTokenForm (Just initTokenForm))
-            , if erd |> Erd.getOrganizationM Nothing |> .plan |> .projectShare then
+            , if Organization.canShareProject projectRef then
                 erd |> Maybe.map (\e -> Backend.getProjectTokens e.project (GotTokens >> wrap)) |> Extra.cmdM
 
               else
@@ -203,8 +201,8 @@ update wrap modalOpen toast zone now erd msg model =
 -- VIEW
 
 
-view : (Msg -> msg) -> (Cmd msg -> msg) -> (msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> Url -> UrlInfos -> Bool -> Erd -> Model -> Html msg
-view wrap send modalClose confirm zone currentUrl urlInfos opened erd model =
+view : (Msg -> msg) -> (Cmd msg -> msg) -> (msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> Url -> ProjectRef -> Bool -> Erd -> Model -> Html msg
+view wrap send modalClose confirm zone curUrl projectRef opened erd model =
     let
         titleId : HtmlId
         titleId =
@@ -212,14 +210,14 @@ view wrap send modalClose confirm zone currentUrl urlInfos opened erd model =
 
         iframeUrl : Maybe String
         iframeUrl =
-            buildIframeUrl currentUrl model.kind model.content model.layout model.mode (model.tokenForm |> Maybe.andThen .token)
+            buildIframeUrl curUrl model.kind model.content model.layout model.mode (model.tokenForm |> Maybe.andThen .token)
     in
     Modal.modal { id = model.id, titleId = titleId, isOpen = opened, onBackgroundClick = Close |> wrap |> modalClose }
         [ div [ class "flex" ]
             [ Lazy.lazy viewIframe (iframeUrl |> Maybe.withDefault "")
             , div [ class "p-4", style "width" "70ch" ]
                 [ viewHeader wrap modalClose titleId
-                , viewBody wrap send confirm zone currentUrl urlInfos erd model
+                , viewBody wrap send confirm zone curUrl projectRef erd model
                 ]
             ]
         ]
@@ -254,8 +252,8 @@ viewHeader wrap modalClose titleId =
         ]
 
 
-viewBody : (Msg -> msg) -> (Cmd msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> Url -> UrlInfos -> Erd -> Model -> Html msg
-viewBody wrap send confirm zone currentUrl urlInfos erd model =
+viewBody : (Msg -> msg) -> (Cmd msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> Url -> ProjectRef -> Erd -> Model -> Html msg
+viewBody wrap send confirm zone currentUrl projectRef erd model =
     div []
         [ case erd.project.storage of
             ProjectStorage.Local ->
@@ -266,7 +264,7 @@ viewBody wrap send confirm zone currentUrl urlInfos erd model =
         , viewBodyKindContentInput wrap (model.id ++ "-input") model.kind model.content
         , viewBodyLayoutInput wrap (model.id ++ "-input-layout") model.layout (erd.layouts |> Dict.keys)
         , if erd.project.storage == ProjectStorage.Remote && model.kind == EmbedKind.EmbedProjectId then
-            viewBodyPrivateLinkInput wrap confirm zone (model.id ++ "-input-token") currentUrl urlInfos erd model
+            viewBodyPrivateLinkInput wrap confirm zone (model.id ++ "-input-token") currentUrl projectRef erd model
 
           else
             div [] []
@@ -344,13 +342,8 @@ embedKindPlaceholder kind =
             JsonSource.example
 
 
-viewBodyPrivateLinkInput : (Msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> HtmlId -> Url -> UrlInfos -> Erd -> Model -> Html msg
-viewBodyPrivateLinkInput wrap confirm zone inputId currentUrl urlInfos erd model =
-    let
-        project : ProjectRef
-        project =
-            erd |> Erd.getProjectRef urlInfos
-    in
+viewBodyPrivateLinkInput : (Msg -> msg) -> (String -> Html msg -> msg -> msg) -> Time.Zone -> HtmlId -> Url -> ProjectRef -> Erd -> Model -> Html msg
+viewBodyPrivateLinkInput wrap confirm zone inputId curUrl projectRef erd model =
     div [ class "mt-3" ]
         [ div [ class "flex justify-between" ]
             [ label [ for inputId, class "block text-sm font-medium text-gray-700" ]
@@ -368,7 +361,7 @@ viewBodyPrivateLinkInput wrap confirm zone inputId currentUrl urlInfos erd model
         , model.tokenForm
             |> Maybe.mapOrElse
                 (\f ->
-                    if project.organization.plan.projectShare then
+                    if Organization.canShareProject projectRef then
                         div [ class "mt-1" ]
                             [ div [ class "-space-y-px shadow-sm bg-white" ]
                                 ((model.tokens |> List.indexedMap (viewBodyProjectToken wrap confirm zone inputId f.token))
@@ -392,10 +385,10 @@ viewBodyPrivateLinkInput wrap confirm zone inputId currentUrl urlInfos erd model
                             ]
 
                     else
-                        div [ class "mt-1" ] [ ProPlan.privateLinkWarning project ]
+                        div [ class "mt-1" ] [ PlanDialog.privateLinkWarning projectRef ]
                 )
                 (div [] [])
-        , buildShareUrl currentUrl erd.project model.kind model.content model.layout (model.tokenForm |> Maybe.andThen .token)
+        , buildShareUrl curUrl erd.project model.kind model.content model.layout (model.tokenForm |> Maybe.andThen .token)
             |> Maybe.mapOrElse
                 (\url ->
                     div [ class "mt-2 bg-gray-100 text-gray-700 rounded text-sm px-3 py-2" ]
