@@ -188,17 +188,17 @@ getProjectRefM urlInfos erd =
 
 canCreateLayout : Maybe Erd -> Bool
 canCreateLayout erd =
-    erd |> getOrganizationM Nothing |> .plan |> .layouts |> Maybe.all (\max -> max + 1 > Dict.size (erd |> Maybe.mapOrElse .layouts Dict.empty))
+    erd |> getOrganizationM Nothing |> .plan |> .projectLayouts |> Maybe.all (\max -> max + 1 > Dict.size (erd |> Maybe.mapOrElse .layouts Dict.empty))
 
 
 canCreateMemo : Maybe Erd -> Bool
 canCreateMemo erd =
-    erd |> getOrganizationM Nothing |> .plan |> .memos |> Maybe.all (\max -> max > List.length (erd |> Maybe.mapOrElse (currentLayout >> .memos) []))
+    erd |> getOrganizationM Nothing |> .plan |> .projectDoc |> Maybe.all (\max -> max > List.length (erd |> Maybe.mapOrElse (currentLayout >> .memos) []))
 
 
 canCreateGroup : Maybe Erd -> Bool
 canCreateGroup erd =
-    erd |> getOrganizationM Nothing |> .plan |> .groups |> Maybe.all (\max -> max > List.length (erd |> Maybe.mapOrElse (currentLayout >> .groups) []))
+    erd |> getOrganizationM Nothing |> .plan |> .projectDoc |> Maybe.all (\max -> max > List.length (erd |> Maybe.mapOrElse (currentLayout >> .groups) []))
 
 
 canChangeColor : Maybe Erd -> Bool

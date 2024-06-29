@@ -15,6 +15,7 @@ import Libs.Maybe as Maybe
 import Libs.Nel as Nel exposing (Nel)
 import Libs.String as String
 import Libs.Tailwind as Tw
+import Models.Feature as Feature
 import Models.Project.Column as Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
@@ -211,7 +212,7 @@ view createRelations ignoreRelation project defaultSchema errors =
             relsWithRef |> List.filterMap SuggestedRelation.toFound |> List.sortBy (SuggestedRelation.toRefs >> (\r -> ColumnRef.show defaultSchema r.ref ++ " ← " ++ ColumnRef.show defaultSchema r.src))
     in
     div []
-        [ if List.nonEmpty relsWithRef && project.organization.plan.dbAnalysis then
+        [ if List.nonEmpty relsWithRef && project.organization.plan.analysis /= Feature.analysis.preview then
             div []
                 [ Button.primary1 Tw.primary
                     [ onClick (sortedMissingRels |> List.map SuggestedRelation.toRefs |> createRelations) ]

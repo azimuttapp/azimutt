@@ -23,6 +23,7 @@ import Libs.Nel as Nel
 import Libs.Task as T
 import Libs.Time as Time
 import Models.Area as Area
+import Models.Feature as Feature
 import Models.Organization exposing (Organization)
 import Models.Position as Position
 import Models.Project as Project
@@ -132,21 +133,21 @@ update urlLayout zone now urlInfos organizations projects msg model =
                     model |> mapErdMT (showTable now id hint from) |> setDirtyM
 
             else
-                ( model, Extra.cmdL [ ProPlan.layoutTablesModalBody (model.erd |> Erd.getProjectRefM urlInfos) |> CustomModalOpen |> T.send, Track.planLimit .layoutTables model.erd ] )
+                ( model, Extra.cmdL [ ProPlan.layoutTablesModalBody (model.erd |> Erd.getProjectRefM urlInfos) |> CustomModalOpen |> T.send, Track.planLimit Feature.layoutTables model.erd ] )
 
         ShowTables ids hint from ->
             if model.erd |> Erd.canShowTables (ids |> List.length) then
                 model |> mapErdMT (showTables now ids hint from) |> setDirtyM
 
             else
-                ( model, Extra.cmdL [ ProPlan.layoutTablesModalBody (model.erd |> Erd.getProjectRefM urlInfos) |> CustomModalOpen |> T.send, Track.planLimit .layoutTables model.erd ] )
+                ( model, Extra.cmdL [ ProPlan.layoutTablesModalBody (model.erd |> Erd.getProjectRefM urlInfos) |> CustomModalOpen |> T.send, Track.planLimit Feature.layoutTables model.erd ] )
 
         ShowAllTables from ->
             if model.erd |> Erd.canShowTables (model.erd |> Maybe.mapOrElse (.tables >> Dict.size) 0) then
                 model |> mapErdMT (showAllTables now from) |> setDirtyM
 
             else
-                ( model, Extra.cmdL [ ProPlan.layoutTablesModalBody (model.erd |> Erd.getProjectRefM urlInfos) |> CustomModalOpen |> T.send, Track.planLimit .layoutTables model.erd ] )
+                ( model, Extra.cmdL [ ProPlan.layoutTablesModalBody (model.erd |> Erd.getProjectRefM urlInfos) |> CustomModalOpen |> T.send, Track.planLimit Feature.layoutTables model.erd ] )
 
         HideTable id ->
             model |> mapErdMT (hideTable now id) |> Tuple.mapFirst (mapHoverTable (Maybe.filter (\( t, _ ) -> t /= id))) |> setDirtyM
@@ -163,7 +164,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
                 model |> mapErdMT (showRelatedTables now id) |> setDirtyM
 
             else
-                ( model, Extra.cmdL [ ProPlan.layoutTablesModalBody (model.erd |> Erd.getProjectRefM urlInfos) |> CustomModalOpen |> T.send, Track.planLimit .layoutTables model.erd ] )
+                ( model, Extra.cmdL [ ProPlan.layoutTablesModalBody (model.erd |> Erd.getProjectRefM urlInfos) |> CustomModalOpen |> T.send, Track.planLimit Feature.layoutTables model.erd ] )
 
         HideRelatedTables id ->
             model |> mapErdMT (hideRelatedTables now id) |> setDirtyM
@@ -264,7 +265,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
                 model |> mapErdMTM (\erd -> erd |> Erd.mapCurrentLayoutTWithTime now (mapTablesT (mapTablePropOrSelectedTE erd.settings.defaultSchema extendToSelected id (\t -> t |> mapPropsT (mapColorT (\c -> ( color, Extra.history ( TableColor t.id c False, TableColor t.id color False ) ))))))) |> setDirtyM
 
             else
-                ( model, Extra.cmdL [ ProPlan.colorsModalBody (model.erd |> Erd.getProjectRefM urlInfos) ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit .tableColor model.erd ] )
+                ( model, Extra.cmdL [ ProPlan.colorsModalBody (model.erd |> Erd.getProjectRefM urlInfos) ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit Feature.colors model.erd ] )
 
         MoveColumn column position ->
             model

@@ -34,7 +34,7 @@ organizationName =
 
 plan : Fuzzer Plan
 plan =
-    Fuzz.map14 Plan planId planName (Fuzz.maybe intPosSmall) (Fuzz.maybe intPosSmall) (Fuzz.maybe intPosSmall) (Fuzz.maybe intPosSmall) (Fuzz.maybe intPosSmall) Fuzz.bool Fuzz.bool Fuzz.bool Fuzz.bool Fuzz.bool Fuzz.bool Fuzz.int
+    Fuzz.map16 Plan planId planName Fuzz.bool Fuzz.bool Fuzz.bool Fuzz.bool Fuzz.bool stringSmall Fuzz.bool (Fuzz.maybe intPosSmall) (Fuzz.maybe intPosSmall) (Fuzz.maybe intPosSmall) (Fuzz.maybe intPosSmall) (Fuzz.maybe intPosSmall) Fuzz.bool Fuzz.int
 
 
 planId : Fuzzer String

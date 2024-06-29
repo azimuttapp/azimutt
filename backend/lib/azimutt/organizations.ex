@@ -285,7 +285,7 @@ defmodule Azimutt.Organizations do
   end
 
   def get_organization_plan(%Organization{} = organization, maybe_current_user) do
-    plans = Azimutt.config(:instance_plans) || ["free", "solo", "team", "enterprise", "pro"]
+    plans = Azimutt.config(:instance_plans) || ["free"]
 
     if organization.plan == nil || Date.compare(organization.plan_validated, Timex.shift(DateTime.utc_now(), days: -1)) == :lt do
       validate_organization_plan(organization)
@@ -293,17 +293,26 @@ defmodule Azimutt.Organizations do
       {:ok, organization.plan}
     end
     |> Result.map(fn plan ->
-      if plans |> Enum.member?(plan) do
-        case plan do
-          "free" -> OrganizationPlan.free()
-          "solo" -> OrganizationPlan.solo()
-          "team" -> OrganizationPlan.team()
-          "enterprise" -> OrganizationPlan.enterprise()
-          "pro" -> OrganizationPlan.pro()
-        end
-      else
-        OrganizationPlan.free()
-      end
+      plan_id = String.to_atom(if(plans |> Enum.member?(plan), do: plan, else: "free"))
+
+      %OrganizationPlan{
+        id: Azimutt.plans()[plan_id].id,
+        name: Azimutt.plans()[plan_id].name,
+        data_exploration: Azimutt.limits().data_exploration[plan_id],
+        colors: Azimutt.limits().colors[plan_id],
+        aml: Azimutt.limits().aml[plan_id],
+        schema_export: Azimutt.limits().schema_export[plan_id],
+        ai: Azimutt.limits().ai[plan_id],
+        analysis: Azimutt.limits().analysis[plan_id],
+        project_export: Azimutt.limits().project_export[plan_id],
+        projects: Azimutt.limits().projects[plan_id],
+        project_dbs: Azimutt.limits().project_dbs[plan_id],
+        project_layouts: Azimutt.limits().project_layouts[plan_id],
+        layout_tables: Azimutt.limits().layout_tables[plan_id],
+        project_doc: Azimutt.limits().project_doc[plan_id],
+        project_share: Azimutt.limits().project_share[plan_id],
+        streak: 0
+      }
     end)
     |> Result.map(fn plan -> plan_overrides(plans, organization, plan, maybe_current_user) end)
   end
@@ -311,95 +320,35 @@ defmodule Azimutt.Organizations do
   defp plan_overrides(plans, %Organization{} = organization, %OrganizationPlan{} = plan, maybe_current_user) do
     if organization.data != nil && plans |> Enum.member?("pro") do
       plan
-      |> override_projects(organization.data)
-      |> override_layouts(organization.data)
-      |> override_layout_tables(organization.data)
-      |> override_memos(organization.data)
-      |> override_colors(organization.data)
-      |> override_local_save(organization.data)
-      |> override_private_links(organization.data)
-      |> override_analysis(organization.data)
+      |> override_int(organization.data, :projects, :allowed_projects)
+      |> override_int(organization.data, :project_layouts, :allowed_layouts)
+      |> override_int(organization.data, :layout_tables, :allowed_layout_tables)
+      |> override_bool(organization.data, :colors, :allow_table_color)
+      |> override_bool(organization.data, :project_share, :allow_private_links)
+      |> override_bool(organization.data, :db_analysis, :allow_database_analysis)
     else
       plan
     end
     |> override_streak(maybe_current_user)
   end
 
-  defp override_projects(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
-    if data.allowed_projects != nil do
-      %{plan | projects: best_limit(plan.projects, data.allowed_projects)}
-    else
-      plan
-    end
-  end
+  defp override_int(%OrganizationPlan{} = plan, %Organization.Data{} = data, plan_key, data_key),
+    do: if(data[data_key] != nil, do: plan |> Map.put(plan_key, best_limit(plan[plan_key], data[data_key])), else: plan)
 
-  defp override_layouts(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
-    if data.allowed_layouts != nil do
-      %{plan | layouts: best_limit(plan.layouts, data.allowed_layouts)}
-    else
-      plan
-    end
-  end
-
-  defp override_layout_tables(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
-    if data.allowed_layout_tables != nil do
-      %{plan | layout_tables: best_limit(plan.layout_tables, data.allowed_layout_tables)}
-    else
-      plan
-    end
-  end
-
-  defp override_memos(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
-    if data.allowed_memos != nil do
-      %{plan | memos: best_limit(plan.memos, data.allowed_memos)}
-    else
-      plan
-    end
-  end
-
-  defp override_colors(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
-    if data.allow_table_color do
-      %{plan | colors: true}
-    else
-      plan
-    end
-  end
-
-  defp override_local_save(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
-    if data.allow_table_local_save do
-      %{plan | local_save: true}
-    else
-      plan
-    end
-  end
-
-  defp override_private_links(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
-    if data.allow_private_links do
-      %{plan | private_links: true}
-    else
-      plan
-    end
-  end
-
-  defp override_analysis(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
-    if data.allow_database_analysis do
-      %{plan | db_analysis: true}
-    else
-      plan
-    end
-  end
+  defp override_bool(%OrganizationPlan{} = plan, %Organization.Data{} = data, plan_key, data_key),
+    do: if(data[data_key], do: plan |> Map.put(plan_key, true), else: plan)
 
   defp override_streak(%OrganizationPlan{} = plan, %User{} = maybe_current_user) do
     # MUST stay sync with backend/lib/azimutt_web/templates/partials/_streak.html.heex
     streak = Tracking.get_streak(maybe_current_user) |> Result.or_else(0)
     plan = %{plan | streak: streak}
     plan = if(streak >= 4, do: %{plan | colors: true}, else: plan)
-    plan = if(streak >= 6, do: %{plan | memos: nil}, else: plan)
-    plan = if(streak >= 10, do: %{plan | layouts: nil}, else: plan)
-    plan = if(streak >= 15, do: %{plan | groups: nil}, else: plan)
-    plan = if(streak >= 25, do: %{plan | sql_export: true}, else: plan)
-    plan = if(streak >= 40, do: %{plan | db_analysis: true}, else: plan)
-    plan = if(streak >= 60, do: %{plan | private_links: true}, else: plan)
+    plan = if(streak >= 6, do: %{plan | project_doc: nil}, else: plan)
+    plan = if(streak >= 10, do: %{plan | project_layouts: nil}, else: plan)
+    plan = if(streak >= 15, do: %{plan | project_doc: nil}, else: plan)
+    plan = if(streak >= 25, do: %{plan | schema_export: true}, else: plan)
+    plan = if(streak >= 40, do: %{plan | analysis: true}, else: plan)
+    plan = if(streak >= 60, do: %{plan | project_share: true}, else: plan)
     plan
   end
 

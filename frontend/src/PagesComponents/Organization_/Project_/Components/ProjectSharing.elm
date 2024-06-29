@@ -25,6 +25,7 @@ import Libs.Tailwind as Tw exposing (TwClass, focus, sm)
 import Libs.Task as T
 import Libs.Time as Time
 import Libs.Url as Url
+import Models.Feature as Feature
 import Models.Organization exposing (Organization)
 import Models.Plan exposing (Plan)
 import Models.Project as Project exposing (Project)
@@ -147,11 +148,11 @@ update wrap modalOpen toast zone now erd msg model =
 
         EnableTokenForm ->
             ( model |> Maybe.map (setTokenForm (Just initTokenForm))
-            , if erd |> Erd.getOrganizationM Nothing |> .plan |> .privateLinks then
+            , if erd |> Erd.getOrganizationM Nothing |> .plan |> .projectShare then
                 erd |> Maybe.map (\e -> Backend.getProjectTokens e.project (GotTokens >> wrap)) |> Extra.cmdM
 
               else
-                Track.planLimit .privateLinks erd |> Extra.cmd
+                Track.planLimit Feature.projectShare erd |> Extra.cmd
             )
 
         DisableTokenForm ->
@@ -367,7 +368,7 @@ viewBodyPrivateLinkInput wrap confirm zone inputId currentUrl urlInfos erd model
         , model.tokenForm
             |> Maybe.mapOrElse
                 (\f ->
-                    if project.organization.plan.privateLinks then
+                    if project.organization.plan.projectShare then
                         div [ class "mt-1" ]
                             [ div [ class "-space-y-px shadow-sm bg-white" ]
                                 ((model.tokens |> List.indexedMap (viewBodyProjectToken wrap confirm zone inputId f.token))

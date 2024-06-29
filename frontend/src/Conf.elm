@@ -1,4 +1,4 @@
-module Conf exposing (Feature, Features, canvas, constants, features, hotkeys, ids, schema, ui)
+module Conf exposing (canvas, constants, hotkeys, ids, schema, ui)
 
 import Dict exposing (Dict)
 import Libs.Models.Hotkey exposing (Hotkey, hotkey, target)
@@ -101,42 +101,6 @@ ui =
     , closeDuration = 300
     , table = { headerHeight = 45, columnHeight = 24 }
     , tableRow = { headerHeight = 34, columnHeight = 25 }
-    }
-
-
-type alias Features =
-    { projects : Feature Int
-    , layouts : Feature Int
-    , layoutTables : Feature Int
-    , memos : Feature Int
-    , groups : Feature Int
-    , tableColor : Feature Bool
-    , localSave : Feature Bool
-    , privateLinks : Feature Bool
-    , sqlExport : Feature Bool
-    , dbAnalysis : Feature Bool
-    , dbAccess : Feature Bool
-    }
-
-
-type alias Feature a =
-    { name : String, free : a }
-
-
-features : Features
-features =
-    -- MUST stay in sync with backend/lib/azimutt.ex (`limits`)
-    { projects = { name = "projects", free = 0 }
-    , layouts = { name = "layouts", free = 1 }
-    , layoutTables = { name = "layout_tables", free = 10 }
-    , memos = { name = "memos", free = 10 }
-    , groups = { name = "groups", free = 10 }
-    , tableColor = { name = "table_color", free = False }
-    , localSave = { name = "local_save", free = False }
-    , privateLinks = { name = "private_links", free = False }
-    , sqlExport = { name = "sql_export", free = False }
-    , dbAnalysis = { name = "analysis", free = False }
-    , dbAccess = { name = "data_access", free = True }
     }
 
 

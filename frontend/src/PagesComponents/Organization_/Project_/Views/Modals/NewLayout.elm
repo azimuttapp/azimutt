@@ -3,12 +3,12 @@ module PagesComponents.Organization_.Project_.Views.Modals.NewLayout exposing (G
 import Components.Molecules.Modal as Modal
 import Components.Slices.NewLayoutBody as NewLayoutBody
 import Components.Slices.ProPlan as ProPlan
-import Conf
 import Dict
 import Html exposing (Html)
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Task as T
+import Models.Feature as Feature
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.ProjectRef exposing (ProjectRef)
 import Models.UrlInfos exposing (UrlInfos)
@@ -56,7 +56,7 @@ update wrap batch modalOpen toast customModalOpen loadLayout deleteLayout now ur
                 ( model |> setNewLayout (Just (NewLayoutBody.init dialogId from)), modalOpen dialogId |> T.sendAfter 1 |> Extra.cmd )
 
             else
-                ( model, Extra.cmdL [ model.erd |> Erd.getProjectRefM urlInfos |> ProPlan.layoutsModalBody |> customModalOpen |> T.send, Track.planLimit .layouts model.erd ] )
+                ( model, Extra.cmdL [ model.erd |> Erd.getProjectRefM urlInfos |> ProPlan.layoutsModalBody |> customModalOpen |> T.send, Track.planLimit Feature.projectLayouts model.erd ] )
 
         BodyMsg m ->
             model |> mapNewLayoutMT (NewLayoutBody.update m) |> Extra.defaultT

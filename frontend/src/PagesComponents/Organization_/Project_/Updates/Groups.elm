@@ -7,6 +7,7 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Tailwind as Tw exposing (Color)
 import Libs.Task as T
+import Models.Feature as Feature
 import Models.Project.Group as Group exposing (Group)
 import Models.Project.TableId exposing (TableId)
 import Models.ProjectRef exposing (ProjectRef)
@@ -102,7 +103,7 @@ createGroup now urlInfos tables model =
             |> Extra.defaultT
 
     else
-        ( model, model.erd |> Maybe.map (\erd -> [ erd |> Erd.getProjectRef urlInfos |> ProPlan.groupsModalBody |> CustomModalOpen |> T.send, Track.planLimit .groups (Just erd) ]) |> Extra.cmdML )
+        ( model, model.erd |> Maybe.map (\erd -> [ erd |> Erd.getProjectRef urlInfos |> ProPlan.groupsModalBody |> CustomModalOpen |> T.send, Track.planLimit Feature.projectDoc (Just erd) ]) |> Extra.cmdML )
 
 
 groupColor : ErdLayout -> List TableId -> Color
@@ -129,7 +130,7 @@ setGroupColor now urlInfos index color model =
         model |> mapErdMTM (Erd.mapCurrentLayoutTMWithTime now (mapGroupsT (List.mapAtT index (mapColorT (\c -> ( color, Extra.history ( GroupMsg (GSetColor index c), GroupMsg (GSetColor index color) ) )))))) |> Extra.defaultT
 
     else
-        ( model, Extra.cmdL [ ProPlan.colorsModalBody project ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit .tableColor model.erd ] )
+        ( model, Extra.cmdL [ ProPlan.colorsModalBody project ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit Feature.colors model.erd ] )
 
 
 saveGroup : Time.Posix -> GroupEdit -> Model x -> ( Model x, Extra Msg )

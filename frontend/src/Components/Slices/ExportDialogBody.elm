@@ -29,8 +29,8 @@ import Libs.Tailwind as Tw exposing (sm)
 import Libs.Task as T
 import Libs.Time as Time
 import Libs.Tuple3 as Tuple3
+import Models.Feature as Feature
 import Models.Organization exposing (Organization)
-import Models.Plan as Plan
 import Models.Position as Position
 import Models.Project as Project exposing (Project)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPathStr)
@@ -48,7 +48,7 @@ import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (Er
 import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Ports
-import Services.Lenses exposing (mapOrganization, mapProject, setCurrentLayout, setLayouts, setOrganization, setTables)
+import Services.Lenses exposing (mapProject, setCurrentLayout, setLayouts, setOrganization, setTables)
 import Track
 
 
@@ -121,7 +121,7 @@ getOutput wrap urlInfos erd input format =
     let
         sqlExportAllowed : Bool
         sqlExportAllowed =
-            erd |> Erd.getOrganization urlInfos.organization |> .plan |> .sqlExport
+            erd |> Erd.getOrganization urlInfos.organization |> .plan |> .schemaExport
     in
     case input of
         Project ->
@@ -129,14 +129,14 @@ getOutput wrap urlInfos erd input format =
 
         AllTables ->
             if format /= AML && format /= JSON && not sqlExportAllowed then
-                Extra.cmdL [ GotOutput "" "plan_limit" |> wrap |> T.send, Track.planLimit .sqlExport (Just erd) ]
+                Extra.cmdL [ GotOutput "" "plan_limit" |> wrap |> T.send, Track.planLimit Feature.schemaExport (Just erd) ]
 
             else
                 erd |> Erd.toSchema |> generateTables format |> (\( output, ext ) -> output |> GotOutput (erd.project.name ++ "." ++ ext) |> wrap |> Extra.msg)
 
         CurrentLayout ->
             if format /= AML && format /= JSON && not sqlExportAllowed then
-                Extra.cmdL [ GotOutput "" "plan_limit" |> wrap |> T.send, Track.planLimit .sqlExport (Just erd) ]
+                Extra.cmdL [ GotOutput "" "plan_limit" |> wrap |> T.send, Track.planLimit Feature.schemaExport (Just erd) ]
 
             else
                 erd
@@ -351,7 +351,7 @@ sampleFreePlan =
 
 sampleProPlan : ProjectRef
 sampleProPlan =
-    sampleFreePlan |> mapOrganization (\o -> { o | plan = Plan.pro })
+    sampleFreePlan
 
 
 component : String -> (DocState -> Html msg) -> ( String, SharedDocState x -> Html msg )

@@ -100,42 +100,51 @@ defmodule Azimutt do
   def limits do
     %{
       # Database features
-      schema_exploration: %{name: "Schema exploration", free: true, solo: true, team: true, enterprise: true},
-      data_exploration: %{name: "Data exploration", free: true, solo: true, team: true, enterprise: true},
-      colors: %{name: "Custom colors", free: false, solo: true, team: true, enterprise: true},
-      aml: %{name: "Database design (AML)", free: false, solo: true, team: true, enterprise: true},
-      # saved_queries: %{name: "Saved queries", free: false, solo: false, team: false, enterprise: true, description: "Soon... Save and share useful queries."},
-      # dashboard: %{name: "Dashboard", free: false, solo: false, team: false, enterprise: true, description: "Soon... Visually see query results."},
-      # db_stat_history: %{name: "Stats history", free: false, solo: false, team: false, enterprise: true, description: "Soon... Keep evolutions of database stats."},
-      schema_export: %{name: "Export schema", free: false, solo: true, team: true, enterprise: true, description: "Export your schema as SQL, AML or JSON."},
-      ai: %{name: "AI features", free: false, solo: false, team: true, enterprise: true},
+      schema_exploration: %{name: "Schema exploration", free: true, solo: true, team: true, enterprise: true, pro: true},
+      data_exploration: %{name: "Data exploration", free: true, solo: true, team: true, enterprise: true, pro: true},
+      colors: %{name: "Custom colors", free: false, solo: true, team: true, enterprise: true, pro: true},
+      aml: %{name: "Database design (AML)", free: false, solo: true, team: true, enterprise: true, pro: true},
+      # saved_queries: %{name: "Saved queries", free: false, solo: false, team: false, enterprise: true, pro: true, description: "Soon... Save and share useful queries."},
+      # dashboard: %{name: "Dashboard", free: false, solo: false, team: false, enterprise: true, pro: true, description: "Soon... Visually see query results."},
+      # db_stat_history: %{name: "Stats history", free: false, solo: false, team: false, enterprise: true, pro: true, description: "Soon... Keep evolutions of database stats."},
+      schema_export: %{name: "Export schema", free: false, solo: true, team: true, enterprise: true, pro: true, description: "Export your schema as SQL, AML or JSON."},
+      ai: %{name: "AI features", free: false, solo: false, team: true, enterprise: true, pro: true},
       analysis: %{
         name: "Database analysis",
         free: "preview",
         solo: "preview",
         team: "snapshot",
         enterprise: "trends",
+        pro: "trends",
         description: "See top 3 suggestions with preview, all suggestions with snapshot and compute evolution with trends."
       },
-      project_export: %{name: "Export project", free: false, solo: false, team: true, enterprise: true},
+      project_export: %{name: "Export project", free: false, solo: false, team: true, enterprise: true, pro: true},
       # Product quotas
-      users: %{name: "Max users", free: 1, solo: 1, team: 5, enterprise: nil},
-      projects: %{name: "Max projects", free: 0, solo: 1, team: 5, enterprise: nil, description: "0 means you can create a project but can't save it."},
-      project_dbs: %{name: "Max db/project", free: 1, solo: 1, team: 3, enterprise: nil},
-      project_layouts: %{name: "Max layout/project", free: 1, solo: 3, team: 20, enterprise: nil},
-      layout_tables: %{name: "Max table/layout", free: 10, solo: 10, team: 40, enterprise: nil},
-      project_doc: %{name: "Max doc/project", free: 10, solo: 10, team: 1000, enterprise: nil},
+      users: %{name: "Max users", free: 1, solo: 1, team: 5, enterprise: nil, pro: nil},
+      projects: %{name: "Max projects", free: 0, solo: 1, team: 5, enterprise: nil, pro: nil, description: "0 means you can create a project but can't save it."},
+      project_dbs: %{name: "Max db/project", free: 1, solo: 1, team: 3, enterprise: nil, pro: nil},
+      project_layouts: %{name: "Max layout/project", free: 1, solo: 3, team: 20, enterprise: nil, pro: nil},
+      layout_tables: %{name: "Max table/layout", free: 10, solo: 10, team: 40, enterprise: nil, pro: nil},
+      project_doc: %{name: "Max doc/project", free: 10, solo: 10, team: 1000, enterprise: nil, pro: nil},
       # Extended integration
-      project_share: %{name: "Sharing project", free: false, solo: false, team: false, enterprise: true, description: "Use private links and embed to share with guest users."},
-      api: %{name: "API access", free: false, solo: false, team: false, enterprise: true, description: "Fetch and update sources and documentation programmatically."},
-      sso: %{name: "SSO", free: false, solo: false, team: false, enterprise: true, description: "Soon..."},
-      user_rights: %{name: "User rights", free: false, solo: false, team: false, enterprise: true, description: "Soon... Have read-only users in your organization."},
-      gateway_custom: %{name: "Custom gateway", free: false, solo: false, team: false, enterprise: true, description: "Soon... Securely connect to your databases."},
-      billing: %{name: "Flexible billing", free: false, solo: false, team: false, enterprise: true},
-      support_on_premise: %{name: "On-premise support", free: false, solo: false, team: false, enterprise: true},
-      support_enterprise: %{name: "Enterprise support", free: false, solo: false, team: false, enterprise: true, description: "Priority email, answer within 48h."},
-      consulting: %{name: "1h expert consulting", free: false, solo: false, team: false, enterprise: true},
-      roadmap: %{name: "Roadmap impact", free: "suggestions", solo: "suggestions", team: "suggestions", enterprise: "discussions"}
+      project_share: %{
+        name: "Sharing project",
+        free: false,
+        solo: false,
+        team: false,
+        enterprise: true,
+        pro: true,
+        description: "Use private links and embed to share with guest users."
+      },
+      api: %{name: "API access", free: false, solo: false, team: false, enterprise: true, pro: true, description: "Fetch and update sources and documentation programmatically."},
+      sso: %{name: "SSO", free: false, solo: false, team: false, enterprise: true, pro: false, description: "Soon..."},
+      user_rights: %{name: "User rights", free: false, solo: false, team: false, enterprise: true, pro: false, description: "Soon... Have read-only users in your organization."},
+      gateway_custom: %{name: "Custom gateway", free: false, solo: false, team: false, enterprise: true, pro: false, description: "Soon... Securely connect to your databases."},
+      billing: %{name: "Flexible billing", free: false, solo: false, team: false, enterprise: true, pro: false},
+      support_on_premise: %{name: "On-premise support", free: false, solo: false, team: false, enterprise: true, pro: false},
+      support_enterprise: %{name: "Enterprise support", free: false, solo: false, team: false, enterprise: true, pro: false, description: "Priority email, answer within 48h."},
+      consulting: %{name: "1h expert consulting", free: false, solo: false, team: false, enterprise: true, pro: false},
+      roadmap: %{name: "Roadmap impact", free: "suggestions", solo: "suggestions", team: "suggestions", enterprise: "discussions", pro: "suggestions"}
     }
   end
 

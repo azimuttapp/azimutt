@@ -24,32 +24,6 @@ type alias Organization =
     }
 
 
-zero : Organization
-zero =
-    { id = OrganizationId.zero
-    , slug = OrganizationId.zero
-    , name = "zero"
-    , plan = Plan.free
-    , logo = "https://azimutt.app/images/logo_dark.svg"
-    , description = Nothing
-    , cleverCloud = Nothing
-    , heroku = Nothing
-    }
-
-
-one : Organization
-one =
-    { id = OrganizationId.one
-    , slug = OrganizationId.one
-    , name = "one"
-    , plan = Plan.free
-    , logo = "https://azimutt.app/images/logo_dark.svg"
-    , description = Nothing
-    , cleverCloud = Nothing
-    , heroku = Nothing
-    }
-
-
 encode : Organization -> Value
 encode value =
     Encode.notNullObject
@@ -75,3 +49,29 @@ decode =
         (Decode.maybeField "description" Decode.string)
         (Decode.maybeField "clever_cloud" CleverCloudResource.decode)
         (Decode.maybeField "heroku" HerokuResource.decode)
+
+
+zero : Organization
+zero =
+    { id = OrganizationId.zero
+    , slug = OrganizationId.zero
+    , name = "zero"
+    , plan = Plan.docSample
+    , logo = "https://azimutt.app/images/logo_dark.svg"
+    , description = Nothing
+    , cleverCloud = Nothing
+    , heroku = Nothing
+    }
+
+
+one : Organization
+one =
+    { id = OrganizationId.one
+    , slug = OrganizationId.one
+    , name = "one"
+    , plan = Plan.docSample
+    , logo = "https://azimutt.app/images/logo_dark.svg"
+    , description = Nothing
+    , cleverCloud = Nothing
+    , heroku = Nothing
+    }

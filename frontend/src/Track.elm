@@ -1,6 +1,5 @@
 module Track exposing (SQLParsing, amlSourceCreated, dataExplorerDetailsOpened, dataExplorerDetailsResult, dataExplorerOpened, dataExplorerQueryOpened, dataExplorerQueryResult, dbAnalysisOpened, detailSidebarClosed, detailSidebarOpened, docOpened, externalLink, findPathOpened, findPathResults, generateSqlFailed, generateSqlOpened, generateSqlQueried, generateSqlReplied, generateSqlSucceeded, groupCreated, groupDeleted, groupRenamed, jsonError, layoutCreated, layoutDeleted, layoutLoaded, layoutRenamed, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, projectLoaded, searchClicked, sourceAdded, sourceCreated, sourceDeleted, sourceEditorClosed, sourceEditorOpened, sourceRefreshed, sqlSourceCreated, tableRowOpened, tableRowResult, tableRowShown, tableShown, tagsCreated, tagsDeleted, tagsUpdated)
 
-import Conf exposing (Feature, Features)
 import DataSources.Helpers exposing (SourceLine)
 import DataSources.SqlMiner.SqlAdapter exposing (SqlSchema)
 import DataSources.SqlMiner.SqlParser exposing (Command)
@@ -20,7 +19,6 @@ import Models.DbSource exposing (DbSource)
 import Models.DbSourceInfo exposing (DbSourceInfo)
 import Models.OpenAIModel as OpenAIModel exposing (OpenAIModel)
 import Models.OrganizationId exposing (OrganizationId)
-import Models.Plan as Plan
 import Models.Project exposing (Project)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.Source as Source exposing (Source)
@@ -283,11 +281,11 @@ generateSqlFailed project source llm prompt query =
     sendEvent "editor__generate_sql__failed" ([ ( "llm", llm |> OpenAIModel.encode ), ( "prompt", prompt |> Encode.string ), ( "query", query |> Encode.string ) ] ++ (source |> Maybe.mapOrElse sourceDetails [])) (Just project)
 
 
-planLimit : (Features -> Feature a) -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId, plan : { pl | id : String } }, id : ProjectId } } -> Cmd msg
-planLimit getFeature erd =
+planLimit : { x | name : String } -> Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId, plan : { pl | id : String } }, id : ProjectId } } -> Cmd msg
+planLimit feature erd =
     sendEvent "plan_limit"
-        [ ( "plan", erd |> Maybe.andThen (.project >> .organization) |> Maybe.mapOrElse (.plan >> .id) Plan.free.id |> Encode.string )
-        , ( "feature", Conf.features |> getFeature |> .name |> Encode.string )
+        [ ( "plan", erd |> Maybe.andThen (.project >> .organization) |> Maybe.mapOrElse (.plan >> .id) "unknown" |> Encode.string )
+        , ( "feature", feature.name |> Encode.string )
         ]
         (erd |> Maybe.map .project)
 

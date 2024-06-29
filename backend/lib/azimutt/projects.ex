@@ -220,7 +220,7 @@ defmodule Azimutt.Projects do
       |> where([p, _, _], p.id == ^project_id and p.storage_kind == :remote)
       |> Repo.one()
       |> Result.from_nillable()
-      |> Result.filter(fn p -> Organizations.get_organization_plan(p.organization, maybe_current_user) |> Result.exists(& &1.private_links) end, :not_found)
+      |> Result.filter(fn p -> Organizations.get_organization_plan(p.organization, maybe_current_user) |> Result.exists(& &1.project_share) end, :not_found)
       |> Result.tap(fn _ -> token |> ProjectToken.access_changeset(now) |> Repo.update() end)
     end)
   end

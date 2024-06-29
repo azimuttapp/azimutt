@@ -13,6 +13,7 @@ import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (css)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (sm)
+import Models.Feature as Feature
 import Models.Organization exposing (Organization)
 import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.Relation exposing (Relation)
@@ -61,7 +62,7 @@ viewSchemaAnalysis project opened defaultSchema sources tables relations ignored
     in
     Modal.modal { id = model.id, titleId = titleId, isOpen = opened, onBackgroundClick = ModalClose (SchemaAnalysisMsg SAClose) }
         [ viewHeader titleId
-        , if project.organization.plan.dbAnalysis then
+        , if project.organization.plan.analysis /= Feature.analysis.preview then
             div [] []
 
           else

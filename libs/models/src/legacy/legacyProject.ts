@@ -570,34 +570,38 @@ export const LegacyPlanId = z.enum(['free', 'solo', 'team', 'enterprise', 'pro']
 export interface LegacyPlan {
     id: LegacyPlanId
     name: string
-    projects: number | null
-    layouts: number | null
-    layout_tables: number | null
-    memos: number | null
-    groups: number | null
+    data_exploration: boolean
     colors: boolean
-    local_save: boolean
-    private_links: boolean
-    sql_export: boolean
-    db_analysis: boolean
-    db_access: boolean
+    aml: boolean
+    schema_export: boolean
+    ai: boolean
+    analysis: string
+    project_export: boolean
+    projects: number | null
+    project_dbs: number | null
+    project_layouts: number | null
+    layout_tables: number | null
+    project_doc: number | null
+    project_share: boolean
     streak: number
 }
 
 export const LegacyPlan = z.object({
     id: LegacyPlanId,
     name: z.string(),
-    projects: z.number().nullable(),
-    layouts: z.number().nullable(),
-    layout_tables: z.number().nullable(),
-    memos: z.number().nullable(),
-    groups: z.number().nullable(),
+    data_exploration: z.boolean(),
     colors: z.boolean(),
-    local_save: z.boolean(),
-    private_links: z.boolean(),
-    sql_export: z.boolean(),
-    db_analysis: z.boolean(),
-    db_access: z.boolean(),
+    aml: z.boolean(),
+    schema_export: z.boolean(),
+    ai: z.boolean(),
+    analysis: z.string(),
+    project_export: z.boolean(),
+    projects: z.number().nullable(),
+    project_dbs: z.number().nullable(),
+    project_layouts: z.number().nullable(),
+    layout_tables: z.number().nullable(),
+    project_doc: z.number().nullable(),
+    project_share: z.boolean(),
     streak: z.number(),
 }).strict()
 

@@ -2,11 +2,11 @@ module PagesComponents.Organization_.Project_.Updates.Memo exposing (Model, hand
 
 import Browser.Dom as Dom
 import Components.Slices.ProPlan as ProPlan
-import Conf
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Task as T
 import Models.ErdProps exposing (ErdProps)
+import Models.Feature as Feature
 import Models.Position as Position
 import Models.UrlInfos exposing (UrlInfos)
 import PagesComponents.Organization_.Project_.Models exposing (MemoEdit, MemoMsg(..), Msg(..))
@@ -71,7 +71,7 @@ createMemo now position urlInfos erd model =
                )
 
     else
-        ( model, Extra.cmdL [ erd |> Erd.getProjectRef urlInfos |> ProPlan.memosModalBody |> CustomModalOpen |> T.send, Track.planLimit .memos (Just erd) ] )
+        ( model, Extra.cmdL [ erd |> Erd.getProjectRef urlInfos |> ProPlan.memosModalBody |> CustomModalOpen |> T.send, Track.planLimit Feature.projectDoc (Just erd) ] )
 
 
 editMemo : Bool -> Memo -> Model x -> ( Model x, Extra Msg )

@@ -69,7 +69,7 @@ view wrap onSubmit onCancel titleId layouts project model =
             , div [ css [ "mt-3 text-center", sm [ "mt-0 ml-4 text-left" ] ] ]
                 [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ]
                     [ text (model.mode |> foldMode "New empty layout" (\name -> "Duplicate layout '" ++ name ++ "'") (\name -> "Rename layout '" ++ name ++ "'")) ]
-                , if project.organization.plan.layouts |> Maybe.any (\l -> List.length layouts >= l) then
+                , if project.organization.plan.projectLayouts |> Maybe.any (\l -> List.length layouts >= l) then
                     div [ class "mt-2" ] [ ProPlan.layoutsWarning project ]
 
                   else

@@ -7,7 +7,6 @@ import Components.Molecules.Alert as Alert
 import Components.Molecules.FormLabel as FormLabel
 import Components.Molecules.InputText as InputText
 import Components.Molecules.Select as Select
-import Conf
 import ElmBook
 import ElmBook.Actions
 import ElmBook.Chapter as Chapter exposing (Chapter)
@@ -23,6 +22,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String exposing (pluralize)
 import Libs.Tailwind as Tw
 import Libs.Time as Time
+import Models.Feature as Feature
 import Models.Organization exposing (Organization)
 import Models.Plan as Plan exposing (Plan)
 import Models.Project.ProjectName exposing (ProjectName)
@@ -106,7 +106,7 @@ selectSave wrap modalClose save titleId organizations projects projectName model
                             div [ class "mt-3" ]
                                 [ Alert.withDescription { color = Tw.yellow, icon = Icon.Exclamation, title = "Can't save project" }
                                     [ text ("You plan (" ++ o.plan.name ++ ") can't save projects. ")
-                                    , a [ href (Backend.organizationBillingUrl o.id Conf.features.projects.name), target "_blank", rel "noopener", class "link" ] [ text "Please upgrade" ]
+                                    , a [ href (Backend.organizationBillingUrl o.id Feature.projects.name), target "_blank", rel "noopener", class "link" ] [ text "Please upgrade" ]
                                     , text "."
                                     ]
                                 ]
@@ -116,7 +116,7 @@ selectSave wrap modalClose save titleId organizations projects projectName model
                             div [ class "mt-3" ]
                                 [ Alert.withDescription { color = Tw.yellow, icon = Icon.Exclamation, title = "Can't save project" }
                                     [ text ("You already saved " ++ (curProjects |> pluralize "project") ++ ", you need ")
-                                    , a [ href (Backend.organizationBillingUrl o.id Conf.features.projects.name), target "_blank", rel "noopener", class "link" ] [ text "to upgrade" ]
+                                    , a [ href (Backend.organizationBillingUrl o.id Feature.projects.name), target "_blank", rel "noopener", class "link" ] [ text "to upgrade" ]
                                     , text " for more."
                                     ]
                                 ]
@@ -306,17 +306,17 @@ docProjectName =
 
 docOrga1 : Organization
 docOrga1 =
-    Organization "00000000-0000-0000-0000-000000000001" "orga-1" "Orga 1" Plan.pro "logo" Nothing Nothing Nothing
+    Organization "00000000-0000-0000-0000-000000000001" "orga-1" "Orga 1" Plan.docSample "logo" Nothing Nothing Nothing
 
 
 docOrga2 : Organization
 docOrga2 =
-    Organization "00000000-0000-0000-0000-000000000002" "orga-2" "Orga 2" Plan.free "logo" Nothing Nothing Nothing
+    Organization "00000000-0000-0000-0000-000000000002" "orga-2" "Orga 2" Plan.docSample "logo" Nothing Nothing Nothing
 
 
 docOrga3 : Organization
 docOrga3 =
-    Organization "00000000-0000-0000-0000-000000000003" "orga-3" "Orga 3" Plan.free "logo" Nothing Nothing Nothing
+    Organization "00000000-0000-0000-0000-000000000003" "orga-3" "Orga 3" Plan.docSample "logo" Nothing Nothing Nothing
 
 
 docOrganizations : List Organization

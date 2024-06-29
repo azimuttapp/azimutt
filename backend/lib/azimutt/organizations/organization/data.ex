@@ -10,7 +10,7 @@ defmodule Azimutt.Organizations.Organization.Data do
     field :allowed_layout_tables, :integer
     field :allowed_memos, :integer
     field :allow_table_color, :string
-    field :allow_table_local_save, :boolean
+    # field :allow_table_local_save, :boolean
     field :allow_private_links, :boolean
     field :allow_database_analysis, :boolean
   end

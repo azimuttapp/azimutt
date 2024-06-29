@@ -15,6 +15,7 @@ import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Libs.String as String
 import Libs.Tailwind as Tw
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
+import Models.Feature as Feature
 import Models.Project.ColumnPath as ColumnPath
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRefLike)
 import Models.Project.SchemaName exposing (SchemaName)
@@ -61,7 +62,7 @@ heading errors =
 view : ProjectRef -> SchemaName -> List Source -> (Cmd msg -> msg) -> List Model -> Html msg
 view project defaultSchema sources send errors =
     div []
-        [ if List.nonEmpty errors && project.organization.plan.dbAnalysis then
+        [ if List.nonEmpty errors && project.organization.plan.analysis /= Feature.analysis.preview then
             div []
                 [ Button.primary1 Tw.primary
                     [ onClick (errors |> scriptForRelationsWithDifferentTypes defaultSchema sources |> Ports.downloadFile "azimutt-fix-relations-with-different-types.sql" |> send) ]
