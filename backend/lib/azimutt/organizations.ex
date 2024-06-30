@@ -339,6 +339,8 @@ defmodule Azimutt.Organizations do
     end)
   end
 
+  defp streak_overrides(maybe_current_user, %OrganizationPlan{} = plan) when is_nil(maybe_current_user), do: plan
+
   def validate_organization_plan(%Organization{} = organization) do
     cond do
       organization.clever_cloud_resource -> validate_clever_cloud_plan(organization.clever_cloud_resource)
