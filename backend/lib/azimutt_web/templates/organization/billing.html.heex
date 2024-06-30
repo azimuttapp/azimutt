@@ -18,7 +18,7 @@
             Don't hesitate to <a href={"mailto:#{Azimutt.config(:contact_email)}"} class="underline">reach out</a> for any question.<br>
             <% max_seats = Azimutt.limits().users[String.to_atom(@organization.plan)] %>
             <%= if max_seats == nil || max_seats > 1 do %>
-                Change you seats using the "Manage your subscription" button.
+                Change your seats or plan using the "Manage your subscription" button.
             <% end %>
         </p>
         <%= if @organization.plan == "pro" do %>

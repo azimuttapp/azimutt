@@ -129,7 +129,7 @@ These are the basic variables you will **need** to set up Azimutt:
 - `PHX_HOST` (required): host of the deployed website (ex: `localhost` or `azimutt.app`), it's used to build absolute urls
 - `PORT` (required): the port the server will listen to (ex: `4000`)
 - `SECRET_KEY_BASE` (required): the secret used for server encryption (cookies and others), should be at least 64 bytes and you probably want a random value for it
-- `LICENCE_KEY` (optional): the licence key to unlock the pro features, contact us if you need one (contact@azimutt.app)
+- `LICENCE_KEY` (optional): the licence key to unlock paid features, contact us if you need one (contact@azimutt.app)
 - `DATABASE_URL` (required): the whole url to connect to your PostgreSQL database (ex: `postgresql://<user>:<pass>@<host>:<port>/<database>`)
     - `DATABASE_IPV6` (optional): if `true`, the database driver will use IPV6
     - `DATABASE_POOL_SIZE` (optional, default: `10`): the database connection pool size
@@ -177,7 +177,7 @@ At least one of authentication methods should be defined:
 - `SKIP_EMAIL_CONFIRMATION` (optional): if `true`, users will not be asked to confirm their email (either blocked or soft)
 - `REQUIRE_EMAIL_CONFIRMATION` (optional): if `true`, users will not be allowed to use Azimutt until they confirm their email, otherwise they will have a soft confirmation banner
 - `REQUIRE_EMAIL_ENDS_WITH` (optional): force all users to use an email ending with a suffix, your domain name for example
-- `ORGANIZATION_DEFAULT_PLAN` (optional, values: `free` or `pro`): define the plan an organization has by default when created
+- `ORGANIZATION_DEFAULT_PLAN` (optional, values: `free`, `solo`, `team`, `enterprise` or `pro`): define the plan an organization has by default when created
 - `GLOBAL_ORGANIZATION` (optional): an organization id, if set, all new users will be added to this organization
     - `GLOBAL_ORGANIZATION_ALONE` (optional): if `true`, only the global organization is shown (allows to work like a mono-tenant app)
 - `RECAPTCHA` (optional): if `true`, add [reCAPTCHA](https://www.google.com/recaptcha) on register and login

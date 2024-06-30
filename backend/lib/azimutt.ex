@@ -28,6 +28,7 @@ defmodule Azimutt do
   end
 
   def plans do
+    # MUST match Stripe prices defined in env vars
     %{
       free: %{
         id: :free,
@@ -103,6 +104,7 @@ defmodule Azimutt do
       schema_exploration: %{name: "Schema exploration", free: true, solo: true, team: true, enterprise: true, pro: true},
       data_exploration: %{name: "Data exploration", free: true, solo: true, team: true, enterprise: true, pro: true},
       colors: %{name: "Custom colors", free: false, solo: true, team: true, enterprise: true, pro: true},
+      # TODO: rename `aml` to `db_design`
       aml: %{name: "Database design (AML)", free: false, solo: true, team: true, enterprise: true, pro: true},
       # saved_queries: %{name: "Saved queries", free: false, solo: false, team: false, enterprise: true, pro: true, description: "Soon... Save and share useful queries."},
       # dashboard: %{name: "Dashboard", free: false, solo: false, team: false, enterprise: true, pro: true, description: "Soon... Visually see query results."},
@@ -116,7 +118,7 @@ defmodule Azimutt do
         team: "snapshot",
         enterprise: "trends",
         pro: "trends",
-        description: "See top 3 suggestions with preview, all suggestions with snapshot and compute evolution with trends."
+        description: "preview: top 3 suggestions, snapshot: all suggestions, trends: more suggestions based on evolution"
       },
       project_export: %{name: "Export project", free: false, solo: false, team: true, enterprise: true, pro: true},
       # Product quotas

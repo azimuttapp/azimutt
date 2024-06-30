@@ -57,9 +57,6 @@ defmodule Azimutt.CleverCloud do
     existing_members = Organizations.count_member(organization)
 
     cond do
-      existing_members > organization.plan_seats ->
-        {:error, :too_many_members}
-
       Organizations.has_member?(organization, current_user) ->
         {:ok, :already_member}
 
@@ -67,6 +64,9 @@ defmodule Azimutt.CleverCloud do
         OrganizationMember.new_member_changeset(organization.id, current_user)
         |> Repo.insert()
         |> Result.map(fn _ -> :member_added end)
+
+      existing_members > organization.plan_seats ->
+        {:error, :too_many_members}
 
       true ->
         {:error, :member_limit_reached}

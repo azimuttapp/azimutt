@@ -292,28 +292,7 @@ defmodule Azimutt.Organizations do
     else
       {:ok, organization.plan}
     end
-    |> Result.map(fn plan ->
-      plan_id = String.to_atom(if(plans |> Enum.member?(plan), do: plan, else: "free"))
-
-      %OrganizationPlan{
-        id: Azimutt.plans()[plan_id].id,
-        name: Azimutt.plans()[plan_id].name,
-        data_exploration: Azimutt.limits().data_exploration[plan_id],
-        colors: Azimutt.limits().colors[plan_id],
-        aml: Azimutt.limits().aml[plan_id],
-        schema_export: Azimutt.limits().schema_export[plan_id],
-        ai: Azimutt.limits().ai[plan_id],
-        analysis: Azimutt.limits().analysis[plan_id],
-        project_export: Azimutt.limits().project_export[plan_id],
-        projects: Azimutt.limits().projects[plan_id],
-        project_dbs: Azimutt.limits().project_dbs[plan_id],
-        project_layouts: Azimutt.limits().project_layouts[plan_id],
-        layout_tables: Azimutt.limits().layout_tables[plan_id],
-        project_doc: Azimutt.limits().project_doc[plan_id],
-        project_share: Azimutt.limits().project_share[plan_id],
-        streak: 0
-      }
-    end)
+    |> Result.map(fn plan -> OrganizationPlan.build(if(plans |> Enum.member?(plan), do: plan, else: "free") |> String.to_atom()) end)
     |> Result.map(fn plan -> organization_overrides(organization, plan) end)
     |> Result.map(fn plan -> streak_overrides(maybe_current_user, plan) end)
   end
@@ -321,12 +300,18 @@ defmodule Azimutt.Organizations do
   defp organization_overrides(%Organization{} = organization, %OrganizationPlan{} = plan) do
     if organization.data != nil && Azimutt.config(:plan_overrides) do
       plan
+      |> override_bool(organization.data, :colors, :allow_colors)
+      |> override_bool(organization.data, :aml, :allow_aml)
+      |> override_bool(organization.data, :schema_export, :allow_schema_export)
+      |> override_bool(organization.data, :ai, :allow_ai)
+      |> override_string(organization.data, :analysis, :allow_analysis)
+      |> override_bool(organization.data, :project_export, :allow_project_export)
       |> override_int(organization.data, :projects, :allowed_projects)
-      |> override_int(organization.data, :project_layouts, :allowed_layouts)
+      |> override_int(organization.data, :project_dbs, :allowed_project_dbs)
+      |> override_int(organization.data, :project_layouts, :allowed_project_layouts)
       |> override_int(organization.data, :layout_tables, :allowed_layout_tables)
-      |> override_bool(organization.data, :colors, :allow_table_color)
-      |> override_bool(organization.data, :project_share, :allow_private_links)
-      |> override_bool(organization.data, :db_analysis, :allow_database_analysis)
+      |> override_int(organization.data, :project_doc, :allowed_project_doc)
+      |> override_bool(organization.data, :project_share, :allow_project_share)
     else
       plan
     end
@@ -337,6 +322,9 @@ defmodule Azimutt.Organizations do
 
   defp override_bool(%OrganizationPlan{} = plan, %Organization.Data{} = data, plan_key, data_key),
     do: if(data[data_key], do: plan |> Map.put(plan_key, true), else: plan)
+
+  defp override_string(%OrganizationPlan{} = plan, %Organization.Data{} = data, plan_key, data_key),
+    do: if(data[data_key], do: plan |> Map.put(plan_key, data[data_key]), else: plan)
 
   defp streak_overrides(%User{} = maybe_current_user, %OrganizationPlan{} = plan) do
     streak = Tracking.get_streak(maybe_current_user) |> Result.or_else(0)
@@ -350,8 +338,6 @@ defmodule Azimutt.Organizations do
       end
     end)
   end
-
-  defp override_streak(%OrganizationPlan{} = plan, maybe_current_user) when is_nil(maybe_current_user), do: plan
 
   def validate_organization_plan(%Organization{} = organization) do
     cond do

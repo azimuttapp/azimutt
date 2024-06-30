@@ -26,9 +26,3 @@
     <%= render AzimuttWeb.PartialsView, "_pricing_plan_light.html", plan: Azimutt.plans.enterprise, cta: "Contact us", sub: fn _, _ -> "mailto:#{Azimutt.config(:support_email)}" end %>
   </div>
 </div>
-
-<div class="mt-6 sm:flex sm:items-start sm:justify-between">
-    <a href={Routes.organization_billing_path(@conn, :new, @organization.id, plan: "pro", freq: "monthly")} class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm">
-        Subscribe pro
-    </a>
-</div>
