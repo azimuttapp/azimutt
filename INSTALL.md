@@ -129,7 +129,7 @@ These are the basic variables you will **need** to set up Azimutt:
 - `PHX_HOST` (required): host of the deployed website (ex: `localhost` or `azimutt.app`), it's used to build absolute urls
 - `PORT` (required): the port the server will listen to (ex: `4000`)
 - `SECRET_KEY_BASE` (required): the secret used for server encryption (cookies and others), should be at least 64 bytes and you probably want a random value for it
-- `LICENCE_KEY` (optional): the licence key to unlock the pro features, contact us if you need one (contact@azimutt.app)
+- `LICENCE_KEY` (optional): the licence key to unlock paid features, contact us if you need one (contact@azimutt.app)
 - `DATABASE_URL` (required): the whole url to connect to your PostgreSQL database (ex: `postgresql://<user>:<pass>@<host>:<port>/<database>`)
     - `DATABASE_IPV6` (optional): if `true`, the database driver will use IPV6
     - `DATABASE_POOL_SIZE` (optional, default: `10`): the database connection pool size
@@ -154,8 +154,10 @@ These are the basic variables you will **need** to set up Azimutt:
         - `SMTP_USERNAME` (required)
         - `SMTP_PASSWORD` (required)
         - `SMTP_PORT` (required)
-- `SUPPORT_EMAIL` (optional, default `contact@azimutt.app`): email shown in Azimutt when users need support
 - `SENDER_EMAIL` (optional, default `contact@azimutt.app`): email Azimutt will us to send emails
+- `CONTACT_EMAIL` (optional, default `contact@azimutt.app`): email shown in Azimutt to reach out
+- `SUPPORT_EMAIL` (optional, default `contact@azimutt.app`): email shown in Azimutt when users need support
+- `ENTERPRISE_SUPPORT_EMAIL` (optional, default `contact@azimutt.app`): email shown in Azimutt for high priority support
 
 
 ### Key features
@@ -175,7 +177,7 @@ At least one of authentication methods should be defined:
 - `SKIP_EMAIL_CONFIRMATION` (optional): if `true`, users will not be asked to confirm their email (either blocked or soft)
 - `REQUIRE_EMAIL_CONFIRMATION` (optional): if `true`, users will not be allowed to use Azimutt until they confirm their email, otherwise they will have a soft confirmation banner
 - `REQUIRE_EMAIL_ENDS_WITH` (optional): force all users to use an email ending with a suffix, your domain name for example
-- `ORGANIZATION_DEFAULT_PLAN` (optional, values: `free` or `pro`): define the plan an organization has by default when created
+- `ORGANIZATION_DEFAULT_PLAN` (optional, values: `free`, `solo`, `team`, `enterprise` or `pro`): define the plan an organization has by default when created
 - `GLOBAL_ORGANIZATION` (optional): an organization id, if set, all new users will be added to this organization
     - `GLOBAL_ORGANIZATION_ALONE` (optional): if `true`, only the global organization is shown (allows to work like a mono-tenant app)
 - `RECAPTCHA` (optional): if `true`, add [reCAPTCHA](https://www.google.com/recaptcha) on register and login
@@ -207,7 +209,12 @@ At least one of authentication methods should be defined:
 - `STRIPE` (optional): if `true`, allow to purchase plans with [Stripe](https://stripe.com), you probably don't need it ^^
     - `STRIPE_API_KEY` (required): Stripe api key (ex: `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`)
     - `STRIPE_WEBHOOK_SIGNING_SECRET` (required): Stripe webhook secret (ex: `whsec_ayZAyKqOLy34UKNeI3eq4icXVWJam0IW`)
-    - `STRIPE_PRICE_PRO_MONTHLY` (required): the Stripe price for the pro plan (ex: `price_uJINukB78aAbajUQHy6Ra523`)
+    - `STRIPE_PRICE_SOLO_MONTHLY` (required): Stripe price for the monthly solo plan (ex: `price_uJINukB78aAbajUQHy6Ra523`)
+    - `STRIPE_PRICE_SOLO_YEARLY` (required): Stripe price for the yearly solo plan (ex: `price_uJINukB78aAbajUQHy6Ra523`)
+    - `STRIPE_PRICE_TEAM_MONTHLY` (required): Stripe price for the monthly team plan (ex: `price_uJINukB78aAbajUQHy6Ra523`)
+    - `STRIPE_PRICE_TEAM_YEARLY` (required): Stripe price for the yearly team plan (ex: `price_uJINukB78aAbajUQHy6Ra523`)
+    - `STRIPE_PRODUCT_ENTERPRISE` (required): Stripe product for enterprise plan (ex: `prod_eBlQLUZPVprdAo`)
+    - `STRIPE_PRICE_PRO_MONTHLY` (required): Stripe price for the monthly legacy pro plan (ex: `price_uJINukB78aAbajUQHy6Ra523`)
 - `CLEVER_CLOUD` (optional): if `true`, enable auth & hooks for [Clever Cloud Add-on](https://www.clever-cloud.com/doc/extend/add-ons-api)
     - `CLEVER_CLOUD_ADDON_ID` (required)
     - `CLEVER_CLOUD_PASSWORD` (required)

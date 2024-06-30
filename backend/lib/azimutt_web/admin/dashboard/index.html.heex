@@ -3,7 +3,7 @@
         {"Users", @users_count, Routes.admin_user_path(@conn, :index)},
         {"Projects", @projects_count, Routes.admin_project_path(@conn, :index)},
         {"Organizations (non personal)", @organizations_count, Routes.admin_organization_path(@conn, :index) <> "?f-is_personal=false"},
-        {"Stripe subscriptions", @stripe_count, nil},
+        {"Paid organizations", @paid_count, nil},
         {"Clever Cloud addons", @clever_cloud_count, nil},
         {"Heroku addons", @heroku_count, nil},
     ] do %>

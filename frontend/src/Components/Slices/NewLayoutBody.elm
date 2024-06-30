@@ -2,7 +2,7 @@ module Components.Slices.NewLayoutBody exposing (DocState, Mode(..), Model, Msg,
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Slices.ProPlan as ProPlan
+import Components.Slices.PlanDialog as PlanDialog
 import Conf
 import ElmBook
 import ElmBook.Actions
@@ -12,10 +12,9 @@ import Html.Attributes exposing (autofocus, class, disabled, id, name, placehold
 import Html.Events exposing (onClick, onInput)
 import Libs.Html exposing (bText, sendTweet)
 import Libs.Html.Attributes exposing (css)
-import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (focus, sm)
-import Models.Organization exposing (Organization)
+import Models.Organization as Organization
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.ProjectRef as ProjectRef exposing (ProjectRef)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
@@ -51,7 +50,7 @@ update msg model =
 
 
 view : (Msg -> msg) -> (LayoutName -> msg) -> msg -> HtmlId -> List LayoutName -> ProjectRef -> Model -> Html msg
-view wrap onSubmit onCancel titleId layouts project model =
+view wrap onSubmit onCancel titleId layouts projectRef model =
     let
         inputId : HtmlId
         inputId =
@@ -69,8 +68,8 @@ view wrap onSubmit onCancel titleId layouts project model =
             , div [ css [ "mt-3 text-center", sm [ "mt-0 ml-4 text-left" ] ] ]
                 [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ]
                     [ text (model.mode |> foldMode "New empty layout" (\name -> "Duplicate layout '" ++ name ++ "'") (\name -> "Rename layout '" ++ name ++ "'")) ]
-                , if project.organization.plan.layouts |> Maybe.any (\l -> List.length layouts >= l) then
-                    div [ class "mt-2" ] [ ProPlan.layoutsWarning project ]
+                , if projectRef |> Organization.isLastLayout (List.length layouts) then
+                    div [ class "mt-2" ] [ PlanDialog.layoutsWarning projectRef ]
 
                   else
                     div [] []

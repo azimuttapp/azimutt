@@ -40,6 +40,8 @@ defmodule Azimutt.Organizations do
     # |> preload([:created_by])
     Organization
     |> where([o], o.stripe_customer_id == ^customer_id)
+    |> preload(:clever_cloud_resource)
+    |> preload(:heroku_resource)
     |> preload(:created_by)
     |> Repo.one()
     |> Result.from_nillable()
@@ -112,15 +114,6 @@ defmodule Azimutt.Organizations do
     organization
     |> Organization.update_changeset(attrs, current_user)
     |> Repo.update()
-  end
-
-  def update_organization_subscription(%Organization{} = organization, subscription_id) do
-    if organization.stripe_subscription_id do
-      Logger.error("Organization #{organization.id} as already a subscription #{organization.stripe_subscription_id}, it will be replaced")
-    end
-
-    organization = Ecto.Changeset.change(organization, stripe_subscription_id: subscription_id)
-    Repo.update!(organization)
   end
 
   # Organization members
@@ -276,52 +269,9 @@ defmodule Azimutt.Organizations do
     |> Repo.update()
   end
 
-  def get_subscription_status(stripe_subscription_id) when is_bitstring(stripe_subscription_id) do
-    with {:ok, subscription} <- StripeSrv.get_subscription(stripe_subscription_id) do
-      case subscription.status do
-        "active" ->
-          {:ok, :active}
-
-        "past_due" ->
-          {:ok, :past_due}
-
-        "unpaid" ->
-          {:ok, :unpaid}
-
-        "canceled" ->
-          {:ok, :canceled}
-
-        "incomplete" ->
-          {:ok, :incomplete}
-
-        "incomplete_expired" ->
-          {:ok, :incomplete_expired}
-
-        "trialing" ->
-          {:ok, :trialing}
-
-        other ->
-          Logger.warning("Get unexpected subscription status : #{other}")
-          {:ok, :incomplete}
-      end
-    end
-  end
-
-  def get_allowed_members(%Organization{} = organization, %OrganizationPlan{} = plan) do
-    cond do
-      organization.clever_cloud_resource ->
-        CleverCloud.allowed_members(organization.clever_cloud_resource.plan)
-
-      organization.heroku_resource ->
-        Heroku.allowed_members(organization.heroku_resource.plan)
-
-      plan.id == :pro ->
-        # means no limit
-        nil
-
-      true ->
-        Azimutt.config(:free_plan_seats)
-    end
+  def get_subscriptions(%Organization{} = organization) do
+    StripeSrv.get_subscriptions(organization.stripe_customer_id)
+    |> Result.map(fn subs -> subs.data |> Enum.map(fn sub -> subscription_to_hash(sub) end) end)
   end
 
   def allow_table_color(%Organization{} = organization, tweet_url) when is_binary(tweet_url) do
@@ -330,151 +280,143 @@ defmodule Azimutt.Organizations do
     |> Repo.update()
   end
 
+  def use_free_trial(%Organization{} = organization, now) do
+    organization |> Organization.free_trial_changeset(now) |> Repo.update()
+  end
+
   def get_organization_plan(%Organization{} = organization, maybe_current_user) do
     plans = Azimutt.config(:instance_plans) || ["free"]
 
-    cond do
-      organization.clever_cloud_resource -> clever_cloud_plan(plans, organization.clever_cloud_resource)
-      organization.heroku_resource -> heroku_plan(plans, organization.heroku_resource)
-      organization.stripe_subscription_id && StripeSrv.stripe_configured?() -> stripe_plan(plans, organization.stripe_subscription_id)
-      true -> default_plan(plans)
-    end
-    |> Result.map(fn plan -> plan_overrides(plans, organization, plan, maybe_current_user) end)
-  end
-
-  defp clever_cloud_plan(plans, %CleverCloud.Resource{} = resource) do
-    if resource.plan |> String.starts_with?("pro-") && plans |> Enum.member?("pro") do
-      {:ok, OrganizationPlan.pro()}
+    if organization.plan == nil || Date.compare(organization.plan_validated, Timex.shift(DateTime.utc_now(), days: -1)) == :lt do
+      validate_organization_plan(organization)
     else
-      {:ok, OrganizationPlan.free()}
+      {:ok, organization.plan}
     end
+    |> Result.map(fn plan -> OrganizationPlan.build(if(plans |> Enum.member?(plan), do: plan, else: "free") |> String.to_atom()) end)
+    |> Result.map(fn plan -> organization_overrides(organization, plan) end)
+    |> Result.map(fn plan -> streak_overrides(maybe_current_user, plan) end)
   end
 
-  defp heroku_plan(plans, %Heroku.Resource{} = resource) do
-    if (resource.plan |> String.starts_with?("pro-") || resource.plan == "test") && plans |> Enum.member?("pro") do
-      {:ok, OrganizationPlan.pro()}
+  defp organization_overrides(%Organization{} = organization, %OrganizationPlan{} = plan) do
+    if organization.data != nil && Azimutt.config(:plan_overrides) do
+      plan
+      |> override_bool(organization.data, :colors, :allow_colors)
+      |> override_bool(organization.data, :aml, :allow_aml)
+      |> override_bool(organization.data, :schema_export, :allow_schema_export)
+      |> override_bool(organization.data, :ai, :allow_ai)
+      |> override_string(organization.data, :analysis, :allow_analysis)
+      |> override_bool(organization.data, :project_export, :allow_project_export)
+      |> override_int(organization.data, :projects, :allowed_projects)
+      |> override_int(organization.data, :project_dbs, :allowed_project_dbs)
+      |> override_int(organization.data, :project_layouts, :allowed_project_layouts)
+      |> override_int(organization.data, :layout_tables, :allowed_layout_tables)
+      |> override_int(organization.data, :project_doc, :allowed_project_doc)
+      |> override_bool(organization.data, :project_share, :allow_project_share)
     else
-      {:ok, OrganizationPlan.free()}
+      plan
     end
   end
 
-  defp stripe_plan(plans, subscription_id) do
-    StripeSrv.get_subscription(subscription_id)
-    |> Result.map(fn s ->
-      if (s.status == "trialing" || s.status == "active" || s.status == "past_due" || s.status == "unpaid") && plans |> Enum.member?("pro") do
-        OrganizationPlan.pro()
+  defp override_int(%OrganizationPlan{} = plan, %Organization.Data{} = data, plan_key, data_key),
+    do: if(data[data_key] != nil, do: plan |> Map.put(plan_key, best_limit(plan[plan_key], data[data_key])), else: plan)
+
+  defp override_bool(%OrganizationPlan{} = plan, %Organization.Data{} = data, plan_key, data_key),
+    do: if(data[data_key], do: plan |> Map.put(plan_key, true), else: plan)
+
+  defp override_string(%OrganizationPlan{} = plan, %Organization.Data{} = data, plan_key, data_key),
+    do: if(data[data_key], do: plan |> Map.put(plan_key, data[data_key]), else: plan)
+
+  defp streak_overrides(%User{} = maybe_current_user, %OrganizationPlan{} = plan) do
+    streak = Tracking.get_streak(maybe_current_user) |> Result.or_else(0)
+
+    Azimutt.streak()
+    |> Enum.reduce(%{plan | streak: streak}, fn step, plan ->
+      if streak >= step.goal do
+        plan |> Map.put(step.feature, step.limit)
       else
-        OrganizationPlan.free()
+        plan
       end
     end)
   end
 
-  def default_plan(plans) do
-    plan = Azimutt.config(:organization_default_plan)
+  defp streak_overrides(maybe_current_user, %OrganizationPlan{} = plan) when is_nil(maybe_current_user), do: plan
 
-    if plan == "pro" && plans |> Enum.member?("pro") do
-      {:ok, OrganizationPlan.pro()}
-    else
-      {:ok, OrganizationPlan.free()}
+  def validate_organization_plan(%Organization{} = organization) do
+    cond do
+      organization.clever_cloud_resource -> validate_clever_cloud_plan(organization.clever_cloud_resource)
+      organization.heroku_resource -> validate_heroku_plan(organization.heroku_resource)
+      organization.stripe_customer_id && StripeSrv.stripe_configured?() -> validate_stripe_plan(organization.stripe_customer_id)
+      true -> validate_default_plan()
     end
+    |> Result.tap(fn validated -> organization |> Organization.validate_plan_changeset(validated, DateTime.utc_now()) |> Repo.update() end)
+    |> Result.map(fn validated -> validated.plan end)
   end
 
-  defp plan_overrides(plans, %Organization{} = organization, %OrganizationPlan{} = plan, maybe_current_user) do
-    if organization.data != nil && plans |> Enum.member?("pro") do
-      plan
-      |> override_projects(organization.data)
-      |> override_layouts(organization.data)
-      |> override_layout_tables(organization.data)
-      |> override_memos(organization.data)
-      |> override_colors(organization.data)
-      |> override_local_save(organization.data)
-      |> override_private_links(organization.data)
-      |> override_analysis(organization.data)
-    else
-      plan
-    end
-    |> override_streak(maybe_current_user)
+  def validate_clever_cloud_plan(%CleverCloud.Resource{} = resource) do
+    {plan, seats} =
+      if resource.plan do
+        seats = resource.plan |> String.split("-") |> Enum.at(1, "1") |> String.to_integer()
+
+        cond do
+          resource.plan |> String.starts_with?("solo") -> {"solo", seats}
+          resource.plan |> String.starts_with?("team") -> {"team", seats}
+          resource.plan |> String.starts_with?("enterprise") -> {"enterprise", seats}
+          resource.plan |> String.starts_with?("pro") -> {"pro", seats}
+          true -> {"free", 1}
+        end
+      else
+        {"free", 1}
+      end
+
+    {:ok, %{plan: plan, plan_freq: "monthly", plan_status: "manual", plan_seats: seats}}
   end
 
-  defp override_projects(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
-    if data.allowed_projects != nil do
-      %{plan | projects: best_limit(plan.projects, data.allowed_projects)}
-    else
-      plan
-    end
+  def validate_heroku_plan(%Heroku.Resource{} = resource) do
+    {plan, seats} =
+      if resource.plan do
+        seats = resource.plan |> String.split("-") |> Enum.at(1, "1") |> String.to_integer()
+
+        cond do
+          resource.plan |> String.starts_with?("solo") -> {"solo", seats}
+          resource.plan |> String.starts_with?("team") -> {"team", seats}
+          resource.plan |> String.starts_with?("enterprise") || resource.plan == "test" -> {"enterprise", seats}
+          resource.plan |> String.starts_with?("pro") -> {"pro", seats}
+          true -> {"free", 1}
+        end
+      else
+        {"free", 1}
+      end
+
+    {:ok, %{plan: plan, plan_freq: "monthly", plan_status: "manual", plan_seats: seats}}
   end
 
-  defp override_layouts(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
-    if data.allowed_layouts != nil do
-      %{plan | layouts: best_limit(plan.layouts, data.allowed_layouts)}
-    else
-      plan
-    end
+  # credo:disable-for-lines:20 Credo.Check.Refactor.Nesting
+  defp validate_stripe_plan(customer_id) do
+    StripeSrv.get_subscriptions(customer_id)
+    |> Result.map(fn subs ->
+      if length(subs.data) > 0 do
+        sub = subscription_to_hash(hd(subs.data))
+        {plan, freq} = StripeSrv.get_plan(sub.product, sub.price)
+
+        if ["trialing", "active", "past_due", "unpaid"] |> Enum.member?(sub.status) do
+          if plan == "enterprise" do
+            %{plan: plan, plan_freq: freq, plan_status: sub.status, plan_seats: sub.metadata.seats || sub.quantity}
+          else
+            %{plan: plan, plan_freq: freq, plan_status: sub.status, plan_seats: sub.quantity}
+          end
+        else
+          %{plan: "free", plan_freq: freq, plan_status: sub.status, plan_seats: 1}
+        end
+      else
+        %{plan: "free", plan_freq: "monthly", plan_status: "no_subscription", plan_seats: 1}
+      end
+    end)
   end
 
-  defp override_layout_tables(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
-    if data.allowed_layout_tables != nil do
-      %{plan | layout_tables: best_limit(plan.layout_tables, data.allowed_layout_tables)}
-    else
-      plan
-    end
+  def validate_default_plan do
+    plan = Azimutt.config(:organization_default_plan) || "free"
+    {:ok, %{plan: plan, plan_freq: "monthly", plan_status: "no_stripe", plan_seats: 1}}
   end
-
-  defp override_memos(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
-    if data.allowed_memos != nil do
-      %{plan | memos: best_limit(plan.memos, data.allowed_memos)}
-    else
-      plan
-    end
-  end
-
-  defp override_colors(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
-    if data.allow_table_color do
-      %{plan | colors: true}
-    else
-      plan
-    end
-  end
-
-  defp override_local_save(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
-    if data.allow_table_local_save do
-      %{plan | local_save: true}
-    else
-      plan
-    end
-  end
-
-  defp override_private_links(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
-    if data.allow_private_links do
-      %{plan | private_links: true}
-    else
-      plan
-    end
-  end
-
-  defp override_analysis(%OrganizationPlan{} = plan, %Organization.Data{} = data) do
-    if data.allow_database_analysis do
-      %{plan | db_analysis: true}
-    else
-      plan
-    end
-  end
-
-  defp override_streak(%OrganizationPlan{} = plan, %User{} = maybe_current_user) do
-    # MUST stay sync with backend/lib/azimutt_web/templates/partials/_streak.html.heex
-    streak = Tracking.get_streak(maybe_current_user) |> Result.or_else(0)
-    plan = %{plan | streak: streak}
-    plan = if(streak >= 4, do: %{plan | colors: true}, else: plan)
-    plan = if(streak >= 6, do: %{plan | memos: nil}, else: plan)
-    plan = if(streak >= 10, do: %{plan | layouts: nil}, else: plan)
-    plan = if(streak >= 15, do: %{plan | groups: nil}, else: plan)
-    plan = if(streak >= 25, do: %{plan | sql_export: true}, else: plan)
-    plan = if(streak >= 40, do: %{plan | db_analysis: true}, else: plan)
-    plan = if(streak >= 60, do: %{plan | private_links: true}, else: plan)
-    plan
-  end
-
-  defp override_streak(%OrganizationPlan{} = plan, maybe_current_user) when is_nil(maybe_current_user), do: plan
 
   defp best_limit(a, b) do
     cond do
@@ -483,5 +425,25 @@ defmodule Azimutt.Organizations do
       is_integer(a) -> a
       is_integer(b) -> b
     end
+  end
+
+  defp subscription_to_hash(sub) do
+    %{
+      id: sub.id,
+      customer: sub.customer,
+      status: sub.status,
+      promotion_code: sub.promotion_code,
+      price: sub.plan.id,
+      product: sub.plan.product,
+      freq: sub.plan.interval,
+      quantity: sub.quantity,
+      metadata: %{
+        seats: if(is_binary(sub.metadata["seats"]), do: String.to_integer(sub.metadata["seats"]), else: nil),
+        projects: if(is_binary(sub.metadata["projects"]), do: String.to_integer(sub.metadata["projects"]), else: nil),
+        databases: if(is_binary(sub.metadata["databases"]), do: String.to_integer(sub.metadata["databases"]), else: nil)
+      },
+      cancel_at: if(sub.cancel_at != nil, do: DateTime.from_unix!(sub.cancel_at), else: nil),
+      created: DateTime.from_unix!(sub.created)
+    }
   end
 end

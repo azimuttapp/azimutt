@@ -9,6 +9,8 @@ It's accessible through the [Desktop app](../../desktop) (soon), the [CLI](https
 
 **Feel free to use it and even submit PR to improve it:**
 
+- improve [Oracle queries](./src/oracle.ts) (look at `getSchema` function)
+
 ## Publish
 
 - update `package.json` version

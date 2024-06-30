@@ -3,7 +3,6 @@ defmodule AzimuttWeb.LayoutView do
   alias Azimutt.Accounts
   alias Azimutt.CleverCloud
   alias Azimutt.Heroku
-  alias Azimutt.Organizations.OrganizationPlan
   alias Azimutt.Services.StripeSrv
 
   # Phoenix LiveDashboard is available only in development by default,
@@ -64,14 +63,16 @@ defmodule AzimuttWeb.LayoutView do
     end
   end
 
-  def generate_organization_plan_badge(%OrganizationPlan{} = plan) do
+  def plan_badge(plan) do
     classes = "inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium"
 
-    case plan.id do
-      :free -> content_tag(:span, "Free plan", class: "#{classes} bg-gray-100 text-gray-800")
-      :pro -> content_tag(:span, "Pro plan", class: "#{classes} bg-yellow-100 text-yellow-800")
-      :enterprise -> content_tag(:span, "Enterprise plan", class: "#{classes} bg-purple-100 text-purple-800")
-      _ -> content_tag(:span, "Unknown plan #{plan.id}", class: "#{classes} bg-red-100 text-red-800")
+    case "#{plan}" do
+      "free" -> content_tag(:span, "Free plan", class: "#{classes} bg-gray-100 text-gray-800")
+      "pro" -> content_tag(:span, "Pro plan", class: "#{classes} bg-yellow-100 text-yellow-800")
+      "solo" -> content_tag(:span, "Solo plan", class: "#{classes} bg-yellow-100 text-yellow-800")
+      "team" -> content_tag(:span, "Team plan", class: "#{classes} bg-emerald-100 text-emerald-800")
+      "enterprise" -> content_tag(:span, "Enterprise plan", class: "#{classes} bg-indigo-100 text-indigo-800")
+      _ -> content_tag(:span, "Unknown plan #{plan}", class: "#{classes} bg-red-100 text-red-800")
     end
   end
 end

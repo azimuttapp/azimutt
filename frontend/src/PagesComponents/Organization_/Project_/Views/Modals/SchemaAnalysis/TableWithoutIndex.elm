@@ -1,7 +1,7 @@
 module PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis.TableWithoutIndex exposing (Model, compute, heading, view)
 
 import Components.Atoms.Button as Button
-import Components.Slices.ProPlan as ProPlan
+import Components.Slices.PlanDialog as PlanDialog
 import Dict exposing (Dict)
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class)
@@ -47,7 +47,7 @@ view showTable project defaultSchema errors =
         [ div [ class "mb-1 text-gray-500" ]
             [ text "Indexes allow fast querying, depending on your table usage, it can be great to create a few indexes."
             ]
-        , ProPlan.analysisResults project
+        , PlanDialog.analysisResults project
             errors
             (\t ->
                 div [ class "flex justify-between items-center my-1" ]

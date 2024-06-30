@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, canChangeColor, canCreateGroup, canCreateLayout, canCreateMemo, canShowTables, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getOrganization, getOrganizationM, getProjectId, getProjectIdM, getProjectRef, getProjectRefM, getTable, isShown, mapCurrentLayout, mapCurrentLayoutT, mapCurrentLayoutTMWithTime, mapCurrentLayoutTWithTime, mapCurrentLayoutWithTime, mapIgnoredRelationsT, mapSettings, mapSource, mapSourceT, mapSources, mapSourcesT, setIgnoredRelations, setSettings, setSources, toSchema, unpack, viewportM, viewportToCanvas)
+module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, countLayoutTables, countLayouts, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getProjectRef, getTable, isShown, mapCurrentLayout, mapCurrentLayoutT, mapCurrentLayoutTMWithTime, mapCurrentLayoutTWithTime, mapCurrentLayoutWithTime, mapIgnoredRelationsT, mapSettings, mapSource, mapSourceT, mapSources, mapSourcesT, setIgnoredRelations, setSettings, setSources, toSchema, unpack, viewportM, viewportToCanvas)
 
 import Conf
 import Dict exposing (Dict)
@@ -8,8 +8,7 @@ import Libs.Maybe as Maybe
 import Libs.Time as Time
 import Models.Area as Area
 import Models.ErdProps exposing (ErdProps)
-import Models.Organization as Organization exposing (Organization)
-import Models.OrganizationId exposing (OrganizationId)
+import Models.Organization exposing (Organization)
 import Models.Position as Position
 import Models.Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
@@ -18,7 +17,6 @@ import Models.Project.ColumnRef exposing (ColumnRef, ColumnRefLike)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Metadata exposing (Metadata)
-import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.Schema exposing (Schema)
@@ -151,69 +149,21 @@ mapCurrentLayoutTMWithTime now transform erd =
     erd |> mapLayoutsDTM erd.currentLayout (transform >> Tuple.mapFirst (\l -> { l | updatedAt = now }))
 
 
-getOrganization : Maybe OrganizationId -> Erd -> Organization
-getOrganization urlOrganization erd =
-    getOrganizationM urlOrganization (Just erd)
+getProjectRef : UrlInfos -> List Organization -> Maybe Erd -> ProjectRef
+getProjectRef urlInfos organizations erd =
+    { id = erd |> Maybe.map (.project >> .id) |> Maybe.orElse urlInfos.project
+    , organization = erd |> Maybe.andThen (.project >> .organization) |> Maybe.orElse (urlInfos.organization |> Maybe.andThen (\id -> organizations |> List.findBy .id id))
+    }
 
 
-getOrganizationM : Maybe OrganizationId -> Maybe Erd -> Organization
-getOrganizationM urlOrganization erd =
-    let
-        zero : Organization
-        zero =
-            Organization.zero
-    in
-    erd |> Maybe.andThen (.project >> .organization) |> Maybe.withDefault (urlOrganization |> Maybe.mapOrElse (\id -> { zero | id = id }) zero)
+countLayouts : Maybe Erd -> Int
+countLayouts erd =
+    erd |> Maybe.mapOrElse (.layouts >> Dict.size) 0
 
 
-getProjectId : Maybe ProjectId -> Erd -> ProjectId
-getProjectId urlProjectId erd =
-    getProjectIdM urlProjectId (Just erd)
-
-
-getProjectIdM : Maybe ProjectId -> Maybe Erd -> ProjectId
-getProjectIdM urlProjectId erd =
-    erd |> Maybe.map (.project >> .id) |> Maybe.orElse urlProjectId |> Maybe.withDefault ProjectId.zero
-
-
-getProjectRef : UrlInfos -> Erd -> ProjectRef
-getProjectRef urlInfos erd =
-    getProjectRefM urlInfos (Just erd)
-
-
-getProjectRefM : UrlInfos -> Maybe Erd -> ProjectRef
-getProjectRefM urlInfos erd =
-    { organization = erd |> getOrganizationM urlInfos.organization, id = erd |> getProjectIdM urlInfos.project }
-
-
-canCreateLayout : Maybe Erd -> Bool
-canCreateLayout erd =
-    erd |> getOrganizationM Nothing |> .plan |> .layouts |> Maybe.all (\max -> max + 1 > Dict.size (erd |> Maybe.mapOrElse .layouts Dict.empty))
-
-
-canCreateMemo : Maybe Erd -> Bool
-canCreateMemo erd =
-    erd |> getOrganizationM Nothing |> .plan |> .memos |> Maybe.all (\max -> max > List.length (erd |> Maybe.mapOrElse (currentLayout >> .memos) []))
-
-
-canCreateGroup : Maybe Erd -> Bool
-canCreateGroup erd =
-    erd |> getOrganizationM Nothing |> .plan |> .groups |> Maybe.all (\max -> max > List.length (erd |> Maybe.mapOrElse (currentLayout >> .groups) []))
-
-
-canChangeColor : Maybe Erd -> Bool
-canChangeColor erd =
-    erd |> getOrganizationM Nothing |> .plan |> .colors
-
-
-canShowTables : Int -> Maybe Erd -> Bool
-canShowTables nb erd =
-    let
-        layoutTables : Int
-        layoutTables =
-            erd |> Maybe.mapOrElse (currentLayout >> .tables >> List.length) 0
-    in
-    erd |> getOrganizationM Nothing |> .plan |> .layoutTables |> Maybe.all (\max -> layoutTables + nb <= max)
+countLayoutTables : Maybe Erd -> Int
+countLayoutTables erd =
+    erd |> Maybe.mapOrElse (currentLayout >> .tables >> List.length) 0
 
 
 getTable : TableId -> Erd -> Maybe ErdTable

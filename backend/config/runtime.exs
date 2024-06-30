@@ -33,8 +33,10 @@ config :azimutt,
   organization_default_plan: System.get_env("ORGANIZATION_DEFAULT_PLAN"),
   global_organization: global_organization,
   global_organization_alone: global_organization && System.get_env("GLOBAL_ORGANIZATION_ALONE") == "true",
-  support_email: System.get_env("SUPPORT_EMAIL") || "contact@azimutt.app",
-  sender_email: System.get_env("SENDER_EMAIL") || "contact@azimutt.app",
+  sender_email: System.get_env("SENDER_EMAIL") || Azimutt.config(:azimutt_email),
+  contact_email: System.get_env("CONTACT_EMAIL") || Azimutt.config(:azimutt_email),
+  support_email: System.get_env("SUPPORT_EMAIL") || System.get_env("CONTACT_EMAIL") || Azimutt.config(:azimutt_email),
+  enterprise_support_email: System.get_env("ENTERPRISE_SUPPORT_EMAIL") || System.get_env("SUPPORT_EMAIL") || System.get_env("CONTACT_EMAIL") || Azimutt.config(:azimutt_email),
   server_started: DateTime.utc_now()
 
 config :azimutt, Azimutt.Repo,
@@ -270,6 +272,11 @@ if System.get_env("STRIPE") == "true" do
 
   config :azimutt,
     stripe: true,
+    stripe_price_solo_monthly: System.fetch_env!("STRIPE_PRICE_SOLO_MONTHLY"),
+    stripe_price_solo_yearly: System.fetch_env!("STRIPE_PRICE_SOLO_YEARLY"),
+    stripe_price_team_monthly: System.fetch_env!("STRIPE_PRICE_TEAM_MONTHLY"),
+    stripe_price_team_yearly: System.fetch_env!("STRIPE_PRICE_TEAM_YEARLY"),
+    stripe_product_enterprise: System.fetch_env!("STRIPE_PRODUCT_ENTERPRISE"),
     stripe_price_pro_monthly: System.fetch_env!("STRIPE_PRICE_PRO_MONTHLY")
 
   config :stripity_stripe,

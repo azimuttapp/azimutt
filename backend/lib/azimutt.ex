@@ -28,60 +28,130 @@ defmodule Azimutt do
   end
 
   def plans do
-    # Next ones: Explore ($3), Expand ($13), Extend ($25)
-    [
-      %{
+    # MUST match Stripe prices defined in env vars
+    %{
+      free: %{
         id: :free,
-        name: "Explorer",
-        description: "Design or Explore any kind of database, seamlessly.",
-        monthly: 0,
-        annually: 0,
+        name: "Free",
+        description: "Quickly explore your db with one command. No long term save.",
+        monthly: "Free",
+        yearly: "Free",
         features: [
-          "Schema & Data exploration",
-          "Database design with AML",
-          "Unlimited Tables",
-          "2 projects with 2 layouts of 10 tables",
-          "2 collaborators"
-        ],
-        cta: "Select this plan",
-        buy: "/login?plan=free",
-        selected: false
+          "Unlimited tables",
+          "Schema exploration",
+          "Data exploration"
+        ]
       },
-      %{
-        id: :pro,
-        name: "Pro",
-        description: "Remove limits, make Azimutt a central space for collaboration.",
-        monthly: 13,
-        annually: 130,
+      solo: %{
+        id: :solo,
+        name: "Solo",
+        description: "Personal usage with one project. Allows design and custom colors.",
+        monthly: 9,
+        yearly: 7,
+        unit: "€ / month",
         features: [
-          "Everything included in Explorer",
-          "Unlimited projects",
-          "Unlimited layouts",
-          "Unlimited notes & memos",
-          "Full database analysis",
-          "Premium support"
-        ],
-        cta: "Try this plan",
-        buy: "/login?plan=pro",
-        selected: true
+          "Free plan features",
+          "Long term usage",
+          "Database design",
+          "Schema export"
+        ]
       },
-      %{
+      team: %{
+        id: :team,
+        name: "Team",
+        description: "Collaborate on Azimutt with all database features.",
+        monthly: 42,
+        yearly: 35,
+        unit: "€ / user / month",
+        features: [
+          "Solo plan features",
+          "Database analysis",
+          "Collaboration",
+          "Documentation",
+          "AI capabilities",
+          "Export project"
+        ]
+      },
+      enterprise: %{
         id: :enterprise,
         name: "Enterprise",
-        description: "Features you only dreamed of to ease database understanding and management.",
-        monthly: nil,
-        annually: nil,
+        description: "Getting serious: higher limits, security, control and automation.",
+        monthly: "Custom",
+        yearly: "Custom",
         features: [
-          "Everything included in Pro",
-          "User roles",
-          "Schema change alerting",
-          "Advanced data access",
-          "AI query generation"
-        ],
-        cta: "Contact us",
-        buy: "mailto:#{Azimutt.config(:support_email)}",
-        selected: false
+          "Team plan features",
+          "Unlimited usage",
+          "User management",
+          "Custom integrations"
+        ]
+      },
+      pro: %{
+        id: :pro,
+        name: "Pro",
+        monthly: 13,
+        yearly: 13,
+        features: []
       }
+    }
+  end
+
+  def active_plans, do: [plans().free, plans().solo, plans().team, plans().enterprise]
+
+  # MUST stay in sync with frontend/src/Conf.elm (`features`)
+  def limits do
+    %{
+      # Database features
+      schema_exploration: %{name: "Schema exploration", free: true, solo: true, team: true, enterprise: true, pro: true},
+      data_exploration: %{name: "Data exploration", free: true, solo: true, team: true, enterprise: true, pro: true},
+      colors: %{name: "Custom colors", free: false, solo: true, team: true, enterprise: true, pro: true},
+      # TODO: rename `aml` to `db_design`
+      aml: %{name: "Database design (AML)", free: false, solo: true, team: true, enterprise: true, pro: true},
+      # saved_queries: %{name: "Saved queries", free: false, solo: false, team: false, enterprise: true, pro: true, description: "Soon... Save and share useful queries."},
+      # dashboard: %{name: "Dashboard", free: false, solo: false, team: false, enterprise: true, pro: true, description: "Soon... Visually see query results."},
+      # db_stat_history: %{name: "Stats history", free: false, solo: false, team: false, enterprise: true, pro: true, description: "Soon... Keep evolutions of database stats."},
+      schema_export: %{name: "Export schema", free: false, solo: true, team: true, enterprise: true, pro: true, description: "Export your schema as SQL, AML or JSON."},
+      ai: %{name: "AI features", free: false, solo: false, team: true, enterprise: true, pro: true},
+      analysis: %{
+        name: "Database analysis",
+        free: "preview",
+        solo: "preview",
+        team: "snapshot",
+        enterprise: "trends",
+        pro: "trends",
+        description: "preview: top 3 suggestions, snapshot: all suggestions, trends: more suggestions based on evolution"
+      },
+      project_export: %{name: "Export project", free: false, solo: false, team: true, enterprise: true, pro: true},
+      # Product quotas
+      users: %{name: "Max users", free: 1, solo: 1, team: 5, enterprise: nil, pro: nil},
+      projects: %{name: "Max projects", free: 0, solo: 1, team: 5, enterprise: nil, pro: nil, description: "0 means you can create a project but can't save it."},
+      project_dbs: %{name: "Max db/project", free: 1, solo: 1, team: 3, enterprise: nil, pro: nil},
+      project_layouts: %{name: "Max layout/project", free: 1, solo: 3, team: 20, enterprise: nil, pro: nil},
+      layout_tables: %{name: "Max table/layout", free: 10, solo: 10, team: 40, enterprise: nil, pro: nil},
+      project_doc: %{name: "Max doc/project", free: 10, solo: 10, team: 1000, enterprise: nil, pro: nil},
+      # Extended integration
+      project_share: %{name: "Sharing project", free: false, solo: false, team: false, enterprise: true, pro: true, description: "Use private links & embed to share with guest."},
+      api: %{name: "API access", free: false, solo: false, team: false, enterprise: true, pro: true, description: "Fetch and update sources and documentation programmatically."},
+      sso: %{name: "SSO", free: false, solo: false, team: false, enterprise: true, pro: false, description: "Soon..."},
+      user_rights: %{name: "User rights", free: false, solo: false, team: false, enterprise: true, pro: false, description: "Soon... Have read-only users in your organization."},
+      gateway_custom: %{name: "Custom gateway", free: false, solo: false, team: false, enterprise: true, pro: false, description: "Soon... Securely connect to your databases."},
+      billing: %{name: "Flexible billing", free: false, solo: false, team: false, enterprise: true, pro: false},
+      support_on_premise: %{name: "On-premise support", free: false, solo: false, team: false, enterprise: true, pro: false},
+      support_enterprise: %{name: "Enterprise support", free: false, solo: false, team: false, enterprise: true, pro: false, description: "Priority email, answer within 48h."},
+      consulting: %{name: "1h expert consulting", free: false, solo: false, team: false, enterprise: true, pro: false},
+      roadmap: %{name: "Roadmap impact", free: "suggestions", solo: "suggestions", team: "suggestions", enterprise: "discussions", pro: "suggestions"}
+    }
+  end
+
+  # MUST stay sync with backend/lib/azimutt_web/templates/partials/_streak.html.heex
+  def streak do
+    [
+      %{goal: 4, feature: :colors, limit: true},
+      %{goal: 6, feature: :aml, limit: true},
+      %{goal: 10, feature: :ai, limit: true},
+      %{goal: 15, feature: :project_layouts, limit: nil},
+      %{goal: 25, feature: :schema_export, limit: true},
+      %{goal: 40, feature: :analysis, limit: "trends"},
+      %{goal: 60, feature: :project_share, limit: true}
     ]
   end
 

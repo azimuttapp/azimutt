@@ -1,6 +1,6 @@
 module PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis.IndexDuplicated exposing (Model, compute, heading, view)
 
-import Components.Slices.ProPlan as ProPlan
+import Components.Slices.PlanDialog as PlanDialog
 import Dict exposing (Dict)
 import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (class, title)
@@ -63,7 +63,7 @@ heading errors =
 view : ProjectRef -> SchemaName -> List Model -> Html msg
 view project defaultSchema errors =
     div []
-        [ ProPlan.analysisResults project
+        [ PlanDialog.analysisResults project
             errors
             (\( t, i, dups ) ->
                 div []

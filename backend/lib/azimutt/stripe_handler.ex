@@ -4,17 +4,32 @@ defmodule Azimutt.StripeHandler do
   alias Azimutt.Organizations
   alias Azimutt.Organizations.Organization
   alias Azimutt.Tracking
-  alias Azimutt.Tracking.Event
   # credo:disable-for-this-file
 
   @impl true
   def handle_event(%Stripe.Event{type: "customer.subscription.created"} = event) do
     subscription = event.data.object
 
-    with {:ok, %Organization{} = organization} <- Organizations.get_organization_by_customer(subscription.customer),
-         {:ok, %Event{} = last_billing} <- Tracking.last_billing_loaded(organization) do
-      Tracking.stripe_subscription_created(event, organization, last_billing.created_by, subscription.quantity, subscription.id)
-      Organizations.update_organization_subscription(organization, subscription.id)
+    with {:ok, %Organization{} = organization} <- Organizations.get_organization_by_customer(subscription.customer) do
+      Organizations.validate_organization_plan(organization)
+
+      if subscription.status == "trialing" do
+        organization |> Organizations.use_free_trial(DateTime.utc_now())
+      end
+
+      Tracking.stripe_subscription_created(event, organization, subscription.id, subscription.status, subscription.plan.id, subscription.plan.interval, subscription.quantity)
+    end
+
+    :ok
+  end
+
+  @impl true
+  def handle_event(%Stripe.Event{type: "customer.subscription.deleted"} = event) do
+    subscription = event.data.object
+
+    with {:ok, %Organization{} = organization} <- Organizations.get_organization_by_customer(subscription.customer) do
+      Organizations.validate_organization_plan(organization)
+      Tracking.stripe_subscription_deleted(event, organization, subscription.id, subscription.status, subscription.plan.id, subscription.plan.interval, subscription.quantity)
     end
 
     :ok
@@ -25,37 +40,22 @@ defmodule Azimutt.StripeHandler do
     subscription = event.data.object
     previous = event.data.previous_attributes
 
-    with {:ok, %Organization{} = organization} <- Organizations.get_organization_by_customer(subscription.customer),
-         {:ok, %Event{} = last_billing} <- Tracking.last_billing_loaded(organization) do
+    with {:ok, %Organization{} = organization} <- Organizations.get_organization_by_customer(subscription.customer) do
+      Organizations.validate_organization_plan(organization)
+
       cond do
         previous[:cancel_at] == nil && subscription.cancel_at != nil ->
-          Tracking.stripe_subscription_canceled(event, organization, last_billing.created_by, subscription.quantity)
+          Tracking.stripe_subscription_canceled(event, organization, subscription.quantity)
 
         previous[:cancel_at] != nil && subscription.cancel_at == nil ->
-          Tracking.stripe_subscription_renewed(event, organization, last_billing.created_by, subscription.quantity)
+          Tracking.stripe_subscription_renewed(event, organization, subscription.quantity)
 
         previous[:quantity] ->
-          Tracking.stripe_subscription_quantity_updated(
-            event,
-            organization,
-            last_billing.created_by,
-            subscription.quantity,
-            previous.quantity
-          )
-
-        previous[:status] == "incomplete" && subscription.status == "active" ->
-          if organization.stripe_subscription_id == nil do
-            # not saved in 'customer.subscription.created', don't know why :/
-            Tracking.stripe_subscription_created(event, organization, last_billing.created_by, subscription.quantity, subscription.id)
-            Organizations.update_organization_subscription(organization, subscription.id)
-          else
-            Tracking.stripe_unhandled_event(event)
-          end
-
-          :ok
+          Tracking.stripe_subscription_quantity_updated(event, organization, subscription.quantity, previous.quantity)
 
         true ->
-          Tracking.stripe_subscription_updated(event, organization, last_billing.created_by, subscription.quantity)
+          # TODO: fails when previous is Stripe.SubscriptionItem :/
+          Tracking.stripe_subscription_updated(event, organization, previous)
       end
     end
 
@@ -64,27 +64,27 @@ defmodule Azimutt.StripeHandler do
 
   @impl true
   def handle_event(%Stripe.Event{type: "billing_portal.session.created"} = event) do
-    with {:ok, %Organization{} = organization} <- Organizations.get_organization_by_customer(event.data.object.customer),
-         {:ok, %Event{} = last_billing} <- Tracking.last_billing_loaded(organization),
-         do: Tracking.stripe_open_billing_portal(event, organization, last_billing.created_by)
+    with {:ok, %Organization{} = organization} <- Organizations.get_organization_by_customer(event.data.object.customer) do
+      Tracking.stripe_open_billing_portal(event, organization)
+    end
 
     :ok
   end
 
   @impl true
   def handle_event(%Stripe.Event{type: "invoice.paid"} = event) do
-    with {:ok, %Organization{} = organization} <- Organizations.get_organization_by_customer(event.data.object.customer),
-         {:ok, %Event{} = last_billing} <- Tracking.last_billing_loaded(organization),
-         do: Tracking.stripe_invoice_paid(event, organization, last_billing.created_by)
+    with {:ok, %Organization{} = organization} <- Organizations.get_organization_by_customer(event.data.object.customer) do
+      Tracking.stripe_invoice_paid(event, organization)
+    end
 
     :ok
   end
 
   @impl true
   def handle_event(%Stripe.Event{type: "invoice.payment_failed"} = event) do
-    with {:ok, %Organization{} = organization} <- Organizations.get_organization_by_customer(event.data.object.customer),
-         {:ok, %Event{} = last_billing} <- Tracking.last_billing_loaded(organization),
-         do: Tracking.stripe_invoice_payment_failed(event, organization, last_billing.created_by)
+    with {:ok, %Organization{} = organization} <- Organizations.get_organization_by_customer(event.data.object.customer) do
+      Tracking.stripe_invoice_payment_failed(event, organization)
+    end
 
     :ok
   end
@@ -92,7 +92,7 @@ defmodule Azimutt.StripeHandler do
   # Return HTTP 200 for unhandled events
   @impl true
   def handle_event(%Stripe.Event{} = event) do
-    # IO.inspect(event, label: "Got Stripe event")
+    # IO.inspect(event, label: "stripe_unhandled_event")
     Tracking.stripe_unhandled_event(event)
     :ok
   end

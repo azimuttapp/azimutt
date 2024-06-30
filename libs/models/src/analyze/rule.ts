@@ -1,21 +1,15 @@
-import { number, z, ZodType } from "zod"
-import { Timestamp } from "../common"
-import { AttributePath, Database, EntityRef } from "../database"
-import { DatabaseQuery } from "../interfaces/connector"
+import {z, ZodType} from "zod";
+import {Timestamp} from "../common";
+import {AttributePath, Database, EntityRef} from "../database";
+import {DatabaseQuery} from "../interfaces/connector";
 
 export interface Rule<Conf extends RuleConf = RuleConf> {
-  id: RuleId
-  name: RuleName
-  conf: Conf
-  zConf: ZodType<Conf>
-  analyze(
-    conf: Conf,
-    now: Timestamp,
-    db: Database,
-    queries: DatabaseQuery[],
-    history: AnalyzeHistory[],
-    reference: AnalyzeReportViolation[]
-  ): RuleViolation[]
+    id: RuleId
+    name: RuleName
+    conf: Conf
+    zConf: ZodType<Conf>
+
+    analyze(conf: Conf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[]
 }
 
 export const RuleId = z.string()
@@ -24,18 +18,12 @@ export const RuleName = z.string()
 export type RuleName = z.infer<typeof RuleName>
 export const RuleLevel = z.enum(["high", "medium", "low", "hint", "off"]) // from highest to lowest
 export type RuleLevel = z.infer<typeof RuleLevel>
-export const ruleLevelsShown = RuleLevel.options.filter(
-  (l) => l !== RuleLevel.enum.off
-)
-export const RuleConf = z
-  .object({
+export const ruleLevelsShown = RuleLevel.options.filter(l => l !== RuleLevel.enum.off)
+export const RuleConf = z.object({
     level: RuleLevel,
-  })
-  .strict()
-  .describe("RuleConf")
+}).strict().describe("RuleConf")
 export type RuleConf = z.infer<typeof RuleConf>
-export const RuleViolation = z
-  .object({
+export const RuleViolation = z.object({
     ruleId: RuleId,
     ruleName: RuleName,
     ruleLevel: RuleLevel,
@@ -45,96 +33,80 @@ export const RuleViolation = z
     attribute: AttributePath.optional(),
     // extra allow to keep structured information about the violation
     extra: z.record(z.any()).optional(),
-  })
-  .strict()
+}).strict()
 export type RuleViolation = z.infer<typeof RuleViolation>
 
-export const AnalyzeReportViolation = z
-  .object({
+export const AnalyzeReportViolation = z.object({
     message: z.string(),
     entity: EntityRef.optional(),
     attribute: AttributePath.optional(),
     extra: z.record(z.any()).optional(),
-  })
-  .strict()
-  .describe("AnalyzeReportViolation")
+}).strict().describe("AnalyzeReportViolation")
 export type AnalyzeReportViolation = z.infer<typeof AnalyzeReportViolation>
 
-export const AnalyzeReportRule = z
-  .object({
+export const AnalyzeReportRule = z.object({
     name: z.string(),
     level: RuleLevel,
     conf: z.record(z.string(), z.any()),
     violations: AnalyzeReportViolation.array(),
     totalViolations: z.number(),
-  })
-  .strict()
-  .describe("AnalyzeReportRule")
+}).strict().describe("AnalyzeReportRule")
 export type AnalyzeReportRule = z.infer<typeof AnalyzeReportRule>
 
-export const AnalyzeReportRuleSummary = z
-  .object({
+export const AnalyzeReportRuleSummary = z.object({
     name: z.string(),
     totalViolations: z.number(),
-  })
-  .strict()
-  .describe("AnalyzeReportRuleSummary")
+}).strict().describe("AnalyzeReportRuleSummary")
 export type AnalyzeReportRuleSummary = z.infer<typeof AnalyzeReportRuleSummary>
 
 export const AnalyzeReportResult = z.record(RuleId, AnalyzeReportRule)
 export type AnalyzeReportResult = z.infer<typeof AnalyzeReportResult>
 
-export const AnalyzeReport = z
-  .object({
+export const AnalyzeReport = z.object({
     analysis: AnalyzeReportResult,
     // TODO: insights: z.object({mostUsedEntities: z.object({entity: EntityRef, queries: QueryId.array()}).array().optional()}).optional()
     database: Database,
     queries: DatabaseQuery.array(),
-  })
-  .strict()
-  .describe("AnalyzeReport")
+}).strict().describe("AnalyzeReport")
 export type AnalyzeReport = z.infer<typeof AnalyzeReport>
 
-export const AnalyzeHistory = z
-  .object({
+export const AnalyzeHistory = z.object({
     report: z.string(),
     date: Timestamp,
     database: Database,
     queries: DatabaseQuery.array(),
-  })
-  .strict()
-  .describe("AnalyzeHistory")
+}).strict().describe("AnalyzeHistory")
 export type AnalyzeHistory = z.infer<typeof AnalyzeHistory>
 
 export const AnalyzeReportLevel = z.object({
-  level: RuleLevel,
-  levelViolationsCount: z.number(),
-  rules: z.array(AnalyzeReportRule),
+    level: RuleLevel,
+    levelViolationsCount: z.number(),
+    rules: z.array(AnalyzeReportRule),
 })
 export type AnalyzeReportLevel = z.infer<typeof AnalyzeReportLevel>
 
 export const AnalyzeStats = z.object({
-  nb_entities: z.number(),
-  nb_relations: z.number(),
-  nb_queries: z.number(),
-  nb_types: z.number(),
-  nb_rules: z.number(),
-  nb_violations: z.number(),
-  violations: z.record(RuleLevel, z.number()),
+    nb_entities: z.number(),
+    nb_relations: z.number(),
+    nb_queries: z.number(),
+    nb_types: z.number(),
+    nb_rules: z.number(),
+    nb_violations: z.number(),
+    violations: z.record(RuleLevel, z.number()),
 })
 export type AnalyzeStats = z.infer<typeof AnalyzeStats>
 
 export const AnalyzeReportHtmlStats = z.object({
-  nb_entities: z.number(),
-  nb_relations: z.number(),
-  nb_queries: z.number(),
-  nb_types: z.number(),
-  nb_rules: z.number(),
+    nb_entities: z.number(),
+    nb_relations: z.number(),
+    nb_queries: z.number(),
+    nb_types: z.number(),
+    nb_rules: z.number(),
 })
 export type AnalyzeReportHtmlStats = z.infer<typeof AnalyzeReportHtmlStats>
 
 export const AnalyzeReportHtmlResult = z.object({
-  rules: z.array(AnalyzeReportRule),
-  stats: AnalyzeReportHtmlStats,
+    rules: z.array(AnalyzeReportRule),
+    stats: AnalyzeReportHtmlStats,
 })
 export type AnalyzeReportHtmlResult = z.infer<typeof AnalyzeReportHtmlResult>

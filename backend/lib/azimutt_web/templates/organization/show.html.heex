@@ -1,8 +1,25 @@
+<%= if @organization.plan == "pro" do %>
+    <div class="bg-yellow-50 border-t-4 border-yellow-400 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <Icon.exclamation_triangle kind="mini" class="h-5 w-5 text-yellow-400" />
+            </div>
+            <div class="ml-3">
+                <h3 class="my-0 text-sm font-medium text-yellow-800">You are using the legacy Pro plan.</h3>
+                <div class="mt-2 text-sm text-yellow-700">
+                    Please <a href={Routes.organization_billing_path(@conn, :index, @organization, source: "legacy-alert")} class="underline">migrate to the new plans</a> as mentionned in the email.
+                </div>
+            </div>
+        </div>
+    </div>
+<% end %>
+
 <%= if @projects == [] do %>
     <%= render "_project_list_empty.html", conn: @conn, organization: @organization %>
 <% else %>
     <%= render "_project_list.html", conn: @conn, projects: @projects %>
 <% end %>
+
 <% user = @conn.assigns.current_user %>
 <script>
     window.fetch && window.location.hostname !== 'localhost' && fetch(`https://cockpit.azimutt.app/api/events`, {

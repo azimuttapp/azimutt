@@ -43,7 +43,7 @@ import Components.Slices.ExportDialogBody as ExportDialogBody
 import Components.Slices.LlmGenerateSqlBody as LlmGenerateSql
 import Components.Slices.NewLayoutBody as NewLayoutBody
 import Components.Slices.NotFound as NotFound
-import Components.Slices.ProPlan as ProPlan
+import Components.Slices.PlanDialog as PlanDialog
 import Components.Slices.ProjectSaveDialogBody as ProjectSaveDialogBody
 import ElmBook
 import ElmBook.Chapter as Chapter exposing (Chapter)
@@ -71,9 +71,9 @@ type alias DocState =
     , modalDocState : Modal.DocState
     , navbarDocState : Navbar.DocState
     , newLayoutDocState : NewLayoutBody.DocState
+    , planDialogDocState : PlanDialog.DocState
     , popoverDocState : Popover.DocState
     , projectSaveDocState : ProjectSaveDialogBody.DocState
-    , proPlanDocState : ProPlan.DocState
     , selectDocState : Select.DocState
     , radioDocState : Radio.DocState
     , slideoverDocState : Slideover.DocState
@@ -99,9 +99,9 @@ init =
     , modalDocState = Modal.docInit
     , navbarDocState = Navbar.docInit
     , newLayoutDocState = NewLayoutBody.docInit
+    , planDialogDocState = PlanDialog.docInit
     , popoverDocState = Popover.docInit
     , projectSaveDocState = ProjectSaveDialogBody.docInit
-    , proPlanDocState = ProPlan.docInit
     , selectDocState = Select.docInit
     , radioDocState = Radio.docInit
     , slideoverDocState = Slideover.docInit
@@ -124,7 +124,7 @@ main =
         |> ElmBook.withChapterGroups
             -- sorted alphabetically
             [ ( "", [ docs ] )
-            , ( "Slices", [ DataExplorer.doc, DataExplorerDetails.doc, DataExplorerQuery.doc, DataExplorerStats.doc, ExportDialogBody.doc, LlmGenerateSql.doc, NotFound.doc, NewLayoutBody.doc, ProjectSaveDialogBody.doc, ProPlan.doc ] )
+            , ( "Slices", [ DataExplorer.doc, DataExplorerDetails.doc, DataExplorerQuery.doc, DataExplorerStats.doc, ExportDialogBody.doc, LlmGenerateSql.doc, NotFound.doc, NewLayoutBody.doc, PlanDialog.doc, ProjectSaveDialogBody.doc ] )
             , ( "Organisms", [ ColorPicker.doc, Details.doc, Navbar.doc, Relation.doc, Table.doc, TableRow.doc ] )
             , ( "Molecules", [ Alert.doc, Avatar.doc, BarChart.doc, ContextMenu.doc, Divider.doc, Dropdown.doc, Editor.doc, FileInput.doc, FormLabel.doc, InputText.doc, ItemList.doc, Modal.doc, Pagination.doc, PieChart.doc, PieChartCustom.doc, Popover.doc, Radio.doc, Select.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
             , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Icon.doc, Input.doc, Kbd.doc, Markdown.doc, Link.doc, Loader.doc ] )

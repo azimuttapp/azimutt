@@ -49,7 +49,7 @@
                         </div>
                     <% end %>
                     <%= if !Azimutt.config(:skip_public_site) do %>
-                        <%= generate_organization_plan_badge(@plan) %>
+                        <%= plan_badge(@organization.plan) %>
                     <% end %>
                     <%= if @organization.clever_cloud_resource do %>
                         <a href={CleverCloud.app_url()} target="_blank" rel="noopener" class="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-indigo-100 text-indigo-800">Clever Cloud Add-on</a>

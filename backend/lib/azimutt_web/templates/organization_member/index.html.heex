@@ -4,41 +4,43 @@
     </div>
 <% else %>
     <div class="mt-12 max-w-lg mx-auto">
-        <% total_seats = Organizations.get_allowed_members(@organization, @plan) %>
+        <% max_seats = Azimutt.limits().users[@plan.id] %>
+        <% plan_seats = @organization.plan_seats %>
         <% used_seats = (Enum.count @organization.members) + (Enum.count @organization_invitations) %>
-        <% remaining_seats = if(total_seats == nil, do: nil, else: total_seats - used_seats) %>
         <div class="text-center">
             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 48 48" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M34 40h10v-4a6 6 0 00-10.712-3.714M34 40H14m20 0v-4a9.971 9.971 0 00-.712-3.714M14 40H4v-4a6 6 0 0110.713-3.714M14 40v-4c0-1.313.253-2.566.713-3.714m0 0A10.003 10.003 0 0124 26c4.21 0 7.813 2.602 9.288 6.286M30 14a6 6 0 11-12 0 6 6 0 0112 0zm12 6a4 4 0 11-8 0 4 4 0 018 0zm-28 0a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
-            <h2 class="mt-2 text-lg font-medium text-gray-900">Add new members</h2>
+            <h2 class="mt-2 text-lg font-medium text-gray-900">Organization members</h2>
             <p class="mt-1 text-sm text-gray-500">
                 <%= cond do %>
-                    <% @plan.id == :free && used_seats == 1 -> %>
-                        You haven’t added any other member to your organization yet.<br>
-                        As a free organization, you can add <%= Azimutt.config(:free_plan_seats) - 1 %> other members.
-                    <% @plan.id == :free && remaining_seats != nil && remaining_seats > 0 -> %>
-                        You still have <b><%= remaining_seats %> remaining seats</b> in your free organization.
-                    <% @plan.id == :free && remaining_seats != nil -> %>
-                        You have no remaining seat in your free organization.<br>
-                        Get more collaborators with <%= link "our pro plan", to: Routes.organization_billing_path(@conn, :index, @organization, source: "members"), class: "text-indigo-600 font-semibold hover:text-indigo-900" %>.
-                    <% @organization.clever_cloud_resource && remaining_seats != nil && remaining_seats > 0 -> %>
-                        Your Clever Cloud plan has <%= total_seats %> seats, you have <%= remaining_seats %> left.
-                    <% @organization.clever_cloud_resource -> %>
-                        All your Clever Cloud seats are used. To add more people, please go to your Clever Cloud Add-on and upgrade your plan (click on "Billing" menu on the left).
-                    <% @organization.heroku_resource && remaining_seats != nil && remaining_seats > 0 -> %>
-                        Your Heroku plan has <%= total_seats %> seats, you have <%= remaining_seats %> left.
-                    <% @organization.heroku_resource -> %>
-                        All your Heroku seats are used. To add more people, please go to your Heroku Add-on and upgrade your plan (click on "Billing" menu on the left).
-                    <% true -> %>
-                        Invite new members in your organization to share projects with them.<br>
-                        <%= if StripeSrv.stripe_configured?() && @organization.stripe_subscription_id do %>
-                            Your billing will adjust accordingly.
-                        <% end %>
+                  <% plan_seats > max_seats -> %>
+                    Your plan has more seats than its maximum 😅<br>
+                    Please <a href={"mailto:#{Azimutt.config(:support_email)}"} class="underline text-indigo-600 hover:text-indigo-900">contact us</a> to find out why ^^
+                  <% used_seats > plan_seats -> %>
+                    You are using more seats than allowed by your plan 😅<br>
+                    Please <a href={Routes.organization_billing_path(@conn, :index, @organization, source: "members")} class="underline text-indigo-600 hover:text-indigo-900">adjust it</a>
+                    or <a href={"mailto:#{Azimutt.config(:support_email)}"} class="underline text-indigo-600 hover:text-indigo-900">contact us</a> to find out why ^^
+                  <% max_seats == 1 -> %>
+                    Your plan does not allow collaboration, <a href={Routes.organization_billing_path(@conn, :index, @organization, source: "members")} class="underline text-indigo-600 hover:text-indigo-900">upgrade</a> to invite people.
+                  <% used_seats == plan_seats && plan_seats == max_seats -> %>
+                    You are using all the available seats of your plan.<br>
+                    <a href={Routes.organization_billing_path(@conn, :index, @organization, source: "members")} class="underline text-indigo-600 hover:text-indigo-900">Upgrade</a>
+                    or <a href={"mailto:#{Azimutt.config(:support_email)}"} class="underline text-indigo-600 hover:text-indigo-900">contact us</a>
+                    to invite more people.
+                  <% used_seats == plan_seats && plan_seats < max_seats -> %>
+                    You are using all of your seats.<br>
+                    <a href={Routes.organization_billing_path(@conn, :index, @organization, source: "members")} class="underline text-indigo-600 hover:text-indigo-900">Add some</a> to invite more people.
+                  <% used_seats < plan_seats -> %>
+                    You have <b><%= Azimutt.Utils.Stringx.pluralize(plan_seats - used_seats, "remaining seat") %></b> in your plan.<br>
+                    You can invite more people.
+                  <% true -> %>
+                    You are in an <b>unexpected situation</b> 😱<br>
+                    Please <a href={"mailto:#{Azimutt.config(:support_email)}"} class="underline text-indigo-600 hover:text-indigo-900">contact us</a> to find out why ^^
                 <% end %>
             </p>
         </div>
-        <%= if remaining_seats == nil || remaining_seats > 0 do %>
+        <%= if plan_seats == nil || used_seats < plan_seats do %>
             <!-- FIXME: do this check server side also -->
             <.form let={f} for={@organization_invitation_changeset} action={Routes.organization_member_path(@conn, :create_invitation, @organization.id)} class="mt-6 flex">
                 <%= label f, :sent_to, class: "sr-only" %>

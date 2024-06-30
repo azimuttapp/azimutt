@@ -1,0 +1,7 @@
+<% {plan_id, freq} = Azimutt.Services.StripeSrv.get_plan(@subscription.product, @subscription.price) %>
+<% plan = Azimutt.plans()[String.to_atom(plan_id)] %>
+<%= plan.name %> plan, <%= freq %>:
+<%= @subscription.status %>
+<%= if @subscription.cancel_at != nil do %>
+    , canceling on <%= format_datetime(@subscription.cancel_at) %>
+<% end %>

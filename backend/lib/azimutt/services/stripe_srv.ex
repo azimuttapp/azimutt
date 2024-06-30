@@ -1,6 +1,5 @@
 defmodule Azimutt.Services.StripeSrv do
   @moduledoc false
-  alias Azimutt.Utils.Result
   require Logger
 
   def create_customer(organization_id, name, email, description, is_personal, creator_name, creator_email) do
@@ -59,34 +58,16 @@ defmodule Azimutt.Services.StripeSrv do
     end
   end
 
-  def update_quantity(subscription_id, quantity) when is_bitstring(subscription_id) do
+  def get_subscriptions(customer_id) when is_bitstring(customer_id) do
     if stripe_configured?() do
-      Stripe.Subscription.update(subscription_id, %{quantity: quantity})
-      |> Result.map_error(fn error -> error.message end)
-      |> Result.tap_error(&Logger.error/1)
+      Stripe.Subscription.list(%{customer: customer_id})
     else
       {:error, "Stripe not configured"}
     end
   end
 
-  def get_subscription(subscription_id) when is_bitstring(subscription_id) do
-    if stripe_configured?() do
-      # FIXME: add cache to limit Stripe reads: https://github.com/sasa1977/con_cache
-      # https://medium.com/@toddresudek/caching-in-an-elixir-phoenix-app-a499cdf91046
-      case Stripe.Subscription.retrieve(subscription_id) do
-        {:ok, %Stripe.Subscription{} = subscription} ->
-          {:ok, subscription}
-
-        {:error, %Stripe.Error{} = error} ->
-          Logger.error(error.message)
-          {:error, error.message}
-      end
-    else
-      {:error, "Stripe not configured"}
-    end
-  end
-
-  def create_session(%{customer: customer, subscription: subscription, success_url: success_url, cancel_url: cancel_url, price_id: price_id, quantity: quantity}) do
+  def create_session(%{customer: customer, success_url: success_url, cancel_url: cancel_url, price_id: price_id, quantity: quantity, free_trial: free_trial}) do
+    # https://docs.stripe.com/api/checkout/sessions/create
     if stripe_configured?() do
       Stripe.Session.create(%{
         mode: "subscription",
@@ -98,17 +79,18 @@ defmodule Azimutt.Services.StripeSrv do
           }
         ],
         subscription_data:
-          if(subscription,
-            do: %{},
-            else: %{
-              trial_period_days: 14,
+          if(free_trial,
+            do: %{
+              trial_period_days: free_trial,
               trial_settings: %{
                 end_behavior: %{
                   missing_payment_method: "cancel"
                 }
               }
-            }
+            },
+            else: %{}
           ),
+        automatic_tax: %{enabled: true},
         payment_method_collection: "if_required",
         allow_promotion_codes: true,
         success_url: success_url,
@@ -130,8 +112,29 @@ defmodule Azimutt.Services.StripeSrv do
     end
   end
 
-  def subscription_url(stripe_sub_id) do
-    "https://dashboard.stripe.com/subscriptions/#{stripe_sub_id}"
+  def get_price(plan, freq) do
+    case {plan, freq} do
+      {"solo", "monthly"} -> Azimutt.config(:stripe_price_solo_monthly)
+      {"solo", "yearly"} -> Azimutt.config(:stripe_price_solo_yearly)
+      {"team", "monthly"} -> Azimutt.config(:stripe_price_team_monthly)
+      {"team", "yearly"} -> Azimutt.config(:stripe_price_team_yearly)
+      {"pro", "monthly"} -> Azimutt.config(:stripe_price_pro_monthly)
+    end
+  end
+
+  def get_plan(product, price) do
+    cond do
+      price == Azimutt.config(:stripe_price_solo_monthly) -> {"solo", "monthly"}
+      price == Azimutt.config(:stripe_price_solo_yearly) -> {"solo", "yearly"}
+      price == Azimutt.config(:stripe_price_team_monthly) -> {"team", "monthly"}
+      price == Azimutt.config(:stripe_price_team_yearly) -> {"team", "yearly"}
+      price == Azimutt.config(:stripe_price_pro_monthly) -> {"pro", "monthly"}
+      product == Azimutt.config(:stripe_product_enterprise) -> {"enterprise", "yearly"}
+    end
+  end
+
+  def customer_url(customer_id) do
+    "https://dashboard.stripe.com/customers/#{customer_id}"
   end
 
   def stripe_configured?, do: !!Application.get_env(:stripity_stripe, :api_key)

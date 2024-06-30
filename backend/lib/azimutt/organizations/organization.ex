@@ -21,7 +21,12 @@ defmodule Azimutt.Organizations.Organization do
     field :github_username, :string
     field :twitter_username, :string
     field :stripe_customer_id, :string
-    field :stripe_subscription_id, :string
+    field :plan, :string
+    field :plan_freq, :string
+    field :plan_status, :string
+    field :plan_seats, :integer
+    field :plan_validated, :utc_datetime_usec
+    field :free_trial_used, :utc_datetime_usec
     field :is_personal, :boolean
     embeds_one :data, Organization.Data, on_replace: :update
     belongs_to :created_by, User, source: :created_by
@@ -44,8 +49,7 @@ defmodule Azimutt.Organizations.Organization do
       :description,
       :github_username,
       :twitter_username,
-      :stripe_customer_id,
-      :stripe_subscription_id
+      :stripe_customer_id
     ]
 
   @doc false
@@ -92,6 +96,16 @@ defmodule Azimutt.Organizations.Organization do
   end
 
   @doc false
+  def validate_plan_changeset(%Organization{} = organization, attrs, now) do
+    required = [:plan, :plan_freq, :plan_status, :plan_seats]
+
+    organization
+    |> cast(attrs, required)
+    |> put_change(:plan_validated, now)
+    |> validate_required(required)
+  end
+
+  @doc false
   def accept_invitation_changeset(%Organization{} = organization, %User{} = invited_user) do
     organization
     |> cast(%{}, [])
@@ -109,6 +123,12 @@ defmodule Azimutt.Organizations.Organization do
       :twitter_username
     ])
     |> put_change(:updated_by_id, current_user.id)
+  end
+
+  def free_trial_changeset(%Organization{} = organization, now) do
+    organization
+    |> cast(%{}, [])
+    |> put_change(:free_trial_used, now)
   end
 
   def delete_changeset(%Organization{} = organization, now) do

@@ -26,7 +26,7 @@ export const ReportStatsGrid = ({
 
   const databaseStats: ReportStatCellProps[] = [
     { label: "Entities", value: String(entities) },
-    { label: "Relatons", value: String(relations) },
+    { label: "Relations", value: String(relations) },
     { label: "Queries", value: String(queries) },
     { label: "Types", value: String(types) },
     { label: "Rules", value: String(rules) },

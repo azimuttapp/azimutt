@@ -92,6 +92,17 @@ describe('databaseUrl', () => {
             options: {option1: 'abc'},
         })
     })
+    test('parse oracle url', () => {
+        expect(parseDatabaseUrl('jdbc:oracle:thin:sys/oracle@//localhost:1521/FREE')).toEqual({
+            full: 'jdbc:oracle:thin:sys/oracle@//localhost:1521/FREE',
+            kind: 'oracle',
+            user: 'sys',
+            pass: 'oracle',
+            host: 'localhost',
+            port: 1521,
+            db: 'FREE'
+        })
+    })
     test('parse postgres url', () => {
         expect(parseDatabaseUrl('postgres://postgres0.example.com')).toEqual({
             full: 'postgres://postgres0.example.com',

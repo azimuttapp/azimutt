@@ -1,4 +1,4 @@
-module Components.Slices.ProPlan exposing (ColorsModel, ColorsMsg(..), DocState, SharedDocState, analysisResults, analysisWarning, colorsInit, colorsModalBody, colorsUpdate, doc, docInit, groupsModalBody, layoutTablesModalBody, layoutsModalBody, layoutsWarning, memosModalBody, privateLinkWarning, projectsModalBody, sqlExportWarning)
+module Components.Slices.PlanDialog exposing (ColorsModel, ColorsMsg(..), DocState, SharedDocState, analysisResults, analysisWarning, colorsInit, colorsModalBody, colorsUpdate, doc, docInit, layoutTablesModalBody, layoutsModalBody, layoutsWarning, privateLinkWarning, projectsModalBody, sqlExportWarning)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon)
@@ -20,8 +20,9 @@ import Libs.Nel as Nel
 import Libs.Result as Result
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (Color, focus, sm)
-import Models.Organization exposing (Organization)
-import Models.OrganizationId exposing (OrganizationId)
+import Models.Feature as Feature
+import Models.Organization as Organization exposing (Organization)
+import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.ProjectRef as ProjectRef exposing (ProjectRef)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
@@ -34,8 +35,8 @@ draftProjectWarning =
     warning Tw.indigo
         "Oh no! You are limited by your draft project 😕"
         [ p [] [ text "As your project is ", bText "still in draft", text ", you have free plan limitations." ]
-        , p [] [ text "Save it to an organization with a ", bText "pro plan", text " to unlock them." ]
-        , p [] [ text "Subscribing to Azimutt pro plan will unlock its full power, ", extLink "/pricing" [ class "link" ] [ text "check it out" ], text "." ]
+        , p [] [ text "Save it to an organization with a ", bText "paid plan", text " to unlock them." ]
+        , p [] [ text "Subscribing to Azimutt paid plans will unlock more power, ", extLink "/pricing" [ class "link" ] [ text "check it out" ], text "." ]
         ]
         []
 
@@ -46,8 +47,8 @@ draftProjectModalBody close titleId =
         Icon.CubeTransparent
         ( titleId, "Oh no! You are limited by your draft project 😕" )
         [ p [ class "text-sm text-gray-500" ] [ text "As your project is ", bText "still in draft", text ", you have free plan limitations." ]
-        , p [ class "text-sm text-gray-500" ] [ text "Save it to an organization with a ", bText "pro plan", text " to unlock them." ]
-        , p [ class "text-sm text-gray-500" ] [ text "Subscribing to Azimutt pro plan will unlock its full power, ", extLink "/pricing" [ class "link" ] [ text "check it out" ], text "." ]
+        , p [ class "text-sm text-gray-500" ] [ text "Save it to an organization with a ", bText "paid plan", text " to unlock them." ]
+        , p [ class "text-sm text-gray-500" ] [ text "Subscribing to Azimutt paid plan will unlock more power, ", extLink "/pricing" [ class "link" ] [ text "check it out" ], text "." ]
         ]
         [ Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Close" ]
         ]
@@ -57,16 +58,16 @@ projectsModalBody : ProjectRef -> msg -> HtmlId -> Html msg
 projectsModalBody project close titleId =
     let
         ( color, limit ) =
-            ( Tw.teal, project.organization.plan.projects |> Maybe.withDefault Conf.features.projects.free )
+            ( Tw.teal, project.organization |> Maybe.andThen (.plan >> .projects) |> Maybe.withDefault Feature.projects.default )
     in
     showModalBody ( project, close, color )
         Icon.Collection
         ( titleId, "Projects" )
         [ p [ class "text-sm text-gray-500" ] [ bText ("Oh! Free plans are limited to " ++ String.pluralize "project" limit ++ ".") ]
         , p [ class "text-sm text-gray-500" ] [ text "We are making Azimutt free for exploration but heavy use of it needs to also contribute to its development in order to make it sustainable." ]
-        , p [ class "text-sm text-gray-500" ] [ text "Please consider subscribing to our pro plan to contribute to it and unlock all the features!" ]
+        , p [ class "text-sm text-gray-500" ] [ text "Please consider subscribing to a paid plan to contribute to it and unlock all the features!" ]
         ]
-        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.projects.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Sun "mr-1", text "Start trial" ]
+        [ Link.primary3 color [ href (Backend.organizationBillingUrl (project.organization |> Maybe.map .id) Feature.projects.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Sun "mr-1", text "Start trial" ]
         , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
         ]
 
@@ -84,7 +85,7 @@ layoutsWarning project =
         [ p [] [ text "Hey! We are very happy you use and like layouts in Azimutt." ]
         , p [] [ text "They are an important feature but also a limited one. You've reached the limits of your current plan and will need to upgrade. We will let you create one last layout so you can keep working but ", bText "please upgrade as soon as possible", text "." ]
         ]
-        [ Link.secondary3 color [ href (Backend.organizationBillingUrl project.organization.id (Conf.features.layouts.name ++ "_warning")), target "_blank", rel "noopener" ] [ Icon.outline Icon.Sparkles "mr-1", text "Start trial" ] ]
+        [ Link.secondary3 color [ href (Backend.organizationBillingUrl (project.organization |> Maybe.map .id) (Feature.projectLayouts.name ++ "_warning")), target "_blank", rel "noopener" ] [ Icon.outline Icon.Sparkles "mr-1", text "Start trial" ] ]
 
 
 layoutsModalBody : ProjectRef -> msg -> HtmlId -> Html msg
@@ -100,7 +101,7 @@ layoutsModalBody project close titleId =
         [ p [ class "text-sm text-gray-500" ] [ text "Hey! It's so great to see people using Azimutt and we are quite proud to make this tool for you. It's already great but we have so much more to do to make it at full potential, we need your support to make it grow and help more and more people." ]
         , p [ class "text-sm text-gray-500" ] [ text "That's why we created a paid plan. Please consider your contribution to this awesome Azimutt community, it will ", bText "bring us much further together", text "." ]
         ]
-        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.layouts.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Sparkles "mr-1", text "Start trial" ]
+        [ Link.primary3 color [ href (Backend.organizationBillingUrl (project.organization |> Maybe.map .id) Feature.projectLayouts.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Sparkles "mr-1", text "Start trial" ]
         , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
         ]
 
@@ -109,52 +110,16 @@ layoutTablesModalBody : ProjectRef -> msg -> HtmlId -> Html msg
 layoutTablesModalBody project close titleId =
     let
         ( color, limit ) =
-            ( Tw.sky, project.organization.plan.layoutTables |> Maybe.withDefault Conf.features.layoutTables.free )
+            ( Tw.sky, project.organization |> Maybe.andThen (.plan >> .layoutTables) |> Maybe.withDefault Feature.layoutTables.default )
     in
     showModalBody ( project, close, color )
         Icon.Calculator
         ( titleId, "Tables in layout" )
         [ p [ class "text-sm text-gray-500" ] [ bText ("Ooops, you just hit a plan limit, you can only add " ++ String.pluralize "table" limit ++ " per layout!") ]
         , p [ class "text-sm text-gray-500" ] [ text "We hope you like experimenting with Azimutt but, as you know, we have to make it sustainable to continue its long term development." ]
-        , p [ class "text-sm text-gray-500" ] [ text "Please consider subscribing to our pro plan to contribute to it and unlock all the features!" ]
+        , p [ class "text-sm text-gray-500" ] [ text "Please consider subscribing to a paid plan to contribute to it and unlock more features!" ]
         ]
-        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.layoutTables.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.CheckCircle "mr-1", text "Start trial" ]
-        , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
-        ]
-
-
-memosModalBody : ProjectRef -> msg -> HtmlId -> Html msg
-memosModalBody project close titleId =
-    let
-        ( color, limit ) =
-            ( Tw.amber, project.organization.plan.memos |> Maybe.withDefault Conf.features.memos.free )
-    in
-    showModalBody ( project, close, color )
-        Icon.Newspaper
-        ( titleId, "Layout memos" )
-        [ p [ class "text-sm text-gray-500" ] [ bText ("You just hit a plan limit, you have only " ++ String.pluralize "memo" limit ++ " per layout!") ]
-        , p [ class "mt-2 text-sm text-gray-500" ] [ text "I'm a huge fan of memos and it seems you too. They are awesome for documentation, quick notes or even branding as you can write any markdown, including links and images." ]
-        , p [ class "text-sm text-gray-500" ] [ text "We see this as a long term feature to document database schema so it's reserved for pro accounts. ", bText "Consider subscribing", text " or ", a [ href ("mailto:" ++ Conf.constants.azimuttEmail), target "_blank", rel "noopener", class "link" ] [ text "reach at us" ], text " to contribute improving Azimutt." ]
-        ]
-        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.memos.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.ThumbUp "mr-1", text "Start trial" ]
-        , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
-        ]
-
-
-groupsModalBody : ProjectRef -> msg -> HtmlId -> Html msg
-groupsModalBody project close titleId =
-    let
-        ( color, limit ) =
-            ( Tw.purple, project.organization.plan.groups |> Maybe.withDefault Conf.features.groups.free )
-    in
-    showModalBody ( project, close, color )
-        Icon.ViewGrid
-        ( titleId, "Table groups" )
-        [ p [ class "text-sm text-gray-500" ] [ bText ("Oh no! Table groups are limited in your plan, you only have " ++ String.pluralize "group" limit ++ " per layout!") ]
-        , p [ class "mt-2 text-sm text-gray-500" ] [ text "Groups are great to show which tables work together and make it immediately explicit." ]
-        , p [ class "text-sm text-gray-500" ] [ text "We keep this feature for pro users as it really comes very useful with heavy usage. ", bText "Consider subscribing", text ", or ", a [ href ("mailto:" ++ Conf.constants.azimuttEmail), target "_blank", rel "noopener", class "link" ] [ text "reach at us" ], text " to contribute improving Azimutt and get it free." ]
-        ]
-        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.groups.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.TrendingUp "mr-1", text "Start trial" ]
+        [ Link.primary3 color [ href (Backend.organizationBillingUrl (project.organization |> Maybe.map .id) Feature.layoutTables.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.CheckCircle "mr-1", text "Start trial" ]
         , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
         ]
 
@@ -166,7 +131,7 @@ type alias ColorsModel =
 type ColorsMsg
     = ToggleTweet
     | UpdateTweetUrl String
-    | GetTableColorTweet OrganizationId TweetUrl
+    | GetTableColorTweet (Maybe OrganizationId) TweetUrl
     | GotTableColorTweet (Result Backend.Error TableColorTweet)
     | EnableTableChangeColor
 
@@ -190,12 +155,12 @@ colorsUpdate update msg model =
         UpdateTweetUrl value ->
             ( { model | tweetUrl = value }, Extra.none )
 
-        GetTableColorTweet id url ->
+        GetTableColorTweet idM url ->
             if url == "" then
                 ( { model | result = Nothing }, Extra.none )
 
             else
-                ( { model | result = Nothing }, Backend.getTableColorTweet id url (GotTableColorTweet >> wrap) |> Extra.cmd )
+                ( { model | result = Nothing }, Backend.getTableColorTweet (idM |> Maybe.withDefault OrganizationId.zero) url (GotTableColorTweet >> wrap) |> Extra.cmd )
 
         GotTableColorTweet res ->
             let
@@ -224,7 +189,7 @@ colorsModalBody project update model close titleId =
     showModalBody ( project, close, color )
         Icon.ColorSwatch
         ( titleId, "Change colors" )
-        [ p [ class "text-sm text-gray-500" ] [ bText "Oh! You found a Pro feature!" ]
+        [ p [ class "text-sm text-gray-500" ] [ bText "Oh! You found an paid feature!" ]
         , p [ class "mt-2 text-sm text-gray-500" ] [ text "I'm glad you are exploring Azimutt. We want to make it the ultimate tool to understand and analyze your database, and will bring much more in the coming months." ]
         , p [ class "text-sm text-gray-500" ] [ text "This would need a lot of resources and having a small contribution from you would be awesome. Onboard in Azimutt community, it will ", bText "bring us much further together", text "." ]
         , colorsTweetDivider wrap color
@@ -233,7 +198,7 @@ colorsModalBody project update model close titleId =
             |> Maybe.withDefault
                 (if model.tweetOpen then
                     div []
-                        [ colorsTweetInput wrap project.organization.id tweetInput model.tweetUrl color
+                        [ colorsTweetInput wrap (project.organization |> Maybe.map .id) tweetInput model.tweetUrl color
                         , (model.result |> Maybe.andThen Result.toError)
                             |> Maybe.map (\err -> p [ id (tweetInput ++ "-description"), class "mt-2 h-10 text-sm text-red-600" ] [ text err ])
                             |> Maybe.withDefault (p [ id (tweetInput ++ "-description"), class "mt-2 h-10 text-sm text-gray-500" ] [ text "Your tweet has to be published within the last 10 minutes, mention ", extLink Conf.constants.azimuttTwitter [ class "link" ] [ text "@azimuttapp" ], text " and have a link to ", extLink Conf.constants.azimuttWebsite [ class "link" ] [ text "azimutt.app" ], text "." ])
@@ -244,7 +209,7 @@ colorsModalBody project update model close titleId =
                     div [] []
                 )
         ]
-        [ Link.primary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.tableColor.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Fire "mr-1", text "Start trial" ]
+        [ Link.primary3 color [ href (Backend.organizationBillingUrl (project.organization |> Maybe.map .id) Feature.colors.name), target "_blank", rel "noopener", css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ Icon.solid Icon.Fire "mr-1", text "Start trial" ]
         , Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
         ]
 
@@ -263,7 +228,7 @@ colorsTweetDivider wrap color =
         ]
 
 
-colorsTweetInput : (ColorsMsg -> msg) -> OrganizationId -> HtmlId -> String -> Color -> Html msg
+colorsTweetInput : (ColorsMsg -> msg) -> Maybe OrganizationId -> HtmlId -> String -> Color -> Html msg
 colorsTweetInput wrap organizationId inputId inputValue color =
     div []
         [ label [ for inputId, class "block text-sm font-medium text-gray-700" ] [ text "Your tweet url" ]
@@ -324,11 +289,11 @@ privateLinkWarning project =
             Tw.cyan
     in
     showWarning ( project, color )
-        "Private links are a pro feature!"
+        "Private links are an enterprise feature!"
         [ p [] [ text "They hold a great power to easily share projects or embed them in documentation." ]
-        , p [] [ text "And thus, we keep them fresh for users wise enough to use our pro plan 😉" ]
+        , p [] [ text "And thus, we keep them fresh for users wise enough to use our best plan 😉" ]
         ]
-        [ Link.secondary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.privateLinks.name), target "_blank", rel "noopener" ] [ Icon.outline Icon.UserGroup "mr-1", text "Join us, start trial!" ] ]
+        [ Link.secondary3 color [ href (Backend.organizationBillingUrl (project.organization |> Maybe.map .id) Feature.projectShare.name), target "_blank", rel "noopener" ] [ Icon.outline Icon.UserGroup "mr-1", text "Join us, start trial!" ] ]
 
 
 sqlExportWarning : ProjectRef -> Html msg
@@ -339,11 +304,11 @@ sqlExportWarning project =
             Tw.green
     in
     showWarning ( project, color )
-        "SQL export is a pro feature!"
-        [ p [] [ text "Getting a pro plan is the best support you could give to Azimutt, allowing us to invest even more to make it always better." ]
+        "SQL export is a paid feature!"
+        [ p [] [ text "Getting a paid plan is the best support you could give to Azimutt, allowing us to invest even more to make it always better." ]
         , p [] [ text "It will unlock many features for you, check it out below. Or reach us if you have any question on ", span [ title "Azimutt" ] [ text "🧭" ] ]
         ]
-        [ Link.secondary3 color [ href (Backend.organizationBillingUrl project.organization.id Conf.features.sqlExport.name), target "_blank", rel "noopener" ] [ Icon.outline Icon.TrendingUp "mr-1", text "Unleash power, start trial!" ] ]
+        [ Link.secondary3 color [ href (Backend.organizationBillingUrl (project.organization |> Maybe.map .id) Feature.schemaExport.name), target "_blank", rel "noopener" ] [ Icon.outline Icon.TrendingUp "mr-1", text "Unleash power, start trial!" ] ]
 
 
 analysisWarning : ProjectRef -> Html msg
@@ -354,13 +319,13 @@ analysisWarning project =
             Tw.fuchsia
     in
     showWarning ( project, color )
-        "Get full analysis with Pro plan!"
+        "Get full analysis with Team plan!"
         [ p [] [ text "Schema analysis is still an early feature but a very important one in Azimutt." ]
         , p [] [ text "It analyzes your schema to give you insights on possible improvements. In free mode you can only see limited results." ]
         , p [] [ text "Consider upgrading to access to the full analysis and support Azimutt expansion ❤️" ]
         ]
         [ Link.secondary3 color
-            [ href (Backend.organizationBillingUrl project.organization.id Conf.features.dbAnalysis.name), target "_blank", rel "noopener" ]
+            [ href (Backend.organizationBillingUrl (project.organization |> Maybe.map .id) Feature.analysis.name), target "_blank", rel "noopener" ]
             [ Icon.outline Icon.ShieldCheck "mr-1"
             , text "Start trial"
             ]
@@ -369,7 +334,7 @@ analysisWarning project =
 
 analysisResults : ProjectRef -> List a -> (a -> Html msg) -> Html msg
 analysisResults project items render =
-    if project.organization.plan.dbAnalysis || List.length items <= 5 then
+    if Organization.canAnalyse project || List.length items <= Feature.analysis.limit then
         div [] (items |> List.map render)
 
     else
@@ -383,10 +348,10 @@ analysisResults project items render =
                     Tw.fuchsia
         in
         div [ class "relative" ]
-            ((items |> List.take 5 |> List.map render)
+            ((items |> List.take Feature.analysis.limit |> List.map render)
                 ++ [ div [ class "absolute inset-x-0 pt-32 bg-gradient-to-t from-white text-center text-sm text-gray-500 pointer-events-none", style "bottom" "-2px" ]
                         [ text "See more with upgraded plan, "
-                        , a [ href (Backend.organizationBillingUrl project.organization.id (Conf.features.dbAnalysis.name ++ "_results")), target "_blank", rel "noopener", css [ Tw.text_500 color, "underline pointer-events-auto" ] ] [ text "start trial" ]
+                        , a [ href (Backend.organizationBillingUrl (project.organization |> Maybe.map .id) (Feature.analysis.name ++ "_results")), target "_blank", rel "noopener", css [ Tw.text_500 color, "underline pointer-events-auto" ] ] [ text "start trial" ]
                         , text "."
                         ]
                    ]
@@ -434,7 +399,7 @@ warning color title content buttons =
 
 isDraft : ProjectRef -> Bool
 isDraft project =
-    project.id == ProjectId.zero
+    project.id |> Maybe.mapOrElse (\id -> id == ProjectId.zero) True
 
 
 
@@ -442,7 +407,7 @@ isDraft project =
 
 
 type alias SharedDocState x =
-    { x | proPlanDocState : DocState }
+    { x | planDialogDocState : DocState }
 
 
 type alias DocState =
@@ -462,32 +427,30 @@ updateDocState : DocMsg -> ElmBook.Msg (SharedDocState x)
 updateDocState msg =
     case msg of
         ColorsMsg model message ->
-            Actions.updateState (\s -> { s | proPlanDocState = s.proPlanDocState |> setColors (colorsUpdate docColorsUpdate message model |> Tuple.first) })
+            Actions.updateState (\s -> { s | planDialogDocState = s.planDialogDocState |> setColors (colorsUpdate docColorsUpdate message model |> Tuple.first) })
 
 
-projectRef : ProjectRef
-projectRef =
+docProjectRef : ProjectRef
+docProjectRef =
     ProjectRef.one
 
 
 doc : Chapter (SharedDocState x)
 doc =
-    Chapter.chapter "ProPlan"
+    Chapter.chapter "PlanDialog"
         |> Chapter.renderStatefulComponentList
             [ ( "draftProjectWarning", \_ -> draftProjectWarning )
             , ( "draftProjectModalBody", \_ -> draftProjectModalBody docClose docTitleId )
-            , ( "projectsModalBody", \_ -> projectsModalBody projectRef docClose docTitleId )
-            , ( "layoutsWarning", \_ -> layoutsWarning projectRef )
-            , ( "layoutsModalBody", \_ -> layoutsModalBody projectRef docClose docTitleId )
-            , ( "layoutTablesModalBody", \_ -> layoutTablesModalBody projectRef docClose docTitleId )
-            , ( "memosModalBody", \_ -> memosModalBody projectRef docClose docTitleId )
-            , ( "groupsModalBody", \_ -> groupsModalBody projectRef docClose docTitleId )
-            , ( "colorsModalBody", \s -> colorsModalBody projectRef docColorsUpdate s.proPlanDocState.colors docClose docTitleId )
-            , ( "colorsModalBody success", \s -> colorsModalBody projectRef docColorsUpdate (s.proPlanDocState.colors |> setResult (Just (Ok "Tweet.."))) docClose docTitleId )
-            , ( "privateLinkWarning", \_ -> privateLinkWarning projectRef )
-            , ( "sqlExportWarning", \_ -> sqlExportWarning projectRef )
-            , ( "analysisWarning", \_ -> analysisWarning projectRef )
-            , ( "analysisResults", \_ -> analysisResults projectRef [ 1, 2, 3, 4, 5, 6 ] (\i -> p [] [ text ("Item " ++ String.fromInt i) ]) )
+            , ( "projectsModalBody", \_ -> projectsModalBody docProjectRef docClose docTitleId )
+            , ( "layoutsWarning", \_ -> layoutsWarning docProjectRef )
+            , ( "layoutsModalBody", \_ -> layoutsModalBody docProjectRef docClose docTitleId )
+            , ( "layoutTablesModalBody", \_ -> layoutTablesModalBody docProjectRef docClose docTitleId )
+            , ( "colorsModalBody", \s -> colorsModalBody docProjectRef docColorsUpdate s.planDialogDocState.colors docClose docTitleId )
+            , ( "colorsModalBody success", \s -> colorsModalBody docProjectRef docColorsUpdate (s.planDialogDocState.colors |> setResult (Just (Ok "Tweet.."))) docClose docTitleId )
+            , ( "privateLinkWarning", \_ -> privateLinkWarning docProjectRef )
+            , ( "sqlExportWarning", \_ -> sqlExportWarning docProjectRef )
+            , ( "analysisWarning", \_ -> analysisWarning docProjectRef )
+            , ( "analysisResults", \_ -> analysisResults docProjectRef [ 1, 2, 3, 4, 5, 6 ] (\i -> p [] [ text ("Item " ++ String.fromInt i) ]) )
             ]
 
 

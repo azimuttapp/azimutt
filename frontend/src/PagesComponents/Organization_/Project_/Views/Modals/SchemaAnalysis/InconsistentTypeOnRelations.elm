@@ -2,7 +2,7 @@ module PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis.Incons
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Slices.ProPlan as ProPlan
+import Components.Slices.PlanDialog as PlanDialog
 import DataSources.DbMiner.DbQuery as DbQuery
 import Dict exposing (Dict)
 import Html exposing (Html, div, span, text)
@@ -15,6 +15,7 @@ import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Libs.String as String
 import Libs.Tailwind as Tw
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
+import Models.Organization as Organization
 import Models.Project.ColumnPath as ColumnPath
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRefLike)
 import Models.Project.SchemaName exposing (SchemaName)
@@ -61,7 +62,7 @@ heading errors =
 view : ProjectRef -> SchemaName -> List Source -> (Cmd msg -> msg) -> List Model -> Html msg
 view project defaultSchema sources send errors =
     div []
-        [ if List.nonEmpty errors && project.organization.plan.dbAnalysis then
+        [ if List.nonEmpty errors && Organization.canAnalyse project then
             div []
                 [ Button.primary1 Tw.primary
                     [ onClick (errors |> scriptForRelationsWithDifferentTypes defaultSchema sources |> Ports.downloadFile "azimutt-fix-relations-with-different-types.sql" |> send) ]
@@ -70,7 +71,7 @@ view project defaultSchema sources send errors =
 
           else
             div [] []
-        , ProPlan.analysisResults project
+        , PlanDialog.analysisResults project
             (errors |> List.sortBy (\( rel, _, _ ) -> ColumnRef.show defaultSchema rel.ref ++ " ← " ++ ColumnRef.show defaultSchema rel.src))
             (\( rel, src, ref ) ->
                 div [ class "flex justify-between items-center py-1" ]

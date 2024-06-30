@@ -1,0 +1,68 @@
+<section aria-labelledby="comparison-heading" class="hidden lg:block">
+    <h2 id="comparison-heading" class="sr-only">Feature comparison</h2>
+
+    <div class={"grid grid-cols-#{length(@plans) + 1} gap-x-8 border-t border-gray-900/10 before:block"}>
+        <%= for plan <- @plans do %>
+        <div aria-hidden="true" class="-mt-px">
+            <div class={"border-t-2 pt-10 #{if plan.id == @selected, do: "border-indigo-600", else: "border-transparent"}"}>
+                <p class={"text-sm font-semibold leading-6 #{if plan.id == @selected, do: "text-indigo-600", else: "text-gray-900"}"}><%= plan.name %></p>
+                <p class="mt-1 text-sm leading-6 text-gray-600"><%= plan.description %></p>
+            </div>
+        </div>
+        <% end %>
+    </div>
+
+    <div class="-mt-6 space-y-16">
+        <%= for category <- @feature_categories do %>
+        <div>
+            <h3 class="text-sm font-semibold leading-6 text-gray-900"><%= category.name %></h3>
+            <div class="relative -mx-8 mt-10">
+                <!-- Fake card backgrounds -->
+                <div class={"absolute inset-x-8 inset-y-0 grid grid-cols-#{length(@plans) + 1} gap-x-8 before:block"} aria-hidden="true">
+                    <%= for _ <- @plans do %>
+                    <div class="h-full w-full rounded-lg bg-white shadow-sm"></div>
+                    <% end %>
+                </div>
+
+                <table class="relative w-full border-separate border-spacing-x-8">
+                    <thead>
+                        <tr class="text-left">
+                            <th scope="col"><span class="sr-only">Feature</span></th>
+                            <%= for plan <- @plans do %>
+                            <th scope="col"><span class="sr-only"><%= plan.name %> plan</span></th>
+                            <% end %>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% last = category.features |> List.last() %>
+                        <%= for feature <- category.features do %>
+                        <tr>
+                            <th scope="row" class={"w-1/#{length(@plans) + 1} py-3 pr-4 text-left text-sm font-normal leading-6 text-gray-900"}>
+                                <%= render AzimuttWeb.PartialsView, "_pricing_features_label.html", feature: feature %>
+                                <%= if feature != last do %>
+                                <div class="absolute inset-x-8 mt-3 h-px bg-gray-200"></div>
+                                <% end %>
+                            </th>
+                            <%= for plan <- @plans do %>
+                            <td class={"relative w-1/#{length(@plans) + 1} px-4 py-0 text-center"}>
+                                <span class="relative h-full w-full py-3">
+                                    <%= render AzimuttWeb.PartialsView, "_pricing_features_value.html", value: feature |> Map.fetch!(plan.id), selected: plan.id == @selected %>
+                                </span>
+                            </td>
+                            <% end %>
+                        </tr>
+                        <% end %>
+                    </tbody>
+                </table>
+
+                <!-- Fake card borders -->
+                <div class={"pointer-events-none absolute inset-x-8 inset-y-0 grid grid-cols-#{length(@plans) + 1} gap-x-8 before:block"} aria-hidden="true">
+                    <%= for plan <- @plans do %>
+                    <div class={"rounded-lg #{if plan.id == @selected, do: "ring-2 ring-indigo-600", else: "ring-1 ring-gray-900/10"}"}></div>
+                    <% end %>
+                </div>
+            </div>
+        </div>
+        <% end %>
+    </div>
+</section>

@@ -4,7 +4,7 @@ import Components.Atoms.Icon exposing (Icon(..))
 import Components.Organisms.Table exposing (TableHover)
 import Components.Organisms.TableRow as TableRow exposing (TableRowHover)
 import Components.Slices.DataExplorer as DataExplorer
-import Components.Slices.ProPlan as ProPlan
+import Components.Slices.PlanDialog as PlanDialog
 import DataSources.AmlMiner.AmlAdapter exposing (AmlSchemaError)
 import DataSources.DbMiner.DbTypes exposing (RowQuery)
 import Dict exposing (Dict)
@@ -303,7 +303,7 @@ type Msg
     | ProjectSettingsMsg ProjectSettingsMsg
     | EmbedSourceParsingMsg EmbedSourceParsingDialog.Msg
     | SourceParsed Source
-    | ProPlanColors ProPlan.ColorsModel ProPlan.ColorsMsg
+    | PlanDialogColors PlanDialog.ColorsModel PlanDialog.ColorsMsg
     | HelpMsg HelpMsg
     | CursorMode CursorMode
     | Fullscreen (Maybe HtmlId)

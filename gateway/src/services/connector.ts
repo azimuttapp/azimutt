@@ -7,7 +7,6 @@ import {mysql} from "@azimutt/connector-mysql"
 import {postgres} from "@azimutt/connector-postgres"
 import {snowflake} from "@azimutt/connector-snowflake"
 import {sqlserver} from "@azimutt/connector-sqlserver"
-import {oracle} from "@azimutt/connector-oracle"
 
 const connectors: Record<DatabaseKind, Connector | undefined> = {
     bigquery: bigquery,
@@ -18,7 +17,7 @@ const connectors: Record<DatabaseKind, Connector | undefined> = {
     mariadb: mariadb,
     mongodb: mongodb,
     mysql: mysql,
-    oracle: oracle,
+    oracle: undefined,
     postgres: postgres,
     redis: undefined,
     snowflake: snowflake,

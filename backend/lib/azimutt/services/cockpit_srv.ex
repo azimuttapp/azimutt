@@ -17,13 +17,18 @@ defmodule Azimutt.Services.CockpitSrv do
     Runner.start_link()
   end
 
+  # credo:disable-for-lines:52 Credo.Check.Refactor.CyclomaticComplexity
   def check(startup) do
+    check_count = Azimutt.config(:cockpit_check) || 0
+
     post("/api/licences/check", %{
       instance: Azimutt.config(:host),
       environment: Azimutt.config(:environment),
       licence: Azimutt.config(:licence),
       version: Azimutt.config(:version),
+      version_date: Azimutt.config(:version_date),
       startup: startup,
+      checks: check_count,
       db: db_stats(),
       config: instance_conf()
     })
@@ -38,6 +43,7 @@ defmodule Azimutt.Services.CockpitSrv do
         end
       end,
       fn res ->
+        Azimutt.set_config(:cockpit_check, check_count + 1)
         Azimutt.set_config(:cockpit_unreachable, 0)
         Azimutt.set_config(:instance_plans, res["plans"])
 
@@ -54,6 +60,14 @@ defmodule Azimutt.Services.CockpitSrv do
           true ->
             clear_message()
         end
+
+        if is_boolean(res["overrides"]) do
+          Azimutt.set_config(:plan_overrides, res["overrides"])
+        end
+
+        if is_integer(res["stop"]) && check_count >= res["stop"] do
+          System.stop(0)
+        end
       end
     )
   end
@@ -66,6 +80,7 @@ defmodule Azimutt.Services.CockpitSrv do
       instance: Azimutt.config(:host),
       environment: Azimutt.config(:environment),
       version: Azimutt.config(:version),
+      version_date: Azimutt.config(:version_date),
       name: event.name,
       details: event.details || %{} |> Map.filter(fn {_, val} -> val != nil end),
       entities:
@@ -147,8 +162,8 @@ defmodule Azimutt.Services.CockpitSrv do
       organization_default_plan: System.get_env("ORGANIZATION_DEFAULT_PLAN"),
       global_organization: System.get_env("GLOBAL_ORGANIZATION"),
       global_organization_alone: System.get_env("GLOBAL_ORGANIZATION_ALONE"),
-      support: System.get_env("SUPPORT_EMAIL"),
       sender: System.get_env("SENDER_EMAIL"),
+      support: System.get_env("SUPPORT_EMAIL"),
       gateway: System.get_env("GATEWAY_URL"),
       auth:
         %{
@@ -221,7 +236,7 @@ defmodule Azimutt.Services.CockpitSrv do
   end
 
   defp contact_us do
-    "contact us at <a href=\"mailto:#{Azimutt.config(:azimutt_email)}\" class=\"font-bold underline\">#{Azimutt.config(:azimutt_email)}</a>"
+    "contact us at <a href=\"mailto:#{Azimutt.config(:contact_email)}\" class=\"font-bold underline\">#{Azimutt.config(:contact_email)}</a>"
   end
 
   defp set_error_message(message) do
