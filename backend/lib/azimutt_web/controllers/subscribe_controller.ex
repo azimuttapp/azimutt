@@ -24,7 +24,7 @@ defmodule AzimuttWeb.SubscribeController do
         "solo" -> 3
         "team" -> 4
         "enterprise" -> 5
-        true -> 0
+        _ -> 0
       end
 
     "#{priority}-#{o.name}"

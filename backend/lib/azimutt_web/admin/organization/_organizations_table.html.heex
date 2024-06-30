@@ -16,7 +16,7 @@
                         Name
                         <%= render AzimuttWeb.PartialsView, "_page_sort.html", page: @organizations, key: "name" %>
                     </th>
-                    <th class="p-1" scope="col">Sub</th>
+                    <th class="p-1" scope="col">Plan</th>
                     <th class="p-1" scope="col">
                         <span title="members">M</span> /
                         <span title="projects">P</span> /
@@ -42,6 +42,7 @@
                             <% end %>
                         </td>
                         <td class="p-1">
+                            <%= organization.plan %>
                             <%= if organization.stripe_customer_id do %>
                                 <%= link "Stripe", to: StripeSrv.customer_url(organization.stripe_customer_id), target: "_blank", class: "underline" %>
                             <% end %>

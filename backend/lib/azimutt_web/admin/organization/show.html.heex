@@ -24,7 +24,7 @@
                 </div>
                 <div class="mt-1 text-xs font-medium text-slate-300">
                     <%= if @organization.github_username do %>
-                        - <a href={"https://github.com/#{@organization.github_username}"} title="GitHub profile" class="underline"><%= @organization.github_username %></a>
+                        <a href={"https://github.com/#{@organization.github_username}"} title="GitHub profile" class="underline"><%= @organization.github_username %></a>
                     <% end %>
                     <%= if @organization.twitter_username do %>
                         - <a href={"https://twitter.com/#{@organization.twitter_username}"} title="Twitter account" class="underline">@<%= @organization.twitter_username %></a>
@@ -34,14 +34,18 @@
                     <% end %>
                 </div>
                 <div class="mt-1 text-xs font-medium text-slate-300">
-                    <%= @plan.projects || "∞" %> projects,
-                    <%= @plan.layouts || "∞" %> layouts (<%= @plan.layout_tables || "∞" %> tables),
-                    <%= @plan.memos || "∞" %> memos,
+                    Features:
                     <span class={if(@plan.colors, do: "", else: "line-through")}>colors</span>,
-                    <span class={if(@plan.local_save, do: "", else: "line-through")}>local save</span>,
-                    <span class={if(@plan.private_links, do: "", else: "line-through")}>private links</span>,
-                    <span class={if(@plan.db_analysis, do: "", else: "line-through")}>db analysis</span>,
-                    <span class={if(@plan.db_access, do: "", else: "line-through")}>db access</span>
+                    <span class={if(@plan.aml, do: "", else: "line-through")}>db design</span>,
+                    <span class={if(@plan.schema_export, do: "", else: "line-through")}>sql export</span>,
+                    <span class={if(@plan.ai, do: "", else: "line-through")}>AI</span>,
+                    <span>analysis <%= @plan.analysis %></span>,
+                    <span class={if(@plan.project_export, do: "", else: "line-through")}>project export</span>,
+                    <%= @plan.projects || "∞" %> projects,
+                    <%= @plan.project_dbs || "∞" %> dbs,
+                    <%= @plan.project_layouts || "∞" %> layouts (<%= @plan.layout_tables || "∞" %> tables),
+                    <%= @plan.project_doc || "∞" %> docs,
+                    <span class={if(@plan.project_share, do: "", else: "line-through")}>project share</span>
                 </div>
                 <div class="mt-1 text-xs font-medium text-slate-500 truncate"><%= @organization.data |> format_data() %></div>
             </div>

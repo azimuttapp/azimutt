@@ -32,6 +32,7 @@ defmodule Azimutt.Organizations do
     |> preload(:updated_by)
     |> Repo.one()
     |> Result.from_nillable()
+    |> Result.tap(fn org -> if org.plan == nil, do: validate_organization_plan(org) end)
   end
 
   # /!\ should be only used in stripe_handler.ex
@@ -57,6 +58,10 @@ defmodule Azimutt.Organizations do
     |> preload(:heroku_resource)
     |> preload(:invitations)
     |> Repo.all()
+    |> Enum.map(fn org ->
+      if org.plan == nil, do: validate_organization_plan(org)
+      org
+    end)
   end
 
   def create_personal_organization(%User{} = current_user) do
