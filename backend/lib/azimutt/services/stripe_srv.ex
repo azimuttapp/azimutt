@@ -91,6 +91,7 @@ defmodule Azimutt.Services.StripeSrv do
             else: %{}
           ),
         automatic_tax: %{enabled: true},
+        customer_update: %{address: "auto"},
         payment_method_collection: "if_required",
         allow_promotion_codes: true,
         success_url: success_url,
