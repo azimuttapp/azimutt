@@ -93,7 +93,7 @@ COPY libs/ libs
 COPY frontend/ frontend
 
 RUN npm install -g pnpm@9.1.4
-RUN if [ ${PLATFORM}=="arm64" ]; then sed -iz 's/"elm-coverage": "^0.4.1",//g' frontend/package.json; fi
+RUN if [ ${PLATFORM} == "arm64" ]; then sed -iz 's/"elm-coverage": "^0.4.1",//g' frontend/package.json; fi
 RUN npm run build:docker
 
 # Compile the release
