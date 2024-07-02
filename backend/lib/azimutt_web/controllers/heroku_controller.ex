@@ -57,7 +57,7 @@ defmodule AzimuttWeb.HerokuController do
              |> Result.flat_map_error(fn _ -> Accounts.register_heroku_user(user_params, UserAuth.get_attribution(conn), now) end),
            {:ok, resource} <- Heroku.set_app_if_needed(resource, app, now),
            {:ok, resource} <- Heroku.set_organization_if_needed(resource, user, now),
-           {:ok, _} <- Heroku.add_member_if_needed(resource, resource.organization, user) do
+           {:ok, _} <- Heroku.add_member_if_needed(resource.organization, user) do
         conn = conn |> UserAuth.heroku_sso(resource, user)
         project = Projects.list_projects(resource.organization, user) |> Enum.sort_by(& &1.updated_at, {:desc, DateTime}) |> List.first()
 

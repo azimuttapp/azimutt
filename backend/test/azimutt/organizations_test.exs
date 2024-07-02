@@ -1,6 +1,7 @@
 defmodule Azimutt.OrganizationsTest do
   use Azimutt.DataCase
   import Azimutt.AccountsFixtures
+  alias Azimutt.CleverCloud
   alias Azimutt.Organizations
 
   describe "organizations" do
@@ -100,6 +101,12 @@ defmodule Azimutt.OrganizationsTest do
       user = user_fixture()
       organization = organization_fixture(user)
       assert {:error, %Ecto.Changeset{}} = Organizations.create_organization_invitation(%{sent_to: nil}, "url", organization.id, user, now)
+    end
+
+    test "validate_clever_cloud_plan" do
+      assert {:ok, %{plan: "free", plan_freq: "monthly", plan_status: "manual", plan_seats: 1}} = Organizations.validate_clever_cloud_plan(%CleverCloud.Resource{})
+      assert {:ok, %{plan: "pro", plan_freq: "monthly", plan_status: "manual", plan_seats: 1}} = Organizations.validate_clever_cloud_plan(%CleverCloud.Resource{plan: "pro"})
+      assert {:ok, %{plan: "pro", plan_freq: "monthly", plan_status: "manual", plan_seats: 5}} = Organizations.validate_clever_cloud_plan(%CleverCloud.Resource{plan: "pro-5"})
     end
   end
 end

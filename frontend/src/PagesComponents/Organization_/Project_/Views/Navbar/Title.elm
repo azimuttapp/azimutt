@@ -25,7 +25,7 @@ import Libs.String as String
 import Libs.Tailwind as Tw exposing (focus, focus_ring_offset_600)
 import Libs.Task as T
 import Libs.Tuple3 as Tuple3
-import Models.Organization as Organization exposing (Organization)
+import Models.Organization exposing (Organization)
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId exposing (ProjectId)
@@ -87,8 +87,8 @@ viewNavbarTitle gConf eConf projects project layouts args =
 viewProjectsDropdown : Platform -> ErdConf -> List ProjectInfo -> ProjectInfo -> Bool -> HtmlId -> HtmlId -> Html Msg
 viewProjectsDropdown platform eConf projects project dirty htmlId openedDropdown =
     let
-        projectsPerOrganization : Dict OrganizationId (List ProjectInfo)
-        projectsPerOrganization =
+        projectsByOrganization : Dict OrganizationId (List ProjectInfo)
+        projectsByOrganization =
             projects |> List.groupBy (.organization >> Maybe.mapOrElse .id OrganizationId.zero)
 
         currentOrganization : OrganizationId
@@ -97,14 +97,14 @@ viewProjectsDropdown platform eConf projects project dirty htmlId openedDropdown
 
         currentOrganizationProjects : List ProjectInfo
         currentOrganizationProjects =
-            projectsPerOrganization |> Dict.getOrElse currentOrganization []
+            projectsByOrganization |> Dict.getOrElse currentOrganization []
 
         organizationProjects : List ( Organization, List ProjectInfo )
         organizationProjects =
-            projectsPerOrganization
+            projectsByOrganization
                 |> Dict.remove currentOrganization
                 |> Dict.toList
-                |> List.map (\( _, p ) -> ( p |> List.head |> Maybe.andThen .organization |> Maybe.withDefault (Organization.zero |> (\z -> { z | name = "Draft" })), p ))
+                |> List.filterMap (\( _, p ) -> p |> List.head |> Maybe.andThen .organization |> Maybe.map (\o -> ( o, p )))
     in
     Dropdown.dropdown { id = htmlId, direction = BottomRight, isOpen = openedDropdown == htmlId }
         (\m ->
@@ -135,7 +135,7 @@ viewProjectsDropdown platform eConf projects project dirty htmlId openedDropdown
                                 [ Avatar.xs org.logo org.name "mr-2", span [] [ text (org.name ++ " »") ] ]
                                 (orgProjects |> List.map (viewProjectsDropdownItem project.id))
                         )
-                 , [ ContextMenu.link { url = currentOrganization |> Just |> Maybe.filter (\id -> projectsPerOrganization |> Dict.member id) |> Backend.organizationUrl, text = "Back to dashboard" } ]
+                 , [ ContextMenu.link { url = currentOrganization |> Just |> Maybe.filter (\id -> projectsByOrganization |> Dict.member id) |> Backend.organizationUrl, text = "Back to dashboard" } ]
                  ]
                     |> List.filterNot List.isEmpty
                     |> List.map (\section -> div [ role "none", class "py-1" ] section)

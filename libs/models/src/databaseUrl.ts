@@ -22,6 +22,7 @@ const couchbaseRegexxxxxxxxxxx = /^couchbases?:\/\/(?:([^:]+):([^@]*)@)?([^:/?&]
 const mariadbRegexxxxxxx = /^(?:jdbc:)?mariadb:\/\/(?:([^:]+):([^@]*)@)?([^:/?&]+)(?::(\d+))?(?:\/([^?]+))?(?:\?(.+))?$/
 const mongoRegexxxxxxxxxx = /^mongodb(?:\+srv)?:\/\/(?:([^:]+):([^@]*)@)?([^:/?&]+)(?::(\d+))?(?:\/([^?]+))?(?:\?(.+))?$/
 const mysqlRegexxxxxxxxxxx = /^(?:jdbc:)?mysql:\/\/(?:([^:]+):([^@]*)@)?([^:/?&]+)(?::(\d+))?(?:\/([^?]+))?(?:\?(.+))?$/
+const oracleRegexxxxxx = /^(?:jdbc:)?oracle:thin:(?:([^\/]+)\/([^@]+)@\/\/)?([^:\/]+)(?::(\d+))?(?:\/([^?]+))?$/
 const postgresRe = /^(?:jdbc:)?postgres(?:ql)?:\/\/(?:([^:]+):([^@]*)@)?([^:/?&]+)(?::(\d+))?(?:\/([^?]+))?(?:\?(.+))?$/
 const sqlserver = /^(?:jdbc:)?sqlserver(?:ql)?:\/\/(?:([^:]+):([^@]*)@)?([^:/?&]+)(?::(\d+))?(?:\/([^?]+))?(?:\?(.+))?$/
 const snowflakeRegexxx = /^(?:jdbc:)?snowflake:\/\/(?:([^:]+):([^@]*)@)?([^:/?&]+)(?::(\d+))?(?:\/([^?]+))?(?:\?(.+))?$/
@@ -66,6 +67,14 @@ export function parseDatabaseUrl(rawUrl: DatabaseUrl): DatabaseUrlParsed {
     if (mysqlMatches) {
         const kind: DatabaseKind = 'mysql'
         const [, user, pass, host, port, db, optionsStr] = mysqlMatches
+        const options = optionsStr ? parseDatabaseOptions(optionsStr) : undefined
+        return removeUndefined({full: url, kind, user, pass, host, port: port ? parseInt(port) : undefined, db, options})
+    }
+
+    const oracleMatches = url.match(oracleRegexxxxxx)
+    if (oracleMatches) {
+        const kind: DatabaseKind = 'oracle'
+        const [, user, pass, host, port, db, optionsStr] = oracleMatches
         const options = optionsStr ? parseDatabaseOptions(optionsStr) : undefined
         return removeUndefined({full: url, kind, user, pass, host, port: port ? parseInt(port) : undefined, db, options})
     }

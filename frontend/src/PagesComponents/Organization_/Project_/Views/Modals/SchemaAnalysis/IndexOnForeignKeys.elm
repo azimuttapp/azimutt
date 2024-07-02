@@ -2,7 +2,7 @@ module PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis.IndexO
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Slices.ProPlan as ProPlan
+import Components.Slices.PlanDialog as PlanDialog
 import Dict exposing (Dict)
 import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (class)
@@ -86,7 +86,7 @@ view showTable project defaultSchema errors =
         [ div [ class "mb-1 text-gray-500" ]
             [ text "Adding index on relations may speed-up the joins, consider adding some."
             ]
-        , ProPlan.analysisResults project
+        , PlanDialog.analysisResults project
             errors
             (\( r, isSrc ) ->
                 div [ class "flex justify-between items-center my-1" ]

@@ -1,7 +1,7 @@
 module PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis.PrimaryKeyMissing exposing (Model, compute, heading, view)
 
 import Components.Atoms.Button as Button
-import Components.Slices.ProPlan as ProPlan
+import Components.Slices.PlanDialog as PlanDialog
 import Dict exposing (Dict)
 import Html exposing (Html, div, p, text)
 import Html.Attributes exposing (class)
@@ -42,7 +42,7 @@ view : (TableId -> Maybe PositionHint -> String -> msg) -> ProjectRef -> SchemaN
 view showTable project defaultSchema errors =
     div []
         [ p [ class "mb-3 text-sm text-gray-500" ] [ text "It's not always required to have a primary key but strongly encouraged in most case. Make sure this is what you want!" ]
-        , ProPlan.analysisResults project
+        , PlanDialog.analysisResults project
             errors
             (\t ->
                 div [ class "flex justify-between items-center my-1" ]

@@ -13,16 +13,6 @@ defmodule Azimutt.Heroku do
   def app_addons_url(app), do: "https://dashboard.heroku.com/apps/#{app}/resources"
   def app_settings_url(app), do: "https://dashboard.heroku.com/apps/#{app}/settings"
 
-  def allowed_members(plan) do
-    team_members = Regex.named_captures(~r/pro-(?<members>[0-9]+)/, plan)
-
-    if team_members do
-      String.to_integer(team_members["members"])
-    else
-      Azimutt.config(:free_plan_seats)
-    end
-  end
-
   # use only for HerokuController.index local helper
   def all_resources do
     Resource
@@ -74,21 +64,20 @@ defmodule Azimutt.Heroku do
     end
   end
 
-  def add_member_if_needed(%Resource{} = resource, %Organization{} = organization, %User{} = current_user) do
-    slots_in_plan = allowed_members(resource.plan)
+  def add_member_if_needed(%Organization{} = organization, %User{} = current_user) do
     existing_members = Organizations.count_member(organization)
 
     cond do
-      existing_members > slots_in_plan ->
-        {:error, :too_many_members}
-
       Organizations.has_member?(organization, current_user) ->
         {:ok, :already_member}
 
-      existing_members < slots_in_plan ->
+      existing_members < organization.plan_seats ->
         OrganizationMember.new_member_changeset(organization.id, current_user)
         |> Repo.insert()
         |> Result.map(fn _ -> :member_added end)
+
+      existing_members > organization.plan_seats ->
+        {:error, :too_many_members}
 
       true ->
         {:error, :member_limit_reached}

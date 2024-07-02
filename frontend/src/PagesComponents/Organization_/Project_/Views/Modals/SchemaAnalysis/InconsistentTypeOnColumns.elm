@@ -1,7 +1,7 @@
 module PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis.InconsistentTypeOnColumns exposing (Model, compute, heading, view)
 
 import Components.Molecules.Tooltip as Tooltip
-import Components.Slices.ProPlan as ProPlan
+import Components.Slices.PlanDialog as PlanDialog
 import Conf
 import Dict exposing (Dict)
 import Html exposing (Html, div, p, span, text)
@@ -56,7 +56,7 @@ view project defaultSchema errors =
                     ++ "But of course, not every column with the same name is the same thing, so just look at the to know, not to fix everything."
                 )
             ]
-        , ProPlan.analysisResults project
+        , PlanDialog.analysisResults project
             errors
             (\( col, types ) ->
                 div []

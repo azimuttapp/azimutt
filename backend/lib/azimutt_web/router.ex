@@ -81,6 +81,7 @@ defmodule AzimuttWeb.Router do
     get("/home", UserDashboardController, :index)
     get("/billing", UserDashboardController, :billing)
     get("/login/redirect", UserSessionController, :redirect_to)
+    get("/subscribe/:plan/:freq", SubscribeController, :index)
 
     scope "/email-confirm" do
       pipe_through([:hfull_root_layout])
@@ -134,7 +135,8 @@ defmodule AzimuttWeb.Router do
 
     resources "/organizations", OrganizationController, param: "organization_id", except: [:index] do
       get("/billing", OrganizationBillingController, :index, as: :billing)
-      post("/billing/new", OrganizationBillingController, :new, as: :billing)
+      post("/billing/refresh", OrganizationBillingController, :refresh, as: :billing)
+      get("/billing/new", OrganizationBillingController, :new, as: :billing)
       post("/billing/edit", OrganizationBillingController, :edit, as: :billing)
       get("/billing/success", OrganizationBillingController, :success, as: :billing)
       get("/billing/cancel", OrganizationBillingController, :cancel, as: :billing)
@@ -264,7 +266,7 @@ defmodule AzimuttWeb.Router do
         description: "API Documentation for Azimutt Backend",
         contact: %{
           name: "Azimutt",
-          email: Azimutt.config(:azimutt_email)
+          email: Azimutt.config(:contact_email)
         }
       },
       basePath: "/api/v1",

@@ -1,16 +1,17 @@
 module PagesComponents.Organization_.Project_.Updates.Groups exposing (Model, handleGroups)
 
 import Browser.Dom as Dom
-import Components.Slices.ProPlan as ProPlan
+import Components.Slices.PlanDialog as PlanDialog
 import Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Tailwind as Tw exposing (Color)
 import Libs.Task as T
+import Models.Feature as Feature
+import Models.Organization as Organization exposing (Organization)
 import Models.Project.Group as Group exposing (Group)
 import Models.Project.TableId exposing (TableId)
 import Models.ProjectRef exposing (ProjectRef)
-import Models.UrlInfos exposing (UrlInfos)
 import PagesComponents.Organization_.Project_.Models exposing (GroupEdit, GroupMsg(..), Msg(..), NotesDialog)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
@@ -32,11 +33,11 @@ type alias Model x =
     }
 
 
-handleGroups : Time.Posix -> UrlInfos -> GroupMsg -> Model x -> ( Model x, Extra Msg )
-handleGroups now urlInfos msg model =
+handleGroups : Time.Posix -> ProjectRef -> GroupMsg -> Model x -> ( Model x, Extra Msg )
+handleGroups now projectRef msg model =
     case msg of
         GCreate tables ->
-            model |> createGroup now urlInfos tables
+            model |> createGroup now tables
 
         GEdit index name ->
             ( model |> setEditGroup (Just { index = index, content = name }), index |> Group.toInputId |> Dom.focus |> Task.attempt (\_ -> Noop "focus-group-input") |> Extra.cmd )
@@ -48,7 +49,7 @@ handleGroups now urlInfos msg model =
             model |> saveGroup now content
 
         GSetColor index color ->
-            model |> setGroupColor now urlInfos index color
+            model |> setGroupColor now projectRef index color
 
         GAddTables index tables ->
             ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapGroups (List.mapAt index (mapTables (List.append tables)))))
@@ -80,12 +81,12 @@ handleGroups now urlInfos msg model =
             model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapGroupsT (\groups -> ( groups |> List.insertAt index group, Extra.history ( GroupMsg (GDelete index), GroupMsg msg ) )))) |> Extra.defaultT
 
 
-createGroup : Time.Posix -> UrlInfos -> List TableId -> Model x -> ( Model x, Extra Msg )
-createGroup now urlInfos tables model =
+createGroup : Time.Posix -> List TableId -> Model x -> ( Model x, Extra Msg )
+createGroup now tables model =
     if tables |> List.isEmpty then
         ( model, Extra.none )
 
-    else if model.erd |> Erd.canCreateGroup then
+    else
         model
             |> mapErdMTM
                 (Erd.mapCurrentLayoutTWithTime now
@@ -101,9 +102,6 @@ createGroup now urlInfos tables model =
                 )
             |> Extra.defaultT
 
-    else
-        ( model, model.erd |> Maybe.map (\erd -> [ erd |> Erd.getProjectRef urlInfos |> ProPlan.groupsModalBody |> CustomModalOpen |> T.send, Track.planLimit .groups (Just erd) ]) |> Extra.cmdML )
-
 
 groupColor : ErdLayout -> List TableId -> Color
 groupColor layout tableIds =
@@ -118,18 +116,13 @@ groupColor layout tableIds =
         |> Maybe.mapOrElse Tuple.first Tw.indigo
 
 
-setGroupColor : Time.Posix -> UrlInfos -> Int -> Color -> Model x -> ( Model x, Extra Msg )
-setGroupColor now urlInfos index color model =
-    let
-        project : ProjectRef
-        project =
-            model.erd |> Erd.getProjectRefM urlInfos
-    in
-    if model.erd |> Erd.canChangeColor then
+setGroupColor : Time.Posix -> ProjectRef -> Int -> Color -> Model x -> ( Model x, Extra Msg )
+setGroupColor now projectRef index color model =
+    if Organization.canChangeColor projectRef then
         model |> mapErdMTM (Erd.mapCurrentLayoutTMWithTime now (mapGroupsT (List.mapAtT index (mapColorT (\c -> ( color, Extra.history ( GroupMsg (GSetColor index c), GroupMsg (GSetColor index color) ) )))))) |> Extra.defaultT
 
     else
-        ( model, Extra.cmdL [ ProPlan.colorsModalBody project ProPlanColors ProPlan.colorsInit |> CustomModalOpen |> T.send, Track.planLimit .tableColor model.erd ] )
+        ( model, Extra.cmdL [ PlanDialog.colorsModalBody projectRef PlanDialogColors PlanDialog.colorsInit |> CustomModalOpen |> T.send, Track.planLimit Feature.colors model.erd ] )
 
 
 saveGroup : Time.Posix -> GroupEdit -> Model x -> ( Model x, Extra Msg )

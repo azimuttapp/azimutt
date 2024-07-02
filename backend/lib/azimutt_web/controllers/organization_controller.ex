@@ -18,14 +18,14 @@ defmodule AzimuttWeb.OrganizationController do
     |> render("new.html", changeset: changeset, logo: logo)
   end
 
-  def create(conn, %{"organization" => organization_params}) do
+  def create(conn, %{"organization" => organization_params} = params) do
     current_user = conn.assigns.current_user
 
     case Organizations.create_non_personal_organization(organization_params, current_user) do
       {:ok, organization} ->
         conn
         |> put_flash(:info, "Organization created successfully.")
-        |> redirect(to: Routes.organization_path(conn, :show, organization))
+        |> redirect(to: if(params["redirect"] != "", do: params["redirect"], else: Routes.organization_path(conn, :show, organization)))
 
       {:error, %Ecto.Changeset{} = changeset} ->
         conn

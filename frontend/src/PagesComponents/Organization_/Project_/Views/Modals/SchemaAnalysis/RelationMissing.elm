@@ -3,7 +3,7 @@ module PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis.Relati
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Tooltip as Tooltip
-import Components.Slices.ProPlan as ProPlan
+import Components.Slices.PlanDialog as PlanDialog
 import Dict exposing (Dict)
 import Html exposing (Html, div, h5, span, text)
 import Html.Attributes exposing (class)
@@ -15,6 +15,7 @@ import Libs.Maybe as Maybe
 import Libs.Nel as Nel exposing (Nel)
 import Libs.String as String
 import Libs.Tailwind as Tw
+import Models.Organization as Organization
 import Models.Project.Column as Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
@@ -211,7 +212,7 @@ view createRelations ignoreRelation project defaultSchema errors =
             relsWithRef |> List.filterMap SuggestedRelation.toFound |> List.sortBy (SuggestedRelation.toRefs >> (\r -> ColumnRef.show defaultSchema r.ref ++ " ← " ++ ColumnRef.show defaultSchema r.src))
     in
     div []
-        [ if List.nonEmpty relsWithRef && project.organization.plan.dbAnalysis then
+        [ if List.nonEmpty relsWithRef && Organization.canAnalyse project then
             div []
                 [ Button.primary1 Tw.primary
                     [ onClick (sortedMissingRels |> List.map SuggestedRelation.toRefs |> createRelations) ]
@@ -220,7 +221,7 @@ view createRelations ignoreRelation project defaultSchema errors =
 
           else
             div [] []
-        , ProPlan.analysisResults project
+        , PlanDialog.analysisResults project
             sortedMissingRels
             (\rel ->
                 div [ class "flex justify-between items-center py-1" ]
@@ -247,7 +248,7 @@ view createRelations ignoreRelation project defaultSchema errors =
           else
             div []
                 [ h5 [ class "mt-1 font-medium" ] [ text "Some columns may need a relation, but can't find a related table:" ]
-                , ProPlan.analysisResults project
+                , PlanDialog.analysisResults project
                     relsNoRef
                     (\rel ->
                         div [ class "ml-3" ]

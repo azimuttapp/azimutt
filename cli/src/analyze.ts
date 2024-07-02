@@ -13,13 +13,15 @@ import {
     pluralizeL,
     publicEmailDomains,
     removeEmpty,
-    removeUndefined
+    removeUndefined,
 } from "@azimutt/utils";
 import {
     analyzeDatabase,
     AnalyzeHistory,
     AnalyzeReport,
+    AnalyzeReportHtmlResult,
     AnalyzeReportRule,
+    AnalyzeStats,
     azimuttEmail,
     Connector,
     Database,
@@ -32,12 +34,12 @@ import {
     ruleLevelsShown,
     RulesConf,
     zodParse,
-    zodParseAsync
+    zodParseAsync,
 } from "@azimutt/models";
 import {getConnector, track} from "@azimutt/gateway";
 import {version} from "./version.js";
 import {loggerNoOp} from "./utils/logger.js";
-import {fileExists, fileList, fileReadJson, fileWriteJson, mkParentDirs} from "./utils/file.js";
+import {fileExists, fileList, fileRead, fileReadJson, fileWrite, fileWriteJson, mkParentDirs,} from "./utils/file.js";
 
 export type Opts = {
     folder?: string
@@ -46,6 +48,7 @@ export type Opts = {
     only?: string
     key?: string
     ignoreViolationsFrom?: string
+    html?: boolean
 }
 
 export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Promise<void> {
@@ -77,10 +80,11 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
     track('cli__analyze__run', removeUndefined({version, database: dbUrl.kind, ...stats, email: opts.email, key: opts.key}), 'cli').then(() => {})
     await updateConf(folder, conf, rules)
 
+    const maxShown = opts.email ? opts.size ?? 3 : 3
+    let report: AnalyzeReport | null = null
     if (opts.email) {
-        const maxShown = opts.size || 3
         printReport(offRules, rulesByLevel, maxShown, stats, logger)
-        const report = buildReport(db, queries, rules)
+        report = buildReport(db, queries, rules)
         await writeReport(folder, report, logger)
         if (opts.key) {
             logger.log(chalk.blue('Thanks for using Azimutt analyze!'))
@@ -99,13 +103,17 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
             logger.log('')
         }
     } else {
-        const maxShown = 3
         printReport(offRules, rulesByLevel, maxShown, stats, logger)
         logger.log(chalk.blue('Had useful insights using Azimutt analyze?'))
         logger.log(chalk.blue('Add your professional email (ex: `--email your.name@company.com`) to get the full report in JSON.'))
         logger.log(chalk.blue(`Reach out to ${azimuttEmail} for feedback or suggest improvements ;)`))
         logger.log(chalk.blue(`Cheers!`))
         logger.log('')
+    }
+
+    if (opts.html) {
+        if (!report) report = buildReport(db, queries, rules)
+        await writeHtmlReport(folder, report, stats, maxShown, logger)
     }
 }
 
@@ -165,16 +173,6 @@ async function updateConf(folder: string, conf: RulesConf, rules: Record<RuleId,
     await fileWriteJson(path, usedConf)
 }
 
-type AnalyzeStats = {
-    nb_entities: number,
-    nb_relations: number,
-    nb_queries: number,
-    nb_types: number,
-    nb_rules: number,
-    nb_violations: number,
-    violations: Record<RuleLevel, number>,
-}
-
 function buildStats(db: Database, queries: DatabaseQuery[], rulesByLevel: Record<RuleLevel, RuleAnalyzed[]>): AnalyzeStats {
     const violationsByLevel: Record<RuleLevel, number> = mapValues(rulesByLevel, rules => rules.reduce((acc, rule) => acc + rule.violations.length, 0))
     return {
@@ -184,11 +182,17 @@ function buildStats(db: Database, queries: DatabaseQuery[], rulesByLevel: Record
         nb_types: db.types?.length || 0,
         nb_rules: Object.values(rulesByLevel).reduce((acc, rules) => acc + rules.length, 0),
         nb_violations: Object.values(violationsByLevel).reduce((acc, count) => acc + count, 0),
-        violations: violationsByLevel
+        violations: violationsByLevel,
     }
 }
 
-function printReport(offRules: RuleAnalyzed[], rulesByLevel: Record<string, RuleAnalyzed[]>, maxShown: number, stats: AnalyzeStats, logger: Logger): void {
+function ruleIgnores(rule: RuleAnalyzed): string {
+    return 'ignores' in rule.conf && Array.isArray(rule.conf.ignores)
+        ? ` (${pluralize(rule.conf.ignores.length, 'ignore')})`
+        : ''
+}
+
+function printReport(offRules: RuleAnalyzed[], rulesByLevel: Record<RuleLevel, RuleAnalyzed[]>, maxShown: number, stats: AnalyzeStats, logger: Logger): void {
     logger.log('')
     if (offRules.length > 0) {
         logger.log(`${pluralizeL(offRules, 'off rule')}: ${offRules.map(r => r.rule.name).join(', ')}`)
@@ -198,7 +202,7 @@ function printReport(offRules: RuleAnalyzed[], rulesByLevel: Record<string, Rule
         const levelViolationsCount = levelRules.reduce((acc, r) => acc + r.violations.length, 0)
         logger.log(`${levelViolationsCount} ${level} violations (${pluralizeL(levelRules, 'rule')}):`)
         levelRules.forEach(rule => {
-            const ignores = 'ignores' in rule.conf && Array.isArray(rule.conf.ignores) ? ` (${pluralize(rule.conf.ignores.length, 'ignore')})` : ''
+            const ignores = ruleIgnores(rule)
             logger.log(`  ${rule.violations.length} ${rule.rule.name}${ignores}${rule.violations.length > 0 ? ':' : ''}`)
             rule.violations.slice(0, maxShown).forEach(violation => {
                 logger.log(`    - ${violation.message}`)
@@ -210,7 +214,7 @@ function printReport(offRules: RuleAnalyzed[], rulesByLevel: Record<string, Rule
     })
     logger.log('')
     logger.log(`Found ${pluralize(stats.nb_entities, 'entity')}, ${pluralize(stats.nb_relations, 'relation')}, ${pluralize(stats.nb_queries, 'query')} and ${pluralize(stats.nb_types, 'type')} on the database.`)
-    logger.log(`Found ${stats.nb_violations} violations using ${stats.nb_rules} rules: ${ruleLevelsShown.map(l => `${(stats.violations[l] || 0)} ${l}`).join(', ')}.`)
+    logger.log(`Found ${stats.nb_violations} violations using ${stats.nb_rules} rules: ${ruleLevelsShown.map(l => `${stats.violations[l] || 0} ${l}`).join(', ')}.`)
     logger.log('')
 }
 
@@ -232,12 +236,29 @@ function buildRuleReport(rule: RuleAnalyzed): AnalyzeReportRule {
         attribute: v.attribute,
         extra: v.extra,
     }))
-    return {name: rule.rule.name, level, conf, violations}
+    return {name: rule.rule.name, level, conf, violations, totalViolations: violations.length}
 }
 
 async function writeReport(folder: string, report: AnalyzeReport, logger: Logger): Promise<void> {
     const path = pathJoin(folder, `report_${dateToIsoFilename(new Date())}.azimutt.json`)
     await fileWriteJson(path, report)
+    logger.log(`Analysis report written to ${path}`)
+    logger.log('')
+}
+
+async function writeHtmlReport(folder: string, report: AnalyzeReport, stats: AnalyzeStats, maxShown: number, logger: Logger): Promise<void> {
+    const path = pathJoin(folder, `report_${dateToIsoFilename(new Date())}.azimutt.html`)
+    const {analysis} = report
+    const rules = Object.values(analysis).map(({violations, ...rule}) => ({...rule, violations: violations.slice(0, maxShown)}))
+    const {nb_entities, nb_relations, nb_queries, nb_types, nb_rules} = stats
+    const reportResult: AnalyzeReportHtmlResult = {rules, stats: {nb_entities, nb_relations, nb_queries, nb_types, nb_rules}}
+
+    let html = await fileRead('./resources/report.html')
+    html = html.replace(
+        '<script id="data"></script>',
+        `<script id="data">const __REPORT__ = ${JSON.stringify(reportResult)}</script>`
+    )
+    await fileWrite(path, html)
     logger.log(`Analysis report written to ${path}`)
     logger.log('')
 }

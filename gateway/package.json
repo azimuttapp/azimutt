@@ -34,7 +34,7 @@
     "lint": "tsc --noEmit && eslint .",
     "lint:fix": "tsc --noEmit && eslint . --fix",
     "build": "rm -rf ./out && tsc",
-    "build:do": "npm install --production=false && npm run build && npm ci",
+    "build:do": "npm ci --production=false && npm run build",
     "build:docker:prod": "docker build . -t azimutt-gateway --build-arg APP_ENV=production",
     "preview": "node out/start.js",
     "dry-publish": "pnpm run build && pnpm test && pnpm pack"

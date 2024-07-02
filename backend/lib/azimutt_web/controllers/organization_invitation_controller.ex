@@ -2,7 +2,6 @@ defmodule AzimuttWeb.OrganizationInvitationController do
   require Logger
   use AzimuttWeb, :controller
   alias Azimutt.Organizations
-  alias Azimutt.Services.StripeSrv
   action_fallback(AzimuttWeb.FallbackController)
 
   def show(conn, %{"invitation_id" => invitation_id}) do
@@ -27,15 +26,6 @@ defmodule AzimuttWeb.OrganizationInvitationController do
 
     case Organizations.accept_organization_invitation(invitation_id, current_user, now) do
       {:ok, invitation} ->
-        if invitation.organization.stripe_subscription_id do
-          {:ok, organization} = Organizations.get_organization(invitation.organization_id, current_user)
-
-          StripeSrv.update_quantity(
-            organization.stripe_subscription_id,
-            length(organization.members)
-          )
-        end
-
         conn
         |> put_flash(
           :info,

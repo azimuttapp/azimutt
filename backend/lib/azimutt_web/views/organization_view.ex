@@ -1,6 +1,11 @@
 defmodule AzimuttWeb.OrganizationView do
   use AzimuttWeb, :view
 
+  def format_datetime(date) do
+    {:ok, formatted} = Timex.format(date, "{Mshort} {D}, {YYYY} at {h24}:{m}")
+    formatted
+  end
+
   def last_update(datetime) do
     {:ok, relative_str} = datetime |> Timex.format("{relative}", :relative)
     relative_str

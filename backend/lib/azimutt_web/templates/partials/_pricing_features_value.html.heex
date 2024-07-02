@@ -1,0 +1,12 @@
+<%= cond do %>
+    <% @value == true -> %>
+        <Icon.check kind="outline" class="mx-auto h-5 w-5 text-indigo-600" /><span class="sr-only">Yes</span>
+    <% @value == false -> %>
+        <Icon.x_mark kind="mini" class="mx-auto h-5 w-5 text-gray-400" /><span class="sr-only">No</span>
+    <% is_binary(@value) || is_number(@value) -> %>
+        <span class={if @selected, do: "font-semibold text-indigo-600", else: "text-gray-900"}><%= @value %></span>
+    <% @value == nil -> %>
+        <span class={if @selected, do: "font-semibold text-indigo-600", else: "text-gray-900"}>∞</span>
+    <% true -> %>
+        <span class="text-gray-900">???: <%= @value %></span>
+<% end %>

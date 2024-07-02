@@ -79,9 +79,9 @@ organizationUrl organization =
     organization |> Maybe.filter (\id -> id /= OrganizationId.zero) |> Maybe.mapOrElse (\id -> "/organizations/" ++ id) dashboardUrl
 
 
-organizationBillingUrl : OrganizationId -> String -> String
+organizationBillingUrl : Maybe OrganizationId -> String -> String
 organizationBillingUrl organization source =
-    "/organizations/" ++ organization ++ "/billing?source=" ++ source
+    "/organizations/" ++ (organization |> Maybe.withDefault OrganizationId.zero) ++ "/billing?source=" ++ source
 
 
 blogUrl : String

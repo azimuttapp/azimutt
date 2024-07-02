@@ -5,16 +5,14 @@ import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 
 
 type alias ProjectRef =
-    { organization : Organization
-    , id : ProjectId
-    }
+    { id : Maybe ProjectId, organization : Maybe Organization }
 
 
 zero : ProjectRef
 zero =
-    { organization = Organization.zero, id = ProjectId.zero }
+    { id = Just ProjectId.zero, organization = Just Organization.zero }
 
 
 one : ProjectRef
 one =
-    { organization = Organization.one, id = ProjectId.one }
+    { id = Just ProjectId.one, organization = Just Organization.one }

@@ -24,17 +24,19 @@ describe('legacyProject', () => {
     const plan: LegacyPlan = {
         id: LegacyPlanId.enum.free,
         name: 'Free plan',
+        data_exploration: true,
+        colors: true,
+        aml: true,
+        schema_export: true,
+        ai: true,
+        analysis: "snapshot",
+        project_export: true,
         projects: 2,
-        layouts: 2,
+        project_dbs: 2,
+        project_layouts: 3,
         layout_tables: 10,
-        memos: 1,
-        groups: 1,
-        colors: false,
-        local_save: false,
-        private_links: false,
-        sql_export: false,
-        db_analysis: false,
-        db_access: false,
+        project_doc: 10,
+        project_share: true,
         streak: 0
     }
     const organization: LegacyOrganization = {

@@ -6,7 +6,6 @@ defmodule AzimuttWeb.OrganizationMemberController do
   alias Azimutt.Organizations.Organization
   alias Azimutt.Organizations.OrganizationInvitation
   alias Azimutt.Organizations.OrganizationMember
-  alias Azimutt.Services.StripeSrv
   alias Azimutt.Utils.Uuid
   action_fallback AzimuttWeb.FallbackController
 
@@ -74,11 +73,7 @@ defmodule AzimuttWeb.OrganizationMemberController do
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user),
          {:ok, %OrganizationMember{} = member} <- Organizations.remove_member(organization, user_id) do
-      # FIXME: send email to removed user
-      if organization.stripe_subscription_id do
-        StripeSrv.update_quantity(organization.stripe_subscription_id, length(organization.members) - 1)
-      end
-
+      # TODO: send email to removed user
       if member.user.id == current_user.id do
         conn
         |> put_flash(:info, "Successfully leaved #{organization.name}.")
@@ -93,7 +88,7 @@ defmodule AzimuttWeb.OrganizationMemberController do
 
   defp render_index(conn, organization, %User{} = current_user, changeset) do
     with {:ok, plan} <- Organizations.get_organization_plan(organization, current_user) do
-      # FIXME: create a `Organizations.get_pending_invitations(organization.id)`
+      # TODO: create a `Organizations.get_pending_invitations(organization.id)`
       organization_invitations =
         organization.invitations
         |> Enum.filter(fn invitation -> invitation.accepted_at == nil and invitation.cancel_at == nil and invitation.refused_at == nil end)

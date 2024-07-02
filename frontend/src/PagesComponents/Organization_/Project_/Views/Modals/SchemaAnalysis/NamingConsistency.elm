@@ -1,6 +1,6 @@
 module PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis.NamingConsistency exposing (Model, compute, heading, view)
 
-import Components.Slices.ProPlan as ProPlan
+import Components.Slices.PlanDialog as PlanDialog
 import Dict exposing (Dict)
 import Html exposing (Html, div, text)
 import Libs.Html exposing (bText)
@@ -74,4 +74,4 @@ heading errors =
 
 view : ProjectRef -> SchemaName -> List Model -> Html msg
 view project defaultSchema errors =
-    div [] [ ProPlan.analysisResults project errors (\t -> div [] [ bText (TableId.show defaultSchema t.id), text " has uncommon naming case." ]) ]
+    div [] [ PlanDialog.analysisResults project errors (\t -> div [] [ bText (TableId.show defaultSchema t.id), text " has uncommon naming case." ]) ]

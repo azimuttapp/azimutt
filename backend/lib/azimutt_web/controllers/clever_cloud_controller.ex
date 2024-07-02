@@ -51,7 +51,7 @@ defmodule AzimuttWeb.CleverCloudController do
              Accounts.get_user_by_email(email)
              |> Result.flat_map_error(fn _ -> Accounts.register_clever_cloud_user(user_params, UserAuth.get_attribution(conn), now) end),
            {:ok, resource} <- CleverCloud.set_organization_if_needed(resource, user, now),
-           {:ok, _} <- CleverCloud.add_member_if_needed(resource, resource.organization, user) do
+           {:ok, _} <- CleverCloud.add_member_if_needed(resource.organization, user) do
         conn = conn |> UserAuth.clever_cloud_sso(resource, user)
         project = Projects.list_projects(resource.organization, user) |> Enum.sort_by(& &1.updated_at, {:desc, DateTime}) |> List.first()
 

@@ -1,0 +1,7 @@
+<%= @feature.name %>
+<%= if @feature[:description] do %>
+<div class="relative inline-block group">
+    <Icon.question_mark_circle kind="outline" class="h-5 w-5 inline" />
+    <div class="z-10 absolute left-6 top-0 w-max max-w-40 px-3 py-1 rounded-md bg-black text-white text-sm invisible group-hover:visible"><%= @feature.description %></div>
+</div>
+<% end %>
