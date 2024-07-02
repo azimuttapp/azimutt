@@ -11,14 +11,14 @@ aml =
     { name = "aml" }
 
 
-analysis : { name : String, preview : String, snapshot : String, trends : String, limit : Int }
+analysis : { name : String, preview : String, snapshot : String, trends : String, limit : Int, default : Bool }
 analysis =
-    { name = "analysis", preview = "preview", snapshot = "snapshot", trends = "trends", limit = 3 }
+    { name = "analysis", preview = "preview", snapshot = "snapshot", trends = "trends", limit = 3, default = False }
 
 
-colors : { name : String }
+colors : { name : String, default : Bool }
 colors =
-    { name = "colors" }
+    { name = "colors", default = False }
 
 
 dataExploration : { name : String }
@@ -28,7 +28,7 @@ dataExploration =
 
 layoutTables : { name : String, default : Int }
 layoutTables =
-    { name = "layout_tables", default = 3 }
+    { name = "layout_tables", default = 10 }
 
 
 projects : { name : String, default : Int }
@@ -51,16 +51,16 @@ projectExport =
     { name = "project_export" }
 
 
-projectLayouts : { name : String }
+projectLayouts : { name : String, default : Int }
 projectLayouts =
-    { name = "project_layouts" }
+    { name = "project_layouts", default = 1 }
 
 
-projectShare : { name : String }
+projectShare : { name : String, default : Bool }
 projectShare =
-    { name = "project_share" }
+    { name = "project_share", default = False }
 
 
-schemaExport : { name : String }
+schemaExport : { name : String, default : Bool }
 schemaExport =
-    { name = "schema_export" }
+    { name = "schema_export", default = False }

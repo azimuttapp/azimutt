@@ -28,37 +28,37 @@ type alias Organization =
 
 canShowTables : Int -> Int -> { x | organization : Maybe Organization } -> Bool
 canShowTables newTables layoutTables projectRef =
-    projectRef.organization |> Maybe.mapOrElse (.plan >> .layoutTables >> Maybe.all (\max -> layoutTables + newTables <= max)) False
+    projectRef.organization |> Maybe.mapOrElse (.plan >> .layoutTables >> Maybe.all (\max -> layoutTables + newTables <= max)) (newTables + layoutTables <= Feature.layoutTables.default)
 
 
 canChangeColor : { x | organization : Maybe Organization } -> Bool
 canChangeColor projectRef =
-    projectRef.organization |> Maybe.mapOrElse (.plan >> .colors) False
+    projectRef.organization |> Maybe.mapOrElse (.plan >> .colors) Feature.colors.default
 
 
 isLastLayout : Int -> { x | organization : Maybe Organization } -> Bool
 isLastLayout layouts projectRef =
-    projectRef.organization |> Maybe.mapOrElse (.plan >> .projectLayouts >> Maybe.any (\l -> layouts >= l)) False
+    projectRef.organization |> Maybe.mapOrElse (.plan >> .projectLayouts >> Maybe.any (\l -> layouts >= l)) (layouts + 1 == Feature.projectLayouts.default)
 
 
 canCreateLayout : Int -> { x | organization : Maybe Organization } -> Bool
 canCreateLayout layouts projectRef =
-    projectRef.organization |> Maybe.mapOrElse (.plan >> .projectLayouts >> Maybe.all (\max -> max + 1 > layouts)) False
+    projectRef.organization |> Maybe.mapOrElse (.plan >> .projectLayouts >> Maybe.all (\max -> max + 1 > layouts)) (layouts < Feature.projectLayouts.default)
 
 
 canExportSchema : { x | organization : Maybe Organization } -> Bool
 canExportSchema projectRef =
-    projectRef.organization |> Maybe.mapOrElse (.plan >> .schemaExport) False
+    projectRef.organization |> Maybe.mapOrElse (.plan >> .schemaExport) Feature.schemaExport.default
 
 
 canShareProject : { x | organization : Maybe Organization } -> Bool
 canShareProject projectRef =
-    projectRef.organization |> Maybe.mapOrElse (.plan >> .projectShare) False
+    projectRef.organization |> Maybe.mapOrElse (.plan >> .projectShare) Feature.projectShare.default
 
 
 canAnalyse : { x | organization : Maybe Organization } -> Bool
 canAnalyse projectRef =
-    projectRef.organization |> Maybe.mapOrElse (\o -> o.plan.analysis /= Feature.analysis.preview) False
+    projectRef.organization |> Maybe.mapOrElse (\o -> o.plan.analysis /= Feature.analysis.preview) Feature.analysis.default
 
 
 canSaveProject : Int -> Organization -> Bool

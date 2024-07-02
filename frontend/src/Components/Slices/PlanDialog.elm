@@ -30,37 +30,13 @@ import Services.Backend as Backend exposing (TableColorTweet)
 import Services.Lenses exposing (setColors, setResult)
 
 
-draftProjectWarning : Html msg
-draftProjectWarning =
-    warning Tw.indigo
-        "Oh no! You are limited by your draft project 😕"
-        [ p [] [ text "As your project is ", bText "still in draft", text ", you have free plan limitations." ]
-        , p [] [ text "Save it to an organization with a ", bText "paid plan", text " to unlock them." ]
-        , p [] [ text "Subscribing to Azimutt paid plans will unlock more power, ", extLink "/pricing" [ class "link" ] [ text "check it out" ], text "." ]
-        ]
-        []
-
-
-draftProjectModalBody : msg -> HtmlId -> Html msg
-draftProjectModalBody close titleId =
-    modalBody Tw.indigo
-        Icon.CubeTransparent
-        ( titleId, "Oh no! You are limited by your draft project 😕" )
-        [ p [ class "text-sm text-gray-500" ] [ text "As your project is ", bText "still in draft", text ", you have free plan limitations." ]
-        , p [ class "text-sm text-gray-500" ] [ text "Save it to an organization with a ", bText "paid plan", text " to unlock them." ]
-        , p [ class "text-sm text-gray-500" ] [ text "Subscribing to Azimutt paid plan will unlock more power, ", extLink "/pricing" [ class "link" ] [ text "check it out" ], text "." ]
-        ]
-        [ Button.white3 Tw.gray [ onClick close, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Close" ]
-        ]
-
-
 projectsModalBody : ProjectRef -> msg -> HtmlId -> Html msg
 projectsModalBody project close titleId =
     let
         ( color, limit ) =
             ( Tw.teal, project.organization |> Maybe.andThen (.plan >> .projects) |> Maybe.withDefault Feature.projects.default )
     in
-    showModalBody ( project, close, color )
+    modalBody color
         Icon.Collection
         ( titleId, "Projects" )
         [ p [ class "text-sm text-gray-500" ] [ bText ("Oh! Free plans are limited to " ++ String.pluralize "project" limit ++ ".") ]
@@ -79,7 +55,6 @@ layoutsWarning project =
         color =
             Tw.rose
     in
-    -- don't use `showWarning` to avoid the "draft project" state as it's not blocking
     warning color
         "You've reached a plan limit!"
         [ p [] [ text "Hey! We are very happy you use and like layouts in Azimutt." ]
@@ -95,7 +70,7 @@ layoutsModalBody project close titleId =
         color =
             Tw.rose
     in
-    showModalBody ( project, close, color )
+    modalBody color
         Icon.Template
         ( titleId, "New layout" )
         [ p [ class "text-sm text-gray-500" ] [ text "Hey! It's so great to see people using Azimutt and we are quite proud to make this tool for you. It's already great but we have so much more to do to make it at full potential, we need your support to make it grow and help more and more people." ]
@@ -112,7 +87,7 @@ layoutTablesModalBody project close titleId =
         ( color, limit ) =
             ( Tw.sky, project.organization |> Maybe.andThen (.plan >> .layoutTables) |> Maybe.withDefault Feature.layoutTables.default )
     in
-    showModalBody ( project, close, color )
+    modalBody color
         Icon.Calculator
         ( titleId, "Tables in layout" )
         [ p [ class "text-sm text-gray-500" ] [ bText ("Ooops, you just hit a plan limit, you can only add " ++ String.pluralize "table" limit ++ " per layout!") ]
@@ -186,7 +161,7 @@ colorsModalBody project update model close titleId =
         ( wrap, color, tweetInput ) =
             ( update model, Tw.orange, "change-color-tweet" )
     in
-    showModalBody ( project, close, color )
+    modalBody color
         Icon.ColorSwatch
         ( titleId, "Change colors" )
         [ p [ class "text-sm text-gray-500" ] [ bText "Oh! You found an paid feature!" ]
@@ -288,7 +263,7 @@ privateLinkWarning project =
         color =
             Tw.cyan
     in
-    showWarning ( project, color )
+    warning color
         "Private links are an enterprise feature!"
         [ p [] [ text "They hold a great power to easily share projects or embed them in documentation." ]
         , p [] [ text "And thus, we keep them fresh for users wise enough to use our best plan 😉" ]
@@ -303,7 +278,7 @@ sqlExportWarning project =
         color =
             Tw.green
     in
-    showWarning ( project, color )
+    warning color
         "SQL export is a paid feature!"
         [ p [] [ text "Getting a paid plan is the best support you could give to Azimutt, allowing us to invest even more to make it always better." ]
         , p [] [ text "It will unlock many features for you, check it out below. Or reach us if you have any question on ", span [ title "Azimutt" ] [ text "🧭" ] ]
@@ -318,7 +293,7 @@ analysisWarning project =
         color =
             Tw.fuchsia
     in
-    showWarning ( project, color )
+    warning color
         "Get full analysis with Team plan!"
         [ p [] [ text "Schema analysis is still an early feature but a very important one in Azimutt." ]
         , p [] [ text "It analyzes your schema to give you insights on possible improvements. In free mode you can only see limited results." ]
@@ -358,15 +333,6 @@ analysisResults project items render =
             )
 
 
-showModalBody : ( ProjectRef, msg, Color ) -> Icon -> ( HtmlId, String ) -> List (Html msg) -> List (Html msg) -> Html msg
-showModalBody ( project, close, color ) icon ( titleId, title ) content buttons =
-    if isDraft project then
-        draftProjectModalBody close titleId
-
-    else
-        modalBody color icon ( titleId, title ) content buttons
-
-
 modalBody : Color -> Icon -> ( HtmlId, String ) -> List (Html msg) -> List (Html msg) -> Html msg
 modalBody color icon ( titleId, title ) content buttons =
     div [ class "max-w-2xl" ]
@@ -381,15 +347,6 @@ modalBody color icon ( titleId, title ) content buttons =
             ]
         , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50 rounded-b-lg" ] buttons
         ]
-
-
-showWarning : ( ProjectRef, Color ) -> String -> List (Html msg) -> List (Html msg) -> Html msg
-showWarning ( project, color ) title content buttons =
-    if isDraft project then
-        draftProjectWarning
-
-    else
-        warning color title content buttons
 
 
 warning : Color -> String -> List (Html msg) -> List (Html msg) -> Html msg
@@ -439,9 +396,7 @@ doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "PlanDialog"
         |> Chapter.renderStatefulComponentList
-            [ ( "draftProjectWarning", \_ -> draftProjectWarning )
-            , ( "draftProjectModalBody", \_ -> draftProjectModalBody docClose docTitleId )
-            , ( "projectsModalBody", \_ -> projectsModalBody docProjectRef docClose docTitleId )
+            [ ( "projectsModalBody", \_ -> projectsModalBody docProjectRef docClose docTitleId )
             , ( "layoutsWarning", \_ -> layoutsWarning docProjectRef )
             , ( "layoutsModalBody", \_ -> layoutsModalBody docProjectRef docClose docTitleId )
             , ( "layoutTablesModalBody", \_ -> layoutTablesModalBody docProjectRef docClose docTitleId )
