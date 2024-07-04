@@ -855,6 +855,9 @@ importers:
       '@dbml/core':
         specifier: 3.4.3
         version: 3.4.3
+      '@dbml/parse':
+        specifier: 3.4.3
+        version: 3.4.3(lodash@4.17.21)
       zod:
         specifier: 3.23.8
         version: 3.23.8
@@ -1521,8 +1524,8 @@ packages:
   '@dbml/core@3.4.3':
     resolution: {integrity: sha512-bvjp3BSjBWo6JuFAIe8zd1for09XTha4Sy0F73+Ca+7Yu6HbFxSGSTz/Sh/YecjcBMniTbKZPRNWBTyLJD18bw==}
 
-  '@dbml/parse@3.5.1':
-    resolution: {integrity: sha512-00SdLhsKSKb/PQkEzIVKnsulyuDTqsASGOg2MMq1EWkA2z0LobrseR3iBXsb9YEZh6Nup31Xm+TcKo6IByXrpg==}
+  '@dbml/parse@3.4.3':
+    resolution: {integrity: sha512-U6jZxMaxT2IA/qPjVDjvip0BXg7GK/53ytpzjXPyu+tVCPSiwWnqMnoH9xfNz1pbLIF4xKW219Fpt0dTXguXhQ==}
     peerDependencies:
       lodash: ^4.17.21
 
@@ -10142,13 +10145,13 @@ snapshots:
 
   '@dbml/core@3.4.3':
     dependencies:
-      '@dbml/parse': 3.5.1(lodash@4.17.21)
+      '@dbml/parse': 3.4.3(lodash@4.17.21)
       antlr4: 4.13.1
       lodash: 4.17.21
       parsimmon: 1.18.1
       pluralize: 8.0.0
 
-  '@dbml/parse@3.5.1(lodash@4.17.21)':
+  '@dbml/parse@3.4.3(lodash@4.17.21)':
     dependencies:
       lodash: 4.17.21
 
