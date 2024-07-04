@@ -34,5 +34,5 @@ defmodule Azimutt.Accounts.UserAuthToken do
     |> cast(%{deleted_at: now}, [:deleted_at])
   end
 
-  def is_valid?(value), do: Uuid.is_valid?(value)
+  def valid?(value), do: Uuid.valid?(value)
 end

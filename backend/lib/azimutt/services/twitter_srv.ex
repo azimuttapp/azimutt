@@ -25,7 +25,7 @@ defmodule Azimutt.Services.TwitterSrv do
       tweet.user.screen_name
     end
 
-    def is_after?(%ExTwitter.Model.Tweet{} = tweet, date) do
+    def after?(%ExTwitter.Model.Tweet{} = tweet, date) do
       Timex.parse(tweet.created_at, "{WDshort} {Mshort} {D} {h24}:{m}:{s} {Z} {YYYY}")
       |> Result.map(fn created_at -> Timex.compare(created_at, date) == 1 end)
       |> Result.or_else(false)

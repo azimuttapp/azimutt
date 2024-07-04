@@ -47,7 +47,7 @@ defmodule Azimutt.Application do
 
   defp check_global_organization do
     if Azimutt.config(:global_organization) do
-      if !Uuid.is_valid?(Azimutt.config(:global_organization)) do
+      if !Uuid.valid?(Azimutt.config(:global_organization)) do
         raise "Configuration error: GLOBAL_ORGANIZATION '#{Azimutt.config(:global_organization)}' is not a valid UUID. Can't start."
       end
 

@@ -38,7 +38,7 @@ defmodule AzimuttWeb.Api.OrganizationController do
          {:ok, tweet} <- TwitterSrv.get_tweet(tweet_id) |> Result.map_error(fn e -> {:bad_request, e.message} end) do
       errors =
         [
-          if(tweet |> TwitterSrv.Tweet.is_after?(now |> Timex.shift(minutes: -10)), do: nil, else: "Tweet not within the last 10 minutes"),
+          if(tweet |> TwitterSrv.Tweet.after?(now |> Timex.shift(minutes: -10)), do: nil, else: "Tweet not within the last 10 minutes"),
           if(tweet |> TwitterSrv.Tweet.has_mention?("azimuttapp"), do: nil, else: "Tweet doesn't mention @azimuttapp"),
           if(tweet |> TwitterSrv.Tweet.has_url?("https://azimutt.app"), do: nil, else: "Tweet doesn't link https://azimutt.app")
         ]

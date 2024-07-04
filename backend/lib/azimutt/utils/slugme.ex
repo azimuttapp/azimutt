@@ -43,13 +43,13 @@ defmodule Azimutt.Utils.Slugme do
       |> put_change(:slug, new_slug)
       |> unsafe_validate_unique([:slug], Azimutt.Repo)
 
-    if is_slug_unique(new_changeset) do
+    if slug_unique?(new_changeset) do
       new_slug
     else
       make_unique(changeset, slug, attempt + 1)
     end
   end
 
-  defp is_slug_unique(%Ecto.Changeset{valid?: true}), do: true
-  defp is_slug_unique(_), do: false
+  defp slug_unique?(%Ecto.Changeset{valid?: true}), do: true
+  defp slug_unique?(_), do: false
 end

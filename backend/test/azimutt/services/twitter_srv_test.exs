@@ -14,7 +14,7 @@ defmodule Azimutt.Services.TwitterSrvTest do
     test "get_tweet" do
       {:ok, tweet} = TwitterSrv.get_tweet("1603309394250326016")
       assert "azimuttapp" = tweet |> Tweet.get_user_name()
-      assert tweet |> Tweet.is_after?(Timex.parse!("2022-12-14", "{YYYY}-{0M}-{D}"))
+      assert tweet |> Tweet.after?(Timex.parse!("2022-12-14", "{YYYY}-{0M}-{D}"))
       assert tweet |> Tweet.has_url?("https://sqlfordevs.io")
       assert tweet |> Tweet.has_mention?("tobias_petry")
 

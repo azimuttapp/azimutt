@@ -52,28 +52,28 @@ defmodule Azimutt.Utils.Result do
   @doc """
   Returns true if Result is :ok
   ## Examples
-      iex> {:ok, 1} |> Result.is_ok?()
+      iex> {:ok, 1} |> Result.ok?()
       true
-      iex> {:error, 1} |> Result.is_ok?()
+      iex> {:error, 1} |> Result.ok?()
       false
   """
-  def is_ok?(:ok), do: true
-  def is_ok?(:error), do: false
-  def is_ok?({:ok, _}), do: true
-  def is_ok?({:error, _}), do: false
+  def ok?(:ok), do: true
+  def ok?(:error), do: false
+  def ok?({:ok, _}), do: true
+  def ok?({:error, _}), do: false
 
   @doc """
   Returns true if Result is :error
   ## Examples
-      iex> {:ok, 1} |> Result.is_error?()
+      iex> {:ok, 1} |> Result.error?()
       false
-      iex> {:error, 1} |> Result.is_error?()
+      iex> {:error, 1} |> Result.error?()
       true
   """
-  def is_error?(:ok), do: false
-  def is_error?(:error), do: true
-  def is_error?({:ok, _}), do: false
-  def is_error?({:error, _}), do: true
+  def error?(:ok), do: false
+  def error?(:error), do: true
+  def error?({:ok, _}), do: false
+  def error?({:error, _}), do: true
 
   @doc """
   Transforms the Result value (when :ok).

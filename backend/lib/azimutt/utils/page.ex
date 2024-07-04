@@ -99,10 +99,10 @@ defmodule Azimutt.Utils.Page do
       value |> String.starts_with?("!") ->
         dynamic([t], not (^filter_clause(field, value |> String.trim_leading("!"))))
 
-      value |> Timex.parse("{YYYY}-{0M}-{0D}") |> Result.is_ok?() ->
+      value |> Timex.parse("{YYYY}-{0M}-{0D}") |> Result.ok?() ->
         dynamic([t], fragment("to_char(?, 'yyyy-mm-dd')", field(t, ^field)) == ^value)
 
-      value |> Timex.parse("{YYYY}-{0M}") |> Result.is_ok?() ->
+      value |> Timex.parse("{YYYY}-{0M}") |> Result.ok?() ->
         dynamic([t], fragment("to_char(?, 'yyyy-mm')", field(t, ^field)) == ^value)
 
       value |> String.contains?("%") ->

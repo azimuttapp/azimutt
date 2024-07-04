@@ -126,7 +126,7 @@ defmodule AzimuttWeb.UserAuth do
   and remember me token.
   """
   def fetch_current_user(conn, _opts) do
-    auth_token = conn.params["auth-token"] || conn.req_headers |> Enum.find_value(fn {key, value} -> if key == "auth-token" && UserAuthToken.is_valid?(value), do: value end)
+    auth_token = conn.params["auth-token"] || conn.req_headers |> Enum.find_value(fn {key, value} -> if key == "auth-token" && UserAuthToken.valid?(value), do: value end)
     {user_token, conn} = ensure_user_token(conn)
 
     user =
@@ -188,11 +188,11 @@ defmodule AzimuttWeb.UserAuth do
         conn
 
       !user.confirmed_at && Azimutt.config(:require_email_confirmation) && !Azimutt.config(:skip_email_confirmation) &&
-        !is_email_confirm_path(conn, path) && Date.compare(user.created_at, ~D[2023-04-19]) == :gt ->
+        !email_confirm_path?(conn, path) && Date.compare(user.created_at, ~D[2023-04-19]) == :gt ->
         conn |> redirect(to: Routes.user_confirmation_path(conn, :new)) |> halt()
 
       user.onboarding && !Azimutt.config(:skip_onboarding_funnel) &&
-        !is_onboarding_path(conn, path) && !is_email_confirm_path(conn, path) ->
+        !onboarding_path?(conn, path) && !email_confirm_path?(conn, path) ->
         conn |> redirect(to: Routes.user_onboarding_path(conn, user.onboarding |> String.to_atom())) |> halt()
 
       true ->
@@ -200,8 +200,8 @@ defmodule AzimuttWeb.UserAuth do
     end
   end
 
-  defp is_email_confirm_path(conn, path), do: path |> String.starts_with?(Routes.user_confirmation_path(conn, :new))
-  defp is_onboarding_path(conn, path), do: path |> String.starts_with?(Routes.user_onboarding_path(conn, :index))
+  defp email_confirm_path?(conn, path), do: path |> String.starts_with?(Routes.user_confirmation_path(conn, :new))
+  defp onboarding_path?(conn, path), do: path |> String.starts_with?(Routes.user_onboarding_path(conn, :index))
 
   def require_authed_user_api(conn, _opts) do
     if conn.assigns[:current_user] do
