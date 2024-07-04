@@ -397,8 +397,8 @@ importers:
         specifier: ^0.1.1
         version: 0.1.1
       '@azimutt/connector-mariadb':
-        specifier: ^0.1.1
-        version: 0.1.1
+        specifier: ^0.1.2
+        version: 0.1.2
       '@azimutt/connector-mongodb':
         specifier: ^0.1.1
         version: 0.1.1(socks@2.8.3)
@@ -1183,8 +1183,8 @@ packages:
   '@azimutt/connector-couchbase@0.1.1':
     resolution: {integrity: sha512-c0ZSWRqR+I6qzrgROUpoAuzkTWdPEz6Jz/Na+0Lt/1Uqyr9Vj1JSm4dwgh53RN0G8kC4HPJWpD8gC58Z0tyErA==}
 
-  '@azimutt/connector-mariadb@0.1.1':
-    resolution: {integrity: sha512-p73qlO6BYmwidyOJxMAZ164bP093XvYda1u6Xh8+dFZ68OJBYwuiBfU5Oz8YbKOk00rzfuQ+r77PlnRltgQtVQ==}
+  '@azimutt/connector-mariadb@0.1.2':
+    resolution: {integrity: sha512-Bxp6u82AlM3rw9qiamYdJQqqKkDKfvHOcVrRKCviVWXcrmwG2FIH8mdrtpfnSku0il+7Gy3S2lfS1J6wstdAcg==}
 
   '@azimutt/connector-mongodb@0.1.1':
     resolution: {integrity: sha512-qAP52R/tz59XMOO1BptYSrNzmpPujBquxx/jFAajF2nKHldG7KvDsbeSEoTLpjUNOPkEpKWSfwXW6g+LqyDYLA==}
@@ -9667,13 +9667,11 @@ snapshots:
       - encoding
       - supports-color
 
-  '@azimutt/connector-mariadb@0.1.1':
+  '@azimutt/connector-mariadb@0.1.2':
     dependencies:
-      '@azimutt/models': 0.1.8
-      '@azimutt/utils': 0.1.3
+      '@azimutt/models': link:libs/models
+      '@azimutt/utils': link:libs/utils
       mariadb: 3.3.0
-    transitivePeerDependencies:
-      - encoding
 
   '@azimutt/connector-mongodb@0.1.1(socks@2.8.3)':
     dependencies:

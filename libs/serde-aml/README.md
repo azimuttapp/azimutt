@@ -111,7 +111,7 @@ Other concepts:
 - update `package.json` version
 - update lib versions (`pnpm -w run update` + manual)
 - test with `pnpm run dry-publish` and check `azimutt-serde-aml-x.y.z.tgz` content
-- launch `pnpm publish --access public`
+- launch `npm publish --access public`
 
 View it on [npm](https://www.npmjs.com/package/@azimutt/serde-aml).
 

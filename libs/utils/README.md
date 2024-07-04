@@ -7,6 +7,6 @@ A library with several basic helpers used in other Azimutt libs.
 - update `package.json` version
 - update lib versions (`pnpm -w run update` + manual)
 - test with `pnpm run dry-publish` and check `azimutt-utils-x.y.z.tgz` content
-- launch `pnpm publish --access public`
+- launch `npm publish --access public`
 
 View it on [npm](https://www.npmjs.com/package/@azimutt/utils).

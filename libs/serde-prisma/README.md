@@ -11,7 +11,7 @@ This lib is able to parse and generate [Prisma Schema](https://www.prisma.io/doc
 - update `package.json` version
 - update lib versions (`pnpm -w run update` + manual)
 - test with `pnpm run dry-publish` and check `azimutt-serde-prisma-x.y.z.tgz` content
-- launch `pnpm publish --access public`
+- launch `npm publish --access public`
 
 View it on [npm](https://www.npmjs.com/package/@azimutt/serde-prisma).
 

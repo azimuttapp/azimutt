@@ -133,7 +133,7 @@ function buildEntity(table: RawTable, columns: RawColumn[], primaryKeyColumns: R
         kind: table.table_kind === 'VIEW' || table.table_kind === 'SYSTEM VIEW' ? 'view' as const : undefined,
         def: table.definition || undefined,
         attrs: columns.slice(0)
-            .sort((a, b) => a.column_index - b.column_index)
+            .sort((a, b) => a.column_index > b.column_index ? 1 : a.column_index < b.column_index ? -1 : 0)
             .map(c => buildAttribute(c, jsonColumns[c.column_name], polyColumns[c.column_name])),
         pk: primaryKeyColumns.length > 0 ? buildPrimaryKey(primaryKeyColumns) : undefined,
         indexes: indexes.length > 0 ? indexes.map(buildIndex) : undefined,
@@ -159,7 +159,7 @@ function buildEntity(table: RawTable, columns: RawColumn[], primaryKeyColumns: R
 export type RawColumn = {
     table_schema: string
     table_name: string
-    column_index: number
+    column_index: number | bigint
     column_name: string
     column_type: string
     column_nullable: 'YES' | 'NO'

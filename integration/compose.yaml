@@ -16,10 +16,10 @@ services:
     image: mariadb # https://hub.docker.com/_/mariadb
     restart: always
     environment:
-      MARIADB_DATABASE: azimutt_sample
       MARIADB_ROOT_PASSWORD: root
       MARIADB_USER: mariadb
       MARIADB_PASSWORD: mariadb
+      MARIADB_DATABASE: azimutt_sample
     volumes:
       - ./mariadb:/docker-entrypoint-initdb.d
     ports:
@@ -41,10 +41,10 @@ services:
     image: mysql # https://hub.docker.com/_/mysql
     restart: always
     environment:
-      MYSQL_DATABASE: azimutt_sample
       MYSQL_ROOT_PASSWORD: root
       MYSQL_USER: mysql
       MYSQL_PASSWORD: mysql
+      MYSQL_DATABASE: azimutt_sample
     volumes:
       - ./mysql:/docker-entrypoint-initdb.d
     ports:
