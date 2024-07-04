@@ -48,7 +48,7 @@ Start with `pnpm install` to install dependencies and set up the CLI, then you h
 
 ## Publish
 
-- update `package.json` and `src/version.ts` versions
+- update `package.json` version
 - update lib versions (`pnpm -w run update` + manual) 
 - test with `npm run dry-publish` and check `azimutt-x.y.z.tgz` content
 - launch `npm publish azimutt-x.y.z.tgz`

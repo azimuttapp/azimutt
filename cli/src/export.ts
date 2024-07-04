@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import {isNotUndefined, pluralizeL} from "@azimutt/utils";
-import {Connector, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/models";
+import {Connector, databaseToLegacy, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/models";
 import {getConnector} from "@azimutt/gateway";
 import {FileFormat, FilePath, fileWriteJson} from "./utils/file.js";
 import {logger} from "./utils/logger.js";
@@ -64,7 +64,7 @@ async function exportJsonSchema(url: DatabaseUrlParsed, opts: Opts, connector: C
     const schemas: string[] = [...new Set(database.entities?.map(t => t.schema)?.filter(isNotUndefined))]
     const file = filename(opts.output, url, schemas, opts.format)
     logger.log(`Writing schema to ${file} file ...`)
-    await fileWriteJson(file, database)
+    await fileWriteJson(file, databaseToLegacy(database))
     logger.log('')
     logger.log(chalk.green(`${connector.name} schema written in '${file}'.`))
     logger.log(`Found ${pluralizeL(database.entities || [], 'table')} in ${pluralizeL(schemas, 'schema')}.`)

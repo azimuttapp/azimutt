@@ -25,8 +25,8 @@
   },
   "devDependencies": {
     "@types/webextension-polyfill": "^0.8.3",
-    "esbuild": "^0.14.27",
-    "esbuild-plugin-copy": "^1.2.1",
-    "typescript": "^5.3.3"
+    "esbuild": "^0.14.54",
+    "esbuild-plugin-copy": "^1.6.0",
+    "typescript": "^5.5.3"
   }
 }

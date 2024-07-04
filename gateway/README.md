@@ -46,7 +46,7 @@ The `workspace:^` can't be used there...
 
 ## Publish
 
-- update `package.json` and `src/version.ts` versions
+- update `package.json` version
 - update lib versions (`pnpm -w run update` + manual)
 - test with `pnpm run dry-publish` and check `azimutt-gateway-x.y.z.tgz` content
 - launch `pnpm publish --access public`
