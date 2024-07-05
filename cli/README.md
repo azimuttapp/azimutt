@@ -48,10 +48,10 @@ Start with `pnpm install` to install dependencies and set up the CLI, then you h
 
 ## Publish
 
-- update `package.json` version
+- update `package.json` and `src/version.ts` version
 - update lib versions (`pnpm -w run update` + manual) 
 - test with `pnpm run dry-publish` and check `azimutt-x.y.z.tgz` content
-- launch `npm publish`
+- launch `pnpm publish --no-git-checks`
 
 View it on [npm](https://www.npmjs.com/package/azimutt).
 

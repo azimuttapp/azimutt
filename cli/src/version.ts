@@ -1,3 +1,1 @@
-import process from "process";
-
-export const version = process.env.npm_package_version || 'x.y.z'
+export const version = '0.1.18' // FIXME: `process.env.npm_package_version` is not available :/

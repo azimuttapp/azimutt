@@ -63,7 +63,7 @@ canAnalyse projectRef =
 
 canSaveProject : Int -> Organization -> Bool
 canSaveProject orgProjects organization =
-    organization.plan.projects |> Maybe.any (\p -> orgProjects < p)
+    organization.plan.projects |> Maybe.mapOrElse (\p -> orgProjects < p) True
 
 
 encode : Organization -> Value
