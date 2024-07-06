@@ -3,16 +3,18 @@
 
     <div class="mx-auto max-w-2xl space-y-16">
         <%= for plan <- @plans do %>
+        <% plan_slug = Azimutt.Utils.Slugme.slugify(plan.name) %>
         <div class="border-t border-gray-900/10">
             <div class={"-mt-px w-72 border-t-2 pt-10 md:w-80 #{if plan.id == @selected, do: "border-indigo-600", else: "border-transparent"}"}>
-                <h3 class={"text-sm font-semibold leading-6 #{if plan.id == @selected, do: "text-indigo-600", else: "text-gray-900"}"}><%= plan.name %></h3>
+                <h3 class={"text-sm font-semibold leading-6 #{if plan.id == @selected, do: "text-indigo-600", else: "text-gray-900"}"}><a href={"##{plan_slug}"} id={plan_slug}><%= plan.name %></a></h3>
                 <p class="mt-1 text-sm leading-6 text-gray-600"><%= plan.description %></p>
             </div>
 
             <div class="mt-10 space-y-10">
                 <%= for category <- @feature_categories do %>
+                <% category_slug = Azimutt.Utils.Slugme.slugify("#{category.name} #{plan.name}") %>
                 <div>
-                    <h4 class="text-sm font-semibold leading-6 text-gray-900"><%= category.name %></h4>
+                    <h4 class="text-sm font-semibold leading-6 text-gray-900"><a href={"##{category_slug}"} id={category_slug}><%= category.name %></a></h4>
                     <div class="relative mt-6">
                         <!-- Fake card background -->
                         <div aria-hidden="true" class="absolute inset-y-0 right-0 hidden w-1/2 rounded-lg bg-white shadow-sm sm:block"></div>
@@ -20,9 +22,10 @@
                         <div class="relative rounded-lg bg-white shadow-sm ring-1 ring-gray-900/10 sm:rounded-none sm:bg-transparent sm:shadow-none sm:ring-0">
                             <dl class="divide-y divide-gray-200 text-sm leading-6">
                                 <%= for feature <- category.features do %>
-                                <div class="flex items-center justify-between px-4 py-3 sm:grid sm:grid-cols-2 sm:px-0">
+                                <% feature_slug = Azimutt.Utils.Slugme.slugify("#{feature.name} #{plan.name}") %>
+                                <div id={feature_slug} class="flex items-center justify-between px-4 py-3 sm:grid sm:grid-cols-2 sm:px-0">
                                     <dt class="pr-4 text-gray-600">
-                                        <%= render AzimuttWeb.PartialsView, "_pricing_features_label.html", feature: feature %>
+                                        <a href={"##{feature_slug}"}><%= render AzimuttWeb.PartialsView, "_pricing_features_label.html", feature: feature %></a>
                                     </dt>
                                     <dd class="flex items-center justify-end sm:justify-center sm:px-4">
                                         <%= render AzimuttWeb.PartialsView, "_pricing_features_value.html", value: feature |> Map.fetch!(plan.id), selected: plan.id == @selected %>

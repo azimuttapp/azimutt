@@ -14,8 +14,9 @@
 
     <div class="-mt-6 space-y-16">
         <%= for category <- @feature_categories do %>
+        <% category_slug = Azimutt.Utils.Slugme.slugify(category.name) %>
         <div>
-            <h3 class="text-sm font-semibold leading-6 text-gray-900"><%= category.name %></h3>
+            <h3 class="text-sm font-semibold leading-6 text-gray-900"><a href={"##{category_slug}"} id={category_slug}><%= category.name %></a></h3>
             <div class="relative -mx-8 mt-10">
                 <!-- Fake card backgrounds -->
                 <div class={"absolute inset-x-8 inset-y-0 grid grid-cols-#{length(@plans) + 1} gap-x-8 before:block"} aria-hidden="true">
@@ -36,9 +37,10 @@
                     <tbody>
                         <% last = category.features |> List.last() %>
                         <%= for feature <- category.features do %>
-                        <tr>
+                        <% feature_slug = Azimutt.Utils.Slugme.slugify(feature.name) %>
+                        <tr id={feature_slug}>
                             <th scope="row" class={"w-1/#{length(@plans) + 1} py-3 pr-4 text-left text-sm font-normal leading-6 text-gray-900"}>
-                                <%= render AzimuttWeb.PartialsView, "_pricing_features_label.html", feature: feature %>
+                                <a href={"##{feature_slug}"}><%= render AzimuttWeb.PartialsView, "_pricing_features_label.html", feature: feature %></a>
                                 <%= if feature != last do %>
                                 <div class="absolute inset-x-8 mt-3 h-px bg-gray-200"></div>
                                 <% end %>
