@@ -32,6 +32,7 @@ import Models.Project as Project
 import Models.Project.Column as Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPathStr)
+import Models.Project.DatabaseUrlStorage as DatabaseUrlStorage
 import Models.Project.Relation exposing (Relation)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId, SourceIdStr)
@@ -408,7 +409,7 @@ docSource : Source
 docSource =
     { id = SourceId.one
     , name = "azimutt_dev"
-    , kind = DatabaseConnection "postgresql://postgres:postgres@localhost/azimutt_dev"
+    , kind = DatabaseConnection PostgreSQL (Just "postgresql://postgres:postgres@localhost/azimutt_dev") DatabaseUrlStorage.Project
     , content = Array.empty
     , tables =
         [ { docTableEmpty
@@ -445,7 +446,7 @@ docSource2 : Source
 docSource2 =
     { id = SourceId.two
     , name = "cockpit_dev"
-    , kind = DatabaseConnection "postgresql://postgres:postgres@localhost/cockpit_dev"
+    , kind = DatabaseConnection PostgreSQL (Just "postgresql://postgres:postgres@localhost/cockpit_dev") DatabaseUrlStorage.Project
     , content = Array.empty
     , tables = Dict.empty
     , relations = []

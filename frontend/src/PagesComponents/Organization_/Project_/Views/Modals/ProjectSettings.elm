@@ -107,8 +107,8 @@ viewSource htmlId _ zone updating source =
                     ]
     in
     case source.kind of
-        DatabaseConnection url ->
-            view Icons.sources.database "Last fetched on " source.updatedAt ("Database " ++ url)
+        DatabaseConnection _ url _ ->
+            view Icons.sources.database "Last fetched on " source.updatedAt ("Database " ++ (url |> Maybe.withDefault "<hidden>"))
 
         SqlLocalFile path _ modified ->
             view Icons.sources.sql "File last modified on " modified (path ++ " file")

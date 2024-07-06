@@ -813,7 +813,7 @@ viewSource : (SourceId -> SqlQueryOrigin -> msg) -> TableId -> Maybe ColumnPath 
 viewSource openDataExplorer table column rows origin =
     div [ class "mt-1 flex flex-row" ]
         [ case origin.kind of
-            SourceKind.DatabaseConnection _ ->
+            SourceKind.DatabaseConnection _ _ _ ->
                 Icon.solid Icons.sources.database "opacity-50 mr-1" |> Tooltip.r "Database source"
 
             SourceKind.SqlLocalFile _ _ _ ->

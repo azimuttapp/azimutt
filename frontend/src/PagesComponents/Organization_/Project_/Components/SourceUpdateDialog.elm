@@ -127,7 +127,7 @@ view wrap sourceSet modalClose noop zone now opened model =
             |> Maybe.mapOrElse
                 (\source ->
                     case source.kind of
-                        DatabaseConnection url ->
+                        DatabaseConnection _ url _ ->
                             databaseModal wrap sourceSet close zone now titleId source url model.databaseSource
 
                         SqlLocalFile filename _ updatedAt ->
@@ -155,15 +155,17 @@ view wrap sourceSet modalClose noop zone now opened model =
         )
 
 
-databaseModal : (Msg -> msg) -> (Source -> msg) -> msg -> Time.Zone -> Time.Posix -> HtmlId -> Source -> DatabaseUrl -> DatabaseSource.Model msg -> List (Html msg)
-databaseModal wrap sourceSet close zone now titleId source url model =
+databaseModal : (Msg -> msg) -> (Source -> msg) -> msg -> Time.Zone -> Time.Posix -> HtmlId -> Source -> Maybe DatabaseUrl -> DatabaseSource.Model msg -> List (Html msg)
+databaseModal wrap sourceSet close zone now titleId source urlM model =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
         [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
             [ modalTitle titleId ("Refresh " ++ source.name ++ " source")
-            , div [ class "mt-2" ] [ remoteFileInfo zone now url source.updatedAt ]
+            , div [ class "mt-2" ] [ remoteFileInfo zone now (urlM |> Maybe.withDefault "<hidden>") source.updatedAt ]
             ]
         , div [ class "mt-3 flex justify-center" ]
-            [ Button.primary5 Tw.primary [ onClick (url |> DatabaseSource.GetSchema |> DatabaseSourceMsg |> wrap) ] [ text "Fetch schema again" ]
+            [ urlM
+                |> Maybe.map (\url -> Button.primary5 Tw.primary [ onClick (url |> DatabaseSource.GetSchema |> DatabaseSourceMsg |> wrap) ] [ text "Fetch schema again" ])
+                |> Maybe.withDefault (Button.primary5 Tw.primary [ disabled True ] [ text "Fetch schema again" ])
             ]
         , DatabaseSource.viewParsing (DatabaseSourceMsg >> wrap) model
         , viewSourceDiff model

@@ -8,6 +8,7 @@ import Libs.Time as Time
 import Models.DbSourceInfo exposing (DbSourceInfo)
 import Models.Project.CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
+import Models.Project.DatabaseUrlStorage as DatabaseUrlStorage
 import Models.Project.Relation exposing (Relation)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
@@ -73,7 +74,7 @@ toSource : DbSource -> Source
 toSource source =
     { id = source.id
     , name = source.name
-    , kind = DatabaseConnection source.db.url
+    , kind = DatabaseConnection source.db.kind (Just source.db.url) DatabaseUrlStorage.Project
     , content = Array.empty
     , tables = source.tables
     , relations = source.relations

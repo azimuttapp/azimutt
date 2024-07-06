@@ -125,8 +125,8 @@ update wrap now project msg model =
 
         BuildSource sourceId ->
             Maybe.map2
-                (\url -> JsonAdapter.buildSource (SourceInfo.database now (model.source |> Maybe.mapOrElse .id sourceId) url) >> Ok)
-                (model.selectedUrl |> Maybe.andThen Result.toMaybe)
+                (\( url, kind ) -> JsonAdapter.buildSource (SourceInfo.database now (model.source |> Maybe.mapOrElse .id sourceId) kind url) >> Ok)
+                (model.selectedUrl |> Maybe.andThen Result.toMaybe |> Maybe.andThenZip DatabaseKind.fromUrl)
                 (model.parsedSchema |> Maybe.andThen Result.toMaybe)
                 |> (\source ->
                         ( { model | parsedSource = Just (source |> Maybe.withDefault (Err "Can't build source")) }
