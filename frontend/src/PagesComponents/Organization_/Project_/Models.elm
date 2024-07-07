@@ -207,7 +207,7 @@ type alias SchemaAnalysisDialog =
 
 
 type alias ProjectSettingsDialog =
-    { id : HtmlId, sourceNameEdit : Maybe ( SourceId, String ) }
+    { id : HtmlId }
 
 
 type alias HelpDialog =
@@ -406,8 +406,6 @@ type ProjectSettingsMsg
     = PSOpen
     | PSClose
     | PSSourceToggle Source
-    | PSSourceNameUpdate SourceId String
-    | PSSourceNameUpdateDone SourceId String
     | PSSourceDelete SourceId
     | PSSourceUnDelete_ Int Source
     | PSSourceUpdate SourceUpdateDialog.Msg

@@ -37,6 +37,7 @@ import Track
 
 type alias Model msg =
     { source : Maybe Source
+    , name : String
     , url : String
     , selectedLocalFile : Maybe File
     , selectedRemoteFile : Maybe (Result String FileUrl)
@@ -49,7 +50,8 @@ type alias Model msg =
 
 
 type Msg
-    = UpdateRemoteFile FileUrl
+    = UpdateName String
+    | UpdateRemoteFile FileUrl
     | GetRemoteFile FileUrl
     | GotRemoteFile FileUrl (Result Http.Error FileContent)
     | GetLocalFile File
@@ -76,6 +78,7 @@ example =
 init : Maybe Source -> (Result String Source -> msg) -> Model msg
 init source callback =
     { source = source
+    , name = source |> Maybe.mapOrElse .name ""
     , url = ""
     , selectedLocalFile = Nothing
     , selectedRemoteFile = Nothing
@@ -94,6 +97,9 @@ init source callback =
 update : (Msg -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Model msg -> ( Model msg, Extra msg )
 update wrap now project msg model =
     case msg of
+        UpdateName name ->
+            ( { model | name = name }, Extra.none )
+
         UpdateRemoteFile url ->
             ( { model | url = url, selectedLocalFile = Nothing, selectedRemoteFile = Nothing, loadedSchema = Nothing, parsedSchema = Nothing, parsedSource = Nothing }, Extra.none )
 

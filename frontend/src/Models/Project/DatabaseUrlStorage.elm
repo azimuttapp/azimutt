@@ -1,4 +1,4 @@
-module Models.Project.DatabaseUrlStorage exposing (DatabaseUrlStorage(..), decode, encode, fromString, toString)
+module Models.Project.DatabaseUrlStorage exposing (DatabaseUrlStorage(..), all, decode, encode, fromString, toString)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
@@ -6,35 +6,40 @@ import Libs.Json.Decode as Decode
 
 
 type DatabaseUrlStorage
-    = Project
+    = Memory
     | Browser
-    | None
+    | Project
+
+
+all : List DatabaseUrlStorage
+all =
+    [ Memory, Browser, Project ]
 
 
 toString : DatabaseUrlStorage -> String
 toString kind =
     case kind of
-        Project ->
-            "project"
+        Memory ->
+            "memory"
 
         Browser ->
             "browser"
 
-        None ->
-            "none"
+        Project ->
+            "project"
 
 
 fromString : String -> Maybe DatabaseUrlStorage
 fromString kind =
     case kind of
-        "project" ->
-            Just Project
+        "memory" ->
+            Just Memory
 
         "browser" ->
             Just Browser
 
-        "none" ->
-            Just None
+        "project" ->
+            Just Project
 
         _ ->
             Nothing

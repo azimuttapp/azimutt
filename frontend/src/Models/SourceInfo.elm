@@ -5,7 +5,8 @@ import Libs.Models exposing (FileContent)
 import Libs.Models.DatabaseKind exposing (DatabaseKind)
 import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.FileUrl as FileUrl exposing (FileUrl)
-import Models.Project.DatabaseUrlStorage as DatabaseUrlStorage
+import Libs.String as String
+import Models.Project.DatabaseUrlStorage exposing (DatabaseUrlStorage)
 import Models.Project.SampleKey exposing (SampleKey)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.SourceKind exposing (SourceKind(..))
@@ -24,9 +25,15 @@ type alias SourceInfo =
     }
 
 
-database : Time.Posix -> SourceId -> DatabaseKind -> DatabaseUrl -> SourceInfo
-database now sourceId engine url =
-    SourceInfo sourceId (DatabaseUrl.databaseName url) (DatabaseConnection engine (Just url) DatabaseUrlStorage.Project) True Nothing now now
+database : Time.Posix -> SourceId -> String -> DatabaseKind -> DatabaseUrl -> DatabaseUrlStorage -> SourceInfo
+database now sourceId name engine url storage =
+    let
+        ( sourceName, kind ) =
+            ( name |> String.nonEmptyMaybe |> Maybe.withDefault (DatabaseUrl.databaseName url)
+            , DatabaseConnection engine (Just url) storage
+            )
+    in
+    SourceInfo sourceId sourceName kind True Nothing now now
 
 
 aml : Time.Posix -> SourceId -> SourceName -> SourceInfo

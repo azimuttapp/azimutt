@@ -65,6 +65,7 @@ module Libs.List exposing
     , resultCollect
     , resultSeq
     , toggle
+    , tuple
     , tupleSeq
     , unique
     , uniqueBy
@@ -683,6 +684,11 @@ toggle item list =
 
     else
         list ++ [ item ]
+
+
+tuple : (a -> b) -> List a -> List ( a, b )
+tuple f list =
+    list |> List.map (\a -> ( a, f a ))
 
 
 resultCollect : List (Result e a) -> ( List e, List a )

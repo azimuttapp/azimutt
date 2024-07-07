@@ -17,7 +17,7 @@ import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyM)
 import Ports
-import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapErdMT, mapErdMTM, mapHiddenColumns, mapLlm, mapLlmM, mapNameT, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSettingsM, mapSourceUpdateT, setColumnOrder, setDefaultSchema, setKey, setList, setMax, setModel, setRelationStyle, setRemovedTables, setSettings)
+import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapErdMT, mapHiddenColumns, mapLlm, mapLlmM, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUpdateT, setColumnOrder, setDefaultSchema, setKey, setList, setMax, setModel, setRelationStyle, setRemovedTables, setSettings)
 import Services.Toasts as Toasts
 import Time
 import Track
@@ -37,7 +37,7 @@ handleProjectSettings : Time.Posix -> ProjectSettingsMsg -> Model x -> ( Model x
 handleProjectSettings now msg model =
     case msg of
         PSOpen ->
-            ( model |> setSettings (Just { id = Conf.ids.settingsDialog, sourceNameEdit = Nothing }), ModalOpen Conf.ids.settingsDialog |> T.sendAfter 1 |> Extra.cmd )
+            ( model |> setSettings (Just { id = Conf.ids.settingsDialog }), ModalOpen Conf.ids.settingsDialog |> T.sendAfter 1 |> Extra.cmd )
 
         PSClose ->
             ( model |> setSettings Nothing, Extra.none )
@@ -54,28 +54,6 @@ handleProjectSettings now msg model =
                         )
                    )
                 |> setDirty
-
-        PSSourceNameUpdate source name ->
-            ( model |> mapSettingsM (\s -> { s | sourceNameEdit = Just ( source, name ) }), Extra.none )
-
-        PSSourceNameUpdateDone source name ->
-            model
-                |> mapSettingsM (\s -> { s | sourceNameEdit = Nothing })
-                |> mapErdMTM
-                    (Erd.mapSourceT source
-                        (mapNameT
-                            (\old ->
-                                ( name
-                                , if old == name then
-                                    Extra.none
-
-                                  else
-                                    Extra.history (( PSSourceNameUpdateDone source old, PSSourceNameUpdateDone source name ) |> Tuple.map ProjectSettingsMsg)
-                                )
-                            )
-                        )
-                    )
-                |> Extra.defaultT
 
         PSSourceDelete sourceId ->
             model
@@ -117,7 +95,7 @@ handleProjectSettings now msg model =
                             (sources |> List.findBy .id source.id)
                                 |> Maybe.mapOrElse
                                     (\s ->
-                                        ( sources |> List.mapBy .id source.id (Source.refreshWith source)
+                                        ( sources |> List.mapBy .id source.id (Source.updateWith source)
                                         , Extra.newCL [ close, Track.sourceRefreshed model.erd source ] (( PSSourceSet s, msg ) |> Tuple.map ProjectSettingsMsg)
                                         )
                                     )
