@@ -1,4 +1,4 @@
-module Models.Project.SourceKind exposing (SourceKind(..), databaseKind, databaseUrl, databaseUrlStorage, decode, encode, isDatabase, isUser, same, setDatabaseUrlStorage, toString)
+module Models.Project.SourceKind exposing (SourceKind(..), databaseKind, databaseUrl, databaseUrlStorage, decode, encode, isDatabase, isUser, same, setDatabaseUrl, setDatabaseUrlStorage, toString)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -75,6 +75,20 @@ databaseUrl kind =
 
         _ ->
             Nothing
+
+
+setDatabaseUrl : Maybe DatabaseUrl -> SourceKind -> SourceKind
+setDatabaseUrl newUrl kind =
+    case kind of
+        DatabaseConnection engine url storage ->
+            if url /= newUrl then
+                DatabaseConnection engine newUrl storage
+
+            else
+                kind
+
+        _ ->
+            kind
 
 
 databaseUrlStorage : SourceKind -> Maybe DatabaseUrlStorage

@@ -54,7 +54,7 @@ export const LegacyZoomLevel = z.number()
 export type LegacyProjectTokenId = Uuid
 export const LegacyProjectTokenId = Uuid
 
-export const DatabaseUrlStorage = z.enum(['project', 'browser', 'none'])
+export const DatabaseUrlStorage = z.enum(['memory', 'browser', 'project'])
 export type DatabaseUrlStorage = z.infer<typeof DatabaseUrlStorage>
 
 export const LegacyDatabaseConnection = z.object({

@@ -6,6 +6,7 @@ import {
     AttributeRef,
     columnStatsToLegacy,
     databaseToLegacy,
+    DatabaseUrl,
     entityRefFromId,
     legacyBuildProjectDraft,
     legacyBuildProjectJson,
@@ -14,11 +15,13 @@ import {
     LegacyColumnStats,
     LegacyDatabase,
     LegacyDatabaseQueryResults,
+    LegacyProject,
     LegacyProjectStorage,
     LegacyTableStats,
     OpenAIConnector,
     ParserError,
     queryResultsToLegacy,
+    SourceId,
     sourceToDatabase,
     SqlStatement,
     tableStatsToLegacy,
@@ -161,7 +164,7 @@ function getProject(msg: GetProject) {
                     return Promise.reject('Invalid storage')
                 }
             })
-    ).then(project => app.gotProject('load', project), err => {
+    ).then(res => loadProject(res).then(p => app.gotProject('load', p)), err => {
         if (err.statusCode === 401) {
             window.location.replace(backend.loginUrl(url.relative(window.location)))
         } else {
@@ -171,22 +174,25 @@ function getProject(msg: GetProject) {
     })
 }
 
-function createProjectTmp(msg: CreateProjectTmp): void {
-    const json = legacyBuildProjectJson(msg.project)
+async function createProjectTmp(msg: CreateProjectTmp): Promise<void> {
+    const project = await saveProject(msg.project)
+    const json = legacyBuildProjectJson(project)
     storage.deleteProject(Uuid.zero)
         .then(_ => storage.createProject(Uuid.zero, json))
-        .then(_ => app.gotProject('draft', legacyBuildProjectDraft(msg.project.id, json)),
+        .then(_ => loadProject(legacyBuildProjectDraft(project.id, json)).then(p => app.gotProject('draft', p)),
             err => reportError(`Can't save draft project`, err))
 }
 
-function updateProjectTmp(msg: UpdateProjectTmp): void {
-    const json = legacyBuildProjectJson(msg.project)
+async function updateProjectTmp(msg: UpdateProjectTmp): Promise<void> {
+    const project = await saveProject(msg.project)
+    const json = legacyBuildProjectJson(project)
     storage.updateProject(Uuid.zero, json)
         .then(_ => null, err => reportError(`Can't update draft project`, err))
 }
 
-function createProject(msg: CreateProject): void {
-    const json = legacyBuildProjectJson(msg.project)
+async function createProject(msg: CreateProject): Promise<void> {
+    const project = await saveProject(msg.project)
+    const json = legacyBuildProjectJson(project)
     if (msg.storage == LegacyProjectStorage.enum.local) {
         backend.createProjectLocal(msg.organization, json).then(res => {
             return storage.createProject(res.id, json).then(_ => legacyBuildProjectLocal(res, json), err => {
@@ -196,27 +202,27 @@ function createProject(msg: CreateProject): void {
         }, err => {
             reportError(`Can't save project to backend`, err)
             return Promise.reject(err)
-        }).then(p => {
+        }).then(res => {
             // delete previously stored projects: draft and legacy one
-            return Promise.all([storage.deleteProject(Uuid.zero), storage.deleteProject(msg.project.id)]).catch(err => {
+            return Promise.all([storage.deleteProject(Uuid.zero), storage.deleteProject(project.id)]).catch(err => {
                 reportError(`Can't delete temporary project`, err)
                 return Promise.resolve()
             }).then(_ => {
                 app.toast(ToastLevel.enum.success, `Project created!`)
-                window.history.replaceState("", "", `/${msg.organization}/${p.id}`)
-                app.gotProject('create', p)
+                window.history.replaceState("", "", `/${msg.organization}/${res.id}`)
+                loadProject(res).then(p => app.gotProject('create', p))
             })
         })
     } else if (msg.storage == LegacyProjectStorage.enum.remote) {
-        backend.createProjectRemote(msg.organization, json).then(p => {
+        backend.createProjectRemote(msg.organization, json).then(res => {
             // delete previously stored projects: draft and legacy one
-            return Promise.all([storage.deleteProject(Uuid.zero), storage.deleteProject(msg.project.id)]).catch(err => {
+            return Promise.all([storage.deleteProject(Uuid.zero), storage.deleteProject(project.id)]).catch(err => {
                 reportError(`Can't delete temporary project`, err)
                 return Promise.resolve()
             }).then(_ => {
                 app.toast(ToastLevel.enum.success, `Project created!`)
-                window.history.replaceState("", "", `/${msg.organization}/${p.id}`)
-                app.gotProject('create', legacyBuildProjectRemote(p, json))
+                window.history.replaceState("", "", `/${msg.organization}/${res.id}`)
+                loadProject(legacyBuildProjectRemote(res, json)).then(p => app.gotProject('create', p))
             })
         }, err => reportError(`Can't save project to backend`, err))
     } else {
@@ -224,23 +230,24 @@ function createProject(msg: CreateProject): void {
     }
 }
 
-function updateProject(msg: UpdateProject): void {
-    const json = legacyBuildProjectJson(msg.project)
-    if (!msg.project.organization) return reportError('Expecting an organization to update project')
-    if (msg.project.storage == LegacyProjectStorage.enum.local) {
-        backend.updateProjectLocal(msg.project).then(res => {
+async function updateProject(msg: UpdateProject): Promise<void> {
+    const project = await saveProject(msg.project)
+    const json = legacyBuildProjectJson(project)
+    if (!project.organization) return reportError('Expecting an organization to update project')
+    if (project.storage == LegacyProjectStorage.enum.local) {
+        backend.updateProjectLocal(project).then(res => {
             return storage.updateProject(res.id, json).then(_ => {
                 app.toast(ToastLevel.enum.success, 'Project saved')
-                app.gotProject('update', legacyBuildProjectLocal(res, json))
+                loadProject(legacyBuildProjectLocal(res, json)).then(p => app.gotProject('update', p))
             }, err => reportError(`Can't update project locally`, err))
         }, err => reportError(`Can't update project to backend`, err))
-    } else if (msg.project.storage == LegacyProjectStorage.enum.remote) {
-        backend.updateProjectRemote(msg.project).then(res => {
+    } else if (project.storage == LegacyProjectStorage.enum.remote) {
+        backend.updateProjectRemote(project).then(res => {
             app.toast(ToastLevel.enum.success, 'Project saved')
-            app.gotProject('update', legacyBuildProjectRemote(res, json))
+            loadProject(legacyBuildProjectRemote(res, json)).then(p => app.gotProject('update', p))
         }, err => reportError(`Can't update project`, err))
     } else {
-        reportError(`Unknown ProjectStorage`, msg.project.storage)
+        reportError(`Unknown ProjectStorage`, project.storage)
     }
 }
 
@@ -263,6 +270,59 @@ function deleteProject(msg: DeleteProject): void {
             return Promise.reject(err)
         }).then(_ => msg.redirect ? window.location.href = msg.redirect : app.dropProject(msg.project.id))
     }
+}
+
+const dbUrlsInMemory: {[key: SourceId]: DatabaseUrl} = {}
+
+async function loadProject(project: LegacyProject): Promise<LegacyProject> {
+    const sources = await Promise.all(project.sources.map(async s => {
+        if (s.kind.kind === 'DatabaseConnection') {
+            let url: DatabaseUrl | undefined = undefined
+            switch (s.kind.storage) {
+                case 'memory':
+                    url = dbUrlsInMemory[s.id];
+                    break;
+                case 'browser':
+                    url = await storage.getDbUrl(project.id, s.id);
+                    break;
+            }
+            return url ? {...s, kind: {...s.kind, url}} : s
+        } else {
+            return s
+        }
+    }))
+    return {...project, sources}
+}
+
+async function saveProject(project: LegacyProject): Promise<LegacyProject> {
+    const sources = await Promise.all(project.sources.map(async s => {
+        if (s.kind.kind === 'DatabaseConnection') {
+            const {url, ...kind} = s.kind
+            delete dbUrlsInMemory[s.id]
+            await storage.removeDbUrl(s.id)
+            switch (s.kind.storage) {
+                case 'memory':
+                    url && (dbUrlsInMemory[s.id] = url)
+                    return {...s, kind}
+                case 'browser':
+                    url && await storage.setDbUrl(project.id, s.id, url)
+                    return {...s, kind}
+            }
+            return s
+        } else {
+            return s
+        }
+    }))
+    return {...project, sources}
+}
+
+async function cleanProject(project: LegacyProject): Promise<void> {
+    await Promise.all(project.sources.map(async s => {
+        if (s.kind.kind === 'DatabaseConnection') {
+            delete dbUrlsInMemory[s.id]
+            await storage.removeDbUrl(s.id)
+        }
+    }))
 }
 
 // prompt users to save before leave project when not fully saved

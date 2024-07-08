@@ -1,10 +1,11 @@
 import {successes} from "@azimutt/utils";
-import {LegacyProjectId, LegacyProjectJson} from "@azimutt/models";
+import {DatabaseUrl, LegacyProjectId, LegacyProjectJson, ProjectId, SourceId} from "@azimutt/models";
 import {IndexedDBStorage} from "./storage/indexeddb";
 import {LocalStorageStorage} from "./storage/localstorage";
 import {InMemoryStorage} from "./storage/inmemory";
 import {StorageKind} from "./storage/api";
 import {Logger} from "./logger";
+import {aesDecrypt, aesEncrypt} from "../utils/crypto";
 
 export class Storage {
     public kind: StorageKind = 'manager'
@@ -16,6 +17,32 @@ export class Storage {
         this.indexedDb = IndexedDBStorage.init(logger.disableDebug())
         this.localStorage = LocalStorageStorage.init(logger.disableDebug())
         this.inMemory = new InMemoryStorage(logger.disableDebug())
+    }
+
+    getDbUrl = async (project: ProjectId, source: SourceId): Promise<DatabaseUrl | undefined> => {
+        this.logger.debug(`storage.getDbUrl(${source})`)
+        return this.indexedDb.then(s => s.getDbUrl(source))
+            .catch(e => e !== 'Not found' ? this.localStorage.then(s => s.getDbUrl(source)) : Promise.reject(e))
+            .catch(e => e !== 'Not found' ? this.inMemory.getDbUrl(source) : Promise.reject(e))
+            .catch(e => Promise.reject(e === 'Not found' ? `Not found database url ${source}` : e))
+            .then(url => url ? aesDecrypt(project.replaceAll('-', ''), url).catch(_ => undefined) : undefined)
+    }
+
+    setDbUrl = async (project: ProjectId, id: SourceId, url: DatabaseUrl): Promise<void> => {
+        this.logger.debug(`storage.setDbUrl(${id})`)
+        const secret = await aesEncrypt(project.replaceAll('-', ''), url)
+        return this.indexedDb.catch(_ => this.localStorage).catch(_ => this.inMemory)
+            .then(s => s.setDbUrl(id, secret))
+            .then(_ => undefined)
+    }
+
+    removeDbUrl = (id: SourceId): Promise<void> => {
+        this.logger.debug(`storage.removeDbUrl(${id})`)
+        return successes([
+            this.indexedDb.then(s => s.removeDbUrl(id)),
+            this.localStorage.then(s => s.removeDbUrl(id)),
+            this.inMemory.removeDbUrl(id)
+        ]).then(_ => undefined)
     }
 
     getProject = (id: LegacyProjectId): Promise<LegacyProjectJson> => {

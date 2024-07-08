@@ -18,6 +18,7 @@ import Libs.Models.FileName exposing (FileName)
 import Libs.Models.FileUpdatedAt exposing (FileUpdatedAt)
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.String as String
 import Libs.Tailwind as Tw exposing (sm)
 import Libs.Task as T
 import Models.Project.DatabaseUrlStorage as DatabaseUrlStorage exposing (DatabaseUrlStorage)
@@ -165,6 +166,7 @@ viewDatabaseModal wrap updateSource close zone now htmlId titleId source url mod
         , inputSelect (htmlId ++ "-storage-input") "Database url storage" (DatabaseUrlStorage.toString model.storage) (DatabaseUrlStorage.fromString >> DatabaseSource.UpdateStorage >> DatabaseSourceMsg >> wrap) (DatabaseUrlStorage.all |> List.map (\s -> { value = DatabaseUrlStorage.toString s, label = "In " ++ DatabaseUrlStorage.toString s }))
         , p [ class "mt-3 text-sm text-gray-500" ] [ text "Database last loaded on ", source.updatedAt |> viewDate zone now, text "." ]
         , url
+            |> Maybe.orElse (String.nonEmptyMaybe model.url)
             |> Maybe.map (\u -> Button.primary5 Tw.primary [ onClick (u |> DatabaseSource.GetSchema |> DatabaseSourceMsg |> wrap), class "mt-1" ] [ text "Fetch schema again" ])
             |> Maybe.withDefault (Button.primary5 Tw.primary [ disabled True, class "mt-1" ] [ text "Fetch schema again" ])
         , DatabaseSource.viewParsing (DatabaseSourceMsg >> wrap) model
@@ -176,8 +178,8 @@ viewDatabaseModal wrap updateSource close zone now htmlId titleId source url mod
             |> Maybe.andThen Result.toMaybe
             |> Maybe.orElse
                 (model.source
-                    |> Maybe.filter (\s -> s.name /= model.name || Source.databaseUrlStorage s /= Just model.storage)
-                    |> Maybe.map (\s -> s |> setName model.name |> mapKind (SourceKind.setDatabaseUrlStorage model.storage))
+                    |> Maybe.filter (\s -> s.name /= model.name || Source.databaseUrl s /= String.nonEmptyMaybe model.url || Source.databaseUrlStorage s /= Just model.storage)
+                    |> Maybe.map (\s -> s |> setName model.name |> mapKind (SourceKind.setDatabaseUrl (String.nonEmptyMaybe model.url) >> SourceKind.setDatabaseUrlStorage model.storage))
                 )
         )
     ]
