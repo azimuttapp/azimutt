@@ -36,6 +36,7 @@ import {
     CreateProject,
     CreateProjectTmp,
     DeleteProject,
+    DeleteSource,
     GetColumnStats,
     GetDatabaseSchema,
     GetLocalFile,
@@ -108,6 +109,7 @@ app.on('CreateProject', createProject)
 app.on('UpdateProject', updateProject)
 // FIXME: app.on('MoveProjectTo', msg => store.moveProjectTo(msg.project, msg.storage).then(app.gotProject).catch(err => app.toast(ToastLevel.enum.error, err)))
 app.on('DeleteProject', deleteProject)
+app.on('DeleteSource', deleteSource)
 app.on('ProjectDirty', projectDirty)
 app.on('DownloadFile', msg => Utils.downloadFile(msg.filename, msg.content))
 app.on('CopyToClipboard', msg => Utils.copyToClipboard(msg.content)
@@ -275,6 +277,11 @@ function deleteProject(msg: DeleteProject): void {
     }
 }
 
+async function deleteSource(msg: DeleteSource): Promise<void> {
+    delete dbUrlsInMemory[msg.source]
+    await storage.removeDbUrl(msg.source)
+}
+
 const dbUrlsInMemory: { [key: SourceId]: DatabaseUrl } = {}
 const dbUrlIsCrypted = (url: DatabaseUrl): boolean => !url.includes('://')
 const dbUrlDecrypt = (project: ProjectId, url: DatabaseUrl): Promise<DatabaseUrl | undefined> =>
@@ -325,15 +332,6 @@ async function saveProject(project: LegacyProject): Promise<LegacyProject> {
         }
     }))
     return {...project, sources}
-}
-
-async function cleanProject(project: LegacyProject): Promise<void> {
-    await Promise.all(project.sources.map(async s => {
-        if (s.kind.kind === 'DatabaseConnection') {
-            delete dbUrlsInMemory[s.id]
-            await storage.removeDbUrl(s.id)
-        }
-    }))
 }
 
 // prompt users to save before leave project when not fully saved

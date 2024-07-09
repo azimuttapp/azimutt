@@ -25,6 +25,7 @@ import {
     OpenAIModel,
     Position,
     Size,
+    SourceId,
     SqlStatement,
     Timestamp
 } from "@azimutt/models";
@@ -136,6 +137,8 @@ export type MoveProjectTo = { kind: 'MoveProjectTo', project: LegacyProject, sto
 export const MoveProjectTo = z.object({kind: z.literal('MoveProjectTo'), project: LegacyProject, storage: LegacyProjectStorage}).strict()
 export type DeleteProject = { kind: 'DeleteProject', project: LegacyProjectInfo, redirect: string | null }
 export const DeleteProject = z.object({kind: z.literal('DeleteProject'), project: LegacyProjectInfo, redirect: z.string().nullable()}).strict()
+export type DeleteSource = { kind: 'DeleteSource', source: SourceId }
+export const DeleteSource = z.object({kind: z.literal('DeleteSource'), source: SourceId}).strict()
 export type ProjectDirty = { kind: 'ProjectDirty', dirty: boolean }
 export const ProjectDirty = z.object({kind: z.literal('ProjectDirty'), dirty: z.boolean()}).strict()
 export type DownloadFile = { kind: 'DownloadFile', filename: FileName, content: FileContent }
@@ -168,8 +171,8 @@ export type Fireworks = { kind: 'Fireworks' }
 export const Fireworks = z.object({kind: z.literal('Fireworks')}).strict()
 export type Track = { kind: 'Track', event: TrackEvent }
 export const Track = z.object({kind: z.literal('Track'), event: TrackEvent}).strict()
-export type ElmMsg = Click | MouseDown | Focus | Blur | ScrollTo | Fullscreen | SetMeta | AutofocusWithin | Toast | GetProject | CreateProjectTmp | UpdateProjectTmp | CreateProject | UpdateProject | MoveProjectTo | DeleteProject | ProjectDirty | DownloadFile | CopyToClipboard | GetLocalFile | GetDatabaseSchema | GetTableStats | GetColumnStats | RunDatabaseQuery | GetPrismaSchema | ObserveSizes | ListenKeys | LlmGenerateSql | Confetti | ConfettiPride | Fireworks | Track
-export const ElmMsg = z.discriminatedUnion('kind', [Click, MouseDown, Focus, Blur, ScrollTo, Fullscreen, SetMeta, AutofocusWithin, Toast, GetProject, CreateProjectTmp, UpdateProjectTmp, CreateProject, UpdateProject, MoveProjectTo, DeleteProject, ProjectDirty, DownloadFile, CopyToClipboard, GetLocalFile, GetDatabaseSchema, GetTableStats, GetColumnStats, RunDatabaseQuery, GetPrismaSchema, ObserveSizes, ListenKeys, LlmGenerateSql, Confetti, ConfettiPride, Fireworks, Track]).describe('ElmMsg')
+export type ElmMsg = Click | MouseDown | Focus | Blur | ScrollTo | Fullscreen | SetMeta | AutofocusWithin | Toast | GetProject | CreateProjectTmp | UpdateProjectTmp | CreateProject | UpdateProject | MoveProjectTo | DeleteProject | DeleteSource | ProjectDirty | DownloadFile | CopyToClipboard | GetLocalFile | GetDatabaseSchema | GetTableStats | GetColumnStats | RunDatabaseQuery | GetPrismaSchema | ObserveSizes | ListenKeys | LlmGenerateSql | Confetti | ConfettiPride | Fireworks | Track
+export const ElmMsg = z.discriminatedUnion('kind', [Click, MouseDown, Focus, Blur, ScrollTo, Fullscreen, SetMeta, AutofocusWithin, Toast, GetProject, CreateProjectTmp, UpdateProjectTmp, CreateProject, UpdateProject, MoveProjectTo, DeleteProject, DeleteSource, ProjectDirty, DownloadFile, CopyToClipboard, GetLocalFile, GetDatabaseSchema, GetTableStats, GetColumnStats, RunDatabaseQuery, GetPrismaSchema, ObserveSizes, ListenKeys, LlmGenerateSql, Confetti, ConfettiPride, Fireworks, Track]).describe('ElmMsg')
 
 
 export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }

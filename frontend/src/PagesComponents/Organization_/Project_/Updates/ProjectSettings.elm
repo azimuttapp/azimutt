@@ -64,7 +64,7 @@ handleProjectSettings now msg model =
                                 ( ( deleted, index ) :: _, kept ) ->
                                     ( kept |> List.map Tuple.first
                                     , Extra.newCL
-                                        [ "'" ++ deleted.name ++ "' source removed from project." |> Toasts.info |> Toast |> T.send, Track.sourceDeleted model.erd deleted ]
+                                        [ "'" ++ deleted.name ++ "' source removed from project." |> Toasts.info |> Toast |> T.send, Ports.deleteSource sourceId, Track.sourceDeleted model.erd deleted ]
                                         (( PSSourceUnDelete_ index deleted, msg ) |> Tuple.map ProjectSettingsMsg)
                                     )
 

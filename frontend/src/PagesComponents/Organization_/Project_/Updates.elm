@@ -125,7 +125,11 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdMT (mapProjectT (\p -> ( p |> setName name, Extra.history ( RenameProject p.name, RenameProject name ) ))) |> setDirtyM
 
         DeleteProject project ->
-            ( model, Ports.deleteProject project ((project.organization |> Maybe.map .id) |> Backend.organizationUrl |> Just) |> Extra.cmd )
+            ( model
+            , Ports.deleteProject project ((project.organization |> Maybe.map .id) |> Backend.organizationUrl |> Just)
+                :: (model.erd |> Maybe.filter (\erd -> erd.project.id == project.id) |> Maybe.mapOrElse (.sources >> List.map (.id >> Ports.deleteSource)) [])
+                |> Extra.cmdL
+            )
 
         GoToTable id ->
             model |> mapErdMT (goToTable now id model.erdElem) |> setDirtyM
