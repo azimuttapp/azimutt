@@ -36,8 +36,8 @@ import {
     ValueSchema,
     valuesToSchema
 } from "@azimutt/models";
-import {buildSqlColumn, buildSqlTable, scopeWhere} from "./helpers";
 import {Conn} from "./connect";
+import {buildSqlColumn, buildSqlTable, getTableColumns, scopeWhere} from "./helpers";
 
 export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
     const start = Date.now()
@@ -184,16 +184,6 @@ export type RawTable = {
     toast_name: string | null
     toast_blocks: number | null
     toast_idx_blocks: number | null
-}
-
-const getTableColumns = (schema: string, table: string, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<string[]> => {
-    return conn.query<{ attr: string }>(`
-        SELECT a.attname AS attr
-        FROM pg_attribute a
-                 JOIN pg_class c ON c.oid = a.attrelid
-                 JOIN pg_namespace n ON n.oid = c.relnamespace
-        WHERE n.nspname = '${schema}' AND c.relname = '${table}';`, [], 'getTableColumns'
-    ).then(res => res.map(r => r.attr)).catch(handleError(`Failed to get table columns`, [], opts))
 }
 
 export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawTable[]> => {

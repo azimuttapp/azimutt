@@ -3,6 +3,7 @@ import {
     dateFromIsoFilename,
     dateToIsoFilename,
     emailParse,
+    errorToString,
     groupBy,
     isNotUndefined,
     Logger,
@@ -70,7 +71,8 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
     const db: Database = await connector.getSchema(app, dbUrl, {...conf.database, logger: connectorLogger})
     const queries: DatabaseQuery[] = await connector.getQueryHistory(app, dbUrl, {database: dbUrl.db, logger: connectorLogger}).catch(err => {
         if (typeof err === 'string' && err === 'Not implemented') logger.log(chalk.blue(`Query history is not supported yet on ${dbUrl.kind}, ping us ;)`))
-        if (typeof err === 'object' && 'message' in err && err.message.indexOf('"pg_stat_statements" does not exist')) logger.log(chalk.blue(`Can't get query history as pg_stat_statements is not enabled. Enable it for a better db analysis.`))
+        else if (typeof err === 'object' && 'message' in err && err.message.indexOf('"pg_stat_statements" does not exist')) logger.log(chalk.blue(`Can't get query history as pg_stat_statements is not enabled. Enable it for a better db analysis.`))
+        else logger.log(chalk.red(`Error fetching query history: ${errorToString(err)}`))
         return []
     })
     const rules: Record<RuleId, RuleAnalyzed> = analyzeDatabase(conf, now, db, queries, history, referenceReport?.analysis, opts.only?.split(',') || [])
@@ -81,11 +83,11 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
     await updateConf(folder, conf, rules)
 
     const maxShown = opts.email ? opts.size ?? 3 : 3
-    let report: AnalyzeReport | null = null
+    const report: AnalyzeReport = buildReport(db, queries, rules)
     if (opts.email) {
         printReport(offRules, rulesByLevel, maxShown, stats, logger)
-        report = buildReport(db, queries, rules)
         await writeReport(folder, report, logger)
+        if (opts.html) await writeHtmlReport(folder, report, stats, maxShown, logger)
         if (opts.key) {
             logger.log(chalk.blue('Thanks for using Azimutt analyze!'))
             logger.log(chalk.blue(`For any question or suggestion, reach out to ${azimuttEmail}.`))
@@ -104,16 +106,12 @@ export async function launchAnalyze(url: string, opts: Opts, logger: Logger): Pr
         }
     } else {
         printReport(offRules, rulesByLevel, maxShown, stats, logger)
+        if (opts.html) await writeHtmlReport(folder, report, stats, maxShown, logger)
         logger.log(chalk.blue('Had useful insights using Azimutt analyze?'))
         logger.log(chalk.blue('Add your professional email (ex: `--email your.name@company.com`) to get the full report in JSON.'))
         logger.log(chalk.blue(`Reach out to ${azimuttEmail} for feedback or suggest improvements ;)`))
         logger.log(chalk.blue(`Cheers!`))
         logger.log('')
-    }
-
-    if (opts.html) {
-        if (!report) report = buildReport(db, queries, rules)
-        await writeHtmlReport(folder, report, stats, maxShown, logger)
     }
 }
 
@@ -265,7 +263,7 @@ async function writeHtmlReport(folder: string, report: AnalyzeReport, stats: Ana
 
 async function loadReferenceReport(folder: string, report: string, logger: Logger): Promise<AnalyzeReport> {
     const path = pathJoin(folder, report)
-    const res = await fileReadJson<AnalyzeReport>(path).then(zodParseAsync(AnalyzeReport))
+    const res = await readReport(path)
     logger.log(`Loaded reference report from ${path}`)
     return res
 }
@@ -278,12 +276,21 @@ async function loadHistory(folder: string, logger: Logger): Promise<AnalyzeHisto
             return date ? {date: dateFromIsoFilename(date).getTime(), path: pathJoin(folder, file)} : undefined
         })
         .filter(isNotUndefined)
-        .map(({date, path}) =>
-            fileReadJson<AnalyzeReport>(path)
-                .then(zodParseAsync(AnalyzeReport))
-                .then(report => ({report: path, date, database: report.database, queries: report.queries}))
-        )
+        .map(({date, path}) => readReport(path).then(report => ({report: path, date, database: report.database, queries: report.queries})))
     const res = await Promise.all(history)
     logger.log(`Loaded ${pluralizeL(res, 'previous report')} from ${folder}`)
     return res
+}
+
+function readReport(path: string): Promise<AnalyzeReport> {
+    return fileReadJson<AnalyzeReport>(path)
+        // retro-compatibility
+        .then(report => ({
+            ...report,
+            analysis: mapValues(report.analysis, rule => ({
+                ...rule,
+                totalViolations: rule.totalViolations || rule.violations.length
+            }))
+        }))
+        .then(zodParseAsync(AnalyzeReport))
 }

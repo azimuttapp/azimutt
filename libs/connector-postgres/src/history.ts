@@ -1,7 +1,7 @@
 import {removeUndefined} from "@azimutt/utils";
 import {ConnectorQueryHistoryOpts, DatabaseQuery, handleError} from "@azimutt/models";
 import {Conn} from "./connect";
-import {scopeOp, scopeValue} from "./helpers";
+import {getTableColumns, scopeOp, scopeValue} from "./helpers";
 
 export type RawQuery = {
     database_id: number
@@ -39,6 +39,7 @@ export const getQueryHistory = (opts: ConnectorQueryHistoryOpts) => async (conn:
     // `s.toplevel = true`: get only top level queries
     // `queryid IS NOT NULL`: get only visible queries (<insufficient privilege>)
     // shared blocks (regular tables & indexes), local blocks (temp tables & indexes), temp blocks (query sorts, hashes and others)
+    const sCols = await getTableColumns(undefined, 'pg_stat_statements', opts)(conn) // check column presence to include them or not
     return conn.query<RawQuery>(`
         SELECT d.oid                 AS database_id
              , d.datname             AS database_name
@@ -71,7 +72,7 @@ export const getQueryHistory = (opts: ConnectorQueryHistoryOpts) => async (conn:
         FROM pg_stat_statements s
                  JOIN pg_database d ON d.oid = s.dbid
                  -- JOIN pg_authid u ON u.oid = s.userid
-        WHERE s.toplevel = true AND queryid IS NOT NULL${scopeFilter('d.datname', opts.database)}${'' /* scopeFilter('u.rolname', opts.user) */}
+        WHERE ${sCols.includes('toplevel') ? 's.toplevel = true AND ' : ''}queryid IS NOT NULL${scopeFilter('d.datname', opts.database)}${'' /* scopeFilter('u.rolname', opts.user) */}
         ORDER BY exec_time_total DESC;`, [], 'getQueryHistory'
     ).then(queries => queries.map(buildQuery)).catch(handleError(`Failed to get historical queries`, [], opts))
 }
