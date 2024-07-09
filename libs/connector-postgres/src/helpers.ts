@@ -1,4 +1,12 @@
-import {AttributePath, ConnectorScopeOpts, EntityRef, SqlFragment} from "@azimutt/models";
+import {
+    AttributePath,
+    ConnectorSchemaOpts,
+    ConnectorScopeOpts,
+    EntityRef,
+    handleError,
+    SqlFragment
+} from "@azimutt/models";
+import {Conn} from "./connect";
 
 export function buildSqlTable(ref: EntityRef): SqlFragment {
     const sqlSchema = ref.schema ? `"${ref.schema}".` : ''
@@ -30,6 +38,16 @@ export function scopeOp(scope: string): SqlFragment {
 
 export function scopeValue(scope: string): SqlFragment {
     return scope.startsWith('!') ? scope.slice(1) : scope
+}
+
+export const getTableColumns = (schema: string | undefined, table: string, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<string[]> => {
+    return conn.query<{ attr: string }>(`
+        SELECT a.attname AS attr
+        FROM pg_attribute a
+                 JOIN pg_class c ON c.oid = a.attrelid
+                 JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE ${schema ? `n.nspname = '${schema}' AND ` : ''}c.relname = '${table}';`, [], 'getTableColumns'
+    ).then(res => res.map(r => r.attr)).catch(handleError(`Failed to get table columns`, [], opts))
 }
 
 // sadly pg_catalog schema doesn't have relations, so let's define them here for easy exploration

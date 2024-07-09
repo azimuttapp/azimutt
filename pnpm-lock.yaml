@@ -406,8 +406,8 @@ importers:
         specifier: ^0.1.2
         version: 0.1.2
       '@azimutt/connector-postgres':
-        specifier: ^0.1.6
-        version: 0.1.6(pg-native@3.0.1)
+        specifier: ^0.1.7
+        version: 0.1.7(pg-native@3.0.1)
       '@azimutt/connector-snowflake':
         specifier: ^0.1.1
         version: 0.1.1(asn1.js@5.4.1)
@@ -1195,8 +1195,8 @@ packages:
   '@azimutt/connector-mysql@0.1.2':
     resolution: {integrity: sha512-3a+ehvsiPd77swjvcnwXL6a+T8IyDaXS8gE7o87Se7X5/475D70uL1/8/cv+E75l7VQJPW7q+jiAzkKjlIRzlQ==}
 
-  '@azimutt/connector-postgres@0.1.6':
-    resolution: {integrity: sha512-iwPlbZuS2kIszSzjU2QXOtvLPE4v66cVlRbR49dpOGE1Z4n/jbojQO4kt9ETzzF2UXsTW9kIe+yxczhFwvYwkQ==}
+  '@azimutt/connector-postgres@0.1.7':
+    resolution: {integrity: sha512-7YhFam+SxICu/A5yVdcWRDci4q2HObh3NRlgbMB4ZtjNHUe4iUxFYYMm/xCo4PB40PNYVP2d+FrVOuNjly7NVQ==}
 
   '@azimutt/connector-snowflake@0.1.1':
     resolution: {integrity: sha512-S8zM9fppxFGDb5hLO6o0lUfY/5MELncjy7KuK9VBcpKbf7OLO+YWpj8pnc0NloeEemdSyL8G4CKyXzEEgN36ZQ==}
@@ -9595,7 +9595,7 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@azimutt/connector-postgres@0.1.6(pg-native@3.0.1)':
+  '@azimutt/connector-postgres@0.1.7(pg-native@3.0.1)':
     dependencies:
       '@azimutt/models': 0.1.8
       '@azimutt/utils': 0.1.3
