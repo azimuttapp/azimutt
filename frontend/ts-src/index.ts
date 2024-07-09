@@ -14,12 +14,14 @@ import {
     legacyBuildProjectRemote,
     LegacyColumnStats,
     LegacyDatabase,
+    LegacyDatabaseConnection,
     LegacyDatabaseQueryResults,
     LegacyProject,
     LegacyProjectStorage,
     LegacyTableStats,
     OpenAIConnector,
     ParserError,
+    ProjectId,
     queryResultsToLegacy,
     SourceId,
     sourceToDatabase,
@@ -57,10 +59,11 @@ import {AzimuttApi} from "./services/api";
 import {ConsoleLogger} from "./services/logger";
 import {Storage} from "./services/storage";
 import {Backend} from "./services/backend";
-import {loadPolyfills} from "./utils/polyfills";
-import {Utils} from "./utils/utils";
+import {aesDecrypt, aesEncrypt} from "./utils/crypto";
 import {Env} from "./utils/env";
+import {loadPolyfills} from "./utils/polyfills";
 import * as url from "./utils/url";
+import {Utils} from "./utils/utils";
 
 const platform = Utils.getPlatform()
 const logger = new ConsoleLogger(window.env)
@@ -272,21 +275,26 @@ function deleteProject(msg: DeleteProject): void {
     }
 }
 
-const dbUrlsInMemory: {[key: SourceId]: DatabaseUrl} = {}
+const dbUrlsInMemory: { [key: SourceId]: DatabaseUrl } = {}
+const dbUrlIsCrypted = (url: DatabaseUrl): boolean => !url.includes('://')
+const dbUrlDecrypt = (project: ProjectId, url: DatabaseUrl): Promise<DatabaseUrl | undefined> =>
+    dbUrlIsCrypted(url) ? aesDecrypt(project.replaceAll('-', ''), url).catch(_ => undefined) : Promise.resolve(url)
+const dbUrlEncrypt = (project: ProjectId, url: DatabaseUrl): Promise<DatabaseUrl> =>
+    dbUrlIsCrypted(url) ? Promise.resolve(url) : aesEncrypt(project.replaceAll('-', ''), url)
 
 async function loadProject(project: LegacyProject): Promise<LegacyProject> {
+    const getUrl = async (source: SourceId, kind: LegacyDatabaseConnection): Promise<DatabaseUrl | undefined> => {
+        switch (kind.storage) {
+            case 'memory': return dbUrlsInMemory[source]
+            case 'browser': return await storage.getDbUrl(source)
+            case 'project': return kind.url
+            default: return kind.url
+        }
+    }
     const sources = await Promise.all(project.sources.map(async s => {
         if (s.kind.kind === 'DatabaseConnection') {
-            let url: DatabaseUrl | undefined = undefined
-            switch (s.kind.storage) {
-                case 'memory':
-                    url = dbUrlsInMemory[s.id];
-                    break;
-                case 'browser':
-                    url = await storage.getDbUrl(project.id, s.id);
-                    break;
-            }
-            return url ? {...s, kind: {...s.kind, url}} : s
+            const url: DatabaseUrl | undefined = await getUrl(s.id, s.kind)
+            return url ? {...s, kind: {...s.kind, url: await dbUrlDecrypt(project.id, url)}} : s
         } else {
             return s
         }
@@ -302,13 +310,16 @@ async function saveProject(project: LegacyProject): Promise<LegacyProject> {
             await storage.removeDbUrl(s.id)
             switch (s.kind.storage) {
                 case 'memory':
-                    url && (dbUrlsInMemory[s.id] = url)
+                    url && (dbUrlsInMemory[s.id] = await dbUrlEncrypt(project.id, url))
                     return {...s, kind}
                 case 'browser':
-                    url && await storage.setDbUrl(project.id, s.id, url)
+                    url && await storage.setDbUrl(s.id, await dbUrlEncrypt(project.id, url))
                     return {...s, kind}
+                case 'project':
+                    return {...s, kind: {...kind, url: url ? await dbUrlEncrypt(project.id, url) : undefined}}
+                default:
+                    return s
             }
-            return s
         } else {
             return s
         }
