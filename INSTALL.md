@@ -55,6 +55,16 @@ docker run -d --name azimutt \
 ghcr.io/azimuttapp/azimutt:main
 ```
 
+Or for Apple Silicon/Arm64 users:
+
+```bash
+docker run -d --name azimutt \
+--env-file <path_to_your_env_file> \
+-p 4000:4000 \
+--platform arm64 \
+ghcr.io/azimuttapp/azimutt:main
+```
+
 The Azimutt application should now be running on `http://localhost:4000`.
 
 
