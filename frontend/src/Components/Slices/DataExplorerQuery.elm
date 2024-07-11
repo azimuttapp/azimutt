@@ -798,7 +798,7 @@ docSource : Source
 docSource =
     { id = SourceId.zero
     , name = "azimutt_dev"
-    , kind = DatabaseConnection PostgreSQL (Just "postgresql://postgres:postgres@localhost:5432/azimutt_dev") DatabaseUrlStorage.Project
+    , kind = DatabaseConnection { kind = PostgreSQL, url = Just "postgresql://postgres:postgres@localhost:5432/azimutt_dev", storage = DatabaseUrlStorage.Project }
     , content = Array.empty
     , tables =
         [ docTable "public" "users" [ ( "id", "uuid", False ), ( "slug", "varchar", False ), ( "name", "varchar", False ), ( "email", "varchar", False ), ( "provider", "varchar", True ), ( "provider_uid", "varchar", True ), ( "avatar", "varchar", False ), ( "github_username", "varchar", True ), ( "twitter_username", "varchar", True ), ( "is_admin", "boolean", False ), ( "hashed_password", "varchar", True ), ( "last_signin", "timestamp", False ), ( "created_at", "timestamp", False ), ( "updated_at", "timestamp", False ), ( "confirmed_at", "timestamp", True ), ( "deleted_at", "timestamp", True ), ( "data", "json", False ), ( "onboarding", "json", False ), ( "provider_data", "json", True ), ( "tags", "varchar[]", False ) ]

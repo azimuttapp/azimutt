@@ -51,17 +51,20 @@ zero =
 fromSource : Source -> Maybe DbSource
 fromSource source =
     case source.kind of
-        DatabaseConnection kind (Just url) storage ->
-            Just
-                { id = source.id
-                , name = source.name
-                , db = { kind = kind, url = url, storage = storage }
-                , tables = source.tables
-                , relations = source.relations
-                , types = source.types
-                , createdAt = source.createdAt
-                , updatedAt = source.updatedAt
-                }
+        DatabaseConnection db ->
+            db.url
+                |> Maybe.map
+                    (\url ->
+                        { id = source.id
+                        , name = source.name
+                        , db = { kind = db.kind, url = url, storage = db.storage }
+                        , tables = source.tables
+                        , relations = source.relations
+                        , types = source.types
+                        , createdAt = source.createdAt
+                        , updatedAt = source.updatedAt
+                        }
+                    )
 
         _ ->
             Nothing
@@ -71,7 +74,7 @@ toSource : DbSource -> Source
 toSource source =
     { id = source.id
     , name = source.name
-    , kind = DatabaseConnection source.db.kind (Just source.db.url) source.db.storage
+    , kind = DatabaseConnection { kind = source.db.kind, url = Just source.db.url, storage = source.db.storage }
     , content = Array.empty
     , tables = source.tables
     , relations = source.relations

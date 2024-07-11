@@ -409,7 +409,7 @@ docSource : Source
 docSource =
     { id = SourceId.one
     , name = "azimutt_dev"
-    , kind = DatabaseConnection PostgreSQL (Just "postgresql://postgres:postgres@localhost/azimutt_dev") DatabaseUrlStorage.Project
+    , kind = DatabaseConnection { kind = PostgreSQL, url = Just "postgresql://postgres:postgres@localhost/azimutt_dev", storage = DatabaseUrlStorage.Project }
     , content = Array.empty
     , tables =
         [ { docTableEmpty
@@ -446,7 +446,7 @@ docSource2 : Source
 docSource2 =
     { id = SourceId.two
     , name = "cockpit_dev"
-    , kind = DatabaseConnection PostgreSQL (Just "postgresql://postgres:postgres@localhost/cockpit_dev") DatabaseUrlStorage.Project
+    , kind = DatabaseConnection { kind = PostgreSQL, url = Just "postgresql://postgres:postgres@localhost/cockpit_dev", storage = DatabaseUrlStorage.Project }
     , content = Array.empty
     , tables = Dict.empty
     , relations = []

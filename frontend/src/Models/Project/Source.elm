@@ -1,4 +1,4 @@
-module Models.Project.Source exposing (Source, addRelations, aml, databaseKind, databaseUrl, databaseUrlStorage, decode, encode, getColumn, getTable, removeRelations, toInfo, updateWith)
+module Models.Project.Source exposing (Source, addRelations, aml, database, databaseKind, databaseUrl, databaseUrlStorage, decode, encode, getColumn, getTable, removeRelations, toInfo, updateWith)
 
 import Array exposing (Array)
 import Conf
@@ -22,7 +22,7 @@ import Models.Project.DatabaseUrlStorage exposing (DatabaseUrlStorage)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.SampleKey as SampleKey exposing (SampleKey)
 import Models.Project.SourceId as SourceId exposing (SourceId)
-import Models.Project.SourceKind as SourceKind exposing (SourceKind(..))
+import Models.Project.SourceKind as SourceKind exposing (SourceKind(..), SourceKindDatabase)
 import Models.Project.SourceLine as SourceLine exposing (SourceLine)
 import Models.Project.SourceName as SourceName exposing (SourceName)
 import Models.Project.Table as Table exposing (Table)
@@ -74,6 +74,11 @@ toInfo source =
     , createdAt = source.createdAt
     , updatedAt = source.updatedAt
     }
+
+
+database : Source -> Maybe SourceKindDatabase
+database source =
+    source.kind |> SourceKind.database
 
 
 databaseKind : Source -> Maybe DatabaseKind

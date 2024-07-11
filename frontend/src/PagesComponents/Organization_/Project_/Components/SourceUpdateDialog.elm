@@ -129,26 +129,26 @@ view wrap updateSource modalClose noop zone now opened model =
             |> Maybe.mapOrElse
                 (\source ->
                     case source.kind of
-                        DatabaseConnection _ url _ ->
-                            viewDatabaseModal wrap updateSource close zone now (model.id ++ "-database") titleId source url model.databaseSource
+                        DatabaseConnection db ->
+                            viewDatabaseModal wrap updateSource close zone now (model.id ++ "-database") titleId source db.url model.databaseSource
 
-                        SqlLocalFile filename _ updatedAt ->
-                            viewSqlLocalFileModal wrap updateSource close noop zone now (model.id ++ "-sql-local") titleId source filename updatedAt model.sqlSource
+                        SqlLocalFile file ->
+                            viewSqlLocalFileModal wrap updateSource close noop zone now (model.id ++ "-sql-local") titleId source file.name file.modified model.sqlSource
 
-                        SqlRemoteFile url _ ->
-                            viewSqlRemoteFileModal wrap updateSource close zone now (model.id ++ "-sql-remote") titleId source url model.sqlSource
+                        SqlRemoteFile file ->
+                            viewSqlRemoteFileModal wrap updateSource close zone now (model.id ++ "-sql-remote") titleId source file.url model.sqlSource
 
-                        PrismaLocalFile filename _ updatedAt ->
-                            viewPrismaLocalFileModal wrap updateSource close noop zone now (model.id ++ "-prisma-local") titleId source filename updatedAt model.prismaSource
+                        PrismaLocalFile file ->
+                            viewPrismaLocalFileModal wrap updateSource close noop zone now (model.id ++ "-prisma-local") titleId source file.name file.modified model.prismaSource
 
-                        PrismaRemoteFile url _ ->
-                            viewPrismaRemoteFileModal wrap updateSource close zone now (model.id ++ "-prisma-remote") titleId source url model.prismaSource
+                        PrismaRemoteFile file ->
+                            viewPrismaRemoteFileModal wrap updateSource close zone now (model.id ++ "-prisma-remote") titleId source file.url model.prismaSource
 
-                        JsonLocalFile filename _ updatedAt ->
-                            viewJsonLocalFileModal wrap updateSource close noop zone now (model.id ++ "-json-local") titleId source filename updatedAt model.jsonSource
+                        JsonLocalFile file ->
+                            viewJsonLocalFileModal wrap updateSource close noop zone now (model.id ++ "-json-local") titleId source file.name file.modified model.jsonSource
 
-                        JsonRemoteFile url _ ->
-                            viewJsonRemoteFileModal wrap updateSource close zone now (model.id ++ "-prisma-remote") titleId source url model.jsonSource
+                        JsonRemoteFile file ->
+                            viewJsonRemoteFileModal wrap updateSource close zone now (model.id ++ "-prisma-remote") titleId source file.url model.jsonSource
 
                         AmlEditor ->
                             viewAmlModal wrap updateSource close zone now (model.id ++ "-aml") titleId source model.amlSource
@@ -164,6 +164,7 @@ viewDatabaseModal wrap updateSource close zone now htmlId titleId source url mod
         , inputText (htmlId ++ "-name-input") "Source name" model.name (DatabaseSource.UpdateName >> DatabaseSourceMsg >> wrap) False
         , inputText (htmlId ++ "-url-input") "Database url" model.url (DatabaseSource.UpdateUrl >> DatabaseSourceMsg >> wrap) (url /= Nothing)
         , inputSelect (htmlId ++ "-storage-input") "Database url storage" (DatabaseUrlStorage.toString model.storage) (DatabaseUrlStorage.fromString >> DatabaseSource.UpdateStorage >> DatabaseSourceMsg >> wrap) (DatabaseUrlStorage.all |> List.map (\s -> { value = DatabaseUrlStorage.toString s, label = "In " ++ DatabaseUrlStorage.toString s }))
+        , p [ class "mt-1 text-sm text-gray-500" ] [ text (DatabaseUrlStorage.explain model.storage) ]
         , p [ class "mt-3 text-sm text-gray-500" ] [ text "Database last loaded on ", source.updatedAt |> viewDate zone now, text "." ]
         , url
             |> Maybe.orElse (String.nonEmptyMaybe model.url)
@@ -194,8 +195,8 @@ viewSqlLocalFileModal wrap updateSource close noop zone now htmlId titleId sourc
         , localFileInfo zone now source.updatedAt updatedAt
         , div [ class "mt-3" ] [ SqlSource.viewLocalInput (SqlSourceMsg >> wrap) noop (htmlId ++ "-local-file") ]
         , case ( source.kind, model.loadedFile |> Maybe.map (\( src, _ ) -> src.kind) ) of
-            ( SqlLocalFile name1 _ updated1, Just (SqlLocalFile name2 _ updated2) ) ->
-                localFileWarnings ( name1, name2 ) ( updated1, updated2 )
+            ( SqlLocalFile file1, Just (SqlLocalFile file2) ) ->
+                localFileWarnings ( file1.name, file2.name ) ( file1.modified, file2.modified )
 
             _ ->
                 div [] []
@@ -230,8 +231,8 @@ viewPrismaLocalFileModal wrap updateSource close noop zone now htmlId titleId so
         , localFileInfo zone now source.updatedAt updatedAt
         , div [ class "mt-3" ] [ PrismaSource.viewLocalInput (PrismaSourceMsg >> wrap) noop (htmlId ++ "-local-file") ]
         , case ( source.kind, model.loadedSchema |> Maybe.map (\( src, _ ) -> src.kind) ) of
-            ( PrismaLocalFile name1 _ updated1, Just (PrismaLocalFile name2 _ updated2) ) ->
-                localFileWarnings ( name1, name2 ) ( updated1, updated2 )
+            ( PrismaLocalFile file1, Just (PrismaLocalFile file2) ) ->
+                localFileWarnings ( file1.name, file2.name ) ( file1.modified, file2.modified )
 
             _ ->
                 div [] []
@@ -266,8 +267,8 @@ viewJsonLocalFileModal wrap updateSource close noop zone now htmlId titleId sour
         , localFileInfo zone now source.updatedAt updatedAt
         , div [ class "mt-3" ] [ JsonSource.viewLocalInput (JsonSourceMsg >> wrap) noop (htmlId ++ "-local-file") ]
         , case ( source.kind, model.loadedSchema |> Maybe.map (\( src, _ ) -> src.kind) ) of
-            ( JsonLocalFile name1 _ updated1, Just (JsonLocalFile name2 _ updated2) ) ->
-                localFileWarnings ( name1, name2 ) ( updated1, updated2 )
+            ( JsonLocalFile file1, Just (JsonLocalFile file2) ) ->
+                localFileWarnings ( file1.name, file2.name ) ( file1.modified, file2.modified )
 
             _ ->
                 div [] []

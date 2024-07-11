@@ -38,14 +38,17 @@ zero =
 fromSource : Source -> Maybe DbSourceInfo
 fromSource source =
     case source.kind of
-        DatabaseConnection kind (Just url) storage ->
-            Just
-                { id = source.id
-                , name = source.name
-                , db = { kind = kind, url = url, storage = storage }
-                , createdAt = source.createdAt
-                , updatedAt = source.updatedAt
-                }
+        DatabaseConnection db ->
+            db.url
+                |> Maybe.map
+                    (\url ->
+                        { id = source.id
+                        , name = source.name
+                        , db = { kind = db.kind, url = url, storage = db.storage }
+                        , createdAt = source.createdAt
+                        , updatedAt = source.updatedAt
+                        }
+                    )
 
         _ ->
             Nothing
@@ -54,14 +57,17 @@ fromSource source =
 fromSourceInfo : SourceInfo -> Maybe DbSourceInfo
 fromSourceInfo source =
     case source.kind of
-        DatabaseConnection kind (Just url) storage ->
-            Just
-                { id = source.id
-                , name = source.name
-                , db = { kind = kind, url = url, storage = storage }
-                , createdAt = source.createdAt
-                , updatedAt = source.updatedAt
-                }
+        DatabaseConnection db ->
+            db.url
+                |> Maybe.map
+                    (\url ->
+                        { id = source.id
+                        , name = source.name
+                        , db = { kind = db.kind, url = url, storage = db.storage }
+                        , createdAt = source.createdAt
+                        , updatedAt = source.updatedAt
+                        }
+                    )
 
         _ ->
             Nothing

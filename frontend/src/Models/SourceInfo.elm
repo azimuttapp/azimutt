@@ -30,7 +30,7 @@ database now sourceId name engine url storage =
     let
         ( sourceName, kind ) =
             ( name |> String.nonEmptyMaybe |> Maybe.withDefault (DatabaseUrl.databaseName url)
-            , DatabaseConnection engine (Just url) storage
+            , DatabaseConnection { kind = engine, url = Just url, storage = storage }
             )
     in
     SourceInfo sourceId sourceName kind True Nothing now now
@@ -43,29 +43,29 @@ aml now sourceId name =
 
 sqlLocal : Time.Posix -> SourceId -> File -> SourceInfo
 sqlLocal now sourceId file =
-    SourceInfo sourceId file.name (SqlLocalFile file.name file.size file.lastModified) True Nothing now now
+    SourceInfo sourceId file.name (SqlLocalFile { name = file.name, size = file.size, modified = file.lastModified }) True Nothing now now
 
 
 sqlRemote : Time.Posix -> SourceId -> FileUrl -> FileContent -> Maybe SampleKey -> SourceInfo
 sqlRemote now sourceId url content sample =
-    SourceInfo sourceId (url |> FileUrl.filename) (SqlRemoteFile url (String.length content)) True sample now now
+    SourceInfo sourceId (url |> FileUrl.filename) (SqlRemoteFile { url = url, size = String.length content }) True sample now now
 
 
 prismaLocal : Time.Posix -> SourceId -> File -> SourceInfo
 prismaLocal now sourceId file =
-    SourceInfo sourceId file.name (PrismaLocalFile file.name file.size file.lastModified) True Nothing now now
+    SourceInfo sourceId file.name (PrismaLocalFile { name = file.name, size = file.size, modified = file.lastModified }) True Nothing now now
 
 
 prismaRemote : Time.Posix -> SourceId -> FileUrl -> FileContent -> Maybe SampleKey -> SourceInfo
 prismaRemote now sourceId url content sample =
-    SourceInfo sourceId (url |> FileUrl.filename) (PrismaRemoteFile url (String.length content)) True sample now now
+    SourceInfo sourceId (url |> FileUrl.filename) (PrismaRemoteFile { url = url, size = String.length content }) True sample now now
 
 
 jsonLocal : Time.Posix -> SourceId -> File -> SourceInfo
 jsonLocal now sourceId file =
-    SourceInfo sourceId file.name (JsonLocalFile file.name file.size file.lastModified) True Nothing now now
+    SourceInfo sourceId file.name (JsonLocalFile { name = file.name, size = file.size, modified = file.lastModified }) True Nothing now now
 
 
 jsonRemote : Time.Posix -> SourceId -> FileUrl -> FileContent -> Maybe SampleKey -> SourceInfo
 jsonRemote now sourceId url content sample =
-    SourceInfo sourceId (url |> FileUrl.filename) (JsonRemoteFile url (String.length content)) True sample now now
+    SourceInfo sourceId (url |> FileUrl.filename) (JsonRemoteFile { url = url, size = String.length content }) True sample now now

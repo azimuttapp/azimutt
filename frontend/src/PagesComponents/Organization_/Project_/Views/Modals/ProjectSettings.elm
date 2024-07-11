@@ -100,25 +100,25 @@ viewSource htmlId _ zone source =
                     ]
     in
     case source.kind of
-        DatabaseConnection _ _ _ ->
+        DatabaseConnection _ ->
             view Icons.sources.database "Last fetched on " source.updatedAt
 
-        SqlLocalFile _ _ modified ->
-            view Icons.sources.sql "File last modified on " modified
+        SqlLocalFile file ->
+            view Icons.sources.sql "File last modified on " file.modified
 
-        SqlRemoteFile _ _ ->
+        SqlRemoteFile _ ->
             view Icons.sources.remote "Last fetched on " source.updatedAt
 
-        PrismaLocalFile _ _ modified ->
-            view Icons.sources.prisma "File last modified on " modified
+        PrismaLocalFile file ->
+            view Icons.sources.prisma "File last modified on " file.modified
 
-        PrismaRemoteFile _ _ ->
+        PrismaRemoteFile _ ->
             view Icons.sources.remote "Last fetched on " source.updatedAt
 
-        JsonLocalFile _ _ modified ->
-            view Icons.sources.json "File last modified on " modified
+        JsonLocalFile file ->
+            view Icons.sources.json "File last modified on " file.modified
 
-        JsonRemoteFile _ _ ->
+        JsonRemoteFile _ ->
             view Icons.sources.remote "Last fetched on " source.updatedAt
 
         AmlEditor ->
