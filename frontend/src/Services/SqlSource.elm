@@ -79,6 +79,7 @@ type Msg
     | GetRemoteFile FileUrl
     | GotRemoteFile FileUrl (Result Http.Error FileContent)
     | GetLocalFile File
+    | GotLocalFile SourceId File FileContent
     | GotFile SourceInfo FileContent
     | ParseMsg ParsingMsg
     | BuildSource
@@ -163,15 +164,16 @@ update wrap now project msg model =
         GotRemoteFile url result ->
             case result of
                 Ok content ->
-                    ( model, SourceId.generator |> Random.generate (\sourceId -> GotFile (SourceInfo.sqlRemote now sourceId url content Nothing) content |> wrap) |> Extra.cmd )
+                    ( model, SourceId.generator |> Random.generate (\sourceId -> GotFile (SourceInfo.sqlRemote now sourceId model.name url content Nothing) content |> wrap) |> Extra.cmd )
 
                 Err err ->
                     ( model |> setParsedSource (err |> Http.errorToString |> Err |> Just), ( Nothing, err |> Http.errorToString |> Err ) |> model.callback |> Extra.msg )
 
         GetLocalFile file ->
-            ( init model.source model.callback |> (\m -> { m | selectedLocalFile = Just file })
-            , Ports.readLocalFile kind file |> Extra.cmd
-            )
+            ( init model.source model.callback |> (\m -> { m | selectedLocalFile = Just file }), Ports.readLocalFile kind file |> Extra.cmd )
+
+        GotLocalFile sourceId file fileContent ->
+            ( model, GotFile (SourceInfo.sqlLocal now sourceId model.name file) fileContent |> wrap |> Extra.msg )
 
         GotFile sourceInfo fileContent ->
             ( { model
