@@ -176,43 +176,49 @@ export const ParseUrlResponse = Type.Object({
 })
 export type ParseUrlResponse = Static<typeof ParseUrlResponse>
 
-export const GetSchemaParams = Type.Object({
-    url: sDatabaseUrl,
+export const DsSchemaParams = Type.Object({
     database: Type.Optional(sDatabaseName),
     catalog: Type.Optional(sCatalogName),
     schema: Type.Optional(sSchemaName),
     entity: Type.Optional(sTableName),
     user: Type.Optional(sUser),
 })
-export type GetSchemaParams = Static<typeof GetSchemaParams>
-export const GetSchemaResponse = sAzimuttSchema
-export type GetSchemaResponse = Static<typeof GetSchemaResponse>
+export type DsSchemaParams = Static<typeof DsSchemaParams>
+export const DbSchemaParams = Type.Composite([DsSchemaParams, Type.Object({url: sDatabaseUrl})])
+export type DbSchemaParams = Static<typeof DbSchemaParams>
+export const SchemaResponse = sAzimuttSchema
+export type SchemaResponse = Static<typeof SchemaResponse>
 
-export const DbQueryParams = Type.Object({url: sDatabaseUrl, query: Type.String(), user: Type.Optional(sUser)})
+export const DsQueryParams = Type.Object({query: Type.String(), user: Type.Optional(sUser)})
+export type DsQueryParams = Static<typeof DsQueryParams>
+export const DbQueryParams = Type.Composite([DsQueryParams, Type.Object({url: sDatabaseUrl})])
 export type DbQueryParams = Static<typeof DbQueryParams>
-export const DbQueryResponse = Type.Strict(sDatabaseQueryResults)
-export type DbQueryResponse = Static<typeof DbQueryResponse>
+export const QueryResponse = Type.Strict(sDatabaseQueryResults)
+export type QueryResponse = Static<typeof QueryResponse>
 
-export const GetTableStatsParams = Type.Object({
-    url: sDatabaseUrl,
+export const DsTableStatsParams = Type.Object({
     schema: Type.Optional(sSchemaName),
     table: sTableName,
     user: Type.Optional(sUser),
 })
-export type GetTableStatsParams = Static<typeof GetTableStatsParams>
-export const GetTableStatsResponse = Type.Strict(sTableStats)
-export type GetTableStatsResponse = Static<typeof GetTableStatsResponse>
+export type DsTableStatsParams = Static<typeof DsTableStatsParams>
+export const DbTableStatsParams = Type.Composite([DsTableStatsParams, Type.Object({url: sDatabaseUrl})])
+export type DbTableStatsParams = Static<typeof DbTableStatsParams>
+export const TableStatsResponse = Type.Strict(sTableStats)
+export type TableStatsResponse = Static<typeof TableStatsResponse>
 
-export const GetColumnStatsParams = Type.Object({
+export const DsColumnStatsParams = Type.Object({
     url: sDatabaseUrl,
     schema: Type.Optional(sSchemaName),
     table: sTableName,
     column: sColumnName,
     user: Type.Optional(sUser),
 })
-export type GetColumnStatsParams = Static<typeof GetColumnStatsParams>
-export const GetColumnStatsResponse = Type.Strict(sColumnStats)
-export type GetColumnStatsResponse = Static<typeof GetColumnStatsResponse>
+export type DsColumnStatsParams = Static<typeof DsColumnStatsParams>
+export const DbColumnStatsParams = Type.Composite([DsColumnStatsParams, Type.Object({url: sDatabaseUrl})])
+export type DbColumnStatsParams = Static<typeof DbColumnStatsParams>
+export const ColumnStatsResponse = Type.Strict(sColumnStats)
+export type ColumnStatsResponse = Static<typeof ColumnStatsResponse>
 
 function Nullish<T extends TSchema>(s: T): TOptional<TUnion<[T, TNull]>> {
     return Type.Optional(Type.Union([s, Type.Null()]))
