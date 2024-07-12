@@ -2,7 +2,7 @@ import process from "process";
 import {TSchema} from "@sinclair/typebox"
 import {FastifyPluginAsync, FastifyReply} from "fastify"
 import {RouteShorthandOptions} from "fastify/types/route"
-import {Logger} from "@azimutt/utils"
+import {Logger, removeUndefined} from "@azimutt/utils"
 import {
     AttributeRef,
     columnStatsToLegacy,
@@ -167,7 +167,7 @@ type Get<Params = undefined, Query = undefined, Response = undefined> = {
 
 function get(params: TSchema | undefined, query: TSchema | undefined, response: TSchema): RouteShorthandOptions {
     return {
-        schema: {
+        schema: removeUndefined({
             params: params,
             querystring: query,
             response: {
@@ -175,7 +175,7 @@ function get(params: TSchema | undefined, query: TSchema | undefined, response: 
                 400: ErrorResponse,
                 500: FailureResponse,
             },
-        },
+        }),
     }
 }
 
@@ -188,7 +188,7 @@ type Post<Params = undefined, Query = undefined, Body = undefined, Response = un
 
 function post(params: TSchema | undefined, query: TSchema | undefined, body: TSchema | undefined, response: TSchema): RouteShorthandOptions {
     return {
-        schema: {
+        schema: removeUndefined({
             params: params,
             querystring: query,
             body: body,
@@ -197,7 +197,7 @@ function post(params: TSchema | undefined, query: TSchema | undefined, body: TSc
                 400: ErrorResponse,
                 500: FailureResponse,
             },
-        },
+        }),
     }
 }
 

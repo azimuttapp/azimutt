@@ -843,7 +843,7 @@ viewSource openDataExplorer table column rows origin =
                     query =
                         column |> Maybe.mapOrElse (DbQuery.exploreColumn db.kind table) (DbQuery.exploreTable db.kind table)
                 in
-                button [ type_ "button", onClick (openDataExplorer origin.id query), class "ml-1" ]
+                button [ type_ "button", onClick (openDataExplorer origin.id query), class "ml-1", ariaLabel "Browse data" ]
                     [ Icon.solid Icon.ArrowCircleRight "opacity-50" ]
                     |> Tooltip.r "Browse data"
 
