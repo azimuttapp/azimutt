@@ -141,8 +141,8 @@ function buildDataSources(config: Config): void {
 
     const slugs = Object.keys(dataSources)
     if (slugs.length > 0) {
-        console.log('Gateway data-sources:')
-        slugs.forEach(slug => console.log(`  - ${config.API_HOST}:${config.API_PORT}/gateway/data-sources/${slug}`))
+        logger.log('Gateway data-sources:')
+        slugs.forEach(slug => logger.log(`  - ${config.API_HOST}:${config.API_PORT}/gateway/data-sources/${slug}`))
     }
 }
 

@@ -27,6 +27,7 @@ defmodule Azimutt.Organizations.Organization do
     field :plan_seats, :integer
     field :plan_validated, :utc_datetime_usec
     field :free_trial_used, :utc_datetime_usec
+    field :gateway, :string
     field :is_personal, :boolean
     embeds_one :data, Organization.Data, on_replace: :update
     belongs_to :created_by, User, source: :created_by
@@ -120,7 +121,8 @@ defmodule Azimutt.Organizations.Organization do
       :logo,
       :description,
       :github_username,
-      :twitter_username
+      :twitter_username,
+      :gateway
     ])
     |> put_change(:updated_by_id, current_user.id)
   end

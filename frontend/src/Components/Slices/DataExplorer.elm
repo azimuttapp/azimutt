@@ -282,10 +282,7 @@ view wrap toggleDropdown openModal updateSource _ showTableRow openNotes _ opene
                                         , title = "Missing database url"
                                         , actions = [ Button.secondary3 Tw.blue [ onClick (source |> updateSource) ] [ text "Update source" ] ]
                                         }
-                                        [ text "Open settings (top right "
-                                        , Icon.outline Icon.Cog "inline"
-                                        , text ") to add the database url for this source and query it."
-                                        ]
+                                        [ text "Open settings (top right ", Icon.outline Icon.Cog "inline", text ") to add the database url for this source and query it." ]
                                     ]
                                 )
                     )
