@@ -24,6 +24,15 @@ defmodule Azimutt.Utils.Mapx do
   def map(enumerable, f), do: enumerable |> Enum.map(f) |> Map.new()
 
   @doc """
+  Same as `Enum.filter` but for a Map.
+  It iterates over all the key/value pairs and filter the `p` predicate.
+  ## Examples
+      iex> %{foo: "bar", bob: "alice"} |> Mapx.filter(fn {key, value} -> String.length(value) > 4 end)
+      %{bob: "alice"}
+  """
+  def filter(enumerable, p), do: enumerable |> Enum.filter(p) |> Map.new()
+
+  @doc """
   Same as `map` but only on the keys.
   It iterates over all the keys and apply them the `f` function.
   ## Examples
