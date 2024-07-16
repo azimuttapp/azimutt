@@ -3,9 +3,10 @@ module Models.DbSourceInfo exposing (DbSourceInfo, fromSource, fromSourceInfo, z
 import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Time as Time
+import Models.Project.DatabaseUrlStorage as DatabaseUrlStorage exposing (DatabaseUrlStorage)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
-import Models.Project.SourceKind as SourceKind
+import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.SourceName exposing (SourceName)
 import Models.SourceInfo exposing (SourceInfo)
 import Time
@@ -18,7 +19,7 @@ import Time
 type alias DbSourceInfo =
     { id : SourceId
     , name : SourceName
-    , db : { url : DatabaseUrl, kind : DatabaseKind }
+    , db : { kind : DatabaseKind, url : DatabaseUrl, storage : DatabaseUrlStorage }
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
     }
@@ -28,7 +29,7 @@ zero : DbSourceInfo
 zero =
     { id = SourceId.zero
     , name = "zero"
-    , db = { url = "postgres://localhost/zero", kind = DatabaseKind.PostgreSQL }
+    , db = { kind = DatabaseKind.PostgreSQL, url = "postgres://localhost/zero", storage = DatabaseUrlStorage.Browser }
     , createdAt = Time.zero
     , updatedAt = Time.zero
     }
@@ -36,37 +37,37 @@ zero =
 
 fromSource : Source -> Maybe DbSourceInfo
 fromSource source =
-    source.kind
-        |> SourceKind.databaseUrl
-        |> Maybe.andThen
-            (\url ->
-                DatabaseKind.fromUrl url
-                    |> Maybe.map
-                        (\kind ->
-                            { id = source.id
-                            , name = source.name
-                            , db = { url = url, kind = kind }
-                            , createdAt = source.createdAt
-                            , updatedAt = source.updatedAt
-                            }
-                        )
-            )
+    case source.kind of
+        DatabaseConnection db ->
+            db.url
+                |> Maybe.map
+                    (\url ->
+                        { id = source.id
+                        , name = source.name
+                        , db = { kind = db.kind, url = url, storage = db.storage }
+                        , createdAt = source.createdAt
+                        , updatedAt = source.updatedAt
+                        }
+                    )
+
+        _ ->
+            Nothing
 
 
 fromSourceInfo : SourceInfo -> Maybe DbSourceInfo
 fromSourceInfo source =
-    source.kind
-        |> SourceKind.databaseUrl
-        |> Maybe.andThen
-            (\url ->
-                DatabaseKind.fromUrl url
-                    |> Maybe.map
-                        (\kind ->
-                            { id = source.id
-                            , name = source.name
-                            , db = { url = url, kind = kind }
-                            , createdAt = source.createdAt
-                            , updatedAt = source.updatedAt
-                            }
-                        )
-            )
+    case source.kind of
+        DatabaseConnection db ->
+            db.url
+                |> Maybe.map
+                    (\url ->
+                        { id = source.id
+                        , name = source.name
+                        , db = { kind = db.kind, url = url, storage = db.storage }
+                        , createdAt = source.createdAt
+                        , updatedAt = source.updatedAt
+                        }
+                    )
+
+        _ ->
+            Nothing

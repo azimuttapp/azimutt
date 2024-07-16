@@ -42,6 +42,7 @@ module Services.Lenses exposing
     , mapIndex
     , mapJsonSourceMT
     , mapJsonSourceT
+    , mapKind
     , mapLayouts
     , mapLayoutsD
     , mapLayoutsDT
@@ -167,6 +168,7 @@ module Services.Lenses exposing
     , setIsOpen
     , setJsonSource
     , setKey
+    , setKind
     , setLast
     , setLayoutOnLoad
     , setLayouts
@@ -750,6 +752,16 @@ mapJsonSourceMT transform item =
 setKey : v -> { item | key : v } -> { item | key : v }
 setKey =
     set_ .key (\value item -> { item | key = value })
+
+
+setKind : v -> { item | kind : v } -> { item | kind : v }
+setKind =
+    set_ .kind (\value item -> { item | kind = value })
+
+
+mapKind : (v -> v) -> { item | kind : v } -> { item | kind : v }
+mapKind =
+    map_ .kind setKind
 
 
 setLast : v -> { item | last : v } -> { item | last : v }

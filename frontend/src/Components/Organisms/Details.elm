@@ -24,7 +24,6 @@ import Libs.Html.Attributes exposing (ariaHidden, ariaLabel, css, role)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.Bytes as Bytes
-import Libs.Models.DatabaseKind as DatabaseKind
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Notes exposing (Notes)
 import Libs.Models.Tag as Tag exposing (Tag)
@@ -816,37 +815,40 @@ viewSource openDataExplorer table column rows origin =
             SourceKind.DatabaseConnection _ ->
                 Icon.solid Icons.sources.database "opacity-50 mr-1" |> Tooltip.r "Database source"
 
-            SourceKind.SqlLocalFile _ _ _ ->
+            SourceKind.SqlLocalFile _ ->
                 Icon.solid Icons.sources.sql "opacity-50 mr-1" |> Tooltip.r "SQL source"
 
-            SourceKind.SqlRemoteFile _ _ ->
+            SourceKind.SqlRemoteFile _ ->
                 Icon.solid Icons.sources.sql "opacity-50 mr-1" |> Tooltip.r "SQL source"
 
-            SourceKind.PrismaLocalFile _ _ _ ->
+            SourceKind.PrismaLocalFile _ ->
                 Icon.solid Icons.sources.prisma "opacity-50 mr-1" |> Tooltip.r "Prisma source"
 
-            SourceKind.PrismaRemoteFile _ _ ->
+            SourceKind.PrismaRemoteFile _ ->
                 Icon.solid Icons.sources.prisma "opacity-50 mr-1" |> Tooltip.r "Prisma source"
 
-            SourceKind.JsonLocalFile _ _ _ ->
+            SourceKind.JsonLocalFile _ ->
                 Icon.solid Icons.sources.json "opacity-50 mr-1" |> Tooltip.r "JSON source"
 
-            SourceKind.JsonRemoteFile _ _ ->
+            SourceKind.JsonRemoteFile _ ->
                 Icon.solid Icons.sources.json "opacity-50 mr-1" |> Tooltip.r "JSON source"
 
             SourceKind.AmlEditor ->
                 Icon.solid Icons.sources.aml "opacity-50 mr-1" |> Tooltip.r "AML source"
         , text (origin.name ++ (rows |> Maybe.mapOrElse (\r -> " (" ++ String.fromInt r ++ " rows)") ""))
-        , origin.db
-            |> Maybe.andThen DatabaseKind.fromUrl
-            |> Maybe.map (\kind -> column |> Maybe.mapOrElse (DbQuery.exploreColumn kind table) (DbQuery.exploreTable kind table))
-            |> Maybe.map
-                (\query ->
-                    button [ type_ "button", onClick (openDataExplorer origin.id query), class "ml-1" ]
-                        [ Icon.solid Icon.ArrowCircleRight "opacity-50" ]
-                        |> Tooltip.r "Browse data"
-                )
-            |> Maybe.withDefault (text "")
+        , case origin.kind of
+            SourceKind.DatabaseConnection db ->
+                let
+                    query : SqlQueryOrigin
+                    query =
+                        column |> Maybe.mapOrElse (DbQuery.exploreColumn db.kind table) (DbQuery.exploreTable db.kind table)
+                in
+                button [ type_ "button", onClick (openDataExplorer origin.id query), class "ml-1", ariaLabel "Browse data" ]
+                    [ Icon.solid Icon.ArrowCircleRight "opacity-50" ]
+                    |> Tooltip.r "Browse data"
+
+            _ ->
+                text ""
         ]
 
 

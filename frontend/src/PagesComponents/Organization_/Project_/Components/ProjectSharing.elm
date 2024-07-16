@@ -28,6 +28,7 @@ import Libs.Url as Url
 import Models.Feature as Feature
 import Models.Organization as Organization exposing (Organization)
 import Models.Project as Project exposing (Project)
+import Models.Project.DatabaseUrlStorage as DatabaseUrlStorage
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectStorage as ProjectStorage
 import Models.Project.Source
@@ -368,7 +369,7 @@ viewBodyPrivateLinkInput wrap confirm zone inputId curUrl projectRef erd model =
                                     ++ [ viewBodyProjectTokenCreation wrap inputId (model.tokens == []) f ]
                                 )
                             , f.error |> Maybe.mapOrElse (\err -> p [ class "mt-2 text-sm text-red-600" ] [ text err ]) (p [] [])
-                            , if erd.sources |> List.any (.kind >> SourceKind.isDatabase) then
+                            , if erd.sources |> List.any (.kind >> SourceKind.database >> Maybe.any (\db -> db.storage == DatabaseUrlStorage.Project)) then
                                 div [ class "mt-2" ]
                                     [ Alert.simple Tw.yellow
                                         Icon.ExclamationCircle

@@ -12,6 +12,10 @@ defmodule Azimutt.Utils.MapxTest do
       assert %{foo: 3, bob: 5} = %{foo: "bar", bob: "alice"} |> Mapx.map(fn {k, v} -> {k, String.length(v)} end)
     end
 
+    test "filter" do
+      assert %{bob: "alice"} = %{foo: "bar", bob: "alice"} |> Mapx.filter(fn {k, v} -> String.length(v) > 4 end)
+    end
+
     test "map_keys" do
       assert %{"foo" => "bar", "bob" => "alice"} = %{foo: "bar", bob: "alice"} |> Mapx.map_keys(&Atom.to_string/1)
     end

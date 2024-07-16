@@ -415,8 +415,8 @@ importers:
         specifier: ^0.1.1
         version: 0.1.1
       '@azimutt/models':
-        specifier: ^0.1.8
-        version: 0.1.8
+        specifier: ^0.1.10
+        version: 0.1.10
       '@azimutt/utils':
         specifier: ^0.1.3
         version: 0.1.3
@@ -1204,8 +1204,8 @@ packages:
   '@azimutt/connector-sqlserver@0.1.1':
     resolution: {integrity: sha512-zWMU6+AQrvg+yWLU09mYUZevJYm/JnL9EwK3c1rlrezjJtBM3lGIgmtS7oJUjrpt/wHNF/+t4enIr+RuXOc6bw==}
 
-  '@azimutt/models@0.1.8':
-    resolution: {integrity: sha512-Jiuzr4LdGZbfNdm/pkX+75X5q38/FWNdPwcYssWSqBtfGuAGybYdNgNy70WphKJ+jjbp0YPIQ0mzDCW1VxILlQ==}
+  '@azimutt/models@0.1.10':
+    resolution: {integrity: sha512-k3Rsy3SzxGQQDeKlCHmjZeqYCar/jh5jsM5HVcAaEHABxO+V/kuUSpVn9574EXp2Y2ZG+xK7KBU7TtdKwrVgTQ==}
 
   '@azimutt/utils@0.1.3':
     resolution: {integrity: sha512-zTmUDglG/wY3G54deypQju89jvVwA/hr4xqgJMcGeqdY2LeGNB9xFBCWzJz7kRTO3ApJShu7A/TLRVHzEzAufQ==}
@@ -9548,7 +9548,7 @@ snapshots:
 
   '@azimutt/connector-bigquery@0.1.1':
     dependencies:
-      '@azimutt/models': 0.1.8
+      '@azimutt/models': 0.1.10
       '@azimutt/utils': 0.1.3
       '@google-cloud/bigquery': 7.7.0(encoding@0.1.13)
     transitivePeerDependencies:
@@ -9557,7 +9557,7 @@ snapshots:
 
   '@azimutt/connector-couchbase@0.1.1':
     dependencies:
-      '@azimutt/models': 0.1.8
+      '@azimutt/models': 0.1.10
       '@azimutt/utils': 0.1.3
       couchbase: 4.3.1
     transitivePeerDependencies:
@@ -9566,7 +9566,7 @@ snapshots:
 
   '@azimutt/connector-mariadb@0.1.3':
     dependencies:
-      '@azimutt/models': 0.1.8
+      '@azimutt/models': 0.1.10
       '@azimutt/utils': 0.1.3
       mariadb: 3.3.0
     transitivePeerDependencies:
@@ -9574,7 +9574,7 @@ snapshots:
 
   '@azimutt/connector-mongodb@0.1.1(socks@2.8.3)':
     dependencies:
-      '@azimutt/models': 0.1.8
+      '@azimutt/models': 0.1.10
       '@azimutt/utils': 0.1.3
       mongodb: 6.6.1(socks@2.8.3)
     transitivePeerDependencies:
@@ -9589,7 +9589,7 @@ snapshots:
 
   '@azimutt/connector-mysql@0.1.2':
     dependencies:
-      '@azimutt/models': 0.1.8
+      '@azimutt/models': 0.1.10
       '@azimutt/utils': 0.1.3
       mysql2: 3.3.3
     transitivePeerDependencies:
@@ -9597,7 +9597,7 @@ snapshots:
 
   '@azimutt/connector-postgres@0.1.7(pg-native@3.0.1)':
     dependencies:
-      '@azimutt/models': 0.1.8
+      '@azimutt/models': 0.1.10
       '@azimutt/utils': 0.1.3
       pg: 8.10.0(pg-native@3.0.1)
       postgres-array: 3.0.2
@@ -9607,7 +9607,7 @@ snapshots:
 
   '@azimutt/connector-snowflake@0.1.1(asn1.js@5.4.1)':
     dependencies:
-      '@azimutt/models': 0.1.8
+      '@azimutt/models': 0.1.10
       '@azimutt/utils': 0.1.3
       snowflake-sdk: 1.10.1(asn1.js@5.4.1)(encoding@0.1.13)
     transitivePeerDependencies:
@@ -9618,14 +9618,14 @@ snapshots:
 
   '@azimutt/connector-sqlserver@0.1.1':
     dependencies:
-      '@azimutt/models': 0.1.8
+      '@azimutt/models': 0.1.10
       '@azimutt/utils': 0.1.3
       mssql: 9.3.0
     transitivePeerDependencies:
       - encoding
       - supports-color
 
-  '@azimutt/models@0.1.8':
+  '@azimutt/models@0.1.10':
     dependencies:
       '@azimutt/utils': 0.1.3
       openai: 4.47.2(encoding@0.1.13)

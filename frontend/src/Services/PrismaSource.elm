@@ -21,7 +21,7 @@ import Libs.Result as Result
 import Libs.Tailwind exposing (TwClass)
 import Libs.Task as T
 import Models.Project.Source exposing (Source)
-import Models.Project.SourceId as SourceId
+import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.SourceInfo as SourceInfo exposing (SourceInfo)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
@@ -35,6 +35,7 @@ import Track
 
 type alias Model msg =
     { source : Maybe Source
+    , name : String
     , url : String
     , selectedLocalFile : Maybe File
     , selectedRemoteFile : Maybe (Result String FileUrl)
@@ -47,10 +48,12 @@ type alias Model msg =
 
 
 type Msg
-    = UpdateRemoteFile FileUrl
+    = UpdateName String
+    | UpdateRemoteFile FileUrl
     | GetRemoteFile FileUrl
     | GotRemoteFile FileUrl (Result Http.Error FileContent)
     | GetLocalFile File
+    | GotLocalFile SourceId File FileContent
     | GotFile SourceInfo FileContent
     | GotSchema (Result String JsonSchema)
     | BuildSource
@@ -74,6 +77,7 @@ example =
 init : Maybe Source -> (Result String Source -> msg) -> Model msg
 init source callback =
     { source = source
+    , name = source |> Maybe.mapOrElse .name ""
     , url = ""
     , selectedLocalFile = Nothing
     , selectedRemoteFile = Nothing
@@ -92,6 +96,9 @@ init source callback =
 update : (Msg -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Model msg -> ( Model msg, Extra msg )
 update wrap now project msg model =
     case msg of
+        UpdateName name ->
+            ( { model | name = name }, Extra.none )
+
         UpdateRemoteFile url ->
             ( { model | url = url, selectedLocalFile = Nothing, selectedRemoteFile = Nothing, loadedSchema = Nothing, parsedSchema = Nothing, parsedSource = Nothing }, Extra.none )
 
@@ -110,15 +117,16 @@ update wrap now project msg model =
         GotRemoteFile url result ->
             case result of
                 Ok content ->
-                    ( model, SourceId.generator |> Random.generate (\sourceId -> GotFile (SourceInfo.prismaRemote now sourceId url content Nothing) content |> wrap) |> Extra.cmd )
+                    ( model, SourceId.generator |> Random.generate (\sourceId -> GotFile (SourceInfo.prismaRemote now sourceId model.name url content Nothing) content |> wrap) |> Extra.cmd )
 
                 Err err ->
                     ( model |> setParsedSource (err |> Http.errorToString |> Err |> Just), err |> Http.errorToString |> Err |> model.callback |> Extra.msg )
 
         GetLocalFile file ->
-            ( init model.source model.callback |> (\m -> { m | selectedLocalFile = Just file })
-            , Ports.readLocalFile kind file |> Extra.cmd
-            )
+            ( init model.source model.callback |> (\m -> { m | selectedLocalFile = Just file }), Ports.readLocalFile kind file |> Extra.cmd )
+
+        GotLocalFile sourceId file fileContent ->
+            ( model, GotFile (SourceInfo.prismaLocal now sourceId model.name file) fileContent |> wrap |> Extra.msg )
 
         GotFile sourceInfo fileContent ->
             ( { model | loadedSchema = Just ( sourceInfo |> setId (model.source |> Maybe.mapOrElse .id sourceInfo.id), fileContent ) }

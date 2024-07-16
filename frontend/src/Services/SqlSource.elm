@@ -48,6 +48,7 @@ import Url exposing (percentEncode)
 
 type alias Model msg =
     { source : Maybe Source
+    , name : String
     , url : String
     , selectedLocalFile : Maybe File
     , selectedRemoteFile : Maybe (Result String FileUrl)
@@ -73,10 +74,12 @@ type alias SqlParsing msg =
 
 
 type Msg
-    = UpdateRemoteFile FileUrl
+    = UpdateName String
+    | UpdateRemoteFile FileUrl
     | GetRemoteFile FileUrl
     | GotRemoteFile FileUrl (Result Http.Error FileContent)
     | GetLocalFile File
+    | GotLocalFile SourceId File FileContent
     | GotFile SourceInfo FileContent
     | ParseMsg ParsingMsg
     | BuildSource
@@ -107,6 +110,7 @@ example =
 init : Maybe Source -> (( Maybe (SqlParsing msg), Result String Source ) -> msg) -> Model msg
 init source callback =
     { source = source
+    , name = source |> Maybe.mapOrElse .name ""
     , url = ""
     , selectedLocalFile = Nothing
     , selectedRemoteFile = Nothing
@@ -139,6 +143,9 @@ parsingInit fileContent buildMsg buildProject =
 update : (Msg -> msg) -> Time.Posix -> Maybe ProjectInfo -> Msg -> Model msg -> ( Model msg, Extra msg )
 update wrap now project msg model =
     case msg of
+        UpdateName name ->
+            ( { model | name = name }, Extra.none )
+
         UpdateRemoteFile url ->
             ( { model | url = url, selectedLocalFile = Nothing, selectedRemoteFile = Nothing, loadedFile = Nothing, parsedSchema = Nothing, parsedSource = Nothing }, Extra.none )
 
@@ -157,15 +164,16 @@ update wrap now project msg model =
         GotRemoteFile url result ->
             case result of
                 Ok content ->
-                    ( model, SourceId.generator |> Random.generate (\sourceId -> GotFile (SourceInfo.sqlRemote now sourceId url content Nothing) content |> wrap) |> Extra.cmd )
+                    ( model, SourceId.generator |> Random.generate (\sourceId -> GotFile (SourceInfo.sqlRemote now sourceId model.name url content Nothing) content |> wrap) |> Extra.cmd )
 
                 Err err ->
                     ( model |> setParsedSource (err |> Http.errorToString |> Err |> Just), ( Nothing, err |> Http.errorToString |> Err ) |> model.callback |> Extra.msg )
 
         GetLocalFile file ->
-            ( init model.source model.callback |> (\m -> { m | selectedLocalFile = Just file })
-            , Ports.readLocalFile kind file |> Extra.cmd
-            )
+            ( init model.source model.callback |> (\m -> { m | selectedLocalFile = Just file }), Ports.readLocalFile kind file |> Extra.cmd )
+
+        GotLocalFile sourceId file fileContent ->
+            ( model, GotFile (SourceInfo.sqlLocal now sourceId model.name file) fileContent |> wrap |> Extra.msg )
 
         GotFile sourceInfo fileContent ->
             ( { model

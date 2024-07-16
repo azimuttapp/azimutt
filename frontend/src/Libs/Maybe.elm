@@ -1,4 +1,4 @@
-module Libs.Maybe exposing (all, andThenZip, any, any2, filter, filterBy, filterNot, flipWith, has, hasBy, isJust, mapOrElse, mapT, merge, onNothing, orElse, resultSeq, toList, toResult, toResultErr, unzip, when, zip, zip3)
+module Libs.Maybe exposing (all, andThenZip, any, any2, filter, filterBy, filterNot, flipWith, has, hasBy, isJust, mapOrElse, mapT, merge, onNothing, orElse, resultSeq, toList, toResult, toResultErr, tuple, unzip, when, zip, zip3)
 
 import Libs.Bool as B
 
@@ -145,6 +145,11 @@ resultSeq maybe =
 
         Nothing ->
             Ok Nothing
+
+
+tuple : b -> Maybe a -> Maybe ( a, b )
+tuple b maybe =
+    maybe |> Maybe.map (\a -> ( a, b ))
 
 
 tupleFirstSeq : b -> Maybe ( a, b ) -> ( Maybe a, b )

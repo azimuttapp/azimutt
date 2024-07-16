@@ -44,6 +44,7 @@ export class ElmApp {
         UpdateProject: [],
         MoveProjectTo: [],
         DeleteProject: [],
+        DeleteSource: [],
         ProjectDirty: [],
         DownloadFile: [],
         CopyToClipboard: [],

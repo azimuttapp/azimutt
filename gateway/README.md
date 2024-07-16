@@ -46,8 +46,9 @@ The `workspace:^` can't be used there...
 
 ## Publish
 
-- update `package.json` version
+- update `package.json` version & deps
 - update lib versions (`pnpm -w run update` + manual)
+- update package-lock.json (`npm install`)
 - test with `pnpm run dry-publish` and check `azimutt-gateway-x.y.z.tgz` content
 - launch `pnpm publish --no-git-checks --access public`
 

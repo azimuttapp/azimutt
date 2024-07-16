@@ -1,9 +1,10 @@
-module Services.AmlSource exposing (Model, Msg, init, update, viewInput)
+module Services.AmlSource exposing (Model, Msg(..), init, update, viewInput)
 
 import Components.Molecules.InputText as InputText
 import Html exposing (Html, div, label, p, text)
 import Html.Attributes exposing (class, for)
 import Libs.Html exposing (extLink)
+import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
@@ -15,7 +16,8 @@ import Track
 
 
 type alias Model =
-    { name : String
+    { source : Maybe Source
+    , name : String
     , parsedSource : Maybe (Result String Source)
     }
 
@@ -29,9 +31,10 @@ type Msg
 -- INIT
 
 
-init : Model
-init =
-    { name = ""
+init : Maybe Source -> Model
+init source =
+    { source = source
+    , name = source |> Maybe.mapOrElse .name ""
     , parsedSource = Nothing
     }
 

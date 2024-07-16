@@ -1,5 +1,5 @@
 import {successes} from "@azimutt/utils";
-import {LegacyProjectId, LegacyProjectJson} from "@azimutt/models";
+import {DatabaseUrl, LegacyProjectId, LegacyProjectJson, SourceId} from "@azimutt/models";
 import {IndexedDBStorage} from "./storage/indexeddb";
 import {LocalStorageStorage} from "./storage/localstorage";
 import {InMemoryStorage} from "./storage/inmemory";
@@ -16,6 +16,30 @@ export class Storage {
         this.indexedDb = IndexedDBStorage.init(logger.disableDebug())
         this.localStorage = LocalStorageStorage.init(logger.disableDebug())
         this.inMemory = new InMemoryStorage(logger.disableDebug())
+    }
+
+    getDbUrl = async (id: SourceId): Promise<DatabaseUrl | undefined> => {
+        this.logger.debug(`storage.getDbUrl(${id})`)
+        return this.indexedDb.then(s => s.getDbUrl(id))
+            .catch(e => e !== 'Not found' ? this.localStorage.then(s => s.getDbUrl(id)) : Promise.reject(e))
+            .catch(e => e !== 'Not found' ? this.inMemory.getDbUrl(id) : Promise.reject(e))
+            .catch(e => Promise.reject(e === 'Not found' ? `Not found database url ${id}` : e))
+    }
+
+    setDbUrl = async (id: SourceId, url: DatabaseUrl): Promise<void> => {
+        this.logger.debug(`storage.setDbUrl(${id})`)
+        return this.indexedDb.catch(_ => this.localStorage).catch(_ => this.inMemory)
+            .then(s => s.setDbUrl(id, url))
+            .then(_ => undefined)
+    }
+
+    removeDbUrl = (id: SourceId): Promise<void> => {
+        this.logger.debug(`storage.removeDbUrl(${id})`)
+        return successes([
+            this.indexedDb.then(s => s.removeDbUrl(id)),
+            this.localStorage.then(s => s.removeDbUrl(id)),
+            this.inMemory.removeDbUrl(id)
+        ]).then(_ => undefined)
     }
 
     getProject = (id: LegacyProjectId): Promise<LegacyProjectJson> => {

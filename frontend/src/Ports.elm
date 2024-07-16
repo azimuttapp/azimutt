@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, copyToClipboard, createProject, createProjectTmp, deleteProject, downloadFile, fireworks, focus, fullscreen, getColumnStats, getDatabaseSchema, getPrismaSchema, getProject, getTableStats, listenHotkeys, llmGenerateSql, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableRowSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, copyToClipboard, createProject, createProjectTmp, deleteProject, deleteSource, downloadFile, fireworks, focus, fullscreen, getColumnStats, getDatabaseSchema, getPrismaSchema, getProject, getTableStats, listenHotkeys, llmGenerateSql, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableRowSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
 
 import DataSources.JsonMiner.JsonSchema as JsonSchema exposing (JsonSchema)
 import Dict exposing (Dict)
@@ -130,6 +130,11 @@ copyToClipboard content =
 deleteProject : ProjectInfo -> Maybe String -> Cmd msg
 deleteProject project redirect =
     messageToJs (DeleteProject project redirect)
+
+
+deleteSource : SourceId -> Cmd msg
+deleteSource source =
+    messageToJs (DeleteSource source)
 
 
 projectDirty : Bool -> Cmd msg
@@ -266,6 +271,7 @@ type ElmMsg
     | UpdateProject Project
     | MoveProjectTo Project ProjectStorage
     | DeleteProject ProjectInfo (Maybe String)
+    | DeleteSource SourceId
     | ProjectDirty Bool
     | DownloadFile FileName FileContent
     | CopyToClipboard String
@@ -392,6 +398,9 @@ elmEncoder elm =
 
         DeleteProject project redirect ->
             Encode.object [ ( "kind", "DeleteProject" |> Encode.string ), ( "project", project |> ProjectInfo.encode ), ( "redirect", redirect |> Encode.maybe Encode.string ) ]
+
+        DeleteSource source ->
+            Encode.object [ ( "kind", "DeleteSource" |> Encode.string ), ( "source", source |> SourceId.encode ) ]
 
         ProjectDirty dirty ->
             Encode.object [ ( "kind", "ProjectDirty" |> Encode.string ), ( "dirty", dirty |> Encode.bool ) ]

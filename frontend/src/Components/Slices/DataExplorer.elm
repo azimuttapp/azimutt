@@ -38,8 +38,9 @@ import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.Metadata exposing (Metadata)
 import Models.Project.SchemaName exposing (SchemaName)
-import Models.Project.Source exposing (Source)
+import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
+import Models.Project.SourceKind as SourceKind
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableRow as TableRow
@@ -75,7 +76,7 @@ import Track
 type alias Model =
     { display : Maybe DataExplorerDisplay
     , activeTab : DataExplorerTab
-    , source : Maybe DbSource
+    , selectedSource : Maybe SourceId
     , visualEditor : VisualEditor
     , queryEditor : QueryEditor
     , results : List DataExplorerQuery.Model
@@ -112,7 +113,7 @@ type Msg
     | Close
     | UpdateDisplay (Maybe DataExplorerDisplay)
     | UpdateTab DataExplorerTab
-    | UpdateSource (Maybe DbSource)
+    | UpdateSource (Maybe SourceId)
     | UpdateTable (Maybe TableId)
     | AddFilter Table ColumnPath
     | UpdateFilterOperator Int FilterOperator
@@ -137,7 +138,7 @@ init : Model
 init =
     { display = Nothing
     , activeTab = QueryEditorTab
-    , source = Nothing
+    , selectedSource = Nothing
     , visualEditor = { table = Nothing, filters = [] }
     , queryEditor = Editor.init ""
     , results = []
@@ -156,13 +157,16 @@ update wrap showToast openGenerateSql project sources msg model =
     case msg of
         Open sourceId query ->
             let
-                dbSources : List DbSource
-                dbSources =
-                    sources |> List.filterMap DbSource.fromSource
+                selected : Maybe SourceId
+                selected =
+                    sourceId
+                        |> Maybe.orElse model.selectedSource
+                        |> Maybe.orElse (sources |> List.find (Source.databaseUrl >> Maybe.isJust) |> Maybe.map .id)
+                        |> Maybe.orElse (sources |> List.find (.kind >> SourceKind.isDatabase) |> Maybe.map .id)
 
                 source : Maybe DbSource
                 source =
-                    sourceId |> Maybe.andThen (\id -> dbSources |> List.findBy .id id)
+                    selected |> Maybe.andThen (\id -> sources |> List.findBy .id id |> Maybe.andThen DbSource.fromSource)
 
                 tab : DataExplorerTab
                 tab =
@@ -171,7 +175,7 @@ update wrap showToast openGenerateSql project sources msg model =
             ( { model
                 | display = Just BottomDisplay
                 , activeTab = tab
-                , source = source |> Maybe.orElse model.source |> Maybe.orElse (dbSources |> List.head)
+                , selectedSource = selected
                 , queryEditor = query |> Maybe.map (.sql >> Editor.init) |> Maybe.withDefault model.queryEditor
               }
             , Extra.cmdL
@@ -191,7 +195,7 @@ update wrap showToast openGenerateSql project sources msg model =
             ( { model | activeTab = tab }, focusMainInput tab |> Extra.cmd )
 
         UpdateSource source ->
-            ( { model | source = source, visualEditor = { table = Nothing, filters = [] } }, Extra.none )
+            ( { model | selectedSource = source, visualEditor = { table = Nothing, filters = [] } }, Extra.none )
 
         UpdateTable table ->
             ( { model | visualEditor = { table = table, filters = [] } }, Extra.none )
@@ -250,56 +254,71 @@ focusMainInput tab =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> ((msg -> String -> Html msg) -> msg) -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> String -> HtmlId -> SchemaName -> HtmlId -> List Source -> ErdLayout -> Metadata -> Model -> DataExplorerDisplay -> Html msg
-view wrap toggleDropdown openModal _ showTableRow openNotes _ openedDropdown defaultSchema htmlId sources _ metadata model display =
-    let
-        hasFullScreen : Bool
-        hasFullScreen =
-            model.results
-                |> List.any
-                    (\r ->
-                        case r.state of
-                            DataExplorerQuery.StateSuccess s ->
-                                s.fullScreen
-
-                            _ ->
-                                False
-                    )
-    in
+view : (Msg -> msg) -> (HtmlId -> msg) -> ((msg -> String -> Html msg) -> msg) -> (Source -> msg) -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> String -> HtmlId -> SchemaName -> HtmlId -> List Source -> ErdLayout -> Metadata -> Model -> DataExplorerDisplay -> Html msg
+view wrap toggleDropdown openModal updateSource _ showTableRow openNotes _ openedDropdown defaultSchema htmlId sources _ metadata model display =
     div [ class "h-full flex" ]
         [ div [ class "basis-1/3 flex-1 overflow-y-auto flex flex-col border-r" ]
             -- TODO: put header on the whole width
-            [ viewHeader wrap model.activeTab model.source display
-            , viewSources wrap (htmlId ++ "-sources") sources model.source
-            , case model.activeTab of
-                VisualEditorTab ->
-                    model.source |> Maybe.mapOrElse (\s -> viewVisualExplorer wrap defaultSchema (htmlId ++ "-visual-editor") s model.visualEditor) (div [] [])
+            [ viewHeader wrap model.activeTab display
+            , viewSources wrap (htmlId ++ "-sources") sources model.selectedSource
+            , (model.selectedSource |> Maybe.andThen (\id -> sources |> List.findBy .id id))
+                |> Maybe.map
+                    (\source ->
+                        (source |> DbSource.fromSource)
+                            |> Maybe.map
+                                (\db ->
+                                    case model.activeTab of
+                                        VisualEditorTab ->
+                                            viewVisualExplorer wrap defaultSchema (htmlId ++ "-visual-editor") db model.visualEditor
 
-                QueryEditorTab ->
-                    model.source |> Maybe.mapOrElse (\s -> viewQueryEditor wrap toggleDropdown openedDropdown (htmlId ++ "-query-editor") s model.queryEditor) (div [] [])
+                                        QueryEditorTab ->
+                                            viewQueryEditor wrap toggleDropdown openedDropdown (htmlId ++ "-query-editor") db model.queryEditor
+                                )
+                            |> Maybe.withDefault
+                                (div [ class "m-3" ]
+                                    [ Alert.withActions
+                                        { color = Tw.blue
+                                        , icon = Icon.ExclamationCircle
+                                        , title = "Missing database url"
+                                        , actions = [ Button.secondary3 Tw.blue [ onClick (source |> updateSource) ] [ text "Update source" ] ]
+                                        }
+                                        [ text "Open settings (top right ", Icon.outline Icon.Cog "inline", text ") to add the database url for this source and query it." ]
+                                    ]
+                                )
+                    )
+                |> Maybe.withDefault (div [ class "m-3" ] [ Alert.simple Tw.blue Icon.ExclamationCircle [ text "Please select a source to query." ] ])
             ]
         , div [ class "basis-2/3 flex-1 overflow-y-auto bg-gray-50 pb-28" ]
             [ viewResults wrap toggleDropdown openModal (\s q -> showTableRow s q Nothing Nothing) openNotes openedDropdown defaultSchema sources metadata (htmlId ++ "-results") model.results ]
 
         -- Don't show TableRow details, load them directly into the layout, TODO: clean everything once sure about this change...
-        -- , viewDetails wrap showTable showTableRow (\s q -> OpenDetails s q |> wrap) openNotes navbarHeight hasFullScreen defaultSchema sources layout metadata (htmlId ++ "-details") model.details
+        --, let
+        --    hasFullScreen : Bool
+        --    hasFullScreen =
+        --        model.results
+        --            |> List.any
+        --                (\r ->
+        --                    case r.state of
+        --                        DataExplorerQuery.StateSuccess s ->
+        --                            s.fullScreen
+        --
+        --                        _ ->
+        --                            False
+        --                )
+        --  in
+        --  viewRowDetails wrap showTable showTableRow (\s q -> OpenDetails s q |> wrap) openNotes navbarHeight hasFullScreen defaultSchema sources layout metadata (htmlId ++ "-details") model.details
         ]
 
 
-viewHeader : (Msg -> msg) -> DataExplorerTab -> Maybe DbSource -> DataExplorerDisplay -> Html msg
-viewHeader wrap activeTab source display =
+viewHeader : (Msg -> msg) -> DataExplorerTab -> DataExplorerDisplay -> Html msg
+viewHeader wrap activeTab display =
     div [ class "px-3 flex justify-between border-b border-gray-200" ]
         [ div [ class "sm:flex sm:items-baseline" ]
             [ h3 [ class "text-base font-semibold leading-6 text-gray-900 whitespace-nowrap" ] [ text "Data explorer", Badge.basic Tw.green [ class "ml-1" ] [ text "Beta" ] |> Tooltip.br "Data exploration is free while in beta." ]
-            , source
-                |> Maybe.map
-                    (\_ ->
-                        div [ class "ml-6 mt-0" ]
-                            [ nav [ class "flex space-x-6" ]
-                                ([ VisualEditorTab, QueryEditorTab ] |> List.map (viewHeaderTab wrap activeTab))
-                            ]
-                    )
-                |> Maybe.withDefault (div [] [])
+            , div [ class "ml-6 mt-0" ]
+                [ nav [ class "flex space-x-6" ]
+                    ([ VisualEditorTab, QueryEditorTab ] |> List.map (viewHeaderTab wrap activeTab))
+                ]
             ]
         , div [ class "py-2 flex flex-shrink-0 self-center" ]
             [ case display of
@@ -338,14 +357,14 @@ viewHeaderTab wrap active tab =
         ]
 
 
-viewSources : (Msg -> msg) -> HtmlId -> List Source -> Maybe DbSource -> Html msg
+viewSources : (Msg -> msg) -> HtmlId -> List Source -> Maybe SourceId -> Html msg
 viewSources wrap htmlId sources selectedSource =
     let
         sourceInput : HtmlId
         sourceInput =
             htmlId ++ "-input"
     in
-    case sources |> List.filterMap DbSource.fromSource of
+    case sources |> List.filter (.kind >> SourceKind.isDatabase) of
         [] ->
             div [ class "mt-3 mx-3" ]
                 [ Alert.withDescription
@@ -374,7 +393,7 @@ viewSources wrap htmlId sources selectedSource =
                             { color = Tw.red
                             , icon = Icon.ExclamationCircle
                             , title = "Ooops"
-                            , actions = [ Button.secondary2 Tw.red [ onClick (Just db |> UpdateSource |> wrap) ] [ text ("Select " ++ db.name ++ " source") ] ]
+                            , actions = [ Button.secondary2 Tw.red [ onClick (Just db.id |> UpdateSource |> wrap) ] [ text ("Select " ++ db.name ++ " source") ] ]
                             }
                             [ p [] [ text "You project has one database source but it's not selected in data explorer." ]
                             , p []
@@ -386,15 +405,15 @@ viewSources wrap htmlId sources selectedSource =
                         ]
                     )
 
-        dbSources ->
+        dbs ->
             div []
                 [ select
                     [ id sourceInput
                     , name sourceInput
-                    , onInput (SourceId.fromString >> Maybe.andThen (\id -> dbSources |> List.findBy .id id) >> UpdateSource >> wrap)
+                    , onInput (SourceId.fromString >> UpdateSource >> wrap)
                     , class "mt-3 mx-3 block rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
                     ]
-                    (option [] [ text "-- select a source" ] :: (dbSources |> List.map (\s -> option [ value (SourceId.toString s.id), selected (selectedSource |> Maybe.hasBy .id s.id) ] [ text s.name ])))
+                    (option [] [ text "-- select a source" ] :: (dbs |> List.map (\s -> option [ value (SourceId.toString s.id), selected (selectedSource == Just s.id) ] [ text (s.name ++ (s |> Source.databaseUrl |> Maybe.mapOrElse (\_ -> "") " (needs url)")) ])))
                 ]
 
 
@@ -581,8 +600,8 @@ viewResults wrap toggleDropdown openModal openRow openNotes openedDropdown defau
             )
 
 
-viewDetails : (Msg -> msg) -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (DbSourceInfo -> RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> String -> Bool -> SchemaName -> List Source -> ErdLayout -> Metadata -> HtmlId -> List DataExplorerDetails.Model -> Html msg
-viewDetails wrap showTable showTableRow openRowDetails openNotes navbarHeight hasFullScreen defaultSchema sources layout metadata htmlId details =
+viewRowDetails : (Msg -> msg) -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (DbSourceInfo -> RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> String -> Bool -> SchemaName -> List Source -> ErdLayout -> Metadata -> HtmlId -> List DataExplorerDetails.Model -> Html msg
+viewRowDetails wrap showTable showTableRow openRowDetails openNotes navbarHeight hasFullScreen defaultSchema sources layout metadata htmlId details =
     div []
         (details
             |> List.indexedMap (\i m -> DataExplorerDetails.view (DetailsMsg m.id >> wrap) (CloseDetails m.id |> wrap) showTable showTableRow (openRowDetails m.source) openNotes navbarHeight hasFullScreen defaultSchema (sources |> List.findBy .id m.source.id) (layout.tables |> List.findBy .id m.query.table) (metadata |> Dict.get m.query.table) (htmlId ++ "-" ++ String.fromInt m.id) (Just i) m)
@@ -605,7 +624,7 @@ type alias DocState =
 docInit : DocState
 docInit =
     { openedDropdown = ""
-    , model = { init | source = DbSource.fromSource docSource1, results = docQueryResults, resultsSeq = List.length docQueryResults + 1 }
+    , model = { init | selectedSource = Just docSource1.id, results = docQueryResults, resultsSeq = List.length docQueryResults + 1 }
     , oneSource = init
     , noSource = init
     }
@@ -701,7 +720,7 @@ docLayout =
 
 docComponentState : String -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> ( String, SharedDocState x -> Html (ElmBook.Msg (SharedDocState x)) )
 docComponentState name get set sources =
-    ( name, \{ dataExplorerDocState } -> dataExplorerDocState |> (\s -> div [ style "height" "500px" ] [ view (docUpdate s get set sources) (docToggleDropdown s) docOpenModal docShowTable docShowTableRow docOpenNotes "0px" s.openedDropdown "public" "data-explorer" sources docLayout docMetadata (get s) (get s |> .display |> Maybe.withDefault BottomDisplay) ]) )
+    ( name, \{ dataExplorerDocState } -> dataExplorerDocState |> (\s -> div [ style "height" "500px" ] [ view (docUpdate s get set sources) (docToggleDropdown s) docOpenModal docUpdateSource docShowTable docShowTableRow docOpenNotes "0px" s.openedDropdown "public" "data-explorer" sources docLayout docMetadata (get s) (get s |> .display |> Maybe.withDefault BottomDisplay) ]) )
 
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> List Source -> Msg -> ElmBook.Msg (SharedDocState x)
@@ -741,6 +760,11 @@ docShowToast _ =
 docOpenGenerateSql : Maybe SourceId -> ElmBook.Msg state
 docOpenGenerateSql _ =
     logAction "openGenerateSql"
+
+
+docUpdateSource : Source -> ElmBook.Msg state
+docUpdateSource _ =
+    logAction "updateSource"
 
 
 docShowTable : TableId -> ElmBook.Msg state

@@ -156,7 +156,7 @@ updateSource now source input model =
             apply items f m =
                 items |> List.foldl (\a ( curModel, curExtra ) -> curModel |> f a |> Tuple.mapSecond (Extra.combine curExtra >> Extra.dropHistory)) m
         in
-        ( model |> mapAmlSidebarM (setErrors []) |> mapErdM (Erd.mapSource source.id (Source.refreshWith parsed)), Extra.none )
+        ( model |> mapAmlSidebarM (setErrors []) |> mapErdM (Erd.mapSource source.id (Source.updateWith parsed)), Extra.none )
             |> apply toShow (\( id, hint ) -> mapErdMT (showTable now id hint "aml") >> setDirtyM)
             |> apply toHide (\id -> mapErdMT (hideTable now id) >> setDirtyM)
             |> apply updated (\t -> mapErdMT (showColumns now t.id (ShowColumns.List (amlColumns |> Dict.getOrElse t.id []))) >> setDirtyM)

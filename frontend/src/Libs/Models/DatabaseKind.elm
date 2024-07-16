@@ -2,6 +2,7 @@ module Libs.Models.DatabaseKind exposing (DatabaseKind(..), all, decode, encode,
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
+import Libs.Json.Decode as Decode
 import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 
 
@@ -146,4 +147,4 @@ encode value =
 
 decode : Decoder DatabaseKind
 decode =
-    Decode.string |> Decode.andThen (\v -> v |> fromString |> Maybe.map Decode.succeed |> Maybe.withDefault (Decode.fail ("Unknown DatabaseKind:" ++ v)))
+    Decode.string |> Decode.andThen (\v -> v |> fromString |> Decode.fromMaybe ("Unknown DatabaseKind:" ++ v))

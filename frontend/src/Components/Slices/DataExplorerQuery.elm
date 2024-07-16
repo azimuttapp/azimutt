@@ -22,7 +22,7 @@ import Libs.Dict as Dict
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Models.DatabaseKind as DatabaseKind
+import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind(..))
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Notes exposing (Notes)
 import Libs.Nel exposing (Nel)
@@ -41,6 +41,7 @@ import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathS
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.Comment exposing (Comment)
+import Models.Project.DatabaseUrlStorage as DatabaseUrlStorage
 import Models.Project.Metadata exposing (Metadata)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
@@ -797,7 +798,7 @@ docSource : Source
 docSource =
     { id = SourceId.zero
     , name = "azimutt_dev"
-    , kind = DatabaseConnection "postgresql://postgres:postgres@localhost:5432/azimutt_dev"
+    , kind = DatabaseConnection { kind = PostgreSQL, url = Just "postgresql://postgres:postgres@localhost:5432/azimutt_dev", storage = DatabaseUrlStorage.Project }
     , content = Array.empty
     , tables =
         [ docTable "public" "users" [ ( "id", "uuid", False ), ( "slug", "varchar", False ), ( "name", "varchar", False ), ( "email", "varchar", False ), ( "provider", "varchar", True ), ( "provider_uid", "varchar", True ), ( "avatar", "varchar", False ), ( "github_username", "varchar", True ), ( "twitter_username", "varchar", True ), ( "is_admin", "boolean", False ), ( "hashed_password", "varchar", True ), ( "last_signin", "timestamp", False ), ( "created_at", "timestamp", False ), ( "updated_at", "timestamp", False ), ( "confirmed_at", "timestamp", True ), ( "deleted_at", "timestamp", True ), ( "data", "json", False ), ( "onboarding", "json", False ), ( "provider_data", "json", True ), ( "tags", "varchar[]", False ) ]

@@ -31,7 +31,8 @@ program.name('azimutt')
 
 program.command('gateway')
     .description('Launch the gateway server to allow Azimutt to access your local databases.')
-    .action((args) => exec(launchGateway(logger), args))
+    .argument('[datasource_urls]', 'database urls to keep inside the gateway, including credentials')
+    .action((dataSourceUrls, args) => exec(launchGateway(dataSourceUrls, logger), args))
 
 program.command('explore')
     .description('Open Azimutt with your database url to see it immediately.')

@@ -1,7 +1,7 @@
 import open from "open";
 import {Logger} from "@azimutt/utils";
 import {DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/models";
-import {NodeEnv, startServer, track} from "@azimutt/gateway";
+import {buildConfig, NodeEnv, startServer, track} from "@azimutt/gateway";
 import {version} from "./version.js";
 
 export async function launchExplore(url: string, instance: string, logger: Logger): Promise<void> {
@@ -12,13 +12,13 @@ export async function launchExplore(url: string, instance: string, logger: Logge
     // const azimuttUrl = `${instance}/embed?database-source=${encodeURIComponent(url)}&mode=full`
     // https://azimutt.app/embed?database-source=postgresql://postgres:postgres@localhost/azimutt_dev&mode=full
     // const azimuttUrl = `https://azimutt.app/create?database=${encodeURIComponent(url)}&gateway=http://localhost:4177`
-    await startServer({
+    await startServer(buildConfig({
         NODE_ENV: NodeEnv.production,
         LOG_LEVEL: 'info',
         API_HOST: 'localhost',
         API_PORT: '4177',
-        CORS_ALLOW_ORIGIN: '*'
-    })
+        CORS_ALLOW_ORIGIN: '*',
+    }))
     logger.log(`opening ${azimuttUrl}`)
     await open(azimuttUrl)
 }
