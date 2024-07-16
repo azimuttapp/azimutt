@@ -193,10 +193,10 @@ export class Backend {
             return Http.postJson(`${gateway_local}/gateway${path}`, body, zod)
                 .catch(err => Promise.reject(`Local gateway: ${errorToString(err)}`))
         }, _ => {
-            return Http.getJson(`${window.gateway_url}/ping`, GatewayPing).then(_ => {
-                return Http.postJson(`${window.gateway_url}/gateway${path}`, body, zod)
-                    .catch(err => Promise.reject(`Azimutt gateway: ${errorToString(err)}, forgot to start the local gateway? (npx azimutt@latest gateway)`))
-            })
+            const gateway_remote = window.gateway_url || ''
+            return Http.getJson(`${gateway_remote}/ping`, GatewayPing)
+                .then(_ => Http.postJson(`${gateway_remote}/gateway${path}`, body, zod))
+                .catch(err => Promise.reject(`${gateway_remote.includes('azimutt.app') ? 'Azimutt gateway' : 'Custom gateway'}: ${errorToString(err)}, forgot to start the local gateway? (npx azimutt@latest gateway)`))
         })
     }
 }
