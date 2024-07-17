@@ -122,7 +122,7 @@ update req now projects urlOrganization msg model =
             ( model, Cmd.batch [ Ports.createProjectTmp project, Track.projectDraftCreated project ] )
 
         CreateEmptyProject name ->
-            ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create projects name >> CreateProjectTmp) )
+            ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create urlOrganization projects name >> CreateProjectTmp) )
 
         DropdownToggle id ->
             ( model |> Dropdown.update id, Cmd.none )

@@ -19,7 +19,6 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Libs.Tailwind exposing (hover, lg, sm)
 import Models.Organization exposing (Organization)
-import Models.OrganizationId exposing (OrganizationId)
 import Models.Position as Position
 import Models.Project.ProjectStorage as ProjectStorage
 import Models.ProjectInfo exposing (ProjectInfo)
@@ -72,7 +71,7 @@ view onDelete currentUrl urlInfos shared model =
 viewProject : Cmd Msg -> Url -> UrlInfos -> Shared.Model -> Model -> List (Html Msg)
 viewProject onDelete currentUrl urlInfos shared model =
     [ if model.loaded then
-        model.erd |> Maybe.mapOrElse (viewApp currentUrl urlInfos.organization shared model "app") (viewNotFound currentUrl urlInfos shared.user shared.projects model.conf)
+        model.erd |> Maybe.mapOrElse (viewApp currentUrl urlInfos shared model "app") (viewNotFound currentUrl urlInfos shared.user shared.projects model.conf)
 
       else
         Loader.fullScreen
@@ -88,11 +87,11 @@ viewProject onDelete currentUrl urlInfos shared model =
     ]
 
 
-viewApp : Url -> Maybe OrganizationId -> Shared.Model -> Model -> HtmlId -> Erd -> Html Msg
-viewApp currentUrl urlOrganization shared model htmlId erd =
+viewApp : Url -> UrlInfos -> Shared.Model -> Model -> HtmlId -> Erd -> Html Msg
+viewApp currentUrl urlInfos shared model htmlId erd =
     div [ class "az-app h-full" ]
         [ if model.conf.showNavbar then
-            Lazy.lazy8 viewNavbar shared.conf shared.user model.conf model.virtualRelation erd shared.projects model.navbar (Navbar.argsToString currentUrl urlOrganization (shared.organizations |> List.map .id) (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav")) model.dirty)
+            Lazy.lazy8 viewNavbar shared.conf shared.user model.conf model.virtualRelation erd shared.projects model.navbar (Navbar.argsToString currentUrl urlInfos.organization (shared.organizations |> List.map .id) (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav")) model.dirty)
 
           else
             div [] []
@@ -133,7 +132,7 @@ viewApp currentUrl urlOrganization shared model htmlId erd =
                     div [] []
                 ]
             , viewLeftSidebar model
-            , viewRightSidebar model
+            , viewRightSidebar urlInfos shared model
             ]
         , viewBottomSheet model
         ]
@@ -153,12 +152,16 @@ viewLeftSidebar model =
         ]
 
 
-viewRightSidebar : Model -> Html Msg
-viewRightSidebar model =
+viewRightSidebar : UrlInfos -> Shared.Model -> Model -> Html Msg
+viewRightSidebar urlInfos shared model =
     let
+        projectRef : ProjectRef
+        projectRef =
+            model.erd |> Erd.getProjectRef urlInfos shared.organizations
+
         content : Maybe (Html Msg)
         content =
-            model.amlSidebar |> Maybe.map2 AmlSidebar.view model.erd
+            Maybe.map2 (AmlSidebar.view projectRef) model.erd model.amlSidebar
     in
     aside [ css [ "block flex-shrink-0 order-last" ] ]
         [ div [ css [ B.cond (content == Nothing) "-mr-112" "", "w-112 transition-[margin] ease-in-out duration-200 h-full relative flex flex-col border-l border-gray-200 bg-white overflow-y-auto" ] ]
@@ -200,7 +203,7 @@ viewModal curUrl urlInfos shared model _ =
          , model.newLayout |> Maybe.map2 (\e m -> ( m.id, NewLayout.view NewLayoutMsg ModalClose projectRef (e.layouts |> Dict.keys) (isOpen m) m )) model.erd
          , model.editNotes |> Maybe.map2 (\e m -> ( m.id, viewEditNotes (isOpen m) e m )) model.erd
          , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (isOpen m) model.openedDropdown e.settings.defaultSchema e.tables e.settings.findPath m )) model.erd
-         , model.llmGenerateSql |> Maybe.map2 (\e m -> ( m.id, LlmGenerateSqlDialog.view LlmGenerateSqlDialogMsg Send Batch (Toasts.success >> Toast) (\source q -> DataExplorer.Open (Just source) (Just q) |> DataExplorerMsg) ModalClose (isOpen m) e m )) model.erd
+         , model.llmGenerateSql |> Maybe.map2 (\e m -> ( m.id, LlmGenerateSqlDialog.view LlmGenerateSqlDialogMsg Send Batch (Toasts.success >> Toast) (\source q -> DataExplorer.Open (Just source) (Just q) |> DataExplorerMsg) ModalClose (isOpen m) projectRef e m )) model.erd
          , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis projectRef (isOpen m) e.settings.defaultSchema e.sources e.tables e.relations e.ignoredRelations m )) model.erd
          , model.exportDialog |> Maybe.map (\m -> ( m.id, ExportDialog.view ExportDialogMsg Send ModalClose (isOpen m) projectRef m ))
          , model.sharing |> Maybe.map2 (\e m -> ( m.id, ProjectSharing.view SharingMsg Send ModalClose confirmDanger shared.zone curUrl projectRef (isOpen m) e m )) model.erd

@@ -3,6 +3,7 @@ module PagesComponents.Organization_.Project_.Components.AmlSidebar exposing (Mo
 import Array exposing (Array)
 import Components.Atoms.Icon as Icon
 import Components.Molecules.Editor as Editor
+import Components.Slices.PlanDialog as PlanDialog
 import Conf
 import DataSources.AmlMiner.AmlAdapter as AmlAdapter
 import DataSources.AmlMiner.AmlParser as AmlParser
@@ -19,6 +20,8 @@ import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (focus)
 import Libs.Tuple as Tuple
+import Models.Feature as Feature
+import Models.Organization as Organization
 import Models.Position as Position
 import Models.Project.ColumnId as ColumnId
 import Models.Project.ColumnPath as ColumnPath
@@ -27,6 +30,7 @@ import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind as SourceKind
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.ProjectRef exposing (ProjectRef)
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), Msg(..), simplePrompt)
 import PagesComponents.Organization_.Project_.Models.CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
@@ -76,11 +80,17 @@ init sourceId erd =
 -- UPDATE
 
 
-update : Time.Posix -> AmlSidebarMsg -> Model x -> ( Model x, Extra Msg )
-update now msg model =
+update : Time.Posix -> ProjectRef -> AmlSidebarMsg -> Model x -> ( Model x, Extra Msg )
+update now projectRef msg model =
     case msg of
         AOpen id ->
-            ( model |> setAmlSidebar (Just (init id model.erd)), Track.sourceEditorOpened model.erd |> Extra.cmd )
+            ( model |> setAmlSidebar (Just (init id model.erd))
+            , if projectRef |> Organization.canUseAml then
+                Track.sourceEditorOpened model.erd |> Extra.cmd
+
+              else
+                [ Track.sourceEditorOpened model.erd, Track.planLimit Feature.aml model.erd ] |> Extra.cmdL
+            )
 
         AClose ->
             ( model |> setAmlSidebar Nothing, Track.sourceEditorClosed model.erd |> Extra.cmd )
@@ -214,8 +224,8 @@ getOtherSourcesTableIds currentSourceId erd =
 -- VIEW
 
 
-view : Erd -> AmlSidebar -> Html Msg
-view erd model =
+view : ProjectRef -> Erd -> AmlSidebar -> Html Msg
+view projectRef erd model =
     let
         userSources : List Source
         userSources =
@@ -246,10 +256,14 @@ view erd model =
     in
     div []
         [ viewHeading
-        , div [ class "px-3 py-2" ]
-            [ viewChooseSource selectedSource userSources
-            , selectedSource |> Maybe.mapOrElse (viewSourceEditor model warnings) (div [] [])
-            ]
+        , if projectRef |> Organization.canUseAml then
+            div [ class "px-3 py-2" ]
+                [ viewChooseSource selectedSource userSources
+                , selectedSource |> Maybe.mapOrElse (viewSourceEditor model warnings) (div [] [])
+                ]
+
+          else
+            div [ class "px-3 py-2" ] [ PlanDialog.amlDisabledAlert projectRef ]
         ]
 
 

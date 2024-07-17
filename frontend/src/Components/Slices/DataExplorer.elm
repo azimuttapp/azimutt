@@ -286,7 +286,7 @@ view wrap toggleDropdown openModal updateSource _ showTableRow openNotes _ opene
                                     ]
                                 )
                     )
-                |> Maybe.withDefault (div [ class "m-3" ] [ Alert.simple Tw.blue Icon.ExclamationCircle [ text "Please select a source to query." ] ])
+                |> Maybe.withDefault (div [] [])
             ]
         , div [ class "basis-2/3 flex-1 overflow-y-auto bg-gray-50 pb-28" ]
             [ viewResults wrap toggleDropdown openModal (\s q -> showTableRow s q Nothing Nothing) openNotes openedDropdown defaultSchema sources metadata (htmlId ++ "-results") model.results ]

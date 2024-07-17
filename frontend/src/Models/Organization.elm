@@ -1,4 +1,4 @@
-module Models.Organization exposing (Organization, canAnalyse, canChangeColor, canCreateLayout, canExportSchema, canSaveProject, canShareProject, canShowTables, decode, encode, isLastLayout, one, zero)
+module Models.Organization exposing (Organization, canAnalyse, canChangeColor, canCreateLayout, canExportProject, canExportSchema, canSaveProject, canShareProject, canShowTables, canUseAi, canUseAml, decode, encode, isLastLayout, one, zero)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -36,6 +36,16 @@ canChangeColor projectRef =
     projectRef.organization |> Maybe.mapOrElse (.plan >> .colors) Feature.colors.default
 
 
+canUseAml : { x | organization : Maybe Organization } -> Bool
+canUseAml projectRef =
+    projectRef.organization |> Maybe.mapOrElse (.plan >> .aml) Feature.aml.default
+
+
+canUseAi : { x | organization : Maybe Organization } -> Bool
+canUseAi projectRef =
+    projectRef.organization |> Maybe.mapOrElse (.plan >> .ai) Feature.ai.default
+
+
 isLastLayout : Int -> { x | organization : Maybe Organization } -> Bool
 isLastLayout layouts projectRef =
     projectRef.organization |> Maybe.mapOrElse (.plan >> .projectLayouts >> Maybe.any (\l -> layouts >= l)) (layouts + 1 == Feature.projectLayouts.default)
@@ -49,6 +59,11 @@ canCreateLayout layouts projectRef =
 canExportSchema : { x | organization : Maybe Organization } -> Bool
 canExportSchema projectRef =
     projectRef.organization |> Maybe.mapOrElse (.plan >> .schemaExport) Feature.schemaExport.default
+
+
+canExportProject : { x | organization : Maybe Organization } -> Bool
+canExportProject projectRef =
+    projectRef.organization |> Maybe.mapOrElse (.plan >> .projectExport) Feature.schemaExport.default
 
 
 canShareProject : { x | organization : Maybe Organization } -> Bool

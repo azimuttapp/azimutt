@@ -3,6 +3,7 @@ module Shared exposing (Confirm, Flags, GlobalConf, Model, Msg, Prompt, init, su
 import Components.Atoms.Icon exposing (Icon)
 import Html exposing (Html)
 import Libs.Bool as Bool
+import Libs.List as List
 import Libs.Models.Env as Env exposing (Env)
 import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Result as Result
@@ -13,6 +14,7 @@ import Models.User exposing (User)
 import Ports exposing (JsMsg)
 import Request exposing (Request)
 import Services.Backend as Backend
+import Services.Lenses exposing (mapPlan)
 import Services.Sort as Sort
 import Task
 import Time

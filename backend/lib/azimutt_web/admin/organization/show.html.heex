@@ -47,7 +47,9 @@
                     <%= @plan.project_doc || "∞" %> docs,
                     <span class={if(@plan.project_share, do: "", else: "line-through")}>project share</span>
                 </div>
-                <div class="mt-1 text-xs font-medium text-slate-500 truncate"><%= @organization.data |> format_data() %></div>
+                <%= if @organization.data do %>
+                <div class="mt-1 text-xs font-medium text-slate-500 truncate">Data: <%= @organization.data |> format_data() %></div>
+                <% end %>
             </div>
         </div>
         <div class="my-3"><%= render AzimuttWeb.Admin.ProjectView, "_projects_table.html", conn: @conn, projects: @projects %></div>

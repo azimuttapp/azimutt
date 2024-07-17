@@ -323,13 +323,13 @@ defmodule Azimutt.Organizations do
   end
 
   defp override_int(%OrganizationPlan{} = plan, %Organization.Data{} = data, plan_key, data_key),
-    do: if(data[data_key] != nil, do: plan |> Map.put(plan_key, best_limit(plan[plan_key], data[data_key])), else: plan)
+    do: if(Map.fetch!(data, data_key) != nil, do: plan |> Map.put(plan_key, best_limit(Map.fetch!(plan, plan_key), Map.fetch!(data, data_key))), else: plan)
 
   defp override_bool(%OrganizationPlan{} = plan, %Organization.Data{} = data, plan_key, data_key),
-    do: if(data[data_key], do: plan |> Map.put(plan_key, true), else: plan)
+    do: if(Map.fetch!(data, data_key), do: plan |> Map.put(plan_key, true), else: plan)
 
   defp override_string(%OrganizationPlan{} = plan, %Organization.Data{} = data, plan_key, data_key),
-    do: if(data[data_key], do: plan |> Map.put(plan_key, data[data_key]), else: plan)
+    do: if(Map.fetch!(data, data_key), do: plan |> Map.put(plan_key, Map.fetch!(data, data_key)), else: plan)
 
   defp streak_overrides(%User{} = maybe_current_user, %OrganizationPlan{} = plan) do
     streak = Tracking.get_streak(maybe_current_user) |> Result.or_else(0)

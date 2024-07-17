@@ -125,16 +125,16 @@ viewTabContent : HtmlId -> Time.Zone -> List ProjectInfo -> Maybe OrganizationId
 viewTabContent htmlId zone projects urlOrganization model =
     case model.selectedTab of
         TabDatabase ->
-            model.databaseSource |> Maybe.mapOrElse (viewDatabaseSourceTab (htmlId ++ "-database") model.openedCollapse projects) (div [] [])
+            model.databaseSource |> Maybe.mapOrElse (viewDatabaseSourceTab (htmlId ++ "-database") model.openedCollapse urlOrganization projects) (div [] [])
 
         TabSql ->
-            model.sqlSource |> Maybe.mapOrElse (viewSqlSourceTab (htmlId ++ "-sql") model.openedCollapse projects) (div [] [])
+            model.sqlSource |> Maybe.mapOrElse (viewSqlSourceTab (htmlId ++ "-sql") model.openedCollapse urlOrganization projects) (div [] [])
 
         TabPrisma ->
-            model.prismaSource |> Maybe.mapOrElse (viewPrismaSourceTab (htmlId ++ "-prisma") model.openedCollapse projects) (div [] [])
+            model.prismaSource |> Maybe.mapOrElse (viewPrismaSourceTab (htmlId ++ "-prisma") model.openedCollapse urlOrganization projects) (div [] [])
 
         TabJson ->
-            model.jsonSource |> Maybe.mapOrElse (viewJsonSourceTab (htmlId ++ "-json") model.openedCollapse projects) (div [] [])
+            model.jsonSource |> Maybe.mapOrElse (viewJsonSourceTab (htmlId ++ "-json") model.openedCollapse urlOrganization projects) (div [] [])
 
         TabEmptyProject ->
             viewEmptyProjectTab
@@ -146,48 +146,48 @@ viewTabContent htmlId zone projects urlOrganization model =
             model.sampleSource |> Maybe.mapOrElse (viewSampleSourceTab urlOrganization projects model.samples) (div [] [])
 
 
-viewDatabaseSourceTab : HtmlId -> HtmlId -> List ProjectInfo -> DatabaseSource.Model Msg -> Html Msg
-viewDatabaseSourceTab htmlId openedCollapse projects model =
+viewDatabaseSourceTab : HtmlId -> HtmlId -> Maybe OrganizationId -> List ProjectInfo -> DatabaseSource.Model Msg -> Html Msg
+viewDatabaseSourceTab htmlId openedCollapse urlOrganization projects model =
     div []
         [ viewHeading "Extract your database schema" [ text "Browsers can't connect to databases, schema extraction is done through a proxy, Azimutt Gateway or ", extLink "https://www.npmjs.com/package/azimutt" [ class "link" ] [ text "CLI" ], text ". Nothing is stored." ]
         , div [ class "mt-6" ] [ DatabaseSource.viewInput DatabaseSourceMsg htmlId model ]
         , div [ class "mt-3" ] [ viewDataPrivacyCollapse htmlId openedCollapse ]
         , DatabaseSource.viewParsing DatabaseSourceMsg model
-        , viewSourceActionButtons (InitTab TabDatabase) (DatabaseSource.GetSchema >> DatabaseSourceMsg) projects model.url model.parsedSource
+        , viewSourceActionButtons (InitTab TabDatabase) (DatabaseSource.GetSchema >> DatabaseSourceMsg) urlOrganization projects model.url model.parsedSource
         ]
 
 
-viewSqlSourceTab : HtmlId -> HtmlId -> List ProjectInfo -> SqlSource.Model Msg -> Html Msg
-viewSqlSourceTab htmlId openedCollapse projects model =
+viewSqlSourceTab : HtmlId -> HtmlId -> Maybe OrganizationId -> List ProjectInfo -> SqlSource.Model Msg -> Html Msg
+viewSqlSourceTab htmlId openedCollapse urlOrganization projects model =
     div []
         [ viewHeading "Import your SQL schema" [ text "Everything stay on your machine, don't worry about your schema privacy." ]
         , div [ class "mt-6" ] [ SqlSource.viewInput SqlSourceMsg Noop htmlId model ]
         , div [ class "mt-3" ] [ viewHowToGetSchemaCollapse htmlId openedCollapse ]
         , viewDataPrivacyCollapse htmlId openedCollapse
         , SqlSource.viewParsing SqlSourceMsg model
-        , viewSourceActionButtons (InitTab TabSql) (SqlSource.GetRemoteFile >> SqlSourceMsg) projects model.url model.parsedSource
+        , viewSourceActionButtons (InitTab TabSql) (SqlSource.GetRemoteFile >> SqlSourceMsg) urlOrganization projects model.url model.parsedSource
         ]
 
 
-viewPrismaSourceTab : HtmlId -> HtmlId -> List ProjectInfo -> PrismaSource.Model Msg -> Html Msg
-viewPrismaSourceTab htmlId openedCollapse projects model =
+viewPrismaSourceTab : HtmlId -> HtmlId -> Maybe OrganizationId -> List ProjectInfo -> PrismaSource.Model Msg -> Html Msg
+viewPrismaSourceTab htmlId openedCollapse urlOrganization projects model =
     div []
         [ viewHeading "Import your Prisma Schema" [ text "Everything stay on your machine, don't worry about your schema privacy." ]
         , div [ class "mt-6" ] [ PrismaSource.viewInput PrismaSourceMsg Noop htmlId model ]
         , div [ class "mt-3" ] [ viewDataPrivacyCollapse htmlId openedCollapse ]
         , PrismaSource.viewParsing PrismaSourceMsg model
-        , viewSourceActionButtons (InitTab TabSql) (PrismaSource.GetRemoteFile >> PrismaSourceMsg) projects model.url model.parsedSource
+        , viewSourceActionButtons (InitTab TabSql) (PrismaSource.GetRemoteFile >> PrismaSourceMsg) urlOrganization projects model.url model.parsedSource
         ]
 
 
-viewJsonSourceTab : HtmlId -> HtmlId -> List ProjectInfo -> JsonSource.Model Msg -> Html Msg
-viewJsonSourceTab htmlId openedCollapse projects model =
+viewJsonSourceTab : HtmlId -> HtmlId -> Maybe OrganizationId -> List ProjectInfo -> JsonSource.Model Msg -> Html Msg
+viewJsonSourceTab htmlId openedCollapse urlOrganization projects model =
     div []
         [ viewHeading "Import your custom source in JSON" [ text "If you have a data source not (yet) supported by Azimutt, you can extract and format its schema into JSON to import it here." ]
         , div [ class "mt-6" ] [ JsonSource.viewInput JsonSourceMsg Noop htmlId model ]
         , viewDataPrivacyCollapse htmlId openedCollapse
         , JsonSource.viewParsing JsonSourceMsg model
-        , viewSourceActionButtons (InitTab TabJson) (JsonSource.GetRemoteFile >> JsonSourceMsg) projects model.url model.parsedSource
+        , viewSourceActionButtons (InitTab TabJson) (JsonSource.GetRemoteFile >> JsonSourceMsg) urlOrganization projects model.url model.parsedSource
         ]
 
 
@@ -320,8 +320,8 @@ viewDataPrivacyCollapse htmlId openedCollapse =
         ]
 
 
-viewSourceActionButtons : Msg -> (String -> Msg) -> List ProjectInfo -> String -> Maybe (Result String Source) -> Html Msg
-viewSourceActionButtons drop extractSchema projects url parsedSource =
+viewSourceActionButtons : Msg -> (String -> Msg) -> Maybe OrganizationId -> List ProjectInfo -> String -> Maybe (Result String Source) -> Html Msg
+viewSourceActionButtons drop extractSchema urlOrganization projects url parsedSource =
     div [ css [ "mt-6" ] ]
         [ div [ css [ "flex justify-end" ] ]
             (case ( url, parsedSource ) of
@@ -335,7 +335,7 @@ viewSourceActionButtons drop extractSchema projects url parsedSource =
                             )
                             (\src ->
                                 [ Button.white3 Tw.primary [ onClick drop ] [ text "Trash this" ]
-                                , Button.primary3 Tw.primary [ onClick (CreateProjectTmp (Project.create projects src.name src)), id "create-project-btn", css [ "ml-3" ] ] [ text "Create project!" ]
+                                , Button.primary3 Tw.primary [ onClick (CreateProjectTmp (Project.create urlOrganization projects src.name src)), id "create-project-btn", css [ "ml-3" ] ] [ text "Create project!" ]
                                 ]
                             )
 

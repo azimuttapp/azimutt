@@ -1,14 +1,14 @@
 module Models.Feature exposing (ai, aml, analysis, colors, dataExploration, layoutTables, projectDbs, projectDoc, projectExport, projectLayouts, projectShare, projects, schemaExport)
 
 
-ai : { name : String }
+ai : { name : String, default : Bool }
 ai =
-    { name = "ai" }
+    { name = "ai", default = False }
 
 
-aml : { name : String }
+aml : { name : String, default : Bool }
 aml =
-    { name = "aml" }
+    { name = "aml", default = False }
 
 
 analysis : { name : String, preview : String, snapshot : String, trends : String, limit : Int, default : Bool }

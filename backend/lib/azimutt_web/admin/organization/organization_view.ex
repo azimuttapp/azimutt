@@ -6,6 +6,7 @@ defmodule AzimuttWeb.Admin.OrganizationView do
   import Phoenix.HTML.Link
   alias Azimutt.Organizations.Organization
   alias Azimutt.Services.StripeSrv
+  alias Azimutt.Utils.Mapx
   alias Azimutt.Utils.Page
   alias AzimuttWeb.Router.Helpers, as: Routes
 
@@ -20,7 +21,7 @@ defmodule AzimuttWeb.Admin.OrganizationView do
   end
 
   def format_data(data) when is_nil(data), do: ""
-  def format_data(%Organization.Data{} = data), do: data |> Map.from_struct() |> Jason.encode!()
+  def format_data(%Organization.Data{} = data), do: data |> Map.from_struct() |> Mapx.filter(fn {_, v} -> !is_nil(v) end) |> Jason.encode!()
 
   def display_number(list) do
     x = Enum.count(list)

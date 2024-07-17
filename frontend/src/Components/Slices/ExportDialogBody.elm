@@ -119,7 +119,11 @@ getOutput : (Msg -> msg) -> ProjectRef -> Erd -> ExportInput -> ExportFormat -> 
 getOutput wrap projectRef erd input format =
     case input of
         Project ->
-            erd |> Erd.unpack |> Project.downloadContent |> (GotOutput (erd.project.name ++ ".azimutt.json") >> wrap >> Extra.msg)
+            if not (Organization.canExportProject projectRef) then
+                Extra.cmdL [ GotOutput "" "plan_limit" |> wrap |> T.send, Track.planLimit Feature.projectExport (Just erd) ]
+
+            else
+                erd |> Erd.unpack |> Project.downloadContent |> (GotOutput (erd.project.name ++ ".azimutt.json") >> wrap >> Extra.msg)
 
         AllTables ->
             if format /= AML && format /= JSON && not (Organization.canExportSchema projectRef) then
@@ -210,7 +214,11 @@ view wrap send onClose titleId project model =
                             (\e -> viewCode ("Error: " ++ e))
                             (\( _, content ) ->
                                 if content == "plan_limit" then
-                                    div [ class "mt-3" ] [ PlanDialog.sqlExportWarning project ]
+                                    if model.input == Just Project then
+                                        div [ class "mt-3" ] [ PlanDialog.projectExportWarning project ]
+
+                                    else
+                                        div [ class "mt-3" ] [ PlanDialog.schemaExportWarning project ]
 
                                 else if model.format == Just PostgreSQL then
                                     div [] [ viewCode content, viewSuggestPR "https://github.com/azimuttapp/azimutt/blob/main/frontend/src/DataSources/SqlMiner/PostgreSqlGenerator.elm#L26" ]
@@ -326,7 +334,7 @@ organization_members
         |> AmlParser.parse
         |> AmlAdapter.buildSource (SourceInfo.aml Time.zero SourceId.zero "test") Array.empty
         |> Tuple3.second
-        |> Project.create [] "Project name"
+        |> Project.create Nothing [] "Project name"
         |> Erd.create
         |> setLayouts (Dict.fromList [ ( "init layout", docBuildLayout [ ( "users", [ "id", "name" ] ) ] ) ])
         |> setCurrentLayout "init layout"

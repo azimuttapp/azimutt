@@ -376,7 +376,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdMTM (\e -> e |> Erd.mapCurrentLayoutTWithTime now (mapTableRowsT (mapTableRowOrSelected id message (TableRow.update (TableRowMsg id) DropdownToggle Toast (DeleteTableRow id) (UnDeleteTableRow_ 0) now e.project e.sources model.openedDropdown message)))) |> setDirtyM
 
         AmlSidebarMsg message ->
-            model |> AmlSidebar.update now message
+            model |> AmlSidebar.update now projectRef message
 
         DetailsSidebarMsg message ->
             model.erd |> Maybe.mapOrElse (\erd -> model |> mapDetailsSidebarT (DetailsSidebar.update Noop NotesMsg TagsMsg erd message)) ( model, Extra.none )
@@ -391,10 +391,10 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> handleFindPath message
 
         LlmGenerateSqlDialogMsg message ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> mapLlmGenerateSqlT (LlmGenerateSqlDialog.update ModalOpen PromptOpen (PSLlmKeyUpdate >> ProjectSettingsMsg) erd message)) ( model, Extra.none )
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapLlmGenerateSqlT (LlmGenerateSqlDialog.update ModalOpen PromptOpen (PSLlmKeyUpdate >> ProjectSettingsMsg) projectRef erd message)) ( model, Extra.none )
 
         SchemaAnalysisMsg SAOpen ->
-            ( model |> setSchemaAnalysis (Just { id = Conf.ids.schemaAnalysisDialog, opened = "" }), Extra.cmdL [ T.sendAfter 1 (ModalOpen Conf.ids.schemaAnalysisDialog), Track.dbAnalysisOpened model.erd ] )
+            ( model |> setSchemaAnalysis (Just { id = Conf.ids.schemaAnalysisDialog, opened = "" }), [ T.sendAfter 1 (ModalOpen Conf.ids.schemaAnalysisDialog), Track.dbAnalysisOpened model.erd ] ++ B.cond (Organization.canAnalyse projectRef) [] [ Track.planLimit Feature.analysis model.erd ] |> Extra.cmdL )
 
         SchemaAnalysisMsg (SASectionToggle section) ->
             ( model |> mapSchemaAnalysisM (mapOpened (\opened -> B.cond (opened == section) "" section)), Extra.none )
@@ -418,7 +418,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapEmbedSourceParsingMT (EmbedSourceParsingDialog.update EmbedSourceParsingMsg now (model.erd |> Maybe.map .project) message) |> Extra.defaultT
 
         SourceParsed source ->
-            ( model, source |> Project.create projects source.name |> Ok |> Just |> GotProject "load" |> JsMessage |> Extra.msg )
+            ( model, source |> Project.create urlInfos.organization projects source.name |> Ok |> Just |> GotProject "load" |> JsMessage |> Extra.msg )
 
         PlanDialogColors _ PlanDialog.EnableTableChangeColor ->
             ( model |> mapErdM (mapProject (mapOrganizationM (mapPlan (setColors True)))), Ports.fireworks |> Extra.cmd )
