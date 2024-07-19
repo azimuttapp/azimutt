@@ -284,10 +284,17 @@ async function deleteSource(msg: DeleteSource): Promise<void> {
 
 const dbUrlsInMemory: { [key: SourceId]: DatabaseUrl } = {}
 const dbUrlIsCrypted = (url: DatabaseUrl): boolean => !url.includes('://')
-const dbUrlDecrypt = (project: ProjectId, url: DatabaseUrl): Promise<DatabaseUrl | undefined> =>
-    dbUrlIsCrypted(url) ? aesDecrypt(project.replaceAll('-', ''), url).catch(_ => undefined) : Promise.resolve(url)
 const dbUrlEncrypt = (project: ProjectId, url: DatabaseUrl): Promise<DatabaseUrl> =>
     dbUrlIsCrypted(url) ? Promise.resolve(url) : aesEncrypt(project.replaceAll('-', ''), url)
+const dbUrlDecrypt = (project: ProjectId, url: DatabaseUrl): Promise<DatabaseUrl | undefined> => {
+    if (dbUrlIsCrypted(url)) {
+        return aesDecrypt(project.replaceAll('-', ''), url)
+            .catch(_ => aesDecrypt('00000000-0000-0000-0000-000000000000'.replaceAll('-', ''), url)) // if saved from draft project
+            .catch(_ => undefined)
+    } else {
+        return Promise.resolve(url)
+    }
+}
 
 async function loadProject(project: LegacyProject): Promise<LegacyProject> {
     const getUrl = async (source: SourceId, kind: LegacyDatabaseConnection): Promise<DatabaseUrl | undefined> => {
