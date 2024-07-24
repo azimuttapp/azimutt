@@ -12,6 +12,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
   alias Azimutt.Utils.Uuid
   alias AzimuttWeb.Router.Helpers, as: Routes
   alias AzimuttWeb.Services.BillingSrv
+  import AzimuttWeb.Utils.ControllerHelpers, only: [for_owners: 4]
   action_fallback AzimuttWeb.FallbackController
 
   def index(conn, %{"organization_organization_id" => organization_id} = params) do
@@ -24,14 +25,16 @@ defmodule AzimuttWeb.OrganizationBillingController do
     end
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user) do
-      Tracking.billing_loaded(current_user, organization, source)
+      for_owners(conn, organization, current_user, fn ->
+        Tracking.billing_loaded(current_user, organization, source)
 
-      cond do
-        organization.clever_cloud_resource -> conn |> redirect(external: CleverCloud.app_addons_url())
-        organization.heroku_resource -> conn |> redirect(external: Heroku.app_addons_url(organization.heroku_resource.app))
-        organization.stripe_customer_id && StripeSrv.stripe_configured?() -> conn |> stripe_subscription_view(organization, current_user)
-        true -> conn |> put_flash(:error, "Billing not available.") |> redirect(to: Routes.organization_path(conn, :show, organization))
-      end
+        cond do
+          organization.clever_cloud_resource -> conn |> redirect(external: CleverCloud.app_addons_url())
+          organization.heroku_resource -> conn |> redirect(external: Heroku.app_addons_url(organization.heroku_resource.app))
+          organization.stripe_customer_id && StripeSrv.stripe_configured?() -> conn |> stripe_subscription_view(organization, current_user)
+          true -> conn |> put_flash(:error, "Billing not available.") |> redirect(to: Routes.organization_path(conn, :show, organization))
+        end
+      end)
     end
   end
 
@@ -88,25 +91,27 @@ defmodule AzimuttWeb.OrganizationBillingController do
     current_user = conn.assigns.current_user
     {:ok, organization} = Organizations.get_organization(organization_id, current_user)
 
-    if organization.stripe_customer_id != nil do
-      case StripeSrv.update_session(%{
-             customer: organization.stripe_customer_id,
-             return_url: Routes.organization_billing_url(conn, :index, organization, source: "billing-portal")
-           }) do
-        {:ok, session} ->
-          Logger.info("Stripe Billing Portal session is create with success")
-          redirect(conn, external: session.url)
+    for_owners(conn, organization, current_user, fn ->
+      if organization.stripe_customer_id != nil do
+        case StripeSrv.update_session(%{
+               customer: organization.stripe_customer_id,
+               return_url: Routes.organization_billing_url(conn, :index, organization, source: "billing-portal")
+             }) do
+          {:ok, session} ->
+            Logger.info("Stripe Billing Portal session is create with success")
+            redirect(conn, external: session.url)
 
-        {:error, stripe_error} ->
-          Logger.error("Cannot create Stripe  Billing Portal Session", stripe_error)
+          {:error, stripe_error} ->
+            Logger.error("Cannot create Stripe  Billing Portal Session", stripe_error)
 
-          conn
-          |> put_flash(:error, "Sorry something went wrong.")
-          |> redirect(to: Routes.organization_path(conn, :show, organization))
+            conn
+            |> put_flash(:error, "Sorry something went wrong.")
+            |> redirect(to: Routes.organization_path(conn, :show, organization))
+        end
+      else
+        conn |> put_flash(:error, "Can't show view.") |> redirect(to: Routes.organization_path(conn, :show, organization))
       end
-    else
-      conn |> put_flash(:error, "Can't show view.") |> redirect(to: Routes.organization_path(conn, :show, organization))
-    end
+    end)
   end
 
   def success(conn, %{"organization_organization_id" => organization_id}) do

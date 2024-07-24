@@ -1,13 +1,6 @@
 import mssql, {config, ConnectionPool, IOptions, IResult, ISqlType} from "mssql";
 import {AnyError} from "@azimutt/utils";
-import {
-    AttributeValue,
-    ConnectorDefaultOpts,
-    DatabaseUrlParsed,
-    logQueryIfNeeded,
-    parseDatabaseOptions,
-    queryError
-} from "@azimutt/models";
+import {AttributeValue, ConnectorDefaultOpts, DatabaseUrlParsed, logQueryIfNeeded, queryError} from "@azimutt/models";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
     const connection: ConnectionPool = await mssql.connect(buildconfig(application, url))

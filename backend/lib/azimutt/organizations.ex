@@ -135,6 +135,22 @@ defmodule Azimutt.Organizations do
     |> Repo.aggregate(:count, :user_id)
   end
 
+  def owner?(%Organization{} = organization, %User{} = user) do
+    organization.members
+    |> Enum.find(fn m -> m.user_id == user.id end)
+    |> Result.from_nillable()
+    |> Result.map(fn m -> m.role == OrganizationMember.owner() end)
+    |> Result.or_else(false)
+  end
+
+  def writer?(%Organization{} = organization, %User{} = user) do
+    organization.members
+    |> Enum.find(fn m -> m.user_id == user.id end)
+    |> Result.from_nillable()
+    |> Result.map(fn m -> m.role == OrganizationMember.owner() || m.role == OrganizationMember.writer() end)
+    |> Result.or_else(false)
+  end
+
   def remove_member(%Organization{} = organization, member_id) do
     with {:ok, %OrganizationMember{} = member} <- organization.members |> Enum.filter(fn m -> m.user.id == member_id end) |> Enumx.one(),
          {:ok, _} <- Repo.delete(member),
@@ -189,7 +205,7 @@ defmodule Azimutt.Organizations do
 
     if error === false do
       Ecto.Multi.new()
-      |> Ecto.Multi.insert(:add_member, OrganizationMember.new_member_changeset(invitation.organization_id, current_user))
+      |> Ecto.Multi.insert(:add_member, OrganizationMember.new_member_changeset(invitation.organization_id, current_user, invitation.role))
       |> Ecto.Multi.update(:accept_invitation, OrganizationInvitation.accept_changeset(invitation, current_user, now))
       |> Repo.transaction()
       |> case do

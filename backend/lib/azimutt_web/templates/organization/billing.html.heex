@@ -16,7 +16,7 @@
             <br>
             More details on <a href={Routes.website_path(@conn, :pricing)} target="_blank" rel="noopener noreferrer" class="underline">pricing page</a>.
             Don't hesitate to <a href={"mailto:#{Azimutt.config(:contact_email)}"} class="underline">reach out</a> for any question.<br>
-            <% max_seats = Azimutt.limits().users[@plan.id] %>
+            <% max_seats = Azimutt.features().users[@plan.id] %>
             <%= if max_seats == nil || max_seats > 1 do %>
                 Change your seats or plan using the "Manage your subscription" button.
             <% end %>

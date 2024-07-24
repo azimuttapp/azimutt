@@ -3,7 +3,9 @@ defmodule AzimuttWeb.LayoutView do
   alias Azimutt.Accounts
   alias Azimutt.CleverCloud
   alias Azimutt.Heroku
+  alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Services.StripeSrv
+  alias Azimutt.Utils.Result
 
   # Phoenix LiveDashboard is available only in development by default,
   # so we instruct Elixir to not warn if the dashboard route is missing.
@@ -74,5 +76,26 @@ defmodule AzimuttWeb.LayoutView do
       "enterprise" -> content_tag(:span, "Enterprise plan", class: "#{classes} bg-indigo-100 text-indigo-800")
       _ -> content_tag(:span, "Unknown plan #{plan}", class: "#{classes} bg-red-100 text-red-800")
     end
+  end
+
+  def plan_badge_for(feature) do
+    cond do
+      plan_allowed(feature.free) -> "free"
+      plan_allowed(feature.solo) -> "solo"
+      plan_allowed(feature.team) -> "team"
+      plan_allowed(feature.enterprise) -> "enterprise"
+      true -> "none"
+    end
+    |> plan_badge()
+  end
+
+  defp plan_allowed(value), do: (is_boolean(value) && value) || (is_integer(value) && value > 0)
+
+  def member_role(role) do
+    OrganizationMember.roles()
+    |> Enum.find(fn {label, value} -> value == role end)
+    |> Result.from_nillable()
+    |> Result.map(fn {label, value} -> label end)
+    |> Result.or_else(role)
   end
 end
