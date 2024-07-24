@@ -5,6 +5,7 @@
 <% else %>
     <div class="mt-12 max-w-lg mx-auto">
         <% is_owner = Azimutt.Organizations.owner?(@organization, @current_user) %>
+        <% user_rights = Azimutt.features().user_rights %>
         <% max_seats = Azimutt.features().users[@plan.id] %>
         <% plan_seats = @organization.plan_seats %>
         <% used_seats = (Enum.count @organization.members) + (Enum.count @organization_invitations) %>
@@ -45,7 +46,6 @@
         </div>
         <%= if is_owner && (plan_seats == nil || used_seats < plan_seats) do %>
             <!-- FIXME: do this check server side also -->
-            <% user_rights = Azimutt.features().user_rights %>
             <.form let={f} for={@organization_invitation_changeset} action={Routes.organization_member_path(@conn, :create_invitation, @organization.id)} class="mt-6 flex">
                 <div class="grow">
                     <%= label f, :sent_to, class: "sr-only" %>
@@ -64,11 +64,16 @@
                 <%= submit "Send invite", class: "ml-4 flex-shrink-0 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
             </.form>
             <%= if !user_rights[@plan.id] do %>
-            <p class="mt-2 text-sm text-gray-500"><%= user_rights.name %> are available on <%= AzimuttWeb.LayoutView.plan_badge_for(user_rights) %></p>
+                <p class="mt-2 text-sm text-gray-500">
+                    <%= user_rights.name %> are available on <%= AzimuttWeb.LayoutView.plan_badge_for(user_rights) %>,
+                    <a href={"mailto:#{Azimutt.config(:contact_email)}"} target="_blank" rel="noopener" class="underline">contact us</a> for any question.
+                </p>
             <% end %>
         <% end %>
         <div class="mt-10">
-            <h3 class="text-sm font-medium text-gray-500 max-w-lg mx-auto">Organization members</h3>
+            <%= if is_owner do %>
+                <h3 class="text-sm font-medium text-gray-500 max-w-lg mx-auto">Organization members</h3>
+            <% end %>
             <ul role="list" class="mt-4 border-t border-b border-gray-200 divide-y divide-gray-200">
                 <%= if is_owner do %>
                     <%= for organization_invitation <- @organization_invitations do %>
@@ -127,9 +132,11 @@
                                 <div x-show="open" @click.outside="open = false" role="menu" aria-orientation="vertical" tabindex="-1" style="display: none;" class="absolute right-0 z-10 mt-2 w-56 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                                     <div class="py-1" role="none">
                                         <%= if nb_owners > 1 || member.role != Azimutt.Organizations.OrganizationMember.owner() do %>
-                                            <%= for {name, value} <- Azimutt.Organizations.OrganizationMember.roles() do %>
-                                                <%= if value != member.role do %>
-                                                    <%= link "Make #{name}", to: Routes.organization_member_path(@conn, :set_role, @organization, member.user, value), method: :put, class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" %>
+                                            <%= if user_rights[@plan.id] do %>
+                                                <%= for {name, value} <- Azimutt.Organizations.OrganizationMember.roles() do %>
+                                                    <%= if value != member.role do %>
+                                                        <%= link "Make #{name}", to: Routes.organization_member_path(@conn, :set_role, @organization, member.user, value), method: :put, class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" %>
+                                                    <% end %>
                                                 <% end %>
                                             <% end %>
                                             <% {text, confirm} = if(member.user.id == @current_user.id, do: {"Leave organization", "leave #{@organization.name} organization"}, else: {"Remove from organization", "remove #{member.user.name} from #{@organization.name} organization"}) %>

@@ -8,7 +8,7 @@ defmodule AzimuttWeb.OrganizationMemberController do
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Organizations.OrganizationPlan
   alias Azimutt.Utils.Uuid
-  import AzimuttWeb.Utils.ControllerHelpers, only: [for_owners: 4]
+  import AzimuttWeb.Utils.ControllerHelpers, only: [for_owners: 4, with_feature: 5]
   action_fallback AzimuttWeb.FallbackController
 
   def index(conn, %{"organization_organization_id" => org_id}) do
@@ -30,9 +30,10 @@ defmodule AzimuttWeb.OrganizationMemberController do
     {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
     {:ok, %Organization{} = organization} = Organizations.get_organization(org_id, current_user)
     {:ok, %OrganizationPlan{} = plan} = Organizations.get_organization_plan(organization, current_user)
+    feature = Azimutt.features().user_rights
 
     for_owners(conn, organization, current_user, fn ->
-      if Azimutt.features().user_rights[plan.id] || !invitation_params["role"] do
+      if feature[plan.id] || !invitation_params["role"] do
         build_url = fn invitation_id -> Routes.invitation_url(conn, :show, invitation_id) end
 
         case Organizations.create_organization_invitation(invitation_params, build_url, organization.id, current_user, now) do
@@ -46,7 +47,7 @@ defmodule AzimuttWeb.OrganizationMemberController do
         end
       else
         conn
-        |> put_flash(:error, "Your plan does not support user rights.")
+        |> put_flash(:warn, "#{feature.name} not supported in #{plan.name} plan.")
         |> redirect(to: Routes.organization_member_path(conn, :index, organization))
       end
     end)
@@ -76,11 +77,14 @@ defmodule AzimuttWeb.OrganizationMemberController do
   def set_role(conn, %{"organization_organization_id" => org_id, "user_id" => user_id, "role" => role}) do
     {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
     {:ok, %Organization{} = organization} = Organizations.get_organization(org_id, current_user)
+    {:ok, %OrganizationPlan{} = plan} = Organizations.get_organization_plan(organization, current_user)
 
     for_owners(conn, organization, current_user, fn ->
-      with {:ok, %OrganizationMember{} = member} <- Organizations.set_member_role(organization, user_id, role, now, current_user) do
-        conn |> redirect(to: Routes.organization_member_path(conn, :index, organization))
-      end
+      with_feature(conn, organization, plan, Azimutt.features().user_rights, fn ->
+        with {:ok, %OrganizationMember{} = member} <- Organizations.set_member_role(organization, user_id, role, now, current_user) do
+          conn |> redirect(to: Routes.organization_member_path(conn, :index, organization))
+        end
+      end)
     end)
   end
 

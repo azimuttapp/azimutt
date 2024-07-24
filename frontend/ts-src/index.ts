@@ -250,7 +250,10 @@ async function updateProject(msg: UpdateProject): Promise<void> {
         backend.updateProjectRemote(project).then(res => {
             app.toast(ToastLevel.enum.success, 'Project saved')
             loadProject(legacyBuildProjectRemote(res, json)).then(p => app.gotProject('update', p))
-        }, err => reportError(`Can't update project`, err))
+        }, err => {
+            reportError(`Can't update project`, err)
+            app.gotProject('update', undefined)
+        })
     } else {
         reportError(`Unknown ProjectStorage`, project.storage)
     }
