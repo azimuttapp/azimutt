@@ -14,10 +14,10 @@
                     <%= organization.name %> <%= AzimuttWeb.LayoutView.plan_badge(organization.plan) %>
                 </p>
                 <p class="mt-1 truncate text-sm leading-5 text-gray-500">
-                    <%= Azimutt.Utils.Stringx.pluralize(length(organization.members), "member") %>
                     <%= if organization.plan_seats do %>
-                    - <%= Azimutt.Utils.Stringx.pluralize(organization.plan_seats, "seat") %>
+                    <%= Azimutt.Utils.Stringx.pluralize(organization.plan_seats, "seat") %> -
                     <% end %>
+                    <%= Azimutt.Utils.Stringx.pluralize(length(organization.members), "member") %>
                 </p>
               </div>
             </div>

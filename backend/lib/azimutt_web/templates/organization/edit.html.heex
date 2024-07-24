@@ -20,7 +20,7 @@
                 </div>
                 <p class="mt-1 text-sm text-gray-500">Describe your organization in a few sentences.</p>
             </div>
-            <%= if Azimutt.limits().gateway_custom[String.to_atom(@organization.plan)] do %>
+            <%= if Azimutt.limits().gateway_custom[@plan.id] do %>
             <div class="sm:col-span-6">
                 <%= label f, :gateway, "Custom gateway", class: "block text-sm font-medium text-gray-700" %>
                 <div class="mt-1">

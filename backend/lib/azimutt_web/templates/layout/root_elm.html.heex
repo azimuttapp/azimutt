@@ -10,7 +10,8 @@
         <script>window.env = '<%= Azimutt.config(:environment) %>'</script>
         <% org_id = @conn.params["organization_id"] %>
         <% org = org_id && assigns[:current_user] && assigns[:current_user].organizations |> Enum.find(fn o -> o.id == org_id end) %>
-        <% org_gateway = org && org.plan && Azimutt.limits().gateway_custom[String.to_atom(org.plan)] && org.gateway %>
+        <% plan = org && Azimutt.Organizations.get_organization_plan(org, assigns[:current_user]) |> Azimutt.Utils.Result.or_else(nil) %>
+        <% org_gateway = plan && Azimutt.limits().gateway_custom[plan] && org.gateway %>
         <script>window.gateway_url = '<%= org_gateway || Azimutt.config(:gateway_url) %>'</script>
         <%= if Azimutt.config(:sentry_frontend_dsn) do %><script>window.sentry_frontend_dsn = '<%= Azimutt.config(:sentry_frontend_dsn) %>'</script><% end %>
         <script type="text/javascript" src={Routes.static_path(@conn, "/elm/script.js")} />
