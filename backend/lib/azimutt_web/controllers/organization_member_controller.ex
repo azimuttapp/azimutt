@@ -12,8 +12,7 @@ defmodule AzimuttWeb.OrganizationMemberController do
   action_fallback AzimuttWeb.FallbackController
 
   def index(conn, %{"organization_organization_id" => org_id}) do
-    now = DateTime.utc_now()
-    current_user = conn.assigns.current_user
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
 
     if org_id == Uuid.zero() do
       organization = Accounts.get_user_default_organization(current_user)
@@ -28,8 +27,7 @@ defmodule AzimuttWeb.OrganizationMemberController do
   end
 
   def create_invitation(conn, %{"organization_organization_id" => org_id, "organization_invitation" => invitation_params}) do
-    now = DateTime.utc_now()
-    current_user = conn.assigns.current_user
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
     {:ok, %Organization{} = organization} = Organizations.get_organization(org_id, current_user)
     {:ok, %OrganizationPlan{} = plan} = Organizations.get_organization_plan(organization, current_user)
 
@@ -55,8 +53,7 @@ defmodule AzimuttWeb.OrganizationMemberController do
   end
 
   def cancel_invitation(conn, %{"organization_organization_id" => org_id, "invitation_id" => invitation_id}) do
-    now = DateTime.utc_now()
-    current_user = conn.assigns.current_user
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
     {:ok, %Organization{} = organization} = Organizations.get_organization(org_id, current_user)
 
     for_owners(conn, organization, current_user, fn ->
@@ -72,6 +69,17 @@ defmodule AzimuttWeb.OrganizationMemberController do
           conn
           |> put_flash(:error, message)
           |> redirect(to: Routes.organization_member_path(conn, :index, organization))
+      end
+    end)
+  end
+
+  def set_role(conn, %{"organization_organization_id" => org_id, "user_id" => user_id, "role" => role}) do
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
+    {:ok, %Organization{} = organization} = Organizations.get_organization(org_id, current_user)
+
+    for_owners(conn, organization, current_user, fn ->
+      with {:ok, %OrganizationMember{} = member} <- Organizations.set_member_role(organization, user_id, role, now, current_user) do
+        conn |> redirect(to: Routes.organization_member_path(conn, :index, organization))
       end
     end)
   end

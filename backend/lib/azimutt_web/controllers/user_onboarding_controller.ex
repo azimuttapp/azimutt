@@ -57,8 +57,7 @@ defmodule AzimuttWeb.UserOnboardingController do
   def community_next(conn, _params), do: conn |> update_step(:community, %{})
 
   def finalize(conn, _params) do
-    current_user = conn.assigns.current_user
-    now = DateTime.utc_now()
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
     Tracking.user_onboarding(current_user, :finalize, %{})
 
     current_user
@@ -69,8 +68,7 @@ defmodule AzimuttWeb.UserOnboardingController do
   def template(conn, %{"template" => template}), do: conn |> render("#{template}.html")
 
   defp show_step(conn, id) do
-    current_user = conn.assigns.current_user
-    now = DateTime.utc_now()
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
     Tracking.user_onboarding(current_user, id, %{})
 
     with {:ok, step} <- @steps |> Enum.find(fn s -> s.id == id end) |> Result.from_nillable(),
@@ -79,8 +77,7 @@ defmodule AzimuttWeb.UserOnboardingController do
   end
 
   defp update_step(conn, id, profile_params) do
-    current_user = conn.assigns.current_user
-    now = DateTime.utc_now()
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
     Tracking.user_onboarding(current_user, id, profile_params)
 
     with {:ok, step} <- @steps |> Enum.find(fn s -> s.id == id end) |> Result.from_nillable(),

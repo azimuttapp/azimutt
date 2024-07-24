@@ -151,8 +151,13 @@ defmodule Azimutt.Organizations do
     |> Result.or_else(false)
   end
 
-  def remove_member(%Organization{} = organization, member_id) do
-    with {:ok, %OrganizationMember{} = member} <- organization.members |> Enum.filter(fn m -> m.user.id == member_id end) |> Enumx.one(),
+  def set_member_role(%Organization{} = organization, user_id, role, now, current_user) do
+    with {:ok, %OrganizationMember{} = member} <- organization.members |> Enum.filter(fn m -> m.user.id == user_id end) |> Enumx.one(),
+         do: member |> OrganizationMember.update_role_changeset(role, now, current_user) |> Repo.update()
+  end
+
+  def remove_member(%Organization{} = organization, user_id) do
+    with {:ok, %OrganizationMember{} = member} <- organization.members |> Enum.filter(fn m -> m.user.id == user_id end) |> Enumx.one(),
          {:ok, _} <- Repo.delete(member),
          do: {:ok, member}
   end

@@ -87,8 +87,7 @@ defmodule AzimuttWeb.OrganizationController do
   end
 
   def delete(conn, %{"organization_id" => organization_id}) do
-    now = DateTime.utc_now()
-    current_user = conn.assigns.current_user
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
     {:ok, organization} = Organizations.get_organization(organization_id, current_user)
 
     for_owners(conn, organization, current_user, fn ->

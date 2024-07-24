@@ -6,14 +6,12 @@ defmodule AzimuttWeb.UserSettingsController do
   action_fallback AzimuttWeb.FallbackController
 
   def show(conn, _params) do
-    current_user = conn.assigns.current_user
-    now = DateTime.utc_now()
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
     conn |> show_html(current_user, now)
   end
 
   def update_account(conn, %{"user" => user_params}) do
-    current_user = conn.assigns.current_user
-    now = DateTime.utc_now()
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
 
     Accounts.update_user_infos(current_user, user_params, now)
     |> Result.fold(
@@ -24,8 +22,7 @@ defmodule AzimuttWeb.UserSettingsController do
 
   # FIXME: how to change email for users from social login? (no password)
   def update_email(conn, %{"user" => user_params}) do
-    current_user = conn.assigns.current_user
-    now = DateTime.utc_now()
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
 
     Accounts.apply_user_email(current_user, user_params["current_password"], user_params)
     |> Result.fold(
@@ -44,8 +41,7 @@ defmodule AzimuttWeb.UserSettingsController do
   end
 
   def confirm_update_email(conn, %{"token" => token}) do
-    current_user = conn.assigns.current_user
-    now = DateTime.utc_now()
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
 
     {flash_kind, flash_message} =
       Accounts.update_user_email(current_user, token, now)
@@ -58,8 +54,7 @@ defmodule AzimuttWeb.UserSettingsController do
   end
 
   def update_password(conn, %{"user" => user_params}) do
-    current_user = conn.assigns.current_user
-    now = DateTime.utc_now()
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
 
     Accounts.update_user_password(current_user, user_params["current_password"], user_params, now)
     |> Result.fold(
@@ -74,8 +69,7 @@ defmodule AzimuttWeb.UserSettingsController do
   end
 
   def set_password(conn, %{"user" => user_params}) do
-    current_user = conn.assigns.current_user
-    now = DateTime.utc_now()
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
 
     Accounts.set_user_password(current_user, user_params, now)
     |> Result.fold(
@@ -94,8 +88,7 @@ defmodule AzimuttWeb.UserSettingsController do
   end
 
   def remove_provider(conn, %{"provider" => provider}) do
-    current_user = conn.assigns.current_user
-    now = DateTime.utc_now()
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
 
     if provider == "password" do
       Accounts.remove_user_password(current_user, now)
@@ -113,8 +106,7 @@ defmodule AzimuttWeb.UserSettingsController do
   end
 
   def create_auth_token(conn, %{"user_auth_token" => auth_token_params}) do
-    current_user = conn.assigns.current_user
-    now = DateTime.utc_now()
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
 
     Accounts.create_auth_token(current_user, now, auth_token_params)
     |> Result.fold(
@@ -124,8 +116,7 @@ defmodule AzimuttWeb.UserSettingsController do
   end
 
   def delete_auth_token(conn, %{"token_id" => token_id}) do
-    current_user = conn.assigns.current_user
-    now = DateTime.utc_now()
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
 
     Accounts.delete_auth_token(token_id, current_user, now)
     |> Result.fold(

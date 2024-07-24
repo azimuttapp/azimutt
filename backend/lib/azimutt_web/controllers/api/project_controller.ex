@@ -41,9 +41,7 @@ defmodule AzimuttWeb.Api.ProjectController do
   end
 
   def show(conn, %{"organization_id" => _organization_id, "project_id" => project_id} = params) do
-    now = DateTime.utc_now()
-    maybe_current_user = conn.assigns.current_user
-    ctx = CtxParams.from_params(params)
+    {now, maybe_current_user, ctx} = {DateTime.utc_now(), conn.assigns.current_user, CtxParams.from_params(params)}
 
     with {:ok, %Project{} = project} <- Projects.load_project(project_id, maybe_current_user, params["token"], now),
          do: conn |> render("show.json", project: project, maybe_current_user: maybe_current_user, ctx: ctx)
@@ -61,9 +59,7 @@ defmodule AzimuttWeb.Api.ProjectController do
   end
 
   def update(conn, %{"organization_organization_id" => _organization_id, "project_id" => project_id} = params) do
-    now = DateTime.utc_now()
-    current_user = conn.assigns.current_user
-    ctx = CtxParams.from_params(params)
+    {now, current_user, ctx} = {DateTime.utc_now(), conn.assigns.current_user, CtxParams.from_params(params)}
 
     with {:ok, %Project{} = project} <- Projects.get_project(project_id, current_user),
          {:ok, %Project{} = updated} <- Projects.update_project(project, params, current_user, now),

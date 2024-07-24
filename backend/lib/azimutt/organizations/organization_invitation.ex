@@ -8,7 +8,7 @@ defmodule Azimutt.Organizations.OrganizationInvitation do
 
   schema "organization_invitations" do
     field :sent_to, :string
-    field :role, :string
+    field :role, Ecto.Enum, values: [:owner, :writer, :reader]
     belongs_to :organization, Organization
     field :expire_at, :utc_datetime_usec
     belongs_to :created_by, User, source: :created_by

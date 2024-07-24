@@ -29,8 +29,7 @@ defmodule AzimuttWeb.Api.OrganizationController do
   end
 
   def table_colors(conn, %{"organization_organization_id" => organization_id, "tweet_url" => tweet_url}) do
-    now = DateTime.utc_now()
-    current_user = conn.assigns.current_user
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user),
          {:ok, %{user: _tweet_user, tweet: tweet_id}} <-
