@@ -37,6 +37,7 @@ import {
     Platform,
     PositionViewport,
     ToastLevel,
+    UserRole,
     ViewPosition
 } from "./basics";
 import {Env} from "../utils/env";
@@ -59,6 +60,7 @@ export interface ElmFlags {
     conf: {
         env: Env
         platform: Platform
+        role: UserRole
         desktop: boolean
     }
 }

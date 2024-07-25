@@ -37,6 +37,7 @@ import {
     CreateProjectTmp,
     DeleteProject,
     DeleteSource,
+    ElmFlags,
     GetColumnStats,
     GetDatabaseSchema,
     GetLocalFile,
@@ -68,7 +69,7 @@ import {Utils} from "./utils/utils";
 
 const platform = Utils.getPlatform()
 const logger = new ConsoleLogger(window.env)
-const flags = {now: Date.now(), conf: {env: window.env, platform, desktop: !!window.desktop}}
+const flags: ElmFlags = {now: Date.now(), conf: {env: window.env, platform, role: window.role, desktop: !!window.desktop}}
 logger.debug('flags', flags)
 const app = ElmApp.init(flags, logger)
 const storage = new Storage(logger)

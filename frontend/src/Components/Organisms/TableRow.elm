@@ -62,6 +62,7 @@ import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.QueryResult exposing (QueryResult, QueryResultSuccess)
 import Models.Size as Size
 import Models.SqlQuery exposing (SqlQuery, SqlQueryOrigin)
+import Models.UserRole as UserRole
 import PagesComponents.Organization_.Project_.Models.ErdConf as ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.PositionHint as PositionHint exposing (PositionHint)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
@@ -974,7 +975,7 @@ docPlatform =
 
 docErdConf : ErdConf
 docErdConf =
-    ErdConf.project Nothing
+    ErdConf.project Nothing UserRole.Owner
 
 
 docDefaultSchema : SchemaName

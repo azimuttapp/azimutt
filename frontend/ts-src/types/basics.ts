@@ -21,6 +21,8 @@ export type ToastLevel = 'info' | 'success' | 'warning' | 'error'
 export const ToastLevel = z.enum(['info', 'success', 'warning', 'error'])
 export type Platform = 'mac' | 'pc'
 export const Platform = z.enum(['mac', 'pc'])
+export type UserRole = 'owner' | 'writer' | 'reader'
+export const UserRole = z.enum(['owner', 'writer', 'reader'])
 
 export interface PositionViewport {
     clientX: number

@@ -83,8 +83,7 @@ defmodule Azimutt.Tracking do
     |> where([e], not is_nil(e.created_by))
     |> where([e], not is_nil(e.project_id))
     |> where([e], e.name in ^allowed_events)
-    |> preload(:created_by)
-    |> preload(:project)
+    |> preload([:project, :created_by])
     |> order_by([e], desc: e.created_at)
     |> limit(10)
     |> Repo.all()
@@ -270,18 +269,7 @@ defmodule Azimutt.Tracking do
       members: if(Ecto.assoc_loaded?(org.members), do: org.members |> length, else: nil),
       projects: if(Ecto.assoc_loaded?(org.projects), do: org.projects |> length, else: nil),
       created_at: org.created_at,
-      data:
-        if org.data do
-          %{
-            allowed_layouts: org.data.allowed_layouts,
-            allowed_memos: org.data.allowed_memos,
-            allow_table_color: org.data.allow_table_color,
-            allow_private_links: org.data.allow_private_links,
-            allow_database_analysis: org.data.allow_database_analysis
-          }
-        else
-          nil
-        end
+      data: if(org.data, do: Organization.Data.to_hash(org.data), else: nil)
     }
   end
 

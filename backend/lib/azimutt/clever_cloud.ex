@@ -17,8 +17,7 @@ defmodule Azimutt.CleverCloud do
   def all_resources do
     Resource
     |> order_by([r], desc: [r.deleted_at, r.created_at])
-    |> preload(:organization)
-    |> preload(organization: :projects)
+    |> preload(organization: [:projects])
     |> Repo.all()
   end
 
