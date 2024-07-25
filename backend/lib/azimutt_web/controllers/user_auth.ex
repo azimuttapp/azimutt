@@ -137,7 +137,7 @@ defmodule AzimuttWeb.UserAuth do
       end
       |> Result.or_else(nil)
 
-    user = user |> Azimutt.Repo.preload(:profile) |> Azimutt.Repo.preload(organizations: [:clever_cloud_resource, :heroku_resource, :projects])
+    user = user |> Azimutt.Repo.preload([:profile, members: [organization: [:projects, :clever_cloud_resource, :heroku_resource]]])
 
     conn |> assign(:current_user, user)
   end

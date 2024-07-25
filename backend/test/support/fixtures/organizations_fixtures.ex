@@ -16,9 +16,7 @@ defmodule Azimutt.OrganizationsFixtures do
       |> Azimutt.Organizations.create_non_personal_organization(user)
 
     organization
-    |> Azimutt.Repo.preload(:projects)
-    |> Azimutt.Repo.preload(:members)
-    |> Azimutt.Repo.preload(:invitations)
+    |> Azimutt.Repo.preload([:invitations, :members, :projects])
   end
 
   def organization_invitation_fixture(organization, user, attrs \\ %{}) do

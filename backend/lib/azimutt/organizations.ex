@@ -22,14 +22,8 @@ defmodule Azimutt.Organizations do
     Organization
     |> join(:inner, [o], om in OrganizationMember, on: om.organization_id == o.id)
     |> where([o, om], om.user_id == ^current_user.id and o.id == ^id and is_nil(o.deleted_at))
-    |> preload(members: [:user, :created_by, :updated_by])
-    # TODO: can filter projects? (ignore local projects not owned by the current_user)
-    |> preload(:projects)
-    |> preload(:clever_cloud_resource)
-    |> preload(:heroku_resource)
-    |> preload(:invitations)
-    |> preload(:created_by)
-    |> preload(:updated_by)
+    # TODO: can filter preloaded projects? (ignore local projects not owned by the current_user)
+    |> preload([:invitations, :projects, :created_by, :updated_by, :clever_cloud_resource, :heroku_resource, members: [:user, :created_by, :updated_by]])
     |> Repo.one()
     |> Result.from_nillable()
     |> Result.tap(fn org -> if org.plan == nil, do: validate_organization_plan(org) end)
@@ -37,13 +31,9 @@ defmodule Azimutt.Organizations do
 
   # /!\ should be only used in stripe_handler.ex
   def get_organization_by_customer(customer_id) do
-    # Repo.get_by(Organization, stripe_customer_id: customer_id)
-    # |> preload([:created_by])
     Organization
     |> where([o], o.stripe_customer_id == ^customer_id)
-    |> preload(:clever_cloud_resource)
-    |> preload(:heroku_resource)
-    |> preload(:created_by)
+    |> preload([:created_by, :clever_cloud_resource, :heroku_resource])
     |> Repo.one()
     |> Result.from_nillable()
   end
@@ -52,11 +42,7 @@ defmodule Azimutt.Organizations do
     Organization
     |> join(:inner, [o], om in OrganizationMember, on: om.organization_id == o.id)
     |> where([o, om], om.user_id == ^current_user.id and is_nil(o.deleted_at))
-    |> preload(:members)
-    |> preload(:projects)
-    |> preload(:clever_cloud_resource)
-    |> preload(:heroku_resource)
-    |> preload(:invitations)
+    |> preload([:invitations, :members, :projects, :clever_cloud_resource, :heroku_resource])
     |> Repo.all()
     |> Enum.map(fn org ->
       if org.plan == nil, do: validate_organization_plan(org)
@@ -135,8 +121,29 @@ defmodule Azimutt.Organizations do
     |> Repo.aggregate(:count, :user_id)
   end
 
-  def remove_member(%Organization{} = organization, member_id) do
-    with {:ok, %OrganizationMember{} = member} <- organization.members |> Enum.filter(fn m -> m.user.id == member_id end) |> Enumx.one(),
+  def owner?(%Organization{} = organization, %User{} = user) do
+    organization.members
+    |> Enum.find(fn m -> m.user_id == user.id end)
+    |> Result.from_nillable()
+    |> Result.map(fn m -> m.role == OrganizationMember.owner() end)
+    |> Result.or_else(false)
+  end
+
+  def writer?(%Organization{} = organization, %User{} = user) do
+    organization.members
+    |> Enum.find(fn m -> m.user_id == user.id end)
+    |> Result.from_nillable()
+    |> Result.map(fn m -> m.role == OrganizationMember.owner() || m.role == OrganizationMember.writer() end)
+    |> Result.or_else(false)
+  end
+
+  def set_member_role(%Organization{} = organization, user_id, role, now, current_user) do
+    with {:ok, %OrganizationMember{} = member} <- organization.members |> Enum.filter(fn m -> m.user.id == user_id end) |> Enumx.one(),
+         do: member |> OrganizationMember.update_role_changeset(role, now, current_user) |> Repo.update()
+  end
+
+  def remove_member(%Organization{} = organization, user_id) do
+    with {:ok, %OrganizationMember{} = member} <- organization.members |> Enum.filter(fn m -> m.user.id == user_id end) |> Enumx.one(),
          {:ok, _} <- Repo.delete(member),
          do: {:ok, member}
   end
@@ -146,10 +153,7 @@ defmodule Azimutt.Organizations do
   def get_organization_invitation(id) do
     OrganizationInvitation
     |> where([oi], oi.id == ^id)
-    |> preload(:organization)
-    |> preload(organization: [:clever_cloud_resource, :heroku_resource])
-    |> preload(:created_by)
-    |> preload(:answered_by)
+    |> preload([:created_by, :answered_by, organization: [:clever_cloud_resource, :heroku_resource]])
     |> Repo.one()
     |> Result.from_nillable()
   end
@@ -161,7 +165,6 @@ defmodule Azimutt.Organizations do
       oi.sent_to == ^user.email and oi.organization_id == ^organization.id and oi.expire_at > ^now and is_nil(oi.cancel_at) and
         is_nil(oi.accepted_at) and is_nil(oi.refused_at)
     )
-    |> preload(:organization)
     |> preload(organization: [:clever_cloud_resource, :heroku_resource])
     |> Repo.one()
   end
@@ -189,7 +192,7 @@ defmodule Azimutt.Organizations do
 
     if error === false do
       Ecto.Multi.new()
-      |> Ecto.Multi.insert(:add_member, OrganizationMember.new_member_changeset(invitation.organization_id, current_user))
+      |> Ecto.Multi.insert(:add_member, OrganizationMember.new_member_changeset(invitation.organization_id, current_user, invitation.role))
       |> Ecto.Multi.update(:accept_invitation, OrganizationInvitation.accept_changeset(invitation, current_user, now))
       |> Repo.transaction()
       |> case do
@@ -241,8 +244,8 @@ defmodule Azimutt.Organizations do
   def cancel_organization_invitation(id, %User{} = current_user, now) do
     {:ok, invitation} = get_organization_invitation(id)
 
-    # only orga members can cancel orga invitations
-    if current_user.organizations |> Enum.find(fn o -> o.id == invitation.organization_id end) do
+    # only org members can cancel org invitations
+    if current_user.members |> Enum.find(fn m -> m.organization.id == invitation.organization_id end) do
       Ecto.Multi.new()
       |> Ecto.Multi.update(:cancel_invitation, OrganizationInvitation.cancel_changeset(invitation, current_user, now))
       |> Repo.transaction()

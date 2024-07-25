@@ -8,6 +8,7 @@ defmodule Azimutt.Organizations.OrganizationInvitation do
 
   schema "organization_invitations" do
     field :sent_to, :string
+    field :role, Ecto.Enum, values: [:owner, :writer, :reader]
     belongs_to :organization, Organization
     field :expire_at, :utc_datetime_usec
     belongs_to :created_by, User, source: :created_by
@@ -21,7 +22,7 @@ defmodule Azimutt.Organizations.OrganizationInvitation do
   @doc false
   def create_changeset(organization_invitation, attrs, organization_id, current_user, expire_at) do
     organization_invitation
-    |> cast(attrs, [:sent_to])
+    |> cast(attrs, [:sent_to, :role])
     |> put_change(:expire_at, expire_at)
     |> put_change(:created_by, current_user)
     |> put_change(:organization_id, organization_id)

@@ -97,8 +97,7 @@ defmodule Azimutt do
 
   def active_plans, do: [plans().free, plans().solo, plans().team, plans().enterprise]
 
-  # MUST stay in sync with frontend/src/Conf.elm (`features`)
-  def limits do
+  def features do
     %{
       # Database features
       schema_exploration: %{name: "Schema exploration", free: true, solo: true, team: true, enterprise: true, pro: true},
@@ -155,7 +154,7 @@ defmodule Azimutt do
     ]
   end
 
-  def use_cases do
+  def showcase_usages do
     [
       %{
         id: "explore",
@@ -181,7 +180,7 @@ defmodule Azimutt do
     ]
   end
 
-  def features do
+  def showcase_features do
     [
       %{
         id: "erd",

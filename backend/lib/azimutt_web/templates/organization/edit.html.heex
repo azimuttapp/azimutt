@@ -20,7 +20,8 @@
                 </div>
                 <p class="mt-1 text-sm text-gray-500">Describe your organization in a few sentences.</p>
             </div>
-            <%= if Azimutt.limits().gateway_custom[@plan.id] do %>
+            <% feature = Azimutt.features().gateway_custom %>
+            <%= if feature[@plan.id] do %>
             <div class="sm:col-span-6">
                 <%= label f, :gateway, "Custom gateway", class: "block text-sm font-medium text-gray-700" %>
                 <div class="mt-1">
@@ -35,8 +36,8 @@
             <% else %>
             <div class="sm:col-span-6 -m-3 p-3 bg-gray-50 shadow rounded">
                 <div class="flex justify-between">
-                    <label for="gateway" class="block text-sm font-medium text-gray-700">Custom gateway</label>
-                    <span class="text-sm text-gray-500">Needs <%= AzimuttWeb.LayoutView.plan_badge("enterprise") %></span>
+                    <label for="gateway" class="block text-sm font-medium text-gray-700"><%= feature.name %></label>
+                    <span class="text-sm text-gray-500">Needs <%= AzimuttWeb.LayoutView.plan_badge_for(feature) %></span>
                 </div>
                 <div class="mt-1">
                     <input type="text" name="gateway" id="gateway" disabled placeholder="ex: https://gateway.azimutt.app" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm text-sm leading-6 ring-1 ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-200">

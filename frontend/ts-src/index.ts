@@ -37,6 +37,7 @@ import {
     CreateProjectTmp,
     DeleteProject,
     DeleteSource,
+    ElmFlags,
     GetColumnStats,
     GetDatabaseSchema,
     GetLocalFile,
@@ -68,7 +69,7 @@ import {Utils} from "./utils/utils";
 
 const platform = Utils.getPlatform()
 const logger = new ConsoleLogger(window.env)
-const flags = {now: Date.now(), conf: {env: window.env, platform, desktop: !!window.desktop}}
+const flags: ElmFlags = {now: Date.now(), conf: {env: window.env, platform, role: window.role, desktop: !!window.desktop}}
 logger.debug('flags', flags)
 const app = ElmApp.init(flags, logger)
 const storage = new Storage(logger)
@@ -250,7 +251,10 @@ async function updateProject(msg: UpdateProject): Promise<void> {
         backend.updateProjectRemote(project).then(res => {
             app.toast(ToastLevel.enum.success, 'Project saved')
             loadProject(legacyBuildProjectRemote(res, json)).then(p => app.gotProject('update', p))
-        }, err => reportError(`Can't update project`, err))
+        }, err => {
+            reportError(`Can't update project`, err)
+            app.gotProject('update', undefined)
+        })
     } else {
         reportError(`Unknown ProjectStorage`, project.storage)
     }

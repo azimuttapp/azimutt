@@ -18,11 +18,13 @@ defmodule AzimuttWeb.Admin.UserController do
     {:ok, start_stats} = "2022-11-01" |> Timex.parse("{YYYY}-{0M}-{0D}")
 
     with {:ok, user} <- Admin.get_user(user_id) do
+      organizations = user.members |> Enum.map(fn m -> m.organization end)
+
       conn
       |> render("show.html",
         user: user,
-        organizations: user.organizations |> Page.wrap(),
-        projects: user.organizations |> Enum.flat_map(fn o -> o.projects end) |> Page.wrap(),
+        organizations: organizations |> Page.wrap(),
+        projects: organizations |> Enum.flat_map(fn o -> o.projects end) |> Page.wrap(),
         activity: Dataset.chartjs_daily_data([Admin.daily_user_activity(user) |> Dataset.from_values("Daily events")], start_stats, now),
         events: Admin.get_user_events(user, events_page)
       )

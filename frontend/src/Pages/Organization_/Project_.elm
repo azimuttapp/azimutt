@@ -9,6 +9,7 @@ import Libs.Bool as Bool
 import Libs.Task as T
 import Models.ProjectTokenId exposing (ProjectTokenId)
 import Models.UrlInfos exposing (UrlInfos)
+import Models.UserRole exposing (UserRole)
 import Page
 import PagesComponents.Organization_.Project_.Models as Models exposing (Msg(..), emptyModel)
 import PagesComponents.Organization_.Project_.Models.ErdConf as ErdConf
@@ -33,7 +34,7 @@ page shared req =
             ( req.query |> Dict.get "layout", req.query |> Dict.get "token", req.query |> Dict.member "save" )
     in
     Page.element
-        { init = init req.params urlToken urlSave
+        { init = init req.params urlToken urlSave shared.conf.role
         , update = \msg model -> Updates.update urlLayout shared.zone shared.now urlInfos shared.organizations shared.projects msg model |> Extra.apply Batch
         , view = Views.view (Navigation.load (Backend.organizationUrl urlInfos.organization)) req.url urlInfos shared
         , subscriptions = Subscriptions.subscriptions
@@ -52,9 +53,9 @@ type alias Msg =
 -- INIT
 
 
-init : Params -> Maybe ProjectTokenId -> Bool -> ( Model, Cmd Msg )
-init params token save =
-    ( { emptyModel | conf = ErdConf.project token }
+init : Params -> Maybe ProjectTokenId -> Bool -> UserRole -> ( Model, Cmd Msg )
+init params token save role =
+    ( { emptyModel | conf = ErdConf.project token role }
     , Cmd.batch
         [ Ports.setMeta
             { title = Just (Views.title Nothing)

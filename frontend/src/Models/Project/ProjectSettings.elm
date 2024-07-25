@@ -5,13 +5,12 @@ import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.List as List
-import Libs.Nel as Nel
 import Libs.Regex as Regex
 import Libs.String as String
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.OpenAIKey as OpenAIKey exposing (OpenAIKey)
 import Models.OpenAIModel as OpenAIModel exposing (OpenAIModel)
-import Models.Project.ColumnPath exposing (ColumnPath)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.FindPathSettings as FindPathSettings exposing (FindPathSettings)
 import Models.Project.SchemaName as SchemaName exposing (SchemaName)
 import Models.Project.TableId exposing (TableId)
@@ -54,7 +53,7 @@ init defaultSchema =
     , removedSchemas = []
     , removeViews = False
     , removedTables = ""
-    , hiddenColumns = { list = "created_.+, updated_.+", max = 15, props = False, relations = False }
+    , hiddenColumns = { list = "created_.+, updated_.+, deleted_.+", max = 15, props = False, relations = False }
     , columnOrder = ColumnOrder.OrderByProperty
     , relationStyle = RelationStyle.Bezier
     , columnBasicTypes = True
@@ -88,9 +87,9 @@ removeColumn : String -> ColumnPath -> Bool
 removeColumn hiddenColumns =
     let
         ( regexHide, stringHide ) =
-            hiddenColumns |> String.split "," |> List.map String.trim |> List.filterNot String.isEmpty |> List.partition (Regex.match "[+*?^$()[]{}|\\]")
+            hiddenColumns |> String.split "," |> List.map String.trim |> List.filterNot String.isEmpty |> List.partition (Regex.match "[+*?^$()[\\]{}|\\\\]")
     in
-    Nel.toList >> String.join "." >> (\path -> (stringHide |> List.any (\h -> path |> String.startsWith h)) || (regexHide |> List.any (\h -> path |> Regex.match h)))
+    ColumnPath.show >> (\path -> (stringHide |> List.any (\h -> path |> String.startsWith h)) || (regexHide |> List.any (\h -> path |> Regex.match h)))
 
 
 hideColumn : HiddenColumns -> ErdColumn -> Bool

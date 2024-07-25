@@ -4,7 +4,9 @@
     </div>
 <% else %>
     <div class="mt-12 max-w-lg mx-auto">
-        <% max_seats = Azimutt.limits().users[@plan.id] %>
+        <% is_owner = Azimutt.Organizations.owner?(@organization, @current_user) %>
+        <% user_rights = Azimutt.features().user_rights %>
+        <% max_seats = Azimutt.features().users[@plan.id] %>
         <% plan_seats = @organization.plan_seats %>
         <% used_seats = (Enum.count @organization.members) + (Enum.count @organization_invitations) %>
         <div class="text-center">
@@ -12,6 +14,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M34 40h10v-4a6 6 0 00-10.712-3.714M34 40H14m20 0v-4a9.971 9.971 0 00-.712-3.714M14 40H4v-4a6 6 0 0110.713-3.714M14 40v-4c0-1.313.253-2.566.713-3.714m0 0A10.003 10.003 0 0124 26c4.21 0 7.813 2.602 9.288 6.286M30 14a6 6 0 11-12 0 6 6 0 0112 0zm12 6a4 4 0 11-8 0 4 4 0 018 0zm-28 0a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
             <h2 class="mt-2 text-lg font-medium text-gray-900">Organization members</h2>
+            <%= if is_owner do %>
             <p class="mt-1 text-sm text-gray-500">
                 <%= cond do %>
                   <% plan_seats > max_seats -> %>
@@ -39,64 +42,111 @@
                     Please <a href={"mailto:#{Azimutt.config(:support_email)}"} class="underline text-indigo-600 hover:text-indigo-900">contact us</a> to find out why ^^
                 <% end %>
             </p>
+            <% end %>
         </div>
-        <%= if plan_seats == nil || used_seats < plan_seats do %>
+        <%= if is_owner && (plan_seats == nil || used_seats < plan_seats) do %>
             <!-- FIXME: do this check server side also -->
             <.form let={f} for={@organization_invitation_changeset} action={Routes.organization_member_path(@conn, :create_invitation, @organization.id)} class="mt-6 flex">
-                <%= label f, :sent_to, class: "sr-only" %>
-                <%= email_input f, :sent_to, class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md", placeholder: "Enter an email" %>
-                <%= error_tag f, :sent_to %>
+                <div class="grow">
+                    <%= label f, :sent_to, class: "sr-only" %>
+                    <div class="relative">
+                        <%= email_input f, :sent_to, placeholder: "Enter an email", class: "block w-full border-gray-300 rounded-md shadow-sm sm:text-sm focus:ring-indigo-500" %>
+                        <%= if user_rights[@plan.id] do %>
+                        <div class="absolute inset-y-0 right-0 flex items-center">
+                            <%= label f, :role, class: "sr-only" %>
+                            <%= select f, :role, Azimutt.Organizations.OrganizationMember.roles(), class: "block text-gray-500 bg-transparent border-0 rounded-md sm:text-sm focus:ring-2 focus:ring-indigo-500" %>
+                        </div>
+                        <% end %>
+                    </div>
+                    <%= error_tag f, :sent_to %>
+                    <%= error_tag f, :role %>
+                </div>
                 <%= submit "Send invite", class: "ml-4 flex-shrink-0 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
             </.form>
+            <%= if !user_rights[@plan.id] do %>
+                <p class="mt-2 text-sm text-gray-500">
+                    <%= user_rights.name %> are available on <%= AzimuttWeb.LayoutView.plan_badge_for(user_rights) %>,
+                    <a href={"mailto:#{Azimutt.config(:contact_email)}"} target="_blank" rel="noopener" class="underline">contact us</a> for any question.
+                </p>
+            <% end %>
         <% end %>
         <div class="mt-10">
-            <h3 class="text-sm font-medium text-gray-500 max-w-lg mx-auto">Organization members</h3>
+            <%= if is_owner do %>
+                <h3 class="text-sm font-medium text-gray-500 max-w-lg mx-auto">Organization members</h3>
+            <% end %>
             <ul role="list" class="mt-4 border-t border-b border-gray-200 divide-y divide-gray-200">
-                <%= for organization_invitation <- @organization_invitations do %>
-                    <li class="py-4 flex items-center justify-between space-x-3">
-                        <div class="min-w-0 flex-1 flex items-center space-x-3">
-                            <div class="flex-shrink-0">
-                                <span class="inline-block h-10 w-10 rounded-full overflow-hidden bg-gray-100">
-                                    <svg class="h-full w-full text-gray-300" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
-                                    </svg>
-                                </span>
+                <%= if is_owner do %>
+                    <%= for organization_invitation <- @organization_invitations do %>
+                        <li class="py-4 flex items-center justify-between space-x-3">
+                            <div class="min-w-0 flex-1 flex items-center space-x-3">
+                                <div class="flex-shrink-0">
+                                    <span class="inline-block h-10 w-10 rounded-full overflow-hidden bg-gray-100">
+                                        <svg class="h-full w-full text-gray-300" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+                                        </svg>
+                                    </span>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-sm font-medium text-gray-900 truncate">
+                                        <%= organization_invitation.sent_to %>
+                                        <%= if organization_invitation.role do %>
+                                          <span class="text-xs">(<%= AzimuttWeb.LayoutView.member_role(organization_invitation.role) %>)</span>
+                                        <% end %>
+                                    </p>
+                                    <p class="text-sm font-medium text-gray-500 truncate">Invitation pending</p>
+                                </div>
                             </div>
-                            <div class="min-w-0 flex-1">
-                                <p class="text-sm font-medium text-gray-900 truncate"><%= organization_invitation.sent_to %></p>
-                                <p class="text-sm font-medium text-gray-500 truncate">Invitation pending</p>
+                            <div class="flex-shrink-0 text-gray-400">
+                                <%= link to: Routes.organization_member_path(@conn, :cancel_invitation, @organization.id, organization_invitation.id), method: :patch, data: [confirm: "Are you sure?"], class: "inline-flex items-center py-2 px-3 border border-transparent rounded-full bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" do %>
+                                    <Icon.x_mark class="-ml-1 mr-0.5" />
+                                    <span class="text-sm font-medium">Cancel</span>
+                                <% end %>
                             </div>
-                        </div>
-                        <div class="flex-shrink-0 text-gray-400">
-                            <%= link to: Routes.organization_member_path(@conn, :cancel_invitation, @organization.id, organization_invitation.id), method: :patch, data: [confirm: "Are you sure?"], class: "inline-flex items-center py-2 px-3 border border-transparent rounded-full bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" do %>
-                                <Icon.x_mark class="-ml-1 mr-0.5" />
-                                <span class="text-sm font-medium">Cancel</span>
-                            <% end %>
-                        </div>
-                    </li>
+                        </li>
+                    <% end %>
                 <% end %>
+
+                <% nb_members = @organization.members |> length() %>
+                <% nb_owners = @organization.members |> Enum.filter(fn m -> m.role == Azimutt.Organizations.OrganizationMember.owner() end) |> length() %>
                 <%= for member <- @organization.members |> Enum.sort_by(fn m -> m.user.name end) do %>
-                    <li class="py-4 flex items-center justify-between space-x-3">
+                    <li class={"py-4 flex items-center justify-between space-x-3#{if member.user.id == @current_user.id, do: " bg-yellow-50", else: ""}"}>
                         <div class="min-w-0 flex-1 flex items-center space-x-3">
                             <div class="flex-shrink-0">
                                 <!-- FIXME: pas ouf de passer par member.user, voir pour ajouter un helper ? -->
                                 <img class="h-10 w-10 rounded-full" src={member.user.avatar} alt="">
                             </div>
                             <div class="min-w-0 flex-1">
-                                <p class="text-sm font-medium text-gray-900 truncate"><%= member.user.name %></p>
+                                <p class="text-sm font-medium text-gray-900 truncate">
+                                    <%= member.user.name %>
+                                    <span class="text-xs">(<%= AzimuttWeb.LayoutView.member_role(member.role) %>)</span>
+                                </p>
                                 <p class="text-sm font-medium text-gray-500 truncate"><%= member.user.email %></p>
                             </div>
                         </div>
-                        <%= if member.user.id == @current_user.id do %>
-                            <%= if (Enum.count @organization.members) > 1 do %>
-                                <%= link to: Routes.organization_member_path(@conn, :remove, @organization, member.user), method: :delete, title: "Leave #{@organization.name}", data: [confirm: "Leave #{@organization.name}?"], class: "py-2 px-3 text-gray-400 hover:text-gray-500" do %>
-                                    <Icon.arrow_left_on_rectangle kind="outline" class="-ml-1 mr-0.5" />
-                                <% end %>
-                            <% end %>
-                        <% else %>
-                            <%= link to: Routes.organization_member_path(@conn, :remove, @organization, member.user), method: :delete, title: "Remove #{member.user.name} from #{@organization.name}", data: [confirm: "Remove #{member.user.name} from #{@organization.name}?"], class: "py-2 px-3 text-gray-400 hover:text-gray-500" do %>
-                                <Icon.x_circle kind="outline" class="-ml-1 mr-0.5" />
-                            <% end %>
+                        <%= if is_owner && nb_members > 1 do %>
+                            <div x-data="{open: false}" class="relative inline-block pr-1 text-left">
+                                <button type="button" @click="open = !open" class="flex items-center text-gray-400 rounded-full hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-100" aria-haspopup="true">
+                                    <span class="sr-only">Open options</span>
+                                    <Icon.ellipsis_vertical kind="outline" />
+                                </button>
+                                <div x-show="open" @click.outside="open = false" role="menu" aria-orientation="vertical" tabindex="-1" style="display: none;" class="absolute right-0 z-10 mt-2 w-56 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                                    <div class="py-1" role="none">
+                                        <%= if nb_owners > 1 || member.role != Azimutt.Organizations.OrganizationMember.owner() do %>
+                                            <%= if user_rights[@plan.id] do %>
+                                                <%= for {name, value} <- Azimutt.Organizations.OrganizationMember.roles() do %>
+                                                    <%= if value != member.role do %>
+                                                        <%= link "Make #{name}", to: Routes.organization_member_path(@conn, :set_role, @organization, member.user, value), method: :put, class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" %>
+                                                    <% end %>
+                                                <% end %>
+                                            <% end %>
+                                            <% {text, confirm} = if(member.user.id == @current_user.id, do: {"Leave organization", "leave #{@organization.name} organization"}, else: {"Remove from organization", "remove #{member.user.name} from #{@organization.name} organization"}) %>
+                                            <%= link text, to: Routes.organization_member_path(@conn, :remove, @organization, member.user), method: :delete, data: [confirm: "Are you sure to #{confirm}?"], class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" %>
+                                        <% else %>
+                                            <span role="menuitem" tabindex="-1" class="block px-4 py-2 text-sm text-gray-700">You are the only owner 🤯</span>
+                                        <% end %>
+                                    </div>
+                                </div>
+                            </div>
                         <% end %>
                     </li>
                 <% end %>

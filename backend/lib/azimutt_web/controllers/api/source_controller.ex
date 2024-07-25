@@ -88,9 +88,7 @@ defmodule AzimuttWeb.Api.SourceController do
   end
 
   def create(conn, %{"organization_id" => _organization_id, "project_id" => project_id} = params) do
-    now = DateTime.utc_now()
-    ctx = CtxParams.from_params(params)
-    current_user = conn.assigns.current_user
+    {now, current_user, ctx} = {DateTime.utc_now(), conn.assigns.current_user, CtxParams.from_params(params)}
 
     create_schema = %{
       "type" => "object",
@@ -148,9 +146,7 @@ defmodule AzimuttWeb.Api.SourceController do
   end
 
   def update(conn, %{"organization_id" => _organization_id, "project_id" => project_id, "source_id" => source_id} = params) do
-    now = DateTime.utc_now()
-    ctx = CtxParams.from_params(params)
-    current_user = conn.assigns.current_user
+    {now, current_user, ctx} = {DateTime.utc_now(), conn.assigns.current_user, CtxParams.from_params(params)}
 
     update_schema = %{
       "type" => "object",
@@ -193,9 +189,7 @@ defmodule AzimuttWeb.Api.SourceController do
   end
 
   def delete(conn, %{"organization_id" => _organization_id, "project_id" => project_id, "source_id" => source_id} = params) do
-    now = DateTime.utc_now()
-    ctx = CtxParams.from_params(params)
-    current_user = conn.assigns.current_user
+    {now, current_user, ctx} = {DateTime.utc_now(), conn.assigns.current_user, CtxParams.from_params(params)}
 
     with {:ok, %Project{} = project} <- Projects.get_project(project_id, current_user),
          {:ok, content} <- Projects.get_project_content(project),

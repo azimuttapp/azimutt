@@ -10,6 +10,7 @@ import Libs.Tailwind exposing (Color)
 import Models.Organization exposing (Organization)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.User exposing (User)
+import Models.UserRole as UserRole exposing (UserRole)
 import Ports exposing (JsMsg)
 import Request exposing (Request)
 import Services.Backend as Backend
@@ -20,13 +21,14 @@ import Time
 
 type alias Flags =
     { now : Int
-    , conf : { env : String, platform : String, desktop : Bool }
+    , conf : { env : String, platform : String, role : String, desktop : Bool }
     }
 
 
 type alias GlobalConf =
     { env : Env
     , platform : Platform
+    , role : UserRole
     , desktop : Bool -- True when loaded from desktop app
     }
 
@@ -88,7 +90,8 @@ init _ flags =
       , now = Time.millisToPosix flags.now
       , conf =
             { env = env
-            , platform = Platform.fromString flags.conf.platform
+            , platform = flags.conf.platform |> Platform.fromString
+            , role = flags.conf.role |> UserRole.fromString |> Maybe.withDefault UserRole.Owner
             , desktop = flags.conf.desktop
             }
       , user = Nothing
