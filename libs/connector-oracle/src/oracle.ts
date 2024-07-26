@@ -72,18 +72,20 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     const indexesByTable = groupByEntity(indexes)
     opts.logger.log(`✔︎ Exported ${pluralizeL(tables, 'table')}, ${pluralizeL(relations, 'relation')} and ${pluralizeL(types, 'type')} from the database!`)
     return removeUndefined({
-        entities: tables
-            .map(table => [toEntityId(table), table] as const)
-            .map(([id, table]) => buildTableEntity(
-                blockSize,
-                table,
-                columnsByTable[id] || [],
-                columnsByIndex[id] || {},
-                constraintsByTable[id] || [],
-                indexesByTable[id] || [],
-                jsonColumns[id] || {},
-                polyColumns[id] || {}
-            )).concat(views.map(view => buildViewEntity(view))),
+        entities: tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildTableEntity(
+            blockSize,
+            table,
+            columnsByTable[id] || [],
+            columnsByIndex[id] || {},
+            constraintsByTable[id] || [],
+            indexesByTable[id] || [],
+            jsonColumns[id] || {},
+            polyColumns[id] || {}
+        )).concat(views.map(view => [toEntityId(view), view] as const).map(([id, view]) => buildViewEntity(
+            view,
+            columnsByTable[id] || [],
+            jsonColumns[id] || {}
+        ))),
         relations: relations
             .map(r => buildRelation(r, columnsByIndex))
             .filter((rel): rel is Relation => !!rel),
@@ -105,7 +107,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
 // 👇️ Private functions, some are exported only for tests
 // If you use them, beware of breaking changes!
 
-const toEntityId = <T extends { TABLE_OWNER: string | null; TABLE_NAME: string }>(value: T): EntityId => entityRefToId({schema: value.TABLE_OWNER || undefined, entity: value.TABLE_NAME})
+const toEntityId = <T extends { TABLE_OWNER: string; TABLE_NAME: string }>(value: T): EntityId => entityRefToId({schema: value.TABLE_OWNER, entity: value.TABLE_NAME})
 const groupByEntity = <T extends { TABLE_OWNER: string; TABLE_NAME: string }>(values: T[]): Record<EntityId, T[]> => groupBy(values, toEntityId)
 
 export type RawDatabase = {
@@ -240,13 +242,14 @@ export const getViews = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promi
     ).catch(handleError(`Failed to get views`, [], opts))
 }
 
-// FIXME: add columns (at least ^^)
-function buildViewEntity(view: RawView): Entity {
+function buildViewEntity(view: RawView, columns: RawColumn[], jsonColumns: Record<AttributeName, ValueSchema>): Entity {
     return {
         name: view.TABLE_NAME,
         kind: 'view',
         def: view.TABLE_DEFINITION,
-        attrs: [], // TODO
+        attrs: columns?.slice(0)
+            ?.sort((a, b) => a.COLUMN_INDEX - b.COLUMN_INDEX)
+            ?.map(c => buildAttribute(c, jsonColumns[c.COLUMN_NAME])) || [],
         pk: undefined, // TODO
         indexes: [], // TODO
         checks: [], // TODO
@@ -277,6 +280,7 @@ export type RawColumn = {
 
 export const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawColumn[]> => {
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/DBA_TAB_COLUMNS.html
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_COL_COMMENTS.html
     return conn.query<RawColumn>(`
         SELECT c.OWNER           AS TABLE_OWNER
              , c.TABLE_NAME      AS TABLE_NAME
@@ -324,43 +328,74 @@ function buildAttribute(c: RawColumn, jsonColumn: ValueSchema | undefined): Attr
 }
 
 type RawConstraint = {
+    CONSTRAINT_NAME: string
+    CONSTRAINT_TYPE: 'P' | 'C' // C: Check, P: Primary, U: Unique, R: Referential, V: view check, O: view read only, H: Hash expr, F: Foreign, S: Supplemental logging
     TABLE_OWNER: string
     TABLE_NAME: string
-    COLUMN_NAME: string
-    CONSTRAINT_NAME: string
-    CONSTRAINT_TYPE: 'P' | 'C' // P: primary key, C: Check,
+    COLUMN_NAMES: string
+    COLUMN_POSITIONS: number | null
+    PREDICATE: string | null
+    REF_OWNER: string | null
+    REF_CONSTRAINT: string | null
+    STATUS: 'ENABLED' | 'DISABLED'
     DEFERRABLE: 'DEFERRABLE' | 'NOT DEFERRABLE'
+    DEFERRED: 'DEFERRED' | 'IMMEDIATE'
+    VALIDATED: 'VALIDATED' | 'NOT VALIDATED'
+    INVALID: 'INVALID' | null
+    GENERATED: 'USER NAME' | 'GENERATED NAME'
+    LAST_CHANGE: Date
+    INDEX_OWNER: string | null
+    INDEX_NAME: string | null
 }
 
 export const getConstraints = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawConstraint[]> => {
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_CONSTRAINTS.html
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_CONS_COLUMNS.html
     // `constraint_type IN ('P', 'C')`: get only primary key and check constraints
     return conn.query<RawConstraint>(`
-        SELECT uc.owner           AS TABLE_OWNER,
-               uc.table_name      AS TABLE_NAME,
-               acc.COLUMN_NAME    AS COLUMN_NAME,
-               uc.constraint_name AS CONSTRAINT_NAME,
-               uc.constraint_type AS CONSTRAINT_TYPE,
-               uc.DEFERRABLE      AS DEFERRABLE
-        FROM user_constraints uc
-                 JOIN all_cons_columns acc ON uc.CONSTRAINT_NAME = acc.CONSTRAINT_NAME
-        WHERE CONSTRAINT_TYPE IN ('P', 'C')
-        ORDER BY TABLE_OWNER, TABLE_NAME, CONSTRAINT_NAME`, [], 'getConstraints'
+        SELECT c.CONSTRAINT_NAME            AS CONSTRAINT_NAME
+             , c.CONSTRAINT_TYPE            AS CONSTRAINT_TYPE
+             , c.OWNER                      AS TABLE_OWNER
+             , c.TABLE_NAME                 AS TABLE_NAME
+             , LISTAGG(cc.COLUMN_NAME, ',') AS COLUMN_NAMES
+             , LISTAGG(cc.POSITION, ',')    AS COLUMN_POSITIONS
+             , MIN(c.SEARCH_CONDITION_VC)   AS PREDICATE
+             , MIN(c.R_OWNER)               AS REF_OWNER
+             , MIN(c.R_CONSTRAINT_NAME)     AS REF_CONSTRAINT
+             , MIN(c.STATUS)                AS STATUS
+             , MIN(c.DEFERRABLE)            AS DEFERRABLE
+             , MIN(c.DEFERRED)              AS DEFERRED
+             , MIN(c.VALIDATED)             AS VALIDATED
+             , MIN(c.INVALID)               AS INVALID
+             , MIN(c.GENERATED)             AS GENERATED
+             , MIN(c.LAST_CHANGE)           AS LAST_CHANGE
+             , MIN(c.INDEX_OWNER)           AS INDEX_OWNER
+             , MIN(c.INDEX_NAME)            AS INDEX_NAME
+        FROM ALL_CONSTRAINTS c
+                 JOIN ALL_CONS_COLUMNS cc ON cc.OWNER = c.OWNER AND cc.TABLE_NAME = c.TABLE_NAME AND cc.CONSTRAINT_NAME = c.CONSTRAINT_NAME
+        WHERE c.CONSTRAINT_TYPE IN ('P', 'C') AND (c.SEARCH_CONDITION_VC IS NULL OR c.SEARCH_CONDITION_VC NOT LIKE '% IS NOT NULL') AND ${scopeWhere({schema: 'c.OWNER', entity: 'c.TABLE_NAME'}, opts)}
+        GROUP BY c.CONSTRAINT_NAME, c.CONSTRAINT_TYPE, c.OWNER, c.TABLE_NAME`, [], 'getConstraints'
     ).catch(handleError(`Failed to get constraints`, [], opts))
 }
 
 function buildPrimaryKey(c: RawConstraint, columns: { [i: number]: string }): PrimaryKey {
     return removeUndefined({
         name: c.CONSTRAINT_NAME,
-        attrs: [[c.COLUMN_NAME]],
+        attrs: c.COLUMN_NAMES.split(',').map(name => [name]),
+        doc: undefined, // no constraint comment in Oracle
+        stats: undefined,
+        extra: undefined,
     })
 }
 
 function buildCheck(c: RawConstraint, columns: { [i: number]: string }): Check {
     return removeUndefined({
         name: c.CONSTRAINT_NAME,
-        attrs: [[c.COLUMN_NAME]],
-        predicate: '',
+        attrs: c.COLUMN_NAMES.split(',').map(name => [name]),
+        predicate: c.PREDICATE || '',
+        doc: undefined, // no constraint comment in Oracle
+        stats: undefined,
+        extra: undefined,
     })
 }
 
