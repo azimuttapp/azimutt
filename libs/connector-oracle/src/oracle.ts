@@ -76,7 +76,6 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
             blockSize,
             table,
             columnsByTable[id] || [],
-            columnsByIndex[id] || {},
             constraintsByTable[id] || [],
             indexesByTable[id] || [],
             jsonColumns[id] || {},
@@ -143,7 +142,7 @@ export const getBlockSize = (opts: ConnectorSchemaOpts) => async (conn: Conn): P
 export type RawTable = {
     TABLE_OWNER: string
     TABLE_CLUSTER: string | null
-    TABLE_SCHEMA: string | null
+    TABLE_TABLESPACE: string | null
     TABLE_NAME: string
     TABLE_ROWS: number | null
     TABLE_BLOCKS: number | null
@@ -164,7 +163,7 @@ export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     return conn.query<RawTable>(`
         SELECT t.OWNER              AS TABLE_OWNER
              , t.CLUSTER_NAME       AS TABLE_CLUSTER
-             , t.TABLESPACE_NAME    AS TABLE_SCHEMA
+             , t.TABLESPACE_NAME    AS TABLE_TABLESPACE
              , t.TABLE_NAME         AS TABLE_NAME
              , t.NUM_ROWS           AS TABLE_ROWS
              , t.BLOCKS             AS TABLE_BLOCKS
@@ -183,23 +182,19 @@ export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     ).catch(handleError(`Failed to get tables`, [], opts))
 }
 
-function buildTableEntity(blockSize: number, table: RawTable, columns: RawColumn[], columnsByIndex: { [i: number]: string }, constraints: RawConstraint[], indexes: RawIndex[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>): Entity {
+function buildTableEntity(blockSize: number, table: RawTable, columns: RawColumn[], constraints: RawConstraint[], indexes: RawIndex[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>): Entity {
     return {
         catalog: table.TABLE_CLUSTER || undefined,
-        schema: table.TABLE_SCHEMA || undefined,
+        schema: table.TABLE_TABLESPACE || undefined,
         name: table.TABLE_NAME,
         kind: table.MVIEW_DEFINITION ? 'materialized view' : undefined,
         def: table.MVIEW_DEFINITION || undefined,
         attrs: columns?.slice(0)
             ?.sort((a, b) => a.COLUMN_INDEX - b.COLUMN_INDEX)
             ?.map(c => buildAttribute(c, jsonColumns[c.COLUMN_NAME])) || [],
-        pk: constraints
-            .filter(c => c.CONSTRAINT_TYPE === 'P')
-            .map(c => buildPrimaryKey(c, columnsByIndex))[0] || undefined,
-        indexes: indexes.map(i => buildIndex(blockSize, i, columnsByIndex)),
-        checks: constraints
-            .filter(c => c.CONSTRAINT_TYPE === 'C')
-            .map(c => buildCheck(c, columnsByIndex)),
+        pk: constraints.filter(c => c.CONSTRAINT_TYPE === 'P').map(buildPrimaryKey)[0] || undefined,
+        indexes: indexes.map(i => buildIndex(blockSize, i)),
+        checks: constraints.filter(c => c.CONSTRAINT_TYPE === 'C').map(buildCheck),
         doc: table.TABLE_COMMENT || table.MVIEW_COMMENT || undefined,
         stats: removeUndefined({
             rows: table.TABLE_ROWS || undefined,
@@ -332,8 +327,7 @@ type RawConstraint = {
     CONSTRAINT_TYPE: 'P' | 'C' // C: Check, P: Primary, U: Unique, R: Referential, V: view check, O: view read only, H: Hash expr, F: Foreign, S: Supplemental logging
     TABLE_OWNER: string
     TABLE_NAME: string
-    COLUMN_NAMES: string
-    COLUMN_POSITIONS: number | null
+    COLUMN_NAMES: string // comma separated list of columns
     PREDICATE: string | null
     REF_OWNER: string | null
     REF_CONSTRAINT: string | null
@@ -353,32 +347,33 @@ export const getConstraints = (opts: ConnectorSchemaOpts) => async (conn: Conn):
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_CONS_COLUMNS.html
     // `constraint_type IN ('P', 'C')`: get only primary key and check constraints
     return conn.query<RawConstraint>(`
-        SELECT c.CONSTRAINT_NAME            AS CONSTRAINT_NAME
-             , c.CONSTRAINT_TYPE            AS CONSTRAINT_TYPE
-             , c.OWNER                      AS TABLE_OWNER
-             , c.TABLE_NAME                 AS TABLE_NAME
-             , LISTAGG(cc.COLUMN_NAME, ',') AS COLUMN_NAMES
-             , LISTAGG(cc.POSITION, ',')    AS COLUMN_POSITIONS
-             , MIN(c.SEARCH_CONDITION_VC)   AS PREDICATE
-             , MIN(c.R_OWNER)               AS REF_OWNER
-             , MIN(c.R_CONSTRAINT_NAME)     AS REF_CONSTRAINT
-             , MIN(c.STATUS)                AS STATUS
-             , MIN(c.DEFERRABLE)            AS DEFERRABLE
-             , MIN(c.DEFERRED)              AS DEFERRED
-             , MIN(c.VALIDATED)             AS VALIDATED
-             , MIN(c.INVALID)               AS INVALID
-             , MIN(c.GENERATED)             AS GENERATED
-             , MIN(c.LAST_CHANGE)           AS LAST_CHANGE
-             , MIN(c.INDEX_OWNER)           AS INDEX_OWNER
-             , MIN(c.INDEX_NAME)            AS INDEX_NAME
+        SELECT c.CONSTRAINT_NAME                                                AS CONSTRAINT_NAME
+             , c.CONSTRAINT_TYPE                                                AS CONSTRAINT_TYPE
+             , c.OWNER                                                          AS TABLE_OWNER
+             , c.TABLE_NAME                                                     AS TABLE_NAME
+             , LISTAGG(cc.COLUMN_NAME, ',') WITHIN GROUP (ORDER BY cc.POSITION) AS COLUMN_NAMES
+             , MIN(c.SEARCH_CONDITION_VC)                                       AS PREDICATE
+             , MIN(c.R_OWNER)                                                   AS REF_OWNER
+             , MIN(c.R_CONSTRAINT_NAME)                                         AS REF_CONSTRAINT
+             , MIN(c.STATUS)                                                    AS STATUS
+             , MIN(c.DEFERRABLE)                                                AS DEFERRABLE
+             , MIN(c.DEFERRED)                                                  AS DEFERRED
+             , MIN(c.VALIDATED)                                                 AS VALIDATED
+             , MIN(c.INVALID)                                                   AS INVALID
+             , MIN(c.GENERATED)                                                 AS GENERATED
+             , MIN(c.LAST_CHANGE)                                               AS LAST_CHANGE
+             , MIN(c.INDEX_OWNER)                                               AS INDEX_OWNER
+             , MIN(c.INDEX_NAME)                                                AS INDEX_NAME
         FROM ALL_CONSTRAINTS c
                  JOIN ALL_CONS_COLUMNS cc ON cc.OWNER = c.OWNER AND cc.TABLE_NAME = c.TABLE_NAME AND cc.CONSTRAINT_NAME = c.CONSTRAINT_NAME
-        WHERE c.CONSTRAINT_TYPE IN ('P', 'C') AND (c.SEARCH_CONDITION_VC IS NULL OR c.SEARCH_CONDITION_VC NOT LIKE '% IS NOT NULL') AND ${scopeWhere({schema: 'c.OWNER', entity: 'c.TABLE_NAME'}, opts)}
+        WHERE c.CONSTRAINT_TYPE IN ('P', 'C')
+          AND (c.SEARCH_CONDITION_VC IS NULL OR c.SEARCH_CONDITION_VC NOT LIKE '% IS NOT NULL')
+          AND ${scopeWhere({schema: 'c.OWNER', entity: 'c.TABLE_NAME'}, opts)}
         GROUP BY c.CONSTRAINT_NAME, c.CONSTRAINT_TYPE, c.OWNER, c.TABLE_NAME`, [], 'getConstraints'
     ).catch(handleError(`Failed to get constraints`, [], opts))
 }
 
-function buildPrimaryKey(c: RawConstraint, columns: { [i: number]: string }): PrimaryKey {
+function buildPrimaryKey(c: RawConstraint): PrimaryKey {
     return removeUndefined({
         name: c.CONSTRAINT_NAME,
         attrs: c.COLUMN_NAMES.split(',').map(name => [name]),
@@ -388,7 +383,7 @@ function buildPrimaryKey(c: RawConstraint, columns: { [i: number]: string }): Pr
     })
 }
 
-function buildCheck(c: RawConstraint, columns: { [i: number]: string }): Check {
+function buildCheck(c: RawConstraint): Check {
     return removeUndefined({
         name: c.CONSTRAINT_NAME,
         attrs: c.COLUMN_NAMES.split(',').map(name => [name]),
@@ -400,33 +395,59 @@ function buildCheck(c: RawConstraint, columns: { [i: number]: string }): Check {
 }
 
 type RawIndex = {
+    INDEX_TABLESPACE: string
+    INDEX_NAME: string
+    INDEX_TYPE: string
     TABLE_OWNER: string
     TABLE_NAME: string
-    INDEX_NAME: string
-    COLUMNS: string // comma separated list of columns
+    TABLE_TYPE: 'TABLE' | 'VIEW' | 'INDEX' | 'SEQUENCE' | 'CLUSTER' | 'SYNONYM' | 'NEXT OBJECT'
+    COLUMN_NAMES: string // comma separated list of columns
     IS_UNIQUE: 'UNIQUE' | 'NONUNIQUE'
+    CARDINALITY: number
+    INDEX_ROWS: number
+    ANALYZED_LAST: Date
+    GENERATED: 'Y' | 'N'
+    PARTITIONED: 'YES' | 'NO'
+    IS_CONSTRAINT: 'YES' | 'NO'
+    VISIBILITY: 'VISIBLE' | 'INVISIBLE'
 }
 
 export const getIndexes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawIndex[]> => {
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_INDEXES.html
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_IND_COLUMNS.html
     return conn.query<RawIndex>(`
-        SELECT idx.table_owner                                                           AS TABLE_OWNER
-             , idx.table_name                                                            AS TABLE_NAME
-             , idx.index_name                                                            AS INDEX_NAME
-             , LISTAGG(col.column_name, ',') WITHIN GROUP (ORDER BY col.column_position) AS COLUMNS
-             , idx.uniqueness                                                            AS IS_UNIQUE
-        FROM ALL_INDEXES idx
-                 JOIN ALL_IND_COLUMNS col ON idx.index_name = col.index_name AND idx.table_owner = col.table_owner AND idx.table_name = col.table_name
-        GROUP BY idx.index_name, idx.table_owner, idx.table_name, idx.uniqueness`, [], 'getIndexes'
+        SELECT i.TABLESPACE_NAME                                                     AS INDEX_TABLESPACE
+             , i.INDEX_NAME                                                          AS INDEX_NAME
+             , i.INDEX_TYPE                                                          AS INDEX_TYPE
+             , i.TABLE_OWNER                                                         AS TABLE_OWNER
+             , i.TABLE_NAME                                                          AS TABLE_NAME
+             , i.TABLE_TYPE                                                          AS TABLE_TYPE
+             , LISTAGG(c.COLUMN_NAME, ',') WITHIN GROUP (ORDER BY c.COLUMN_POSITION) AS COLUMN_NAMES
+             , MIN(i.UNIQUENESS)                                                     AS IS_UNIQUE
+             , MIN(i.DISTINCT_KEYS)                                                  AS CARDINALITY
+             , MIN(i.NUM_ROWS)                                                       AS INDEX_ROWS
+             , MIN(i.LAST_ANALYZED)                                                  AS ANALYZED_LAST
+             , MIN(i.GENERATED)                                                      AS GENERATED
+             , MIN(i.PARTITIONED)                                                    AS PARTITIONED
+             , MIN(i.CONSTRAINT_INDEX)                                               AS IS_CONSTRAINT
+             , MIN(i.VISIBILITY)                                                     AS VISIBILITY
+        FROM ALL_INDEXES i
+                 JOIN ALL_IND_COLUMNS c ON c.INDEX_OWNER = i.OWNER AND c.INDEX_NAME = i.INDEX_NAME
+        WHERE i.DROPPED != 'YES' AND ${scopeWhere({schema: 'i.TABLE_OWNER', entity: 'i.TABLE_NAME'}, opts)}
+        GROUP BY i.TABLESPACE_NAME, i.INDEX_NAME, i.INDEX_TYPE, i.TABLE_OWNER, i.TABLE_NAME, i.TABLE_TYPE`, [], 'getIndexes'
     ).catch(handleError(`Failed to get indexes`, [], opts))
 }
 
-function buildIndex(blockSize: number, index: RawIndex, columns: { [i: number]: string }): Index {
+function buildIndex(blockSize: number, index: RawIndex): Index {
     return removeUndefined({
         name: index.INDEX_NAME,
-        attrs: [index.COLUMNS.split(',')],
+        attrs: index.COLUMN_NAMES.split(',').map(name => [name]),
         unique: index.IS_UNIQUE === 'UNIQUE' || undefined,
+        partial: undefined,
+        definition: undefined,
+        doc: undefined,
+        stats: undefined,
+        extra: undefined,
     })
 }
 
