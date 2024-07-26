@@ -102,6 +102,21 @@ describe('databaseUrl', () => {
             port: 1521,
             db: 'FREE'
         })
+        expect(parseDatabaseUrl('oracle:thin:HR/hr@localhost:5221:orcl')).toEqual({
+            full: 'oracle:thin:HR/hr@localhost:5221:orcl',
+            kind: 'oracle',
+            user: 'HR',
+            pass: 'hr',
+            host: 'localhost',
+            port: 5221,
+            db: 'orcl'
+        })
+        expect(parseDatabaseUrl('oracle:thin:localhost:5221')).toEqual({
+            full: 'oracle:thin:localhost:5221',
+            kind: 'oracle',
+            host: 'localhost',
+            port: 5221,
+        })
     })
     test('parse postgres url', () => {
         expect(parseDatabaseUrl('postgres://postgres0.example.com')).toEqual({

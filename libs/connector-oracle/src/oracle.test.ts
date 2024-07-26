@@ -2,12 +2,24 @@ import {describe, expect, test} from "@jest/globals";
 import {ConnectorSchemaOpts, DatabaseUrlParsed, parseDatabaseUrl,} from "@azimutt/models";
 import {connect} from "./connect";
 import {execQuery} from "./query";
-import {getBlockSize, getColumns, getDatabase, getDistinctValues, getSchema, getTables, getTypes,} from "./oracle";
+import {
+    getBlockSize,
+    getColumns,
+    getConstraints,
+    getDatabase,
+    getDistinctValues,
+    getIndexes,
+    getRelations,
+    getSchema,
+    getTables,
+    getTypes,
+    getViews,
+} from "./oracle";
 import {application, logger} from "./constants.test";
 
 describe('oracle', () => {
     // local url, install db or replace it to test
-    const url: DatabaseUrlParsed = parseDatabaseUrl('jdbc:oracle:thin:sys/oracle@//localhost:1521/FREE')
+    const url: DatabaseUrlParsed = parseDatabaseUrl('oracle:thin:system/oracle@localhost:1521')
     const opts: ConnectorSchemaOpts = {logger, logQueries: false, inferJsonAttributes: true, inferPolymorphicRelations: true}
 
     test.skip('execQuery', async () => {
@@ -25,26 +37,43 @@ describe('oracle', () => {
         // console.log('schema', schema.entities?.find(e => e.name == 'events')?.attrs?.find(a => a.name == 'name')?.stats)
         expect(schema.entities?.length).toEqual(14)
     })
-    test.skip('getBlockSize', async () => {
-        const blockSize = await connect(application, url, getBlockSize(opts), opts)
-        console.log(`blockSize`, blockSize)
-    })
     test.skip('getDatabase', async () => {
         const database = await connect(application, url, getDatabase(opts), opts)
         console.log(`database`, database)
+    })
+    test.skip('getBlockSize', async () => {
+        const blockSize = await connect(application, url, getBlockSize(opts), opts)
+        console.log(`blockSize`, blockSize)
     })
     test.skip('getTables', async () => {
         const tables = await connect(application, url, getTables(opts), opts)
         console.log(`${tables.length} tables`, tables)
     })
+    test.skip('getViews', async () => {
+        const views = await connect(application, url, getViews(opts), opts)
+        console.log(`${views.length} views`, views)
+    })
     test.skip('getColumns', async () => {
         const columns = await connect(application, url, getColumns(opts), opts)
         console.log(`${columns.length} columns`, columns)
+    })
+    test.skip('getConstraints', async () => {
+        const constraints = await connect(application, url, getConstraints(opts), opts)
+        console.log(`${constraints.length} constraints`, constraints)
+    })
+    test.skip('getIndexes', async () => {
+        const indexes = await connect(application, url, getIndexes(opts), opts)
+        console.log(`${indexes.length} indexes`, indexes)
+    })
+    test.skip('getRelations', async () => {
+        const relations = await connect(application, url, getRelations(opts), opts)
+        console.log(`${relations.length} relations`, relations)
     })
     test.skip('getTypes', async () => {
         const types = await connect(application, url, getTypes(opts), opts)
         console.log(`${types.length} types`, types)
     })
+    // TODO getSampleValues
     test.skip('getDistinctValues', async () => {
         const values = await connect(application, url, getDistinctValues({schema: 'C##AZIMUTT', entity: 'USERS'}, ['NAME'], opts), opts)
         console.log(`${values.length} values`, values)
