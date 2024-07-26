@@ -149,27 +149,33 @@ export type RawTable = {
     PARTITIONED: 'YES' | 'NO'
     NESTED: 'YES' | 'NO'
     TABLE_COMMENT: string | null
+    MVIEW_DEFINITION: string | null
+    MVIEW_REFRESHED: Date | null
     MVIEW_COMMENT: string | null
 }
 
 export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawTable[]> => {
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_ALL_TABLES.html
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_TAB_COMMENTS.html
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_MVIEWS.html
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_MVIEW_COMMENTS.html
     return conn.query<RawTable>(`
-        SELECT t.OWNER           AS TABLE_OWNER
-             , t.CLUSTER_NAME    AS TABLE_CLUSTER
-             , t.TABLESPACE_NAME AS TABLE_SCHEMA
-             , t.TABLE_NAME      AS TABLE_NAME
-             , t.NUM_ROWS        AS TABLE_ROWS
-             , t.BLOCKS          AS TABLE_BLOCKS
-             , t.LAST_ANALYZED   AS ANALYZE_LAST
-             , t.PARTITIONED     AS PARTITIONED
-             , t.NESTED          AS NESTED
-             , tc.COMMENTS       AS TABLE_COMMENT
-             , vc.COMMENTS       AS MVIEW_COMMENT
+        SELECT t.OWNER              AS TABLE_OWNER
+             , t.CLUSTER_NAME       AS TABLE_CLUSTER
+             , t.TABLESPACE_NAME    AS TABLE_SCHEMA
+             , t.TABLE_NAME         AS TABLE_NAME
+             , t.NUM_ROWS           AS TABLE_ROWS
+             , t.BLOCKS             AS TABLE_BLOCKS
+             , t.LAST_ANALYZED      AS ANALYZE_LAST
+             , t.PARTITIONED        AS PARTITIONED
+             , t.NESTED             AS NESTED
+             , tc.COMMENTS          AS TABLE_COMMENT
+             , mv.QUERY             AS MVIEW_DEFINITION
+             , mv.LAST_REFRESH_DATE AS MVIEW_REFRESHED
+             , vc.COMMENTS          AS MVIEW_COMMENT
         FROM ALL_ALL_TABLES t
                  LEFT JOIN ALL_TAB_COMMENTS tc ON tc.OWNER = t.OWNER AND tc.TABLE_NAME = t.TABLE_NAME AND tc.TABLE_TYPE='TABLE'
+                 LEFT JOIN ALL_MVIEWS mv ON mv.OWNER=t.OWNER AND mv.MVIEW_NAME=t.TABLE_NAME
                  LEFT JOIN ALL_MVIEW_COMMENTS vc ON vc.OWNER = t.OWNER AND vc.MVIEW_NAME = t.TABLE_NAME
         WHERE ${scopeWhere({catalog: 'CLUSTER_NAME', schema: 'TABLESPACE_NAME', entity: 'TABLE_NAME'}, opts)}`, [], 'getTables'
     ).catch(handleError(`Failed to get tables`, [], opts))
@@ -180,8 +186,8 @@ function buildTableEntity(blockSize: number, table: RawTable, columns: RawColumn
         catalog: table.TABLE_CLUSTER || undefined,
         schema: table.TABLE_SCHEMA || undefined,
         name: table.TABLE_NAME,
-        kind: undefined, // tables & materialized views, but can't get which one is which :/
-        def: undefined, // tables & materialized views, but can't get which one is which :/
+        kind: table.MVIEW_DEFINITION ? 'materialized view' : undefined,
+        def: table.MVIEW_DEFINITION || undefined,
         attrs: columns?.slice(0)
             ?.sort((a, b) => a.COLUMN_INDEX - b.COLUMN_INDEX)
             ?.map(c => buildAttribute(c, jsonColumns[c.COLUMN_NAME])) || [],
@@ -216,7 +222,6 @@ function buildTableEntity(blockSize: number, table: RawTable, columns: RawColumn
 export type RawView = {
     TABLE_OWNER: string
     TABLE_NAME: string
-    TABLE_KIND: 'view' | 'materialized view'
     TABLE_DEFINITION: string
     TABLE_COMMENT: string | null
 }
@@ -230,20 +235,10 @@ export const getViews = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promi
     return conn.query<RawView>(`
         SELECT v.OWNER     AS TABLE_OWNER
              , v.VIEW_NAME AS TABLE_NAME
-             , 'view'      AS TABLE_KIND
              , v.TEXT      AS TABLE_DEFINITION
              , c.COMMENTS  AS TABLE_COMMENT
         FROM ALL_VIEWS v
                  LEFT JOIN ALL_TAB_COMMENTS c ON c.OWNER = v.OWNER AND c.TABLE_NAME = v.VIEW_NAME AND c.TABLE_TYPE = 'VIEW'
-        WHERE v.OWNER NOT IN ('AUDSYS', 'CTXSYS', 'DBSNMP', 'DVSYS', 'GSMADMIN_INTERNAL', 'LBACSYS', 'MDSYS', 'OLAPSYS', 'SYS', 'SYSTEM', 'WMSYS', 'XDB')
-        UNION ALL
-        SELECT v.OWNER             AS TABLE_OWNER
-             , v.MVIEW_NAME        AS TABLE_NAME
-             , 'materialized view' AS TABLE_KIND
-             , v.QUERY             AS TABLE_DEFINITION
-             , c.COMMENTS          AS TABLE_COMMENT
-        FROM ALL_MVIEWS v
-                 LEFT JOIN ALL_MVIEW_COMMENTS c ON c.OWNER = v.OWNER AND c.MVIEW_NAME = v.MVIEW_NAME
         WHERE v.OWNER NOT IN ('AUDSYS', 'CTXSYS', 'DBSNMP', 'DVSYS', 'GSMADMIN_INTERNAL', 'LBACSYS', 'MDSYS', 'OLAPSYS', 'SYS', 'SYSTEM', 'WMSYS', 'XDB')`, [], 'getViews'
     ).catch(handleError(`Failed to get views`, [], opts))
 }
@@ -252,7 +247,7 @@ export const getViews = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promi
 function buildViewEntity(view: RawView): Entity {
     return {
         name: view.TABLE_NAME,
-        kind: view.TABLE_KIND,
+        kind: 'view',
         def: view.TABLE_DEFINITION,
         attrs: [], // TODO
         pk: undefined, // TODO
