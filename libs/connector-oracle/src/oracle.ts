@@ -105,8 +105,8 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
 // 👇️ Private functions, some are exported only for tests
 // If you use them, beware of breaking changes!
 
-const toEntityId = <T extends { TABLE_SCHEMA: string | null; TABLE_NAME: string }>(value: T): EntityId => entityRefToId({schema: value.TABLE_SCHEMA || undefined, entity: value.TABLE_NAME})
-const groupByEntity = <T extends { TABLE_SCHEMA: string; TABLE_NAME: string }>(values: T[]): Record<EntityId, T[]> => groupBy(values, toEntityId)
+const toEntityId = <T extends { TABLE_OWNER: string | null; TABLE_NAME: string }>(value: T): EntityId => entityRefToId({schema: value.TABLE_OWNER || undefined, entity: value.TABLE_NAME})
+const groupByEntity = <T extends { TABLE_OWNER: string; TABLE_NAME: string }>(values: T[]): Record<EntityId, T[]> => groupBy(values, toEntityId)
 
 export type RawDatabase = {
     version: string
@@ -145,7 +145,7 @@ export type RawTable = {
     TABLE_NAME: string
     TABLE_ROWS: number | null
     TABLE_BLOCKS: number | null
-    ANALYZE_LAST: Date | null
+    ANALYZED_LAST: Date | null
     PARTITIONED: 'YES' | 'NO'
     NESTED: 'YES' | 'NO'
     TABLE_COMMENT: string | null
@@ -166,7 +166,7 @@ export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
              , t.TABLE_NAME         AS TABLE_NAME
              , t.NUM_ROWS           AS TABLE_ROWS
              , t.BLOCKS             AS TABLE_BLOCKS
-             , t.LAST_ANALYZED      AS ANALYZE_LAST
+             , t.LAST_ANALYZED      AS ANALYZED_LAST
              , t.PARTITIONED        AS PARTITIONED
              , t.NESTED             AS NESTED
              , tc.COMMENTS          AS TABLE_COMMENT
@@ -177,7 +177,7 @@ export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
                  LEFT JOIN ALL_TAB_COMMENTS tc ON tc.OWNER = t.OWNER AND tc.TABLE_NAME = t.TABLE_NAME AND tc.TABLE_TYPE='TABLE'
                  LEFT JOIN ALL_MVIEWS mv ON mv.OWNER=t.OWNER AND mv.MVIEW_NAME=t.TABLE_NAME
                  LEFT JOIN ALL_MVIEW_COMMENTS vc ON vc.OWNER = t.OWNER AND vc.MVIEW_NAME = t.TABLE_NAME
-        WHERE ${scopeWhere({catalog: 'CLUSTER_NAME', schema: 'TABLESPACE_NAME', entity: 'TABLE_NAME'}, opts)}`, [], 'getTables'
+        WHERE ${scopeWhere({schema: 't.OWNER', entity: 't.TABLE_NAME'}, opts)}`, [], 'getTables'
     ).catch(handleError(`Failed to get tables`, [], opts))
 }
 
@@ -210,7 +210,7 @@ function buildTableEntity(blockSize: number, table: RawTable, columns: RawColumn
             scanSeqLast: undefined,
             scanIdx: undefined,
             scanIdxLast: undefined,
-            analyzeLast: table.ANALYZE_LAST?.toISOString(),
+            analyzeLast: table.ANALYZED_LAST?.toISOString(),
             analyzeLag: undefined,
             vacuumLast: undefined,
             vacuumLag: undefined,
@@ -226,12 +226,9 @@ export type RawView = {
     TABLE_COMMENT: string | null
 }
 
-// FIXME: looks like materialized views are also in ALL_ALL_TABLES but can't differentiate them from real tables :/
 export const getViews = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawView[]> => {
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_VIEWS.html
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_TAB_COMMENTS.html
-    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_MVIEWS.html
-    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_MVIEW_COMMENTS.html
     return conn.query<RawView>(`
         SELECT v.OWNER     AS TABLE_OWNER
              , v.VIEW_NAME AS TABLE_NAME
@@ -239,7 +236,7 @@ export const getViews = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promi
              , c.COMMENTS  AS TABLE_COMMENT
         FROM ALL_VIEWS v
                  LEFT JOIN ALL_TAB_COMMENTS c ON c.OWNER = v.OWNER AND c.TABLE_NAME = v.VIEW_NAME AND c.TABLE_TYPE = 'VIEW'
-        WHERE v.OWNER NOT IN ('AUDSYS', 'CTXSYS', 'DBSNMP', 'DVSYS', 'GSMADMIN_INTERNAL', 'LBACSYS', 'MDSYS', 'OLAPSYS', 'SYS', 'SYSTEM', 'WMSYS', 'XDB')`, [], 'getViews'
+        WHERE ${scopeWhere({schema: 'v.OWNER', entity: 'v.VIEW_NAME'}, opts)}`, [], 'getViews'
     ).catch(handleError(`Failed to get views`, [], opts))
 }
 
@@ -260,26 +257,46 @@ function buildViewEntity(view: RawView): Entity {
 }
 
 export type RawColumn = {
-    COLUMN_INDEX: number
-    TABLE_SCHEMA: string
+    TABLE_OWNER: string
     TABLE_NAME: string
+    COLUMN_INDEX: number
     COLUMN_NAME: string
     COLUMN_TYPE: string
     COLUMN_TYPE_LEN: number
     COLUMN_NULLABLE: 'Y' | 'N'
+    COLUMN_DEFAULT: string | null
+    COLUMN_COMMENT: string | null
+    CARDINALITY: number | null
+    VALUE_LOW: Buffer | null
+    VALUE_HIGH: Buffer | null
+    NULLS: number | null
+    ANALYZED_LAST: Date | null
+    AVG_LEN: number | null
+    IS_IDENTITY: 'YES' | 'NO'
 }
 
 export const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawColumn[]> => {
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/DBA_TAB_COLUMNS.html
     return conn.query<RawColumn>(`
-        SELECT column_id   AS COLUMN_INDEX,
-               owner       AS TABLE_SCHEMA,
-               table_name  AS TABLE_NAME,
-               column_name AS COLUMN_NAME,
-               data_type   AS COLUMN_TYPE,
-               data_length AS COLUMN_TYPE_LEN,
-               nullable    AS COLUMN_NULLABLE
-        from sys.dba_tab_columns`, [], 'getColumns'
+        SELECT c.OWNER           AS TABLE_OWNER
+             , c.TABLE_NAME      AS TABLE_NAME
+             , c.COLUMN_ID       AS COLUMN_INDEX
+             , c.COLUMN_NAME     AS COLUMN_NAME
+             , c.DATA_TYPE       AS COLUMN_TYPE
+             , c.DATA_LENGTH     AS COLUMN_TYPE_LEN
+             , c.NULLABLE        AS COLUMN_NULLABLE
+             , c.DATA_DEFAULT    AS COLUMN_DEFAULT
+             , cc.COMMENTS       AS COLUMN_COMMENT
+             , c.NUM_DISTINCT    AS CARDINALITY
+             , c.LOW_VALUE       AS VALUE_LOW
+             , c.HIGH_VALUE      AS VALUE_HIGH
+             , c.NUM_NULLS       AS NULLS
+             , c.LAST_ANALYZED   AS ANALYZED_LAST
+             , c.AVG_COL_LEN     AS AVG_LEN
+             , c.IDENTITY_COLUMN AS IS_IDENTITY
+        FROM ALL_TAB_COLUMNS c
+                 LEFT JOIN ALL_COL_COMMENTS cc ON cc.OWNER = c.OWNER AND cc.TABLE_NAME = c.TABLE_NAME AND cc.COLUMN_NAME = c.COLUMN_NAME
+        WHERE ${scopeWhere({schema: 'c.OWNER', entity: 'c.TABLE_NAME'}, opts)}`, [], 'getColumns'
     ).catch(handleError(`Failed to get columns`, [], opts))
 }
 
@@ -288,12 +305,26 @@ function buildAttribute(c: RawColumn, jsonColumn: ValueSchema | undefined): Attr
         name: c.COLUMN_NAME,
         type: c.COLUMN_TYPE,
         null: c.COLUMN_NULLABLE == 'Y' || undefined,
+        gen: undefined,
+        default: c.COLUMN_DEFAULT || undefined,
         attrs: jsonColumn ? schemaToAttributes(jsonColumn) : undefined,
+        doc: c.COLUMN_COMMENT || undefined,
+        stats: removeUndefined({
+            nulls: c.NULLS || undefined,
+            bytesAvg: c.AVG_LEN || undefined,
+            cardinality: c.CARDINALITY || undefined,
+            commonValues: undefined,
+            distinctValues: undefined,
+            histogram: undefined,
+            min: c.VALUE_LOW?.toString(),
+            max: c.VALUE_HIGH?.toString(),
+        }),
+        extra: undefined,
     })
 }
 
 type RawConstraint = {
-    TABLE_SCHEMA: string
+    TABLE_OWNER: string
     TABLE_NAME: string
     COLUMN_NAME: string
     CONSTRAINT_NAME: string
@@ -305,7 +336,7 @@ export const getConstraints = (opts: ConnectorSchemaOpts) => async (conn: Conn):
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_CONSTRAINTS.html
     // `constraint_type IN ('P', 'C')`: get only primary key and check constraints
     return conn.query<RawConstraint>(`
-        SELECT uc.owner           AS TABLE_SCHEMA,
+        SELECT uc.owner           AS TABLE_OWNER,
                uc.table_name      AS TABLE_NAME,
                acc.COLUMN_NAME    AS COLUMN_NAME,
                uc.constraint_name AS CONSTRAINT_NAME,
@@ -314,7 +345,7 @@ export const getConstraints = (opts: ConnectorSchemaOpts) => async (conn: Conn):
         FROM user_constraints uc
                  JOIN all_cons_columns acc ON uc.CONSTRAINT_NAME = acc.CONSTRAINT_NAME
         WHERE CONSTRAINT_TYPE IN ('P', 'C')
-        ORDER BY TABLE_SCHEMA, TABLE_NAME, CONSTRAINT_NAME`, [], 'getConstraints'
+        ORDER BY TABLE_OWNER, TABLE_NAME, CONSTRAINT_NAME`, [], 'getConstraints'
     ).catch(handleError(`Failed to get constraints`, [], opts))
 }
 
@@ -334,7 +365,7 @@ function buildCheck(c: RawConstraint, columns: { [i: number]: string }): Check {
 }
 
 type RawIndex = {
-    TABLE_SCHEMA: string
+    TABLE_OWNER: string
     TABLE_NAME: string
     INDEX_NAME: string
     COLUMNS: string // comma separated list of columns
@@ -345,7 +376,7 @@ export const getIndexes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_INDEXES.html
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_IND_COLUMNS.html
     return conn.query<RawIndex>(`
-        SELECT idx.table_owner                                                           AS TABLE_SCHEMA
+        SELECT idx.table_owner                                                           AS TABLE_OWNER
              , idx.table_name                                                            AS TABLE_NAME
              , idx.index_name                                                            AS INDEX_NAME
              , LISTAGG(col.column_name, ',') WITHIN GROUP (ORDER BY col.column_position) AS COLUMNS
