@@ -81,11 +81,12 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
             constraintsByTable[id] || [],
             indexesByTable[id] || [],
             jsonColumns[id] || {},
-            polyColumns[id] || {}
+            polyColumns[id] || {},
         )).concat(views.map(view => [toEntityId(view), view] as const).map(([id, view]) => buildViewEntity(
             view,
             columnsByTable[id] || [],
-            jsonColumns[id] || {}
+            jsonColumns[id] || {},
+            polyColumns[id] || {},
         ))),
         relations: relations.map(buildRelation).filter((rel): rel is Relation => !!rel),
         types: types.map(buildType),
@@ -196,7 +197,7 @@ function buildTableEntity(blockSize: number, table: RawTable, columns: RawColumn
         def: table.MVIEW_DEFINITION || undefined,
         attrs: columns?.slice(0)
             ?.sort((a, b) => a.COLUMN_INDEX - b.COLUMN_INDEX)
-            ?.map(c => buildAttribute(c, jsonColumns[c.COLUMN_NAME])) || [],
+            ?.map(c => buildAttribute(c, jsonColumns[c.COLUMN_NAME], polyColumns[c.COLUMN_NAME])) || [],
         pk: constraints.filter(c => c.CONSTRAINT_TYPE === 'P').map(buildPrimaryKey)[0] || undefined,
         indexes: indexes.map(i => buildIndex(blockSize, i)),
         checks: constraints.filter(c => c.CONSTRAINT_TYPE === 'C').map(buildCheck),
@@ -242,14 +243,14 @@ export const getViews = (opts: ScopeOpts) => async (conn: Conn): Promise<RawView
     ).catch(handleError(`Failed to get views`, [], opts))
 }
 
-function buildViewEntity(view: RawView, columns: RawColumn[], jsonColumns: Record<AttributeName, ValueSchema>): Entity {
+function buildViewEntity(view: RawView, columns: RawColumn[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>): Entity {
     return {
         name: view.TABLE_NAME,
         kind: 'view',
         def: view.TABLE_DEFINITION,
         attrs: columns?.slice(0)
             ?.sort((a, b) => a.COLUMN_INDEX - b.COLUMN_INDEX)
-            ?.map(c => buildAttribute(c, jsonColumns[c.COLUMN_NAME])) || [],
+            ?.map(c => buildAttribute(c, jsonColumns[c.COLUMN_NAME], polyColumns[c.COLUMN_NAME])) || [],
         pk: undefined, // TODO
         indexes: [], // TODO
         checks: [], // TODO
@@ -304,7 +305,7 @@ export const getColumns = (opts: ScopeOpts) => async (conn: Conn): Promise<RawCo
     ).catch(handleError(`Failed to get columns`, [], opts))
 }
 
-function buildAttribute(c: RawColumn, jsonColumn: ValueSchema | undefined): Attribute {
+function buildAttribute(c: RawColumn, jsonColumn: ValueSchema | undefined, values: string[] | undefined): Attribute {
     return removeEmpty({
         name: c.COLUMN_NAME,
         type: c.COLUMN_TYPE,
@@ -318,7 +319,7 @@ function buildAttribute(c: RawColumn, jsonColumn: ValueSchema | undefined): Attr
             bytesAvg: c.AVG_LEN || undefined,
             cardinality: c.CARDINALITY || undefined,
             commonValues: undefined,
-            distinctValues: undefined,
+            distinctValues: values,
             histogram: undefined,
             min: c.VALUE_LOW?.toString(),
             max: c.VALUE_HIGH?.toString(),
@@ -580,7 +581,7 @@ const getJsonColumns = (columns: Record<EntityId, RawColumn[]>, opts: ConnectorS
     opts.logger.log('Inferring JSON columns ...')
     return mapEntriesAsync(columns, (entityId, tableCols) => {
         const ref = entityRefFromId(entityId)
-        const jsonCols = tableCols.filter(c => c.COLUMN_TYPE === 'jsonb')
+        const jsonCols = tableCols.filter(c => c.COLUMN_TYPE === 'JSON')
         return mapValuesAsync(
             Object.fromEntries(jsonCols.map(c => [c.COLUMN_NAME, c.COLUMN_NAME])),
             c => getSampleValues(ref, [c], opts)(conn).then(valuesToSchema)
@@ -588,15 +589,15 @@ const getJsonColumns = (columns: Record<EntityId, RawColumn[]>, opts: ConnectorS
     })
 }
 
-const getSampleValues = (ref: EntityRef, attribute: AttributePath, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<AttributeValue[]> => {
+export const getSampleValues = (ref: EntityRef, attribute: AttributePath, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<AttributeValue[]> => {
     const sqlTable = buildSqlTable(ref)
     const sqlColumn = buildSqlColumn(attribute)
     const sampleSize = opts.sampleSize || connectorSchemaOptsDefaults.sampleSize
-    return conn.query<{value: AttributeValue}>(`
-        SELECT ${sqlColumn} AS value
+    return conn.query<{VALUE: AttributeValue}>(`
+        SELECT ${sqlColumn} AS VALUE
         FROM ${sqlTable}
         WHERE ${sqlColumn} IS NOT NULL FETCH FIRST ${sampleSize} ROWS ONLY`, [], 'getSampleValues'
-    ).then(rows => rows.map(row => row.value))
+    ).then(rows => rows.map(row => row.VALUE))
         .catch(handleError(`Failed to get sample values for '${attributeRefToId({...ref, attribute})}'`, [], opts))
 }
 
@@ -617,12 +618,11 @@ export const getDistinctValues = (ref: EntityRef, attribute: AttributePath, opts
     const sqlTable = buildSqlTable(ref)
     const sqlColumn = buildSqlColumn(attribute)
     const sampleSize = opts.sampleSize || connectorSchemaOptsDefaults.sampleSize
-    return conn.query<{ value: AttributeValue }>(`
-        SELECT DISTINCT ${sqlColumn} AS value
+    return conn.query<{ VALUE: AttributeValue }>(`
+        SELECT DISTINCT ${sqlColumn} AS VALUE
         FROM ${sqlTable}
         WHERE ${sqlColumn} IS NOT NULL
         ORDER BY value FETCH FIRST ${sampleSize} ROWS ONLY`, [], 'getDistinctValues'
-    ).then(rows => rows.map(row => row.value))
-        .catch(err => err instanceof Error && err.message.match(/materialized view "[^"]+" has not been populated/) ? [] : Promise.reject(err))
+    ).then(rows => rows.map(row => row.VALUE))
         .catch(handleError(`Failed to get distinct values for '${attributeRefToId({...ref, attribute})}'`, [], opts))
 }

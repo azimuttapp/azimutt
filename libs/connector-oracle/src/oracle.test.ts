@@ -1,5 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
-import {DatabaseUrlParsed, parseDatabaseUrl,} from "@azimutt/models";
+import {DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/models";
 import {connect} from "./connect";
 import {execQuery} from "./query";
 import {
@@ -10,13 +10,14 @@ import {
     getDistinctValues,
     getIndexes,
     getRelations,
+    getSampleValues,
     getSchema,
     getTables,
     getTypes,
     getViews,
 } from "./oracle";
-import {application, logger, oracleUsers} from "./constants.test";
 import {ScopeOpts} from "./helpers";
+import {application, logger, oracleUsers} from "./constants.test";
 
 describe('oracle', () => {
     // local url, install db or replace it to test
@@ -77,7 +78,10 @@ describe('oracle', () => {
         const types = await connect(application, url, getTypes(opts), opts)
         console.log(`${types.length} types`, types)
     })
-    // TODO getSampleValues
+    test.skip('getSampleValues', async () => {
+        const values = await connect(application, url, getSampleValues({schema: 'C##AZIMUTT', entity: 'USERS'}, ['SETTINGS'], opts), opts)
+        console.log(`${values.length} values`, values)
+    })
     test.skip('getDistinctValues', async () => {
         const values = await connect(application, url, getDistinctValues({schema: 'C##AZIMUTT', entity: 'USERS'}, ['NAME'], opts), opts)
         console.log(`${values.length} values`, values)
