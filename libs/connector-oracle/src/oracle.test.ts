@@ -25,12 +25,14 @@ describe('oracle', () => {
     const opts: ScopeOpts = {logger, logQueries: false, inferJsonAttributes: true, inferPolymorphicRelations: true, oracleUsers}
 
     test.skip('execQuery', async () => {
-        const query = 'SELECT u.id, e.id, o.id FROM users u JOIN events e ON u.id = e.created_by JOIN organizations o on o.id = e.organization_id FETCH FIRST 10 ROWS ONLY;'
+        const url: DatabaseUrlParsed = parseDatabaseUrl('oracle:thin:C##azimutt/azimutt@localhost:1521')
+        const query = 'SELECT p.id, p.title, u.id, u.name FROM posts p JOIN users u on p.created_by = u.id FETCH FIRST 10 ROWS ONLY'
         const results = await connect(application, url, execQuery(query, []), opts)
         expect(results.attributes).toEqual([
-            {name: 'id', ref: {schema: 'public', entity: 'users', attribute: ['id']}},
-            {name: 'id_2', ref: {schema: 'public', entity: 'events', attribute: ['id']}},
-            {name: 'id_3', ref: {schema: 'public', entity: 'organizations', attribute: ['id']}},
+            {name: 'ID'/*, ref: {entity: 'POSTS', attribute: ['ID']}*/},
+            {name: 'TITLE'/*, ref: {entity: 'POSTS', attribute: ['TITLE']}*/},
+            {name: 'ID_1'/*, ref: {entity: 'USERS', attribute: ['ID']}*/},
+            {name: 'NAME'/*, ref: {entity: 'USERS', attribute: ['NAME']}*/},
         ])
     })
     test.skip('getSchema', async () => {
@@ -40,7 +42,7 @@ describe('oracle', () => {
         console.log(`${(schema.types || []).length} types`, ...(schema.types || []))
         console.log('stats', schema.stats)
         // console.log('schema', schema.entities?.find(e => e.name == 'events')?.attrs?.find(a => a.name == 'name')?.stats)
-        expect(schema.entities?.length).toEqual(14)
+        expect(schema.entities?.length).toEqual(7)
     }, 15000)
     test.skip('getDatabase', async () => {
         const database = await connect(application, url, getDatabase(opts), opts)

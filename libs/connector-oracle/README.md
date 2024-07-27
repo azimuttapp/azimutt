@@ -75,6 +75,7 @@ CREATE TABLE users (
     role            VARCHAR2(10)            NOT NULL,
     email           VARCHAR2(255)           NOT NULL,
     email_confirmed BOOLEAN   DEFAULT false NOT NULL,
+    settings        JSON,
     created_at      TIMESTAMP DEFAULT systimestamp,
     PRIMARY KEY (id),
     CONSTRAINT users_lower_email_chk CHECK (email = LOWER(email)),
@@ -84,6 +85,7 @@ COMMENT ON TABLE users IS 'List all users';
 COMMENT ON COLUMN users.name IS 'The user name';
 CREATE UNIQUE INDEX users_email_uniq ON users (email);
 CREATE INDEX users_role_idx ON users (role);
+CREATE INDEX users_plan_idx ON users (json_value(settings, '$.plan.name'));
 
 CREATE VIEW admins AS SELECT id, name, email FROM users WHERE role = 'admin';
 COMMENT ON TABLE admins IS 'Only admins';
@@ -118,14 +120,28 @@ CREATE TABLE post_author_details (
     CONSTRAINT post_author_details_post_user_fk FOREIGN KEY (detail_post_id, detail_user_id) REFERENCES post_authors (post_id, user_id)
 );
 
+CREATE TABLE ratings (
+    user_id   NUMBER       NOT NULL,
+    item_kind VARCHAR2(50) NOT NULL,
+    item_id   NUMBER       NOT NULL,
+    rating    NUMBER       NOT NULL CHECK ( 0 <= rating AND rating <= 5 ),
+    review    VARCHAR2(255),
+    CONSTRAINT ratings_pk PRIMARY KEY (user_id, item_kind, item_id),
+    CONSTRAINT ratings_user_id_fk FOREIGN KEY (user_id) REFERENCES users (id)
+);
+ALTER TABLE ratings ADD CONSTRAINT ratings_item_id_users_fk FOREIGN KEY (item_id) REFERENCES users (id) DISABLE NOVALIDATE;
+ALTER TABLE ratings ADD CONSTRAINT ratings_item_id_posts_fk FOREIGN KEY (item_id) REFERENCES posts (id) DISABLE NOVALIDATE;
 
-INSERT INTO users (name, role, email) VALUES ('Loïc', 'admin', 'loic@mail.com');
-INSERT INTO users (name, role, email) VALUES ('Jean', 'guest', 'jean@mail.com');
-INSERT INTO users (name, role, email) VALUES ('Luc', 'guest', 'luc@mail.com');
+
+INSERT INTO users (name, role, email, settings) VALUES ('Loïc', 'admin', 'loic@mail.com', '{"color": "red", "plan": {"id": 1, "name": "pro"}}');
+INSERT INTO users (name, role, email, settings) VALUES ('Jean', 'guest', 'jean@mail.com', null);
+INSERT INTO users (name, role, email, settings) VALUES ('Luc', 'guest', 'luc@mail.com', null);
 INSERT INTO posts (title, content, created_by) VALUES ('Oracle connector', null, 1);
 INSERT INTO post_authors (post_id, user_id) VALUES (1, 1);
 INSERT INTO post_authors (post_id, user_id) VALUES (1, 2);
 INSERT INTO post_author_details (detail_post_id, detail_user_id, role) VALUES (1, 1, 'author');
+INSERT INTO ratings (user_id, item_kind, item_id, rating) VALUES (3, 'posts', 1, 4);
+INSERT INTO ratings (user_id, item_kind, item_id, rating) VALUES (3, 'users', 1, 5);
 ```
 
 Remove everything with:
@@ -133,6 +149,7 @@ Remove everything with:
 ```oracle
 DROP MATERIALIZED VIEW guests;
 DROP VIEW admins;
+DROP TABLE ratings;
 DROP TABLE post_author_details;
 DROP TABLE post_authors;
 DROP TABLE posts;

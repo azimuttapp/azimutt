@@ -50,6 +50,13 @@ repos:
       pass_filenames: false
       files: libs/connector-mysql/.*\.ts*$
 
+    - id: libs-connector-oracle
+      name: 'libs/connector-oracle'
+      language: system
+      entry: bash -c 'cd libs/connector-oracle && exec npm run build && exec npm test'
+      pass_filenames: false
+      files: libs/connector-oracle/.*\.ts*$
+
     - id: libs-connector-postgres
       name: 'libs/connector-postgres'
       language: system
