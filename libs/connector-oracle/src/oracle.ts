@@ -36,7 +36,7 @@ import {
     ValueSchema,
     valuesToSchema,
 } from "@azimutt/models";
-import {buildSqlColumn, buildSqlTable, scopeWhere} from "./helpers";
+import {buildSqlColumn, buildSqlTable, ScopeOpts, scopeWhere} from "./helpers";
 import {Conn} from "./connect";
 
 export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
@@ -45,20 +45,22 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     opts.logger.log(`Connected to the database${scope ? `, exporting for ${scope}` : ''} ...`)
 
     // access system tables only
-    const blockSizes: BlockSizes = await getBlockSizes(opts)(conn)
     const database: RawDatabase = await getDatabase(opts)(conn)
-    const tables: RawTable[] = await getTables(opts)(conn)
-    const views: RawView[] = await getViews(opts)(conn)
+    const blockSizes: BlockSizes = await getBlockSizes(opts)(conn)
+    const oracleUsers: string[] = await getOracleUsers(opts)(conn)
+    const opts2: ScopeOpts = {...opts, oracleUsers}
+    const tables: RawTable[] = await getTables(opts2)(conn)
+    const views: RawView[] = await getViews(opts2)(conn)
     opts.logger.log(`Found ${pluralize(tables.length + views.length, 'table')} ...`)
-    const columns: RawColumn[] = await getColumns(opts)(conn)
+    const columns: RawColumn[] = await getColumns(opts2)(conn)
     opts.logger.log(`Found ${pluralizeL(columns, 'column')} ...`)
-    const constraints: RawConstraint[] = await getConstraints(opts)(conn)
+    const constraints: RawConstraint[] = await getConstraints(opts2)(conn)
     opts.logger.log(`Found ${pluralizeL(constraints, 'constraint')} ...`)
-    const indexes: RawIndex[] = await getIndexes(opts)(conn)
+    const indexes: RawIndex[] = await getIndexes(opts2)(conn)
     opts.logger.log(`Found ${pluralizeL(indexes, 'index')} ...`)
-    const relations: RawRelation[] = await getRelations(opts)(conn)
+    const relations: RawRelation[] = await getRelations(opts2)(conn)
     opts.logger.log(`Found ${pluralizeL(relations, 'relation')} ...`)
-    const types: RawType[] = await getTypes(opts)(conn)
+    const types: RawType[] = await getTypes(opts2)(conn)
     opts.logger.log(`Found ${pluralizeL(types, 'type')} ...`)
 
     // access table data when options are requested
@@ -135,6 +137,13 @@ export const getBlockSizes = (opts: ConnectorSchemaOpts) => async (conn: Conn): 
         .catch(handleError(`Failed to get block sizes`, {}, opts))
 }
 
+export const getOracleUsers = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<string[]> => {
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_USERS.html
+    return conn.query<{USERNAME: string}>(`SELECT USERNAME FROM ALL_USERS WHERE ORACLE_MAINTAINED='Y'`, [], 'getOracleUsers')
+        .then(res => res.map(r => r.USERNAME))
+        .catch(handleError(`Failed to get oracle users`, [], opts))
+}
+
 export type RawTable = {
     TABLE_OWNER: string
     TABLE_CLUSTER: string | null
@@ -151,7 +160,7 @@ export type RawTable = {
     MVIEW_COMMENT: string | null
 }
 
-export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawTable[]> => {
+export const getTables = (opts: ScopeOpts) => async (conn: Conn): Promise<RawTable[]> => {
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_ALL_TABLES.html
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_TAB_COMMENTS.html
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_MVIEWS.html
@@ -219,7 +228,7 @@ export type RawView = {
     TABLE_COMMENT: string | null
 }
 
-export const getViews = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawView[]> => {
+export const getViews = (opts: ScopeOpts) => async (conn: Conn): Promise<RawView[]> => {
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_VIEWS.html
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_TAB_COMMENTS.html
     return conn.query<RawView>(`
@@ -269,7 +278,7 @@ export type RawColumn = {
     IS_IDENTITY: 'YES' | 'NO'
 }
 
-export const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawColumn[]> => {
+export const getColumns = (opts: ScopeOpts) => async (conn: Conn): Promise<RawColumn[]> => {
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/DBA_TAB_COLUMNS.html
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_COL_COMMENTS.html
     return conn.query<RawColumn>(`
@@ -338,7 +347,7 @@ type RawConstraint = {
     INDEX_NAME: string | null
 }
 
-export const getConstraints = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawConstraint[]> => {
+export const getConstraints = (opts: ScopeOpts) => async (conn: Conn): Promise<RawConstraint[]> => {
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_CONSTRAINTS.html
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_CONS_COLUMNS.html
     // `constraint_type IN ('P', 'C')`: get only primary key and check constraints
@@ -410,7 +419,7 @@ type RawIndex = {
 
 // TODO: ignore indexes from pk
 // TODO: get column names for json indexes
-export const getIndexes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawIndex[]> => {
+export const getIndexes = (opts: ScopeOpts) => async (conn: Conn): Promise<RawIndex[]> => {
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_INDEXES.html
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_IND_COLUMNS.html
     return conn.query<RawIndex>(`
@@ -470,7 +479,7 @@ type RawRelation = {
     DELETE_RULE: string
 }
 
-export const getRelations = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawRelation[]> => {
+export const getRelations = (opts: ScopeOpts) => async (conn: Conn): Promise<RawRelation[]> => {
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_CONSTRAINTS.html
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_CONS_COLUMNS.html
     return conn.query<RawRelation>(`
@@ -531,7 +540,7 @@ export type RawType = {
     DEFINITION: string
 }
 
-export const getTypes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawType[]> => {
+export const getTypes = (opts: ScopeOpts) => async (conn: Conn): Promise<RawType[]> => {
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_TYPES.html
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_TYPE_ATTRS.html
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_SOURCE.html

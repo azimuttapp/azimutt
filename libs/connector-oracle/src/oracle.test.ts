@@ -1,5 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
-import {ConnectorSchemaOpts, DatabaseUrlParsed, parseDatabaseUrl,} from "@azimutt/models";
+import {DatabaseUrlParsed, parseDatabaseUrl,} from "@azimutt/models";
 import {connect} from "./connect";
 import {execQuery} from "./query";
 import {
@@ -15,12 +15,13 @@ import {
     getTypes,
     getViews,
 } from "./oracle";
-import {application, logger} from "./constants.test";
+import {application, logger, oracleUsers} from "./constants.test";
+import {ScopeOpts} from "./helpers";
 
 describe('oracle', () => {
     // local url, install db or replace it to test
     const url: DatabaseUrlParsed = parseDatabaseUrl('oracle:thin:system/oracle@localhost:1521')
-    const opts: ConnectorSchemaOpts = {logger, logQueries: false, inferJsonAttributes: true, inferPolymorphicRelations: true}
+    const opts: ScopeOpts = {logger, logQueries: false, inferJsonAttributes: true, inferPolymorphicRelations: true, oracleUsers}
 
     test.skip('execQuery', async () => {
         const query = 'SELECT u.id, e.id, o.id FROM users u JOIN events e ON u.id = e.created_by JOIN organizations o on o.id = e.organization_id FETCH FIRST 10 ROWS ONLY;'

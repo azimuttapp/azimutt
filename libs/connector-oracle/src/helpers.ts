@@ -1,4 +1,4 @@
-import {AttributePath, ConnectorScopeOpts, EntityRef, SqlFragment} from "@azimutt/models";
+import {AttributePath, ConnectorSchemaOpts, EntityRef, SqlFragment} from "@azimutt/models";
 
 export function buildSqlTable(ref: EntityRef): SqlFragment {
     const sqlSchema = ref.schema ? `"${ref.schema}".` : ""
@@ -10,12 +10,13 @@ export function buildSqlColumn(path: AttributePath): SqlFragment {
     return `"${head}"${tail.map((t) => `->'${t}'`).join("")}`
 }
 
+export type ScopeOpts = ConnectorSchemaOpts & {oracleUsers: string[]}
 export type ScopeFields = { database?: SqlFragment, catalog?: SqlFragment, schema?: SqlFragment, entity?: SqlFragment }
 
-export function scopeWhere(fields: ScopeFields, opts: ConnectorScopeOpts): SqlFragment {
+export function scopeWhere(fields: ScopeFields, opts: ScopeOpts): SqlFragment {
     const databaseFilter = fields.database && opts.database ? `${fields.database} ${scopeOp(opts.database)} '${scopeValue(opts.database)}'` : ''
     const catalogFilter = fields.catalog && opts.catalog ? `${fields.catalog} ${scopeOp(opts.catalog)} '${scopeValue(opts.catalog)}'` : ''
-    const schemaFilter = fields.schema && opts.schema ? `${fields.schema} ${scopeOp(opts.schema)} '${scopeValue(opts.schema)}'` : fields.schema ? `${fields.schema} NOT IN ('APPQOSSYS', 'AUDSYS', 'CTXSYS', 'DBSFWUSER', 'DBSNMP', 'DVSYS', 'GGSHAREDCAP', 'GSMADMIN_INTERNAL', 'LBACSYS', 'MDSYS', 'OJVMSYS', 'OLAPSYS', 'OUTLN', 'VECSYS', 'SYS', 'SYSTEM', 'WMSYS', 'XDB')` : ''
+    const schemaFilter = fields.schema && opts.schema ? `${fields.schema} ${scopeOp(opts.schema)} '${scopeValue(opts.schema)}'` : fields.schema ? `${fields.schema} NOT IN (${opts.oracleUsers.map(u => `'${u}'`).join(', ')})` : ''
     const entityFilter = fields.entity && opts.entity ? `${fields.entity} ${scopeOp(opts.entity)} '${scopeValue(opts.entity)}'` : ''
     return [databaseFilter, catalogFilter, schemaFilter, entityFilter].filter(f => !!f).join(' AND ')
 }
