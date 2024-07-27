@@ -45,7 +45,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     opts.logger.log(`Connected to the database${scope ? `, exporting for ${scope}` : ''} ...`)
 
     // access system tables only
-    const blockSize: number = await getBlockSize(opts)(conn)
+    const blockSizes: BlockSizes = await getBlockSizes(opts)(conn)
     const database: RawDatabase = await getDatabase(opts)(conn)
     const tables: RawTable[] = await getTables(opts)(conn)
     const views: RawView[] = await getViews(opts)(conn)
@@ -70,10 +70,10 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     // build the database
     const constraintsByTable = groupByEntity(constraints)
     const indexesByTable = groupByEntity(indexes)
-    opts.logger.log(`✔︎ Exported ${pluralizeL(tables, 'table')}, ${pluralizeL(relations, 'relation')} and ${pluralizeL(types, 'type')} from the database!`)
+    opts.logger.log(`✔︎ Exported ${pluralize(tables.length + views.length, 'table')}, ${pluralizeL(relations, 'relation')} and ${pluralizeL(types, 'type')} from the database!`)
     return removeUndefined({
         entities: tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildTableEntity(
-            blockSize,
+            blockSizes[table.TABLE_TABLESPACE || ''] || 8192,
             table,
             columnsByTable[id] || [],
             constraintsByTable[id] || [],
@@ -89,13 +89,13 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
         types: types.map(buildType),
         doc: undefined,
         stats: removeUndefined({
-            name: conn.url.db || database.database,
-            kind: DatabaseKind.Enum.postgres,
-            version: database.version,
+            name: conn.url.db || database.DATABASE,
+            kind: DatabaseKind.Enum.oracle,
+            version: database.VERSION,
             doc: undefined,
             extractedAt: new Date().toISOString(),
             extractionDuration: Date.now() - start,
-            size: database.blks_read * blockSize,
+            size: database.BYTES,
         }),
         extra: undefined,
     })
@@ -108,33 +108,31 @@ const toEntityId = <T extends { TABLE_OWNER: string; TABLE_NAME: string }>(value
 const groupByEntity = <T extends { TABLE_OWNER: string; TABLE_NAME: string }>(values: T[]): Record<EntityId, T[]> => groupBy(values, toEntityId)
 
 export type RawDatabase = {
-    version: string
-    database: string
-    blks_read: number
+    DATABASE: string
+    VERSION: string
+    BYTES: number
 }
 
 export const getDatabase = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawDatabase> => {
-    const data: RawDatabase = {version: '', database: '', blks_read: 0}
-
-    await conn.query(`SELECT BANNER FROM V$VERSION`).then(res => {
-        data.version = res?.[0]?.[0] as string
-    })
-
-    await conn.query(`SELECT name FROM v$database`).then(res => {
-        data.database = res?.[0]?.[0] as string
-    })
-
-    await conn.query(`select value from v$sysstat where name = 'physical reads'`).then(res => {
-        data.blks_read = res?.[0]?.[0] ? Number(res[0][0]) : 0
-    })
-
-    return data
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/V-DATABASE.html
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/V-VERSION.html
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/DBA_DATA_FILES.html
+    const db: RawDatabase = {DATABASE: '', VERSION: '', BYTES: 0}
+    return conn.query<RawDatabase>(`
+        SELECT (SELECT NAME FROM V$DATABASE)           AS DATABASE
+             , (SELECT BANNER FROM V$VERSION)          AS VERSION
+             , (SELECT SUM(BYTES) FROM DBA_DATA_FILES) AS BYTES`, [], 'getDatabase'
+    ).then(res => res[0] || db).catch(handleError(`Failed to get database infos`, db, opts))
 }
 
-export const getBlockSize = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<number> => {
-    return conn.query(`select distinct bytes / blocks AS block_size from user_segments`, [], 'getBlockSize')
-        .then(res => (res?.[0]?.[0] ? Number(res[0][0]) : 8192))
-        .catch(handleError(`Failed to get block size`, 0, opts))
+export type RawBlockSizes = { TABLESPACE_NAME: string, BLOCK_SIZE: number }
+export type BlockSizes = { [tablespace: string]: number }
+
+export const getBlockSizes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<BlockSizes> => {
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/DBA_TABLESPACES.html
+    return conn.query<RawBlockSizes>(`SELECT TABLESPACE_NAME, BLOCK_SIZE FROM DBA_TABLESPACES`, [], 'getBlockSizes')
+        .then(res => res.reduce((acc, v) => ({...acc, [v.TABLESPACE_NAME]: v.BLOCK_SIZE}), {}))
+        .catch(handleError(`Failed to get block sizes`, {}, opts))
 }
 
 export type RawTable = {
@@ -181,11 +179,11 @@ export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
 }
 
 function buildTableEntity(blockSize: number, table: RawTable, columns: RawColumn[], constraints: RawConstraint[], indexes: RawIndex[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>): Entity {
-    return {
+    return removeUndefined({
         catalog: table.TABLE_CLUSTER || undefined,
         schema: table.TABLE_TABLESPACE || undefined,
         name: table.TABLE_NAME,
-        kind: table.MVIEW_DEFINITION ? 'materialized view' : undefined,
+        kind: table.MVIEW_DEFINITION ? 'materialized view' as const : undefined,
         def: table.MVIEW_DEFINITION || undefined,
         attrs: columns?.slice(0)
             ?.sort((a, b) => a.COLUMN_INDEX - b.COLUMN_INDEX)
@@ -211,7 +209,7 @@ function buildTableEntity(blockSize: number, table: RawTable, columns: RawColumn
             vacuumLag: undefined,
         }),
         extra: undefined,
-    }
+    })
 }
 
 export type RawView = {
@@ -410,6 +408,8 @@ type RawIndex = {
     VISIBILITY: 'VISIBLE' | 'INVISIBLE'
 }
 
+// TODO: ignore indexes from pk
+// TODO: get column names for json indexes
 export const getIndexes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawIndex[]> => {
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_INDEXES.html
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_IND_COLUMNS.html
@@ -525,9 +525,9 @@ export type RawType = {
     TYPE_OWNER: string
     TYPE_NAME: string
     TYPE_KIND: 'OBJECT' | 'COLLECTION' | 'ANYTYPE' | 'ANYDATA'
-    ATTR_NAMES: string // comma separated list of column names
-    ATTR_TYPES: string // comma separated list of column types
-    ATTR_TYPE_LENS: string // comma separated list of column type lengths
+    ATTR_NAMES: string | null // comma separated list of column names
+    ATTR_TYPES: string | null // comma separated list of column types
+    ATTR_TYPE_LENS: string | null // comma separated list of column type lengths
     DEFINITION: string
 }
 
@@ -557,7 +557,10 @@ function buildType(t: RawType): Type {
         schema: t.TYPE_OWNER,
         name: t.TYPE_NAME,
         values: undefined,
-        attrs: zip(t.ATTR_NAMES.split(','), t.ATTR_TYPES.split(',')).map(([name, type]) => ({name, type})),
+        attrs: t.ATTR_NAMES && t.ATTR_TYPES ? zip(
+            t.ATTR_NAMES.split(','),
+            t.ATTR_TYPES.split(',')
+        ).map(([name, type]) => ({name, type})) : undefined,
         definition: t.DEFINITION,
         doc: undefined,
         extra: undefined,

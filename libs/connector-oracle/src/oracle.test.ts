@@ -3,7 +3,7 @@ import {ConnectorSchemaOpts, DatabaseUrlParsed, parseDatabaseUrl,} from "@azimut
 import {connect} from "./connect";
 import {execQuery} from "./query";
 import {
-    getBlockSize,
+    getBlockSizes,
     getColumns,
     getConstraints,
     getDatabase,
@@ -33,17 +33,20 @@ describe('oracle', () => {
     })
     test.skip('getSchema', async () => {
         const schema = await connect(application, url, getSchema(opts), opts)
-        console.log('schema', schema)
+        console.log(`${(schema.entities || []).length} entities`, ...(schema.entities || []))
+        console.log(`${(schema.relations || []).length} relations`, ...(schema.relations || []))
+        console.log(`${(schema.types || []).length} types`, ...(schema.types || []))
+        console.log('stats', schema.stats)
         // console.log('schema', schema.entities?.find(e => e.name == 'events')?.attrs?.find(a => a.name == 'name')?.stats)
         expect(schema.entities?.length).toEqual(14)
-    })
+    }, 15000)
     test.skip('getDatabase', async () => {
         const database = await connect(application, url, getDatabase(opts), opts)
         console.log(`database`, database)
     })
-    test.skip('getBlockSize', async () => {
-        const blockSize = await connect(application, url, getBlockSize(opts), opts)
-        console.log(`blockSize`, blockSize)
+    test.skip('getBlockSizes', async () => {
+        const blockSizes = await connect(application, url, getBlockSizes(opts), opts)
+        console.log(`blockSizes`, blockSizes)
     })
     test.skip('getTables', async () => {
         const tables = await connect(application, url, getTables(opts), opts)
