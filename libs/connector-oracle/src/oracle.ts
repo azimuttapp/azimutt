@@ -1,17 +1,18 @@
 import {
     groupBy,
     mapEntriesAsync,
-    mapValues,
     mapValuesAsync,
     pluralize,
     pluralizeL,
     removeEmpty,
     removeUndefined,
+    zip,
 } from "@azimutt/utils";
 import {
     Attribute,
     AttributeName,
     AttributePath,
+    attributePathFromId,
     attributeRefToId,
     AttributeValue,
     Check,
@@ -67,7 +68,6 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     // TODO: pii, join relations...
 
     // build the database
-    const columnsByIndex: Record<EntityId, { [i: number]: string }> = mapValues(columnsByTable, cols => cols.reduce((acc, col) => ({...acc, [col.COLUMN_INDEX]: col.COLUMN_NAME}), {}))
     const constraintsByTable = groupByEntity(constraints)
     const indexesByTable = groupByEntity(indexes)
     opts.logger.log(`✔︎ Exported ${pluralizeL(tables, 'table')}, ${pluralizeL(relations, 'relation')} and ${pluralizeL(types, 'type')} from the database!`)
@@ -85,9 +85,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
             columnsByTable[id] || [],
             jsonColumns[id] || {}
         ))),
-        relations: relations
-            .map(r => buildRelation(r, columnsByIndex))
-            .filter((rel): rel is Relation => !!rel),
+        relations: relations.map(buildRelation).filter((rel): rel is Relation => !!rel),
         types: types.map(buildType),
         doc: undefined,
         stats: removeUndefined({
@@ -327,7 +325,7 @@ type RawConstraint = {
     CONSTRAINT_TYPE: 'P' | 'C' // C: Check, P: Primary, U: Unique, R: Referential, V: view check, O: view read only, H: Hash expr, F: Foreign, S: Supplemental logging
     TABLE_OWNER: string
     TABLE_NAME: string
-    COLUMN_NAMES: string // comma separated list of columns
+    COLUMN_NAMES: string // comma separated list of column names
     PREDICATE: string | null
     REF_OWNER: string | null
     REF_CONSTRAINT: string | null
@@ -401,7 +399,7 @@ type RawIndex = {
     TABLE_OWNER: string
     TABLE_NAME: string
     TABLE_TYPE: 'TABLE' | 'VIEW' | 'INDEX' | 'SEQUENCE' | 'CLUSTER' | 'SYNONYM' | 'NEXT OBJECT'
-    COLUMN_NAMES: string // comma separated list of columns
+    COLUMN_NAMES: string // comma separated list of column names
     IS_UNIQUE: 'UNIQUE' | 'NONUNIQUE'
     CARDINALITY: number
     INDEX_ROWS: number
@@ -452,47 +450,71 @@ function buildIndex(blockSize: number, index: RawIndex): Index {
 }
 
 type RawRelation = {
-    constraint_name: string
-    table_schema: string
-    table_name: string
-    table_column: string
-    target_schema: string
-    target_table: string
-    target_column: string
-    is_deferrable: 'DEFERRABLE' | 'NOT DEFERRABLE'
-    on_delete: string
+    CONSTRAINT_NAME: string
+    TABLE_OWNER: string
+    TABLE_NAME: string
+    TABLE_COLUMNS: string // comma separated list of column names
+    TARGET_OWNER: string
+    TARGET_TABLE: string
+    TARGET_COLUMNS: string // comma separated list of column names
+    PREDICATE: string | null
+    STATUS: 'ENABLED' | 'DISABLED'
+    DEFERRABLE: 'DEFERRABLE' | 'NOT DEFERRABLE'
+    DEFERRED: 'DEFERRED' | 'IMMEDIATE'
+    VALIDATED: 'VALIDATED' | 'NOT VALIDATED'
+    INVALID: 'INVALID' | null
+    GENERATED: 'USER NAME' | 'GENERATED NAME'
+    LAST_CHANGE: Date
+    INDEX_OWNER: string | null
+    INDEX_NAME: string | null
+    DELETE_RULE: string
 }
 
 export const getRelations = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawRelation[]> => {
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_CONSTRAINTS.html
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_CONS_COLUMNS.html
     return conn.query<RawRelation>(`
-        SELECT a.constraint_name,
-               a.owner        AS table_schema,
-               a.table_name   AS table_name,
-               ac.column_name AS table_column,
-               cc.owner       AS target_schema,
-               cc.table_name  AS target_table,
-               cc.column_name AS target_column,
-               a.deferrable   AS is_deferable,
-               a.delete_rule  AS on_delete_action
-        FROM all_constraints a
-                 JOIN all_cons_columns ac ON a.constraint_name = ac.constraint_name AND a.owner = ac.owner
-                 JOIN all_constraints c ON a.r_constraint_name = c.constraint_name AND a.r_owner = c.owner
-                 JOIN all_cons_columns cc ON c.constraint_name = cc.constraint_name AND c.owner = cc.owner AND ac.position = cc.position
-        WHERE a.constraint_type = 'R'
-        ORDER BY a.table_name, a.constraint_name, ac.position`, [], 'getRelations'
+        SELECT sc.CONSTRAINT_NAME                                                 AS CONSTRAINT_NAME
+             , sc.OWNER                                                           AS TABLE_OWNER
+             , sc.TABLE_NAME                                                      AS TABLE_NAME
+             , LISTAGG(scc.COLUMN_NAME, ',') WITHIN GROUP (ORDER BY scc.POSITION) AS TABLE_COLUMNS
+             , tc.OWNER                                                           AS TARGET_OWNER
+             , tc.TABLE_NAME                                                      AS TARGET_TABLE
+             , LISTAGG(tcc.COLUMN_NAME, ',') WITHIN GROUP (ORDER BY tcc.POSITION) AS TARGET_COLUMNS
+             , MIN(sc.SEARCH_CONDITION_VC)                                        AS PREDICATE
+             , MIN(sc.STATUS)                                                     AS STATUS
+             , MIN(sc.DEFERRABLE)                                                 AS DEFERRABLE
+             , MIN(sc.DEFERRED)                                                   AS DEFERRED
+             , MIN(sc.VALIDATED)                                                  AS VALIDATED
+             , MIN(sc.INVALID)                                                    AS INVALID
+             , MIN(sc.GENERATED)                                                  AS GENERATED
+             , MIN(sc.LAST_CHANGE)                                                AS LAST_CHANGE
+             , MIN(sc.INDEX_OWNER)                                                AS INDEX_OWNER
+             , MIN(sc.INDEX_NAME)                                                 AS INDEX_NAME
+             , MIN(sc.DELETE_RULE)                                                AS DELETE_RULE
+        FROM ALL_CONSTRAINTS sc
+                 JOIN ALL_CONS_COLUMNS scc ON scc.OWNER = sc.OWNER AND scc.CONSTRAINT_NAME = sc.CONSTRAINT_NAME
+                 JOIN ALL_CONSTRAINTS tc ON tc.OWNER = sc.R_OWNER AND tc.CONSTRAINT_NAME = sc.R_CONSTRAINT_NAME
+                 JOIN ALL_CONS_COLUMNS tcc ON tcc.OWNER = tc.OWNER AND tcc.CONSTRAINT_NAME = tc.CONSTRAINT_NAME AND tcc.POSITION = scc.POSITION
+        WHERE sc.CONSTRAINT_TYPE = 'R' AND ${scopeWhere({schema: 'sc.OWNER', entity: 'sc.TABLE_NAME'}, opts)}
+        GROUP BY sc.CONSTRAINT_NAME, sc.OWNER, sc.TABLE_NAME, tc.OWNER, tc.TABLE_NAME`, [], 'getRelations'
     ).catch(handleError(`Failed to get relations`, [], opts))
 }
 
-function buildRelation(r: RawRelation, columnsByIndex: Record<EntityId, { [i: number]: string }>): Relation | undefined {
-    const src = {schema: r.table_schema, entity: r.table_name}
-    const ref = {schema: r.target_schema, entity: r.target_table}
+function buildRelation(r: RawRelation): Relation | undefined {
     const rel: Relation = {
-        name: r.constraint_name,
+        name: r.CONSTRAINT_NAME,
         kind: undefined, // 'many-to-one' when not specified
         origin: undefined, // 'fk' when not specified
-        src,
-        ref,
-        attrs: [{src: [r.table_column], ref: [r.target_column]}]
+        src: {schema: r.TABLE_OWNER, entity: r.TABLE_NAME},
+        ref: {schema: r.TARGET_OWNER, entity: r.TARGET_TABLE},
+        attrs: zip(
+            r.TABLE_COLUMNS.split(',').map(attributePathFromId),
+            r.TARGET_COLUMNS.split(',').map(attributePathFromId)
+        ).map(([src, ref]) => ({src, ref})),
+        polymorphic: undefined,
+        doc: undefined,
+        extra: undefined,
     }
     // don't keep relation if columns are not found :/
     // should not happen if errors are not skipped
@@ -500,24 +522,45 @@ function buildRelation(r: RawRelation, columnsByIndex: Record<EntityId, { [i: nu
 }
 
 export type RawType = {
-    type_schema: string
-    type_name: string
+    TYPE_OWNER: string
+    TYPE_NAME: string
+    TYPE_KIND: 'OBJECT' | 'COLLECTION' | 'ANYTYPE' | 'ANYDATA'
+    ATTR_NAMES: string // comma separated list of column names
+    ATTR_TYPES: string // comma separated list of column types
+    ATTR_TYPE_LENS: string // comma separated list of column type lengths
+    DEFINITION: string
 }
 
 export const getTypes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawType[]> => {
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_TYPES.html
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_TYPE_ATTRS.html
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_SOURCE.html
     return conn.query<RawType>(`
-        SELECT t.owner AS type_schema,
-               t.type_name
-        FROM all_types t
-        WHERE t.owner IS NOT NULL
-        ORDER BY type_schema, type_name`, [], 'getTypes'
+        SELECT t.OWNER                                                                AS TYPE_OWNER
+             , t.TYPE_NAME                                                            AS TYPE_NAME
+             , t.TYPECODE                                                             AS TYPE_KIND
+             , LISTAGG(a.ATTR_NAME, ',') WITHIN GROUP (ORDER BY a.ATTR_NO)            AS ATTR_NAMES
+             , LISTAGG(a.ATTR_TYPE_NAME, ',') WITHIN GROUP (ORDER BY a.ATTR_NO)       AS ATTR_TYPES
+             , LISTAGG(a.LENGTH, ',') WITHIN GROUP (ORDER BY a.ATTR_NO)               AS ATTR_TYPE_LENS
+             , (SELECT LISTAGG(s.TEXT) WITHIN GROUP (ORDER BY s.LINE)
+                FROM ALL_SOURCE s
+                WHERE s.OWNER = t.OWNER AND s.NAME = t.TYPE_NAME AND s.TYPE = 'TYPE') AS DEFINITION
+        FROM ALL_TYPES t
+                 LEFT JOIN ALL_TYPE_ATTRS a ON a.OWNER = t.OWNER AND a.TYPE_NAME = t.TYPE_NAME
+        WHERE ${scopeWhere({schema: 't.OWNER'}, opts)}
+        GROUP BY t.OWNER, t.TYPE_NAME, t.TYPECODE, t.ATTRIBUTES`, [], 'getTypes'
     ).catch(handleError(`Failed to get types`, [], opts))
 }
 
 function buildType(t: RawType): Type {
     return removeUndefined({
-        schema: t.type_schema,
-        name: t.type_name,
+        schema: t.TYPE_OWNER,
+        name: t.TYPE_NAME,
+        values: undefined,
+        attrs: zip(t.ATTR_NAMES.split(','), t.ATTR_TYPES.split(',')).map(([name, type]) => ({name, type})),
+        definition: t.DEFINITION,
+        doc: undefined,
+        extra: undefined,
     })
 }
 
