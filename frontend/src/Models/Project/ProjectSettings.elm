@@ -78,18 +78,18 @@ removeTable removedTables =
     let
         names : List String
         names =
-            removedTables |> String.split "," |> List.map String.trim |> List.filterNot String.isEmpty
+            removedTables |> String.toLower |> String.split "," |> List.map String.trim |> List.filterNot String.isEmpty
     in
-    \( _, tableName ) -> names |> List.any (\name -> tableName == name || Regex.matchI ("^" ++ name ++ "$") tableName)
+    Tuple.mapSecond String.toLower >> (\( _, tableName ) -> names |> List.any (\name -> tableName == name || Regex.match ("^" ++ name ++ "$") tableName))
 
 
 removeColumn : String -> ColumnPath -> Bool
 removeColumn hiddenColumns =
     let
         ( regexHide, stringHide ) =
-            hiddenColumns |> String.split "," |> List.map String.trim |> List.filterNot String.isEmpty |> List.partition (Regex.match "[+*?^$()[\\]{}|\\\\]")
+            hiddenColumns |> String.toLower |> String.split "," |> List.map String.trim |> List.filterNot String.isEmpty |> List.partition (Regex.match "[+*?^$()[\\]{}|\\\\]")
     in
-    ColumnPath.show >> (\path -> (stringHide |> List.any (\h -> path |> String.startsWith h)) || (regexHide |> List.any (\h -> path |> Regex.match h)))
+    ColumnPath.show >> String.toLower >> (\path -> (stringHide |> List.any (\h -> path |> String.startsWith h)) || (regexHide |> List.any (\h -> path |> Regex.match h)))
 
 
 hideColumn : HiddenColumns -> ErdColumn -> Bool

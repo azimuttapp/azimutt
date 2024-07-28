@@ -93,9 +93,9 @@ defmodule AzimuttWeb.LayoutView do
 
   def member_role(role) do
     OrganizationMember.roles()
-    |> Enum.find(fn {label, value} -> value == role end)
+    |> Enum.find(fn {_label, value} -> value == role end)
     |> Result.from_nillable()
-    |> Result.map(fn {label, value} -> label end)
+    |> Result.map(fn {label, _value} -> label end)
     |> Result.or_else(role)
   end
 end

@@ -1,16 +1,18 @@
 import {
     groupBy,
     mapEntriesAsync,
-    mapValues,
     mapValuesAsync,
+    pluralize,
     pluralizeL,
     removeEmpty,
     removeUndefined,
+    zip,
 } from "@azimutt/utils";
 import {
     Attribute,
     AttributeName,
     AttributePath,
+    attributePathFromId,
     attributeRefToId,
     AttributeValue,
     Check,
@@ -34,7 +36,7 @@ import {
     ValueSchema,
     valuesToSchema,
 } from "@azimutt/models";
-import {buildSqlColumn, buildSqlTable} from "./helpers";
+import {buildSqlColumn, buildSqlTable, ScopeOpts, scopeWhere} from "./helpers";
 import {Conn} from "./connect";
 
 export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Database> => {
@@ -43,19 +45,22 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     opts.logger.log(`Connected to the database${scope ? `, exporting for ${scope}` : ''} ...`)
 
     // access system tables only
-    const blockSize: number = await getBlockSize(opts)(conn)
     const database: RawDatabase = await getDatabase(opts)(conn)
-    const tables: RawTable[] = await getTables(opts)(conn)
-    opts.logger.log(`Found ${pluralizeL(tables, 'table')} ...`)
-    const columns: RawColumn[] = await getColumns(opts)(conn)
+    const blockSizes: BlockSizes = await getBlockSizes(opts)(conn)
+    const oracleUsers: string[] = await getOracleUsers(opts)(conn)
+    const opts2: ScopeOpts = {...opts, oracleUsers}
+    const tables: RawTable[] = await getTables(opts2)(conn)
+    const views: RawView[] = await getViews(opts2)(conn)
+    opts.logger.log(`Found ${pluralize(tables.length + views.length, 'table')} ...`)
+    const columns: RawColumn[] = await getColumns(opts2)(conn)
     opts.logger.log(`Found ${pluralizeL(columns, 'column')} ...`)
-    const constraints: RawConstraint[] = await getConstraints(opts)(conn)
+    const constraints: RawConstraint[] = await getConstraints(opts2)(conn)
     opts.logger.log(`Found ${pluralizeL(constraints, 'constraint')} ...`)
-    const indexes: RawIndex[] = await getIndexes(opts)(conn)
+    const indexes: RawIndex[] = await getIndexes(opts2)(conn)
     opts.logger.log(`Found ${pluralizeL(indexes, 'index')} ...`)
-    const relations: RawRelation[] = await getRelations(opts)(conn)
+    const relations: RawRelation[] = await getRelations(opts2)(conn)
     opts.logger.log(`Found ${pluralizeL(relations, 'relation')} ...`)
-    const types: RawType[] = await getTypes(opts)(conn)
+    const types: RawType[] = await getTypes(opts2)(conn)
     opts.logger.log(`Found ${pluralizeL(types, 'type')} ...`)
 
     // access table data when options are requested
@@ -65,36 +70,35 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     // TODO: pii, join relations...
 
     // build the database
-    const columnsByIndex: Record<EntityId, { [i: number]: string }> = mapValues(columnsByTable, cols => cols.reduce((acc, col) => ({...acc, [col.column_index]: col.column_name}), {}))
     const constraintsByTable = groupByEntity(constraints)
     const indexesByTable = groupByEntity(indexes)
-    opts.logger.log(`✔︎ Exported ${pluralizeL(tables, 'table')}, ${pluralizeL(relations, 'relation')} and ${pluralizeL(types, 'type')} from the database!`)
+    opts.logger.log(`✔︎ Exported ${pluralize(tables.length + views.length, 'table')}, ${pluralizeL(relations, 'relation')} and ${pluralizeL(types, 'type')} from the database!`)
     return removeUndefined({
-        entities: tables
-            .map(table => [toEntityId(table), table] as const)
-            .map(([id, table]) => buildEntity(
-                blockSize,
-                table,
-                columnsByTable[id] || [],
-                columnsByIndex[id] || {},
-                constraintsByTable[id] || [],
-                indexesByTable[id] || [],
-                jsonColumns[id] || {},
-                polyColumns[id] || {}
-            )),
-        relations: relations
-            .map(r => buildRelation(r, columnsByIndex))
-            .filter((rel): rel is Relation => !!rel),
+        entities: tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildTableEntity(
+            blockSizes[table.TABLE_TABLESPACE || ''] || 8192,
+            table,
+            columnsByTable[id] || [],
+            constraintsByTable[id] || [],
+            indexesByTable[id] || [],
+            jsonColumns[id] || {},
+            polyColumns[id] || {},
+        )).concat(views.map(view => [toEntityId(view), view] as const).map(([id, view]) => buildViewEntity(
+            view,
+            columnsByTable[id] || [],
+            jsonColumns[id] || {},
+            polyColumns[id] || {},
+        ))),
+        relations: relations.map(buildRelation).filter((rel): rel is Relation => !!rel),
         types: types.map(buildType),
         doc: undefined,
         stats: removeUndefined({
-            name: conn.url.db || database.database,
-            kind: DatabaseKind.Enum.postgres,
-            version: database.version,
+            name: conn.url.db || database.DATABASE,
+            kind: DatabaseKind.Enum.oracle,
+            version: database.VERSION,
             doc: undefined,
             extractedAt: new Date().toISOString(),
             extractionDuration: Date.now() - start,
-            size: database.blks_read * blockSize,
+            size: database.BYTES,
         }),
         extra: undefined,
     })
@@ -103,231 +107,449 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
 // 👇️ Private functions, some are exported only for tests
 // If you use them, beware of breaking changes!
 
-const toEntityId = <T extends { table_schema: string; table_name: string }>(value: T): EntityId => entityRefToId({schema: value.table_schema, entity: value.table_name})
-const groupByEntity = <T extends { table_schema: string; table_name: string }>(values: T[]): Record<EntityId, T[]> => groupBy(values, toEntityId)
+const toEntityId = <T extends { TABLE_OWNER: string; TABLE_NAME: string }>(value: T): EntityId => entityRefToId({schema: value.TABLE_OWNER, entity: value.TABLE_NAME})
+const groupByEntity = <T extends { TABLE_OWNER: string; TABLE_NAME: string }>(values: T[]): Record<EntityId, T[]> => groupBy(values, toEntityId)
 
 export type RawDatabase = {
-    version: string
-    database: string
-    blks_read: number
+    DATABASE: string
+    VERSION: string
+    BYTES: number
 }
 
 export const getDatabase = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawDatabase> => {
-    const data: RawDatabase = {version: '', database: '', blks_read: 0}
-
-    await conn.query(`SELECT BANNER FROM V$VERSION`).then(res => {
-        data.version = res?.[0]?.[0] as string
-    })
-
-    await conn.query(`SELECT name FROM v$database`).then(res => {
-        data.database = res?.[0]?.[0] as string
-    })
-
-    await conn.query(`select value from v$sysstat where name = 'physical reads'`).then(res => {
-        data.blks_read = res?.[0]?.[0] ? Number(res[0][0]) : 0
-    })
-
-    return data
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/V-DATABASE.html
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/V-VERSION.html
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/DBA_DATA_FILES.html
+    const db: RawDatabase = {DATABASE: '', VERSION: '', BYTES: 0}
+    return conn.query<RawDatabase>(`
+        SELECT (SELECT NAME FROM V$DATABASE)           AS DATABASE
+             , (SELECT BANNER FROM V$VERSION)          AS VERSION
+             , (SELECT SUM(BYTES) FROM DBA_DATA_FILES) AS BYTES`, [], 'getDatabase'
+    ).then(res => res[0] || db).catch(handleError(`Failed to get database infos`, db, opts))
 }
 
-export const getBlockSize = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<number> => {
-    return conn.query(`select distinct bytes / blocks AS block_size from user_segments`, [], 'getBlockSize')
-        .then(res => (res?.[0]?.[0] ? Number(res[0][0]) : 8192))
-        .catch(handleError(`Failed to get block size`, 0, opts))
+export type RawBlockSizes = { TABLESPACE_NAME: string, BLOCK_SIZE: number }
+export type BlockSizes = { [tablespace: string]: number }
+
+export const getBlockSizes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<BlockSizes> => {
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/DBA_TABLESPACES.html
+    return conn.query<RawBlockSizes>(`SELECT TABLESPACE_NAME, BLOCK_SIZE FROM DBA_TABLESPACES`, [], 'getBlockSizes')
+        .then(res => res.reduce((acc, v) => ({...acc, [v.TABLESPACE_NAME]: v.BLOCK_SIZE}), {}))
+        .catch(handleError(`Failed to get block sizes`, {}, opts))
+}
+
+export const getOracleUsers = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<string[]> => {
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_USERS.html
+    return conn.query<{USERNAME: string}>(`SELECT USERNAME FROM ALL_USERS WHERE ORACLE_MAINTAINED='Y'`, [], 'getOracleUsers')
+        .then(res => res.map(r => r.USERNAME))
+        .catch(handleError(`Failed to get oracle users`, [], opts))
 }
 
 export type RawTable = {
-    table_schema: string
-    table_name: string
+    TABLE_OWNER: string
+    TABLE_CLUSTER: string | null
+    TABLE_TABLESPACE: string | null
+    TABLE_NAME: string
+    TABLE_ROWS: number | null
+    TABLE_BLOCKS: number | null
+    ANALYZED_LAST: Date | null
+    PARTITIONED: 'YES' | 'NO'
+    NESTED: 'YES' | 'NO'
+    TABLE_COMMENT: string | null
+    MVIEW_DEFINITION: string | null
+    MVIEW_REFRESHED: Date | null
+    MVIEW_COMMENT: string | null
 }
 
-export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawTable[]> => {
-    return conn.query(`SELECT owner as table_schema, table_name from ALL_ALL_TABLES`)
-        .then(res => res.reduce<RawTable[]>((acc, row) => {
-            const [table_schema, table_name] = row as string[]
-            acc.push({table_schema, table_name})
-            return acc
-        }, [])).catch(handleError(`Failed to get tables`, [], opts))
+export const getTables = (opts: ScopeOpts) => async (conn: Conn): Promise<RawTable[]> => {
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_ALL_TABLES.html
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_TAB_COMMENTS.html
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_MVIEWS.html
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_MVIEW_COMMENTS.html
+    return conn.query<RawTable>(`
+        SELECT t.OWNER              AS TABLE_OWNER
+             , t.CLUSTER_NAME       AS TABLE_CLUSTER
+             , t.TABLESPACE_NAME    AS TABLE_TABLESPACE
+             , t.TABLE_NAME         AS TABLE_NAME
+             , t.NUM_ROWS           AS TABLE_ROWS
+             , t.BLOCKS             AS TABLE_BLOCKS
+             , t.LAST_ANALYZED      AS ANALYZED_LAST
+             , t.PARTITIONED        AS PARTITIONED
+             , t.NESTED             AS NESTED
+             , tc.COMMENTS          AS TABLE_COMMENT
+             , mv.QUERY             AS MVIEW_DEFINITION
+             , mv.LAST_REFRESH_DATE AS MVIEW_REFRESHED
+             , vc.COMMENTS          AS MVIEW_COMMENT
+        FROM ALL_ALL_TABLES t
+                 LEFT JOIN ALL_TAB_COMMENTS tc ON tc.OWNER = t.OWNER AND tc.TABLE_NAME = t.TABLE_NAME AND tc.TABLE_TYPE='TABLE'
+                 LEFT JOIN ALL_MVIEWS mv ON mv.OWNER=t.OWNER AND mv.MVIEW_NAME=t.TABLE_NAME
+                 LEFT JOIN ALL_MVIEW_COMMENTS vc ON vc.OWNER = t.OWNER AND vc.MVIEW_NAME = t.TABLE_NAME
+        WHERE ${scopeWhere({schema: 't.OWNER', entity: 't.TABLE_NAME'}, opts)}`, [], 'getTables'
+    ).catch(handleError(`Failed to get tables`, [], opts))
 }
 
-function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], columnsByIndex: { [i: number]: string }, constraints: RawConstraint[], indexes: RawIndex[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>): Entity {
-    return {
-        schema: table.table_schema,
-        name: table.table_name,
+function buildTableEntity(blockSize: number, table: RawTable, columns: RawColumn[], constraints: RawConstraint[], indexes: RawIndex[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>): Entity {
+    return removeEmpty({
+        schema: table.TABLE_OWNER || undefined,
+        name: table.TABLE_NAME,
+        kind: table.MVIEW_DEFINITION ? 'materialized view' as const : undefined,
+        def: table.MVIEW_DEFINITION || undefined,
         attrs: columns?.slice(0)
-            ?.sort((a, b) => a.column_index - b.column_index)
-            ?.map(c => buildAttribute(c, jsonColumns[c.column_name])) ?? [],
-        pk: constraints
-            .filter(c => c.constraint_type === 'P')
-            .map(c => buildPrimaryKey(c, columnsByIndex))[0] || undefined,
-        indexes: indexes.map(i => buildIndex(blockSize, i, columnsByIndex)),
-        checks: constraints
-            .filter(c => c.constraint_type === 'C')
-            .map(c => buildCheck(c, columnsByIndex)),
+            ?.sort((a, b) => a.COLUMN_INDEX - b.COLUMN_INDEX)
+            ?.map(c => buildAttribute(c, jsonColumns[c.COLUMN_NAME], polyColumns[c.COLUMN_NAME])) || [],
+        pk: constraints.filter(c => c.CONSTRAINT_TYPE === 'P').map(buildPrimaryKey)[0] || undefined,
+        indexes: indexes.map(i => buildIndex(blockSize, i)),
+        checks: constraints.filter(c => c.CONSTRAINT_TYPE === 'C').map(buildCheck),
+        doc: table.TABLE_COMMENT || table.MVIEW_COMMENT || undefined,
+        stats: removeUndefined({
+            rows: table.TABLE_ROWS || undefined,
+            rowsDead: undefined,
+            size: table.TABLE_BLOCKS ? table.TABLE_BLOCKS * blockSize : undefined,
+            sizeIdx: undefined,
+            sizeToast: undefined,
+            sizeToastIdx: undefined,
+            scanSeq: undefined,
+            scanSeqLast: undefined,
+            scanIdx: undefined,
+            scanIdxLast: undefined,
+            analyzeLast: table.ANALYZED_LAST?.toISOString(),
+            analyzeLag: undefined,
+            vacuumLast: undefined,
+            vacuumLag: undefined,
+        }),
+        extra: removeUndefined({
+            cluster: table.TABLE_CLUSTER || undefined,
+            tablespace: table.TABLE_TABLESPACE || undefined,
+        }),
+    })
+}
+
+export type RawView = {
+    TABLE_OWNER: string
+    TABLE_NAME: string
+    TABLE_DEFINITION: string
+    TABLE_COMMENT: string | null
+}
+
+export const getViews = (opts: ScopeOpts) => async (conn: Conn): Promise<RawView[]> => {
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_VIEWS.html
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_TAB_COMMENTS.html
+    return conn.query<RawView>(`
+        SELECT v.OWNER     AS TABLE_OWNER
+             , v.VIEW_NAME AS TABLE_NAME
+             , v.TEXT      AS TABLE_DEFINITION
+             , c.COMMENTS  AS TABLE_COMMENT
+        FROM ALL_VIEWS v
+                 LEFT JOIN ALL_TAB_COMMENTS c ON c.OWNER = v.OWNER AND c.TABLE_NAME = v.VIEW_NAME AND c.TABLE_TYPE = 'VIEW'
+        WHERE ${scopeWhere({schema: 'v.OWNER', entity: 'v.VIEW_NAME'}, opts)}`, [], 'getViews'
+    ).catch(handleError(`Failed to get views`, [], opts))
+}
+
+function buildViewEntity(view: RawView, columns: RawColumn[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>): Entity {
+    // TODO: parse TABLE_DEFINITION to get attributes sources and copy outgoing relations
+    return removeEmpty({
+        schema: view.TABLE_OWNER,
+        name: view.TABLE_NAME,
+        kind: 'view' as const,
+        def: view.TABLE_DEFINITION,
+        attrs: columns?.slice(0)
+            ?.sort((a, b) => a.COLUMN_INDEX - b.COLUMN_INDEX)
+            ?.map(c => buildAttribute(c, jsonColumns[c.COLUMN_NAME], polyColumns[c.COLUMN_NAME])) || [],
+        pk: undefined, // TODO
+        indexes: [], // TODO
+        checks: [], // TODO
+        doc: view.TABLE_COMMENT || undefined,
+        stats: undefined, // TODO
         extra: undefined,
-    }
+    })
 }
 
 export type RawColumn = {
-    column_index: number
-    table_schema: string
-    table_name: string
-    column_name: string
-    column_type: string
-    column_type_len: number
-    column_nullable: boolean
+    TABLE_OWNER: string
+    TABLE_NAME: string
+    COLUMN_INDEX: number
+    COLUMN_NAME: string
+    COLUMN_TYPE: string
+    COLUMN_TYPE_LEN: number
+    COLUMN_NULLABLE: 'Y' | 'N'
+    COLUMN_DEFAULT: string | null
+    COLUMN_COMMENT: string | null
+    CARDINALITY: number | null
+    VALUE_LOW: Buffer | null
+    VALUE_HIGH: Buffer | null
+    NULLS: number | null
+    ANALYZED_LAST: Date | null
+    AVG_LEN: number | null
+    IS_IDENTITY: 'YES' | 'NO'
 }
 
-export const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawColumn[]> => {
-    return conn.query(`
-        select column_id,
-               owner as schema_name,
-               table_name,
-               column_name,
-               data_type,
-               data_length,
-               nullable
-        from sys.dba_tab_columns;`, [], 'getColumns'
-    ).then(res => res.reduce<RawColumn[]>((acc, row) => {
-        const [column_index, table_schema, table_name, column_name, column_type, column_type_len, column_nullable] = row as any[]
-        acc.push({column_index, table_schema, table_name, column_name, column_type, column_type_len, column_nullable: column_nullable === 'Y'})
-        return acc
-    }, [])).catch(handleError(`Failed to get columns`, [], opts))
+export const getColumns = (opts: ScopeOpts) => async (conn: Conn): Promise<RawColumn[]> => {
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/DBA_TAB_COLUMNS.html
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_COL_COMMENTS.html
+    return conn.query<RawColumn>(`
+        SELECT c.OWNER           AS TABLE_OWNER
+             , c.TABLE_NAME      AS TABLE_NAME
+             , c.COLUMN_ID       AS COLUMN_INDEX
+             , c.COLUMN_NAME     AS COLUMN_NAME
+             , c.DATA_TYPE       AS COLUMN_TYPE
+             , c.DATA_LENGTH     AS COLUMN_TYPE_LEN
+             , c.NULLABLE        AS COLUMN_NULLABLE
+             , c.DATA_DEFAULT    AS COLUMN_DEFAULT
+             , cc.COMMENTS       AS COLUMN_COMMENT
+             , c.NUM_DISTINCT    AS CARDINALITY
+             , c.LOW_VALUE       AS VALUE_LOW
+             , c.HIGH_VALUE      AS VALUE_HIGH
+             , c.NUM_NULLS       AS NULLS
+             , c.LAST_ANALYZED   AS ANALYZED_LAST
+             , c.AVG_COL_LEN     AS AVG_LEN
+             , c.IDENTITY_COLUMN AS IS_IDENTITY
+        FROM ALL_TAB_COLUMNS c
+                 LEFT JOIN ALL_COL_COMMENTS cc ON cc.OWNER = c.OWNER AND cc.TABLE_NAME = c.TABLE_NAME AND cc.COLUMN_NAME = c.COLUMN_NAME
+        WHERE ${scopeWhere({schema: 'c.OWNER', entity: 'c.TABLE_NAME'}, opts)}`, [], 'getColumns'
+    ).catch(handleError(`Failed to get columns`, [], opts))
 }
 
-function buildAttribute(c: RawColumn, jsonColumn: ValueSchema | undefined): Attribute {
+function buildAttribute(c: RawColumn, jsonColumn: ValueSchema | undefined, values: string[] | undefined): Attribute {
     return removeEmpty({
-        name: c.column_name,
-        type: c.column_type,
-        null: c.column_nullable || undefined,
+        name: c.COLUMN_NAME,
+        type: c.COLUMN_TYPE,
+        null: c.COLUMN_NULLABLE == 'Y' || undefined,
+        gen: undefined,
+        default: c.COLUMN_DEFAULT || undefined,
         attrs: jsonColumn ? schemaToAttributes(jsonColumn) : undefined,
+        doc: c.COLUMN_COMMENT || undefined,
+        stats: removeUndefined({
+            nulls: c.NULLS || undefined,
+            bytesAvg: c.AVG_LEN || undefined,
+            cardinality: c.CARDINALITY || undefined,
+            commonValues: undefined,
+            distinctValues: values,
+            histogram: undefined,
+            min: c.VALUE_LOW?.toString(),
+            max: c.VALUE_HIGH?.toString(),
+        }),
+        extra: undefined,
     })
 }
 
 type RawConstraint = {
-    table_schema: string
-    table_name: string
-    column_name: string
-    constraint_name: string
-    constraint_type: 'P' | 'C' // P: primary key, C: Check,
-    deferrable: boolean
+    CONSTRAINT_NAME: string
+    CONSTRAINT_TYPE: 'P' | 'C' // C: Check, P: Primary, U: Unique, R: Referential, V: view check, O: view read only, H: Hash expr, F: Foreign, S: Supplemental logging
+    TABLE_OWNER: string
+    TABLE_NAME: string
+    COLUMN_NAMES: string // comma separated list of column names
+    PREDICATE: string | null
+    REF_OWNER: string | null
+    REF_CONSTRAINT: string | null
+    STATUS: 'ENABLED' | 'DISABLED'
+    DEFERRABLE: 'DEFERRABLE' | 'NOT DEFERRABLE'
+    DEFERRED: 'DEFERRED' | 'IMMEDIATE'
+    VALIDATED: 'VALIDATED' | 'NOT VALIDATED'
+    INVALID: 'INVALID' | null
+    GENERATED: 'USER NAME' | 'GENERATED NAME'
+    LAST_CHANGE: Date
+    INDEX_OWNER: string | null
+    INDEX_NAME: string | null
 }
 
-export const getConstraints = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawConstraint[]> => {
-    // https://docs.oracle.com/en/database/oracle/oracle-database/21/refrn/ALL_CONSTRAINTS.html
+export const getConstraints = (opts: ScopeOpts) => async (conn: Conn): Promise<RawConstraint[]> => {
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_CONSTRAINTS.html
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_CONS_COLUMNS.html
     // `constraint_type IN ('P', 'C')`: get only primary key and check constraints
-    return conn.query(`
-        SELECT uc.owner AS table_schema,
-               uc.table_name,
-               acc.COLUMN_NAME,
-               uc.constraint_name,
-               uc.constraint_type,
-               uc.DEFERRABLE
-        FROM user_constraints uc
-                 JOIN all_cons_columns acc ON uc.CONSTRAINT_NAME = acc.CONSTRAINT_NAME
-        WHERE constraint_type IN ('P', 'C')
-        ORDER BY table_schema, table_name, constraint_name;`, [], 'getConstraints'
-    ).then(res => res.reduce<RawConstraint[]>((acc, row) => {
-        const [table_schema, table_name, column_name, constraint_name, constraint_type, deferrable] = row as any[]
-        acc.push({table_schema, table_name, column_name, constraint_name, constraint_type, deferrable: deferrable !== 'NOT DEFFERRABLE'})
-        return acc
-    }, [])).catch(handleError(`Failed to get constraints`, [], opts))
+    return conn.query<RawConstraint>(`
+        SELECT c.CONSTRAINT_NAME                                                AS CONSTRAINT_NAME
+             , c.CONSTRAINT_TYPE                                                AS CONSTRAINT_TYPE
+             , c.OWNER                                                          AS TABLE_OWNER
+             , c.TABLE_NAME                                                     AS TABLE_NAME
+             , LISTAGG(cc.COLUMN_NAME, ',') WITHIN GROUP (ORDER BY cc.POSITION) AS COLUMN_NAMES
+             , MIN(c.SEARCH_CONDITION_VC)                                       AS PREDICATE
+             , MIN(c.R_OWNER)                                                   AS REF_OWNER
+             , MIN(c.R_CONSTRAINT_NAME)                                         AS REF_CONSTRAINT
+             , MIN(c.STATUS)                                                    AS STATUS
+             , MIN(c.DEFERRABLE)                                                AS DEFERRABLE
+             , MIN(c.DEFERRED)                                                  AS DEFERRED
+             , MIN(c.VALIDATED)                                                 AS VALIDATED
+             , MIN(c.INVALID)                                                   AS INVALID
+             , MIN(c.GENERATED)                                                 AS GENERATED
+             , MIN(c.LAST_CHANGE)                                               AS LAST_CHANGE
+             , MIN(c.INDEX_OWNER)                                               AS INDEX_OWNER
+             , MIN(c.INDEX_NAME)                                                AS INDEX_NAME
+        FROM ALL_CONSTRAINTS c
+                 JOIN ALL_CONS_COLUMNS cc ON cc.OWNER = c.OWNER AND cc.TABLE_NAME = c.TABLE_NAME AND cc.CONSTRAINT_NAME = c.CONSTRAINT_NAME
+        WHERE c.CONSTRAINT_TYPE IN ('P', 'C')
+          AND (c.SEARCH_CONDITION_VC IS NULL OR c.SEARCH_CONDITION_VC NOT LIKE '% IS NOT NULL')
+          AND ${scopeWhere({schema: 'c.OWNER', entity: 'c.TABLE_NAME'}, opts)}
+        GROUP BY c.CONSTRAINT_NAME, c.CONSTRAINT_TYPE, c.OWNER, c.TABLE_NAME`, [], 'getConstraints'
+    ).catch(handleError(`Failed to get constraints`, [], opts))
 }
 
-function buildPrimaryKey(c: RawConstraint, columns: { [i: number]: string }): PrimaryKey {
-    return removeUndefined({
-        name: c.constraint_name,
-        attrs: [[c.column_name]],
+function buildPrimaryKey(c: RawConstraint): PrimaryKey {
+    return removeEmpty({
+        name: c.CONSTRAINT_NAME,
+        attrs: c.COLUMN_NAMES.split(',').map(name => [name]),
+        doc: undefined, // no constraint comment in Oracle
+        stats: undefined,
+        extra: removeUndefined({
+            generated: c.GENERATED === 'GENERATED NAME' || undefined,
+        }),
     })
 }
 
-function buildCheck(c: RawConstraint, columns: { [i: number]: string }): Check {
+function buildCheck(c: RawConstraint): Check {
     return removeUndefined({
-        name: c.constraint_name,
-        attrs: [[c.column_name]],
-        predicate: '',
+        name: c.CONSTRAINT_NAME,
+        attrs: c.COLUMN_NAMES.split(',').map(name => [name]),
+        predicate: c.PREDICATE || '',
+        doc: undefined, // no constraint comment in Oracle
+        stats: undefined,
+        extra: undefined,
     })
 }
 
 type RawIndex = {
-    table_schema: string
-    table_name: string
-    index_name: string
-    columns: string[]
-    is_unique: boolean
+    INDEX_TABLESPACE: string
+    INDEX_NAME: string
+    INDEX_TYPE: string
+    TABLE_OWNER: string
+    TABLE_NAME: string
+    TABLE_TYPE: 'TABLE' | 'VIEW' | 'INDEX' | 'SEQUENCE' | 'CLUSTER' | 'SYNONYM' | 'NEXT OBJECT'
+    COLUMN_NAMES: string // comma separated list of column names
+    COLUMN_VALUES: string // JSON
+    IS_UNIQUE: 'UNIQUE' | 'NONUNIQUE'
+    CARDINALITY: number
+    INDEX_ROWS: number
+    ANALYZED_LAST: Date
+    GENERATED: 'Y' | 'N'
+    PARTITIONED: 'YES' | 'NO'
+    IS_CONSTRAINT: 'YES' | 'NO'
+    VISIBILITY: 'VISIBLE' | 'INVISIBLE'
 }
 
-export const getIndexes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawIndex[]> => {
-    return conn.query(`
-        SELECT idx.table_owner                                                            AS table_schema,
-               idx.table_name,
-               idx.index_name,
-               LISTAGG(col.column_name, ', ') WITHIN GROUP (ORDER BY col.column_position) AS columns,
-               CASE WHEN idx.uniqueness = 'UNIQUE' THEN 1 ELSE 0 END                      AS is_unique
-        FROM all_indexes idx
-                 JOIN all_ind_columns col ON idx.index_name = col.index_name AND idx.table_owner = col.table_owner AND idx.table_name = col.table_name
-        GROUP BY idx.index_name, idx.table_owner, idx.table_name, idx.uniqueness;`
-    ).then(res => res.reduce<RawIndex[]>((acc, row) => {
-        const [table_schema, table_name, index_name, columns, is_unique] = row as any
-        acc.push({table_schema, table_name, index_name, columns: columns.split(', '), is_unique: Boolean(is_unique)})
-        return acc
-    }, [])).catch(handleError(`Failed to get indexes`, [], opts))
+export const getIndexes = (opts: ScopeOpts) => async (conn: Conn): Promise<RawIndex[]> => {
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_INDEXES.html
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_IND_COLUMNS.html
+    // `i.INDEX_NAME NOT IN`: ignore indexes from primary keys
+    return conn.query<RawIndex>(`
+        SELECT i.TABLESPACE_NAME                                                     AS INDEX_TABLESPACE
+             , i.INDEX_NAME                                                          AS INDEX_NAME
+             , i.INDEX_TYPE                                                          AS INDEX_TYPE
+             , i.TABLE_OWNER                                                         AS TABLE_OWNER
+             , i.TABLE_NAME                                                          AS TABLE_NAME
+             , i.TABLE_TYPE                                                          AS TABLE_TYPE
+             , LISTAGG(c.COLUMN_NAME, ',') WITHIN GROUP (ORDER BY c.COLUMN_POSITION) AS COLUMN_NAMES
+             , JSON_OBJECTAGG(KEY c.COLUMN_NAME VALUE t.DATA_DEFAULT_VC)             AS COLUMN_VALUES
+             , MIN(i.UNIQUENESS)                                                     AS IS_UNIQUE
+             , MIN(i.DISTINCT_KEYS)                                                  AS CARDINALITY
+             , MIN(i.NUM_ROWS)                                                       AS INDEX_ROWS
+             , MIN(i.LAST_ANALYZED)                                                  AS ANALYZED_LAST
+             , MIN(i.GENERATED)                                                      AS GENERATED
+             , MIN(i.PARTITIONED)                                                    AS PARTITIONED
+             , MIN(i.CONSTRAINT_INDEX)                                               AS IS_CONSTRAINT
+             , MIN(i.VISIBILITY)                                                     AS VISIBILITY
+        FROM ALL_INDEXES i
+                 JOIN ALL_IND_COLUMNS c ON c.INDEX_OWNER = i.OWNER AND c.INDEX_NAME = i.INDEX_NAME
+                 JOIN ALL_TAB_COLS t ON t.OWNER = i.OWNER AND t.TABLE_NAME = i.TABLE_NAME AND t.COLUMN_NAME = c.COLUMN_NAME
+        WHERE i.DROPPED != 'YES'
+          AND ${scopeWhere({schema: 'i.TABLE_OWNER', entity: 'i.TABLE_NAME'}, opts)}
+          AND i.INDEX_NAME NOT IN (SELECT co.CONSTRAINT_NAME FROM ALL_CONSTRAINTS co WHERE co.CONSTRAINT_TYPE = 'P' AND ${scopeWhere({schema: 'co.OWNER', entity: 'co.TABLE_NAME'}, opts)})
+        GROUP BY i.TABLESPACE_NAME, i.INDEX_NAME, i.INDEX_TYPE, i.TABLE_OWNER, i.TABLE_NAME, i.TABLE_TYPE`, [], 'getIndexes'
+    ).catch(handleError(`Failed to get indexes`, [], opts))
 }
 
-function buildIndex(blockSize: number, index: RawIndex, columns: { [i: number]: string }): Index {
-    return removeUndefined({
-        name: index.index_name,
-        attrs: [index.columns],
-        unique: index.is_unique || undefined,
+function buildIndex(blockSize: number, index: RawIndex): Index {
+    const columnValues: { [columnName: string]: string } = JSON.parse(index.COLUMN_VALUES)
+    return removeEmpty({
+        name: index.INDEX_NAME,
+        attrs: index.COLUMN_NAMES.split(',').map(name => {
+            // ex: "JSON_VALUE(\"SETTINGS\" FORMAT OSON , '$.plan.name' RETURNING VARCHAR2(4000) NULL ON ERROR TYPE(LAX) )"
+            const [, col, path] = (columnValues[name] || '').match(/JSON_VALUE\("([^"]+)"[^,]+, '([^']+)'/) || []
+            if (col && path) {
+                return [col].concat(path.split('.').slice(1))
+            } else {
+                return [name]
+            }
+        }),
+        unique: index.IS_UNIQUE === 'UNIQUE' || undefined,
+        partial: undefined,
+        definition: undefined,
+        doc: undefined,
+        stats: removeUndefined({
+            size: undefined,
+            scans: undefined,
+            scansLast: index.ANALYZED_LAST?.toISOString() || undefined,
+        }),
+        extra: removeUndefined({
+            tablespace: index.INDEX_TABLESPACE
+        }),
     })
 }
 
 type RawRelation = {
-    constraint_name: string
-    table_schema: string
-    table_name: string
-    table_column: string
-    target_schema: string
-    target_table: string
-    target_column: string
-    is_deferrable: boolean
-    on_delete: string
+    CONSTRAINT_NAME: string
+    TABLE_OWNER: string
+    TABLE_NAME: string
+    TABLE_COLUMNS: string // comma separated list of column names
+    TARGET_OWNER: string
+    TARGET_TABLE: string
+    TARGET_COLUMNS: string // comma separated list of column names
+    PREDICATE: string | null
+    STATUS: 'ENABLED' | 'DISABLED'
+    DEFERRABLE: 'DEFERRABLE' | 'NOT DEFERRABLE'
+    DEFERRED: 'DEFERRED' | 'IMMEDIATE'
+    VALIDATED: 'VALIDATED' | 'NOT VALIDATED'
+    INVALID: 'INVALID' | null
+    GENERATED: 'USER NAME' | 'GENERATED NAME'
+    LAST_CHANGE: Date
+    INDEX_OWNER: string | null
+    INDEX_NAME: string | null
+    DELETE_RULE: string
 }
 
-export const getRelations = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawRelation[]> => {
-    return conn.query(`
-        SELECT a.constraint_name,
-               a.owner                                                 AS table_schema,
-               a.table_name                                            AS table_name,
-               ac.column_name                                          AS table_column,
-               cc.owner                                                AS target_schema,
-               cc.table_name                                           AS target_table,
-               cc.column_name                                          AS target_column,
-               CASE WHEN a.deferrable = 'DEFERRABLE' THEN 1 ELSE 0 END AS is_deferable,
-               a.delete_rule                                           AS on_delete_action
-        FROM all_constraints a
-                 JOIN all_cons_columns ac ON a.constraint_name = ac.constraint_name AND a.owner = ac.owner
-                 JOIN all_constraints c ON a.r_constraint_name = c.constraint_name AND a.r_owner = c.owner
-                 JOIN all_cons_columns cc ON c.constraint_name = cc.constraint_name AND c.owner = cc.owner AND ac.position = cc.position
-        WHERE a.constraint_type = 'R'
-        ORDER BY a.table_name, a.constraint_name, ac.position;`, [], 'getRelations'
-    ).then(res => res.reduce<RawRelation[]>((acc, row) => {
-        const [constraint_name, table_schema, table_name, table_column, target_schema, target_table, target_column, is_deferrable, on_delete] = row as any[]
-        acc.push({constraint_name, table_schema, table_name, table_column, target_schema, target_table, target_column, is_deferrable: Boolean(is_deferrable), on_delete})
-        return acc
-    }, [])).catch(handleError(`Failed to get relations`, [], opts))
+export const getRelations = (opts: ScopeOpts) => async (conn: Conn): Promise<RawRelation[]> => {
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_CONSTRAINTS.html
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_CONS_COLUMNS.html
+    return conn.query<RawRelation>(`
+        SELECT sc.CONSTRAINT_NAME                                                 AS CONSTRAINT_NAME
+             , sc.OWNER                                                           AS TABLE_OWNER
+             , sc.TABLE_NAME                                                      AS TABLE_NAME
+             , LISTAGG(scc.COLUMN_NAME, ',') WITHIN GROUP (ORDER BY scc.POSITION) AS TABLE_COLUMNS
+             , tc.OWNER                                                           AS TARGET_OWNER
+             , tc.TABLE_NAME                                                      AS TARGET_TABLE
+             , LISTAGG(tcc.COLUMN_NAME, ',') WITHIN GROUP (ORDER BY tcc.POSITION) AS TARGET_COLUMNS
+             , MIN(sc.SEARCH_CONDITION_VC)                                        AS PREDICATE
+             , MIN(sc.STATUS)                                                     AS STATUS
+             , MIN(sc.DEFERRABLE)                                                 AS DEFERRABLE
+             , MIN(sc.DEFERRED)                                                   AS DEFERRED
+             , MIN(sc.VALIDATED)                                                  AS VALIDATED
+             , MIN(sc.INVALID)                                                    AS INVALID
+             , MIN(sc.GENERATED)                                                  AS GENERATED
+             , MIN(sc.LAST_CHANGE)                                                AS LAST_CHANGE
+             , MIN(sc.INDEX_OWNER)                                                AS INDEX_OWNER
+             , MIN(sc.INDEX_NAME)                                                 AS INDEX_NAME
+             , MIN(sc.DELETE_RULE)                                                AS DELETE_RULE
+        FROM ALL_CONSTRAINTS sc
+                 JOIN ALL_CONS_COLUMNS scc ON scc.OWNER = sc.OWNER AND scc.CONSTRAINT_NAME = sc.CONSTRAINT_NAME
+                 JOIN ALL_CONSTRAINTS tc ON tc.OWNER = sc.R_OWNER AND tc.CONSTRAINT_NAME = sc.R_CONSTRAINT_NAME
+                 JOIN ALL_CONS_COLUMNS tcc ON tcc.OWNER = tc.OWNER AND tcc.CONSTRAINT_NAME = tc.CONSTRAINT_NAME AND tcc.POSITION = scc.POSITION
+        WHERE sc.CONSTRAINT_TYPE = 'R' AND ${scopeWhere({schema: 'sc.OWNER', entity: 'sc.TABLE_NAME'}, opts)}
+        GROUP BY sc.CONSTRAINT_NAME, sc.OWNER, sc.TABLE_NAME, tc.OWNER, tc.TABLE_NAME`, [], 'getRelations'
+    ).catch(handleError(`Failed to get relations`, [], opts))
 }
 
-function buildRelation(r: RawRelation, columnsByIndex: Record<EntityId, { [i: number]: string }>): Relation | undefined {
-    const src = {schema: r.table_schema, entity: r.table_name}
-    const ref = {schema: r.target_schema, entity: r.target_table}
+function buildRelation(r: RawRelation): Relation | undefined {
     const rel: Relation = {
-        name: r.constraint_name,
+        name: r.CONSTRAINT_NAME,
         kind: undefined, // 'many-to-one' when not specified
         origin: undefined, // 'fk' when not specified
-        src,
-        ref,
-        attrs: [{src: [r.table_column], ref: [r.target_column]}]
+        src: {schema: r.TABLE_OWNER, entity: r.TABLE_NAME},
+        ref: {schema: r.TARGET_OWNER, entity: r.TARGET_TABLE},
+        attrs: zip(
+            r.TABLE_COLUMNS.split(',').map(attributePathFromId),
+            r.TARGET_COLUMNS.split(',').map(attributePathFromId)
+        ).map(([src, ref]) => ({src, ref})),
+        polymorphic: undefined,
+        doc: undefined,
+        extra: undefined,
     }
     // don't keep relation if columns are not found :/
     // should not happen if errors are not skipped
@@ -335,28 +557,53 @@ function buildRelation(r: RawRelation, columnsByIndex: Record<EntityId, { [i: nu
 }
 
 export type RawType = {
-    type_schema: string
-    type_name: string
+    TYPE_OWNER: string
+    TYPE_NAME: string
+    TYPE_KIND: 'OBJECT' | 'COLLECTION' | 'ANYTYPE' | 'ANYDATA'
+    ATTR_NAMES: string | null // comma separated list of column names
+    ATTR_TYPES: string | null // comma separated list of column types
+    ATTR_TYPE_LENS: string | null // comma separated list of column type lengths
+    DEFINITION: string
 }
 
-export const getTypes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawType[]> => {
-    return conn.query(`
-        SELECT t.owner AS type_schema,
-               t.type_name
-        FROM all_types t
-        WHERE t.owner IS NOT NULL
-        ORDER BY type_schema, type_name;`, [], 'getTypes'
-    ).then(res => res.reduce<RawType[]>((acc, row) => {
-        const [type_schema, type_name] = row as string[]
-        acc.push({type_schema, type_name})
-        return acc
-    }, [])).catch(handleError(`Failed to get types`, [], opts))
+export const getTypes = (opts: ScopeOpts) => async (conn: Conn): Promise<RawType[]> => {
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_TYPES.html
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_TYPE_ATTRS.html
+    // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_SOURCE.html
+    return conn.query<RawType>(`
+        SELECT t.OWNER                                                                AS TYPE_OWNER
+             , t.TYPE_NAME                                                            AS TYPE_NAME
+             , t.TYPECODE                                                             AS TYPE_KIND
+             , LISTAGG(a.ATTR_NAME, ',') WITHIN GROUP (ORDER BY a.ATTR_NO)            AS ATTR_NAMES
+             , LISTAGG(a.ATTR_TYPE_NAME, ',') WITHIN GROUP (ORDER BY a.ATTR_NO)       AS ATTR_TYPES
+             , LISTAGG(a.LENGTH, ',') WITHIN GROUP (ORDER BY a.ATTR_NO)               AS ATTR_TYPE_LENS
+             , (SELECT LISTAGG(s.TEXT) WITHIN GROUP (ORDER BY s.LINE)
+                FROM ALL_SOURCE s
+                WHERE s.OWNER = t.OWNER AND s.NAME = t.TYPE_NAME AND s.TYPE = 'TYPE') AS DEFINITION
+        FROM ALL_TYPES t
+                 LEFT JOIN ALL_TYPE_ATTRS a ON a.OWNER = t.OWNER AND a.TYPE_NAME = t.TYPE_NAME
+        WHERE ${scopeWhere({schema: 't.OWNER'}, opts)}
+        GROUP BY t.OWNER, t.TYPE_NAME, t.TYPECODE, t.ATTRIBUTES`, [], 'getTypes'
+    ).catch(handleError(`Failed to get types`, [], opts))
 }
 
 function buildType(t: RawType): Type {
     return removeUndefined({
-        schema: t.type_schema,
-        name: t.type_name,
+        schema: t.TYPE_OWNER,
+        name: t.TYPE_NAME,
+        values: undefined,
+        attrs: t.ATTR_NAMES && t.ATTR_TYPES ? zip(
+            t.ATTR_NAMES.split(','),
+            t.ATTR_TYPES.split(',')
+        ).map(([name, type]) => ({name, type})) : undefined,
+        definition: t.DEFINITION
+            .replaceAll(/TYPE [^ ]+ AS /gi, '')
+            .replaceAll(/ALTER TYPE [^ ]+ /gi, '')
+            .replaceAll(/[\n\r\s]+/gi, ' ')
+            .replaceAll(/\( /g, '(')
+            .replaceAll(/ \)/g, ')'),
+        doc: undefined,
+        extra: undefined,
     })
 }
 
@@ -364,37 +611,34 @@ const getJsonColumns = (columns: Record<EntityId, RawColumn[]>, opts: ConnectorS
     opts.logger.log('Inferring JSON columns ...')
     return mapEntriesAsync(columns, (entityId, tableCols) => {
         const ref = entityRefFromId(entityId)
-        const jsonCols = tableCols.filter(c => c.column_type === 'jsonb')
+        const jsonCols = tableCols.filter(c => c.COLUMN_TYPE === 'JSON')
         return mapValuesAsync(
-            Object.fromEntries(jsonCols.map(c => [c.column_name, c.column_name])),
+            Object.fromEntries(jsonCols.map(c => [c.COLUMN_NAME, c.COLUMN_NAME])),
             c => getSampleValues(ref, [c], opts)(conn).then(valuesToSchema)
         )
     })
 }
 
-const getSampleValues = (ref: EntityRef, attribute: AttributePath, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<AttributeValue[]> => {
+export const getSampleValues = (ref: EntityRef, attribute: AttributePath, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<AttributeValue[]> => {
     const sqlTable = buildSqlTable(ref)
     const sqlColumn = buildSqlColumn(attribute)
     const sampleSize = opts.sampleSize || connectorSchemaOptsDefaults.sampleSize
-    return conn.query(`
-        SELECT ${sqlColumn} AS value
+    return conn.query<{VALUE: AttributeValue}>(`
+        SELECT ${sqlColumn} AS VALUE
         FROM ${sqlTable}
-        WHERE ${sqlColumn} IS NOT NULL FETCH FIRST ${sampleSize} ROWS ONLY;`, [], 'getSampleValues'
-    ).then(rows => rows.reduce<{ value: AttributeValue }[]>((acc, row) => {
-        const [value] = row as any[]
-        acc.push({value})
-        return acc
-    }, [])).catch(handleError(`Failed to get sample values for '${attributeRefToId({...ref, attribute})}'`, [], opts))
+        WHERE ${sqlColumn} IS NOT NULL FETCH FIRST ${sampleSize} ROWS ONLY`, [], 'getSampleValues'
+    ).then(rows => rows.map(row => row.VALUE))
+        .catch(handleError(`Failed to get sample values for '${attributeRefToId({...ref, attribute})}'`, [], opts))
 }
 
 const getPolyColumns = (columns: Record<EntityId, RawColumn[]>, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Record<EntityId, Record<AttributeName, string[]>>> => {
     opts.logger.log('Inferring polymorphic relations ...')
     return mapEntriesAsync(columns, (entityId, tableCols) => {
         const ref = entityRefFromId(entityId)
-        const colNames = tableCols.map(c => c.column_name)
-        const polyCols = tableCols.filter(c => isPolymorphic(c.column_name, colNames))
+        const colNames = tableCols.map(c => c.COLUMN_NAME)
+        const polyCols = tableCols.filter(c => isPolymorphic(c.COLUMN_NAME, colNames))
         return mapValuesAsync(
-            Object.fromEntries(polyCols.map(c => [c.column_name, c.column_name])),
+            Object.fromEntries(polyCols.map(c => [c.COLUMN_NAME, c.COLUMN_NAME])),
             c => getDistinctValues(ref, [c], opts)(conn).then(values => values.filter((v): v is string => typeof v === 'string'))
         )
     })
@@ -404,16 +648,11 @@ export const getDistinctValues = (ref: EntityRef, attribute: AttributePath, opts
     const sqlTable = buildSqlTable(ref)
     const sqlColumn = buildSqlColumn(attribute)
     const sampleSize = opts.sampleSize || connectorSchemaOptsDefaults.sampleSize
-    return conn.query(`
-        SELECT DISTINCT ${sqlColumn} AS value
+    return conn.query<{ VALUE: AttributeValue }>(`
+        SELECT DISTINCT ${sqlColumn} AS VALUE
         FROM ${sqlTable}
         WHERE ${sqlColumn} IS NOT NULL
-        ORDER BY value FETCH FIRST ${sampleSize} ROWS ONLY;`, [], 'getDistinctValues'
-    ).then(rows => rows.reduce<{ value: AttributeValue }[]>((acc, row) => {
-        const [value] = row as any[]
-        acc.push({value})
-        return acc
-    }, []))
-        .catch(err => err instanceof Error && err.message.match(/materialized view "[^"]+" has not been populated/) ? [] : Promise.reject(err))
+        ORDER BY value FETCH FIRST ${sampleSize} ROWS ONLY`, [], 'getDistinctValues'
+    ).then(rows => rows.map(row => row.VALUE))
         .catch(handleError(`Failed to get distinct values for '${attributeRefToId({...ref, attribute})}'`, [], opts))
 }

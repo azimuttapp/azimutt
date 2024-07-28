@@ -5,7 +5,6 @@ defmodule Azimutt.Accounts.User do
   import Ecto.Changeset
   alias Azimutt.Accounts.User
   alias Azimutt.Accounts.UserProfile
-  alias Azimutt.Organizations.Organization
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Utils.Slugme
 

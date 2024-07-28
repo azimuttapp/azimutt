@@ -12,7 +12,7 @@ import {application, logger} from "./constants.test";
 
 describe('history', () => {
     // local url, install db or replace it to test
-    const url: DatabaseUrlParsed = parseDatabaseUrl('jdbc:oracle:thin:sys/oracle@//localhost:1521/FREE')
+    const url: DatabaseUrlParsed = parseDatabaseUrl('oracle:thin:system/oracle@localhost:1521')
     const opts: ConnectorQueryHistoryOpts = {logger, logQueries: false, database: 'C##AZIMUTT.USERS'}
 
     test.skip('getQueryHistory', async () => {
