@@ -52,3 +52,7 @@ export function base64Encode(plaintext: string): string {
 export function base64Decode(base64: string): string {
     return atob(base64)
 }
+
+export function base64Valid(text: string): boolean {
+    return !!text.match(/^[a-zA-Z0-9+/]+={0,2}$/g) && text.length % 4 === 0
+}

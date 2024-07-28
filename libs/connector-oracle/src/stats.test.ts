@@ -18,4 +18,9 @@ describe('stats', () => {
         console.log('getColumnStats', stats)
         expect(stats.rows).toEqual(3)
     })
+    test.skip('getColumnStats json', async () => {
+        const stats = await connect(application, url, getColumnStats({schema: 'C##AZIMUTT', entity: 'USERS', attribute: ['SETTINGS', 'color']}), {logger, logQueries: true})
+        console.log('getColumnStats', stats)
+        expect(stats.rows).toEqual(3)
+    })
 })

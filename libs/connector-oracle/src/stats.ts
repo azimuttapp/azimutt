@@ -71,17 +71,17 @@ type ColumnBasics = { rows: number; nulls: number; cardinality: number }
 async function getColumnBasics(conn: Conn, sqlTable: SqlFragment, sqlColumn: SqlFragment): Promise<ColumnBasics> {
     const [rows, nulls, cardinality] = await Promise.all([
         [`SELECT count(*) AS COUNT FROM ${sqlTable}`, 'countRows'],
-        [`SELECT count(*) AS COUNT FROM ${sqlTable} WHERE ${sqlColumn} IS NULL`, 'countNulls'],
-        [`SELECT count(distinct ${sqlColumn}) AS COUNT FROM ${sqlTable}`, 'countDistincts'],
+        [`SELECT count(*) AS COUNT FROM ${sqlTable} t WHERE t.${sqlColumn} IS NULL`, 'countNulls'],
+        [`SELECT count(distinct t.${sqlColumn}) AS COUNT FROM ${sqlTable} t`, 'countDistincts'],
     ].map(([query, name]) => conn.query<{ COUNT: number }>(query, [], name).then(res => Number(res[0].COUNT))))
     return {rows, nulls, cardinality}
 }
 
 async function getCommonValues(conn: Conn, sqlTable: SqlFragment, sqlColumn: SqlFragment): Promise<ConnectorAttributeStatsValue[]> {
     return await conn.query<{ VALUE: AttributeValue, COUNT: number }>(`
-        SELECT ${sqlColumn} AS VALUE, count(*) AS COUNT
-        FROM ${sqlTable}
-        GROUP BY ${sqlColumn}
+        SELECT t.${sqlColumn} AS VALUE, count(*) AS COUNT
+        FROM ${sqlTable} t
+        GROUP BY t.${sqlColumn}
         ORDER BY count(*) DESC FETCH FIRST 10 ROWS ONLY`, [], 'getCommonValues'
     ).then(res => res.map(r => ({value: r.VALUE, count: r.COUNT})))
 }

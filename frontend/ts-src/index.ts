@@ -61,7 +61,7 @@ import {AzimuttApi} from "./services/api";
 import {ConsoleLogger} from "./services/logger";
 import {Storage} from "./services/storage";
 import {Backend} from "./services/backend";
-import {aesDecrypt, aesEncrypt} from "./utils/crypto";
+import {aesDecrypt, aesEncrypt, base64Valid} from "./utils/crypto";
 import {Env} from "./utils/env";
 import {loadPolyfills} from "./utils/polyfills";
 import * as url from "./utils/url";
@@ -287,7 +287,7 @@ async function deleteSource(msg: DeleteSource): Promise<void> {
 }
 
 const dbUrlsInMemory: { [key: SourceId]: DatabaseUrl } = {}
-const dbUrlIsCrypted = (url: DatabaseUrl): boolean => !url.includes('://')
+const dbUrlIsCrypted = (url: DatabaseUrl): boolean => base64Valid(url)
 const dbUrlEncrypt = (project: ProjectId, url: DatabaseUrl): Promise<DatabaseUrl> =>
     dbUrlIsCrypted(url) ? Promise.resolve(url) : aesEncrypt(project.replaceAll('-', ''), url)
 const dbUrlDecrypt = (project: ProjectId, url: DatabaseUrl): Promise<DatabaseUrl | undefined> => {

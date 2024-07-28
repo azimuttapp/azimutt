@@ -4,7 +4,6 @@ import Libs.Bool as Bool
 import Libs.List as List
 import Libs.Regex as Regex
 import Models.Project.ColumnPath exposing (ColumnPath)
-import Models.Project.ColumnType as ColumnType exposing (ParsedColumnType)
 import Models.Project.TableId exposing (TableId)
 import Models.SqlFragment exposing (SqlFragment)
 import Models.SqlQuery exposing (SqlQuery)
@@ -18,18 +17,18 @@ exploreTable table =
 exploreColumn : TableId -> ColumnPath -> SqlQuery
 exploreColumn table column =
     -- FIXME: formatColumn
-    ( formatColumn "" column ColumnType.Text, formatColumnAlias column )
-        |> (\( col, alias ) -> "SELECT\n  " ++ Bool.cond (col == alias) col (col ++ " as " ++ alias) ++ ",\n  count(*)\nFROM " ++ formatTable table ++ "\nGROUP BY " ++ col ++ "\nORDER BY count DESC, " ++ alias ++ ";\n")
+    ( formatColumn "" column, formatColumnAlias column )
+        |> (\( col, alias ) -> "SELECT\n  t." ++ Bool.cond (col == alias) col (col ++ " AS " ++ alias) ++ ",\n  count(*) AS COUNT\nFROM " ++ formatTable table ++ " t\nGROUP BY t." ++ col ++ "\nORDER BY COUNT DESC, " ++ alias ++ ";\n")
 
 
 addLimit : SqlQuery -> SqlQuery
 addLimit query =
-    case query |> String.trim |> Regex.matches "^(select[\\s\\S]+?)(\\slimit \\d+)?(\\soffset \\d+)?;$" of
+    case query |> String.trim |> Regex.matches "^(select[\\s\\S]+?)(\\s+offset \\d+ rows?)?(\\s+fetch (?:first|next) \\d+ rows? only)?\\s*;$" of
         (Just q) :: Nothing :: Nothing :: [] ->
-            q ++ "\nLIMIT 100;\n"
+            q ++ "\nFETCH FIRST 100 ROWS ONLY;\n"
 
-        (Just q) :: Nothing :: (Just offset) :: [] ->
-            q ++ "\nLIMIT 100" ++ offset ++ ";\n"
+        (Just q) :: (Just offset) :: Nothing :: [] ->
+            q ++ "\n" ++ String.trim offset ++ " FETCH FIRST 100 ROWS ONLY;\n"
 
         _ ->
             query
@@ -48,8 +47,8 @@ formatTable ( schema, table ) =
         "\"" ++ schema ++ "\"" ++ "." ++ "\"" ++ table ++ "\""
 
 
-formatColumn : String -> ColumnPath -> ParsedColumnType -> String
-formatColumn prefix column kind =
+formatColumn : String -> ColumnPath -> String
+formatColumn prefix column =
     let
         baseCol : String
         baseCol =
@@ -59,31 +58,7 @@ formatColumn prefix column kind =
             else
                 prefix ++ ".\"" ++ column.head ++ "\""
     in
-    case column.tail |> List.reverse of
-        last :: rest ->
-            baseCol ++ (rest |> List.reverse |> List.map (\c -> "->'" ++ c ++ "'") |> String.join "") ++ "->>'" ++ last ++ "'" |> formatColumnCast kind
-
-        [] ->
-            baseCol
-
-
-formatColumnCast : ParsedColumnType -> String -> String
-formatColumnCast kind sqlColumn =
-    case kind of
-        ColumnType.Int ->
-            "(" ++ sqlColumn ++ ")::int"
-
-        ColumnType.Float ->
-            "(" ++ sqlColumn ++ ")::float"
-
-        ColumnType.Bool ->
-            "(" ++ sqlColumn ++ ")::boolean"
-
-        ColumnType.Uuid ->
-            "(" ++ sqlColumn ++ ")::uuid"
-
-        _ ->
-            sqlColumn
+    baseCol ++ (column.tail |> List.map (\c -> "." ++ c) |> String.join "")
 
 
 formatColumnAlias : ColumnPath -> SqlFragment

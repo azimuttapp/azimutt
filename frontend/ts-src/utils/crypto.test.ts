@@ -1,4 +1,4 @@
-import {base64Decode, aesDecrypt, base64Encode, aesEncrypt} from "./crypto";
+import {base64Decode, aesDecrypt, base64Encode, aesEncrypt, base64Valid} from "./crypto";
 
 describe('crypto', () => {
     beforeAll(async () => {
@@ -19,5 +19,6 @@ describe('crypto', () => {
         const base64 = 'YXppbXV0dA=='
         expect(base64Encode(text)).toEqual(base64)
         expect(base64Decode(base64)).toEqual(text)
+        expect(base64Valid(base64)).toEqual(true)
     })
 })

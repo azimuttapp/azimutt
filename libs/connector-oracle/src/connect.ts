@@ -9,13 +9,13 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
         url,
         query<T extends QueryResultRow>(sql: string, parameters: [] = [], name?: string): Promise<T[]> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
-                return client.execute<T>(sql.replace(/;$/, ''), parameters, {outFormat: oracledb.OUT_FORMAT_OBJECT})
+                return client.execute<T>(sql.trim().replace(/;$/, ''), parameters, {outFormat: oracledb.OUT_FORMAT_OBJECT})
                     .then(res => res.rows || [], err => Promise.reject(queryError(name, sql, err)))
             }, (r) => r?.length ?? 0, opts)
         },
         queryArrayMode(sql: string, parameters: any[] = [], name?: string): Promise<QueryResultArrayMode> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
-                return client.execute(sql.replace(/;$/, ''), parameters, {outFormat: oracledb.OUT_FORMAT_ARRAY}).then(res => {
+                return client.execute(sql.trim().replace(/;$/, ''), parameters, {outFormat: oracledb.OUT_FORMAT_ARRAY}).then(res => {
                     const {metaData, rows} = res
                     const fields = metaData?.map(meta => ({name: meta.name}))
                     return {fields: fields ?? [], rows: (rows as any[]) ?? []}

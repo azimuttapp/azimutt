@@ -7,7 +7,7 @@ export function buildSqlTable(ref: EntityRef): SqlFragment {
 
 export function buildSqlColumn(path: AttributePath): SqlFragment {
     const [head, ...tail] = path
-    return `"${head}"${tail.map((t) => `->'${t}'`).join("")}`
+    return `"${head}"${tail.map((t) => `.${t}`).join("")}`
 }
 
 export type ScopeOpts = ConnectorSchemaOpts & {oracleUsers: string[]}

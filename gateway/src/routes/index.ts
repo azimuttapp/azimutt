@@ -5,6 +5,7 @@ import {RouteShorthandOptions} from "fastify/types/route"
 import {Logger, removeUndefined} from "@azimutt/utils"
 import {
     AttributeRef,
+    columnNameFromLegacy,
     columnStatsToLegacy,
     Connector,
     databaseToLegacy,
@@ -112,7 +113,7 @@ function getTableStats(params: DbTableStatsParams, res: FastifyReply): Promise<T
 }
 
 function getColumnStats(params: DbColumnStatsParams, res: FastifyReply): Promise<ColumnStatsResponse | FastifyReply> {
-    const ref: AttributeRef = {schema: params.schema, entity: params.table, attribute: [params.column]}
+    const ref: AttributeRef = {schema: params.schema, entity: params.table, attribute: columnNameFromLegacy(params.column)}
     return withConnector(params.url, res, (url, conn) => conn.getAttributeStats(buildApp(params.user), url, ref, {logger}).then(columnStatsToLegacy))
 }
 
