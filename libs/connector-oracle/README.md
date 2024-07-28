@@ -86,6 +86,7 @@ COMMENT ON COLUMN users.name IS 'The user name';
 CREATE UNIQUE INDEX users_email_uniq ON users (email);
 CREATE INDEX users_role_idx ON users (role);
 CREATE INDEX users_plan_idx ON users (json_value(settings, '$.plan.name'));
+CREATE INDEX users_full_idx ON users (name, email, json_value(settings, '$.plan.name'), json_value(settings, '$.color'));
 
 CREATE VIEW admins AS SELECT id, name, email FROM users WHERE role = 'admin';
 COMMENT ON TABLE admins IS 'Only admins';

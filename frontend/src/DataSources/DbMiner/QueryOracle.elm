@@ -16,8 +16,7 @@ exploreTable table =
 
 exploreColumn : TableId -> ColumnPath -> SqlQuery
 exploreColumn table column =
-    -- FIXME: formatColumn
-    ( formatColumn "" column, formatColumnAlias column )
+    ( formatColumn column, formatColumnAlias column )
         |> (\( col, alias ) -> "SELECT\n  t." ++ Bool.cond (col == alias) col (col ++ " AS " ++ alias) ++ ",\n  count(*) AS COUNT\nFROM " ++ formatTable table ++ " t\nGROUP BY t." ++ col ++ "\nORDER BY COUNT DESC, " ++ alias ++ ";\n")
 
 
@@ -47,18 +46,9 @@ formatTable ( schema, table ) =
         "\"" ++ schema ++ "\"" ++ "." ++ "\"" ++ table ++ "\""
 
 
-formatColumn : String -> ColumnPath -> String
-formatColumn prefix column =
-    let
-        baseCol : String
-        baseCol =
-            if prefix == "" then
-                "\"" ++ column.head ++ "\""
-
-            else
-                prefix ++ ".\"" ++ column.head ++ "\""
-    in
-    baseCol ++ (column.tail |> List.map (\c -> "." ++ c) |> String.join "")
+formatColumn : ColumnPath -> String
+formatColumn column =
+    "\"" ++ column.head ++ "\"" ++ (column.tail |> List.map (\c -> "." ++ c) |> String.join "")
 
 
 formatColumnAlias : ColumnPath -> SqlFragment

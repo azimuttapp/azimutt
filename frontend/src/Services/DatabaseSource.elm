@@ -66,8 +66,8 @@ databases =
     [ { key = DatabaseKind.PostgreSQL, sampleUrl = "postgres://<user>:<pass>@<host>:<port>/<db>" }
     , { key = DatabaseKind.MySQL, sampleUrl = "mysql://<user>:<pass>@<host>:<port>/<db>" }
     , { key = DatabaseKind.MariaDB, sampleUrl = "mariadb://<user>:<pass>@<host>:<port>/<db>" }
-    , { key = DatabaseKind.Oracle, sampleUrl = "oracle:thin:<user>/<pass>@<host>:<port>/<db>" }
     , { key = DatabaseKind.SQLServer, sampleUrl = "Server=<host>,<port>;Database=<db>;User Id=<user>;Password=<pass>" }
+    , { key = DatabaseKind.Oracle, sampleUrl = "oracle:thin:<user>/<pass>@<host>:<port>/<db>" }
     , { key = DatabaseKind.Couchbase, sampleUrl = "couchbases://<user>:<pass>@<host>" }
     , { key = DatabaseKind.MongoDB, sampleUrl = "mongodb+srv://<user>:<pass>@<host>" }
     , { key = DatabaseKind.Snowflake, sampleUrl = "snowflake://<user>:<pass>@<account>.snowflakecomputing.com?db=<database>" }

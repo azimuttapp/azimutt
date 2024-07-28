@@ -246,6 +246,7 @@ export const getViews = (opts: ScopeOpts) => async (conn: Conn): Promise<RawView
 }
 
 function buildViewEntity(view: RawView, columns: RawColumn[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>): Entity {
+    // TODO: parse TABLE_DEFINITION to get attributes sources and copy outgoing relations
     return removeEmpty({
         schema: view.TABLE_OWNER,
         name: view.TABLE_NAME,
