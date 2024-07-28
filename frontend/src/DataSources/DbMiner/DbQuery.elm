@@ -6,6 +6,7 @@ import DataSources.DbMiner.QueryCouchbase as QueryCouchbase
 import DataSources.DbMiner.QueryMariaDB as QueryMariaDB
 import DataSources.DbMiner.QueryMongoDB as QueryMongoDB
 import DataSources.DbMiner.QueryMySQL as QueryMySQL
+import DataSources.DbMiner.QueryOracle as QueryOracle
 import DataSources.DbMiner.QueryPostgreSQL as QueryPostgreSQL
 import DataSources.DbMiner.QuerySQLServer as QuerySQLServer
 import DataSources.DbMiner.QuerySnowflake as QuerySnowflake
@@ -37,6 +38,9 @@ exploreTable db table =
 
             DatabaseKind.MySQL ->
                 QueryMySQL.exploreTable table
+
+            DatabaseKind.Oracle ->
+                QueryOracle.exploreTable table
 
             DatabaseKind.PostgreSQL ->
                 QueryPostgreSQL.exploreTable table
@@ -70,6 +74,9 @@ exploreColumn db table column =
 
             DatabaseKind.MySQL ->
                 QueryMySQL.exploreColumn table column
+
+            DatabaseKind.Oracle ->
+                QueryOracle.exploreColumn table column
 
             DatabaseKind.PostgreSQL ->
                 QueryPostgreSQL.exploreColumn table column
@@ -163,6 +170,9 @@ addLimit db query =
 
         DatabaseKind.MySQL ->
             { sql = QueryMySQL.addLimit query.sql, origin = query.origin, db = query.db }
+
+        DatabaseKind.Oracle ->
+            { sql = QueryOracle.addLimit query.sql, origin = query.origin, db = query.db }
 
         DatabaseKind.PostgreSQL ->
             { sql = QueryPostgreSQL.addLimit query.sql, origin = query.origin, db = query.db }

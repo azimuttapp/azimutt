@@ -405,6 +405,9 @@ importers:
       '@azimutt/connector-mysql':
         specifier: ^0.1.2
         version: 0.1.2
+      '@azimutt/connector-oracle':
+        specifier: workspace:^
+        version: link:../libs/connector-oracle
       '@azimutt/connector-postgres':
         specifier: ^0.1.7
         version: 0.1.7(pg-native@3.0.1)

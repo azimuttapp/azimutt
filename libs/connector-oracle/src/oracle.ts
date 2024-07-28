@@ -189,9 +189,8 @@ export const getTables = (opts: ScopeOpts) => async (conn: Conn): Promise<RawTab
 }
 
 function buildTableEntity(blockSize: number, table: RawTable, columns: RawColumn[], constraints: RawConstraint[], indexes: RawIndex[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>): Entity {
-    return removeUndefined({
-        catalog: table.TABLE_CLUSTER || undefined,
-        schema: table.TABLE_TABLESPACE || undefined,
+    return removeEmpty({
+        schema: table.TABLE_OWNER || undefined,
         name: table.TABLE_NAME,
         kind: table.MVIEW_DEFINITION ? 'materialized view' as const : undefined,
         def: table.MVIEW_DEFINITION || undefined,
@@ -218,7 +217,10 @@ function buildTableEntity(blockSize: number, table: RawTable, columns: RawColumn
             vacuumLast: undefined,
             vacuumLag: undefined,
         }),
-        extra: undefined,
+        extra: removeUndefined({
+            cluster: table.TABLE_CLUSTER || undefined,
+            tablespace: table.TABLE_TABLESPACE || undefined,
+        }),
     })
 }
 
@@ -244,9 +246,10 @@ export const getViews = (opts: ScopeOpts) => async (conn: Conn): Promise<RawView
 }
 
 function buildViewEntity(view: RawView, columns: RawColumn[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>): Entity {
-    return {
+    return removeEmpty({
+        schema: view.TABLE_OWNER,
         name: view.TABLE_NAME,
-        kind: 'view',
+        kind: 'view' as const,
         def: view.TABLE_DEFINITION,
         attrs: columns?.slice(0)
             ?.sort((a, b) => a.COLUMN_INDEX - b.COLUMN_INDEX)
@@ -257,7 +260,7 @@ function buildViewEntity(view: RawView, columns: RawColumn[], jsonColumns: Recor
         doc: view.TABLE_COMMENT || undefined,
         stats: undefined, // TODO
         extra: undefined,
-    }
+    })
 }
 
 export type RawColumn = {
@@ -380,12 +383,14 @@ export const getConstraints = (opts: ScopeOpts) => async (conn: Conn): Promise<R
 }
 
 function buildPrimaryKey(c: RawConstraint): PrimaryKey {
-    return removeUndefined({
+    return removeEmpty({
         name: c.CONSTRAINT_NAME,
         attrs: c.COLUMN_NAMES.split(',').map(name => [name]),
         doc: undefined, // no constraint comment in Oracle
         stats: undefined,
-        extra: undefined,
+        extra: removeUndefined({
+            generated: c.GENERATED === 'GENERATED NAME' || undefined,
+        }),
     })
 }
 
@@ -408,6 +413,7 @@ type RawIndex = {
     TABLE_NAME: string
     TABLE_TYPE: 'TABLE' | 'VIEW' | 'INDEX' | 'SEQUENCE' | 'CLUSTER' | 'SYNONYM' | 'NEXT OBJECT'
     COLUMN_NAMES: string // comma separated list of column names
+    COLUMN_VALUES: string // JSON
     IS_UNIQUE: 'UNIQUE' | 'NONUNIQUE'
     CARDINALITY: number
     INDEX_ROWS: number
@@ -418,11 +424,10 @@ type RawIndex = {
     VISIBILITY: 'VISIBLE' | 'INVISIBLE'
 }
 
-// TODO: ignore indexes from pk
-// TODO: get column names for json indexes
 export const getIndexes = (opts: ScopeOpts) => async (conn: Conn): Promise<RawIndex[]> => {
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_INDEXES.html
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_IND_COLUMNS.html
+    // `i.INDEX_NAME NOT IN`: ignore indexes from primary keys
     return conn.query<RawIndex>(`
         SELECT i.TABLESPACE_NAME                                                     AS INDEX_TABLESPACE
              , i.INDEX_NAME                                                          AS INDEX_NAME
@@ -431,6 +436,7 @@ export const getIndexes = (opts: ScopeOpts) => async (conn: Conn): Promise<RawIn
              , i.TABLE_NAME                                                          AS TABLE_NAME
              , i.TABLE_TYPE                                                          AS TABLE_TYPE
              , LISTAGG(c.COLUMN_NAME, ',') WITHIN GROUP (ORDER BY c.COLUMN_POSITION) AS COLUMN_NAMES
+             , JSON_OBJECTAGG(KEY c.COLUMN_NAME VALUE t.DATA_DEFAULT_VC)             AS COLUMN_VALUES
              , MIN(i.UNIQUENESS)                                                     AS IS_UNIQUE
              , MIN(i.DISTINCT_KEYS)                                                  AS CARDINALITY
              , MIN(i.NUM_ROWS)                                                       AS INDEX_ROWS
@@ -441,21 +447,39 @@ export const getIndexes = (opts: ScopeOpts) => async (conn: Conn): Promise<RawIn
              , MIN(i.VISIBILITY)                                                     AS VISIBILITY
         FROM ALL_INDEXES i
                  JOIN ALL_IND_COLUMNS c ON c.INDEX_OWNER = i.OWNER AND c.INDEX_NAME = i.INDEX_NAME
-        WHERE i.DROPPED != 'YES' AND ${scopeWhere({schema: 'i.TABLE_OWNER', entity: 'i.TABLE_NAME'}, opts)}
+                 JOIN ALL_TAB_COLS t ON t.OWNER = i.OWNER AND t.TABLE_NAME = i.TABLE_NAME AND t.COLUMN_NAME = c.COLUMN_NAME
+        WHERE i.DROPPED != 'YES'
+          AND ${scopeWhere({schema: 'i.TABLE_OWNER', entity: 'i.TABLE_NAME'}, opts)}
+          AND i.INDEX_NAME NOT IN (SELECT co.CONSTRAINT_NAME FROM ALL_CONSTRAINTS co WHERE co.CONSTRAINT_TYPE = 'P' AND ${scopeWhere({schema: 'co.OWNER', entity: 'co.TABLE_NAME'}, opts)})
         GROUP BY i.TABLESPACE_NAME, i.INDEX_NAME, i.INDEX_TYPE, i.TABLE_OWNER, i.TABLE_NAME, i.TABLE_TYPE`, [], 'getIndexes'
     ).catch(handleError(`Failed to get indexes`, [], opts))
 }
 
 function buildIndex(blockSize: number, index: RawIndex): Index {
-    return removeUndefined({
+    const columnValues: { [columnName: string]: string } = JSON.parse(index.COLUMN_VALUES)
+    return removeEmpty({
         name: index.INDEX_NAME,
-        attrs: index.COLUMN_NAMES.split(',').map(name => [name]),
+        attrs: index.COLUMN_NAMES.split(',').map(name => {
+            // ex: "JSON_VALUE(\"SETTINGS\" FORMAT OSON , '$.plan.name' RETURNING VARCHAR2(4000) NULL ON ERROR TYPE(LAX) )"
+            const [, col, path] = (columnValues[name] || '').match(/JSON_VALUE\("([^"]+)"[^,]+, '([^']+)'/) || []
+            if (col && path) {
+                return [col].concat(path.split('.').slice(1))
+            } else {
+                return [name]
+            }
+        }),
         unique: index.IS_UNIQUE === 'UNIQUE' || undefined,
         partial: undefined,
         definition: undefined,
         doc: undefined,
-        stats: undefined,
-        extra: undefined,
+        stats: removeUndefined({
+            size: undefined,
+            scans: undefined,
+            scansLast: index.ANALYZED_LAST?.toISOString() || undefined,
+        }),
+        extra: removeUndefined({
+            tablespace: index.INDEX_TABLESPACE
+        }),
     })
 }
 
@@ -571,7 +595,12 @@ function buildType(t: RawType): Type {
             t.ATTR_NAMES.split(','),
             t.ATTR_TYPES.split(',')
         ).map(([name, type]) => ({name, type})) : undefined,
-        definition: t.DEFINITION,
+        definition: t.DEFINITION
+            .replaceAll(/TYPE [^ ]+ AS /gi, '')
+            .replaceAll(/ALTER TYPE [^ ]+ /gi, '')
+            .replaceAll(/[\n\r\s]+/gi, ' ')
+            .replaceAll(/\( /g, '(')
+            .replaceAll(/ \)/g, ')'),
         doc: undefined,
         extra: undefined,
     })

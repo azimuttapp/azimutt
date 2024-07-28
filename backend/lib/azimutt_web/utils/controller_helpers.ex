@@ -35,6 +35,6 @@ defmodule AzimuttWeb.Utils.ControllerHelpers do
   defp response_html(conn, %Organization{} = organization, message),
     do: conn |> put_flash(:warn, message) |> redirect(to: Routes.organization_path(conn, :show, organization.id))
 
-  defp response_json(conn, %Organization{} = organization, message),
+  defp response_json(conn, %Organization{} = _organization, message),
     do: conn |> put_status(:unauthorized) |> put_view(AzimuttWeb.ErrorView) |> render("error.json", %{message: message})
 end

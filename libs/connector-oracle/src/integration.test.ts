@@ -9,8 +9,8 @@ describe('integration', () => {
     const url: DatabaseUrlParsed = parseDatabaseUrl('oracle:thin:system/oracle@localhost:1521')
 
     test.skip('getSchema', async () => {
-        const schemaOpts: ConnectorSchemaOpts = {schema: undefined, sampleSize: 10, inferRelations: true, inferJsonAttributes: true, inferPolymorphicRelations: true, ignoreErrors: true, logQueries: false, logger}
-        const schema = await connect(application, url, getSchema(schemaOpts), {logger, logQueries: true})
+        const opts: ConnectorSchemaOpts = {schema: undefined, sampleSize: 10, inferRelations: true, inferJsonAttributes: true, inferPolymorphicRelations: true, ignoreErrors: false, logQueries: true, logger}
+        const schema = await connect(application, url, getSchema(opts), opts)
         expect(schema.entities?.length).toEqual(7)
         expect(schema.relations?.length).toEqual(7)
         // polymorphic relation

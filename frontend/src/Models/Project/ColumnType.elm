@@ -56,7 +56,7 @@ parse kind =
     else if kind |> Regex.matchI "^ARRAY<.*>$" then
         Array (parse (kind |> String.dropLeft 6 |> String.dropRight 1))
 
-    else if (kind |> Regex.matchI "^(tiny|medium|long|ci)?text$") || (kind |> Regex.matchI "^character( varying)? ?(\\(\\d+\\))?$") || (kind |> Regex.matchI "^n?(var)?char ?(\\([^)]+\\))?( CHARACTER SET [^ ]+)?$") || (kind |> Regex.matchI "^string(\\(\\d+\\))?$") then
+    else if (kind |> Regex.matchI "^(tiny|medium|long|ci)?text$") || (kind |> Regex.matchI "^character( varying)? ?(\\(\\d+\\))?$") || (kind |> Regex.matchI "^n?(var)?char\\d? ?(\\([^)]+\\))?( CHARACTER SET [^ ]+)?$") || (kind |> Regex.matchI "^string(\\(\\d+\\))?$") || (kind |> Regex.matchI "^clob$") then
         Text
 
     else if (kind |> Regex.matchI "integer|bit") || (kind |> Regex.matchI "number\\(\\d+(\\s*,\\s*0)?\\)") || (kind |> Regex.matchI "^(small)?serial$") || (kind |> Regex.matchI "^(tiny|small|big)?int ?(\\d+)?(\\(\\d+\\))?( unsigned)?$") then

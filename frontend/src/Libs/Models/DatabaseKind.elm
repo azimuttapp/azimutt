@@ -12,6 +12,7 @@ type DatabaseKind
     | MariaDB
     | MongoDB
     | MySQL
+    | Oracle
     | PostgreSQL
     | Snowflake
     | SQLServer
@@ -19,7 +20,7 @@ type DatabaseKind
 
 all : List DatabaseKind
 all =
-    [ BigQuery, Couchbase, MariaDB, MongoDB, MySQL, PostgreSQL, Snowflake, SQLServer ]
+    [ BigQuery, Couchbase, MariaDB, MongoDB, MySQL, Oracle, PostgreSQL, Snowflake, SQLServer ]
 
 
 fromUrl : DatabaseUrl -> Maybe DatabaseKind
@@ -38,6 +39,9 @@ fromUrl url =
 
     else if url |> String.contains "mysql" then
         Just MySQL
+
+    else if url |> String.contains "oracle" then
+        Just Oracle
 
     else if url |> String.contains "postgre" then
         Just PostgreSQL
@@ -70,6 +74,9 @@ show kind =
         MySQL ->
             "MySQL"
 
+        Oracle ->
+            "Oracle"
+
         PostgreSQL ->
             "PostgreSQL"
 
@@ -99,6 +106,9 @@ toString kind =
         MySQL ->
             "mysql"
 
+        Oracle ->
+            "oracle"
+
         PostgreSQL ->
             "postgres"
 
@@ -126,6 +136,9 @@ fromString kind =
 
         "mysql" ->
             Just MySQL
+
+        "oracle" ->
+            Just Oracle
 
         "postgres" ->
             Just PostgreSQL
