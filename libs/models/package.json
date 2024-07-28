@@ -1,6 +1,6 @@
 {
   "name": "@azimutt/models",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Define a standard database models for Azimutt.",
   "keywords": [],
   "homepage": "https://azimutt.app",
@@ -25,14 +25,14 @@
   },
   "dependencies": {
     "@azimutt/utils": "workspace:^",
-    "openai": "4.47.2",
+    "openai": "4.53.2",
     "zod": "3.23.8",
-    "zod-to-json-schema": "3.23.0"
+    "zod-to-json-schema": "3.23.2"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
     "@types/jest": "^29.5.12",
-    "@types/node": "^20.14.12",
+    "@types/node": "^20.14.13",
     "ajv": "^8.17.1",
     "jest": "^29.7.0",
     "ts-jest": "^29.2.3",

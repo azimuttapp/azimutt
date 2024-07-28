@@ -12,7 +12,7 @@ describe("helpers", () => {
     })
     test("buildSqlColumn", () => {
         expect(buildSqlColumn(["name"])).toEqual(`"name"`)
-        expect(buildSqlColumn(["data", "email"])).toEqual(`"data"->'email'`)
+        expect(buildSqlColumn(["data", "email"])).toEqual(`"data".email`)
     })
     test('scopeWhere', () => {
         const opts = {logger, oracleUsers: ['SYS', 'SYSTEM']}

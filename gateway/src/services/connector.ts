@@ -4,6 +4,7 @@ import {couchbase} from "@azimutt/connector-couchbase"
 import {mariadb} from "@azimutt/connector-mariadb"
 import {mongodb} from "@azimutt/connector-mongodb"
 import {mysql} from "@azimutt/connector-mysql"
+import {oracle} from "@azimutt/connector-oracle"
 import {postgres} from "@azimutt/connector-postgres"
 import {snowflake} from "@azimutt/connector-snowflake"
 import {sqlserver} from "@azimutt/connector-sqlserver"
@@ -17,7 +18,7 @@ const connectors: Record<DatabaseKind, Connector | undefined> = {
     mariadb: mariadb,
     mongodb: mongodb,
     mysql: mysql,
-    oracle: undefined,
+    oracle: oracle,
     postgres: postgres,
     redis: undefined,
     snowflake: snowflake,
