@@ -1,7 +1,6 @@
 import {describe, expect, test} from "@jest/globals";
 import {DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/models";
 import {connect} from "./connect";
-import {execQuery} from "./query";
 import {
     getBlockSizes,
     getColumns,
@@ -24,17 +23,6 @@ describe('oracle', () => {
     const url: DatabaseUrlParsed = parseDatabaseUrl('oracle:thin:system/oracle@localhost:1521')
     const opts: ScopeOpts = {logger, logQueries: false, inferJsonAttributes: true, inferPolymorphicRelations: true, oracleUsers}
 
-    test.skip('execQuery', async () => {
-        const url: DatabaseUrlParsed = parseDatabaseUrl('oracle:thin:C##azimutt/azimutt@localhost:1521')
-        const query = 'SELECT p.id, p.title, u.id, u.name FROM posts p JOIN users u on p.created_by = u.id FETCH FIRST 10 ROWS ONLY'
-        const results = await connect(application, url, execQuery(query, []), opts)
-        expect(results.attributes).toEqual([
-            {name: 'ID'/*, ref: {entity: 'POSTS', attribute: ['ID']}*/},
-            {name: 'TITLE'/*, ref: {entity: 'POSTS', attribute: ['TITLE']}*/},
-            {name: 'ID_1'/*, ref: {entity: 'USERS', attribute: ['ID']}*/},
-            {name: 'NAME'/*, ref: {entity: 'USERS', attribute: ['NAME']}*/},
-        ])
-    })
     test.skip('getSchema', async () => {
         const schema = await connect(application, url, getSchema(opts), opts)
         console.log(`${(schema.entities || []).length} entities`, ...(schema.entities || []))

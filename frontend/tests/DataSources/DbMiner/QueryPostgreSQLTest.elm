@@ -145,6 +145,10 @@ updateColumnTypeSuite =
     [ test "basic" (\_ -> updateColumnType { table = ( "", "users" ), column = cPath "name" } "varchar(255)" |> Expect.equal """ALTER TABLE "users" ALTER COLUMN "name" TYPE varchar(255);""") ]
 
 
+
+-- HELPERS
+
+
 fRow : TableId -> List ( String, DbValue ) -> String
 fRow table matches =
     matches |> Nel.fromList |> Maybe.map (\primaryKey -> findRow table (primaryKey |> Nel.map (\( col, value ) -> { column = Nel col [], value = value }))) |> Maybe.withDefault ""

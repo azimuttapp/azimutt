@@ -99,6 +99,9 @@ filterTable db query =
             DatabaseKind.MySQL ->
                 QueryMySQL.filterTable query.table query.filters
 
+            DatabaseKind.Oracle ->
+                QueryOracle.filterTable query.table query.filters
+
             DatabaseKind.PostgreSQL ->
                 QueryPostgreSQL.filterTable query.table query.filters
 
@@ -116,6 +119,9 @@ findRow db query =
         case db of
             DatabaseKind.MySQL ->
                 QueryMySQL.findRow query.table query.primaryKey
+
+            DatabaseKind.Oracle ->
+                QueryOracle.findRow query.table query.primaryKey
 
             DatabaseKind.PostgreSQL ->
                 QueryPostgreSQL.findRow query.table query.primaryKey
@@ -146,6 +152,9 @@ incomingRows db relations row =
         case db of
             DatabaseKind.MySQL ->
                 QueryMySQL.incomingRows row relations incomingRowsLimit
+
+            DatabaseKind.Oracle ->
+                QueryOracle.incomingRows row relations incomingRowsLimit
 
             DatabaseKind.PostgreSQL ->
                 QueryPostgreSQL.incomingRows row relations incomingRowsLimit

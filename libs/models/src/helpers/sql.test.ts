@@ -1,5 +1,14 @@
 import {describe, expect, test} from "@jest/globals";
-import {formatSql, getEntities, getMainEntity} from "./sql";
+import {
+    formatSql,
+    getEntities,
+    getMainEntity,
+    parseCondition,
+    parseSelectColumn,
+    parseSelectTable,
+    parseSqlScript,
+    parseValue
+} from "./sql";
 
 describe('sql', () => {
     test('getMainEntity', () => {
@@ -38,5 +47,78 @@ describe('sql', () => {
         expect(formatSql('SELECT id -- the id\n     , name\nFROM users;')).toEqual('SELECT id, name FROM users;')
         expect(formatSql('SELECT e.id as event_id, e.details as event_details, u.email as email FROM events e JOIN users u ON u.id = e.created_by LEFT JOIN organizations o ON o.id = e.organization_id WHERE e.name="plan_limit" AND u.email="loicknuchel@gmail.com";'))
             .toEqual('SELECT e.id as event_id, e.details as event_... FROM events e JOIN users u ON u.id = e.created_by LEFT JOIN organizations o ON o.id = e.organization_id WHERE e.name="plan_limit" AND u.email="loickn...')
+    })
+    describe('parseSqlScript', () => {
+        test('simple', () => {
+            expect(parseSqlScript('SELECT * FROM events;'))
+                .toEqual([{command: 'SELECT', table: {name: 'events'}, columns: [{name: '*'}]}])
+            expect(parseSqlScript('SELECT * FROM public.events;'))
+                .toEqual([{command: 'SELECT', table: {name: 'events', schema: 'public'}, columns: [{name: '*'}]}])
+            expect(parseSqlScript('SELECT e.* FROM events e;'))
+                .toEqual([{command: 'SELECT', table: {name: 'events', alias: 'e'}, columns: [{name: '*', scope: 'e'}]}])
+
+            expect(parseSqlScript('SELECT id FROM events;'))
+                .toEqual([{command: 'SELECT', table: {name: 'events'}, columns: [{name: 'id'}]}])
+            expect(parseSqlScript('SELECT id AS event_id FROM events;'))
+                .toEqual([{command: 'SELECT', table: {name: 'events'}, columns: [{name: 'event_id', def: 'id'}]}])
+            expect(parseSqlScript('SELECT events.id FROM events;'))
+                .toEqual([{command: 'SELECT', table: {name: 'events'}, columns: [{name: 'id', scope: 'events'}]}])
+            expect(parseSqlScript('SELECT e.id FROM events e;'))
+                .toEqual([{command: 'SELECT', table: {name: 'events', alias: 'e'}, columns: [{name: 'id', scope: 'e'}]}])
+        })
+        test('joins', () => {
+            expect(parseSqlScript('SELECT u.name, p.name, e.* FROM events e JOIN users u ON e.created_by = u.id AND u.deleted_at IS NOT NULL LEFT JOIN projects p ON e.project_id=p.id;')).toEqual([{
+                command: 'SELECT',
+                table: {name: 'events', alias: 'e'},
+                columns: [{name: 'name', scope: 'u'}, {name: 'name', scope: 'p'}, {name: '*', scope: 'e'}],
+                joins: [{table: 'users', alias: 'u', on: {
+                    op: 'AND',
+                    left: {op: '=', left: {column: 'created_by', scope: 'e'}, right: {column: 'id', scope: 'u'}},
+                    right: {op: 'NOT NULL', value: {column: 'deleted_at', scope: 'u'}}
+                }}, {table: 'projects', alias: 'p', kind: 'LEFT', on: {op: '=', left: {column: 'project_id', scope: 'e'}, right: {column: 'id', scope: 'p'}}}]
+            }])
+        })
+        test('parseSelectColumn', () => {
+            expect(parseSelectColumn('*', 1)).toEqual({name: '*'})
+            expect(parseSelectColumn('e.*', 1)).toEqual({name: '*', scope: 'e'})
+            expect(parseSelectColumn('id', 1)).toEqual({name: 'id'})
+            expect(parseSelectColumn('e.id', 1)).toEqual({name: 'id', scope: 'e'})
+            expect(parseSelectColumn('id as user_id', 1)).toEqual({name: 'user_id', def: 'id'})
+            expect(parseSelectColumn('e.id as user_id', 1)).toEqual({name: 'user_id', scope: 'e', def: 'id'})
+            expect(parseSelectColumn('count(*)', 1)).toEqual({name: 'col_1', def: 'count(*)'})
+            expect(parseSelectColumn('count(*) AS count', 1)).toEqual({name: 'count', def: 'count(*)'})
+            expect(parseSelectColumn('"id"', 1)).toEqual({name: 'id'})
+            expect(parseSelectColumn('"id" as "user_id"', 1)).toEqual({name: 'user_id', def: 'id'})
+        })
+        test('parseSelectTable', () => {
+            expect(parseSelectTable('events')).toEqual({table: {name: 'events'}})
+            expect(parseSelectTable('public.events')).toEqual({table: {name: 'events', schema: 'public'}})
+            expect(parseSelectTable('events e')).toEqual({table: {name: 'events', alias: 'e'}})
+            expect(parseSelectTable('events e JOIN users u ON u.id=e.created_by')).toEqual({table: {name: 'events', alias: 'e'}, joins: [
+                {table: 'users', alias: 'u', on: {op: '=', left: {column: 'id', scope: 'u'}, right: {column: 'created_by', scope: 'e'}}}
+            ]})
+        })
+        test('parseCondition', () => {
+            expect(parseCondition('u.id=e.created_by')).toEqual({op: '=', left: {column: 'id', scope: 'u'}, right: {column: 'created_by', scope: 'e'}})
+            expect(parseCondition('u.status != 0')).toEqual({op: '!=', left: {column: 'status', scope: 'u'}, right: 0})
+            expect(parseCondition('u.deleted_at IS NULL')).toEqual({op: 'NULL', value: {column: 'deleted_at', scope: 'u'}})
+            expect(parseCondition('u.deleted_at IS NOT NULL')).toEqual({op: 'NOT NULL', value: {column: 'deleted_at', scope: 'u'}})
+            expect(parseCondition("u.status IN ('draft', 'published')")).toEqual({op: 'IN', value: {column: 'status', scope: 'u'}, values: ['draft', 'published']})
+            expect(parseCondition("u.status NOT IN ('draft', 'published')")).toEqual({op: 'NOT IN', value: {column: 'status', scope: 'u'}, values: ['draft', 'published']})
+            expect(parseCondition('u.id=e.created_by AND u.status!=0')).toEqual({
+                op: 'AND',
+                left: {op: '=', left: {column: 'id', scope: 'u'},  right: {column: 'created_by', scope: 'e'}},
+                right: {op: '!=', left: {column: 'status', scope: 'u'}, right: 0}
+            })
+        })
+        test('parseValue', () => {
+            expect(parseValue('12')).toEqual(12)
+            expect(parseValue("'abc'")).toEqual('abc')
+            expect(parseValue('id')).toEqual({column: 'id'})
+            expect(parseValue('u.id')).toEqual({column: 'id', scope: 'u'})
+            expect(parseValue('"u"."id"')).toEqual({column: 'id', scope: 'u'})
+            expect(parseValue('"i d"')).toEqual({column: 'i d'})
+            expect(parseValue('i d')).toEqual(undefined)
+        })
     })
 })

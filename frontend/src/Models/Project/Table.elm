@@ -89,8 +89,8 @@ getAltColumns table =
     , [ "slug" ]
     , [ "first_name", "last_name" ]
     ]
-        |> List.findMap (List.map (\name -> table.columns |> Dict.get name) >> List.maybeSeq)
-        |> Maybe.orElse (table.columns |> Dict.values |> List.find (\col -> col.name |> String.endsWith "name") |> Maybe.map (\col -> [ col ]))
+        |> List.findMap (List.map (\name -> table.columns |> Dict.find (\k _ -> String.toLower k == name) |> Maybe.map Tuple.second) >> List.maybeSeq)
+        |> Maybe.orElse (table.columns |> Dict.values |> List.find (\col -> col.name |> String.toLower |> String.endsWith "name") |> Maybe.map (\col -> [ col ]))
         |> Maybe.withDefault []
         |> List.map (\c -> ( ColumnPath.root c.name, c.kind ))
 
