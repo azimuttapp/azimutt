@@ -78,6 +78,19 @@ describe('sql', () => {
                 }}, {table: 'projects', alias: 'p', kind: 'LEFT', on: {op: '=', left: {column: 'project_id', scope: 'e'}, right: {column: 'id', scope: 'p'}}}]
             }])
         })
+        test('complex', () => {
+            expect(parseSqlScript('SELECT t.EMAIL, count(*) AS COUNT FROM "C##AZIMUTT"."USERS" t WHERE t.EMAIL LIKE \'%@azimutt.app\' GROUP BY t.EMAIL HAVING COUNT > 3 ORDER BY COUNT DESC, EMAIL OFFSET 10 ROWS FETCH NEXT 10 ROWS ONLY;')).toEqual([{
+                command: 'SELECT',
+                table: {name: 'USERS', schema: 'C##AZIMUTT', alias: 't'},
+                columns: [{name: 'EMAIL', scope: 't'}, {name: 'COUNT', def: 'count(*)'}],
+                where: {op: 'LIKE', left: {column: 'EMAIL', scope: 't'}, right: '%@azimutt.app'},
+                groupBy: 't.EMAIL',
+                having: {op: '>', left: {column: 'COUNT'}, right: 3},
+                orderBy: 'COUNT DESC, EMAIL',
+                offset: 10,
+                limit: 10,
+            }])
+        })
         test('parseSelectColumn', () => {
             expect(parseSelectColumn('*', 1)).toEqual({name: '*'})
             expect(parseSelectColumn('e.*', 1)).toEqual({name: '*', scope: 'e'})

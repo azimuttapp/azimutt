@@ -6,7 +6,7 @@ import {application, logger} from "./constants.test";
 
 describe('query', () => {
     // local url, install db or replace it to test
-    const url: DatabaseUrlParsed = parseDatabaseUrl('oracle:thin:system/oracle@localhost:1521')
+    const url: DatabaseUrlParsed = parseDatabaseUrl('oracle:thin:C##azimutt/azimutt@localhost:1521')
     const opts: ConnectorDefaultOpts = {logger, logQueries: false}
 
     test.skip('execQuery', async () => {

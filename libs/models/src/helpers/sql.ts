@@ -55,15 +55,15 @@ export type ParsedSelectStatement = {command: 'SELECT', table: ParsedSelectTable
 export type ParsedSelectTable = {name: string, schema?: string, alias?: string}
 export type ParsedSelectColumn = {name: string, scope?: string, def?: string}
 export type ParsedSelectJoin = {table: string, schema?: string, alias?: string, kind?: 'INNER' | 'LEFT' | 'RIGHT' | 'FULL', on?: ParsedSqlCondition}
-export type ParsedSelectWhere = {}
-export type ParsedSelectGroupBy = {}
-export type ParsedSelectHaving = {}
-export type ParsedSelectOrderBy = {}
-export type ParsedSelectOffset = {}
-export type ParsedSelectLimit = {}
+export type ParsedSelectWhere = ParsedSqlCondition
+export type ParsedSelectGroupBy = string // TODO
+export type ParsedSelectHaving = ParsedSqlCondition
+export type ParsedSelectOrderBy = string // TODO
+export type ParsedSelectOffset = number
+export type ParsedSelectLimit = number
 export type ParsedSqlCondition = ParsedSqlConditionBool | ParsedSqlConditionExp | ParsedSqlConditionNull | ParsedSqlConditionIn | string
 export type ParsedSqlConditionBool = { op: 'AND' | 'OR', left: ParsedSqlCondition, right: ParsedSqlCondition }
-export type ParsedSqlConditionExp = { op: '=' | '!=' | '>' | '>=' | '<' | '<=' | '<>', left: ParsedSqlValue, right: ParsedSqlValue }
+export type ParsedSqlConditionExp = { op: '=' | '!=' | '>' | '>=' | '<' | '<=' | '<>' | 'LIKE', left: ParsedSqlValue, right: ParsedSqlValue }
 export type ParsedSqlConditionNull = { op: 'NULL' | 'NOT NULL', value: ParsedSqlValue }
 export type ParsedSqlConditionIn = { op: 'IN' | 'NOT IN', value: ParsedSqlValue, values: ParsedSqlValue[] }
 export type ParsedSqlValue = {column: string, scope?: string} | string | number
@@ -80,12 +80,35 @@ export function parseSqlStatement(statement: string): ParsedSqlStatement | undef
     }
 }
 
-export function parseSelectStatement(select: string): ParsedSelectStatement | undefined {
-    const [, columns, tables, where, groupBy, having, orderBy, limit, offset, fetch] = select.trim().match(/^SELECT\s+(.+?)\s+FROM\s+(.+?)(?:\s+WHERE\s+(.+?))?(?:\s+GROUP\s+BY\s+(.+?))?(?:\s+HAVING\s+(.+?))?(?:\s+ORDER\s+BY\s+(.+?))?(?:\s+LIMIT\s+(.+?))?(?:\s+OFFSET\s+(.+?))?(?:\s+FETCH\s+(.+?))?\s*;$/i) || []
-    const parsedColumns: ParsedSelectColumn[] = (columns || '').split(',').map((c, i) => parseSelectColumn(c.trim(), i + 1)).filter(c => !!c)
-    const parsedTable: { table: ParsedSelectTable; joins?: ParsedSelectJoin[] } | undefined = parseSelectTable(tables || '')
+export function parseSelectStatement(statement: string): ParsedSelectStatement | undefined {
+    const selectRegex = 'SELECT\\s+(.+?)'
+    const fromRegex = 'FROM\\s+(.+?)'
+    const whereRegex = 'WHERE\\s+(.+?)'
+    const groupByRegex = 'GROUP\\s+BY\\s+(.+?)'
+    const havingRegex = 'HAVING\\s+(.+?)'
+    const orderByRegex = 'ORDER\\s+BY\\s+(.+?)'
+    const limitRegex = 'LIMIT\\s+(\\d+)'
+    const offsetRegex = 'OFFSET\\s+(\\d+)(?:\\s+ROWS?)?'
+    const fetchRegex = 'FETCH\\s+(?:FIRST|NEXT)\\s+(\\d+)\\s+ROWS?\\s+ONLY'
+    const optRegex = [whereRegex, groupByRegex, havingRegex, orderByRegex, limitRegex, offsetRegex, fetchRegex].map(r => `(?:\\s+${r})?`).join('')
+    const regex = new RegExp(`^${selectRegex}\\s+${fromRegex}${optRegex}\\s*;$`, 'i')
+
+    const [, select, from, where, groupBy, having, orderBy, limit, offset, fetch] = statement.trim().match(regex) || []
+    const parsedColumns: ParsedSelectColumn[] = (select || '').split(',').map((c, i) => parseSelectColumn(c.trim(), i + 1)).filter(c => !!c)
+    const parsedTable: { table: ParsedSelectTable; joins?: ParsedSelectJoin[] } | undefined = parseSelectTable(from || '')
     if (parsedTable && parsedColumns.length > 0) {
-        return removeEmpty({command: 'SELECT' as const, table: parsedTable.table, columns: parsedColumns, joins: parsedTable.joins})
+        return removeEmpty({
+            command: 'SELECT' as const,
+            table: parsedTable.table,
+            columns: parsedColumns,
+            joins: parsedTable.joins,
+            where: where && parseCondition(where),
+            groupBy,
+            having: having && parseCondition(having),
+            orderBy,
+            offset: offset ? parseInt(offset) : undefined,
+            limit: limit ? parseInt(limit) : fetch ? parseInt(fetch) : undefined
+        })
     } else {
         return undefined
     }
@@ -128,7 +151,7 @@ export function parseSelectJoinKind(kind: string): ParsedSelectJoin['kind'] | un
 export function parseCondition(cond: string): ParsedSqlCondition | undefined {
     if (cond.search(/AND|OR/i) !== -1) {
         return parseConditionBool(cond)
-    } else if (cond.search(/[=<>]/) !== -1) {
+    } else if (cond.search(/[=<>]|\s+LIKE\s+/) !== -1) {
         return parseConditionExp(cond)
     } else if (cond.search(/\s+NULL/i) !== -1) {
         return parseConditionNull(cond)
@@ -159,7 +182,7 @@ export function parseSqlConditionBoolOp(kind: string): ParsedSqlConditionBool['o
 }
 
 export function parseConditionExp(cond: string): ParsedSqlConditionExp | string {
-    const [, leftS, opS, rightS] = cond.match(/^(.+?)\s*(=|!=|>|>=|<|<=|<>)\s*(.+?)$/) || []
+    const [, leftS, opS, rightS] = cond.match(/^(.+?)\s*(=|!=|>|>=|<|<=|<>|LIKE)\s*(.+?)$/) || []
     const op = parseSqlConditionExpOp(opS || '')
     const left = parseValue(leftS || '')
     const right = parseValue(rightS || '')
@@ -174,6 +197,7 @@ export function parseSqlConditionExpOp(kind: string): ParsedSqlConditionExp['op'
     if (kind === '<') return kind
     if (kind === '<=') return kind
     if (kind === '<>') return kind
+    if (kind === 'LIKE') return kind
     return undefined
 }
 
