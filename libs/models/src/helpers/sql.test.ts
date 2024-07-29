@@ -58,19 +58,19 @@ describe('sql', () => {
                 .toEqual([{command: 'SELECT', table: {name: 'events', alias: 'e'}, columns: [{name: '*', scope: 'e'}]}])
 
             expect(parseSqlScript('SELECT id FROM events;'))
-                .toEqual([{command: 'SELECT', table: {name: 'events'}, columns: [{name: 'id'}]}])
+                .toEqual([{command: 'SELECT', table: {name: 'events'}, columns: [{name: 'id', col: ['id']}]}])
             expect(parseSqlScript('SELECT id AS event_id FROM events;'))
-                .toEqual([{command: 'SELECT', table: {name: 'events'}, columns: [{name: 'event_id', def: 'id'}]}])
+                .toEqual([{command: 'SELECT', table: {name: 'events'}, columns: [{name: 'event_id', col: ['id']}]}])
             expect(parseSqlScript('SELECT events.id FROM events;'))
-                .toEqual([{command: 'SELECT', table: {name: 'events'}, columns: [{name: 'id', scope: 'events'}]}])
+                .toEqual([{command: 'SELECT', table: {name: 'events'}, columns: [{name: 'id', scope: 'events', col: ['id']}]}])
             expect(parseSqlScript('SELECT e.id FROM events e;'))
-                .toEqual([{command: 'SELECT', table: {name: 'events', alias: 'e'}, columns: [{name: 'id', scope: 'e'}]}])
+                .toEqual([{command: 'SELECT', table: {name: 'events', alias: 'e'}, columns: [{name: 'id', scope: 'e', col: ['id']}]}])
         })
         test('joins', () => {
             expect(parseSqlScript('SELECT u.name, p.name, e.* FROM events e JOIN users u ON e.created_by = u.id AND u.deleted_at IS NOT NULL LEFT JOIN projects p ON e.project_id=p.id;')).toEqual([{
                 command: 'SELECT',
                 table: {name: 'events', alias: 'e'},
-                columns: [{name: 'name', scope: 'u'}, {name: 'name', scope: 'p'}, {name: '*', scope: 'e'}],
+                columns: [{name: 'name', scope: 'u', col: ['name']}, {name: 'name', scope: 'p', col: ['name']}, {name: '*', scope: 'e'}],
                 joins: [{table: 'users', alias: 'u', on: {
                     op: 'AND',
                     left: {op: '=', left: {column: 'created_by', scope: 'e'}, right: {column: 'id', scope: 'u'}},
@@ -82,7 +82,7 @@ describe('sql', () => {
             expect(parseSqlScript('SELECT t.EMAIL, count(*) AS COUNT FROM "C##AZIMUTT"."USERS" t WHERE t.EMAIL LIKE \'%@azimutt.app\' GROUP BY t.EMAIL HAVING COUNT > 3 ORDER BY COUNT DESC, EMAIL OFFSET 10 ROWS FETCH NEXT 10 ROWS ONLY;')).toEqual([{
                 command: 'SELECT',
                 table: {name: 'USERS', schema: 'C##AZIMUTT', alias: 't'},
-                columns: [{name: 'EMAIL', scope: 't'}, {name: 'COUNT', def: 'count(*)'}],
+                columns: [{name: 'EMAIL', scope: 't', col: ['EMAIL']}, {name: 'COUNT', def: 'count(*)'}],
                 where: {op: 'LIKE', left: {column: 'EMAIL', scope: 't'}, right: '%@azimutt.app'},
                 groupBy: 't.EMAIL',
                 having: {op: '>', left: {column: 'COUNT'}, right: 3},
@@ -94,14 +94,15 @@ describe('sql', () => {
         test('parseSelectColumn', () => {
             expect(parseSelectColumn('*', 1)).toEqual({name: '*'})
             expect(parseSelectColumn('e.*', 1)).toEqual({name: '*', scope: 'e'})
-            expect(parseSelectColumn('id', 1)).toEqual({name: 'id'})
-            expect(parseSelectColumn('e.id', 1)).toEqual({name: 'id', scope: 'e'})
-            expect(parseSelectColumn('id as user_id', 1)).toEqual({name: 'user_id', def: 'id'})
-            expect(parseSelectColumn('e.id as user_id', 1)).toEqual({name: 'user_id', scope: 'e', def: 'id'})
+            expect(parseSelectColumn('id', 1)).toEqual({name: 'id', col: ['id']})
+            expect(parseSelectColumn('e.id', 1)).toEqual({name: 'id', scope: 'e', col: ['id']})
+            // expect(parseSelectColumn("id->>'f'", 1)).toEqual({name: 'id', col: ['id']}) // TODO: json column
+            expect(parseSelectColumn('id as user_id', 1)).toEqual({name: 'user_id', col: ['id']})
+            expect(parseSelectColumn('e.id as user_id', 1)).toEqual({name: 'user_id', scope: 'e', col: ['id']})
             expect(parseSelectColumn('count(*)', 1)).toEqual({name: 'col_1', def: 'count(*)'})
             expect(parseSelectColumn('count(*) AS count', 1)).toEqual({name: 'count', def: 'count(*)'})
-            expect(parseSelectColumn('"id"', 1)).toEqual({name: 'id'})
-            expect(parseSelectColumn('"id" as "user_id"', 1)).toEqual({name: 'user_id', def: 'id'})
+            expect(parseSelectColumn('"id"', 1)).toEqual({name: 'id', col: ['id']})
+            expect(parseSelectColumn('"id" as "user_id"', 1)).toEqual({name: 'user_id', col: ['id']})
         })
         test('parseSelectTable', () => {
             expect(parseSelectTable('events')).toEqual({table: {name: 'events'}})

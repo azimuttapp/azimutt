@@ -13,10 +13,10 @@ describe('query', () => {
         const query = 'SELECT p.id, p.title, u.id, u.name FROM posts p JOIN users u on p.created_by = u.id FETCH FIRST 10 ROWS ONLY;'
         const results = await connect(application, url, execQuery(query, []), opts)
         expect(results.attributes).toEqual([
-            {name: 'ID'/*, ref: {entity: 'POSTS', attribute: ['ID']}*/},
-            {name: 'TITLE'/*, ref: {entity: 'POSTS', attribute: ['TITLE']}*/},
-            {name: 'ID_1'/*, ref: {entity: 'USERS', attribute: ['ID']}*/},
-            {name: 'NAME'/*, ref: {entity: 'USERS', attribute: ['NAME']}*/},
+            {name: 'ID', ref: {entity: 'posts', attribute: ['id']}},
+            {name: 'TITLE', ref: {entity: 'posts', attribute: ['title']}},
+            {name: 'ID_1', ref: {entity: 'users', attribute: ['id']}},
+            {name: 'NAME', ref: {entity: 'users', attribute: ['name']}},
         ])
     })
     test.skip('execQuery2', async () => {

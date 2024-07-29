@@ -53,7 +53,7 @@ export type ParsedSqlScript = ParsedSqlStatement[]
 export type ParsedSqlStatement = ParsedSelectStatement
 export type ParsedSelectStatement = {command: 'SELECT', table: ParsedSelectTable, columns: ParsedSelectColumn[], joins?: ParsedSelectJoin[], where?: ParsedSelectWhere, groupBy?: ParsedSelectGroupBy, having?: ParsedSelectHaving, orderBy?: ParsedSelectOrderBy, offset?: ParsedSelectOffset, limit?: ParsedSelectLimit}
 export type ParsedSelectTable = {name: string, schema?: string, alias?: string}
-export type ParsedSelectColumn = {name: string, scope?: string, def?: string}
+export type ParsedSelectColumn = {name: string, scope?: string, col?: string[], def?: string}
 export type ParsedSelectJoin = {table: string, schema?: string, alias?: string, kind?: 'INNER' | 'LEFT' | 'RIGHT' | 'FULL', on?: ParsedSqlCondition}
 export type ParsedSelectWhere = ParsedSqlCondition
 export type ParsedSelectGroupBy = string // TODO
@@ -81,7 +81,7 @@ export function parseSqlStatement(statement: string): ParsedSqlStatement | undef
 }
 
 export function parseSelectStatement(statement: string): ParsedSelectStatement | undefined {
-    const selectRegex = 'SELECT\\s+(.+?)'
+    const selectRegex = 'SELECT(?:\\s+DISTINCT)?\\s+(.+?)'
     const fromRegex = 'FROM\\s+(.+?)'
     const whereRegex = 'WHERE\\s+(.+?)'
     const groupByRegex = 'GROUP\\s+BY\\s+(.+?)'
@@ -116,12 +116,12 @@ export function parseSelectStatement(statement: string): ParsedSelectStatement |
 
 export function parseSelectColumn(column: string, index: number): ParsedSelectColumn | undefined {
     const [, scope, def, alias] = (column.match(/^(?:(.+?)\.)?(.+?)(?:\s+AS\s+(.+?))?$/i) || []).map(r => r ? removeQuotes(r) : undefined)
-    if (alias) {
-        return removeUndefined({name: alias, scope, def})
-    } else if (def === '*' || def?.match(/^["]?[a-z]+["]?$/i)) { // simple column
-        return removeUndefined({name: def, scope})
-    } else { // expression
-        return removeUndefined({name: `col_${index}`, scope, def})
+    if (def?.match(/^["]?[a-z]+["]?$/i)) { // simple column
+        return removeUndefined({name: alias || def, scope, col: [def]})
+    } else if(def === '*') {
+        return removeUndefined({name: '*', scope})
+    } else {
+        return removeUndefined({name: alias || `col_${index}`, def})
     }
 }
 
