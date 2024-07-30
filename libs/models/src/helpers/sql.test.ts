@@ -90,11 +90,14 @@ describe('sql', () => {
                 offset: 10,
                 limit: 10,
             }])
+            // TODO: queries with sub-queries (fails ^^)
         })
         test('parseSelectColumn', () => {
             expect(parseSelectColumn('*', 1)).toEqual({name: '*'})
             expect(parseSelectColumn('e.*', 1)).toEqual({name: '*', scope: 'e'})
             expect(parseSelectColumn('id', 1)).toEqual({name: 'id', col: ['id']})
+            expect(parseSelectColumn('created_by', 1)).toEqual({name: 'created_by', col: ['created_by']})
+            expect(parseSelectColumn('"a col"', 1)).toEqual({name: 'a col', col: ['a col']})
             expect(parseSelectColumn('e.id', 1)).toEqual({name: 'id', scope: 'e', col: ['id']})
             // expect(parseSelectColumn("id->>'f'", 1)).toEqual({name: 'id', col: ['id']}) // TODO: json column
             expect(parseSelectColumn('id as user_id', 1)).toEqual({name: 'user_id', col: ['id']})

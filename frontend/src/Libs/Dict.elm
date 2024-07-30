@@ -73,7 +73,7 @@ any predicate dict =
     find predicate dict /= Nothing
 
 
-find : (comparable -> v -> Bool) -> Dict comparable v -> Maybe ( comparable, v )
+find : (comparable -> v -> Bool) -> Dict comparable v -> Maybe v
 find predicate dict =
     Dict.foldl
         (\k v acc ->
@@ -83,7 +83,7 @@ find predicate dict =
 
                 Nothing ->
                     if predicate k v then
-                        Just ( k, v )
+                        Just v
 
                     else
                         Nothing

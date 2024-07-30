@@ -201,7 +201,7 @@ update wrap showToast openGenerateSql project sources msg model =
             ( { model | visualEditor = { table = table, filters = [] } }, Extra.none )
 
         AddFilter table path ->
-            ( table |> Table.getColumn path |> Maybe.mapOrElse (\col -> model |> mapVisualEditor (mapFilters (List.insert { operator = DbAnd, column = path, kind = col.kind, nullable = col.nullable, operation = DbEqual, value = DbString "" }))) model, Extra.none )
+            ( table |> Table.getColumnI path |> Maybe.mapOrElse (\col -> model |> mapVisualEditor (mapFilters (List.insert { operator = DbAnd, column = path, kind = col.kind, nullable = col.nullable, operation = DbEqual, value = DbString "" }))) model, Extra.none )
 
         UpdateFilterOperator i operator ->
             ( model |> mapVisualEditor (mapFilters (List.mapAt i (setOperator operator))), Extra.none )

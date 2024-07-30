@@ -3,7 +3,6 @@ module Models.QueryResult exposing (QueryResult, QueryResultColumn, QueryResultC
 import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
-import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.List as List
 import Libs.Maybe as Maybe
@@ -16,7 +15,7 @@ import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.Table as Table exposing (Table)
-import Models.Project.TableId exposing (TableId)
+import Models.Project.TableId as TableId exposing (TableId)
 import Models.SqlQuery as SqlQuery exposing (SqlQueryOrigin)
 import Time
 
@@ -68,13 +67,11 @@ targetColumn tables relations ref =
         -- FIXME: relations without fk don't get the link :/ Should use relations from any source? Same for primary key?
         target : Maybe ColumnRef
         target =
-            if tables |> Dict.get ref.table |> Maybe.andThen .primaryKey |> Maybe.any (\pk -> pk.columns == Nel ref.column []) then
-                Just ref
-
-            else
-                relations |> Dict.getOrElse ref.table [] |> List.find (\r -> r.src == ref) |> Maybe.map .ref
+            (tables |> TableId.dictGetI ref.table)
+                |> Maybe.andThen (\t -> t.primaryKey |> Maybe.filter (\pk -> pk.columns.tail == [] && ColumnPath.eqI pk.columns.head ref.column) |> Maybe.map (\pk -> { table = t.id, column = pk.columns.head }))
+                |> Maybe.orElse (relations |> TableId.dictGetI ref.table |> Maybe.withDefault [] |> List.find (\r -> ColumnPath.eqI r.src.column ref.column) |> Maybe.map .ref)
     in
-    target |> Maybe.andThen (\r -> tables |> Dict.get r.table |> Maybe.andThen (\t -> t |> Table.getColumn r.column) |> Maybe.map (\c -> { ref = r, kind = c.kind }))
+    target |> Maybe.andThen (\r -> tables |> Dict.get r.table |> Maybe.andThen (\t -> t |> Table.getColumnI r.column) |> Maybe.map (\c -> { ref = r, kind = c.kind }))
 
 
 decode : Decode.Decoder QueryResult

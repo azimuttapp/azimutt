@@ -14,12 +14,12 @@ async function buildResults(conn: Conn, query: string, result: QueryResultArrayM
 
 function buildAttributes(fields: QueryResultField[], statement: ParsedSqlStatement | undefined): { name: string; ref?: AttributeRef }[] {
     const keys: { [key: string]: true } = {}
-    const entityRef = getWildcardSelectTable(statement)
-    const cols = getAllDefinedColumns(statement, fields.length)
+    const wildcardTable = getWildcardSelectTable(statement)
+    const allDefinedColumns = getAllDefinedColumns(statement, fields.length)
     return fields.map((f, i) => {
         const name = uniqueName(f.name, keys)
         keys[name] = true
-        const ref = entityRef ? {...entityRef, attribute: [f.name]} : cols[i]
+        const ref = wildcardTable ? {...wildcardTable, attribute: [f.name]} : allDefinedColumns ? allDefinedColumns[i] : undefined
         return removeUndefined({name, ref})
     })
 }
@@ -27,7 +27,7 @@ function buildAttributes(fields: QueryResultField[], statement: ParsedSqlStateme
 function getWildcardSelectTable(statement: ParsedSqlStatement | undefined): EntityRef | undefined {
     if (statement && statement.command === 'SELECT') {
         if (statement.joins === undefined && statement.columns.length === 1 && statement.columns[0].name === '*') {
-            return removeUndefined({schema: statement.table.schema, entity: statement.table.name})
+            return {schema: statement.table.schema, entity: statement.table.name}
         }
     }
     return undefined

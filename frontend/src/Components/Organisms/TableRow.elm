@@ -611,8 +611,8 @@ viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataE
                                         t.primaryKey
                                             |> Maybe.map
                                                 (\pk ->
-                                                    { primaryKey = pk.columns |> Nel.map (\c -> ( c, t |> Table.getColumn c |> Maybe.mapOrElse .kind "" ))
-                                                    , foreignKeys = cols |> List.map (\c -> ( c.column, t |> Table.getColumn c.column |> Maybe.mapOrElse .kind "" ))
+                                                    { primaryKey = pk.columns |> Nel.map (\c -> ( c, t |> Table.getColumnI c |> Maybe.mapOrElse .kind "" ))
+                                                    , foreignKeys = cols |> List.map (\c -> ( c.column, t |> Table.getColumnI c.column |> Maybe.mapOrElse .kind "" ))
                                                     , altCols = t |> Table.getAltColumns
                                                     }
                                                 )

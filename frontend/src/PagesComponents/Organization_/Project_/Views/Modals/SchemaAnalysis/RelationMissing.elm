@@ -145,7 +145,7 @@ getPolymorphicColumn table path =
             else
                 name
     in
-    (table |> Table.getPeerColumns path)
+    (table |> Table.getPeerColumnsI path)
         |> List.find (\c -> (c.name |> String.startsWith prefix) && (suffixes |> List.any (\s -> hasSuffix s c.name)))
         |> Maybe.map (\c -> { path = path |> Nel.mapLast (\_ -> c.name), values = c.values })
 

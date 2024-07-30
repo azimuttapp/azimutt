@@ -49,7 +49,7 @@ import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.Table as Table exposing (Table)
-import Models.Project.TableId exposing (TableId)
+import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.QueryResult as QueryResult exposing (QueryResult, QueryResultColumn, QueryResultColumnTarget, QueryResultRow, QueryResultSuccess)
@@ -508,11 +508,11 @@ viewTableHeader wrap openModal openNotes source metadata collapsed sortBy rows c
     let
         comment : Maybe Comment
         comment =
-            column.ref |> Maybe.andThen (\ref -> source |> Maybe.andThen (Source.getColumn ref)) |> Maybe.andThen .comment
+            column.ref |> Maybe.andThen (\ref -> source |> Maybe.andThen (Source.getColumnI ref)) |> Maybe.andThen .comment
 
         notes : Maybe ( Notes, ColumnRef )
         notes =
-            column.ref |> Maybe.andThen (\ref -> metadata |> Dict.get ref.table |> Maybe.andThen (.columns >> Dict.get (ref.column |> ColumnPath.toString)) |> Maybe.andThen (\m -> m.notes |> Maybe.map (\n -> ( n, ref ))))
+            column.ref |> Maybe.andThen (\ref -> metadata |> TableId.dictGetI ref.table |> Maybe.andThen (.columns >> ColumnPath.dictGetI ref.column) |> Maybe.andThen (\m -> m.notes |> Maybe.map (\n -> ( n, ref ))))
 
         sort : Maybe ( String, Bool )
         sort =

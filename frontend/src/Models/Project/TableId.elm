@@ -1,8 +1,10 @@
-module Models.Project.TableId exposing (TableId, TableIdStr, decode, decodeWith, encode, fromHtmlId, fromString, name, parse, parseWith, schema, show, toHtmlId, toString)
+module Models.Project.TableId exposing (TableId, TableIdStr, decode, decodeWith, dictGetI, encode, fromHtmlId, fromString, name, parse, parseWith, schema, show, toHtmlId, toLower, toString)
 
 import Conf
+import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
+import Libs.Dict as Dict
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId as HtmlId exposing (HtmlId)
 import Models.Project.SchemaName exposing (SchemaName)
@@ -26,6 +28,18 @@ schema ( s, _ ) =
 name : TableId -> TableName
 name ( _, t ) =
     t
+
+
+toLower : TableId -> TableId
+toLower ( s, t ) =
+    ( String.toLower s, String.toLower t )
+
+
+dictGetI : TableId -> Dict TableId a -> Maybe a
+dictGetI id dict =
+    (dict |> Dict.get id)
+        |> Maybe.orElse (id |> toLower |> (\lowerId -> dict |> Dict.find (\k _ -> toLower k == lowerId)))
+        |> Maybe.orElse (id |> name |> String.toLower |> (\lowerName -> dict |> Dict.find (\k _ -> (k |> name |> String.toLower) == lowerName)))
 
 
 show : SchemaName -> TableId -> String

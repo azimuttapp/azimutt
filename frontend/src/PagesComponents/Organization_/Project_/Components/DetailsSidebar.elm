@@ -200,12 +200,12 @@ columnView erd ref =
 
 filterTableDbSources : TableId -> List Source -> List ( SourceId, DatabaseUrl )
 filterTableDbSources table sources =
-    sources |> List.filterMap (\s -> s |> Source.databaseUrl |> Maybe.filter (\_ -> s |> Source.getTable table |> Maybe.isJust) |> Maybe.map (\url -> ( s.id, url )))
+    sources |> List.filterMap (\s -> s |> Source.databaseUrl |> Maybe.filter (\_ -> s |> Source.getTableI table |> Maybe.isJust) |> Maybe.map (\url -> ( s.id, url )))
 
 
 filterColumnDbSources : ColumnRef -> List Source -> List ( SourceId, DatabaseUrl )
 filterColumnDbSources column sources =
-    sources |> List.filterMap (\s -> s |> Source.databaseUrl |> Maybe.filter (\_ -> s |> Source.getColumn column |> Maybe.isJust) |> Maybe.map (\url -> ( s.id, url )))
+    sources |> List.filterMap (\s -> s |> Source.databaseUrl |> Maybe.filter (\_ -> s |> Source.getColumnI column |> Maybe.isJust) |> Maybe.map (\url -> ( s.id, url )))
 
 
 

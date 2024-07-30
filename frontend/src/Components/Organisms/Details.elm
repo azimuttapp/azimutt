@@ -390,8 +390,8 @@ buildTableHeading erd table =
 buildColumnHeading : Erd -> ErdTable -> ErdColumn -> Heading ErdColumn ErdColumnProps
 buildColumnHeading erd table column =
     { item = column
-    , prev = table.columns |> Dict.find (\_ c -> c.index == column.index - 1) |> Maybe.map Tuple.second
-    , next = table.columns |> Dict.find (\_ c -> c.index == column.index + 1) |> Maybe.map Tuple.second
+    , prev = table.columns |> Dict.find (\_ c -> c.index == column.index - 1)
+    , next = table.columns |> Dict.find (\_ c -> c.index == column.index + 1)
     , shown = erd |> Erd.currentLayout |> .tables |> List.findBy .id table.id |> Maybe.andThen (.columns >> ErdColumnProps.find column.path)
     }
 

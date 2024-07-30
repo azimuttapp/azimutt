@@ -115,13 +115,13 @@ export function parseSelectStatement(statement: string): ParsedSelectStatement |
 }
 
 export function parseSelectColumn(column: string, index: number): ParsedSelectColumn | undefined {
-    const [, scope, def, alias] = (column.match(/^(?:(.+?)\.)?(.+?)(?:\s+AS\s+(.+?))?$/i) || []).map(r => r ? removeQuotes(r) : undefined)
-    if (def?.match(/^["]?[a-z]+["]?$/i)) { // simple column
-        return removeUndefined({name: alias || def, scope, col: [def]})
+    const [, scope, def, alias] = column.match(/^(?:(.+?)\.)?(.+?)(?:\s+AS\s+(.+?))?$/i) || []
+    if (def?.match(/^([a-zA-Z0-9_$#]+?|["`].+?["`]?)$/i)) { // simple column
+        return removeUndefined({name: removeQuotes(alias || def), scope: scope ? removeQuotes(scope) : undefined, col: [removeQuotes(def)]})
     } else if(def === '*') {
-        return removeUndefined({name: '*', scope})
+        return removeUndefined({name: '*', scope: scope ? removeQuotes(scope) : undefined})
     } else {
-        return removeUndefined({name: alias || `col_${index}`, def})
+        return removeUndefined({name: removeQuotes(alias || `col_${index}`), def: def ? removeQuotes(def) : undefined})
     }
 }
 
