@@ -40,7 +40,7 @@ compute defaultSchema tables relations =
     let
         getColumn : ColumnRefLike x -> Maybe ErdColumn
         getColumn ref =
-            tables |> ErdTable.getTable defaultSchema ref.table |> Maybe.andThen (ErdTable.getColumn ref.column)
+            tables |> ErdTable.getTable defaultSchema ref.table |> Maybe.andThen (ErdTable.getColumnI ref.column)
     in
     relations
         |> List.filterMap (\r -> Maybe.map2 (\src ref -> ( r, src, ref )) (getColumn r.src) (getColumn r.ref))

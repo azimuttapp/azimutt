@@ -310,7 +310,7 @@ hideColumns now id kind erd =
                         columns
                             |> ErdColumnProps.filter
                                 (\path _ ->
-                                    case ( kind, table |> ErdTable.getColumn path ) of
+                                    case ( kind, table |> ErdTable.getColumnI path ) of
                                         ( HideColumns.Relations, Just _ ) ->
                                             path |> Relation.outRelation tableRelations |> List.nonEmpty
 
@@ -347,7 +347,7 @@ sortColumns now id kind erd =
                             |> List.filterMap
                                 (\col ->
                                     table
-                                        |> ErdTable.getColumn (path |> Maybe.mapOrElse (ColumnPath.child col.name) (ColumnPath.fromString col.name))
+                                        |> ErdTable.getColumnI (path |> Maybe.mapOrElse (ColumnPath.child col.name) (ColumnPath.fromString col.name))
                                         |> Maybe.map (\c -> ( c, col ))
                                 )
                             |> ColumnOrder.sortBy kind table erd.relations
@@ -371,7 +371,7 @@ toggleNestedColumn now id path open erd =
                                 col
                                     |> ErdColumnProps.createChildren
                                         (table
-                                            |> ErdTable.getColumn path
+                                            |> ErdTable.getColumnI path
                                             |> Maybe.andThen .columns
                                             |> Maybe.mapOrElse (\(ErdNestedColumns cols) -> cols |> Ned.values |> Nel.toList |> List.map (.path >> Nel.last)) []
                                         )
@@ -499,7 +499,7 @@ mapColumnsForTableOrSelectedProps now id transform erd =
                         if props.id == id || (selected && props.props.selected) then
                             erd.tables
                                 |> Dict.get props.id
-                                |> Maybe.map (\table -> props |> mapColumns (transform table >> ErdColumnProps.filter (\p _ -> table |> ErdTable.getColumn p |> Maybe.isJust)))
+                                |> Maybe.map (\table -> props |> mapColumns (transform table >> ErdColumnProps.filter (\p _ -> table |> ErdTable.getColumnI p |> Maybe.isJust)))
                                 |> Maybe.withDefault props
 
                         else
@@ -523,7 +523,7 @@ mapColumnsForTableOrSelectedPropsTE now id transform erd =
                     (\props ->
                         if props.id == id || (selected && props.props.selected) then
                             (erd.tables |> Dict.get props.id)
-                                |> Maybe.map (\table -> props |> mapColumnsT (transform table >> Tuple.mapFirst (ErdColumnProps.filter (\p _ -> table |> ErdTable.getColumn p |> Maybe.isJust))))
+                                |> Maybe.map (\table -> props |> mapColumnsT (transform table >> Tuple.mapFirst (ErdColumnProps.filter (\p _ -> table |> ErdTable.getColumnI p |> Maybe.isJust))))
                                 |> Maybe.withDefault ( props, Extra.none )
 
                         else

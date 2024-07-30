@@ -183,7 +183,7 @@ columnView erd ref =
     (erd |> Erd.getTable ref.table)
         |> Maybe.mapOrElse
             (\table ->
-                (table |> ErdTable.getColumn ref.column)
+                (table |> ErdTable.getColumnI ref.column)
                     |> Maybe.mapOrElse
                         (\column ->
                             ColumnView

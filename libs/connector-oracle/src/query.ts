@@ -27,7 +27,7 @@ function buildAttributes(fields: QueryResultField[], statement: ParsedSqlStateme
 function getWildcardSelectTable(statement: ParsedSqlStatement | undefined): EntityRef | undefined {
     if (statement && statement.command === 'SELECT') {
         if (statement.joins === undefined && statement.columns.length === 1 && statement.columns[0].name === '*') {
-            return {schema: statement.table.schema, entity: statement.table.name}
+            return removeUndefined({schema: statement.table.schema, entity: statement.table.name})
         }
     }
     return undefined

@@ -1347,7 +1347,7 @@ docSelectColumn { table, column } state =
     (docErd |> Erd.getTable table)
         |> Maybe.andThen
             (\erdTable ->
-                (erdTable |> ErdTable.getColumn column)
+                (erdTable |> ErdTable.getColumnI column)
                     |> Maybe.map
                         (\erdColumn ->
                             { state

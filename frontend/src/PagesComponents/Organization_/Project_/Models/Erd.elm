@@ -173,7 +173,7 @@ getTable tableId erd =
 
 getColumn : ColumnRef -> Erd -> Maybe ErdColumn
 getColumn ref erd =
-    erd |> getTable ref.table |> Maybe.andThen (ErdTable.getColumn ref.column)
+    erd |> getTable ref.table |> Maybe.andThen (ErdTable.getColumnI ref.column)
 
 
 getColumnPos : ColumnRef -> Erd -> Maybe Position.Canvas

@@ -13,10 +13,11 @@ import Models.DbValue as DbValue exposing (DbValue)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
-import Models.Project.Relation exposing (Relation)
-import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.SqlQuery as SqlQuery exposing (SqlQueryOrigin)
+import PagesComponents.Organization_.Project_.Models.ErdColumnRef as ErdColumnRef
+import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
+import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import Time
 
 
@@ -47,31 +48,21 @@ type alias QueryResultColumnTarget =
     { path : ColumnPath, pathStr : ColumnPathStr, ref : Maybe ColumnRef, fk : Maybe { ref : ColumnRef, kind : ColumnType } }
 
 
-buildColumnTargets : Maybe { s | tables : Dict TableId Table, relations : List Relation } -> List QueryResultColumn -> List QueryResultColumnTarget
-buildColumnTargets source columns =
+buildColumnTargets : { s | tables : Dict TableId ErdTable, relations : List ErdRelation } -> List QueryResultColumn -> List QueryResultColumnTarget
+buildColumnTargets erd columns =
     let
-        tables : Dict TableId Table
-        tables =
-            source |> Maybe.mapOrElse .tables Dict.empty
-
-        relations : Dict TableId (List Relation)
+        relations : Dict TableId (List ErdRelation)
         relations =
-            source |> Maybe.mapOrElse (.relations >> List.groupBy (.src >> .table)) Dict.empty
+            erd.relations |> List.groupBy (.src >> .table)
     in
-    columns |> List.map (\c -> { path = c.path, pathStr = c.pathStr, ref = c.ref, fk = c.ref |> Maybe.andThen (targetColumn tables relations) })
+    columns |> List.map (\c -> { path = c.path, pathStr = c.pathStr, ref = c.ref, fk = c.ref |> Maybe.andThen (targetColumn erd.tables relations) })
 
 
-targetColumn : Dict TableId Table -> Dict TableId (List Relation) -> ColumnRef -> Maybe { ref : ColumnRef, kind : ColumnType }
+targetColumn : Dict TableId ErdTable -> Dict TableId (List ErdRelation) -> ColumnRef -> Maybe { ref : ColumnRef, kind : ColumnType }
 targetColumn tables relations ref =
-    let
-        -- FIXME: relations without fk don't get the link :/ Should use relations from any source? Same for primary key?
-        target : Maybe ColumnRef
-        target =
-            (tables |> TableId.dictGetI ref.table)
-                |> Maybe.andThen (\t -> t.primaryKey |> Maybe.filter (\pk -> pk.columns.tail == [] && ColumnPath.eqI pk.columns.head ref.column) |> Maybe.map (\pk -> { table = t.id, column = pk.columns.head }))
-                |> Maybe.orElse (relations |> TableId.dictGetI ref.table |> Maybe.withDefault [] |> List.find (\r -> ColumnPath.eqI r.src.column ref.column) |> Maybe.map .ref)
-    in
-    target |> Maybe.andThen (\r -> tables |> Dict.get r.table |> Maybe.andThen (\t -> t |> Table.getColumnI r.column) |> Maybe.map (\c -> { ref = r, kind = c.kind }))
+    (tables |> TableId.dictGetI ref.table |> Maybe.andThen (\t -> t.primaryKey |> Maybe.filter (\pk -> pk.columns.tail == [] && ColumnPath.eqI pk.columns.head ref.column) |> Maybe.map (\pk -> { table = t.id, column = pk.columns.head })))
+        |> Maybe.orElse (relations |> TableId.dictGetI ref.table |> Maybe.withDefault [] |> List.find (\r -> ColumnPath.eqI r.src.column ref.column) |> Maybe.map (.ref >> ErdColumnRef.unpack))
+        |> Maybe.andThen (\target -> tables |> Dict.get target.table |> Maybe.andThen (ErdTable.getColumnI target.column) |> Maybe.map (\c -> { ref = target, kind = c.kind }))
 
 
 decode : Decode.Decoder QueryResult
