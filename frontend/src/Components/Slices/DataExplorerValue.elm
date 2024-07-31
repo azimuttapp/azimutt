@@ -40,7 +40,7 @@ view openRowDetails expandRow defaultSchema documentMode expanded value column =
                     , button
                         [ type_ "button"
                         , onClick (openRowDetails { source = o.ref.source, table = o.ref.table, primaryKey = Nel { column = o.ref.column, value = v } [] })
-                        , title ("Open " ++ TableId.show defaultSchema o.ref.table ++ " with " ++ ColumnPath.show o.ref.column ++ "=" ++ DbValue.toString v)
+                        , title ("Display " ++ TableId.show defaultSchema o.ref.table ++ " row with " ++ ColumnPath.show o.ref.column ++ "=" ++ DbValue.toString v)
                         ]
                         [ Icon.solid Icon.ExternalLink "ml-1 w-4 h-4 inline" ]
                     ]

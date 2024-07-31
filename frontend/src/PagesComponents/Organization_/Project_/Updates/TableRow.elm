@@ -7,7 +7,7 @@ import Libs.Maybe as Maybe
 import Libs.Models.Delta exposing (Delta)
 import Libs.Result as Result
 import Models.Area as Area
-import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
+import Models.DbSourceInfoWithUrl as DbSourceInfoWithUrl
 import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
 import Models.Project.CanvasProps exposing (CanvasProps)
@@ -30,9 +30,9 @@ import Track
 
 showTableRow : Time.Posix -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> String -> Erd -> ( Erd, Extra Msg )
 showTableRow now query previous hint from erd =
-    (erd.sources |> List.findBy .id query.source |> Result.fromMaybe ("source missing (" ++ SourceId.toString query.source ++ ")") |> Result.andThen DbSourceInfo.fromSource)
+    (erd.sources |> List.findBy .id query.source |> Result.fromMaybe ("source missing (" ++ SourceId.toString query.source ++ ")") |> Result.andThen DbSourceInfoWithUrl.fromSource)
         |> Result.fold
-            (\err -> ( erd, "Can't query: " ++ err |> Toasts.create "warning" |> Toast |> Extra.msg ))
+            (\err -> ( erd, "Can't show row: " ++ err |> Toasts.create "warning" |> Toast |> Extra.msg ))
             (\source ->
                 let
                     hidden : Set ColumnName

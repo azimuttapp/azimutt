@@ -28,8 +28,9 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Tailwind as Tw exposing (TwClass)
 import Libs.Task as T
-import Models.DbSource as DbSource exposing (DbSource)
-import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
+import Models.DbSourceInfo exposing (DbSourceInfo)
+import Models.DbSourceInfoWithUrl as DbSourceInfoWithUrl exposing (DbSourceInfoWithUrl)
+import Models.DbSourceWithUrl as DbSourceWithUrl exposing (DbSourceWithUrl)
 import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Project as Project
 import Models.Project.Column as Column exposing (Column, NestedColumns(..))
@@ -120,10 +121,10 @@ type Msg
     | UpdateFilterValue Int DbValue
     | DeleteFilter Int
     | UpdateQuery Editor.Msg
-    | RunQuery DbSource SqlQueryOrigin
+    | RunQuery DbSourceWithUrl SqlQueryOrigin
     | DeleteQuery DataExplorerQuery.Id
     | QueryMsg DataExplorerQuery.Id DataExplorerQuery.Msg
-    | OpenDetails DbSourceInfo RowQuery
+    | OpenDetails DbSourceInfoWithUrl RowQuery
     | CloseDetails DataExplorerQuery.Id
     | DetailsMsg DataExplorerDetails.Id DataExplorerDetails.Msg
     | LlmGenerateSql SourceId
@@ -163,9 +164,9 @@ update wrap showToast openGenerateSql project sources msg model =
                         |> Maybe.orElse (sources |> List.find (Source.databaseUrl >> Maybe.isJust) |> Maybe.map .id)
                         |> Maybe.orElse (sources |> List.find (.kind >> SourceKind.isDatabase) |> Maybe.map .id)
 
-                source : Maybe DbSource
+                source : Maybe DbSourceWithUrl
                 source =
-                    selected |> Maybe.andThen (\id -> sources |> List.findBy .id id |> Maybe.andThen DbSource.fromSource)
+                    selected |> Maybe.andThen (\id -> sources |> List.findBy .id id |> Maybe.andThen (DbSourceWithUrl.fromSource >> Result.toMaybe))
 
                 tab : DataExplorerTab
                 tab =
@@ -218,7 +219,7 @@ update wrap showToast openGenerateSql project sources msg model =
             ( { model | queryEditor = Editor.update message model.queryEditor }, Extra.none )
 
         RunQuery source query ->
-            { model | resultsSeq = model.resultsSeq + 1 } |> mapResultsT (List.prependT (DataExplorerQuery.init project model.resultsSeq (DbSource.toInfo source) (query |> DbQuery.addLimit source.db.kind)))
+            { model | resultsSeq = model.resultsSeq + 1 } |> mapResultsT (List.prependT (DataExplorerQuery.init project model.resultsSeq (DbSourceWithUrl.toInfo source) (query |> DbQuery.addLimit source.db.kind)))
 
         DeleteQuery id ->
             ( { model | results = model.results |> List.filter (\r -> r.id /= id) }, Extra.none )
@@ -263,8 +264,8 @@ view wrap toggleDropdown openModal updateSource _ {- showTable -} showTableRow o
             , (model.selectedSource |> Maybe.andThen (\id -> erd.sources |> List.findBy .id id))
                 |> Maybe.map
                     (\source ->
-                        (source |> DbSource.fromSource)
-                            |> Maybe.map
+                        (source |> DbSourceWithUrl.fromSource)
+                            |> Result.map
                                 (\db ->
                                     case model.activeTab of
                                         VisualEditorTab ->
@@ -273,13 +274,13 @@ view wrap toggleDropdown openModal updateSource _ {- showTable -} showTableRow o
                                         QueryEditorTab ->
                                             viewQueryEditor wrap toggleDropdown openedDropdown (htmlId ++ "-query-editor") db model.queryEditor
                                 )
-                            |> Maybe.withDefault
+                            |> Result.withDefault
                                 (div [ class "m-3" ]
                                     [ Alert.withActions
                                         { color = Tw.blue
                                         , icon = Icon.ExclamationCircle
                                         , title = "Missing database url"
-                                        , actions = [ Button.secondary3 Tw.blue [ onClick (source |> updateSource) ] [ text "Update source" ] ]
+                                        , actions = [ Button.secondary3 Tw.blue [ onClick (source |> updateSource) ] [ text ("Update " ++ source.name) ] ]
                                         }
                                         [ text "Open settings (top right ", Icon.outline Icon.Cog "inline", text ") to add the database url for this source and query it." ]
                                     ]
@@ -416,7 +417,7 @@ viewSources wrap htmlId sources selectedSource =
                 ]
 
 
-viewVisualExplorer : (Msg -> msg) -> SchemaName -> HtmlId -> DbSource -> VisualEditor -> Html msg
+viewVisualExplorer : (Msg -> msg) -> SchemaName -> HtmlId -> DbSourceWithUrl -> VisualEditor -> Html msg
 viewVisualExplorer wrap defaultSchema htmlId source model =
     let
         tables : List TableId
@@ -530,7 +531,7 @@ viewVisualExplorerFilterShow wrap htmlId filters =
             ]
 
 
-viewVisualExplorerSubmit : (Msg -> msg) -> DbSource -> VisualEditor -> Html msg
+viewVisualExplorerSubmit : (Msg -> msg) -> DbSourceWithUrl -> VisualEditor -> Html msg
 viewVisualExplorerSubmit wrap source model =
     let
         query : SqlQueryOrigin
@@ -543,7 +544,7 @@ viewVisualExplorerSubmit wrap source model =
         ]
 
 
-viewQueryEditor : (Msg -> msg) -> (HtmlId -> msg) -> HtmlId -> HtmlId -> DbSource -> QueryEditor -> Html msg
+viewQueryEditor : (Msg -> msg) -> (HtmlId -> msg) -> HtmlId -> HtmlId -> DbSourceWithUrl -> QueryEditor -> Html msg
 viewQueryEditor wrap toggleDropdown openedDropdown htmlId source model =
     let
         ( inputId, optionsButton ) =
@@ -599,7 +600,7 @@ viewResults wrap toggleDropdown openModal openRow openNotes openedDropdown erd h
             )
 
 
-viewRowDetails : (Msg -> msg) -> (TableId -> msg) -> (RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (DbSourceInfo -> RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> String -> Bool -> Erd -> HtmlId -> List DataExplorerDetails.Model -> Html msg
+viewRowDetails : (Msg -> msg) -> (TableId -> msg) -> (RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (DbSourceInfoWithUrl -> RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> String -> Bool -> Erd -> HtmlId -> List DataExplorerDetails.Model -> Html msg
 viewRowDetails wrap showTable showTableRow openRowDetails openNotes navbarHeight hasFullScreen erd htmlId details =
     div []
         (details
@@ -642,18 +643,18 @@ doc =
 docQueryResults : List DataExplorerQuery.Model
 docQueryResults =
     [ { id = 3
-      , source = docSource1 |> DbSourceInfo.fromSource |> Result.withDefault DbSourceInfo.zero
-      , query = { sql = DataExplorerQuery.docCityQuery, origin = "doc", db = DatabaseKind.PostgreSQL }
+      , source = docSource1 |> DbSourceInfoWithUrl.fromSource |> Result.withDefault DbSourceInfoWithUrl.zero
+      , query = { sql = DataExplorerQuery.docCityQuery, origin = "doc", db = DatabaseKind.default }
       , state = DataExplorerQuery.docCitySuccess
       }
     , { id = 2
-      , source = docSource1 |> DbSourceInfo.fromSource |> Result.withDefault DbSourceInfo.zero
-      , query = { sql = DataExplorerQuery.docProjectsQuery, origin = "doc", db = DatabaseKind.PostgreSQL }
+      , source = docSource1 |> DbSourceInfoWithUrl.fromSource |> Result.withDefault DbSourceInfoWithUrl.zero
+      , query = { sql = DataExplorerQuery.docProjectsQuery, origin = "doc", db = DatabaseKind.default }
       , state = DataExplorerQuery.docProjectsSuccess
       }
     , { id = 1
-      , source = docSource1 |> DbSourceInfo.fromSource |> Result.withDefault DbSourceInfo.zero
-      , query = { sql = DataExplorerQuery.docUsersQuery, origin = "doc", db = DatabaseKind.PostgreSQL }
+      , source = docSource1 |> DbSourceInfoWithUrl.fromSource |> Result.withDefault DbSourceInfoWithUrl.zero
+      , query = { sql = DataExplorerQuery.docUsersQuery, origin = "doc", db = DatabaseKind.default }
       , state = DataExplorerQuery.docUsersSuccess
       }
     ]

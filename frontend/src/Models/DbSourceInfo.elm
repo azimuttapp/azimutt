@@ -19,7 +19,7 @@ import Time
 type alias DbSourceInfo =
     { id : SourceId
     , name : SourceName
-    , db : { kind : DatabaseKind, url : DatabaseUrl, storage : DatabaseUrlStorage }
+    , db : { kind : DatabaseKind, url : Maybe DatabaseUrl, storage : DatabaseUrlStorage }
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
     }
@@ -29,47 +29,39 @@ zero : DbSourceInfo
 zero =
     { id = SourceId.zero
     , name = "zero"
-    , db = { kind = DatabaseKind.PostgreSQL, url = "postgres://localhost/zero", storage = DatabaseUrlStorage.Browser }
+    , db = { kind = DatabaseKind.default, url = Just "postgres://localhost/zero", storage = DatabaseUrlStorage.default }
     , createdAt = Time.zero
     , updatedAt = Time.zero
     }
 
 
-fromSource : Source -> Result String DbSourceInfo
+fromSource : Source -> Maybe DbSourceInfo
 fromSource source =
     case source.kind of
         DatabaseConnection db ->
-            db.url
-                |> Maybe.map
-                    (\url ->
-                        { id = source.id
-                        , name = source.name
-                        , db = { kind = db.kind, url = url, storage = db.storage }
-                        , createdAt = source.createdAt
-                        , updatedAt = source.updatedAt
-                        }
-                    )
-                |> Result.fromMaybe ("url missing in " ++ source.name ++ " source")
+            { id = source.id
+            , name = source.name
+            , db = { kind = db.kind, url = db.url, storage = db.storage }
+            , createdAt = source.createdAt
+            , updatedAt = source.updatedAt
+            }
+                |> Just
 
         _ ->
-            Err (source.name ++ " not a database source")
+            Nothing
 
 
-fromSourceInfo : SourceInfo -> Result String DbSourceInfo
+fromSourceInfo : SourceInfo -> Maybe DbSourceInfo
 fromSourceInfo source =
     case source.kind of
         DatabaseConnection db ->
-            db.url
-                |> Maybe.map
-                    (\url ->
-                        { id = source.id
-                        , name = source.name
-                        , db = { kind = db.kind, url = url, storage = db.storage }
-                        , createdAt = source.createdAt
-                        , updatedAt = source.updatedAt
-                        }
-                    )
-                |> Result.fromMaybe "url missing in source"
+            { id = source.id
+            , name = source.name
+            , db = { kind = db.kind, url = db.url, storage = db.storage }
+            , createdAt = source.createdAt
+            , updatedAt = source.updatedAt
+            }
+                |> Just
 
         _ ->
-            Err "not a database source"
+            Nothing

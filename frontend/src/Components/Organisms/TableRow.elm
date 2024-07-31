@@ -36,7 +36,8 @@ import Libs.Tailwind as Tw exposing (Color, TwClass, focus)
 import Libs.Task as T
 import Libs.Time as Time
 import Models.DbSource as DbSource exposing (DbSource)
-import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
+import Models.DbSourceInfo exposing (DbSourceInfo)
+import Models.DbSourceInfoWithUrl as DbSourceInfoWithUrl exposing (DbSourceInfoWithUrl)
 import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Position as Position
 import Models.Project as Project
@@ -129,7 +130,7 @@ dbPrefix =
     "table-row"
 
 
-init : ProjectInfo -> TableRow.Id -> Time.Posix -> DbSourceInfo -> RowQuery -> Set ColumnPathStr -> Maybe TableRow.SuccessState -> Maybe PositionHint -> ( Model, Cmd msg )
+init : ProjectInfo -> TableRow.Id -> Time.Posix -> DbSourceInfoWithUrl -> RowQuery -> Set ColumnPathStr -> Maybe TableRow.SuccessState -> Maybe PositionHint -> ( Model, Cmd msg )
 init project id now source query hidden previous hint =
     let
         sqlQuery : SqlQueryOrigin
@@ -221,7 +222,8 @@ update wrap toggleDropdown showToast deleteTableRow unDeleteTableRow now project
                    )
 
         Refresh ->
-            withDbSource showToast
+            withDbSource "refresh row"
+                showToast
                 sources
                 model
                 (\dbSrc ->
@@ -255,7 +257,8 @@ update wrap toggleDropdown showToast deleteTableRow unDeleteTableRow now project
 
         ToggleIncomingRows dropdown column relations ->
             if Dict.isEmpty column.linkedBy && openedDropdown /= dropdown then
-                withDbSource showToast
+                withDbSource "get incoming rows"
+                    showToast
                     sources
                     model
                     (\dbSrc ->
@@ -281,10 +284,10 @@ update wrap toggleDropdown showToast deleteTableRow unDeleteTableRow now project
             )
 
 
-withDbSource : (Toasts.Msg -> msg) -> List Source -> Model -> (DbSourceInfo -> ( Model, Extra msg )) -> ( Model, Extra msg )
-withDbSource showToast sources model f =
-    (sources |> List.findBy .id model.source |> Result.fromMaybe ("source missing (" ++ SourceId.toString model.source ++ ")") |> Result.andThen DbSourceInfo.fromSource)
-        |> Result.fold (\err -> ( model, "Can't refresh row, " ++ err |> Toasts.error |> showToast |> Extra.msg )) f
+withDbSource : String -> (Toasts.Msg -> msg) -> List Source -> Model -> (DbSourceInfoWithUrl -> ( Model, Extra msg )) -> ( Model, Extra msg )
+withDbSource action showToast sources model f =
+    (sources |> List.findBy .id model.source |> Result.fromMaybe ("source missing (" ++ SourceId.toString model.source ++ ")") |> Result.andThen DbSourceInfoWithUrl.fromSource)
+        |> Result.fold (\err -> ( model, "Can't " ++ action ++ ", " ++ err |> Toasts.warning |> showToast |> Extra.msg )) f
 
 
 parsePks : DbValue -> List RowPrimaryKey
@@ -615,6 +618,7 @@ viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataE
                 Dict.empty
 
             else
+                -- TODO: use erdRelations for incoming rows from other sources? (could be nice but strange if the same db from several envs are added)
                 relations
                     |> List.filter (\r -> r.ref.table == row.table && r.ref.column == rowColumn.path)
                     |> List.map .src
@@ -951,7 +955,7 @@ docLoading =
     , source = docSource.id
     , table = ( "public", "events" )
     , primaryKey = Nel { column = Nel "id" [], value = DbString "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" } []
-    , state = StateLoading { query = { sql = "SELECT * FROM public.events WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", origin = "doc", db = DatabaseKind.PostgreSQL }, startedAt = Time.millisToPosix 1691079663421, previous = Nothing }
+    , state = StateLoading { query = { sql = "SELECT * FROM public.events WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", origin = "doc", db = DatabaseKind.default }, startedAt = Time.millisToPosix 1691079663421, previous = Nothing }
     , hidden = Set.fromList []
     , showHiddenColumns = False
     , selected = False
@@ -968,7 +972,7 @@ docFailure =
     , source = docSource.id
     , table = ( "public", "events" )
     , primaryKey = Nel { column = Nel "id" [], value = DbString "dcecf4fe-aa35-44fb-a90c-eba7d2103f4e" } []
-    , state = StateFailure { query = { sql = "SELECT * FROM public.event WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", origin = "doc", db = DatabaseKind.PostgreSQL }, error = "relation \"public.event\" does not exist", startedAt = Time.millisToPosix 1691079663421, failedAt = Time.millisToPosix 1691079663421, previous = Nothing }
+    , state = StateFailure { query = { sql = "SELECT * FROM public.event WHERE id='dcecf4fe-aa35-44fb-a90c-eba7d2103f4e';", origin = "doc", db = DatabaseKind.default }, error = "relation \"public.event\" does not exist", startedAt = Time.millisToPosix 1691079663421, failedAt = Time.millisToPosix 1691079663421, previous = Nothing }
     , hidden = Set.fromList []
     , showHiddenColumns = False
     , selected = False

@@ -10,7 +10,7 @@ import Libs.Maybe as Maybe
 import Libs.Nel exposing (Nel)
 import Libs.Result as Result
 import Libs.Time as Time
-import Models.DbSourceInfo exposing (DbSourceInfo)
+import Models.DbSourceInfoWithUrl exposing (DbSourceInfoWithUrl)
 import Models.DbValue as DbValue exposing (DbValue)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
@@ -52,7 +52,7 @@ type alias QueryResultColumnTarget =
     { path : ColumnPath, pathStr : ColumnPathStr, schemaRef : Maybe ColumnRef, dataRef : Maybe { ref : DbColumnRef, kind : ColumnType } }
 
 
-buildColumnTargets : { s | tables : Dict TableId ErdTable, relations : List ErdRelation } -> DbSourceInfo -> List QueryResultColumn -> List QueryResultColumnTarget
+buildColumnTargets : { s | tables : Dict TableId ErdTable, relations : List ErdRelation } -> DbSourceInfoWithUrl -> List QueryResultColumn -> List QueryResultColumnTarget
 buildColumnTargets erd sourceInfo columns =
     let
         relations : Dict TableId (List ErdRelation)
@@ -62,7 +62,7 @@ buildColumnTargets erd sourceInfo columns =
     columns |> List.map (\c -> { path = c.path, pathStr = c.pathStr, schemaRef = c.ref, dataRef = c.ref |> Maybe.andThen (targetColumn erd.tables relations sourceInfo) })
 
 
-targetColumn : Dict TableId ErdTable -> Dict TableId (List ErdRelation) -> DbSourceInfo -> ColumnRef -> Maybe { ref : DbColumnRef, kind : ColumnType }
+targetColumn : Dict TableId ErdTable -> Dict TableId (List ErdRelation) -> DbSourceInfoWithUrl -> ColumnRef -> Maybe { ref : DbColumnRef, kind : ColumnType }
 targetColumn tables relations sourceInfo ref =
     let
         pkRef : Maybe DbColumnRef

@@ -32,7 +32,7 @@ import Libs.Set as Set
 import Libs.String as String
 import Libs.Tailwind exposing (TwClass, focus)
 import Libs.Time as Time
-import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
+import Models.DbSourceInfoWithUrl as DbSourceInfoWithUrl exposing (DbSourceInfoWithUrl)
 import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Project as Project
 import Models.Project.Column as Column exposing (Column)
@@ -67,7 +67,7 @@ import Track
 
 type alias Model =
     { id : Id
-    , source : DbSourceInfo
+    , source : DbSourceInfoWithUrl
     , query : SqlQueryOrigin
     , state : State
     }
@@ -132,7 +132,7 @@ dbPrefix =
     "data-explorer-query"
 
 
-init : ProjectInfo -> Id -> DbSourceInfo -> SqlQueryOrigin -> ( Model, Extra msg )
+init : ProjectInfo -> Id -> DbSourceInfoWithUrl -> SqlQueryOrigin -> ( Model, Extra msg )
 init project id source query =
     ( { id = id, source = source, query = query, state = StateRunning }
     , Extra.cmdL [ Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url query, Track.dataExplorerQueryOpened source query project ]
@@ -438,7 +438,7 @@ viewActionButton icon name msg =
         [ span [ class "sr-only" ] [ text name ], Icon.outline icon "w-4 h-4" ]
 
 
-viewTable : (Msg -> msg) -> ((msg -> String -> Html msg) -> msg) -> (RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> Erd -> DbSourceInfo -> SuccessState -> Html msg
+viewTable : (Msg -> msg) -> ((msg -> String -> Html msg) -> msg) -> (RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> Erd -> DbSourceInfoWithUrl -> SuccessState -> Html msg
 viewTable wrap openModal openRow openNotes erd sourceInfo res =
     let
         items : List ( QueryResultRow, RowIndex )
@@ -505,7 +505,7 @@ viewTable wrap openModal openRow openNotes erd sourceInfo res =
         ]
 
 
-viewTableHeader : (Msg -> msg) -> ((msg -> String -> Html msg) -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> Erd -> DbSourceInfo -> Set ColumnName -> Maybe String -> List QueryResultRow -> QueryResultColumnTarget -> Html msg
+viewTableHeader : (Msg -> msg) -> ((msg -> String -> Html msg) -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> Erd -> DbSourceInfoWithUrl -> Set ColumnName -> Maybe String -> List QueryResultRow -> QueryResultColumnTarget -> Html msg
 viewTableHeader wrap openModal openNotes erd sourceInfo collapsed sortBy rows column =
     let
         comment : Maybe String
@@ -623,7 +623,7 @@ doc =
 
 docModel : Int -> SqlQuery -> State -> Model
 docModel id query state =
-    { id = id, source = docSource |> DbSourceInfo.fromSource |> Result.withDefault DbSourceInfo.zero, query = { sql = query, origin = "doc", db = DatabaseKind.PostgreSQL }, state = state }
+    { id = id, source = docSource |> DbSourceInfoWithUrl.fromSource |> Result.withDefault DbSourceInfoWithUrl.zero, query = { sql = query, origin = "doc", db = DatabaseKind.default }, state = state }
 
 
 docComplexQuery : SqlQuery

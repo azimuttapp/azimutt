@@ -22,6 +22,7 @@ import Libs.Set as Set
 import Libs.Tailwind as Tw
 import Libs.Time as Time
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
+import Models.DbSourceInfoWithUrl as DbSourceInfoWithUrl exposing (DbSourceInfoWithUrl)
 import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Project as Project
 import Models.Project.Column exposing (Column)
@@ -57,7 +58,7 @@ import Track
 
 type alias Model =
     { id : Id
-    , source : DbSourceInfo
+    , source : DbSourceInfoWithUrl
     , query : RowQuery
     , state : State
     , expanded : Set ColumnName
@@ -100,7 +101,7 @@ dbPrefix =
     "data-explorer-details"
 
 
-init : ProjectInfo -> Id -> DbSourceInfo -> RowQuery -> ( Model, Extra msg )
+init : ProjectInfo -> Id -> DbSourceInfoWithUrl -> RowQuery -> ( Model, Extra msg )
 init project id source query =
     let
         sqlQuery : SqlQueryOrigin
@@ -364,9 +365,9 @@ docErd =
     Project.create Nothing [] "Azimutt" (Source.aml "aml" Time.zero SourceId.zero) |> Erd.create
 
 
-docSourceInfo : DbSourceInfo
+docSourceInfo : DbSourceInfoWithUrl
 docSourceInfo =
-    DbSourceInfo.zero
+    DbSourceInfoWithUrl.zero
 
 
 docFailureState : FailureState

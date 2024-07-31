@@ -11,12 +11,10 @@ import Libs.Bool as Bool
 import Libs.Dict as Dict
 import Libs.Json.Encode as Encode
 import Libs.Maybe as Maybe
-import Libs.Models.DatabaseKind as DatabaseKind
+import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Libs.Models.Notes exposing (Notes)
 import Libs.Models.Tag exposing (Tag)
 import Libs.Result as Result
-import Models.DbSource exposing (DbSource)
-import Models.DbSourceInfo exposing (DbSourceInfo)
 import Models.OpenAIModel as OpenAIModel exposing (OpenAIModel)
 import Models.OrganizationId exposing (OrganizationId)
 import Models.Project exposing (Project)
@@ -210,7 +208,7 @@ sourceEditorClosed erd =
     sendEvent "editor__source_editor__closed" [] (erd |> Maybe.map .project)
 
 
-dataExplorerOpened : List Source -> Maybe DbSource -> Maybe SqlQueryOrigin -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+dataExplorerOpened : List Source -> Maybe { s | db : { d | kind : DatabaseKind } } -> Maybe SqlQueryOrigin -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
 dataExplorerOpened sources source query project =
     sendEvent "editor__data_explorer__opened"
         [ ( "nb_sources", sources |> List.length |> Encode.int )
@@ -221,7 +219,7 @@ dataExplorerOpened sources source query project =
         (Just project)
 
 
-dataExplorerQueryOpened : DbSourceInfo -> SqlQueryOrigin -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+dataExplorerQueryOpened : { s | db : { d | kind : DatabaseKind } } -> SqlQueryOrigin -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
 dataExplorerQueryOpened source query project =
     sendEvent "data_explorer__query__opened" [ ( "db", source.db.kind |> DatabaseKind.encode ), ( "query", query.origin |> Encode.string ) ] (Just project)
 
@@ -231,7 +229,7 @@ dataExplorerQueryResult res project =
     sendEvent "data_explorer__query__result" (queryResultDetails res) (Just project)
 
 
-dataExplorerDetailsOpened : DbSourceInfo -> SqlQueryOrigin -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+dataExplorerDetailsOpened : { s | db : { d | kind : DatabaseKind } } -> SqlQueryOrigin -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
 dataExplorerDetailsOpened source query project =
     sendEvent "data_explorer__details__opened" [ ( "db", source.db.kind |> DatabaseKind.encode ), ( "query", query.origin |> Encode.string ) ] (Just project)
 
@@ -241,12 +239,12 @@ dataExplorerDetailsResult res project =
     sendEvent "data_explorer__details__result" (queryResultDetails res) (Just project)
 
 
-tableRowShown : DbSourceInfo -> String -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+tableRowShown : { s | db : { d | kind : DatabaseKind } } -> String -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
 tableRowShown source from project =
     sendEvent "data_explorer__table_row__shown" [ ( "db", source.db.kind |> DatabaseKind.encode ), ( "from", from |> Encode.string ) ] (Just project)
 
 
-tableRowOpened : Maybe TableRow.SuccessState -> DbSourceInfo -> SqlQueryOrigin -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
+tableRowOpened : Maybe TableRow.SuccessState -> { s | db : { d | kind : DatabaseKind } } -> SqlQueryOrigin -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
 tableRowOpened previous source query project =
     sendEvent "data_explorer__table_row__opened" [ ( "db", source.db.kind |> DatabaseKind.encode ), ( "query", query.origin |> Encode.string ), ( "previous", previous /= Nothing |> Encode.bool ) ] (Just project)
 

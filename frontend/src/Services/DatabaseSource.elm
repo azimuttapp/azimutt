@@ -94,9 +94,9 @@ init : Maybe Source -> (Result String Source -> msg) -> Model msg
 init source callback =
     { source = source
     , name = source |> Maybe.mapOrElse .name ""
-    , engine = source |> Maybe.andThen Source.databaseKind |> Maybe.withDefault DatabaseKind.PostgreSQL
+    , engine = source |> Maybe.andThen Source.databaseKind |> Maybe.orElse (databases |> List.head |> Maybe.map .key) |> Maybe.withDefault DatabaseKind.default
     , url = source |> Maybe.andThen Source.databaseUrl |> Maybe.withDefault ""
-    , storage = source |> Maybe.andThen Source.databaseUrlStorage |> Maybe.withDefault DatabaseUrlStorage.Browser
+    , storage = source |> Maybe.andThen Source.databaseUrlStorage |> Maybe.withDefault DatabaseUrlStorage.default
     , selectedUrl = Nothing
     , parsedSchema = Nothing
     , parsedSource = Nothing
