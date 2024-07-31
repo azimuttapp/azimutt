@@ -286,7 +286,7 @@ type Msg
     | TagsMsg TagsMsg
     | GroupMsg GroupMsg
     | MemoMsg MemoMsg
-    | ShowTableRow DbSourceInfo RowQuery (Maybe TableRow.SuccessState) (Maybe PositionHint) String
+    | ShowTableRow RowQuery (Maybe TableRow.SuccessState) (Maybe PositionHint) String
     | DeleteTableRow TableRow.Id
     | UnDeleteTableRow_ Int TableRow
     | TableRowMsg TableRow.Id TableRow.Msg

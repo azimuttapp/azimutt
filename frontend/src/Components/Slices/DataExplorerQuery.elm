@@ -286,7 +286,7 @@ csvEscape value =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> ((msg -> String -> Html msg) -> msg) -> (DbSourceInfo -> RowQuery -> msg) -> msg -> (TableId -> Maybe ColumnPath -> msg) -> HtmlId -> Erd -> HtmlId -> Model -> Html msg
+view : (Msg -> msg) -> (HtmlId -> msg) -> ((msg -> String -> Html msg) -> msg) -> (RowQuery -> msg) -> msg -> (TableId -> Maybe ColumnPath -> msg) -> HtmlId -> Erd -> HtmlId -> Model -> Html msg
 view wrap toggleDropdown openModal openRow deleteQuery openNotes openedDropdown erd htmlId model =
     case model.state of
         StateRunning ->
@@ -361,7 +361,7 @@ view wrap toggleDropdown openModal openRow deleteQuery openNotes openedDropdown 
                       else
                         div [ class "mt-1 relative cursor-pointer", onClick (wrap ToggleQuery) ]
                             [ model.query |> viewQuery True ]
-                    , viewTable wrap openModal (openRow model.source) openNotes erd model.source res
+                    , viewTable wrap openModal openRow openNotes erd model.source res
                     ]
                 )
                 (div [ class "flex flex-shrink-0" ]
@@ -459,10 +459,10 @@ viewTable wrap openModal openRow openNotes erd sourceInfo res =
 
         ( columns, rows ) =
             if res.documentMode then
-                "document" |> (\pathStr -> ( [ { path = ColumnPath.fromString pathStr, pathStr = pathStr, ref = Nothing, fk = Nothing } ], pageRows |> List.map (Tuple.mapSecond (Tuple.mapFirst (\r -> Dict.fromList [ ( pathStr, DbObject r ) ]))) ))
+                "document" |> (\pathStr -> ( [ { path = ColumnPath.fromString pathStr, pathStr = pathStr, schemaRef = Nothing, dataRef = Nothing } ], pageRows |> List.map (Tuple.mapSecond (Tuple.mapFirst (\r -> Dict.fromList [ ( pathStr, DbObject r ) ]))) ))
 
             else
-                ( res.columns |> QueryResult.buildColumnTargets erd, pageRows )
+                ( res.columns |> QueryResult.buildColumnTargets erd sourceInfo, pageRows )
     in
     div [ class "mt-1" ]
         [ div [ class "flow-root" ]
@@ -492,7 +492,7 @@ viewTable wrap openModal openRow openNotes erd sourceInfo res =
                                                         []
 
                                                     else
-                                                        [ viewTableValue openRow (ExpandRow ri |> wrap) erd.settings.defaultSchema res.documentMode (res.expanded |> Set.member ri) (res.collapsed |> Set.member "rest") (rest |> DbObject |> Just) { path = Nel "rest" [], pathStr = "rest", ref = Nothing, fk = Nothing } ]
+                                                        [ viewTableValue openRow (ExpandRow ri |> wrap) erd.settings.defaultSchema res.documentMode (res.expanded |> Set.member ri) (res.collapsed |> Set.member "rest") (rest |> DbObject |> Just) { path = Nel "rest" [], pathStr = "rest", schemaRef = Nothing, dataRef = Nothing } ]
                                                    )
                                             )
                                     )
@@ -510,7 +510,7 @@ viewTableHeader wrap openModal openNotes erd sourceInfo collapsed sortBy rows co
     let
         comment : Maybe String
         comment =
-            column.ref
+            column.schemaRef
                 |> Maybe.andThen
                     (\ref ->
                         (erd.sources |> List.findBy .id sourceInfo.id |> Maybe.andThen (Source.getColumnI ref) |> Maybe.andThen .comment |> Maybe.map .text)
@@ -519,7 +519,7 @@ viewTableHeader wrap openModal openNotes erd sourceInfo collapsed sortBy rows co
 
         notes : Maybe ( Notes, ColumnRef )
         notes =
-            column.ref |> Maybe.andThen (\ref -> erd.metadata |> TableId.dictGetI ref.table |> Maybe.andThen (.columns >> ColumnPath.dictGetI ref.column) |> Maybe.andThen (\m -> m.notes |> Maybe.map (\n -> ( n, ref ))))
+            column.schemaRef |> Maybe.andThen (\ref -> erd.metadata |> TableId.dictGetI ref.table |> Maybe.andThen (.columns >> ColumnPath.dictGetI ref.column) |> Maybe.andThen (\m -> m.notes |> Maybe.map (\n -> ( n, ref ))))
 
         sort : Maybe ( String, Bool )
         sort =
@@ -623,7 +623,7 @@ doc =
 
 docModel : Int -> SqlQuery -> State -> Model
 docModel id query state =
-    { id = id, source = docSource |> DbSourceInfo.fromSource |> Maybe.withDefault DbSourceInfo.zero, query = { sql = query, origin = "doc", db = DatabaseKind.PostgreSQL }, state = state }
+    { id = id, source = docSource |> DbSourceInfo.fromSource |> Result.withDefault DbSourceInfo.zero, query = { sql = query, origin = "doc", db = DatabaseKind.PostgreSQL }, state = state }
 
 
 docComplexQuery : SqlQuery
@@ -898,9 +898,9 @@ docOpenModal _ =
     logAction "openModal"
 
 
-docOpenRow : DbSourceInfo -> RowQuery -> ElmBook.Msg state
+docOpenRow : RowQuery -> ElmBook.Msg state
 docOpenRow =
-    \_ _ -> logAction "openRow"
+    \_ -> logAction "openRow"
 
 
 docDelete : ElmBook.Msg state

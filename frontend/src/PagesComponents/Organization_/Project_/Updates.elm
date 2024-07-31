@@ -361,10 +361,10 @@ update urlLayout zone now urlInfos organizations projects msg model =
         MemoMsg message ->
             model |> handleMemo now urlInfos message
 
-        ShowTableRow source query previous hint from ->
-            (model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.find (\r -> r.source == source.id && r.table == query.table && r.primaryKey == query.primaryKey)))
+        ShowTableRow query previous hint from ->
+            (model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.find (\r -> r.source == query.source && r.table == query.table && r.primaryKey == query.primaryKey)))
                 |> Maybe.map (\r -> model |> mapErdMT (moveToTableRow now model.erdElem r) |> Extra.defaultT)
-                |> Maybe.withDefault (model |> mapErdMT (showTableRow now source query previous hint from) |> setDirtyM)
+                |> Maybe.withDefault (model |> mapErdMT (showTableRow now query previous hint from) |> setDirtyM)
 
         DeleteTableRow id ->
             model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (deleteTableRow id)) |> setDirtyM

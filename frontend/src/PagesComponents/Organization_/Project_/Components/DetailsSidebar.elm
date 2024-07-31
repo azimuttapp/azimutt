@@ -166,7 +166,7 @@ schemaView erd name =
 
 tableView : Erd -> TableId -> View
 tableView erd id =
-    (erd |> Erd.getTable id)
+    (erd |> Erd.getTableI id)
         |> Maybe.mapOrElse
             (\table ->
                 TableView
@@ -180,7 +180,7 @@ tableView erd id =
 
 columnView : Erd -> ColumnRef -> View
 columnView erd ref =
-    (erd |> Erd.getTable ref.table)
+    (erd |> Erd.getTableI ref.table)
         |> Maybe.mapOrElse
             (\table ->
                 (table |> ErdTable.getColumnI ref.column)

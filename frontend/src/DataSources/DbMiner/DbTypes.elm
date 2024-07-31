@@ -1,10 +1,11 @@
-module DataSources.DbMiner.DbTypes exposing (FilterOperation(..), FilterOperator(..), IncomingRowsQuery, RowQuery, TableFilter, TableQuery, operationFromString, operationHasValue, operationToString, operationsForType, operatorFromString, operatorToString, operators)
+module DataSources.DbMiner.DbTypes exposing (DbColumnRef, FilterOperation(..), FilterOperator(..), IncomingRowsQuery, RowQuery, TableFilter, TableQuery, operationFromString, operationHasValue, operationToString, operationsForType, operatorFromString, operatorToString, operators)
 
 import Libs.Nel exposing (Nel)
 import Models.DbValue exposing (DbValue)
 import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnType as ColumnType exposing (ColumnType)
 import Models.Project.RowPrimaryKey exposing (RowPrimaryKey)
+import Models.Project.SourceId exposing (SourceId)
 import Models.Project.TableId exposing (TableId)
 
 
@@ -16,8 +17,12 @@ type alias TableFilter =
     { operator : FilterOperator, column : ColumnPath, operation : FilterOperation, value : DbValue }
 
 
+type alias DbColumnRef =
+    { source : SourceId, table : TableId, column : ColumnPath }
+
+
 type alias RowQuery =
-    { table : TableId, primaryKey : RowPrimaryKey }
+    { source : SourceId, table : TableId, primaryKey : RowPrimaryKey }
 
 
 type alias IncomingRowsQuery =

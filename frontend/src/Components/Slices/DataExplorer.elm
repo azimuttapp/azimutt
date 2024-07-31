@@ -253,7 +253,7 @@ focusMainInput tab =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> ((msg -> String -> Html msg) -> msg) -> (Source -> msg) -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> String -> HtmlId -> HtmlId -> Model -> Erd -> DataExplorerDisplay -> Html msg
+view : (Msg -> msg) -> (HtmlId -> msg) -> ((msg -> String -> Html msg) -> msg) -> (Source -> msg) -> (TableId -> msg) -> (RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> String -> HtmlId -> HtmlId -> Model -> Erd -> DataExplorerDisplay -> Html msg
 view wrap toggleDropdown openModal updateSource _ {- showTable -} showTableRow openNotes _ {- navbarHeight -} openedDropdown htmlId model erd display =
     div [ class "h-full flex" ]
         [ div [ class "basis-1/3 flex-1 overflow-y-auto flex flex-col border-r" ]
@@ -288,7 +288,7 @@ view wrap toggleDropdown openModal updateSource _ {- showTable -} showTableRow o
                 |> Maybe.withDefault (div [] [])
             ]
         , div [ class "basis-2/3 flex-1 overflow-y-auto bg-gray-50 pb-28" ]
-            [ viewResults wrap toggleDropdown openModal (\s q -> showTableRow s q Nothing Nothing) openNotes openedDropdown erd (htmlId ++ "-results") model.results ]
+            [ viewResults wrap toggleDropdown openModal (\q -> showTableRow q Nothing Nothing) openNotes openedDropdown erd (htmlId ++ "-results") model.results ]
 
         -- Don't show TableRow details, load them directly into the layout, TODO: clean everything once sure about this change...
         --, let
@@ -582,7 +582,7 @@ viewQueryEditor wrap toggleDropdown openedDropdown htmlId source model =
         ]
 
 
-viewResults : (Msg -> msg) -> (HtmlId -> msg) -> ((msg -> String -> Html msg) -> msg) -> (DbSourceInfo -> RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> HtmlId -> Erd -> HtmlId -> List DataExplorerQuery.Model -> Html msg
+viewResults : (Msg -> msg) -> (HtmlId -> msg) -> ((msg -> String -> Html msg) -> msg) -> (RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> HtmlId -> Erd -> HtmlId -> List DataExplorerQuery.Model -> Html msg
 viewResults wrap toggleDropdown openModal openRow openNotes openedDropdown erd htmlId results =
     if results |> List.isEmpty then
         div [ class "m-3 p-12 block rounded-lg border-2 border-dashed border-gray-200 text-gray-300 text-center text-sm font-semibold" ] [ text "Query results" ]
@@ -599,7 +599,7 @@ viewResults wrap toggleDropdown openModal openRow openNotes openedDropdown erd h
             )
 
 
-viewRowDetails : (Msg -> msg) -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (DbSourceInfo -> RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> String -> Bool -> Erd -> HtmlId -> List DataExplorerDetails.Model -> Html msg
+viewRowDetails : (Msg -> msg) -> (TableId -> msg) -> (RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (DbSourceInfo -> RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> String -> Bool -> Erd -> HtmlId -> List DataExplorerDetails.Model -> Html msg
 viewRowDetails wrap showTable showTableRow openRowDetails openNotes navbarHeight hasFullScreen erd htmlId details =
     div []
         (details
@@ -642,17 +642,17 @@ doc =
 docQueryResults : List DataExplorerQuery.Model
 docQueryResults =
     [ { id = 3
-      , source = docSource1 |> DbSourceInfo.fromSource |> Maybe.withDefault DbSourceInfo.zero
+      , source = docSource1 |> DbSourceInfo.fromSource |> Result.withDefault DbSourceInfo.zero
       , query = { sql = DataExplorerQuery.docCityQuery, origin = "doc", db = DatabaseKind.PostgreSQL }
       , state = DataExplorerQuery.docCitySuccess
       }
     , { id = 2
-      , source = docSource1 |> DbSourceInfo.fromSource |> Maybe.withDefault DbSourceInfo.zero
+      , source = docSource1 |> DbSourceInfo.fromSource |> Result.withDefault DbSourceInfo.zero
       , query = { sql = DataExplorerQuery.docProjectsQuery, origin = "doc", db = DatabaseKind.PostgreSQL }
       , state = DataExplorerQuery.docProjectsSuccess
       }
     , { id = 1
-      , source = docSource1 |> DbSourceInfo.fromSource |> Maybe.withDefault DbSourceInfo.zero
+      , source = docSource1 |> DbSourceInfo.fromSource |> Result.withDefault DbSourceInfo.zero
       , query = { sql = DataExplorerQuery.docUsersQuery, origin = "doc", db = DatabaseKind.PostgreSQL }
       , state = DataExplorerQuery.docUsersSuccess
       }
@@ -766,8 +766,8 @@ docShowTable _ =
     logAction "showTable"
 
 
-docShowTableRow : DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> ElmBook.Msg state
-docShowTableRow _ _ _ _ =
+docShowTableRow : RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> ElmBook.Msg state
+docShowTableRow _ _ _ =
     logAction "showTableRow"
 
 

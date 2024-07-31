@@ -1,5 +1,6 @@
 module Models.QueryResult exposing (QueryResult, QueryResultColumn, QueryResultColumnTarget, QueryResultRow, QueryResultSuccess, buildColumnTargets, decode, encodeQueryResultRow)
 
+import DataSources.DbMiner.DbTypes exposing (DbColumnRef)
 import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -9,13 +10,16 @@ import Libs.Maybe as Maybe
 import Libs.Nel exposing (Nel)
 import Libs.Result as Result
 import Libs.Time as Time
+import Models.DbSourceInfo exposing (DbSourceInfo)
 import Models.DbValue as DbValue exposing (DbValue)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.SqlQuery as SqlQuery exposing (SqlQueryOrigin)
-import PagesComponents.Organization_.Project_.Models.ErdColumnRef as ErdColumnRef
+import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
+import PagesComponents.Organization_.Project_.Models.ErdColumnRef
+import PagesComponents.Organization_.Project_.Models.ErdOrigin as ErdOrigin
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import Time
@@ -45,24 +49,45 @@ type alias QueryResultRow =
 
 
 type alias QueryResultColumnTarget =
-    { path : ColumnPath, pathStr : ColumnPathStr, ref : Maybe ColumnRef, fk : Maybe { ref : ColumnRef, kind : ColumnType } }
+    { path : ColumnPath, pathStr : ColumnPathStr, schemaRef : Maybe ColumnRef, dataRef : Maybe { ref : DbColumnRef, kind : ColumnType } }
 
 
-buildColumnTargets : { s | tables : Dict TableId ErdTable, relations : List ErdRelation } -> List QueryResultColumn -> List QueryResultColumnTarget
-buildColumnTargets erd columns =
+buildColumnTargets : { s | tables : Dict TableId ErdTable, relations : List ErdRelation } -> DbSourceInfo -> List QueryResultColumn -> List QueryResultColumnTarget
+buildColumnTargets erd sourceInfo columns =
     let
         relations : Dict TableId (List ErdRelation)
         relations =
             erd.relations |> List.groupBy (.src >> .table)
     in
-    columns |> List.map (\c -> { path = c.path, pathStr = c.pathStr, ref = c.ref, fk = c.ref |> Maybe.andThen (targetColumn erd.tables relations) })
+    columns |> List.map (\c -> { path = c.path, pathStr = c.pathStr, schemaRef = c.ref, dataRef = c.ref |> Maybe.andThen (targetColumn erd.tables relations sourceInfo) })
 
 
-targetColumn : Dict TableId ErdTable -> Dict TableId (List ErdRelation) -> ColumnRef -> Maybe { ref : ColumnRef, kind : ColumnType }
-targetColumn tables relations ref =
-    (tables |> TableId.dictGetI ref.table |> Maybe.andThen (\t -> t.primaryKey |> Maybe.filter (\pk -> pk.columns.tail == [] && ColumnPath.eqI pk.columns.head ref.column) |> Maybe.map (\pk -> { table = t.id, column = pk.columns.head })))
-        |> Maybe.orElse (relations |> TableId.dictGetI ref.table |> Maybe.withDefault [] |> List.find (\r -> ColumnPath.eqI r.src.column ref.column) |> Maybe.map (.ref >> ErdColumnRef.unpack))
-        |> Maybe.andThen (\target -> tables |> Dict.get target.table |> Maybe.andThen (ErdTable.getColumnI target.column) |> Maybe.map (\c -> { ref = target, kind = c.kind }))
+targetColumn : Dict TableId ErdTable -> Dict TableId (List ErdRelation) -> DbSourceInfo -> ColumnRef -> Maybe { ref : DbColumnRef, kind : ColumnType }
+targetColumn tables relations sourceInfo ref =
+    let
+        pkRef : Maybe DbColumnRef
+        pkRef =
+            (tables |> TableId.dictGetI ref.table)
+                |> Maybe.andThen
+                    (\t ->
+                        t.primaryKey
+                            |> Maybe.filter (\pk -> pk.columns.tail == [] && ColumnPath.eqI pk.columns.head ref.column)
+                            |> Maybe.map (\pk -> { source = sourceInfo.id, table = t.id, column = pk.columns.head })
+                    )
+
+        fkRef : Maybe DbColumnRef
+        fkRef =
+            (relations |> TableId.dictGetI ref.table |> Maybe.withDefault [])
+                |> List.find (\r -> ColumnPath.eqI r.src.column ref.column)
+                |> Maybe.map
+                    (\r ->
+                        { source = (tables |> TableId.dictGetI r.ref.table |> Maybe.andThen (ErdTable.getColumnI r.ref.column)) |> Maybe.mapOrElse .origins [] |> ErdOrigin.query sourceInfo.id
+                        , table = r.ref.table
+                        , column = r.ref.column
+                        }
+                    )
+    in
+    pkRef |> Maybe.orElse fkRef |> Maybe.andThen (\targetRef -> tables |> Dict.get targetRef.table |> Maybe.andThen (ErdTable.getColumnI targetRef.column >> Maybe.map (\c -> { ref = targetRef, kind = c.kind })))
 
 
 decode : Decode.Decoder QueryResult

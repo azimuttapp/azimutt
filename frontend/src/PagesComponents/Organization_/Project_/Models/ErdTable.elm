@@ -124,7 +124,7 @@ getColumnI : ColumnPath -> ErdTable -> Maybe ErdColumn
 getColumnI path table =
     (table.columns |> Dict.get path.head)
         |> Maybe.orElse (table.columns |> Dict.find (\k _ -> String.toLower k == String.toLower path.head))
-        |> Maybe.andThen (\col -> path.tail |> Nel.fromList |> Maybe.mapOrElse (\next -> ErdColumn.getColumn next col) (Just col))
+        |> Maybe.andThen (\col -> path.tail |> Nel.fromList |> Maybe.mapOrElse (\next -> ErdColumn.getColumnI next col) (Just col))
 
 
 getColumnRoot : ColumnPath -> ErdTable -> Maybe ErdColumn

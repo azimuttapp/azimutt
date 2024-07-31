@@ -73,9 +73,13 @@ export function parseSqlScript(script: string): ParsedSqlScript {
 }
 
 export function parseSqlStatement(statement: string): ParsedSqlStatement | undefined {
-    if (statement.trim().match(/^SELECT\s+/i)) {
-        return parseSelectStatement(statement)
-    } else {
+    try {
+        if (statement.trim().match(/^SELECT\s+/i)) {
+            return parseSelectStatement(statement)
+        } else {
+            return undefined
+        }
+    } catch {
         return undefined
     }
 }

@@ -1329,7 +1329,7 @@ docSelectSchema schema state =
 
 docSelectTable : TableId -> DocState -> DocState
 docSelectTable table state =
-    (docErd |> Erd.getTable table)
+    (docErd |> Erd.getTableI table)
         |> Maybe.map
             (\erdTable ->
                 { state
@@ -1344,7 +1344,7 @@ docSelectTable table state =
 
 docSelectColumn : ColumnRef -> DocState -> DocState
 docSelectColumn { table, column } state =
-    (docErd |> Erd.getTable table)
+    (docErd |> Erd.getTableI table)
         |> Maybe.andThen
             (\erdTable ->
                 (erdTable |> ErdTable.getColumnI column)

@@ -145,7 +145,7 @@ update project msg model =
 -- VIEW
 
 
-view : (Msg -> msg) -> msg -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> String -> Bool -> Erd -> HtmlId -> Maybe Int -> Model -> Html msg
+view : (Msg -> msg) -> msg -> (TableId -> msg) -> (RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> String -> Bool -> Erd -> HtmlId -> Maybe Int -> Model -> Html msg
 view wrap close showTable showTableRow openRowDetails openNotes navbarHeight hasFullScreen erd htmlId openDepth model =
     let
         titleId : HtmlId
@@ -202,7 +202,7 @@ view wrap close showTable showTableRow openRowDetails openNotes navbarHeight has
         ]
 
 
-viewSlideOverContent : (Msg -> msg) -> msg -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> Erd -> HtmlId -> Model -> Html msg
+viewSlideOverContent : (Msg -> msg) -> msg -> (TableId -> msg) -> (RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> Erd -> HtmlId -> Model -> Html msg
 viewSlideOverContent wrap close showTable showTableRow openRowDetails openNotes erd titleId model =
     let
         table : Maybe Table
@@ -259,11 +259,11 @@ viewSlideOverContent wrap close showTable showTableRow openRowDetails openNotes 
 
                 StateSuccess res ->
                     [ div [ class "flex flex-wrap space-x-3" ]
-                        [ button [ type_ "button", onClick (showTableRow model.source model.query (res |> toRow |> Just) Nothing), class "inline-flex w-full flex-1 items-center justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" ]
+                        [ button [ type_ "button", onClick (showTableRow model.query (res |> toRow |> Just) Nothing), class "inline-flex w-full flex-1 items-center justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" ]
                             [ text "Add to layout" ]
                         ]
                     , div [ class "space-y-3" ]
-                        ((res.columns |> QueryResult.buildColumnTargets erd)
+                        ((res.columns |> QueryResult.buildColumnTargets erd model.source)
                             |> List.map
                                 (\col ->
                                     let
@@ -356,7 +356,7 @@ docButton name msg =
 
 docModel : Model
 docModel =
-    init ProjectInfo.zero 1 docSource { table = ( "public", "city" ), primaryKey = Nel { column = Nel "id" [], value = DbInt 1 } [] } |> Tuple.first
+    init ProjectInfo.zero 1 docSourceInfo { source = docSourceInfo.id, table = ( "public", "city" ), primaryKey = Nel { column = Nel "id" [], value = DbInt 1 } [] } |> Tuple.first
 
 
 docErd : Erd
@@ -364,8 +364,8 @@ docErd =
     Project.create Nothing [] "Azimutt" (Source.aml "aml" Time.zero SourceId.zero) |> Erd.create
 
 
-docSource : DbSourceInfo
-docSource =
+docSourceInfo : DbSourceInfo
+docSourceInfo =
     DbSourceInfo.zero
 
 
@@ -422,8 +422,8 @@ docShowTable _ =
     logAction "showTable"
 
 
-docShowTableRow : DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> ElmBook.Msg state
-docShowTableRow _ _ _ _ =
+docShowTableRow : RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> ElmBook.Msg state
+docShowTableRow _ _ _ =
     logAction "showTableRow"
 
 

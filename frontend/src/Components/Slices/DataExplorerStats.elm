@@ -345,7 +345,7 @@ docColumn schema table pathStr =
 
 docColumnTarget : String -> QueryResultColumnTarget
 docColumnTarget name =
-    { path = Nel name [], pathStr = name, ref = Nothing, fk = Nothing }
+    { path = Nel name [], pathStr = name, schemaRef = Nothing, dataRef = Nothing }
 
 
 docCityColumnValues : Int -> String -> String -> String -> Int -> Float -> Bool -> List DbValue -> Dict String DbValue -> QueryResultRow

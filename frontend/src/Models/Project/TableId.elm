@@ -1,4 +1,4 @@
-module Models.Project.TableId exposing (TableId, TableIdStr, decode, decodeWith, dictGetI, encode, fromHtmlId, fromString, name, parse, parseWith, schema, show, toHtmlId, toLower, toString)
+module Models.Project.TableId exposing (TableId, TableIdStr, decode, decodeWith, dictGetI, encode, eqI, fromHtmlId, fromString, name, parse, parseWith, schema, show, toHtmlId, toLower, toString)
 
 import Conf
 import Dict exposing (Dict)
@@ -35,10 +35,16 @@ toLower ( s, t ) =
     ( String.toLower s, String.toLower t )
 
 
+eqI : TableId -> TableId -> Bool
+eqI id1 id2 =
+    toLower id1 == toLower id2
+
+
 dictGetI : TableId -> Dict TableId a -> Maybe a
 dictGetI id dict =
     (dict |> Dict.get id)
         |> Maybe.orElse (id |> toLower |> (\lowerId -> dict |> Dict.find (\k _ -> toLower k == lowerId)))
+        -- TODO: try with `defaultSchema` if `schema id == Conf.schema.empty`?
         |> Maybe.orElse (id |> name |> String.toLower |> (\lowerName -> dict |> Dict.find (\k _ -> (k |> name |> String.toLower) == lowerName)))
 
 

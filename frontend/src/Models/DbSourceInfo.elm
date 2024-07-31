@@ -35,7 +35,7 @@ zero =
     }
 
 
-fromSource : Source -> Maybe DbSourceInfo
+fromSource : Source -> Result String DbSourceInfo
 fromSource source =
     case source.kind of
         DatabaseConnection db ->
@@ -49,12 +49,13 @@ fromSource source =
                         , updatedAt = source.updatedAt
                         }
                     )
+                |> Result.fromMaybe ("url missing in " ++ source.name ++ " source")
 
         _ ->
-            Nothing
+            Err (source.name ++ " not a database source")
 
 
-fromSourceInfo : SourceInfo -> Maybe DbSourceInfo
+fromSourceInfo : SourceInfo -> Result String DbSourceInfo
 fromSourceInfo source =
     case source.kind of
         DatabaseConnection db ->
@@ -68,6 +69,7 @@ fromSourceInfo source =
                         , updatedAt = source.updatedAt
                         }
                     )
+                |> Result.fromMaybe "url missing in source"
 
         _ ->
-            Nothing
+            Err "not a database source"

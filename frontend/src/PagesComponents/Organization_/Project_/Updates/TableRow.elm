@@ -5,12 +5,15 @@ import DataSources.DbMiner.DbTypes exposing (RowQuery)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.Delta exposing (Delta)
+import Libs.Result as Result
 import Models.Area as Area
-import Models.DbSourceInfo exposing (DbSourceInfo)
+import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
 import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.Source exposing (Source)
+import Models.Project.SourceId as SourceId
 import Models.Project.TableRow as TableRow exposing (TableRow)
 import PagesComponents.Organization_.Project_.Models exposing (Model, Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
@@ -19,29 +22,35 @@ import PagesComponents.Organization_.Project_.Models.PositionHint exposing (Posi
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Ports
 import Services.Lenses exposing (mapCanvasT, mapPositionT, mapTableRows, mapTableRowsSeq, mapTableRowsT)
+import Services.Toasts as Toasts
 import Set exposing (Set)
 import Time
 import Track
 
 
-showTableRow : Time.Posix -> DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> String -> Erd -> ( Erd, Extra Msg )
-showTableRow now source query previous hint from erd =
-    let
-        hidden : Set ColumnName
-        hidden =
-            erd |> Erd.currentLayout |> .tableRows |> List.find (\r -> r.source == source.id && r.table == query.table) |> Maybe.mapOrElse .hidden Set.empty
+showTableRow : Time.Posix -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> String -> Erd -> ( Erd, Extra Msg )
+showTableRow now query previous hint from erd =
+    (erd.sources |> List.findBy .id query.source |> Result.fromMaybe ("source missing (" ++ SourceId.toString query.source ++ ")") |> Result.andThen DbSourceInfo.fromSource)
+        |> Result.fold
+            (\err -> ( erd, "Can't query: " ++ err |> Toasts.create "warning" |> Toast |> Extra.msg ))
+            (\source ->
+                let
+                    hidden : Set ColumnName
+                    hidden =
+                        erd |> Erd.currentLayout |> .tableRows |> List.find (\r -> r.source == query.source && r.table == query.table) |> Maybe.mapOrElse .hidden Set.empty
 
-        ( row, cmd ) =
-            TableRow.init erd.project erd.tableRowsSeq now source query hidden previous hint
-    in
-    ( erd
-        |> mapTableRowsSeq (\i -> i + 1)
-        |> Erd.mapCurrentLayoutWithTime now (mapTableRows (List.prepend row))
-    , Extra.newLL
-        [ cmd, Ports.observeTableRowSize row.id, Track.tableRowShown source from erd.project ]
-        (previous |> Maybe.mapOrElse (\_ -> [ ( DeleteTableRow row.id, UnDeleteTableRow_ 0 row ) ]) [])
-      -- don't add history if loading, add it when loaded (see frontend/src/Components/Organisms/TableRow.elm#update GotResult)
-    )
+                    ( row, cmd ) =
+                        TableRow.init erd.project erd.tableRowsSeq now source query hidden previous hint
+                in
+                ( erd
+                    |> mapTableRowsSeq (\i -> i + 1)
+                    |> Erd.mapCurrentLayoutWithTime now (mapTableRows (List.prepend row))
+                , Extra.newLL
+                    [ cmd, Ports.observeTableRowSize row.id, Track.tableRowShown source from erd.project ]
+                    (previous |> Maybe.mapOrElse (\_ -> [ ( DeleteTableRow row.id, UnDeleteTableRow_ 0 row ) ]) [])
+                  -- don't add history if loading, add it when loaded (see frontend/src/Components/Organisms/TableRow.elm#update GotResult)
+                )
+            )
 
 
 deleteTableRow : TableRow.Id -> ErdLayout -> ( ErdLayout, Extra Msg )

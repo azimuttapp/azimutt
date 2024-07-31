@@ -9,6 +9,7 @@ import Models.DbValue exposing (DbValue(..))
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnType exposing (ColumnType)
+import Models.Project.SourceId as SourceId
 import Models.Project.TableId exposing (TableId)
 import Test exposing (Test, describe, test)
 
@@ -167,7 +168,7 @@ fRow table matches =
 
 rowQuery : TableId -> ColumnName -> DbValue -> RowQuery
 rowQuery table column value =
-    { table = table, primaryKey = Nel { column = Nel column [], value = value } [] }
+    { source = SourceId.zero, table = table, primaryKey = Nel { column = Nel column [], value = value } [] }
 
 
 inQuery : List ( String, ColumnType ) -> List ( String, ColumnType ) -> IncomingRowsQuery
