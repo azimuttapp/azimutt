@@ -59,12 +59,14 @@ show defaultSchema ( s, t ) =
 
 toHtmlId : TableId -> HtmlId
 toHtmlId ( s, t ) =
-    "table#" ++ s ++ "#" ++ (t |> HtmlId.encode)
+    -- `~` is used to serialize args to String (cf frontend/src/PagesComponents/Organization_/Project_/Views/Erd.elm:86)
+    -- `#` is used in Oracle user (used as table schema ^^)
+    "table|" ++ s ++ "|" ++ (t |> HtmlId.encode)
 
 
 fromHtmlId : HtmlId -> Maybe TableId
 fromHtmlId id =
-    case String.split "#" id of
+    case String.split "|" id of
         "table" :: s :: t :: [] ->
             Just ( s, t |> HtmlId.decode )
 
