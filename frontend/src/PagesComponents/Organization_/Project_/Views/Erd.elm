@@ -285,7 +285,7 @@ viewTableRows now platform conf cursorMode defaultSchema openedDropdown openedPo
                         erd
                         (erd.sources |> List.findBy .id row.source |> Maybe.andThen DbSource.fromSource)
                         (erd.tables |> TableId.dictGetI row.table)
-                        (erd.relations |> List.filter (\r -> TableId.eqI r.src.table row.table))
+                        (erd.relations |> List.filter (\r -> r.src.table == row.table || r.ref.table == row.table))
                         (erd.metadata |> Dict.get row.table)
                         hoverRow
                         ((rowRelationsBySrc |> Dict.getOrElse row.id []) ++ (rowRelationsByRef |> Dict.getOrElse row.id []))

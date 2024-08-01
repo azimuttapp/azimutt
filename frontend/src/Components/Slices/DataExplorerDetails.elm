@@ -109,7 +109,7 @@ init project id source query =
             DbQuery.findRow source.db.kind query
     in
     ( { id = id, source = source, query = query, state = StateLoading, expanded = Set.empty }
-    , Extra.cmdL [ Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url sqlQuery, Track.dataExplorerDetailsOpened source sqlQuery project ]
+    , Extra.cmdL [ Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.id source.db.url sqlQuery, Track.dataExplorerDetailsOpened source sqlQuery project ]
     )
 
 

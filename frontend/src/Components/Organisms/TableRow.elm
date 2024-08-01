@@ -8,7 +8,7 @@ import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Popover as Popover
 import DataSources.DbMiner.DbQuery as DbQuery
-import DataSources.DbMiner.DbTypes exposing (DbColumnRef, FilterOperation(..), FilterOperator(..), IncomingRowsQuery, RowQuery, TableFilter)
+import DataSources.DbMiner.DbTypes exposing (FilterOperation(..), FilterOperator(..), IncomingRowsQuery, RowQuery, TableFilter)
 import Dict exposing (Dict)
 import ElmBook
 import ElmBook.Actions as Actions exposing (logAction)
@@ -35,26 +35,28 @@ import Libs.String as String
 import Libs.Tailwind as Tw exposing (Color, TwClass, focus)
 import Libs.Task as T
 import Libs.Time as Time
+import Models.DbColumnRef as DbColumnRef exposing (DbColumnRef)
 import Models.DbSource as DbSource exposing (DbSource)
-import Models.DbSourceInfo exposing (DbSourceInfo)
+import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
 import Models.DbSourceInfoWithUrl as DbSourceInfoWithUrl exposing (DbSourceInfoWithUrl)
 import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Position as Position
 import Models.Project as Project
 import Models.Project.Column as Column exposing (Column)
 import Models.Project.ColumnMeta exposing (ColumnMeta)
-import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnName as ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.DatabaseUrlStorage as DatabaseUrlStorage
+import Models.Project.Metadata exposing (Metadata)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.RowPrimaryKey as RowPrimaryKey exposing (RowPrimaryKey)
 import Models.Project.RowValue exposing (RowValue)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
-import Models.Project.SourceId as SourceId exposing (SourceId)
-import Models.Project.SourceKind exposing (SourceKind(..))
+import Models.Project.SourceId as SourceId exposing (SourceId, SourceIdStr)
+import Models.Project.SourceKind as SourceKind exposing (SourceKind(..))
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableMeta exposing (TableMeta)
@@ -67,7 +69,7 @@ import Models.SqlQuery exposing (SqlQuery, SqlQueryOrigin)
 import Models.UserRole as UserRole
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
-import PagesComponents.Organization_.Project_.Models.ErdColumnRef
+import PagesComponents.Organization_.Project_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Organization_.Project_.Models.ErdConf as ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdOrigin as ErdOrigin
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
@@ -77,7 +79,7 @@ import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (E
 import PagesComponents.Organization_.Project_.Views.Modals.ColumnRowContextMenu as ColumnRowContextMenu
 import PagesComponents.Organization_.Project_.Views.Modals.TableRowContextMenu as TableRowContextMenu
 import Ports
-import Services.Lenses exposing (mapCollapsedT, mapColumns, mapHidden, mapSelected, mapShowHiddenColumns, mapState, mapStateT, setPrevious, setState)
+import Services.Lenses exposing (mapCollapsedT, mapColumns, mapHidden, mapLinkedBy, mapSelected, mapShowHiddenColumns, mapState, mapStateT, setPrevious, setState)
 import Services.Toasts as Toasts
 import Set exposing (Set)
 import Time
@@ -101,7 +103,7 @@ type Msg
     | ShowColumn ColumnPathStr
     | HideColumn ColumnPathStr
     | ToggleHiddenColumns
-    | ToggleIncomingRows HtmlId TableRowColumn (Dict TableId IncomingRowsQuery)
+    | ToggleIncomingRows HtmlId TableRowColumn (Dict SourceIdStr (Dict TableId IncomingRowsQuery))
     | GotIncomingRows ColumnPath QueryResult
 
 
@@ -156,7 +158,7 @@ init project id now source query hidden previous hint =
       , collapsed = False
       }
     , Cmd.batch
-        [ previous |> Maybe.mapOrElse (\_ -> Cmd.none) (Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url sqlQuery)
+        [ previous |> Maybe.mapOrElse (\_ -> Cmd.none) (Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.id source.db.url sqlQuery)
         , Track.tableRowOpened previous source sqlQuery project
         ]
     )
@@ -222,20 +224,19 @@ update wrap toggleDropdown showToast deleteTableRow unDeleteTableRow now project
                    )
 
         Refresh ->
-            withDbSource "refresh row"
-                showToast
-                sources
-                model
-                (\dbSrc ->
-                    let
-                        sqlQuery : SqlQueryOrigin
-                        sqlQuery =
-                            DbQuery.findRow dbSrc.db.kind { source = dbSrc.id, table = model.table, primaryKey = model.primaryKey }
-                    in
-                    ( model |> setState (StateLoading { query = sqlQuery, startedAt = now, previous = model |> TableRow.stateSuccess })
-                    , Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id) dbSrc.db.url sqlQuery |> Extra.cmd
+            (model.source |> SourceId.toString |> getDbSource sources)
+                |> Result.fold
+                    (\err -> ( model, "Can't refresh row, " ++ err |> Toasts.warning |> showToast |> Extra.msg ))
+                    (\dbSrc ->
+                        let
+                            sqlQuery : SqlQueryOrigin
+                            sqlQuery =
+                                DbQuery.findRow dbSrc.db.kind { source = dbSrc.id, table = model.table, primaryKey = model.primaryKey }
+                        in
+                        ( model |> setState (StateLoading { query = sqlQuery, startedAt = now, previous = model |> TableRow.stateSuccess })
+                        , Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id) dbSrc.id dbSrc.db.url sqlQuery |> Extra.cmd
+                        )
                     )
-                )
 
         Cancel ->
             ( model |> mapStateLoading (\l -> initFailure l.query l.previous l.startedAt now "Query canceled"), Extra.none )
@@ -257,37 +258,38 @@ update wrap toggleDropdown showToast deleteTableRow unDeleteTableRow now project
 
         ToggleIncomingRows dropdown column relations ->
             if Dict.isEmpty column.linkedBy && openedDropdown /= dropdown then
-                withDbSource "get incoming rows"
-                    showToast
-                    sources
-                    model
-                    (\dbSrc ->
-                        let
-                            sqlQuery : SqlQueryOrigin
-                            sqlQuery =
-                                DbQuery.incomingRows dbSrc.db.kind relations { source = dbSrc.id, table = model.table, primaryKey = model.primaryKey }
-                        in
-                        ( model, Extra.cmdL [ toggleDropdown dropdown |> T.send, Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id ++ "/" ++ column.pathStr) dbSrc.db.url sqlQuery ] )
-                    )
+                (relations |> Dict.toList |> List.map (Tuple.mapFirst (getDbSource sources)))
+                    |> List.map
+                        (\( sourceRes, sourceRels ) ->
+                            sourceRes
+                                |> Result.fold
+                                    (\err -> "Can't get incoming rows, " ++ err |> Toasts.warning |> showToast |> T.send)
+                                    (\dbSrc ->
+                                        DbQuery.incomingRows dbSrc.db.kind sourceRels column.value
+                                            |> Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id ++ "/" ++ column.pathStr) dbSrc.id dbSrc.db.url
+                                    )
+                        )
+                    |> (\cmds -> ( model, (toggleDropdown dropdown |> T.send) :: cmds |> Extra.cmdL ))
 
             else
                 ( model, toggleDropdown dropdown |> Extra.msg )
 
         GotIncomingRows column result ->
             let
-                linkedBy : Dict TableId (List RowPrimaryKey)
+                linkedBy : Maybe (Dict TableId (List RowPrimaryKey))
                 linkedBy =
-                    result.result |> Result.fold (\_ -> Dict.empty) (.rows >> List.head >> Maybe.mapOrElse (Dict.mapBoth TableId.parse parsePks) Dict.empty)
+                    result.result |> Result.map (.rows >> List.head >> Maybe.mapOrElse (Dict.mapBoth TableId.parse parsePks) Dict.empty) |> Result.toMaybe
             in
-            ( model |> mapState (mapSuccess (mapColumns (List.mapBy .path column (\c -> { c | linkedBy = linkedBy }))))
+            ( model |> mapState (mapSuccess (mapColumns (List.mapBy .path column (mapLinkedBy (Dict.set (SourceId.toString result.source) linkedBy)))))
             , result.result |> Result.fold (\err -> "Can't get incoming rows: " ++ err |> Toasts.error |> showToast |> Extra.msg) (\_ -> Extra.none)
             )
 
 
-withDbSource : String -> (Toasts.Msg -> msg) -> List Source -> Model -> (DbSourceInfoWithUrl -> ( Model, Extra msg )) -> ( Model, Extra msg )
-withDbSource action showToast sources model f =
-    (sources |> List.findBy .id model.source |> Result.fromMaybe ("source missing (" ++ SourceId.toString model.source ++ ")") |> Result.andThen DbSourceInfoWithUrl.fromSource)
-        |> Result.fold (\err -> ( model, "Can't " ++ action ++ ", " ++ err |> Toasts.warning |> showToast |> Extra.msg )) f
+getDbSource : List Source -> SourceIdStr -> Result String DbSourceInfoWithUrl
+getDbSource sources idStr =
+    (idStr |> SourceId.fromString |> Result.fromMaybe ("invalid source id (" ++ idStr ++ ")"))
+        |> Result.andThen (\id -> sources |> List.findBy .id id |> Result.fromMaybe ("source missing (" ++ idStr ++ ")"))
+        |> Result.andThen DbSourceInfoWithUrl.fromSource
 
 
 parsePks : DbValue -> List RowPrimaryKey
@@ -598,7 +600,7 @@ viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataE
                 Nothing
 
             else
-                (relations |> List.find (\r -> r.src.table == row.table && r.src.column == rowColumn.path) |> Maybe.map2 (\s r -> { source = s.id, table = r.ref.table, column = r.ref.column }) source)
+                (relations |> List.find (\r -> r.src.table == row.table && r.src.column == rowColumn.path) |> Maybe.map2 (\s r -> DbColumnRef.from s.id r.ref) source)
                     |> Maybe.orElse
                         (erdRelations
                             |> List.find (\r -> r.src.table == row.table && r.src.column == rowColumn.path)
@@ -612,33 +614,38 @@ viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataE
                                 source
                         )
 
-        linkedBy : Dict TableId IncomingRowsQuery
+        linkedBy : Dict SourceIdStr (Dict TableId IncomingRowsQuery)
         linkedBy =
             if rowColumn.value == DbNull then
                 Dict.empty
 
             else
-                -- TODO: use erdRelations for incoming rows from other sources? (could be nice but strange if the same db from several envs are added)
-                relations
-                    |> List.filter (\r -> r.ref.table == row.table && r.ref.column == rowColumn.path)
-                    |> List.map .src
-                    |> List.groupBy .table
-                    |> Dict.filterMap
-                        (\id cols ->
-                            source
-                                |> Maybe.andThen (.tables >> Dict.get id)
-                                |> Maybe.andThen
-                                    (\t ->
-                                        t.primaryKey
-                                            |> Maybe.map
-                                                (\pk ->
-                                                    { primaryKey = pk.columns |> Nel.map (\c -> ( c, t |> Table.getColumnI c |> Maybe.mapOrElse .kind "" ))
-                                                    , foreignKeys = cols |> List.map (\c -> ( c.column, t |> Table.getColumnI c.column |> Maybe.mapOrElse .kind "" ))
-                                                    , altCols = t |> Table.getAltColumns
-                                                    }
-                                                )
-                                    )
+                let
+                    incomingRelations : List DbColumnRef
+                    incomingRelations =
+                        (erdRelations |> List.filter (\r -> r.ref.table == row.table && r.ref.column == rowColumn.path) |> List.map .src)
+                            |> List.concatMap (\ref -> erd.tables |> Dict.get ref.table |> Maybe.mapOrElse (ErdTable.getColumnI ref.column >> Maybe.mapOrElse (.origins >> List.filter (.kind >> SourceKind.isDatabase) >> List.map (\o -> ref |> DbColumnRef.from o.id)) []) [])
+                in
+                (incomingRelations |> List.groupBy (.source >> SourceId.toString))
+                    |> Dict.mapValues
+                        (List.groupBy .table
+                            >> Dict.filterMap
+                                (\id cols ->
+                                    (erd.tables |> Dict.get id)
+                                        |> Maybe.andThen
+                                            (\t ->
+                                                t.primaryKey
+                                                    |> Maybe.map
+                                                        (\pk ->
+                                                            { primaryKey = pk.columns |> Nel.map (\c -> ( c, t |> ErdTable.getColumnI c |> Maybe.mapOrElse .kind "" ))
+                                                            , foreignKeys = cols |> List.map (\c -> ( c.column, t |> ErdTable.getColumnI c.column |> Maybe.mapOrElse .kind "" ))
+                                                            , altCols = t |> getAltColumns erd.metadata
+                                                            }
+                                                        )
+                                            )
+                                )
                         )
+                    |> Dict.filter (\_ v -> v |> Dict.isEmpty |> not)
 
         isColumn : TableRowRelationColumn -> Bool
         isColumn c =
@@ -699,45 +706,48 @@ viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataE
                         button [ type_ "button", class "ml-1 opacity-50 cursor-default" ] [ Icon.solid Icon.ExternalLink "w-3 h-3 inline" ]
                 )
             |> Maybe.withDefault (text "")
-        , source
-            |> Maybe.filter (\_ -> Dict.nonEmpty linkedBy)
-            |> Maybe.map DbSource.toInfo
-            |> Maybe.mapOrElse
-                (\s ->
-                    if conf.layout then
-                        Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = openedDropdown == dropdownId }
-                            (\m ->
-                                button
-                                    [ type_ "button"
-                                    , id m.id
-                                    , onClick (ToggleIncomingRows m.id rowColumn linkedBy |> wrap)
-                                    , title "See rows linking this"
-                                    , ariaExpanded m.isOpen
-                                    , ariaHaspopup "true"
-                                    , css [ "ml-1 opacity-50", focus [ "outline-none" ] ]
-                                    ]
-                                    [ span [ class "sr-only" ] [ text "Incoming rows" ]
-                                    , Icon.solid Icon.Login "w-3 h-3"
-                                    ]
-                            )
-                            (\_ ->
-                                div []
-                                    (linkedBy
-                                        |> Dict.toList
-                                        |> List.map
-                                            (\( tableId, query ) ->
-                                                rowColumn.linkedBy
-                                                    |> Dict.get tableId
-                                                    |> Maybe.map (\linkedRows -> viewColumnRowIncomingRows noop showTableRow openDataExplorer defaultSchema s tableId row rowColumn query linkedRows)
-                                                    |> Maybe.withDefault (ContextMenu.btnSubmenu { label = TableId.show defaultSchema tableId ++ " (?)", content = ContextMenu.Simple { action = noop "table-row-column-linked-rows-not-loaded" } })
-                                            )
-                                    )
-                            )
+        , if Dict.isEmpty linkedBy then
+            text ""
 
-                    else
-                        div [] [ button [ type_ "button", class "ml-1 opacity-50 cursor-default" ] [ Icon.solid Icon.Login "w-3 h-3" ] ]
+          else if conf.layout then
+            Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = openedDropdown == dropdownId }
+                (\m ->
+                    button
+                        [ type_ "button"
+                        , id m.id
+                        , onClick (ToggleIncomingRows m.id rowColumn linkedBy |> wrap)
+                        , title "See rows linking this"
+                        , ariaExpanded m.isOpen
+                        , ariaHaspopup "true"
+                        , css [ "ml-1 opacity-50", focus [ "outline-none" ] ]
+                        ]
+                        [ span [ class "sr-only" ] [ text "Incoming rows" ]
+                        , Icon.solid Icon.Login "w-3 h-3"
+                        ]
                 )
-                (text "")
+                (\_ ->
+                    div []
+                        (linkedBy
+                            |> Dict.toList
+                            |> List.filterMap (\( idStr, values ) -> idStr |> SourceId.fromString |> Maybe.andThen (\id -> erd.sources |> List.findBy .id id) |> Maybe.andThen DbSourceInfo.fromSource |> Maybe.tuple values)
+                            |> List.sortBy (\( s, _ ) -> ( Bool.cond (s.id == row.source) "a" "b", s.name ))
+                            |> List.concatMap
+                                (\( s, rels ) ->
+                                    Bool.cond (s.id == row.source) (text "") (ContextMenu.header "" [] [ text s.name ])
+                                        :: ((rels |> Dict.toList)
+                                                |> List.map
+                                                    (\( tableId, query ) ->
+                                                        (rowColumn.linkedBy |> SourceId.dictGet s.id |> Maybe.andThen (Dict.get tableId))
+                                                            |> Maybe.map (\linkedRows -> viewColumnRowIncomingRows noop showTableRow openDataExplorer defaultSchema s tableId row rowColumn query linkedRows)
+                                                            |> Maybe.withDefault (ContextMenu.item "" [] [ text (TableId.show defaultSchema tableId ++ " (?)") ])
+                                                    )
+                                           )
+                                )
+                        )
+                )
+
+          else
+            div [] [ button [ type_ "button", class "ml-1 opacity-50 cursor-default" ] [ Icon.solid Icon.Login "w-3 h-3" ] ]
         ]
 
 
@@ -807,6 +817,40 @@ viewFooter now source row =
         , text ", "
         , span [ title (DateTime.toIso time) ] [ text (DateTime.human now time) ]
         ]
+
+
+
+-- HELPERS
+
+
+getAltColumns : Metadata -> ErdTable -> List ( ColumnPath, ColumnType )
+getAltColumns metadata table =
+    let
+        labelColumns : List ErdColumn
+        labelColumns =
+            -- columns with `label` tag are used to show in incoming relations
+            metadata
+                |> Dict.get table.id
+                |> Maybe.mapOrElse (\m -> m.columns |> Dict.filter (\_ c -> c.tags |> List.member "label") |> Dict.keys) []
+                |> List.filterMap (\name -> table |> ErdTable.getColumnI (ColumnPath.fromString name))
+
+        defaultLabelColumns : List ErdColumn
+        defaultLabelColumns =
+            -- guess interesting columns to show instead of primary key in table row relations (can be empty)
+            [ [ "name" ]
+            , [ "title" ]
+            , [ "slug" ]
+            , [ "first_name", "last_name" ]
+            ]
+                |> List.findMap (List.map (\name -> table.columns |> ColumnName.dictGetI name) >> List.maybeSeq)
+                |> Maybe.orElse (table.columns |> Dict.values |> List.find (\col -> col.name |> String.toLower |> String.endsWith "name") |> Maybe.map (\col -> [ col ]))
+                |> Maybe.withDefault []
+    in
+    if labelColumns |> List.isEmpty then
+        defaultLabelColumns |> List.map (\c -> ( ColumnPath.root c.name, c.kind ))
+
+    else
+        labelColumns |> List.map (\c -> ( ColumnPath.root c.name, c.kind ))
 
 
 

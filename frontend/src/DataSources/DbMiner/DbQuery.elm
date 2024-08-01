@@ -12,6 +12,7 @@ import DataSources.DbMiner.QuerySQLServer as QuerySQLServer
 import DataSources.DbMiner.QuerySnowflake as QuerySnowflake
 import Dict exposing (Dict)
 import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
+import Models.DbValue exposing (DbValue)
 import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef exposing (ColumnRef, ColumnRefLike)
 import Models.Project.ColumnType exposing (ColumnType)
@@ -138,26 +139,26 @@ incomingRowsLimit =
     20
 
 
-incomingRows : DatabaseKind -> Dict TableId IncomingRowsQuery -> RowQuery -> SqlQueryOrigin
-incomingRows db relations row =
-    -- query made from table rows to get incoming rows from every incoming relation for the specific row, something like:
+incomingRows : DatabaseKind -> Dict TableId IncomingRowsQuery -> DbValue -> SqlQueryOrigin
+incomingRows db relations value =
+    -- query made from a table row to get incoming rows from every incoming relation for the specific row, something like:
     -- ```
     -- SELECT
     --   ${rels.map(rel =>
-    --     `array(SELECT json('id', r.id, 'alt', r.name) FROM ${rel.table} r WHERE r.fk=t.pk LIMIT 20) as ${rel.table}`
+    --     `array(SELECT json('id', r.id, 'alt', r.name) FROM ${rel.table} r WHERE r.fk=${value} LIMIT 20) as ${rel.table}`
     --   ).join(', ')}
-    -- FROM table t WHERE ${primaryKey} = ${value} LIMIT 1;
+    -- LIMIT 1;
     -- ```
     { sql =
         case db of
             DatabaseKind.MySQL ->
-                QueryMySQL.incomingRows row relations incomingRowsLimit
+                QueryMySQL.incomingRows value relations incomingRowsLimit
 
             DatabaseKind.Oracle ->
-                QueryOracle.incomingRows row relations incomingRowsLimit
+                QueryOracle.incomingRows value relations incomingRowsLimit
 
             DatabaseKind.PostgreSQL ->
-                QueryPostgreSQL.incomingRows row relations incomingRowsLimit
+                QueryPostgreSQL.incomingRows value relations incomingRowsLimit
 
             _ ->
                 "DbQuery.incomingRows not implemented for database " ++ DatabaseKind.show db

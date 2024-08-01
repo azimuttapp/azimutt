@@ -1,4 +1,4 @@
-module Components.Molecules.ContextMenu exposing (Action, ActionHotkey, Direction(..), ItemAction(..), MenuItem, Nested(..), SubMenuItem, SubMenuItemHotkey, btn, btnDisabled, btnHotkey, btnSubmenu, doc, itemActiveStyles, itemCurrentStyles, itemDisabledActiveStyles, itemDisabledStyles, itemStyles, link, linkHtml, menu, menuStyles, nested, nestedItem, submenuHtml)
+module Components.Molecules.ContextMenu exposing (Action, ActionHotkey, Direction(..), ItemAction(..), MenuItem, Nested(..), SubMenuItem, SubMenuItemHotkey, btn, btnDisabled, btnHotkey, btnSubmenu, doc, header, item, itemActiveStyles, itemCurrentStyles, itemDisabledActiveStyles, itemDisabledStyles, itemStyles, link, linkHtml, menu, menuStyles, nested, nestedItem, submenuHtml)
 
 import Components.Atoms.Kbd as Kbd
 import ElmBook
@@ -68,8 +68,8 @@ nested classes items =
 
 
 nestedItem : Nested msg -> Html msg
-nestedItem item =
-    case item of
+nestedItem i =
+    case i of
         SingleItem content ->
             li [] [ content ]
 
@@ -118,6 +118,16 @@ btnDisabled styles content =
     button [ type_ "button", role "menuitem", tabindex -1, css [ "block w-full text-left", focus [ "outline-none" ], itemDisabledStyles, styles ] ] content
 
 
+item : TwClass -> List (Attribute msg) -> List (Html msg) -> Html msg
+item styles attrs content =
+    span ([ role "menuitem", css [ "block w-full text-left", itemStyles, styles ] ] ++ attrs) content
+
+
+header : TwClass -> List (Attribute msg) -> List (Html msg) -> Html msg
+header styles attrs content =
+    span ([ role "menuitem", css [ "block w-full px-4 py-0 text-sm border-y border-b-gray-100 border-t-gray-200 bg-gray-100 text-xs font-semibold leading-6 text-gray-900", styles ] ] ++ attrs) content
+
+
 type alias MenuItem msg =
     { label : String, content : ItemAction msg }
 
@@ -147,22 +157,22 @@ type alias SubMenuItemHotkey msg =
 
 
 btnSubmenu : MenuItem msg -> Html msg
-btnSubmenu item =
-    case item.content of
+btnSubmenu i =
+    case i.content of
         Simple { action } ->
-            btn "" action [] [ text item.label ]
+            btn "" action [] [ text i.label ]
 
         SimpleHotkey { action, platform, hotkeys } ->
-            btnHotkey "" action [] [ text item.label ] platform hotkeys
+            btnHotkey "" action [] [ text i.label ] platform hotkeys
 
         SubMenu submenus dir ->
-            submenuHtml dir [ text (item.label ++ " »") ] (submenus |> List.map (\submenu -> btn "" submenu.action [] [ text submenu.label ]))
+            submenuHtml dir [ text (i.label ++ " »") ] (submenus |> List.map (\submenu -> btn "" submenu.action [] [ text submenu.label ]))
 
         SubMenuHotkey submenus dir ->
-            submenuHtml dir [ text (item.label ++ " »") ] (submenus |> List.map (\submenu -> btnHotkey "" submenu.action [] [ text submenu.label ] submenu.platform submenu.hotkeys))
+            submenuHtml dir [ text (i.label ++ " »") ] (submenus |> List.map (\submenu -> btnHotkey "" submenu.action [] [ text submenu.label ] submenu.platform submenu.hotkeys))
 
         Custom html dir ->
-            submenuHtml dir [ text (item.label ++ " »") ] [ html ]
+            submenuHtml dir [ text (i.label ++ " »") ] [ html ]
 
 
 link : Link -> Html msg

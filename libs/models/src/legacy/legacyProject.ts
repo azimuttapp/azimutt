@@ -448,7 +448,7 @@ export const LegacyRowPrimaryKey = LegacyRowValue.array()
 export interface LegacyTableRowColumn {
     path: LegacyColumnPathStr
     value: LegacyJsValue
-    linkedBy?: Record<LegacyTableId, LegacyRowPrimaryKey[]>
+    linkedBy?: Record<LegacyTableId, LegacyRowPrimaryKey[]> // legacy, keep it only for retro-compatibility
 }
 
 export const LegacyTableRowColumn = z.object({

@@ -135,7 +135,7 @@ dbPrefix =
 init : ProjectInfo -> Id -> DbSourceInfoWithUrl -> SqlQueryOrigin -> ( Model, Extra msg )
 init project id source query =
     ( { id = id, source = source, query = query, state = StateRunning }
-    , Extra.cmdL [ Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url query, Track.dataExplorerQueryOpened source query project ]
+    , Extra.cmdL [ Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.id source.db.url query, Track.dataExplorerQueryOpened source query project ]
     )
 
 
@@ -200,7 +200,7 @@ update showToast project msg model =
             ( model |> mapState (mapSuccess (\s -> { s | sortBy = sort, page = 1 })), Extra.none )
 
         Refresh ->
-            ( model |> setState StateRunning, Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id) model.source.db.url model.query |> Extra.cmd )
+            ( model |> setState StateRunning, Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id) model.source.id model.source.db.url model.query |> Extra.cmd )
 
         ExportData extension ->
             case model.state of

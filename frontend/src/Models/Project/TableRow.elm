@@ -14,7 +14,7 @@ import Models.Position as Position
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.RowPrimaryKey as RowPrimaryKey exposing (RowPrimaryKey)
-import Models.Project.SourceId as SourceId exposing (SourceId)
+import Models.Project.SourceId as SourceId exposing (SourceId, SourceIdStr)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Size as Size
 import Models.SqlQuery as SqlQuery exposing (SqlQueryOrigin)
@@ -65,7 +65,7 @@ type alias SuccessState =
 
 
 type alias TableRowColumn =
-    { path : ColumnPath, pathStr : ColumnPathStr, value : DbValue, linkedBy : Dict TableId (List RowPrimaryKey) }
+    { path : ColumnPath, pathStr : ColumnPathStr, value : DbValue, linkedBy : Dict SourceIdStr (Dict TableId (List RowPrimaryKey)) }
 
 
 stateSuccess : TableRow -> Maybe SuccessState
@@ -216,13 +216,10 @@ decodeSuccessState =
 encodeTableRowColumn : TableRowColumn -> Value
 encodeTableRowColumn value =
     Encode.object
-        ([ ( "path", value.path |> ColumnPath.encode )
-         , ( "value", value.value |> DbValue.encode )
-         , ( "linkedBy", value.linkedBy |> Encode.withDefault (Encode.dict TableId.toString (Encode.list RowPrimaryKey.encode)) Dict.empty )
-         ]
-            -- ugly but DbValue must be present, even with null, but not linkedBy if empty
-            |> List.filterNot (\( k, v ) -> k == "linkedBy" && v == Encode.null)
-        )
+        -- don't use Encode.notNullObject to keep `value` key even when it's null
+        [ ( "path", value.path |> ColumnPath.encode )
+        , ( "value", value.value |> DbValue.encode )
+        ]
 
 
 decodeTableRowColumn : Decoder TableRowColumn
@@ -231,4 +228,4 @@ decodeTableRowColumn =
         (Decode.field "path" ColumnPath.decode)
         (Decode.field "path" ColumnPath.decodeStr)
         (Decode.field "value" DbValue.decode)
-        (Decode.defaultField "linkedBy" (Decode.customDict TableId.parse (Decode.list RowPrimaryKey.decode)) Dict.empty)
+        (Decode.succeed Dict.empty)

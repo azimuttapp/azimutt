@@ -1,5 +1,6 @@
-module Models.Project.SourceId exposing (SourceId, SourceIdStr, decode, encode, fromString, generator, new, one, toString, two, zero)
+module Models.Project.SourceId exposing (SourceId, SourceIdStr, decode, decodeStr, dictGet, encode, encodeStr, fromString, generator, new, one, toString, two, zero)
 
+import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Value)
 import Libs.Models.Uuid as Uuid exposing (Uuid)
 import Random
@@ -53,11 +54,26 @@ fromString value =
         Nothing
 
 
+dictGet : SourceId -> Dict SourceIdStr a -> Maybe a
+dictGet id dict =
+    dict |> Dict.get (toString id)
+
+
 encode : SourceId -> Value
 encode value =
-    value |> toString |> Uuid.encode
+    value |> toString |> encodeStr
 
 
 decode : Decode.Decoder SourceId
 decode =
-    Uuid.decode |> Decode.map new
+    decodeStr |> Decode.map new
+
+
+encodeStr : SourceIdStr -> Value
+encodeStr value =
+    value |> Uuid.encode
+
+
+decodeStr : Decode.Decoder SourceIdStr
+decodeStr =
+    Uuid.decode

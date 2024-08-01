@@ -162,9 +162,9 @@ getColumnStats column ( source, database ) =
     messageToJs (GetColumnStats source database column)
 
 
-runDatabaseQuery : String -> DatabaseUrl -> SqlQueryOrigin -> Cmd msg
-runDatabaseQuery context database query =
-    messageToJs (RunDatabaseQuery context database query)
+runDatabaseQuery : String -> SourceId -> DatabaseUrl -> SqlQueryOrigin -> Cmd msg
+runDatabaseQuery context source database query =
+    messageToJs (RunDatabaseQuery context source database query)
 
 
 getPrismaSchema : String -> Cmd msg
@@ -279,7 +279,7 @@ type ElmMsg
     | GetDatabaseSchema DatabaseUrl
     | GetTableStats SourceId DatabaseUrl TableId
     | GetColumnStats SourceId DatabaseUrl ColumnRef
-    | RunDatabaseQuery String DatabaseUrl SqlQueryOrigin
+    | RunDatabaseQuery String SourceId DatabaseUrl SqlQueryOrigin
     | GetPrismaSchema String
     | ObserveSizes (List HtmlId)
     | LlmGenerateSql OpenAIKey OpenAIModel String DatabaseKind Source
@@ -423,8 +423,8 @@ elmEncoder elm =
         GetColumnStats source database column ->
             Encode.object [ ( "kind", "GetColumnStats" |> Encode.string ), ( "source", source |> SourceId.encode ), ( "database", database |> DatabaseUrl.encode ), ( "column", column |> ColumnRef.encode ) ]
 
-        RunDatabaseQuery context database query ->
-            Encode.object [ ( "kind", "RunDatabaseQuery" |> Encode.string ), ( "context", context |> Encode.string ), ( "database", database |> DatabaseUrl.encode ), ( "query", query |> SqlQuery.encodeOrigin ) ]
+        RunDatabaseQuery context source database query ->
+            Encode.object [ ( "kind", "RunDatabaseQuery" |> Encode.string ), ( "context", context |> Encode.string ), ( "source", source |> SourceId.encode ), ( "database", database |> DatabaseUrl.encode ), ( "query", query |> SqlQuery.encodeOrigin ) ]
 
         GetPrismaSchema content ->
             Encode.object [ ( "kind", "GetPrismaSchema" |> Encode.string ), ( "content", content |> Encode.string ) ]

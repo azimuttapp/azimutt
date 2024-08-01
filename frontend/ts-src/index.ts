@@ -417,8 +417,8 @@ function runDatabaseQuery(msg: RunDatabaseQuery) {
         window.desktop.execute(msg.database, msg.query.sql, []).then(queryResultsToLegacy) :
         backend.runDatabaseQuery(msg.database, msg.query.sql)
     ).then(
-        (results: LegacyDatabaseQueryResults) => app.gotDatabaseQueryResult(msg.context, msg.query, results, start, Date.now()),
-        (err: any) => app.gotDatabaseQueryResult(msg.context, msg.query, errorToString(err), start, Date.now())
+        (results: LegacyDatabaseQueryResults) => app.gotDatabaseQueryResult(msg.context, msg.source, msg.query, results, start, Date.now()),
+        (err: any) => app.gotDatabaseQueryResult(msg.context, msg.source, msg.query, errorToString(err), start, Date.now())
     )
 }
 

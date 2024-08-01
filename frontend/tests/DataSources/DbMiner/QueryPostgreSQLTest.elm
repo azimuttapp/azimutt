@@ -6,10 +6,8 @@ import Dict
 import Expect
 import Libs.Nel as Nel exposing (Nel)
 import Models.DbValue exposing (DbValue(..))
-import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnType exposing (ColumnType)
-import Models.Project.SourceId as SourceId
 import Models.Project.TableId exposing (TableId)
 import Test exposing (Test, describe, test)
 
@@ -101,23 +99,17 @@ LIMIT 1;
 
 incomingRowsSuite : List Test
 incomingRowsSuite =
-    [ test "simple" (\_ -> incomingRows (rowQuery ( "", "users" ) "id" (DbInt 1)) ([ ( ( "", "events" ), inQuery [ ( "id", "int" ) ] [ ( "created_by", "int" ) ] ) ] |> Dict.fromList) 20 |> Expect.equal """SELECT
-  array(SELECT json_build_object('id', s."id") FROM "events" s WHERE s."created_by" = m."id" LIMIT 20) as ".events"
-FROM "users" m
-WHERE "id"=1
+    [ test "simple" (\_ -> incomingRows (DbInt 1) ([ ( ( "", "events" ), inQuery [ ( "id", "int" ) ] [ ( "created_by", "int" ) ] ) ] |> Dict.fromList) 20 |> Expect.equal """SELECT
+  array(SELECT json_build_object('id', s."id") FROM "events" s WHERE s."created_by"=1 LIMIT 20) AS ".events"
 LIMIT 1;
 """)
-    , test "several tables & foreign keys" (\_ -> incomingRows (rowQuery ( "", "users" ) "id" (DbInt 1)) ([ ( ( "", "events" ), inQuery [ ( "id", "int" ) ] [ ( "created_by", "int" ) ] ), ( ( "public", "organizations" ), inQuery [ ( "id", "int" ) ] [ ( "created_by", "int" ), ( "updated_by", "int" ) ] ) ] |> Dict.fromList) 20 |> Expect.equal """SELECT
-  array(SELECT json_build_object('id', s."id") FROM "events" s WHERE s."created_by" = m."id" LIMIT 20) as ".events",
-  array(SELECT json_build_object('id', s."id") FROM "public"."organizations" s WHERE s."created_by" = m."id" OR s."updated_by" = m."id" LIMIT 20) as "public.organizations"
-FROM "users" m
-WHERE "id"=1
+    , test "several tables & foreign keys" (\_ -> incomingRows (DbInt 1) ([ ( ( "", "events" ), inQuery [ ( "id", "int" ) ] [ ( "created_by", "int" ) ] ), ( ( "public", "organizations" ), inQuery [ ( "id", "int" ) ] [ ( "created_by", "int" ), ( "updated_by", "int" ) ] ) ] |> Dict.fromList) 20 |> Expect.equal """SELECT
+  array(SELECT json_build_object('id', s."id") FROM "events" s WHERE s."created_by"=1 LIMIT 20) AS ".events",
+  array(SELECT json_build_object('id', s."id") FROM "public"."organizations" s WHERE s."created_by"=1 OR s."updated_by"=1 LIMIT 20) AS "public.organizations"
 LIMIT 1;
 """)
-    , test "composite pk & json" (\_ -> incomingRows (rowQuery ( "", "users" ) "id" (DbString "11bd9544-d56a-43d7-9065-6f1f25addf8a")) ([ ( ( "", "events" ), inQuery [ ( "id", "int" ), ( "details.id", "int" ) ] [ ( "details.created_by", "uuid" ) ] ) ] |> Dict.fromList) 20 |> Expect.equal """SELECT
-  array(SELECT json_build_object('id', s."id", 'details:id', (s."details"->>'id')::int) FROM "events" s WHERE (s."details"->>'created_by')::uuid = m."id" LIMIT 20) as ".events"
-FROM "users" m
-WHERE "id"='11bd9544-d56a-43d7-9065-6f1f25addf8a'
+    , test "composite pk & json" (\_ -> incomingRows (DbString "11bd9544-d56a-43d7-9065-6f1f25addf8a") ([ ( ( "", "events" ), inQuery [ ( "id", "int" ), ( "details.id", "int" ) ] [ ( "details.created_by", "uuid" ) ] ) ] |> Dict.fromList) 20 |> Expect.equal """SELECT
+  array(SELECT json_build_object('id', s."id", 'details:id', (s."details"->>'id')::int) FROM "events" s WHERE (s."details"->>'created_by')::uuid='11bd9544-d56a-43d7-9065-6f1f25addf8a' LIMIT 20) AS ".events"
 LIMIT 1;
 """)
     ]
@@ -168,11 +160,6 @@ users =
 filter : FilterOperator -> String -> FilterOperation -> DbValue -> TableFilter
 filter operator path operation value =
     { operator = operator, column = ColumnPath.fromString path, operation = operation, value = value }
-
-
-rowQuery : TableId -> ColumnName -> DbValue -> RowQuery
-rowQuery table column value =
-    { source = SourceId.zero, table = table, primaryKey = Nel { column = Nel column [], value = value } [] }
 
 
 inQuery : List ( String, ColumnType ) -> List ( String, ColumnType ) -> IncomingRowsQuery

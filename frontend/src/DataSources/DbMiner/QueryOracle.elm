@@ -36,8 +36,8 @@ findRow table primaryKey =
     "SELECT *\nFROM " ++ formatTable table ++ "\nWHERE " ++ formatMatcher primaryKey ++ "\nFETCH FIRST 1 ROW ONLY;\n"
 
 
-incomingRows : RowQuery -> Dict TableId IncomingRowsQuery -> Int -> SqlQuery
-incomingRows query relations limit =
+incomingRows : DbValue -> Dict TableId IncomingRowsQuery -> Int -> SqlQuery
+incomingRows value relations limit =
     "SELECT\n"
         ++ (relations
                 |> Dict.toList
@@ -51,15 +51,14 @@ incomingRows query relations limit =
                                     "'" ++ altColName ++ "' VALUE " ++ (q.altCols |> List.map (\( col, _ ) -> "s." ++ formatColumn col) |> String.join " || ") ++ ", "
                                )
                             ++ (q.primaryKey |> Nel.toList |> List.map (\( col, _ ) -> "'" ++ (col |> ColumnPath.toString) ++ "' VALUE s." ++ formatColumn col) |> String.join ", ")
-                            ++ (") FROM " ++ formatTable table ++ " s WHERE ")
-                            ++ (q.foreignKeys |> List.map (\( fk, _ ) -> "s." ++ formatColumn fk ++ " = m." ++ formatColumn query.primaryKey.head.column) |> String.join " OR ")
+                            ++ ")"
+                            ++ (" FROM " ++ formatTable table ++ " s")
+                            ++ (" WHERE " ++ (q.foreignKeys |> List.map (\( fk, _ ) -> "s." ++ formatColumn fk ++ "=" ++ formatValue value) |> String.join " OR "))
                             ++ (" FETCH FIRST " ++ String.fromInt limit ++ " ROWS ONLY)")
                             ++ (" RETURNING JSON) AS \"" ++ TableId.toString table ++ "\"")
                     )
                 |> String.join ",\n"
            )
-        ++ ("\nFROM " ++ formatTable query.table ++ " m")
-        ++ ("\nWHERE " ++ formatMatcher query.primaryKey)
         ++ "\nFETCH FIRST 1 ROW ONLY;\n"
 
 
