@@ -194,6 +194,7 @@ defmodule AzimuttWeb.Router do
     get("/", Admin.DashboardController, :index)
     resources("/users", Admin.UserController, param: "user_id", only: [:index, :show])
     resources("/organizations", Admin.OrganizationController, param: "organization_id", only: [:index, :show])
+    post("/organizations/:organization_id/refresh", Admin.OrganizationController, :refresh)
     resources("/projects", Admin.ProjectController, param: "project_id", only: [:index, :show])
     resources("/events", Admin.EventController, param: "event_id", only: [:index, :show])
   end

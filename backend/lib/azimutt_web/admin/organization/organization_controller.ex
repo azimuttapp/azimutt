@@ -43,4 +43,13 @@ defmodule AzimuttWeb.Admin.OrganizationController do
       )
     end
   end
+
+  def refresh(conn, %{"organization_id" => organization_id} = params) do
+    current_user = conn.assigns.current_user
+
+    with {:ok, %Organization{} = organization} <- Admin.get_organization(organization_id) do
+      Organizations.validate_organization_plan(organization)
+      conn |> put_flash(:info, "Plan refreshed!") |> redirect(to: Routes.admin_organization_path(conn, :show, organization_id))
+    end
+  end
 end
