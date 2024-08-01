@@ -25,6 +25,7 @@ export const AttributePath = AttributeName.array()
 export type AttributePath = z.infer<typeof AttributePath>
 export const AttributeType = z.string()
 export type AttributeType = z.infer<typeof AttributeType>
+// FIXME: remove unknown from AttributeValue
 export const AttributeValue = z.union([z.string(), z.number(), z.boolean(), z.date(), z.null(), z.unknown()])
 export type AttributeValue = z.infer<typeof AttributeValue>
 export const ConstraintName = z.string()

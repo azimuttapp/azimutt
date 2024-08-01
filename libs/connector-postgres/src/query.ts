@@ -1,5 +1,5 @@
 import {indexBy} from "@azimutt/utils";
-import {AttributeRef, QueryResults} from "@azimutt/models";
+import {AttributeRef, AttributeValue, QueryResults} from "@azimutt/models";
 import {Conn, QueryResultArrayMode, QueryResultField} from "./connect";
 
 export const execQuery = (query: string, parameters: any[]) => (conn: Conn): Promise<QueryResults> => {
@@ -10,7 +10,7 @@ async function buildResults(conn: Conn, query: string, result: QueryResultArrayM
     const tableIds = [...new Set(result.fields.map(f => f.tableID))]
     const columnInfos = await getColumnInfos(conn, tableIds)
     const attributes = buildAttributes(result.fields, columnInfos)
-    const rows = result.rows.map(row => attributes.reduce((acc, col, i) => ({...acc, [col.name]: row[i]}), {}))
+    const rows = result.rows.map(row => attributes.reduce((acc, col, i) => ({...acc, [col.name]: buildValue(row[i])}), {}))
     return {query, attributes, rows}
 }
 
@@ -23,6 +23,11 @@ function buildAttributes(fields: QueryResultField[], columnInfos: ColumnInfo[]):
         const info = indexed[`${f.tableID}-${f.columnID}`]
         return info ? {name, ref: {schema: info.schema_name, entity: info.table_name, attribute: [info.column_name]}} : {name}
     })
+}
+
+function buildValue(v: AttributeValue): AttributeValue {
+    if (v !== null && typeof v === 'object' && v.constructor.name === 'Buffer') return v.toString()
+    return v
 }
 
 type ColumnInfo = {
