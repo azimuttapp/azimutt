@@ -3,15 +3,17 @@ module DataSources.DbMiner.QueryMySQL exposing (addLimit, exploreColumn, explore
 import DataSources.DbMiner.DbTypes exposing (FilterOperation(..), FilterOperator(..), IncomingRowsQuery, RowQuery, TableFilter)
 import Dict exposing (Dict)
 import Libs.Bool as Bool
+import Libs.List as List
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Regex as Regex
 import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
-import Models.Project.RowPrimaryKey exposing (RowPrimaryKey)
+import Models.Project.RowPrimaryKey exposing (RowPrimaryKey, labelColName)
 import Models.Project.RowValue exposing (RowValue)
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.SqlFragment exposing (SqlFragment)
 import Models.SqlQuery exposing (SqlQuery)
 
 
@@ -22,7 +24,8 @@ exploreTable table =
 
 exploreColumn : TableId -> ColumnPath -> SqlQuery
 exploreColumn table column =
-    formatColumn "" column |> (\col -> "SELECT\n  " ++ col ++ ",\n  count(*) as count\nFROM " ++ formatTable table ++ "\nGROUP BY " ++ col ++ "\nORDER BY count DESC, " ++ col ++ ";\n")
+    ( formatColumn "" column, formatColumnAlias column )
+        |> (\( col, alias ) -> "SELECT\n  " ++ col ++ Bool.cond (col == alias) "" (" AS " ++ alias) ++ ",\n  count(*) AS count\nFROM " ++ formatTable table ++ "\nGROUP BY " ++ col ++ "\nORDER BY count DESC, " ++ alias ++ ";\n")
 
 
 filterTable : TableId -> List TableFilter -> SqlQuery
@@ -42,9 +45,15 @@ incomingRows value relations limit =
                 |> Dict.toList
                 |> List.map
                     (\( table, q ) ->
-                        "  array(SELECT json_build_object("
+                        "  (SELECT JSON_ARRAYAGG(JSON_OBJECT("
+                            ++ (if q.labelCols |> List.isEmpty then
+                                    ""
+
+                                else
+                                    "'" ++ labelColName ++ "', CONCAT_WS(' ', " ++ (q.labelCols |> List.map (\( col, _ ) -> formatColumn "s" col) |> String.join ", ") ++ "), "
+                               )
                             ++ (q.primaryKey |> Nel.toList |> List.map (\( col, _ ) -> "'" ++ (col |> ColumnPath.toString) ++ "', " ++ formatColumn "s" col) |> String.join ", ")
-                            ++ ")"
+                            ++ "))"
                             ++ (" FROM " ++ formatTable table ++ " s")
                             ++ (" WHERE " ++ (q.foreignKeys |> List.map (\( fk, _ ) -> formatColumn "s" fk ++ "=" ++ formatValue value) |> String.join " OR "))
                             ++ (" LIMIT " ++ String.fromInt limit)
@@ -122,12 +131,25 @@ formatTable ( schema, table ) =
 
 formatColumn : String -> ColumnPath -> String
 formatColumn prefix column =
-    -- FIXME: handle JSON columns
-    if prefix == "" then
-        "`" ++ column.head ++ "`"
+    let
+        baseCol : String
+        baseCol =
+            if prefix == "" then
+                "`" ++ column.head ++ "`"
+
+            else
+                prefix ++ ".`" ++ column.head ++ "`"
+    in
+    if List.isEmpty column.tail then
+        baseCol
 
     else
-        prefix ++ ".`" ++ column.head ++ "`"
+        baseCol ++ "->>'$." ++ (column.tail |> String.join ".") ++ "'"
+
+
+formatColumnAlias : ColumnPath -> SqlFragment
+formatColumnAlias column =
+    "`" ++ (column.tail |> List.last |> Maybe.withDefault column.head) ++ "`"
 
 
 formatOperator : FilterOperator -> String

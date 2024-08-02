@@ -67,7 +67,7 @@ type ColumnBasics = { rows: number, nulls: number, cardinality: number }
 
 async function getColumnBasics(conn: Conn, sqlTable: SqlFragment, sqlColumn: SqlFragment): Promise<ColumnBasics> {
     const rows = await conn.query<ColumnBasics>(`
-        SELECT count(*)                                                      AS rows
+        SELECT count(*)                                                      AS "rows"
              , (SELECT count(*) FROM ${sqlTable} WHERE ${sqlColumn} IS NULL) AS nulls
              , count(distinct ${sqlColumn})                                  AS cardinality
         FROM ${sqlTable};`)

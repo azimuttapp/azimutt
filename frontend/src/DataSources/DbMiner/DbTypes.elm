@@ -22,7 +22,7 @@ type alias RowQuery =
 
 
 type alias IncomingRowsQuery =
-    { primaryKey : Nel ( ColumnPath, ColumnType ), foreignKeys : List ( ColumnPath, ColumnType ), altCols : List ( ColumnPath, ColumnType ) }
+    { primaryKey : Nel ( ColumnPath, ColumnType ), foreignKeys : List ( ColumnPath, ColumnType ), labelCols : List ( ColumnPath, ColumnType ) }
 
 
 

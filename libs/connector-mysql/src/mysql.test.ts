@@ -25,7 +25,7 @@ import {application, logger} from "./constants.test";
 
 describe('mysql', () => {
     // fake url, use a real one to test (see README for how-to)
-    const url: DatabaseUrlParsed = parseDatabaseUrl('mysql://user:pass@host.com:3306/db')
+    const url: DatabaseUrlParsed = parseDatabaseUrl('mysql://azimutt:azimutt@localhost:3306/mysql_sample')
     const opts: ConnectorSchemaOpts = {logger, logQueries: false, inferJsonAttributes: true, inferPolymorphicRelations: true}
 
     test.skip('execQuery', async () => {
@@ -36,12 +36,12 @@ describe('mysql', () => {
     test.skip('getSchema', async () => {
         const schema = await connect(application, url, getSchema(opts), opts)
         console.log('schema', schema)
-        expect(schema.entities?.length).toEqual(21)
+        expect(schema.entities?.length).toEqual(7)
     })
     test.skip('getTables', async () => {
         const tables = await connect(application, url, getTables(opts), opts)
         console.log(`${tables.length} tables`, tables)
-        expect(tables.length).toEqual(21)
+        expect(tables.length).toEqual(7)
     })
     test.skip('getColumns', async () => {
         const columns = await connect(application, url, getColumns(opts), opts)
@@ -109,17 +109,17 @@ describe('mysql', () => {
             {table_schema: 'public', table_name: 'events', column_index: 6, column_name: 'created_by', column_type: 'uuid', column_nullable: 'NO', column_default: null, column_comment: '', column_extra: ''},
         ]
         const eventsCreatedByFK: RawConstraintColumn[] = [
-            {constraint_name: '', constraint_type: 'FOREIGN KEY', table_schema: 'public', table_name: 'events', column_name: 'created_by', column_index: 6, ref_schema: 'public', ref_table: 'users', ref_column: 'id'}
+            {constraint_name: '', constraint_type: 'FOREIGN KEY', table_schema: 'public', table_name: 'events', column_index: 6, column_name: 'created_by', column_expr: null, ref_schema: 'public', ref_table: 'users', ref_column: 'id'}
         ]
         const primaryKeys: Record<EntityId, RawConstraintColumn[]> = {
-            'public.users': [{constraint_name: 'PRIMARY', constraint_type: 'PRIMARY KEY', table_schema: 'public', table_name: 'users', column_name: 'id', column_index: 1, ref_schema: null, ref_table: null, ref_column: null}],
-            'public.events': [{constraint_name: 'events_pk', constraint_type: 'PRIMARY KEY', table_schema: 'public', table_name: 'events', column_name: 'id', column_index: 1, ref_schema: null, ref_table: null, ref_column: null}],
+            'public.users': [{constraint_name: 'PRIMARY', constraint_type: 'PRIMARY KEY', table_schema: 'public', table_name: 'users', column_index: 1, column_name: 'id', column_expr: null, ref_schema: null, ref_table: null, ref_column: null}],
+            'public.events': [{constraint_name: 'events_pk', constraint_type: 'PRIMARY KEY', table_schema: 'public', table_name: 'events', column_index: 1, column_name: 'id', column_expr: null, ref_schema: null, ref_table: null, ref_column: null}],
         }
         const uniques: Record<EntityId, RawConstraintColumn[]> = {
-            'public.users': [{constraint_name: '', constraint_type: 'UNIQUE', table_schema: 'public', table_name: 'users', column_name: 'name', column_index: 2, ref_schema: null, ref_table: null, ref_column: null}],
+            'public.users': [{constraint_name: '', constraint_type: 'UNIQUE', table_schema: 'public', table_name: 'users', column_index: 2, column_name: 'name', column_expr: null, ref_schema: null, ref_table: null, ref_column: null}],
         }
         const indexes: Record<EntityId, RawConstraintColumn[]> = {
-            'public.events': [{constraint_name: '', constraint_type: 'INDEX', table_schema: 'public', table_name: 'events', column_name: 'name', column_index: 2, ref_schema: null, ref_table: null, ref_column: null}],
+            'public.events': [{constraint_name: '', constraint_type: 'INDEX', table_schema: 'public', table_name: 'events', column_index: 2, column_name: 'name', column_expr: null, ref_schema: null, ref_table: null, ref_column: null}],
         }
         const jsonColumns: Record<EntityId, Record<AttributeName, ValueSchema>> = {'public.events': {'details': {type: 'object', values: [{nb_projects: 1}], nested: {nb_projects: {type: 'number', values: [1]}}}}}
         const polyColumns: Record<EntityId, Record<AttributeName, string[]>> = {'public.events': {'item_kind': ['project', 'organization']}}

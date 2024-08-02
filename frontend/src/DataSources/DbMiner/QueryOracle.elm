@@ -8,7 +8,7 @@ import Libs.Nel as Nel exposing (Nel)
 import Libs.Regex as Regex
 import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
-import Models.Project.RowPrimaryKey exposing (RowPrimaryKey, altColName)
+import Models.Project.RowPrimaryKey exposing (RowPrimaryKey, labelColName)
 import Models.Project.RowValue exposing (RowValue)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.SqlFragment exposing (SqlFragment)
@@ -44,11 +44,11 @@ incomingRows value relations limit =
                 |> List.map
                     (\( table, q ) ->
                         "  JSON_ARRAY((SELECT JSON_OBJECT("
-                            ++ (if q.altCols |> List.isEmpty then
+                            ++ (if q.labelCols |> List.isEmpty then
                                     ""
 
                                 else
-                                    "'" ++ altColName ++ "' VALUE " ++ (q.altCols |> List.map (\( col, _ ) -> "s." ++ formatColumn col) |> String.join " || ") ++ ", "
+                                    "'" ++ labelColName ++ "' VALUE " ++ (q.labelCols |> List.map (\( col, _ ) -> "s." ++ formatColumn col) |> List.intersperse "' '" |> String.join " || ") ++ ", "
                                )
                             ++ (q.primaryKey |> Nel.toList |> List.map (\( col, _ ) -> "'" ++ (col |> ColumnPath.toString) ++ "' VALUE s." ++ formatColumn col) |> String.join ", ")
                             ++ ")"

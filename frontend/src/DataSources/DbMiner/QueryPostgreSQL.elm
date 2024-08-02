@@ -10,7 +10,7 @@ import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType as ColumnType exposing (ColumnType, ParsedColumnType)
-import Models.Project.RowPrimaryKey exposing (RowPrimaryKey, altColName)
+import Models.Project.RowPrimaryKey exposing (RowPrimaryKey, labelColName)
 import Models.Project.RowValue exposing (RowValue)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.SqlFragment exposing (SqlFragment)
@@ -47,11 +47,11 @@ incomingRows value relations limit =
                 |> List.map
                     (\( table, q ) ->
                         "  array(SELECT json_build_object("
-                            ++ (if q.altCols |> List.isEmpty then
+                            ++ (if q.labelCols |> List.isEmpty then
                                     ""
 
                                 else
-                                    "'" ++ altColName ++ "', CONCAT(" ++ (q.altCols |> List.map (\( col, kind ) -> formatColumn "s" col (ColumnType.parse kind)) |> List.intersperse "' '" |> String.join ", ") ++ "), "
+                                    "'" ++ labelColName ++ "', CONCAT(" ++ (q.labelCols |> List.map (\( col, kind ) -> formatColumn "s" col (ColumnType.parse kind)) |> List.intersperse "' '" |> String.join ", ") ++ "), "
                                )
                             ++ (q.primaryKey |> Nel.toList |> List.map (\( col, kind ) -> "'" ++ (col |> ColumnPath.toString) ++ "', " ++ formatColumn "s" col (ColumnType.parse kind)) |> String.join ", ")
                             ++ ")"

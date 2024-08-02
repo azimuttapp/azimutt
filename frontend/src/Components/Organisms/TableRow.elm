@@ -639,7 +639,7 @@ viewColumnRow wrap noop createContextMenu hover showTableRow openNotes openDataE
                                                         (\pk ->
                                                             { primaryKey = pk.columns |> Nel.map (\c -> ( c, t |> ErdTable.getColumnI c |> Maybe.mapOrElse .kind "" ))
                                                             , foreignKeys = cols |> List.map (\c -> ( c.column, t |> ErdTable.getColumnI c.column |> Maybe.mapOrElse .kind "" ))
-                                                            , altCols = t |> getAltColumns erd.metadata
+                                                            , labelCols = t |> getAltColumns erd.metadata
                                                             }
                                                         )
                                             )
@@ -765,7 +765,7 @@ viewColumnRowIncomingRows noop showTableRow openDataExplorer defaultSchema sourc
                         |> List.map
                             (\r ->
                                 { label = formatIncomingRowsLabel r
-                                , action = showTableRow { source = source.id, table = tableId, primaryKey = r |> RowPrimaryKey.extractAlt |> Tuple.first } Nothing (Just (PositionHint.PlaceRight row.position row.size))
+                                , action = showTableRow { source = source.id, table = tableId, primaryKey = r |> RowPrimaryKey.extractLabel |> Tuple.first } Nothing (Just (PositionHint.PlaceRight row.position row.size))
                                 }
                             )
                         |> List.insert { label = "See all", action = openDataExplorer (Just source.id) (Just (DbQuery.filterTable source.db.kind { table = tableId, filters = query.foreignKeys |> List.map (\( fk, _ ) -> TableFilter DbOr fk DbEqual rowColumn.value) })) }
@@ -777,8 +777,8 @@ viewColumnRowIncomingRows noop showTableRow openDataExplorer defaultSchema sourc
 formatIncomingRowsLabel : RowPrimaryKey -> String
 formatIncomingRowsLabel r =
     let
-        ( pk, alt ) =
-            r |> RowPrimaryKey.extractAlt
+        ( pk, labelM ) =
+            r |> RowPrimaryKey.extractLabel
 
         key : String
         key =
@@ -788,7 +788,7 @@ formatIncomingRowsLabel r =
             else
                 pk |> Nel.toList |> List.map (\v -> (v.column |> Nel.toList |> String.join ".") ++ ": " ++ (v.value |> DbValue.toString)) |> String.join ", "
     in
-    alt |> Maybe.map (\a -> (a |> DbValue.toString) ++ " (" ++ (key |> String.ellipsis 12) ++ ")") |> Maybe.withDefault key
+    labelM |> Maybe.map (\label -> (label |> DbValue.toString) ++ " (" ++ (key |> String.ellipsis 12) ++ ")") |> Maybe.withDefault key
 
 
 viewQuery : TwClass -> SqlQueryOrigin -> Html msg

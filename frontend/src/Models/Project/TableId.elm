@@ -44,8 +44,6 @@ dictGetI : TableId -> Dict TableId a -> Maybe a
 dictGetI id dict =
     (dict |> Dict.get id)
         |> Maybe.orElse (id |> toLower |> (\lowerId -> dict |> Dict.find (\k _ -> toLower k == lowerId)))
-        -- TODO: try with `defaultSchema` if `schema id == Conf.schema.empty`?
-        |> Maybe.orElse (id |> name |> String.toLower |> (\lowerName -> dict |> Dict.find (\k _ -> (k |> name |> String.toLower) == lowerName)))
 
 
 show : SchemaName -> TableId -> String

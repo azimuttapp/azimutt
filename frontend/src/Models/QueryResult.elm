@@ -3,6 +3,7 @@ module Models.QueryResult exposing (QueryResult, QueryResultColumn, QueryResultC
 import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
+import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.List as List
 import Libs.Maybe as Maybe
@@ -70,6 +71,14 @@ targetColumn tables relations sourceInfo ref =
         pkRef : Maybe DbColumnRef
         pkRef =
             (tables |> TableId.dictGetI ref.table)
+                |> Maybe.orElse
+                    (if TableId.schema ref.table == "" then
+                        -- if no schema, let's match on the table name only within the source
+                        ref.table |> TableId.name |> String.toLower |> (\lowerName -> tables |> Dict.find (\k t -> ((k |> TableId.name |> String.toLower) == lowerName) && (t.origins |> List.memberBy .id sourceInfo.id)))
+
+                     else
+                        Nothing
+                    )
                 |> Maybe.andThen
                     (\t ->
                         t.primaryKey
@@ -79,6 +88,7 @@ targetColumn tables relations sourceInfo ref =
 
         fkRef : Maybe DbColumnRef
         fkRef =
+            -- fk can be from any source
             (relations |> TableId.dictGetI ref.table |> Maybe.withDefault [])
                 |> List.find (\r -> ColumnPath.eqI r.src.column ref.column)
                 |> Maybe.map

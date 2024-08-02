@@ -31,16 +31,16 @@ If you need to develop on multiple libs at the same time (ex: want to update a c
 
 ### 1. Run in Docker
 
-You can use the [Oracle Database free version](https://container-registry.oracle.com/ords/ocr/ba/database), launch the container with `oracle` password for the `SYSTEM` user (using `ORACLE_PWD`):
+You can use the [Oracle Database free version](https://container-registry.oracle.com/ords/ocr/ba/database):
 
 ```bash
-docker run -d --name oracle_sample -p 1521:1521 -e ORACLE_PWD=oracle container-registry.oracle.com/database/free:23.4.0.0-lite
+docker run --name oracle_sample -p 1521:1521 -e ORACLE_PWD=oracle container-registry.oracle.com/database/free:23.4.0.0-lite
 ```
 
 or
 
 ```bash
-docker run -d --name oracle_sample -p 1521:1521 -e ORACLE_PWD=oracle container-registry.oracle.com/database/free:latest
+docker run --name oracle_sample -p 1521:1521 -e ORACLE_PWD=oracle container-registry.oracle.com/database/free:latest
 ```
 
 ### 2. Setup your database

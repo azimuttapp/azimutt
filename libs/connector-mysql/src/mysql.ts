@@ -219,8 +219,9 @@ export type RawConstraintColumn = {
     constraint_type: RawConstraintColumnType
     table_schema: string
     table_name: string
-    column_name: string
     column_index: number
+    column_name: string | null
+    column_expr: string | null
     ref_schema: string | null
     ref_table: string | null
     ref_column: string | null
@@ -235,8 +236,9 @@ export const getConstraintColumns = (opts: ConnectorSchemaOpts) => async (conn: 
               , c.CONSTRAINT_TYPE          AS constraint_type
               , cc.TABLE_SCHEMA            AS table_schema
               , cc.TABLE_NAME              AS table_name
-              , cc.COLUMN_NAME             AS column_name
               , cc.ORDINAL_POSITION        AS column_index
+              , cc.COLUMN_NAME             AS column_name
+              , null                       AS column_expr
               , cc.REFERENCED_TABLE_SCHEMA AS ref_schema
               , cc.REFERENCED_TABLE_NAME   AS ref_table
               , cc.REFERENCED_COLUMN_NAME  AS ref_column
@@ -248,8 +250,9 @@ export const getConstraintColumns = (opts: ConnectorSchemaOpts) => async (conn: 
               , "INDEX"        AS constraint_type
               , i.TABLE_SCHEMA AS table_schema
               , i.TABLE_NAME   AS table_name
-              , i.COLUMN_NAME  AS column_name
               , i.SEQ_IN_INDEX AS column_index
+              , i.COLUMN_NAME  AS column_name
+              , i.EXPRESSION   AS column_expr
               , null           AS ref_schema
               , null           AS ref_table
               , null           AS ref_column
@@ -261,13 +264,22 @@ export const getConstraintColumns = (opts: ConnectorSchemaOpts) => async (conn: 
     ).catch(handleError(`Failed to get constraints`, [], opts))
 }
 
+function buildConstraintColumnPath(name: string | null, expr: string | null, index: number): string[] {
+    if (name) return [name]
+    if (expr) {
+        const [, col, path] = expr.match(/^cast\(json_unquote\(json_extract\(`([^`]+)`,.+?\\'\$\.([^']+)\\'\)\) as .+\)$/) || []
+        return col && path ? [col, ...path.split('.')] : [expr]
+    }
+    return [`unknown_${index + 1}`]
+}
+
 function buildPrimaryKey(columns: RawConstraintColumn[]): PrimaryKey {
     const first = columns[0]
     return removeUndefined({
         name: first.constraint_name === 'PRIMARY' ? undefined : first.constraint_name || undefined,
         attrs: columns.slice(0)
             .sort((a, b) => (a.column_index || 0) - (b.column_index || 0))
-            .map(c => [c.column_name]),
+            .map((c, i) => buildConstraintColumnPath(c.column_name, c.column_expr, i)),
         doc: undefined,
         stats: undefined,
         extra: undefined
@@ -280,7 +292,7 @@ function buildIndex(columns: RawConstraintColumn[]): Index {
         name: first.constraint_name || undefined,
         attrs: columns.slice(0)
             .sort((a, b) => (a.column_index || 0) - (b.column_index || 0))
-            .map(c => [c.column_name]),
+            .map((c, i) => buildConstraintColumnPath(c.column_name, c.column_expr, i)),
         unique: first.constraint_type === 'UNIQUE' ? true : undefined, // false when not specified
         partial: undefined,
         definition: undefined,
@@ -298,7 +310,7 @@ function buildRelation(columns: RawConstraintColumn[]): Relation {
         origin: undefined,
         src: { schema: first.table_schema, entity: first.table_name },
         ref: { schema: first.ref_schema || '', entity: first.ref_table || '' },
-        attrs: columns.map(c => ({src: [c.column_name], ref: [c.ref_column || '']})),
+        attrs: columns.map((c, i) => ({src: buildConstraintColumnPath(c.column_name, c.column_expr, i), ref: buildConstraintColumnPath(c.ref_column, null, i)})),
         polymorphic: undefined,
         doc: undefined,
         extra: undefined
@@ -309,7 +321,7 @@ const getJsonColumns = (columns: Record<EntityId, RawColumn[]>, opts: ConnectorS
     opts.logger.log('Inferring JSON columns ...')
     return mapEntriesAsync(columns, (entityId, tableCols) => {
         const ref = entityRefFromId(entityId)
-        const jsonCols = tableCols.filter(c => c.column_type === 'jsonb')
+        const jsonCols = tableCols.filter(c => c.column_type === 'json')
         return mapValuesAsync(Object.fromEntries(jsonCols.map(c => [c.column_name, c.column_name])), c =>
             getSampleValues(ref, [c], opts)(conn).then(valuesToSchema)
         )
