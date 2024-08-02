@@ -799,7 +799,7 @@ viewColumnConstraint constraint ( columns, definition ) name =
                 []
     in
     definition
-        |> Maybe.map (\d -> span [ class "truncate", title d ] (text (name |> Maybe.withDefault constraint) :: columnsHtml))
+        |> Maybe.map (\d -> span [ class "truncate", title d ] [ text ((name |> Maybe.withDefault constraint) ++ ": " ++ d) ])
         |> Maybe.withDefault (span [ class "truncate" ] (text (name |> Maybe.withDefault constraint) :: columnsHtml))
 
 

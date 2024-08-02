@@ -3,7 +3,6 @@ module DataSources.DbMiner.DbQuery exposing (addLimit, exploreColumn, exploreTab
 import DataSources.DbMiner.DbTypes exposing (FilterOperation, FilterOperator(..), IncomingRowsQuery, RowQuery, TableQuery)
 import DataSources.DbMiner.QueryBigQuery as QueryBigQuery
 import DataSources.DbMiner.QueryCouchbase as QueryCouchbase
-import DataSources.DbMiner.QueryMariaDB as QueryMariaDB
 import DataSources.DbMiner.QueryMongoDB as QueryMongoDB
 import DataSources.DbMiner.QueryMySQL as QueryMySQL
 import DataSources.DbMiner.QueryOracle as QueryOracle
@@ -32,7 +31,8 @@ exploreTable db table =
                 QueryCouchbase.exploreTable table
 
             DatabaseKind.MariaDB ->
-                QueryMariaDB.exploreTable table
+                -- same as MySQL on purpose
+                QueryMySQL.exploreTable table
 
             DatabaseKind.MongoDB ->
                 QueryMongoDB.exploreTable table
@@ -68,7 +68,8 @@ exploreColumn db table column =
                 QueryCouchbase.exploreColumn table column
 
             DatabaseKind.MariaDB ->
-                QueryMariaDB.exploreColumn table column
+                -- same as MySQL on purpose
+                QueryMySQL.exploreColumn table column
 
             DatabaseKind.MongoDB ->
                 QueryMongoDB.exploreColumn table column
@@ -97,6 +98,10 @@ filterTable db query =
     -- query made from the visual editor, something like: `SELECT * FROM table WHERE ${filters};`
     { sql =
         case db of
+            DatabaseKind.MariaDB ->
+                -- same as MySQL on purpose
+                QueryMySQL.filterTable query.table query.filters
+
             DatabaseKind.MySQL ->
                 QueryMySQL.filterTable query.table query.filters
 
@@ -118,6 +123,10 @@ findRow db query =
     -- query made from the table rows or the row details sidebar, something like: `SELECT * FROM table WHERE ${primaryKey} = ${value} LIMIT 1;`
     { sql =
         case db of
+            DatabaseKind.MariaDB ->
+                -- same as MySQL on purpose
+                QueryMySQL.findRow query.table query.primaryKey
+
             DatabaseKind.MySQL ->
                 QueryMySQL.findRow query.table query.primaryKey
 
@@ -151,6 +160,10 @@ incomingRows db relations value =
     -- ```
     { sql =
         case db of
+            DatabaseKind.MariaDB ->
+                -- same as MySQL on purpose
+                QueryMySQL.incomingRows value relations incomingRowsLimit
+
             DatabaseKind.MySQL ->
                 QueryMySQL.incomingRows value relations incomingRowsLimit
 
@@ -176,7 +189,8 @@ addLimit db query =
             { sql = QueryBigQuery.addLimit query.sql, origin = query.origin, db = query.db }
 
         DatabaseKind.MariaDB ->
-            { sql = QueryMariaDB.addLimit query.sql, origin = query.origin, db = query.db }
+            -- same as MySQL on purpose
+            { sql = QueryMySQL.addLimit query.sql, origin = query.origin, db = query.db }
 
         DatabaseKind.MySQL ->
             { sql = QueryMySQL.addLimit query.sql, origin = query.origin, db = query.db }
@@ -202,6 +216,10 @@ updateColumnType db ref kind =
     -- generate SQL to update column types in the db analyzer in order to make them consistent (fk pointing at a pk)
     { sql =
         case db of
+            DatabaseKind.MariaDB ->
+                -- same as MySQL on purpose
+                QueryMySQL.updateColumnType { table = ref.table, column = ref.column } kind
+
             DatabaseKind.MySQL ->
                 QueryMySQL.updateColumnType { table = ref.table, column = ref.column } kind
 

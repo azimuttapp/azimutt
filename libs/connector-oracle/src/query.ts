@@ -6,7 +6,7 @@ export const execQuery = (query: string, parameters: any[]) => (conn: Conn): Pro
 }
 
 async function buildResults(conn: Conn, query: string, result: QueryResultArrayMode): Promise<QueryResults> {
-    const attributes = buildQueryAttributes(result.fields.map(f => f.name), query)
+    const attributes = buildQueryAttributes(result.fields, query)
     const rows = result.rows.map(row => attributes.reduce((acc, col, i) => ({...acc, [col.name]: row[i]}), {}))
     return {query, attributes, rows}
 }

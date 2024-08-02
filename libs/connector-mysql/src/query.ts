@@ -6,7 +6,7 @@ export const execQuery = (query: string, parameters: any[]) => (conn: Conn): Pro
 }
 
 function buildResults(query: string, result: QueryResultArrayMode): QueryResults {
-    const attributes = buildQueryAttributes(result.fields.map(f => f.name), query)
+    const attributes = buildQueryAttributes(result.fields, query)
     return QueryResults.parse({
         query,
         attributes,

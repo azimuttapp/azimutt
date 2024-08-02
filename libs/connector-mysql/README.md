@@ -11,16 +11,6 @@ It's accessible through the [Desktop app](../../desktop) (soon), the [CLI](https
 
 - improve [MySQL queries](./src/mysql.ts) (look at `getSchema` function)
 
-## Set up a sample MySQL database
-
-- Go on https://www.freemysqlhosting.net and click on "Start my Free Account"
-- Follow the onboarding:
-    - Reset password and login
-    - Click on "MySQL Hosting" in to top menu
-    - Create your database
-- Get your credentials by email and build the url like: `mysql://<user>:<pass>@<host>:<port>/<db>` ("Server" is the host, "Name" is the db name)
-- Load data in your instance, if you don't have, you can use schemas from [Prisma schema examples](https://github.com/prisma/database-schema-examples/blob/main/mysql)
-
 ## Publish
 
 - update `package.json` version
@@ -37,6 +27,16 @@ If you need to develop on multiple libs at the same time (ex: want to update a c
 - Depend on a local lib: `pnpm add <lib>`, ex: `pnpm add @azimutt/models`
 - "Publish" lib locally by building it: `pnpm run build`
 
+## Set up a cloud MySQL database
+
+- Go on https://www.freemysqlhosting.net and click on "Start my Free Account"
+- Follow the onboarding:
+  - Reset password and login
+  - Click on "MySQL Hosting" in to top menu
+  - Create your database
+- Get your credentials by email and build the url like: `mysql://<user>:<pass>@<host>:<port>/<db>` ("Server" is the host, "Name" is the db name)
+- Load data in your instance, if you don't have, you can use schemas from [Prisma schema examples](https://github.com/prisma/database-schema-examples/blob/main/mysql)
+
 ## MySQL Setup
 
 You can use the [MySQL Official image](https://hub.docker.com/_/mysql):
@@ -49,7 +49,7 @@ Connect with host (`localhost`), port (`3306`), user (`azimutt`) and pass (`azim
 
 ```mysql
 CREATE TABLE users (
-  id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+  id              BIGINT                  NOT NULL AUTO_INCREMENT PRIMARY KEY,
   name            VARCHAR(50)             NOT NULL,
   role            VARCHAR(10)             NOT NULL,
   email           VARCHAR(255)            NOT NULL,
@@ -70,7 +70,7 @@ CREATE VIEW admins AS SELECT id, name, email FROM users WHERE role = 'admin';
 CREATE VIEW guests AS SELECT id, name, email FROM users WHERE role = 'guest';
 
 CREATE TABLE posts (
-  id         BIGINT AUTO_INCREMENT PRIMARY KEY,
+  id         BIGINT      NOT NULL AUTO_INCREMENT PRIMARY KEY,
   title      VARCHAR(50) NOT NULL,
   content    TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -79,16 +79,16 @@ CREATE TABLE posts (
 );
 
 CREATE TABLE post_authors (
-  post_id BIGINT,
-  user_id BIGINT,
+  post_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
   CONSTRAINT post_authors_pk PRIMARY KEY (post_id, user_id),
   CONSTRAINT post_authors_post_id_fk FOREIGN KEY (post_id) REFERENCES posts (id),
   CONSTRAINT post_authors_user_id_fk FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
 CREATE TABLE post_author_details (
-  detail_post_id BIGINT,
-  detail_user_id BIGINT,
+  detail_post_id BIGINT      NOT NULL,
+  detail_user_id BIGINT      NOT NULL,
   role           VARCHAR(10) NOT NULL,
   CONSTRAINT post_author_details_pk PRIMARY KEY (detail_post_id, detail_user_id),
   CONSTRAINT post_author_details_post_user_fk FOREIGN KEY (detail_post_id, detail_user_id) REFERENCES post_authors (post_id, user_id)

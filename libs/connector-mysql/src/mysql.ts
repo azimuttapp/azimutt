@@ -1,10 +1,21 @@
-import {groupBy, mapEntriesAsync, mapValuesAsync, pluralizeL, removeEmpty, removeUndefined} from "@azimutt/utils";
+import {
+    distinct,
+    groupBy,
+    isNotUndefined,
+    mapEntriesAsync,
+    mapValuesAsync,
+    pluralizeL,
+    removeEmpty,
+    removeSurroundingParentheses,
+    removeUndefined
+} from "@azimutt/utils";
 import {
     Attribute,
     AttributeName,
     AttributePath,
     attributeRefToId,
     AttributeValue,
+    Check,
     ConnectorSchemaOpts,
     connectorSchemaOptsDefaults,
     Database,
@@ -39,6 +50,8 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     opts.logger.log(`Found ${pluralizeL(columns, 'column')} ...`)
     const constraintColumns: RawConstraintColumn[] = await getConstraintColumns(opts)(conn)
     opts.logger.log(`Found ${pluralizeL(constraintColumns, 'constraint column')} ...`)
+    const checks: RawCheck[] = await getChecks(opts)(conn)
+    opts.logger.log(`Found ${pluralizeL(checks, 'check')} ...`)
 
     // access table data when options are requested
     const columnsByTable: Record<EntityId, RawColumn[]> = groupByEntity(columns)
@@ -48,12 +61,37 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
 
     // build the database
     const constraintTypes: Record<RawConstraintColumnType, RawConstraintColumn[]> = groupBy(constraintColumns, c => c.constraint_type)
-    const primaryKeys: Record<EntityId, RawConstraintColumn[]> = groupBy(constraintTypes['PRIMARY KEY'] || [], toEntityId)
-    const uniques: Record<EntityId, RawConstraintColumn[]> = groupBy(constraintTypes['UNIQUE'] || [], toEntityId)
-    const indexes: Record<EntityId, RawConstraintColumn[]> = groupBy(constraintTypes['INDEX'] || [], toEntityId)
-    const foreignKeys: RawConstraintColumn[][] = Object.values(groupBy(constraintTypes['FOREIGN KEY'] || [], c => `${c.table_schema}.${c.table_name}.${c.constraint_name}`))
-    opts.logger.log(`✔︎ Exported ${pluralizeL(tables, 'table')} and ${pluralizeL(foreignKeys, 'relation')} from the database!`)
-    return buildDatabase(tables, columnsByTable, primaryKeys, uniques, indexes, jsonColumns, polyColumns, foreignKeys, conn.url.db, start, Date.now())
+    const primaryKeysByTable: Record<EntityId, RawConstraintColumn[]> = groupBy(constraintTypes['PRIMARY KEY'] || [], toEntityId)
+    const uniquesByTable: Record<EntityId, RawConstraintColumn[]> = groupBy(constraintTypes['UNIQUE'] || [], toEntityId)
+    const indexesByTable: Record<EntityId, RawConstraintColumn[]> = groupBy(constraintTypes['INDEX'] || [], toEntityId)
+    const foreignKeysByTable: RawConstraintColumn[][] = Object.values(groupBy(constraintTypes['FOREIGN KEY'] || [], c => `${c.table_schema}.${c.table_name}.${c.constraint_name}`))
+    const checksByTable: Record<EntityId, RawCheck[]> = groupByEntity(checks)
+    opts.logger.log(`✔︎ Exported ${pluralizeL(tables, 'table')} and ${pluralizeL(foreignKeysByTable, 'relation')} from the database!`)
+    return removeEmpty({
+        entities: tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildEntity(
+            table,
+            columnsByTable[id] || [],
+            primaryKeysByTable[id] || [],
+            uniquesByTable[id] || [],
+            indexesByTable[id] || [],
+            checksByTable[id] || [],
+            jsonColumns[id] || {},
+            polyColumns[id] || {},
+        )),
+        relations: foreignKeysByTable.map(buildRelation),
+        types: undefined,
+        doc: undefined,
+        stats: removeUndefined({
+            name: conn.url.db,
+            kind: DatabaseKind.Enum.mysql,
+            version: undefined,
+            doc: undefined,
+            extractedAt: new Date().toISOString(),
+            extractionDuration: Date.now() - start,
+            size: undefined,
+        }),
+        extra: undefined,
+    })
 }
 
 // 👇️ Private functions, some are exported only for tests
@@ -61,33 +99,6 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
 
 const toEntityId = <T extends { table_schema: string, table_name: string }>(value: T): EntityId => entityRefToId({schema: value.table_schema, entity: value.table_name})
 const groupByEntity = <T extends { table_schema: string, table_name: string }>(values: T[]): Record<EntityId, T[]> => groupBy(values, toEntityId)
-
-export function buildDatabase(tables: RawTable[], columnsByTable: Record<EntityId, RawColumn[]>, primaryKeys: Record<EntityId, RawConstraintColumn[]>, uniques: Record<EntityId, RawConstraintColumn[]>, indexes: Record<EntityId, RawConstraintColumn[]>, jsonColumns: Record<EntityId, Record<AttributeName, ValueSchema>>, polyColumns: Record<EntityId, Record<AttributeName, string[]>>, foreignKeys: RawConstraintColumn[][], database: string | undefined, start: number, end: number): Database {
-    return removeEmpty({
-        entities: tables.map(table => [toEntityId(table), table] as const).map(([id, table]) => buildEntity(
-            table,
-            columnsByTable[id] || [],
-            primaryKeys[id] || [],
-            uniques[id] || [],
-            indexes[id] || [],
-            jsonColumns[id] || {},
-            polyColumns[id] || {},
-        )),
-        relations: foreignKeys.map(buildRelation),
-        types: undefined,
-        doc: undefined,
-        stats: removeUndefined({
-            name: database,
-            kind: DatabaseKind.Enum.mysql,
-            version: undefined,
-            doc: undefined,
-            extractedAt: new Date(end).toISOString(),
-            extractionDuration: end - start,
-            size: undefined,
-        }),
-        extra: undefined,
-    })
-}
 
 export type RawTable = {
     table_schema: string
@@ -128,7 +139,7 @@ export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     ).catch(handleError(`Failed to get tables`, [], opts))
 }
 
-function buildEntity(table: RawTable, columns: RawColumn[], primaryKeyColumns: RawConstraintColumn[], uniqueColumns: RawConstraintColumn[], indexColumns: RawConstraintColumn[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>): Entity {
+function buildEntity(table: RawTable, columns: RawColumn[], primaryKeyColumns: RawConstraintColumn[], uniqueColumns: RawConstraintColumn[], indexColumns: RawConstraintColumn[], checks: RawCheck[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>): Entity {
     const indexes = Object.values(groupBy(uniqueColumns, c => c.constraint_name))
         .concat(Object.values(groupBy(indexColumns, c => c.constraint_name)))
     return removeEmpty({
@@ -140,8 +151,8 @@ function buildEntity(table: RawTable, columns: RawColumn[], primaryKeyColumns: R
             .sort((a, b) => a.column_index - b.column_index)
             .map(c => buildAttribute(c, jsonColumns[c.column_name], polyColumns[c.column_name])),
         pk: primaryKeyColumns.length > 0 ? buildPrimaryKey(primaryKeyColumns) : undefined,
-        indexes: indexes.length > 0 ? indexes.map(buildIndex) : undefined,
-        checks: undefined,
+        indexes: indexes.map(buildIndex),
+        checks: checks.map(buildCheck).filter(isNotUndefined),
         doc: table.table_comment === 'VIEW' ? undefined : table.table_comment || undefined,
         stats: removeUndefined({
             rows: table.table_rows || undefined,
@@ -232,19 +243,19 @@ export const getConstraintColumns = (opts: ConnectorSchemaOpts) => async (conn: 
     // https://dev.mysql.com/doc/refman/en/information-schema-table-constraints-table.html
     // https://dev.mysql.com/doc/refman/en/information-schema-statistics-table.html
     return conn.query<RawConstraintColumn>(
-        `SELECT cc.CONSTRAINT_NAME         AS constraint_name
+        `SELECT c.CONSTRAINT_NAME          AS constraint_name
               , c.CONSTRAINT_TYPE          AS constraint_type
-              , cc.TABLE_SCHEMA            AS table_schema
-              , cc.TABLE_NAME              AS table_name
+              , c.TABLE_SCHEMA             AS table_schema
+              , c.TABLE_NAME               AS table_name
               , cc.ORDINAL_POSITION        AS column_index
               , cc.COLUMN_NAME             AS column_name
               , null                       AS column_expr
               , cc.REFERENCED_TABLE_SCHEMA AS ref_schema
               , cc.REFERENCED_TABLE_NAME   AS ref_table
               , cc.REFERENCED_COLUMN_NAME  AS ref_column
-         FROM information_schema.KEY_COLUMN_USAGE cc
-                  JOIN information_schema.TABLE_CONSTRAINTS c ON c.CONSTRAINT_CATALOG = cc.CONSTRAINT_CATALOG AND c.CONSTRAINT_SCHEMA = cc.CONSTRAINT_SCHEMA AND c.CONSTRAINT_NAME = cc.CONSTRAINT_NAME AND c.TABLE_NAME = cc.TABLE_NAME
-         WHERE ${scopeWhere({schema: 'cc.TABLE_SCHEMA', entity: 'cc.TABLE_NAME'}, opts)}
+         FROM information_schema.TABLE_CONSTRAINTS c
+                  LEFT JOIN information_schema.KEY_COLUMN_USAGE cc ON cc.CONSTRAINT_CATALOG = c.CONSTRAINT_CATALOG AND cc.CONSTRAINT_SCHEMA = c.CONSTRAINT_SCHEMA AND cc.CONSTRAINT_NAME = c.CONSTRAINT_NAME AND cc.TABLE_NAME = c.TABLE_NAME
+         WHERE c.CONSTRAINT_TYPE != 'CHECK' AND ${scopeWhere({schema: 'c.TABLE_SCHEMA', entity: 'c.TABLE_NAME'}, opts)}
          UNION
          SELECT i.INDEX_NAME   AS constraint_name
               , "INDEX"        AS constraint_type
@@ -257,9 +268,8 @@ export const getConstraintColumns = (opts: ConnectorSchemaOpts) => async (conn: 
               , null           AS ref_table
               , null           AS ref_column
          FROM information_schema.STATISTICS i
-                  LEFT JOIN information_schema.TABLE_CONSTRAINTS c ON c.TABLE_SCHEMA = i.TABLE_SCHEMA AND c.TABLE_NAME = i.TABLE_NAME AND i.INDEX_NAME = c.CONSTRAINT_NAME
-         WHERE c.CONSTRAINT_TYPE IS NULL
-           AND ${scopeWhere({schema: 'i.TABLE_SCHEMA', entity: 'i.TABLE_NAME'}, opts)}
+                  LEFT JOIN information_schema.TABLE_CONSTRAINTS c ON c.TABLE_SCHEMA = i.TABLE_SCHEMA AND c.TABLE_NAME = i.TABLE_NAME AND c.CONSTRAINT_NAME = i.INDEX_NAME
+         WHERE c.CONSTRAINT_TYPE IS NULL AND ${scopeWhere({schema: 'i.TABLE_SCHEMA', entity: 'i.TABLE_NAME'}, opts)}
          ORDER BY table_schema, table_name, constraint_name, column_index;`, [], 'getConstraintColumns'
     ).catch(handleError(`Failed to get constraints`, [], opts))
 }
@@ -315,6 +325,43 @@ function buildRelation(columns: RawConstraintColumn[]): Relation {
         doc: undefined,
         extra: undefined
     })
+}
+
+export type RawCheck = {
+    constraint_name: string
+    table_schema: string
+    table_name: string
+    definition: string | null
+}
+
+export const getChecks = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawCheck[]> => {
+    return conn.query<RawCheck>(
+        `SELECT c.CONSTRAINT_NAME AS constraint_name
+              , c.TABLE_SCHEMA    AS table_schema
+              , c.TABLE_NAME      AS table_name
+              , ch.CHECK_CLAUSE   AS definition
+         FROM information_schema.TABLE_CONSTRAINTS c
+                  LEFT JOIN information_schema.CHECK_CONSTRAINTS ch ON ch.CONSTRAINT_CATALOG = c.CONSTRAINT_CATALOG AND ch.CONSTRAINT_SCHEMA = c.CONSTRAINT_SCHEMA AND ch.CONSTRAINT_NAME = c.CONSTRAINT_NAME
+         WHERE c.CONSTRAINT_TYPE = 'CHECK' AND ${scopeWhere({schema: 'c.TABLE_SCHEMA', entity: 'c.TABLE_NAME'}, opts)}
+         ORDER BY table_schema, table_name, constraint_name;`, [], 'getChecks'
+    ).catch(handleError(`Failed to get checks`, [], opts))
+}
+
+function buildCheck(check: RawCheck): Check | undefined {
+    const columns = distinct([...check.definition?.matchAll(/`([^`]+)`/g) || []].map(m => m[1]))
+    if (check.definition && columns.length > 0) {
+        return {
+            name: check.constraint_name,
+            attrs: columns.map(c => [c]),
+            predicate: removeSurroundingParentheses(check.definition),
+            doc: undefined,
+            stats: undefined,
+            extra: undefined
+        }
+    } else {
+        // unable to extract columns from check, so can't build it :/
+        return undefined
+    }
 }
 
 const getJsonColumns = (columns: Record<EntityId, RawColumn[]>, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Record<EntityId, Record<AttributeName, ValueSchema>>> => {

@@ -12,7 +12,7 @@ import {application, logger} from "./constants.test";
 // More documentation available at: https://azimutt.notion.site/Database-connection-troubleshooting-c4c19ed28c7040ef9aaaeec96ce6ba8d
 describe('connect', () => {
     // TODO 1: replace this with your own connection string, but don't commit it!
-    const url = 'mariadb://user:pass@host.com:3306/db'
+    const url = 'mariadb://azimutt:azimutt@localhost:3307/mariadb_sample'
 
     // TODO 2: write a valid query for your database
     const query = 'SELECT * FROM users LIMIT 2;'

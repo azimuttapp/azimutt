@@ -1,5 +1,12 @@
 import * as oracledb from "oracledb";
-import {AttributeValue, ConnectorDefaultOpts, DatabaseUrlParsed, logQueryIfNeeded, queryError} from "@azimutt/models";
+import {
+    AttributeValue,
+    ConnectorDefaultOpts,
+    DatabaseUrlParsed,
+    logQueryIfNeeded,
+    queryError,
+    QueryField
+} from "@azimutt/models";
 import {AnyError} from "@azimutt/utils";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
@@ -37,9 +44,8 @@ export interface Conn {
 
 export type QueryResultValue = AttributeValue
 export type QueryResultRow = { [column: string]: QueryResultValue }
-export type QueryResultField = { name: string }
 export type QueryResultRowArray = QueryResultValue[]
-export type QueryResultArrayMode = { fields: QueryResultField[], rows: QueryResultRowArray[] }
+export type QueryResultArrayMode = { fields: QueryField[], rows: QueryResultRowArray[] }
 
 async function createConnection(config: oracledb.ConnectionAttributes): Promise<oracledb.Connection> {
     return await oracledb.getConnection(config)

@@ -218,16 +218,19 @@ export function handleError<T>(msg: string, onError: T, {logger, ignoreErrors}: 
     }
 }
 
+export type QueryField = { name: string, schema?: string | undefined, table?: string | undefined, column?: string | undefined }
 // assign column ref to query columns by parsing the sql query
-export function buildQueryAttributes(fields: string[], query: string): QueryResultsAttribute[] {
+export function buildQueryAttributes(fields: QueryField[], query: string): QueryResultsAttribute[] {
     const keys: { [key: string]: true } = {}
     const statement: ParsedSqlStatement | undefined = parseSqlStatement(query)
     const wildcardTable = getWildcardSelectTable(statement)
     const allDefinedColumns = getAllDefinedColumns(statement, fields.length)
     return fields.map((field, i) => {
-        const name = uniqueName(field, keys)
+        const name = uniqueName(field.name, keys)
         keys[name] = true
-        const ref = wildcardTable ? {...wildcardTable, attribute: [field]} : allDefinedColumns ? allDefinedColumns[i] : undefined
+        const ref: AttributeRef | undefined = field.table && field.column ? {schema: field.schema, entity: field.table, attribute: [field.column]} :
+            wildcardTable ? {...wildcardTable, attribute: [field.name]} :
+                allDefinedColumns ? allDefinedColumns[i] : undefined
         return removeUndefined({name, ref})
     })
 }
