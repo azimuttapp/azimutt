@@ -14,7 +14,7 @@ describe('stats', () => {
         expect(stats.rows).toEqual(3)
     })
     test.skip('getColumnStats', async () => {
-        const stats = await connect(application, url, getColumnStats({entity: 'users', attribute: ['name']}), {logger, logQueries: true})
+        const stats = await connect(application, url, getColumnStats({entity: 'users', attribute: ['settings', 'color']}), {logger, logQueries: true})
         console.log('getColumnStats', stats)
         expect(stats.rows).toEqual(3)
     })
