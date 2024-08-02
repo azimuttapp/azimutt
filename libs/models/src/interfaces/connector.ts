@@ -218,7 +218,8 @@ export function handleError<T>(msg: string, onError: T, {logger, ignoreErrors}: 
     }
 }
 
-export type QueryField = { name: string, schema?: string | undefined, table?: string | undefined, column?: string | undefined }
+export type QueryField = { name: string, schema?: string | undefined, table?: string | undefined, column?: string | undefined, type?: string | undefined }
+
 // assign column ref to query columns by parsing the sql query
 export function buildQueryAttributes(fields: QueryField[], query: string): QueryResultsAttribute[] {
     const keys: { [key: string]: true } = {}

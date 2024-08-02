@@ -63,11 +63,12 @@ ALTER TABLE users COMMENT = 'List all users';
 ALTER TABLE users MODIFY name VARCHAR(50) COMMENT 'The user name';
 CREATE UNIQUE INDEX users_email_uniq ON users (email);
 CREATE INDEX users_role_idx ON users (role);
-CREATE INDEX users_plan_idx ON users ((CAST(settings->>'$.plan.name' as CHAR(255))));
-CREATE INDEX users_full_idx ON users (name, email, (CAST(settings->>'$.plan.name' as CHAR(10))), (CAST(settings->>'$.color' as CHAR(30))));
+CREATE INDEX users_plan_idx ON users ((CAST(settings->>'$.plan.name' AS CHAR(255))));
+CREATE INDEX users_full_idx ON users (name, email, (CAST(settings->>'$.plan.name' AS CHAR(10))), (CAST(settings->>'$.color' AS CHAR(30))));
 
 CREATE VIEW admins AS SELECT id, name, email FROM users WHERE role = 'admin';
 CREATE VIEW guests AS SELECT id, name, email FROM users WHERE role = 'guest';
+
 
 CREATE TABLE posts (
   id         BIGINT      NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -103,6 +104,7 @@ CREATE TABLE ratings (
   CONSTRAINT ratings_pk PRIMARY KEY (user_id, item_kind, item_id),
   CONSTRAINT ratings_user_id_fk FOREIGN KEY (user_id) REFERENCES users (id)
 );
+
 
 -- Insert data
 INSERT INTO users (name, role, email, settings) VALUES ('Loïc', 'admin', 'loic@mail.com', '{"color": "red", "plan": {"id": 1, "name": "pro"}}');

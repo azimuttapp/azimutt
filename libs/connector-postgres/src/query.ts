@@ -1,6 +1,6 @@
 import {indexBy} from "@azimutt/utils";
-import {AttributeRef, AttributeValue, QueryResults} from "@azimutt/models";
-import {Conn, QueryResultArrayMode, QueryResultField} from "./connect";
+import {AttributeValue, buildQueryAttributes, QueryField, QueryResults} from "@azimutt/models";
+import {Conn, QueryResultArrayMode} from "./connect";
 
 export const execQuery = (query: string, parameters: any[]) => (conn: Conn): Promise<QueryResults> => {
     return conn.queryArrayMode(query, parameters).then(result => buildResults(conn, query, result))
@@ -9,20 +9,14 @@ export const execQuery = (query: string, parameters: any[]) => (conn: Conn): Pro
 async function buildResults(conn: Conn, query: string, result: QueryResultArrayMode): Promise<QueryResults> {
     const tableIds = [...new Set(result.fields.map(f => f.tableID))]
     const columnInfos = await getColumnInfos(conn, tableIds)
-    const attributes = buildAttributes(result.fields, columnInfos)
+    const indexed = indexBy(columnInfos, i => `${i.table_id}-${i.column_id}`)
+    const fields: QueryField[] = result.fields.map(field => {
+        const info = indexed[`${field.tableID}-${field.columnID}`]
+        return info ? {name: field.name, schema: info.schema_name, table: info.table_name, column: info.column_name, type: info.type_name} : {name: field.name}
+    })
+    const attributes = buildQueryAttributes(fields, query)
     const rows = result.rows.map(row => attributes.reduce((acc, col, i) => ({...acc, [col.name]: buildValue(row[i])}), {}))
     return {query, attributes, rows}
-}
-
-function buildAttributes(fields: QueryResultField[], columnInfos: ColumnInfo[]): { name: string, ref?: AttributeRef }[] {
-    const keys: { [key: string]: true } = {}
-    const indexed = indexBy(columnInfos, i => `${i.table_id}-${i.column_id}`)
-    return fields.map(f => {
-        const name = uniqueName(f.name, keys)
-        keys[name] = true
-        const info = indexed[`${f.tableID}-${f.columnID}`]
-        return info ? {name, ref: {schema: info.schema_name, entity: info.table_name, attribute: [info.column_name]}} : {name}
-    })
 }
 
 function buildValue(v: AttributeValue): AttributeValue {
@@ -31,13 +25,13 @@ function buildValue(v: AttributeValue): AttributeValue {
 }
 
 type ColumnInfo = {
-    schema_id: number,
-    schema_name: string,
-    table_id: number,
-    table_name: string,
-    column_id: number,
-    column_name: string,
-    type_id: number,
+    schema_id: number
+    schema_name: string
+    table_id: number
+    table_name: string
+    column_id: number
+    column_name: string
+    type_id: number
     type_name: string
 }
 
@@ -56,18 +50,8 @@ async function getColumnInfos(conn: Conn, tableIds: number[]): Promise<ColumnInf
                      JOIN pg_class c ON c.oid = a.attrelid
                      JOIN pg_namespace n ON n.oid = c.relnamespace
                      JOIN pg_type t ON t.oid = a.atttypid
-            WHERE a.attrelid IN (${tableIds.join(', ')})
-              AND a.attnum > 0;`)
+            WHERE a.attrelid IN (${tableIds.join(', ')}) AND a.attnum > 0;`, [], 'getColumnInfos')
     } else {
         return []
-    }
-}
-
-function uniqueName(name: string, currentNames: { [key: string]: true }, cpt: number = 1): string {
-    const newName = cpt === 1 ? name : `${name}_${cpt}`
-    if (currentNames[newName]) {
-        return uniqueName(name, currentNames, cpt + 1)
-    } else {
-        return newName
     }
 }

@@ -62,13 +62,14 @@ ALTER TABLE users COMMENT = 'List all users';
 ALTER TABLE users MODIFY name VARCHAR(50) COMMENT 'The user name';
 CREATE UNIQUE INDEX users_email_uniq ON users (email);
 CREATE INDEX users_role_idx ON users (role);
-ALTER TABLE users ADD plan VARCHAR(32) AS ( JSON_VALUE(settings, '$.plan.name'));
+ALTER TABLE users ADD plan VARCHAR(32) AS (JSON_VALUE(settings, '$.plan.name'));
 CREATE INDEX users_plan_idx ON users (plan);
-ALTER TABLE users ADD color VARCHAR(32) AS ( JSON_VALUE(settings, '$.color'));
+ALTER TABLE users ADD color VARCHAR(32) AS (JSON_VALUE(settings, '$.color'));
 CREATE INDEX users_full_idx ON users (name, email, plan, color);
 
 CREATE VIEW admins AS SELECT id, name, email FROM users WHERE role = 'admin';
 CREATE VIEW guests AS SELECT id, name, email FROM users WHERE role = 'guest';
+
 
 CREATE TABLE posts (
     id         BIGINT      NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -99,17 +100,18 @@ CREATE TABLE ratings (
     user_id   BIGINT      NOT NULL,
     item_kind VARCHAR(50) NOT NULL,
     item_id   BIGINT      NOT NULL,
-    rating    INT         NOT NULL CHECK ( 0 <= rating AND rating <= 5 ),
+    rating    INT         NOT NULL CHECK (0 <= rating AND rating <= 5),
     review    VARCHAR(255),
     CONSTRAINT ratings_pk PRIMARY KEY (user_id, item_kind, item_id),
     CONSTRAINT ratings_user_id_fk FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
+
 -- Insert data
 INSERT INTO users (name, role, email, settings) VALUES ('Loïc', 'admin', 'loic@mail.com', '{"color": "red", "plan": {"id": 1, "name": "pro"}}');
 INSERT INTO users (name, role, email, settings) VALUES ('Jean', 'guest', 'jean@mail.com', null);
 INSERT INTO users (name, role, email, settings) VALUES ('Luc', 'guest', 'luc@mail.com', null);
-INSERT INTO posts (title, content, created_by) VALUES ('Oracle connector', null, 1);
+INSERT INTO posts (title, content, created_by) VALUES ('MariaDB connector', null, 1);
 INSERT INTO post_authors (post_id, user_id) VALUES (1, 1);
 INSERT INTO post_authors (post_id, user_id) VALUES (1, 2);
 INSERT INTO post_author_details (detail_post_id, detail_user_id, role) VALUES (1, 1, 'author');

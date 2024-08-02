@@ -134,6 +134,7 @@ ALTER TABLE ratings ADD CONSTRAINT ratings_item_id_users_fk FOREIGN KEY (item_id
 ALTER TABLE ratings ADD CONSTRAINT ratings_item_id_posts_fk FOREIGN KEY (item_id) REFERENCES posts (id) DISABLE NOVALIDATE;
 
 
+-- Insert data
 INSERT INTO users (name, role, email, settings) VALUES ('Loïc', 'admin', 'loic@mail.com', '{"color": "red", "plan": {"id": 1, "name": "pro"}}');
 INSERT INTO users (name, role, email, settings) VALUES ('Jean', 'guest', 'jean@mail.com', null);
 INSERT INTO users (name, role, email, settings) VALUES ('Luc', 'guest', 'luc@mail.com', null);
