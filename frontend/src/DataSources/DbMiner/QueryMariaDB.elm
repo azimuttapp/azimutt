@@ -1,6 +1,6 @@
-module DataSources.DbMiner.QuerySQLServer exposing (addLimit, exploreColumn, exploreTable, filterTable, findRow, incomingRows, updateColumnType)
+module DataSources.DbMiner.QueryMariaDB exposing (addLimit, exploreColumn, exploreTable, filterTable, findRow, incomingRows, updateColumnType)
 
-import DataSources.DbMiner.DbTypes exposing (FilterOperation(..), FilterOperator(..), IncomingRowsQuery, TableFilter)
+import DataSources.DbMiner.DbTypes exposing (FilterOperation(..), FilterOperator(..), IncomingRowsQuery, RowQuery, TableFilter)
 import Dict exposing (Dict)
 import Libs.Bool as Bool
 import Libs.List as List
@@ -35,38 +35,43 @@ filterTable table filters =
 
 findRow : TableId -> RowPrimaryKey -> SqlQuery
 findRow table primaryKey =
-    "SELECT TOP 1 *\nFROM " ++ formatTable table ++ "\nWHERE " ++ formatMatcher primaryKey ++ ";\n"
+    "SELECT *\nFROM " ++ formatTable table ++ "\nWHERE " ++ formatMatcher primaryKey ++ "\nLIMIT 1;\n"
 
 
 incomingRows : DbValue -> Dict TableId IncomingRowsQuery -> Int -> SqlQuery
 incomingRows value relations limit =
-    "SELECT TOP 1\n"
+    "SELECT\n"
         ++ (relations
                 |> Dict.toList
                 |> List.map
                     (\( table, q ) ->
-                        ("  (SELECT TOP " ++ String.fromInt limit ++ " ")
+                        "  (SELECT JSON_ARRAYAGG(JSON_OBJECT("
                             ++ (if q.labelCols |> List.isEmpty then
                                     ""
 
                                 else
-                                    (q.labelCols |> List.map (\( col, _ ) -> formatColumn "s" col) |> List.intersperse "' '" |> String.join " + ") ++ " AS '" ++ labelColName ++ "', "
+                                    "'" ++ labelColName ++ "', CONCAT_WS(' ', " ++ (q.labelCols |> List.map (\( col, _ ) -> formatColumn "s" col) |> String.join ", ") ++ "), "
                                )
-                            ++ (q.primaryKey |> Nel.toList |> List.map (\( col, _ ) -> formatColumn "s" col ++ " AS '" ++ (col |> ColumnPath.toString) ++ "'") |> String.join ", ")
+                            ++ (q.primaryKey |> Nel.toList |> List.map (\( col, _ ) -> "'" ++ (col |> ColumnPath.toString) ++ "', " ++ formatColumn "s" col) |> String.join ", ")
+                            ++ "))"
                             ++ (" FROM " ++ formatTable table ++ " s")
                             ++ (" WHERE " ++ (q.foreignKeys |> List.map (\( fk, _ ) -> formatColumn "s" fk ++ "=" ++ formatValue value) |> String.join " OR "))
-                            ++ (" FOR JSON PATH) AS [" ++ TableId.toString table ++ "]")
+                            ++ (" LIMIT " ++ String.fromInt limit)
+                            ++ (") AS `" ++ TableId.toString table ++ "`")
                     )
                 |> String.join ",\n"
            )
-        ++ ";\n"
+        ++ "\nLIMIT 1;\n"
 
 
 addLimit : SqlQuery -> SqlQuery
 addLimit query =
-    case query |> String.trim |> Regex.matches "^(select)(\\s+top \\d+)?([\\s\\S]+?;)$" of
-        (Just s) :: Nothing :: (Just q) :: [] ->
-            s ++ " TOP 100" ++ q ++ "\n"
+    case query |> String.trim |> Regex.matches "^(select[\\s\\S]+?)(\\slimit \\d+)?(\\soffset \\d+)?;$" of
+        (Just q) :: Nothing :: Nothing :: [] ->
+            q ++ "\nLIMIT 100;\n"
+
+        (Just q) :: Nothing :: (Just offset) :: [] ->
+            q ++ "\nLIMIT 100" ++ offset ++ ";\n"
 
         _ ->
             query
@@ -74,7 +79,7 @@ addLimit query =
 
 updateColumnType : ColumnRef -> ColumnType -> SqlQuery
 updateColumnType ref kind =
-    "ALTER TABLE " ++ formatTable ref.table ++ " ALTER COLUMN " ++ formatColumn "" ref.column ++ " " ++ kind ++ ";"
+    "ALTER TABLE " ++ formatTable ref.table ++ " MODIFY " ++ formatColumn "" ref.column ++ " " ++ kind ++ ";"
 
 
 
@@ -118,10 +123,10 @@ formatMatcher matches =
 formatTable : TableId -> String
 formatTable ( schema, table ) =
     if schema == "" then
-        "[" ++ table ++ "]"
+        "`" ++ table ++ "`"
 
     else
-        "[" ++ schema ++ "].[" ++ table ++ "]"
+        "`" ++ schema ++ "`.`" ++ table ++ "`"
 
 
 formatColumn : String -> ColumnPath -> String
@@ -130,10 +135,10 @@ formatColumn prefix column =
         baseCol : String
         baseCol =
             if prefix == "" then
-                "[" ++ column.head ++ "]"
+                "`" ++ column.head ++ "`"
 
             else
-                prefix ++ ".[" ++ column.head ++ "]"
+                prefix ++ ".`" ++ column.head ++ "`"
     in
     if List.isEmpty column.tail then
         baseCol
@@ -144,7 +149,7 @@ formatColumn prefix column =
 
 formatColumnAlias : ColumnPath -> SqlFragment
 formatColumnAlias column =
-    "[" ++ (column.tail |> List.last |> Maybe.withDefault column.head) ++ "]"
+    "`" ++ (column.tail |> List.last |> Maybe.withDefault column.head) ++ "`"
 
 
 formatOperator : FilterOperator -> String

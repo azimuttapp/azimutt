@@ -73,7 +73,7 @@ targetColumn tables relations sourceInfo ref =
             (tables |> TableId.dictGetI ref.table)
                 |> Maybe.orElse
                     (if TableId.schema ref.table == "" then
-                        -- if no schema, let's match on the table name only within the source
+                        -- if no schema, let's match a table only by name within the source
                         ref.table |> TableId.name |> String.toLower |> (\lowerName -> tables |> Dict.find (\k t -> ((k |> TableId.name |> String.toLower) == lowerName) && (t.origins |> List.memberBy .id sourceInfo.id)))
 
                      else
@@ -89,8 +89,15 @@ targetColumn tables relations sourceInfo ref =
         fkRef : Maybe DbColumnRef
         fkRef =
             -- fk can be from any source
-            (relations |> TableId.dictGetI ref.table |> Maybe.withDefault [])
-                |> List.find (\r -> ColumnPath.eqI r.src.column ref.column)
+            (relations |> TableId.dictGetI ref.table |> Maybe.withDefault [] |> List.find (\r -> ColumnPath.eqI r.src.column ref.column))
+                |> Maybe.orElse
+                    (if TableId.schema ref.table == "" then
+                        -- if no schema, let's match a relation within the source only using the table name
+                        ref.table |> TableId.name |> String.toLower |> (\lowerName -> relations |> Dict.findMap (\k rels -> ((k |> TableId.name |> String.toLower) == lowerName) |> Maybe.fromBool |> Maybe.andThen (\_ -> rels |> List.find (\r -> ColumnPath.eqI r.src.column ref.column && (r.origins |> List.memberBy .id sourceInfo.id)))))
+
+                     else
+                        Nothing
+                    )
                 |> Maybe.map
                     (\r ->
                         r.ref

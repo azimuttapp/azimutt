@@ -10,13 +10,14 @@ describe('query', () => {
     const opts: ConnectorSchemaOpts = {logger, logQueries: false, inferJsonAttributes: true, inferPolymorphicRelations: true}
 
     test.skip('execQuery', async () => {
-        const query = 'SELECT id, name FROM users FETCH FIRST 10 ROWS ONLY;'
+        const query = 'SELECT id, name, settings FROM users FETCH FIRST 10 ROWS ONLY;'
         const results = await connect(application, url, execQuery(query, []), opts)
         console.log('results', results)
         expect(results.rows.length).toEqual(3)
         expect(results.attributes).toEqual([
             {name: 'ID', ref: {entity: 'users', attribute: ['id']}},
             {name: 'NAME', ref: {entity: 'users', attribute: ['name']}},
+            {name: 'SETTINGS', ref: {entity: 'users', attribute: ['settings']}},
         ])
     })
     test.skip('execQuery2', async () => {

@@ -348,7 +348,7 @@ export const getChecks = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
 }
 
 function buildCheck(check: RawCheck): Check | undefined {
-    const columns = distinct([...check.definition?.matchAll(/`([^`]+)`/g) || []].map(m => m[1]))
+    const columns = distinct([...check.definition?.matchAll(/`([^`]+)`/g) || []].map(match => match[1]))
     if (check.definition && columns.length > 0) {
         return {
             name: check.constraint_name,

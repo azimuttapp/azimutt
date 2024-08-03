@@ -92,6 +92,10 @@ describe('sql', () => {
             }])
             // TODO: queries with sub-queries (fails ^^)
         })
+        test('SQL Server specifics', () => {
+            expect(parseSqlScript('SELECT TOP 10 * FROM events;'))
+                .toEqual([{command: 'SELECT', table: {name: 'events'}, columns: [{name: '*'}]}])
+        })
         test('parseSelectColumn', () => {
             expect(parseSelectColumn('*', 1)).toEqual({name: '*'})
             expect(parseSelectColumn('e.*', 1)).toEqual({name: '*', scope: 'e'})

@@ -1,5 +1,7 @@
 import {
+    distinct,
     groupBy,
+    isNotUndefined,
     mapEntriesAsync,
     mapValuesAsync,
     partition,
@@ -97,6 +99,7 @@ const toEntityId = <T extends { table_schema: string, table_name: string }>(valu
 const groupByEntity = <T extends { table_schema: string, table_name: string }>(values: T[]): Record<EntityId, T[]> => groupBy(values, toEntityId)
 
 type RawColumn = {
+    table_catalog: string
     table_schema: string
     table_name: string
     table_kind: 'BASE TABLE' | 'VIEW'
@@ -108,19 +111,21 @@ type RawColumn = {
 }
 
 const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawColumn[]> => {
+    // TODO: use `SELECT * FROM sys.tables WHERE is_ms_shipped=0;` to ignore ms tables (ex: spt_fallback_db, spt_fallback_dev, spt_fallback_usg, spt_monitor, MSreplication_options)
     return conn.query<RawColumn>(`
-        SELECT c.TABLE_SCHEMA          AS table_schema
-             , c.TABLE_NAME            AS table_name
+        SELECT t.TABLE_CATALOG         AS table_catalog
+             , t.TABLE_SCHEMA          AS table_schema
+             , t.TABLE_NAME            AS table_name
              , t.TABLE_TYPE            AS table_kind
              , c.ORDINAL_POSITION      AS column_index
              , c.COLUMN_NAME           AS column_name
              , ${buildColumnType('c')} AS column_type
              , c.IS_NULLABLE           AS column_nullable
              , c.COLUMN_DEFAULT        AS column_default
-        FROM information_schema.COLUMNS c
-                 JOIN information_schema.TABLES t ON c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME
-        WHERE ${scopeWhere({schema: 'c.TABLE_SCHEMA', entity: 'c.TABLE_NAME'}, opts)}
-        ORDER BY table_schema, table_name, column_index;`, [], 'getColumns'
+        FROM information_schema.TABLES t
+                 JOIN information_schema.COLUMNS c ON c.TABLE_CATALOG = t.TABLE_CATALOG AND c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME
+        WHERE ${scopeWhere({catalog: 'c.TABLE_CATALOG', schema: 'c.TABLE_SCHEMA', entity: 'c.TABLE_NAME'}, opts)}
+        ORDER BY table_catalog, table_schema, table_name, column_index;`, [], 'getColumns'
     ).catch(handleError(`Failed to get columns`, [], opts))
 }
 
@@ -137,7 +142,7 @@ function buildEntity(columns: RawColumn[], indexColumns: RawIndexColumn[], check
             .map(c => buildAttribute(c, comments, jsonColumns[c.column_name])),
         pk: pk.length > 0 ? buildPrimaryKey(pk[0]) : undefined,
         indexes: idxs.map(buildIndex),
-        checks: checks.map(buildCheck),
+        checks: checks.map(buildCheck).filter(isNotUndefined),
         doc: comments.find(c => c.column_name === null)?.comment,
         stats: undefined,
         extra: undefined
@@ -240,15 +245,21 @@ const getChecks = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Raw
     ).catch(handleError(`Failed to get checks`, [], opts))
 }
 
-function buildCheck(check: RawCheck): Check {
-    return removeUndefined({
-        name: check.constraint_name,
-        attrs: [[check.column_name]],
-        predicate: check.definition,
-        doc: undefined,
-        stats: undefined,
-        extra: undefined
-    })
+function buildCheck(check: RawCheck): Check | undefined {
+    const columns = distinct([...check.definition?.matchAll(/\[([^\]]+)]/g) || []].map(match => match[1]))
+    const attrs = check.column_name ? [[check.column_name]] : columns.length > 0 ? columns.map(c => [c]) : undefined
+    if (attrs) {
+        return removeUndefined({
+            name: check.constraint_name,
+            attrs,
+            predicate: check.definition,
+            doc: undefined,
+            stats: undefined,
+            extra: undefined
+        })
+    } else {
+        return undefined
+    }
 }
 
 type RawComment = {
@@ -330,11 +341,12 @@ function buildRelation(columns: RawForeignKeyColumn[]): Relation {
     })
 }
 
-const getJsonColumns = (columns: Record<EntityId, RawColumn[]>, checks: Record<EntityId, RawCheck[]>, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Record<EntityId, Record<AttributeName, ValueSchema>>> => {
+const getJsonColumns = (columns: Record<EntityId, RawColumn[]>, checksByTable: Record<EntityId, RawCheck[]>, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Record<EntityId, Record<AttributeName, ValueSchema>>> => {
     opts.logger.log('Inferring JSON columns ...')
     return mapEntriesAsync(columns, async (entityId, tableCols) => {
         const ref = entityRefFromId(entityId)
-        const jsonCols = tableCols.filter(col => col.column_type === 'nvarchar' && checks[entityId]?.find(ck => ck.column_name == col.column_name && ck.definition?.includes('isjson')))
+        const checks = checksByTable[entityId] || []
+        const jsonCols = tableCols.filter(c => c.column_type === 'nvarchar' && checks.find(ch => ch.definition === `isjson([${c.column_name}])=(1)`))
         return mapValuesAsync(Object.fromEntries(jsonCols.map(c => [c.column_name, c.column_name])), c =>
             getSampleValues(ref, [c], opts)(conn).then(values => valuesToSchema(values.filter((v): v is string => typeof v === 'string').map(safeJsonParse)))
         )

@@ -3,6 +3,7 @@ module DataSources.DbMiner.DbQuery exposing (addLimit, exploreColumn, exploreTab
 import DataSources.DbMiner.DbTypes exposing (FilterOperation, FilterOperator(..), IncomingRowsQuery, RowQuery, TableQuery)
 import DataSources.DbMiner.QueryBigQuery as QueryBigQuery
 import DataSources.DbMiner.QueryCouchbase as QueryCouchbase
+import DataSources.DbMiner.QueryMariaDB as QueryMariaDB
 import DataSources.DbMiner.QueryMongoDB as QueryMongoDB
 import DataSources.DbMiner.QueryMySQL as QueryMySQL
 import DataSources.DbMiner.QueryOracle as QueryOracle
@@ -31,8 +32,7 @@ exploreTable db table =
                 QueryCouchbase.exploreTable table
 
             DatabaseKind.MariaDB ->
-                -- same as MySQL on purpose
-                QueryMySQL.exploreTable table
+                QueryMariaDB.exploreTable table
 
             DatabaseKind.MongoDB ->
                 QueryMongoDB.exploreTable table
@@ -68,8 +68,7 @@ exploreColumn db table column =
                 QueryCouchbase.exploreColumn table column
 
             DatabaseKind.MariaDB ->
-                -- same as MySQL on purpose
-                QueryMySQL.exploreColumn table column
+                QueryMariaDB.exploreColumn table column
 
             DatabaseKind.MongoDB ->
                 QueryMongoDB.exploreColumn table column
@@ -98,9 +97,17 @@ filterTable db query =
     -- query made from the visual editor, something like: `SELECT * FROM table WHERE ${filters};`
     { sql =
         case db of
+            DatabaseKind.BigQuery ->
+                "DbQuery.filterTable not implemented for BigQuery"
+
+            DatabaseKind.Couchbase ->
+                "DbQuery.filterTable not implemented for Couchbase"
+
             DatabaseKind.MariaDB ->
-                -- same as MySQL on purpose
-                QueryMySQL.filterTable query.table query.filters
+                QueryMariaDB.filterTable query.table query.filters
+
+            DatabaseKind.MongoDB ->
+                "DbQuery.filterTable not implemented for MongoDB"
 
             DatabaseKind.MySQL ->
                 QueryMySQL.filterTable query.table query.filters
@@ -111,8 +118,11 @@ filterTable db query =
             DatabaseKind.PostgreSQL ->
                 QueryPostgreSQL.filterTable query.table query.filters
 
-            _ ->
-                "DbQuery.filterTable not implemented for database " ++ DatabaseKind.show db
+            DatabaseKind.Snowflake ->
+                "DbQuery.filterTable not implemented for Snowflake"
+
+            DatabaseKind.SQLServer ->
+                QuerySQLServer.filterTable query.table query.filters
     , origin = "filterTable"
     , db = db
     }
@@ -123,9 +133,17 @@ findRow db query =
     -- query made from the table rows or the row details sidebar, something like: `SELECT * FROM table WHERE ${primaryKey} = ${value} LIMIT 1;`
     { sql =
         case db of
+            DatabaseKind.BigQuery ->
+                "DbQuery.findRow not implemented for BigQuery"
+
+            DatabaseKind.Couchbase ->
+                "DbQuery.findRow not implemented for Couchbase"
+
             DatabaseKind.MariaDB ->
-                -- same as MySQL on purpose
-                QueryMySQL.findRow query.table query.primaryKey
+                QueryMariaDB.findRow query.table query.primaryKey
+
+            DatabaseKind.MongoDB ->
+                "DbQuery.findRow not implemented for MongoDB"
 
             DatabaseKind.MySQL ->
                 QueryMySQL.findRow query.table query.primaryKey
@@ -136,8 +154,11 @@ findRow db query =
             DatabaseKind.PostgreSQL ->
                 QueryPostgreSQL.findRow query.table query.primaryKey
 
-            _ ->
-                "DbQuery.findRow not implemented for database " ++ DatabaseKind.show db
+            DatabaseKind.Snowflake ->
+                "DbQuery.findRow not implemented for Snowflake"
+
+            DatabaseKind.SQLServer ->
+                QuerySQLServer.findRow query.table query.primaryKey
     , origin = "findRow"
     , db = db
     }
@@ -160,9 +181,17 @@ incomingRows db relations value =
     -- ```
     { sql =
         case db of
+            DatabaseKind.BigQuery ->
+                "DbQuery.incomingRows not implemented for BigQuery"
+
+            DatabaseKind.Couchbase ->
+                "DbQuery.incomingRows not implemented for Couchbase"
+
             DatabaseKind.MariaDB ->
-                -- same as MySQL on purpose
-                QueryMySQL.incomingRows value relations incomingRowsLimit
+                QueryMariaDB.incomingRows value relations incomingRowsLimit
+
+            DatabaseKind.MongoDB ->
+                "DbQuery.incomingRows not implemented for MongoDB"
 
             DatabaseKind.MySQL ->
                 QueryMySQL.incomingRows value relations incomingRowsLimit
@@ -173,8 +202,11 @@ incomingRows db relations value =
             DatabaseKind.PostgreSQL ->
                 QueryPostgreSQL.incomingRows value relations incomingRowsLimit
 
-            _ ->
-                "DbQuery.incomingRows not implemented for database " ++ DatabaseKind.show db
+            DatabaseKind.Snowflake ->
+                "DbQuery.incomingRows not implemented for Snowflake"
+
+            DatabaseKind.SQLServer ->
+                QuerySQLServer.incomingRows value relations incomingRowsLimit
     , origin = "incomingRows"
     , db = db
     }
@@ -188,9 +220,16 @@ addLimit db query =
         DatabaseKind.BigQuery ->
             { sql = QueryBigQuery.addLimit query.sql, origin = query.origin, db = query.db }
 
+        DatabaseKind.Couchbase ->
+            -- "DbQuery.addLimit not implemented for Couchbase"
+            query
+
         DatabaseKind.MariaDB ->
-            -- same as MySQL on purpose
-            { sql = QueryMySQL.addLimit query.sql, origin = query.origin, db = query.db }
+            { sql = QueryMariaDB.addLimit query.sql, origin = query.origin, db = query.db }
+
+        DatabaseKind.MongoDB ->
+            -- "DbQuery.addLimit not implemented for MongoDB"
+            query
 
         DatabaseKind.MySQL ->
             { sql = QueryMySQL.addLimit query.sql, origin = query.origin, db = query.db }
@@ -207,27 +246,38 @@ addLimit db query =
         DatabaseKind.SQLServer ->
             { sql = QuerySQLServer.addLimit query.sql, origin = query.origin, db = query.db }
 
-        _ ->
-            query
-
 
 updateColumnType : DatabaseKind -> ColumnRefLike x -> ColumnType -> SqlQueryOrigin
 updateColumnType db ref kind =
     -- generate SQL to update column types in the db analyzer in order to make them consistent (fk pointing at a pk)
     { sql =
         case db of
+            DatabaseKind.BigQuery ->
+                "DbQuery.updateColumnType not implemented for BigQuery"
+
+            DatabaseKind.Couchbase ->
+                "DbQuery.updateColumnType not implemented for Couchbase"
+
             DatabaseKind.MariaDB ->
-                -- same as MySQL on purpose
-                QueryMySQL.updateColumnType { table = ref.table, column = ref.column } kind
+                QueryMariaDB.updateColumnType { table = ref.table, column = ref.column } kind
+
+            DatabaseKind.MongoDB ->
+                "DbQuery.updateColumnType not implemented for MongoDB"
 
             DatabaseKind.MySQL ->
                 QueryMySQL.updateColumnType { table = ref.table, column = ref.column } kind
 
+            DatabaseKind.Oracle ->
+                "DbQuery.updateColumnType not implemented for Oracle"
+
             DatabaseKind.PostgreSQL ->
                 QueryPostgreSQL.updateColumnType { table = ref.table, column = ref.column } kind
 
-            _ ->
-                "DbQuery.updateColumnType not implemented for database " ++ DatabaseKind.show db
+            DatabaseKind.Snowflake ->
+                "DbQuery.updateColumnType not implemented for Snowflake"
+
+            DatabaseKind.SQLServer ->
+                QuerySQLServer.updateColumnType { table = ref.table, column = ref.column } kind
     , origin = "updateColumnType"
     , db = db
     }

@@ -85,7 +85,7 @@ export function parseSqlStatement(statement: string): ParsedSqlStatement | undef
 }
 
 export function parseSelectStatement(statement: string): ParsedSelectStatement | undefined {
-    const selectRegex = 'SELECT(?:\\s+DISTINCT)?\\s+(.+?)'
+    const selectRegex = 'SELECT(?:\\s+DISTINCT)?(?:\\s+TOP\\s+\\d+)?\\s+(.+?)'
     const fromRegex = 'FROM\\s+(.+?)'
     const whereRegex = 'WHERE\\s+(.+?)'
     const groupByRegex = 'GROUP\\s+BY\\s+(.+?)'
