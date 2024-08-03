@@ -40,6 +40,7 @@ suite =
             , testParse "smallint" "Int"
             , testParse "numeric" "Float"
             , testParse "numeric(4,2)" "Float"
+            , testParse "double" "Float"
             , testParse "double precision" "Float"
             , testParse "number" "Float"
             , testParse "number(4, 2)" "Float"

@@ -143,7 +143,7 @@ findRow db query =
                 QueryMariaDB.findRow query.table query.primaryKey
 
             DatabaseKind.MongoDB ->
-                "DbQuery.findRow not implemented for MongoDB"
+                QueryMongoDB.findRow query.table query.primaryKey
 
             DatabaseKind.MySQL ->
                 QueryMySQL.findRow query.table query.primaryKey
@@ -228,8 +228,7 @@ addLimit db query =
             { sql = QueryMariaDB.addLimit query.sql, origin = query.origin, db = query.db }
 
         DatabaseKind.MongoDB ->
-            -- "DbQuery.addLimit not implemented for MongoDB"
-            query
+            { sql = QueryMongoDB.addLimit query.sql, origin = query.origin, db = query.db }
 
         DatabaseKind.MySQL ->
             { sql = QueryMySQL.addLimit query.sql, origin = query.origin, db = query.db }

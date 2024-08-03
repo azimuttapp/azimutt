@@ -1,38 +1,38 @@
+import {distinct, removeUndefined} from "@azimutt/utils";
 import {QueryResults} from "@azimutt/models";
 import {Conn} from "./connect";
-import {distinct} from "@azimutt/utils";
+import {parseMongoStatement} from "./parser";
 
-// expects `query` to be in the form of: "db/collection/operation/command"
-// - `db`: name of the database to use
-// - `collection`: name of the collection to use
-// - `operation`: name of the collection method to call (see https://mongodb.github.io/node-mongodb-native/5.3/classes/Collection.html)
-// - `command`: the JSON given as parameter for the operation
+/*
+    The `query` is a MongoDB query (like: 'db.users.find({"id": {"$eq": 1}});').
+    The parser should handle most of them, look at it and its [tests](./parser.test.ts) for some examples.
+
+    Legacy query was in the form of: "$db/$collection/$operation/$command/$limit".
+    Stop using it, it will be removed at some point.
+ */
 export const execQuery = (query: string, parameters: any[]) => async (conn: Conn): Promise<QueryResults> => {
-    // Ugly hack to have a single string query perform any operation on MongoDB 🤮
-    // If you see this and have an idea how to improve, please reach out (issue, PR, twitter, email, slack... ^^)
-    const [database, collection, operation, commandStr, limit] = query.split('/').map(v => v.trim())
-    let command
-    try {
-        command = JSON.parse(commandStr)
-    } catch (e) {
-        return Promise.reject(`'${commandStr}' is not a valid JSON (expected for the command)`)
-    }
-    const coll = conn.underlying.db(database).collection(collection) as any
-    if (typeof coll[operation] === 'function') {
-        const rows: any[] = await limitResults(coll[operation](command), limit).toArray()
+    const statement = parseMongoStatement(query)
+    if (typeof statement === 'string') return Promise.reject(`Invalid MongoDB query: ${statement}, query: ${query}`)
+    const coll = conn.underlying.db(statement.database).collection(statement.collection) as any
+    if (typeof coll[statement.operation] === 'function') {
+        let mongoQuery = coll[statement.operation](statement.command)
+        mongoQuery = statement.projection ? mongoQuery.project(statement.projection) : mongoQuery
+        mongoQuery = statement.limit ? mongoQuery.limit(statement.limit) : mongoQuery
+        const rows: any[] = await mongoQuery.toArray()
         const allKeys: string[] = rows.flatMap(Object.keys)
         return QueryResults.parse({
             query,
-            attributes: distinct(allKeys).map(name => ({name})),
+            attributes: distinct(allKeys).map(name => ({
+                name,
+                ref: removeUndefined({
+                    schema: statement.database,
+                    entity: statement.collection,
+                    attribute: [name]
+                })
+            })),
             rows: rows.map(row => JSON.parse(JSON.stringify(row))) // serialize ObjectId & Date objects
         })
     } else {
-        return Promise.reject(`'${operation}' is not a valid MongoDB operation`)
+        return Promise.reject(`Invalid MongoDB operation (${statement.operation})`)
     }
-
-}
-
-function limitResults(query: any, limit: string | undefined) {
-    const l = limit ? (parseInt(limit) || 100) : 100
-    return query.limit(l)
 }

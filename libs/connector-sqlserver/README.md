@@ -33,7 +33,6 @@ You can use the [SQL Server Official image](https://hub.docker.com/r/microsoft/m
 
 ```bash
 docker run --name mssql_sample -p 1433:1433 -e ACCEPT_EULA=Y -e MSSQL_SA_PASSWORD=azimutt_42 -e MSSQL_PID=Evaluation mcr.microsoft.com/mssql/server:2022-latest
-docker run --name mariadb_sample -p 3307:3306 -e MARIADB_ROOT_PASSWORD=mariadb -e MARIADB_USER=azimutt -e MARIADB_PASSWORD=azimutt -e MARIADB_DATABASE=mariadb_sample mariadb:latest
 ```
 
 Connect with host (`localhost`), port (`1433`), user (`sa`) and pass (`azimutt_42`) or using `sqlserver://sa:azimutt_42@localhost:1433/master` or `Server=localhost,1433;User Id=sa;Password=azimutt_42;Database=master`, then add some tables and data:

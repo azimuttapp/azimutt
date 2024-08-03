@@ -37,7 +37,7 @@ docker run --name mariadb_sample -p 3307:3306 -e MARIADB_ROOT_PASSWORD=mariadb -
 
 Connect with host (`localhost`), port (`3307`), user (`azimutt`) and pass (`azimutt`) or using `mariadb://azimutt:azimutt@localhost:3307/mariadb_sample`, then add some tables and data:
 
-```mysql
+```mariadb
 CREATE TABLE users (
     id              BIGINT                  NOT NULL AUTO_INCREMENT PRIMARY KEY,
     name            VARCHAR(50)             NOT NULL,
@@ -112,7 +112,7 @@ INSERT INTO ratings (user_id, item_kind, item_id, rating) VALUES (3, 'users', 1,
 
 Remove everything with:
 
-```mysql
+```mariadb
 DROP VIEW guests;
 DROP VIEW admins;
 DROP TABLE ratings;
