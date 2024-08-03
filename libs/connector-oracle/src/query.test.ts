@@ -1,21 +1,21 @@
 import {describe, expect, test} from "@jest/globals";
-import {ConnectorDefaultOpts, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/models";
+import {ConnectorDefaultOpts, ConnectorSchemaOpts, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/models";
 import {connect} from "./connect";
 import {execQuery} from "./query";
 import {application, logger} from "./constants.test";
 
 describe('query', () => {
-    // local url, install db or replace it to test
-    const url: DatabaseUrlParsed = parseDatabaseUrl('oracle:thin:C##azimutt/azimutt@localhost:1521')
-    const opts: ConnectorDefaultOpts = {logger, logQueries: false}
+    // local url from [README](../README.md#local-setup), launch it or replace it to test
+    const url: DatabaseUrlParsed = parseDatabaseUrl('oracle:thin:C##azimutt/azimutt@localhost:1521/FREE')
+    const opts: ConnectorSchemaOpts = {logger, logQueries: false, inferJsonAttributes: true, inferPolymorphicRelations: true}
 
     test.skip('execQuery', async () => {
-        const query = 'SELECT p.id, p.title, u.id, u.name FROM posts p JOIN users u on p.created_by = u.id FETCH FIRST 10 ROWS ONLY;'
+        const query = 'SELECT id, name FROM users FETCH FIRST 10 ROWS ONLY;'
         const results = await connect(application, url, execQuery(query, []), opts)
+        console.log('results', results)
+        expect(results.rows.length).toEqual(3)
         expect(results.attributes).toEqual([
-            {name: 'ID', ref: {entity: 'posts', attribute: ['id']}},
-            {name: 'TITLE', ref: {entity: 'posts', attribute: ['title']}},
-            {name: 'ID_1', ref: {entity: 'users', attribute: ['id']}},
+            {name: 'ID', ref: {entity: 'users', attribute: ['id']}},
             {name: 'NAME', ref: {entity: 'users', attribute: ['name']}},
         ])
     })

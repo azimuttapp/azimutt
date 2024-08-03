@@ -27,16 +27,7 @@ If you need to develop on multiple libs at the same time (ex: want to update a c
 - Depend on a local lib: `pnpm add <lib>`, ex: `pnpm add @azimutt/models`
 - "Publish" lib locally by building it: `pnpm run build`
 
-## Set up a cloud MariaDB database
-
-- Go on https://mariadb.com and click on "Start in the cloud" (top right)
-- Follow the onboarding
-- Create a cloud database
-- In manage click on "Security access" to allow your IP (if it doesn't work, check your adblock ^^)
-- Then click on "connect to get your credentials" and build an url like: `mariadb://<user>:<pass>@<host>:<port>/<db>` (db is the one you created)
-- Load data in your instance, if you don't have, you can use schemas from [here](https://dataedo.com/kb/databases/mariadb/sample-databases) or [there](https://github.com/mariadb-corporation/dev-example-bookings)
-
-## MariaDB Setup
+## Local Setup
 
 You can use the [MariaDB Official image](https://hub.docker.com/_/mariadb):
 
@@ -130,3 +121,12 @@ DROP TABLE post_authors;
 DROP TABLE posts;
 DROP TABLE users;
 ```
+
+## Cloud Setup
+
+- Go on https://mariadb.com and click on "Start in the cloud" (top right)
+- Follow the onboarding
+- Create a cloud database
+- In manage click on "Security access" to allow your IP (if it doesn't work, check your adblock ^^)
+- Then click on "connect to get your credentials" and build an url like: `mariadb://<user>:<pass>@<host>:<port>/<db>` (db is the one you created)
+- Load data in your instance, if you don't have, you can use schemas from [here](https://dataedo.com/kb/databases/mariadb/sample-databases) or [there](https://github.com/mariadb-corporation/dev-example-bookings)

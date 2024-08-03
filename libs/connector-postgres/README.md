@@ -27,7 +27,7 @@ If you need to develop on multiple libs at the same time (ex: want to update a c
 - Depend on a local lib: `pnpm add <lib>`, ex: `pnpm add @azimutt/models`
 - "Publish" lib locally by building it: `pnpm run build`
 
-## PostgreSQL Setup
+## Local Setup
 
 You can use the [PostgreSQL Official image](https://hub.docker.com/_/postgres):
 
@@ -100,7 +100,7 @@ CREATE TABLE ratings (
 
 
 -- Insert data
-INSERT INTO users (name, role, email, settings) VALUES ('Loïc', 'admin', 'loicknuchel@gmail.com', '{"color": "red", "plan": {"id": 1, "name": "pro"}}');
+INSERT INTO users (name, role, email, settings) VALUES ('Loïc', 'admin', 'loic@mail.com', '{"color": "red", "plan": {"id": 1, "name": "pro"}}');
 INSERT INTO users (name, role, email, settings) VALUES ('Jean', 'guest', 'jean@mail.com', null);
 INSERT INTO users (name, role, email, settings) VALUES ('Luc', 'guest', 'luc@mail.com', null);
 INSERT INTO posts (title, content, created_by) VALUES ('PostgreSQL connector', null, 1);

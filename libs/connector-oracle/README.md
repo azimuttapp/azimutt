@@ -27,7 +27,7 @@ If you need to develop on multiple libs at the same time (ex: want to update a c
 - Depend on a local lib: `pnpm add <lib>`, ex: `pnpm add @azimutt/models`
 - "Publish" lib locally by building it: `pnpm run build`
 
-## Oracle Setup
+## Local Setup
 
 ### 1. Run in Docker
 

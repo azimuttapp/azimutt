@@ -6,7 +6,7 @@ import {application, logger} from "./constants.test";
 
 describe('query', () => {
     // local url from [README](../README.md#local-setup), launch it or replace it to test
-    const url: DatabaseUrlParsed = parseDatabaseUrl('postgresql://postgres:postgres@localhost:5433/postgres')
+    const url: DatabaseUrlParsed = parseDatabaseUrl('mysql://azimutt:azimutt@localhost:3306/mysql_sample')
     const opts: ConnectorSchemaOpts = {logger, logQueries: false, inferJsonAttributes: true, inferPolymorphicRelations: true}
 
     test.skip('execQuery', async () => {
@@ -15,8 +15,8 @@ describe('query', () => {
         console.log('results', results)
         expect(results.rows.length).toEqual(3)
         expect(results.attributes).toEqual([
-            {name: 'id', ref: {schema: 'public', entity: 'users', attribute: ['id']}},
-            {name: 'name', ref: {schema: 'public', entity: 'users', attribute: ['name']}},
+            {name: 'id', ref: {entity: 'users', attribute: ['id']}},
+            {name: 'name', ref: {entity: 'users', attribute: ['name']}},
         ])
     })
 })

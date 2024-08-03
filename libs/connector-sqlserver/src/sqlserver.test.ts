@@ -1,23 +1,17 @@
 import {describe, expect, test} from "@jest/globals";
 import {ConnectorSchemaOpts, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/models";
 import {connect} from "./connect";
-import {execQuery} from "./query";
 import {getSchema} from "./sqlserver";
 import {application, logger} from "./constants.test";
 
 describe('sqlserver', () => {
-    // fake url, use a real one to test (see README for how-to)
-    const url: DatabaseUrlParsed = parseDatabaseUrl('Server=host.com,1433;Database=db;User Id=user;Password=pass')
-    const opts: ConnectorSchemaOpts = {logger, logQueries: true, inferJsonAttributes: true, inferPolymorphicRelations: true}
+    // local url from [README](../README.md#local-setup), launch it or replace it to test
+    const url: DatabaseUrlParsed = parseDatabaseUrl('sqlserver://sa:azimutt_42@localhost:1433/master')
+    const opts: ConnectorSchemaOpts = {logger, logQueries: false, inferJsonAttributes: true, inferPolymorphicRelations: true}
 
-    test.skip('execQuery', async () => {
-        const results = await connect(application, url, execQuery("SELECT * FROM Departments WHERE DepartmentCode='DS';", []), opts)
-        console.log('results', results)
-        expect(results.rows.length).toEqual(1)
-    })
     test.skip('getSchema', async () => {
         const schema = await connect(application, url, getSchema(opts), opts)
         console.log('schema', schema)
-        expect(schema.entities?.length).toEqual(32)
+        expect(schema.entities?.length).toEqual(13)
     })
 })

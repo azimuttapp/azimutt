@@ -11,9 +11,9 @@ import {getQueryHistory} from "./history";
 import {application, logger} from "./constants.test";
 
 describe('history', () => {
-    // local url, install db or replace it to test
-    const url: DatabaseUrlParsed = parseDatabaseUrl('postgresql://postgres:postgres@localhost/azimutt_dev')
-    const opts: ConnectorQueryHistoryOpts = {logger, logQueries: false, database: 'azimutt_app'}
+    // local url from [README](../README.md#local-setup), launch it or replace it to test
+    const url: DatabaseUrlParsed = parseDatabaseUrl('postgresql://postgres:postgres@localhost:5433/postgres')
+    const opts: ConnectorQueryHistoryOpts = {logger, logQueries: false, database: 'postgres'}
 
     test.skip('getQueryHistory', async () => {
         const queries: DatabaseQuery[] = await connect(application, url, getQueryHistory(opts), opts).then(zodParseAsync(DatabaseQuery.array()))

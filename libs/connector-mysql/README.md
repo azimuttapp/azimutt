@@ -27,17 +27,7 @@ If you need to develop on multiple libs at the same time (ex: want to update a c
 - Depend on a local lib: `pnpm add <lib>`, ex: `pnpm add @azimutt/models`
 - "Publish" lib locally by building it: `pnpm run build`
 
-## Set up a cloud MySQL database
-
-- Go on https://www.freemysqlhosting.net and click on "Start my Free Account"
-- Follow the onboarding:
-  - Reset password and login
-  - Click on "MySQL Hosting" in to top menu
-  - Create your database
-- Get your credentials by email and build the url like: `mysql://<user>:<pass>@<host>:<port>/<db>` ("Server" is the host, "Name" is the db name)
-- Load data in your instance, if you don't have, you can use schemas from [Prisma schema examples](https://github.com/prisma/database-schema-examples/blob/main/mysql)
-
-## MySQL Setup
+## Local Setup
 
 You can use the [MySQL Official image](https://hub.docker.com/_/mysql):
 
@@ -129,3 +119,13 @@ DROP TABLE post_authors;
 DROP TABLE posts;
 DROP TABLE users;
 ```
+
+## Cloud Setup
+
+- Go on https://www.freemysqlhosting.net and click on "Start my Free Account"
+- Follow the onboarding:
+  - Reset password and login
+  - Click on "MySQL Hosting" in to top menu
+  - Create your database
+- Get your credentials by email and build the url like: `mysql://<user>:<pass>@<host>:<port>/<db>` ("Server" is the host, "Name" is the db name)
+- Load data in your instance, if you don't have, you can use schemas from [Prisma schema examples](https://github.com/prisma/database-schema-examples/blob/main/mysql)
