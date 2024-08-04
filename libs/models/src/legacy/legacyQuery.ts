@@ -1,6 +1,7 @@
 import {z} from "zod";
 import {removeUndefined} from "@azimutt/utils";
 import {QueryResults} from "../interfaces/connector";
+import {JsValue} from "../common";
 import {columnRefFromLegacy, columnRefToLegacy, LegacyColumnRef, LegacyJsValue} from "./legacyDatabase";
 
 export const LegacyDatabaseQueryResultsColumn = z.object({
@@ -34,6 +35,10 @@ export function queryResultsToLegacy(r: QueryResults): LegacyDatabaseQueryResult
             name,
             ref: ref ? columnRefToLegacy(ref) : undefined
         })),
-        rows: r.rows
+        rows: r.rows.map(jsValueToLegacy)
     }
+}
+
+function jsValueToLegacy(v: JsValue): LegacyJsValue {
+    return v
 }

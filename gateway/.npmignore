@@ -8,7 +8,7 @@ tsconfig.json
 
 .env*
 .eslintignore
-.eslintrc.cjs
+eslint.config.mjs
 .nvmrc
 .prettierrc.js
 Dockerfile
