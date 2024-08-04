@@ -4,7 +4,7 @@ import {Conn} from "./connect";
 import {parseMongoStatement} from "./parser";
 
 /*
-    The `query` is a MongoDB query (like: 'db.users.find({"id": {"$eq": 1}});').
+    The `query` is a MongoDB query (like: 'db.users.find({"id": 1});').
     The parser should handle most of them, look at it and its [tests](./parser.test.ts) for some examples.
 
     Legacy query was in the form of: "$db/$collection/$operation/$command/$limit".

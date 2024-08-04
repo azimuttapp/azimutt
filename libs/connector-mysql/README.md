@@ -127,5 +127,5 @@ DROP TABLE users;
   - Reset password and login
   - Click on "MySQL Hosting" in to top menu
   - Create your database
-- Get your credentials by email and build the url like: `mysql://<user>:<pass>@<host>:<port>/<db>` ("Server" is the host, "Name" is the db name)
+- Get your credentials by email and build the url like: `mysql://<user>:<pass>@<host>:<port>/<db>`
 - Load data in your instance, if you don't have, you can use schemas from [Prisma schema examples](https://github.com/prisma/database-schema-examples/blob/main/mysql)

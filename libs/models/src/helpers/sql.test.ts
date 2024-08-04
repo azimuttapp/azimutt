@@ -94,7 +94,7 @@ describe('sql', () => {
         })
         test('SQL Server specifics', () => {
             expect(parseSqlScript('SELECT TOP 10 * FROM events;'))
-                .toEqual([{command: 'SELECT', table: {name: 'events'}, columns: [{name: '*'}]}])
+                .toEqual([{command: 'SELECT', table: {name: 'events'}, columns: [{name: '*'}], limit: 10}])
         })
         test('parseSelectColumn', () => {
             expect(parseSelectColumn('*', 1)).toEqual({name: '*'})

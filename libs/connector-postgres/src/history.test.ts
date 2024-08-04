@@ -13,7 +13,7 @@ import {application, logger} from "./constants.test";
 describe('history', () => {
     // local url from [README](../README.md#local-setup), launch it or replace it to test
     const url: DatabaseUrlParsed = parseDatabaseUrl('postgresql://postgres:postgres@localhost:5433/postgres')
-    const opts: ConnectorQueryHistoryOpts = {logger, logQueries: false, database: 'postgres'}
+    const opts: ConnectorQueryHistoryOpts = {logger, logQueries: false, database: url.db}
 
     test.skip('getQueryHistory', async () => {
         const queries: DatabaseQuery[] = await connect(application, url, getQueryHistory(opts), opts).then(zodParseAsync(DatabaseQuery.array()))

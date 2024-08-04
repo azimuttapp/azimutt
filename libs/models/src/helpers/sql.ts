@@ -69,7 +69,13 @@ export type ParsedSqlConditionIn = { op: 'IN' | 'NOT IN', value: ParsedSqlValue,
 export type ParsedSqlValue = {column: string, scope?: string} | string | number
 
 export function parseSqlScript(script: string): ParsedSqlScript {
-    return script.split(';').map(s => parseSqlStatement(s.trim() + ';')).filter(s => !!s)
+    return script
+        .split('\n') // get lines
+        .filter(line => !!line.trim() && !line.trim().startsWith('--')) // remove empty & comment lines
+        .join('\n')
+        .split(';') // get statements (naive)
+        .map(s => parseSqlStatement(s.trim() + ';'))
+        .filter(isNotUndefined)
 }
 
 export function parseSqlStatement(statement: string): ParsedSqlStatement | undefined {
@@ -85,7 +91,7 @@ export function parseSqlStatement(statement: string): ParsedSqlStatement | undef
 }
 
 export function parseSelectStatement(statement: string): ParsedSelectStatement | undefined {
-    const selectRegex = 'SELECT(?:\\s+DISTINCT)?(?:\\s+TOP\\s+\\d+)?\\s+(.+?)'
+    const selectRegex = 'SELECT(?:\\s+DISTINCT)?(?:\\s+TOP\\s+(\\d+))?\\s+(.+?)'
     const fromRegex = 'FROM\\s+(.+?)'
     const whereRegex = 'WHERE\\s+(.+?)'
     const groupByRegex = 'GROUP\\s+BY\\s+(.+?)'
@@ -97,7 +103,7 @@ export function parseSelectStatement(statement: string): ParsedSelectStatement |
     const optRegex = [whereRegex, groupByRegex, havingRegex, orderByRegex, limitRegex, offsetRegex, fetchRegex].map(r => `(?:\\s+${r})?`).join('')
     const regex = new RegExp(`^${selectRegex}\\s+${fromRegex}${optRegex}\\s*;$`, 'i')
 
-    const [, select, from, where, groupBy, having, orderBy, limit, offset, fetch] = statement.trim().match(regex) || []
+    const [, top, select, from, where, groupBy, having, orderBy, limit, offset, fetch] = statement.trim().match(regex) || []
     const parsedColumns: ParsedSelectColumn[] = (select || '').split(',').map((c, i) => parseSelectColumn(c.trim(), i + 1)).filter(c => !!c)
     const parsedTable: { table: ParsedSelectTable; joins?: ParsedSelectJoin[] } | undefined = parseSelectTable(from || '')
     if (parsedTable && parsedColumns.length > 0) {
@@ -111,7 +117,7 @@ export function parseSelectStatement(statement: string): ParsedSelectStatement |
             having: having && parseCondition(having),
             orderBy,
             offset: offset ? parseInt(offset) : undefined,
-            limit: limit ? parseInt(limit) : fetch ? parseInt(fetch) : undefined
+            limit: limit ? parseInt(limit) : fetch ? parseInt(fetch) : top ? parseInt(top) : undefined
         })
     } else {
         return undefined
@@ -221,13 +227,14 @@ export function parseConditionIn(cond: string): ParsedSqlConditionIn | string {
 }
 
 export function parseValue(value: string): ParsedSqlValue | undefined {
-    let res: RegExpMatchArray | null
-    if (res = value.match(/^(\d+)$/)) {
-        return parseInt(res[1])
-    } else if (res = value.match(/^'([^']+)'$/)) {
-        return res[1]
-    } else if (res = value.match(/^(?:(.+?)\.)?([a-zA-Z0-9_$#]+?|["`].+?["`])$/i)) {
-        return removeUndefined({column: removeQuotes(res[2]), scope: res[1] ? removeQuotes(res[1]) : undefined})
-    }
+    let res: RegExpMatchArray | null = value.match(/^(\d+)$/)
+    if (res) return parseInt(res[1])
+
+    res = value.match(/^'([^']+)'$/)
+    if (res) return res[1]
+
+    res = value.match(/^(?:(.+?)\.)?([a-zA-Z0-9_$#]+?|["`].+?["`])$/i)
+    if (res) return removeUndefined({column: removeQuotes(res[2]), scope: res[1] ? removeQuotes(res[1]) : undefined})
+
     return undefined
 }

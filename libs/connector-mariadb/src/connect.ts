@@ -71,7 +71,7 @@ function buildConfig(application: string, url: DatabaseUrlParsed): ConnectionCon
         user: url.user,
         password: url.pass,
         database: url.db,
-        bigIntAsNumber: true
+        bigIntAsNumber: true,
         // ssl
     }
 }
