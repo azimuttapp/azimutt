@@ -26,7 +26,7 @@ import Time
 type alias DbSource =
     { id : SourceId
     , name : SourceName
-    , db : { kind : DatabaseKind, url : DatabaseUrl, storage : DatabaseUrlStorage }
+    , db : { kind : DatabaseKind, url : Maybe DatabaseUrl, storage : DatabaseUrlStorage }
     , tables : Dict TableId Table
     , relations : List Relation
     , types : Dict CustomTypeId CustomType
@@ -39,7 +39,7 @@ zero : DbSource
 zero =
     { id = SourceId.zero
     , name = "zero"
-    , db = { kind = DatabaseKind.PostgreSQL, url = "postgres://localhost/zero", storage = DatabaseUrlStorage.Browser }
+    , db = { kind = DatabaseKind.default, url = Just "postgres://localhost/zero", storage = DatabaseUrlStorage.default }
     , tables = Dict.empty
     , relations = []
     , types = Dict.empty
@@ -52,19 +52,16 @@ fromSource : Source -> Maybe DbSource
 fromSource source =
     case source.kind of
         DatabaseConnection db ->
-            db.url
-                |> Maybe.map
-                    (\url ->
-                        { id = source.id
-                        , name = source.name
-                        , db = { kind = db.kind, url = url, storage = db.storage }
-                        , tables = source.tables
-                        , relations = source.relations
-                        , types = source.types
-                        , createdAt = source.createdAt
-                        , updatedAt = source.updatedAt
-                        }
-                    )
+            { id = source.id
+            , name = source.name
+            , db = { kind = db.kind, url = db.url, storage = db.storage }
+            , tables = source.tables
+            , relations = source.relations
+            , types = source.types
+            , createdAt = source.createdAt
+            , updatedAt = source.updatedAt
+            }
+                |> Just
 
         _ ->
             Nothing
@@ -74,7 +71,7 @@ toSource : DbSource -> Source
 toSource source =
     { id = source.id
     , name = source.name
-    , kind = DatabaseConnection { kind = source.db.kind, url = Just source.db.url, storage = source.db.storage }
+    , kind = DatabaseConnection { kind = source.db.kind, url = source.db.url, storage = source.db.storage }
     , content = Array.empty
     , tables = source.tables
     , relations = source.relations

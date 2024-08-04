@@ -1,6 +1,6 @@
 {
   "name": "@azimutt/connector-sqlserver",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Connect to SQL Server, extract schema, run analysis and queries",
   "keywords": [],
   "homepage": "https://azimutt.app",
@@ -26,15 +26,15 @@
   "dependencies": {
     "@azimutt/models": "workspace:^",
     "@azimutt/utils": "workspace:^",
-    "mssql": "9.3.0"
+    "mssql": "11.0.1"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
     "@types/jest": "^29.5.12",
     "@types/mssql": "^9.1.5",
-    "@types/node": "^20.14.13",
+    "@types/node": "^22.1.0",
     "jest": "^29.7.0",
-    "ts-jest": "^29.2.3",
+    "ts-jest": "^29.2.4",
     "typescript": "^5.5.4"
   }
 }

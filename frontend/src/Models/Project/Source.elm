@@ -1,4 +1,4 @@
-module Models.Project.Source exposing (Source, addRelations, aml, database, databaseKind, databaseUrl, databaseUrlStorage, decode, encode, getColumn, getTable, removeRelations, toInfo, updateWith)
+module Models.Project.Source exposing (Source, addRelations, aml, database, databaseKind, databaseUrl, databaseUrlStorage, decode, encode, getColumnI, getTableI, removeRelations, toInfo, updateWith)
 
 import Array exposing (Array)
 import Conf
@@ -26,7 +26,7 @@ import Models.Project.SourceKind as SourceKind exposing (SourceKind(..), SourceK
 import Models.Project.SourceLine as SourceLine exposing (SourceLine)
 import Models.Project.SourceName as SourceName exposing (SourceName)
 import Models.Project.Table as Table exposing (Table)
-import Models.Project.TableId exposing (TableId)
+import Models.Project.TableId as TableId exposing (TableId)
 import Models.SourceInfo exposing (SourceInfo)
 import Services.Lenses exposing (mapContent, mapRelations, setUpdatedAt)
 import Set exposing (Set)
@@ -96,14 +96,14 @@ databaseUrlStorage source =
     source.kind |> SourceKind.databaseUrlStorage
 
 
-getTable : TableId -> Source -> Maybe Table
-getTable table source =
-    source.tables |> Dict.get table
+getTableI : TableId -> Source -> Maybe Table
+getTableI table source =
+    source.tables |> TableId.dictGetI table
 
 
-getColumn : ColumnRef -> Source -> Maybe Column
-getColumn column source =
-    source |> getTable column.table |> Maybe.andThen (Table.getColumn column.column)
+getColumnI : ColumnRef -> Source -> Maybe Column
+getColumnI column source =
+    source |> getTableI column.table |> Maybe.andThen (Table.getColumnI column.column)
 
 
 updateWith : Source -> Source -> Source

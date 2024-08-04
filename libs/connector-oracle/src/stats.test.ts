@@ -5,8 +5,8 @@ import {getColumnStats, getTableStats} from "./stats";
 import {application, logger} from "./constants.test";
 
 describe('stats', () => {
-    // local url, install db or replace it to test
-    const url: DatabaseUrlParsed = parseDatabaseUrl('oracle:thin:system/oracle@localhost:1521')
+    // local url from [README](../README.md#local-setup), launch it or replace it to test
+    const url: DatabaseUrlParsed = parseDatabaseUrl('oracle:thin:system/oracle@localhost:1521/FREE')
 
     test.skip('getTableStats', async () => {
         const stats = await connect(application, url, getTableStats({schema: 'C##AZIMUTT', entity: 'USERS'}), {logger, logQueries: true})

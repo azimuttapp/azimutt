@@ -67,6 +67,6 @@ buildName erd table column =
         Just c ->
             erd.tables
                 |> Dict.get table
-                |> Maybe.andThen (ErdTable.getColumn c)
+                |> Maybe.andThen (ErdTable.getColumnI c)
                 |> Maybe.map (\_ -> span [] [ Badge.basicFlex Tw.gray [] [ text (ColumnRef.show erd.settings.defaultSchema { table = table, column = c }) ], text " column" ])
                 |> Maybe.withDefault (text ("unknown column " ++ ColumnRef.show erd.settings.defaultSchema { table = table, column = c }))

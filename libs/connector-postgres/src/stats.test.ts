@@ -5,16 +5,21 @@ import {getColumnStats, getTableStats} from "./stats";
 import {application, logger} from "./constants.test";
 
 describe('stats', () => {
-    // local url, install db or replace it to test
-    const url: DatabaseUrlParsed = parseDatabaseUrl('postgresql://postgres:postgres@localhost:5432/azimutt_dev')
+    // local url from [README](../README.md#local-setup), launch it or replace it to test
+    const url: DatabaseUrlParsed = parseDatabaseUrl('postgresql://postgres:postgres@localhost:5433/postgres')
 
     test.skip('getTableStats', async () => {
-        const stats = await connect(application, url, getTableStats({schema: 'public', entity: 'users'}), {logger, logQueries: true})
+        const stats = await connect(application, url, getTableStats({entity: 'users'}), {logger, logQueries: true})
         console.log('getTableStats', stats)
-        expect(stats.rows).toEqual(2)
+        expect(stats.rows).toEqual(3)
     })
     test.skip('getColumnStats', async () => {
-        const stats = await connect(application, url, getColumnStats({schema: 'public', entity: 'users', attribute: ['name']}), {logger, logQueries: true})
+        const stats = await connect(application, url, getColumnStats({entity: 'users', attribute: ['name']}), {logger, logQueries: true})
+        console.log('getColumnStats', stats)
+        expect(stats.rows).toEqual(3)
+    })
+    test.skip('getColumnStats json', async () => {
+        const stats = await connect(application, url, getColumnStats({entity: 'users', attribute: ['settings', 'color']}), {logger, logQueries: true})
         console.log('getColumnStats', stats)
         expect(stats.rows).toEqual(3)
     })

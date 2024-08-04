@@ -8,6 +8,7 @@ export const sTableName = Type.String()
 export const sTableId = Type.String()
 export const sColumnName = Type.String()
 export const sColumnType = Type.String()
+// TODO: the `Type.Date()` in sColumnValue prevent to upgrade "@sinclair/typebox"
 export const sColumnValue = Type.Union([Type.String(), Type.Number(), Type.Boolean(), Type.Date(), Type.Null(), Type.Unknown()])
 export const sRelationName = Type.String()
 export const sTypeName = Type.String()

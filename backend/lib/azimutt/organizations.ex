@@ -153,7 +153,7 @@ defmodule Azimutt.Organizations do
   def get_organization_invitation(id) do
     OrganizationInvitation
     |> where([oi], oi.id == ^id)
-    |> preload([:created_by, :answered_by, organization: [:clever_cloud_resource, :heroku_resource]])
+    |> preload([:created_by, :answered_by, organization: [:members, :clever_cloud_resource, :heroku_resource]])
     |> Repo.one()
     |> Result.from_nillable()
   end

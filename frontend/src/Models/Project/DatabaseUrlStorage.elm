@@ -1,4 +1,4 @@
-module Models.Project.DatabaseUrlStorage exposing (DatabaseUrlStorage(..), all, decode, encode, explain, fromString, toString)
+module Models.Project.DatabaseUrlStorage exposing (DatabaseUrlStorage(..), all, decode, default, encode, explain, fromString, toString)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
@@ -14,6 +14,11 @@ type DatabaseUrlStorage
 all : List DatabaseUrlStorage
 all =
     [ Memory, Browser, Project ]
+
+
+default : DatabaseUrlStorage
+default =
+    Browser
 
 
 toString : DatabaseUrlStorage -> String

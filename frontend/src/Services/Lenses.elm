@@ -48,6 +48,7 @@ module Services.Lenses exposing
     , mapLayoutsDT
     , mapLayoutsDTL
     , mapLayoutsDTM
+    , mapLinkedBy
     , mapList
     , mapLlm
     , mapLlmGenerateSqlT
@@ -172,6 +173,7 @@ module Services.Lenses exposing
     , setLast
     , setLayoutOnLoad
     , setLayouts
+    , setLinkedBy
     , setList
     , setLlm
     , setLlmGenerateSql
@@ -802,6 +804,16 @@ mapLayoutsDTM =
 mapLayoutsDTL : comparable -> (v -> ( v, List a )) -> { item | layouts : Dict comparable v } -> ( { item | layouts : Dict comparable v }, List a )
 mapLayoutsDTL =
     mapDTL_ .layouts setLayouts
+
+
+setLinkedBy : v -> { item | linkedBy : v } -> { item | linkedBy : v }
+setLinkedBy =
+    set_ .linkedBy (\value item -> { item | linkedBy = value })
+
+
+mapLinkedBy : (v -> v) -> { item | linkedBy : v } -> { item | linkedBy : v }
+mapLinkedBy =
+    map_ .linkedBy setLinkedBy
 
 
 setList : v -> { item | list : v } -> { item | list : v }

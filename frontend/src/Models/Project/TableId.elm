@@ -1,8 +1,10 @@
-module Models.Project.TableId exposing (TableId, TableIdStr, decode, decodeWith, encode, fromHtmlId, fromString, name, parse, parseWith, schema, show, toHtmlId, toString)
+module Models.Project.TableId exposing (TableId, TableIdStr, decode, decodeWith, dictGetI, encode, eqI, fromHtmlId, fromString, name, parse, parseWith, schema, show, toHtmlId, toLower, toString)
 
 import Conf
+import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
+import Libs.Dict as Dict
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId as HtmlId exposing (HtmlId)
 import Models.Project.SchemaName exposing (SchemaName)
@@ -28,6 +30,22 @@ name ( _, t ) =
     t
 
 
+toLower : TableId -> TableId
+toLower ( s, t ) =
+    ( String.toLower s, String.toLower t )
+
+
+eqI : TableId -> TableId -> Bool
+eqI id1 id2 =
+    toLower id1 == toLower id2
+
+
+dictGetI : TableId -> Dict TableId a -> Maybe a
+dictGetI id dict =
+    (dict |> Dict.get id)
+        |> Maybe.orElse (id |> toLower |> (\lowerId -> dict |> Dict.find (\k _ -> toLower k == lowerId)))
+
+
 show : SchemaName -> TableId -> String
 show defaultSchema ( s, t ) =
     if s == Conf.schema.empty || s == defaultSchema then
@@ -39,12 +57,14 @@ show defaultSchema ( s, t ) =
 
 toHtmlId : TableId -> HtmlId
 toHtmlId ( s, t ) =
-    "table#" ++ s ++ "#" ++ (t |> HtmlId.encode)
+    -- `~` is used to serialize args to String (cf frontend/src/PagesComponents/Organization_/Project_/Views/Erd.elm:86)
+    -- `#` is used in Oracle user (used as table schema ^^)
+    "table|" ++ s ++ "|" ++ (t |> HtmlId.encode)
 
 
 fromHtmlId : HtmlId -> Maybe TableId
 fromHtmlId id =
-    case String.split "#" id of
+    case String.split "|" id of
         "table" :: s :: t :: [] ->
             Just ( s, t |> HtmlId.decode )
 

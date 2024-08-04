@@ -1,4 +1,4 @@
-module Libs.Maybe exposing (all, andThenZip, any, any2, filter, filterBy, filterNot, flipWith, has, hasBy, isJust, mapOrElse, mapT, merge, onNothing, orElse, resultSeq, toList, toResult, toResultErr, tuple, unzip, when, zip, zip3)
+module Libs.Maybe exposing (all, andThenZip, any, any2, filter, filterBy, filterNot, flipWith, fromBool, has, hasBy, isJust, mapOrElse, mapT, merge, onNothing, orElse, resultSeq, toList, toResult, toResultErr, tuple, unzip, when, zip, zip3)
 
 import Libs.Bool as B
 
@@ -7,6 +7,15 @@ when : Bool -> a -> Maybe a
 when p a =
     if p then
         Just a
+
+    else
+        Nothing
+
+
+fromBool : Bool -> Maybe ()
+fromBool p =
+    if p then
+        Just ()
 
     else
         Nothing

@@ -19,20 +19,23 @@ import Models.Project.TableRow as TableRow exposing (TableRow)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models exposing (MemoMsg(..), Msg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
+import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
+import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
+import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.NotesMsg as NotesMsg
 import Time
 
 
-viewTableRow : Time.Posix -> Platform -> ErdConf -> CursorMode -> SchemaName -> HtmlId -> HtmlId -> HtmlId -> Maybe DbSource -> Maybe TableRowHover -> List TableRowRelation -> Color -> Maybe TableMeta -> TableRow -> Html Msg
-viewTableRow now platform conf cursorMode defaultSchema openedDropdown openedPopover htmlId source hoverRow rowRelations color tableMeta row =
+viewTableRow : Time.Posix -> Platform -> ErdConf -> CursorMode -> SchemaName -> HtmlId -> HtmlId -> HtmlId -> Erd -> Maybe DbSource -> Maybe ErdTable -> List ErdRelation -> Maybe TableMeta -> Maybe TableRowHover -> List TableRowRelation -> Color -> TableRow -> Html Msg
+viewTableRow now platform conf cursorMode defaultSchema openedDropdown openedPopover htmlId erd source erdTable erdRelations tableMeta hoverRow rowRelations color row =
     let
         dragAttrs : List (Attribute Msg)
         dragAttrs =
             Bool.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ onPointerDown (handlePointerDown htmlId) platform ]
     in
     div ([ class "select-none absolute", classList [ ( "z-max", row.selected ), ( "invisible", row.size == Size.zeroCanvas ) ] ] ++ Position.stylesGrid row.position ++ dragAttrs)
-        [ TableRow.view (TableRowMsg row.id) Noop DropdownToggle PopoverOpen ContextMenuCreate SelectItem (\id -> ShowTable id Nothing "table-row") HoverTableRow (\i q s h -> ShowTableRow i q s h "relation") (DeleteTableRow row.id) (\t c -> NotesMsg.NOpen t c |> NotesMsg) (\s q -> DataExplorer.Open s q |> DataExplorerMsg) now platform conf defaultSchema openedDropdown openedPopover htmlId source hoverRow rowRelations color tableMeta row
+        [ TableRow.view (TableRowMsg row.id) Noop DropdownToggle PopoverOpen ContextMenuCreate SelectItem (\id -> ShowTable id Nothing "table-row") HoverTableRow (\q s h -> ShowTableRow q s h "relation") (DeleteTableRow row.id) (\t c -> NotesMsg.NOpen t c |> NotesMsg) (\s q -> DataExplorer.Open s q |> DataExplorerMsg) now platform conf defaultSchema openedDropdown openedPopover htmlId erd source erdTable erdRelations tableMeta hoverRow rowRelations color row
         ]
 
 

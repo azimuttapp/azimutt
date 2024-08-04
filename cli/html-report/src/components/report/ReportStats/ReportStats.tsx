@@ -1,8 +1,6 @@
 import { useReport } from "@/hooks/useReport"
 import { ReportStatsGrid } from "./ReportStatsGrid"
 
-export interface ReportStatsProps {}
-
 export const ReportStats = () => {
   const { dbStats, violationStats } = useReport()
 

@@ -27,20 +27,20 @@ If you need to develop on multiple libs at the same time (ex: want to update a c
 - Depend on a local lib: `pnpm add <lib>`, ex: `pnpm add @azimutt/models`
 - "Publish" lib locally by building it: `pnpm run build`
 
-## Oracle Setup
+## Local Setup
 
 ### 1. Run in Docker
 
-You can use the [Oracle Database free version](https://container-registry.oracle.com/ords/ocr/ba/database), launch the container with `oracle` password for the `SYSTEM` user (using `ORACLE_PWD`):
+You can use the [Oracle Database free version](https://container-registry.oracle.com/ords/ocr/ba/database):
 
 ```bash
-docker run -d --name oracle_sample -p 1521:1521 -e ORACLE_PWD=oracle container-registry.oracle.com/database/free:23.4.0.0-lite
+docker run --name oracle_sample -p 1521:1521 -e ORACLE_PWD=oracle container-registry.oracle.com/database/free:23.4.0.0-lite
 ```
 
 or
 
 ```bash
-docker run -d --name oracle_sample -p 1521:1521 -e ORACLE_PWD=oracle container-registry.oracle.com/database/free:latest
+docker run --name oracle_sample -p 1521:1521 -e ORACLE_PWD=oracle container-registry.oracle.com/database/free:latest
 ```
 
 ### 2. Setup your database
@@ -134,6 +134,7 @@ ALTER TABLE ratings ADD CONSTRAINT ratings_item_id_users_fk FOREIGN KEY (item_id
 ALTER TABLE ratings ADD CONSTRAINT ratings_item_id_posts_fk FOREIGN KEY (item_id) REFERENCES posts (id) DISABLE NOVALIDATE;
 
 
+-- Insert data
 INSERT INTO users (name, role, email, settings) VALUES ('Loïc', 'admin', 'loic@mail.com', '{"color": "red", "plan": {"id": 1, "name": "pro"}}');
 INSERT INTO users (name, role, email, settings) VALUES ('Jean', 'guest', 'jean@mail.com', null);
 INSERT INTO users (name, role, email, settings) VALUES ('Luc', 'guest', 'luc@mail.com', null);

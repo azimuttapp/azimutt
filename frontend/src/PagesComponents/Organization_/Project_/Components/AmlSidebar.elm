@@ -243,7 +243,7 @@ view projectRef erd model =
                 |> List.unique
                 |> List.filterMap
                     (\( table, column ) ->
-                        case erd |> Erd.getTable table |> Maybe.map (ErdTable.getColumn (ColumnPath.fromString column)) of
+                        case erd |> Erd.getTableI table |> Maybe.map (ErdTable.getColumnI (ColumnPath.fromString column)) of
                             Just (Just _) ->
                                 Nothing
 

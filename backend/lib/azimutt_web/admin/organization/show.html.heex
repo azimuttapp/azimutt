@@ -45,7 +45,9 @@
                     <%= @plan.project_dbs || "∞" %> dbs,
                     <%= @plan.project_layouts || "∞" %> layouts (<%= @plan.layout_tables || "∞" %> tables),
                     <%= @plan.project_doc || "∞" %> docs,
-                    <span class={if(@plan.project_share, do: "", else: "line-through")}>project share</span>
+                    <span class={if(@plan.project_share, do: "", else: "line-through")}>project share,</span>
+                    <span title="update with `seats` metadata in Stripe subsription"><%= @organization.plan_seats %> seats</span>
+                    (<%= link "refresh plan", to: Routes.admin_organization_path(@conn, :refresh, @organization.id), method: :post, title: "Refresh this organization if its plan is out of sync.", class: "underline" %>)
                 </div>
                 <%= if @organization.data do %>
                 <div class="mt-1 text-xs font-medium text-slate-500 truncate">Data: <%= @organization.data |> format_data() %></div>

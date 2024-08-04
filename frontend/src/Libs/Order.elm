@@ -47,7 +47,7 @@ compareList compare list2 list1 =
 
 compareDict : (a -> a -> Order) -> Dict comparable a -> Dict comparable a -> Order
 compareDict compare dict1 dict2 =
-    dict1 |> Dict.zip dict2 |> Dict.find (\_ ( v1, v2 ) -> compare v1 v2 /= EQ) |> Maybe.mapOrElse (\( _, ( v1, v2 ) ) -> compare v1 v2) EQ
+    dict1 |> Dict.zip dict2 |> Dict.find (\_ ( v1, v2 ) -> compare v1 v2 /= EQ) |> Maybe.mapOrElse (\( v1, v2 ) -> compare v1 v2) EQ
 
 
 compareMaybe : (a -> a -> Order) -> Maybe a -> Maybe a -> Order

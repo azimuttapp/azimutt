@@ -30,7 +30,7 @@ export type LegacySchemaName = string
 export const LegacySchemaName = z.string()
 export type LegacyTableName = string
 export const LegacyTableName = z.string()
-export type LegacyTableId = string // ex: 'public.users'
+export type LegacyTableId = string // ex: 'public.users' or '.users' if no schema
 export const LegacyTableId = z.string()
 export type LegacyColumnName = string
 export const LegacyColumnName = z.string()
@@ -405,7 +405,7 @@ export function tableRefFromId(id: LegacyTableId): LegacyTableRef {
 }
 
 export function tableRefToId(ref: LegacyTableRef): LegacyTableId {
-    return ref.schema ? `${ref.schema}.${ref.table}` : ref.table
+    return `${ref.schema}.${ref.table}`
 }
 
 export function columnRefFromLegacy(c: LegacyColumnRef): AttributeRef {

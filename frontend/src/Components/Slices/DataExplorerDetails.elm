@@ -22,15 +22,19 @@ import Libs.Set as Set
 import Libs.Tailwind as Tw
 import Libs.Time as Time
 import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
+import Models.DbSourceInfoWithUrl as DbSourceInfoWithUrl exposing (DbSourceInfoWithUrl)
 import Models.DbValue as DbValue exposing (DbValue(..))
+import Models.Project as Project
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnMeta exposing (ColumnMeta)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.Comment exposing (Comment)
 import Models.Project.SchemaName exposing (SchemaName)
-import Models.Project.Source exposing (Source)
-import Models.Project.Table exposing (Table)
+import Models.Project.Source as Source exposing (Source)
+import Models.Project.SourceId as SourceId
+import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableMeta exposing (TableMeta)
 import Models.Project.TableName exposing (TableName)
@@ -38,6 +42,9 @@ import Models.Project.TableRow as TableRow
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.QueryResult as QueryResult exposing (QueryResult, QueryResultColumn, QueryResultRow, QueryResultSuccess)
 import Models.SqlQuery exposing (SqlQueryOrigin)
+import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
+import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps as ErdTableProps
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
@@ -51,7 +58,7 @@ import Track
 
 type alias Model =
     { id : Id
-    , source : DbSourceInfo
+    , source : DbSourceInfoWithUrl
     , query : RowQuery
     , state : State
     , expanded : Set ColumnName
@@ -94,7 +101,7 @@ dbPrefix =
     "data-explorer-details"
 
 
-init : ProjectInfo -> Id -> DbSourceInfo -> RowQuery -> ( Model, Extra msg )
+init : ProjectInfo -> Id -> DbSourceInfoWithUrl -> RowQuery -> ( Model, Extra msg )
 init project id source query =
     let
         sqlQuery : SqlQueryOrigin
@@ -102,7 +109,7 @@ init project id source query =
             DbQuery.findRow source.db.kind query
     in
     ( { id = id, source = source, query = query, state = StateLoading, expanded = Set.empty }
-    , Extra.cmdL [ Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url sqlQuery, Track.dataExplorerDetailsOpened source sqlQuery project ]
+    , Extra.cmdL [ Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.id source.db.url sqlQuery, Track.dataExplorerDetailsOpened source sqlQuery project ]
     )
 
 
@@ -139,8 +146,8 @@ update project msg model =
 -- VIEW
 
 
-view : (Msg -> msg) -> msg -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> String -> Bool -> SchemaName -> Maybe Source -> Maybe ErdTableLayout -> Maybe TableMeta -> HtmlId -> Maybe Int -> Model -> Html msg
-view wrap close showTable showTableRow openRowDetails openNotes navbarHeight hasFullScreen defaultSchema source tableLayout tableMeta htmlId openDepth model =
+view : (Msg -> msg) -> msg -> (TableId -> msg) -> (RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> String -> Bool -> Erd -> HtmlId -> Maybe Int -> Model -> Html msg
+view wrap close showTable showTableRow openRowDetails openNotes navbarHeight hasFullScreen erd htmlId openDepth model =
     let
         titleId : HtmlId
         titleId =
@@ -188,7 +195,7 @@ view wrap close showTable showTableRow openRowDetails openNotes navbarHeight has
                             , openDepth |> Maybe.andThen (\i -> [ "translate-x-0", "-translate-x-6", "-translate-x-12", "-translate-x-16", "-translate-x-20" ] |> List.get i) |> Maybe.withDefault "translate-x-full"
                             ]
                         ]
-                        [ viewSlideOverContent wrap close showTable showTableRow openRowDetails openNotes defaultSchema source tableLayout tableMeta titleId model
+                        [ viewSlideOverContent wrap close showTable showTableRow openRowDetails openNotes erd titleId model
                         ]
                     ]
                 ]
@@ -196,20 +203,28 @@ view wrap close showTable showTableRow openRowDetails openNotes navbarHeight has
         ]
 
 
-viewSlideOverContent : (Msg -> msg) -> msg -> (TableId -> msg) -> (DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> SchemaName -> Maybe Source -> Maybe ErdTableLayout -> Maybe TableMeta -> HtmlId -> Model -> Html msg
-viewSlideOverContent wrap close showTable showTableRow openRowDetails openNotes defaultSchema source tableLayout tableMeta titleId model =
+viewSlideOverContent : (Msg -> msg) -> msg -> (TableId -> msg) -> (RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> msg) -> (RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> Erd -> HtmlId -> Model -> Html msg
+viewSlideOverContent wrap close showTable showTableRow openRowDetails openNotes erd titleId model =
     let
         table : Maybe Table
         table =
-            source |> Maybe.andThen (.tables >> Dict.get model.query.table)
+            erd.sources |> List.findBy .id model.source.id |> Maybe.andThen (Source.getTableI model.query.table)
+
+        erdTable : Maybe ErdTable
+        erdTable =
+            erd.tables |> TableId.dictGetI model.query.table
+
+        tableMeta : Maybe TableMeta
+        tableMeta =
+            erd.metadata |> TableId.dictGetI model.query.table
 
         color : Tw.Color
         color =
-            tableLayout |> Maybe.mapOrElse (.props >> .color) (ErdTableProps.computeColor model.query.table)
+            erd |> Erd.currentLayout |> .tables |> List.findBy .id model.query.table |> Maybe.mapOrElse (.props >> .color) (ErdTableProps.computeColor model.query.table)
 
         tableLabel : String
         tableLabel =
-            TableId.show defaultSchema model.query.table
+            TableId.show erd.settings.defaultSchema model.query.table
 
         panelTitle : String
         panelTitle =
@@ -245,17 +260,18 @@ viewSlideOverContent wrap close showTable showTableRow openRowDetails openNotes 
 
                 StateSuccess res ->
                     [ div [ class "flex flex-wrap space-x-3" ]
-                        [ button [ type_ "button", onClick (showTableRow model.source model.query (res |> toRow |> Just) Nothing), class "inline-flex w-full flex-1 items-center justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" ]
+                        [ button [ type_ "button", onClick (showTableRow model.query (res |> toRow |> Just) Nothing), class "inline-flex w-full flex-1 items-center justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" ]
                             [ text "Add to layout" ]
                         ]
                     , div [ class "space-y-3" ]
-                        ((res.columns |> QueryResult.buildColumnTargets source)
+                        ((res.columns |> QueryResult.buildColumnTargets erd model.source)
                             |> List.map
                                 (\col ->
                                     let
-                                        column : Maybe Column
-                                        column =
-                                            table |> Maybe.andThen (.columns >> Dict.get col.pathStr)
+                                        comment : Maybe String
+                                        comment =
+                                            (table |> Maybe.andThen (Table.getColumnI col.path) |> Maybe.andThen .comment |> Maybe.map .text)
+                                                |> Maybe.orElse (erdTable |> Maybe.andThen (ErdTable.getColumnI col.path) |> Maybe.andThen .comment |> Maybe.map .text)
 
                                         meta : Maybe ColumnMeta
                                         meta =
@@ -264,11 +280,11 @@ viewSlideOverContent wrap close showTable showTableRow openRowDetails openNotes 
                                     div []
                                         [ dt [ class "text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0" ]
                                             [ text (ColumnPath.show col.path)
-                                            , column |> Maybe.andThen .comment |> Maybe.mapOrElse (\c -> span [ title c.text, class "ml-1 opacity-50" ] [ Icon.outline Icons.comment "w-3 h-3 inline" ]) (text "")
+                                            , comment |> Maybe.mapOrElse (\c -> span [ title c, class "ml-1 opacity-50" ] [ Icon.outline Icons.comment "w-3 h-3 inline" ]) (text "")
                                             , meta |> Maybe.andThen .notes |> Maybe.mapOrElse (\n -> button [ type_ "button", onClick (openNotes model.query.table (Just col.path)), title n, class "ml-1 opacity-50" ] [ Icon.outline Icons.notes "w-3 h-3 inline" ]) (text "")
                                             ]
                                         , dd [ class "text-sm text-gray-900 sm:col-span-2 overflow-hidden text-ellipsis" ]
-                                            [ DataExplorerValue.view openRowDetails (ExpandValue col.pathStr |> wrap) defaultSchema False (model.expanded |> Set.member col.pathStr) (res.values |> Dict.get col.pathStr) col
+                                            [ DataExplorerValue.view openRowDetails (ExpandValue col.pathStr |> wrap) erd.settings.defaultSchema False (model.expanded |> Set.member col.pathStr) (res.values |> Dict.get col.pathStr) col
                                             ]
                                         ]
                                 )
@@ -323,7 +339,7 @@ doc =
                                 |> List.indexedMap
                                     (\i m ->
                                         div [ class "mt-1" ]
-                                            [ view (docUpdate i s) (docClose i s) docShowTable docShowTableRow docOpenRowDetails docOpenNotes "0px" False "public" Nothing docTableLayout docTableMeta ("data-explorer-details-" ++ String.fromInt i) (Just i) m
+                                            [ view (docUpdate i s) (docClose i s) docShowTable docShowTableRow docOpenRowDetails docOpenNotes "0px" False docErd ("data-explorer-details-" ++ String.fromInt i) (Just i) m
                                             , docButton ("Close " ++ String.fromInt i) (docClose i s)
                                             ]
                                     )
@@ -341,12 +357,17 @@ docButton name msg =
 
 docModel : Model
 docModel =
-    init ProjectInfo.zero 1 docSource { table = ( "public", "city" ), primaryKey = Nel { column = Nel "id" [], value = DbInt 1 } [] } |> Tuple.first
+    init ProjectInfo.zero 1 docSourceInfo { source = docSourceInfo.id, table = ( "public", "city" ), primaryKey = Nel { column = Nel "id" [], value = DbInt 1 } [] } |> Tuple.first
 
 
-docSource : DbSourceInfo
-docSource =
-    DbSourceInfo.zero
+docErd : Erd
+docErd =
+    Project.create Nothing [] "Azimutt" (Source.aml "aml" Time.zero SourceId.zero) |> Erd.create
+
+
+docSourceInfo : DbSourceInfoWithUrl
+docSourceInfo =
+    DbSourceInfoWithUrl.zero
 
 
 docFailureState : FailureState
@@ -371,16 +392,6 @@ docColumn schema table column =
 docCityColumnValues : Int -> String -> String -> String -> Int -> QueryResultRow
 docCityColumnValues id name country_code district population =
     [ ( "id", DbInt id ), ( "name", DbString name ), ( "country_code", DbString country_code ), ( "district", DbString district ), ( "population", DbInt population ) ] ++ (List.range 1 15 |> List.map (\i -> ( "col" ++ String.fromInt i, DbString ("value" ++ String.fromInt i) ))) |> Dict.fromList
-
-
-docTableLayout : Maybe ErdTableLayout
-docTableLayout =
-    Nothing
-
-
-docTableMeta : Maybe TableMeta
-docTableMeta =
-    Nothing
 
 
 
@@ -412,8 +423,8 @@ docShowTable _ =
     logAction "showTable"
 
 
-docShowTableRow : DbSourceInfo -> RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> ElmBook.Msg state
-docShowTableRow _ _ _ _ =
+docShowTableRow : RowQuery -> Maybe TableRow.SuccessState -> Maybe PositionHint -> ElmBook.Msg state
+docShowTableRow _ _ _ =
     logAction "showTableRow"
 
 

@@ -1,9 +1,11 @@
-module Models.Project.ColumnPath exposing (ColumnPath, ColumnPathStr, child, decode, decodeStr, encode, encodeStr, fromString, get, isRoot, merge, name, parent, root, rootName, separator, show, startsWith, toString, update, withName)
+module Models.Project.ColumnPath exposing (ColumnPath, ColumnPathStr, child, decode, decodeStr, dictGetI, encode, encodeStr, eqI, fromString, get, isRoot, merge, name, parent, root, rootName, separator, show, startsWith, toLower, toString, update, withName)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Encode as Encode
+import Libs.Dict as Dict
 import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Nel as Nel exposing (Nel)
 import Models.Project.ColumnName exposing (ColumnName)
 
@@ -21,6 +23,27 @@ type alias ColumnPathStr =
 separator : String
 separator =
     ":"
+
+
+toLower : ColumnPath -> ColumnPath
+toLower path =
+    path |> Nel.map String.toLower
+
+
+eqI : ColumnPath -> ColumnPath -> Bool
+eqI p1 p2 =
+    toLower p1 == toLower p2
+
+
+dictGetI : ColumnPath -> Dict ColumnPathStr a -> Maybe a
+dictGetI id dict =
+    let
+        str : ColumnPathStr
+        str =
+            toString id
+    in
+    (dict |> Dict.get str)
+        |> Maybe.orElse (str |> String.toLower |> (\lowerStr -> dict |> Dict.find (\k _ -> String.toLower k == lowerStr)))
 
 
 fromString : ColumnPathStr -> ColumnPath

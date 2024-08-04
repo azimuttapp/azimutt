@@ -5,6 +5,7 @@ import Models.DbValue exposing (DbValue)
 import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnType as ColumnType exposing (ColumnType)
 import Models.Project.RowPrimaryKey exposing (RowPrimaryKey)
+import Models.Project.SourceId exposing (SourceId)
 import Models.Project.TableId exposing (TableId)
 
 
@@ -17,11 +18,11 @@ type alias TableFilter =
 
 
 type alias RowQuery =
-    { table : TableId, primaryKey : RowPrimaryKey }
+    { source : SourceId, table : TableId, primaryKey : RowPrimaryKey }
 
 
 type alias IncomingRowsQuery =
-    { primaryKey : Nel ( ColumnPath, ColumnType ), foreignKeys : List ( ColumnPath, ColumnType ), altCols : List ( ColumnPath, ColumnType ) }
+    { primaryKey : Nel ( ColumnPath, ColumnType ), foreignKeys : List ( ColumnPath, ColumnType ), labelCols : List ( ColumnPath, ColumnType ) }
 
 
 

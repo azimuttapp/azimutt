@@ -390,8 +390,8 @@ buildTableHeading erd table =
 buildColumnHeading : Erd -> ErdTable -> ErdColumn -> Heading ErdColumn ErdColumnProps
 buildColumnHeading erd table column =
     { item = column
-    , prev = table.columns |> Dict.find (\_ c -> c.index == column.index - 1) |> Maybe.map Tuple.second
-    , next = table.columns |> Dict.find (\_ c -> c.index == column.index + 1) |> Maybe.map Tuple.second
+    , prev = table.columns |> Dict.find (\_ c -> c.index == column.index - 1)
+    , next = table.columns |> Dict.find (\_ c -> c.index == column.index + 1)
     , shown = erd |> Erd.currentLayout |> .tables |> List.findBy .id table.id |> Maybe.andThen (.columns >> ErdColumnProps.find column.path)
     }
 
@@ -799,7 +799,7 @@ viewColumnConstraint constraint ( columns, definition ) name =
                 []
     in
     definition
-        |> Maybe.map (\d -> span [ class "truncate", title d ] (text (name |> Maybe.withDefault constraint) :: columnsHtml))
+        |> Maybe.map (\d -> span [ class "truncate", title d ] [ text ((name |> Maybe.withDefault constraint) ++ ": " ++ d) ])
         |> Maybe.withDefault (span [ class "truncate" ] (text (name |> Maybe.withDefault constraint) :: columnsHtml))
 
 
@@ -1329,7 +1329,7 @@ docSelectSchema schema state =
 
 docSelectTable : TableId -> DocState -> DocState
 docSelectTable table state =
-    (docErd |> Erd.getTable table)
+    (docErd |> Erd.getTableI table)
         |> Maybe.map
             (\erdTable ->
                 { state
@@ -1344,10 +1344,10 @@ docSelectTable table state =
 
 docSelectColumn : ColumnRef -> DocState -> DocState
 docSelectColumn { table, column } state =
-    (docErd |> Erd.getTable table)
+    (docErd |> Erd.getTableI table)
         |> Maybe.andThen
             (\erdTable ->
-                (erdTable |> ErdTable.getColumn column)
+                (erdTable |> ErdTable.getColumnI column)
                     |> Maybe.map
                         (\erdColumn ->
                             { state

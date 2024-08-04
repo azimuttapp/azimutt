@@ -6,7 +6,8 @@ import {
     ConnectorDefaultOpts,
     DatabaseUrlParsed,
     logQueryIfNeeded,
-    queryError
+    queryError,
+    QueryField
 } from "@azimutt/models";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
@@ -23,8 +24,23 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
         },
         queryArrayMode(sql: string, parameters: any[] = [], name?: string): Promise<QueryResultArrayMode> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
-                return connection.query({sql, namedPlaceholders: true, rowsAsArray: true}, parameters)
-                    .then(([rows, fields]) => ({fields, rows}), err => Promise.reject(queryError(name, sql, err)))
+                return connection.query({sql, namedPlaceholders: true, rowsAsArray: true}, parameters).then(rows => ({
+                    rows,
+                    /*
+                        see https://github.com/mariadb-corporation/mariadb-connector-nodejs/blob/master/documentation/promise-api.md#column-metadata
+                        `rows` result has a `meta` property with columns metadata as [ColumnDef](https://github.com/mariadb-corporation/mariadb-connector-nodejs/blob/master/lib/cmd/column-definition.js)
+                        sadly this class is not public, so falling back to any :/
+                     */
+                    fields: (rows.meta as any[]).map(field => ({
+                        schema: field.schema() || undefined, // same as f.db()
+                        table: field.orgTable() || undefined,
+                        tableAlias: field.table() || undefined,
+                        column: field.orgName() || undefined,
+                        name: field.name(),
+                        type: field.type, // see https://github.com/mariadb-corporation/mariadb-connector-nodejs/blob/master/lib/const/field-type.js
+                        flags: field.flags // see https://github.com/mariadb-corporation/mariadb-connector-nodejs/blob/master/lib/const/field-detail.js
+                    }))
+                }), err => Promise.reject(queryError(name, sql, err)))
             }, r => r.rows.length, opts)
         }
     }
@@ -44,12 +60,9 @@ export interface Conn {
 
 export type QueryResultValue = AttributeValue
 export type QueryResultRow = { [column: string]: QueryResultValue }
-export type QueryResultField = { name: string }
+export type QueryResultField = QueryField & { tableAlias: string | undefined, type: string, flags: number }
 export type QueryResultRowArray = QueryResultValue[]
-export type QueryResultArrayMode = {
-    fields: QueryResultField[],
-    rows: QueryResultRowArray[]
-}
+export type QueryResultArrayMode = { fields: QueryResultField[], rows: QueryResultRowArray[] }
 
 function buildConfig(application: string, url: DatabaseUrlParsed): ConnectionConfig {
     return {
@@ -57,7 +70,8 @@ function buildConfig(application: string, url: DatabaseUrlParsed): ConnectionCon
         port: url.port,
         user: url.user,
         password: url.pass,
-        database: url.db
+        database: url.db,
+        bigIntAsNumber: true,
         // ssl
     }
 }
