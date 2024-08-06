@@ -1,6 +1,6 @@
 {
   "name": "@azimutt/connector-postgres",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Connect to PostgreSQL, extract schema, run analysis and queries",
   "keywords": [],
   "homepage": "https://azimutt.app",

@@ -39,6 +39,7 @@ import {
 
 const ruleId: RuleId = 'index-on-relation'
 const ruleName: RuleName = 'index on relation'
+const ruleDescription: string = 'relation attributes with no index'
 const CustomRuleConf = RuleConf.extend({
     ignores: AttributesId.array().optional()
 }).strict().describe('IndexOnRelationConf')
@@ -46,6 +47,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const indexOnRelationRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.medium},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {

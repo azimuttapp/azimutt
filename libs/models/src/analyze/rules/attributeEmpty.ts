@@ -23,6 +23,7 @@ import {
 
 const ruleId: RuleId = 'attribute-empty'
 const ruleName: RuleName = 'empty attribute'
+const ruleDescription: string = 'nullable attributes with cardinality=0 or 100% nulls when entity has some rows'
 const CustomRuleConf = RuleConf.extend({
     ignores: AttributeId.array().optional()
 }).strict().describe('AttributeEmptyConf')
@@ -30,6 +31,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const attributeEmptyRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.low},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {
@@ -50,7 +52,11 @@ export const attributeEmptyRule: Rule<CustomRuleConf> = {
 }
 
 export function getEmptyAttributes(entity: Entity): AttributeRef[] {
-    return entity.attrs.filter(isAttributeEmpty).map(attribute => ({...entityToRef(entity), attribute: [attribute.name]}))
+    if (entity.stats?.rows || 0 > 0) {
+        return entity.attrs.filter(isAttributeEmpty).map(attribute => ({...entityToRef(entity), attribute: [attribute.name]}))
+    } else {
+        return []
+    }
 }
 
 export function isAttributeEmpty(a: Attribute): boolean {

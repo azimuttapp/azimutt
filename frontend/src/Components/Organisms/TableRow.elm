@@ -838,6 +838,7 @@ getAltColumns metadata table =
         defaultLabelColumns =
             -- guess interesting columns to show instead of primary key in table row relations (can be empty)
             [ [ "name" ]
+            , [ "label" ]
             , [ "title" ]
             , [ "slug" ]
             , [ "first_name", "last_name" ]

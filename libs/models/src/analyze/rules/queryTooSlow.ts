@@ -19,6 +19,7 @@ import {
 
 const ruleId: RuleId = 'query-too-slow'
 const ruleName: RuleName = 'too slow query'
+const ruleDescription: string = 'queries with mean execution time over the threshold'
 const CustomRuleConf = RuleConf.extend({
     ignores: QueryId.array().optional(),
     maxMs: z.number(),
@@ -27,6 +28,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const queryTooSlowRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.high, maxMs: 1000},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {

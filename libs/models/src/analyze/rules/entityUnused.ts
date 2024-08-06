@@ -19,6 +19,7 @@ import {
 
 const ruleId: RuleId = 'entity-unused'
 const ruleName: RuleName = 'unused entity'
+const ruleDescription: string = 'entities with the same number of scans (sequential & indexes) during the threshold period or the last scan older than the threshold'
 const CustomRuleConf = RuleConf.extend({
     ignores: EntityId.array().optional(),
     minDays: z.number()
@@ -27,6 +28,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const entityUnusedRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.medium, minDays: 10},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {

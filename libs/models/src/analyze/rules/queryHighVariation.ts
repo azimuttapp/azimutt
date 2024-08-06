@@ -19,20 +19,24 @@ import {
 
 const ruleId: RuleId = 'query-high-variation'
 const ruleName: RuleName = 'query with high variation'
+const ruleDescription: string = 'top 20 queries by execution time standard deviation when execution count is over the threshold'
 const CustomRuleConf = RuleConf.extend({
     ignores: QueryId.array().optional(),
+    minExec: z.number().optional(), // optional for retro-compatibility
 }).strict().describe('QueryHighVariationConf')
 type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const queryHighVariationRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
-    conf: {level: RuleLevel.enum.hint},
+    description: ruleDescription,
+    conf: {level: RuleLevel.enum.hint, minExec: 10},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {
         const refIgnores: QueryId[] = reference.map(r => r.extra?.queryId).filter(isNotUndefined)
         const ignores: QueryId[] = refIgnores.concat(conf.ignores || [])
         return queries
             .filter(q => !ignores.some(i => i === q.id))
+            .filter(q => (q.exec?.count || 0) >= (conf.minExec || 0))
             .sort((a, b) => -((a.exec?.sdTime || 0) - (b.exec?.sdTime || 0)))
             .slice(0, 20)
             .map(q => {

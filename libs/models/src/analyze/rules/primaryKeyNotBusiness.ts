@@ -30,6 +30,7 @@ import {
 
 const ruleId: RuleId = 'primary-key-not-business'
 const ruleName: RuleName = 'business primary key forbidden'
+const ruleDescription: string = 'entities with primary key which don\'t end with id or has a relation'
 const CustomRuleConf = RuleConf.extend({
     ignores: EntityId.array().optional(),
 }).strict().describe('PrimaryKeyNotBusinessConf')
@@ -37,6 +38,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const primaryKeyNotBusinessRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.medium},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {

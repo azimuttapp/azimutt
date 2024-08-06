@@ -18,6 +18,7 @@ import {
 
 const ruleId: RuleId = 'entity-not-clean'
 const ruleName: RuleName = 'entity not clean'
+const ruleDescription: string = 'entities having dead rows, analyze lag/last run or vacuum lag/last run exceeding the thresholds'
 const CustomRuleConf = RuleConf.extend({
     ignores: EntityId.array().optional(),
     maxDeadRows: z.number(),
@@ -30,6 +31,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const entityNotCleanRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.high, maxDeadRows: 30000, maxVacuumLag: 30000, maxAnalyzeLag: 30000, maxVacuumDelayMs: oneDay, maxAnalyzeDelayMs: oneDay},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {
@@ -59,7 +61,7 @@ export function isEntityNotClean(entity: Entity, now: number, maxDeadRows: numbe
         const s = entity.stats
         if (s.rowsDead && s.rowsDead > maxDeadRows) return 'many dead rows'
         if (s.vacuumLag && s.vacuumLag > maxVacuumLag) return 'high vacuum lag'
-        if (s.analyzeLag&& s.analyzeLag > maxAnalyzeLag) return 'high analyze lag'
+        if (s.analyzeLag && s.analyzeLag > maxAnalyzeLag) return 'high analyze lag'
         if (s.vacuumLast && now - new Date(s.vacuumLast).getTime() > maxVacuumDelayMs) return 'old vacuum'
         if (s.analyzeLast && now - new Date(s.analyzeLast).getTime() > maxAnalyzeDelayMs) return 'old analyze'
     }
@@ -71,7 +73,7 @@ function isEntityNotCleanValue(entity: Entity, now: number, maxDeadRows: number,
         const s = entity.stats
         if (s.rowsDead && s.rowsDead > maxDeadRows) return s.rowsDead
         if (s.vacuumLag && s.vacuumLag > maxVacuumLag) return s.vacuumLag
-        if (s.analyzeLag&& s.analyzeLag > maxAnalyzeLag) return s.analyzeLag
+        if (s.analyzeLag && s.analyzeLag > maxAnalyzeLag) return s.analyzeLag
         if (s.vacuumLast && now - new Date(s.vacuumLast).getTime() > maxVacuumDelayMs) return s.vacuumLast
         if (s.analyzeLast && now - new Date(s.analyzeLast).getTime() > maxAnalyzeDelayMs) return s.analyzeLast
     }

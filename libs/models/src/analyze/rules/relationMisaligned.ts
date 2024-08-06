@@ -41,6 +41,7 @@ import {
 
 const ruleId: RuleId = 'relation-misaligned-type'
 const ruleName: RuleName = 'misaligned relation'
+const ruleDescription: string = 'relations with different attribute type on each side'
 const CustomRuleConf = RuleConf.extend({
     ignores: RelationId.array().optional()
 }).strict().describe('RelationMisalignedConf')
@@ -48,6 +49,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const relationMisalignedRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.high},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {

@@ -17,6 +17,7 @@ import {
 
 const ruleId: RuleId = 'entity-empty'
 const ruleName: RuleName = 'empty entity'
+const ruleDescription: string = 'entities with 0 rows or 0 bytes'
 const CustomRuleConf = RuleConf.extend({
     ignores: EntityId.array().optional(),
 }).strict().describe('EntityEmptyConf')
@@ -24,6 +25,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const entityEmptyRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.low},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {

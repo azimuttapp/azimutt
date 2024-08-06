@@ -27,6 +27,7 @@ import {
 
 const ruleId: RuleId = 'relation-miss-attribute'
 const ruleName: RuleName = 'attribute not found in relation'
+const ruleDescription: string = 'relations with an attribute not found in the entities'
 const CustomRuleConf = RuleConf.extend({
     ignores: AttributeId.array().optional(),
 }).strict().describe('RelationMissAttributeConf')
@@ -34,6 +35,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const relationMissAttributeRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.high},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {

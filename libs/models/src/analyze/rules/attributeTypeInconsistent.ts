@@ -24,6 +24,7 @@ import {
 
 const ruleId: RuleId = 'attribute-type-inconsistent'
 const ruleName: RuleName = 'inconsistent attribute type'
+const ruleDescription: string = 'attribute names which have different types in other entities (help for consistency)'
 const CustomRuleConf = RuleConf.extend({
     ignores: AttributeName.array().optional()
 }).strict().describe('AttributeTypeInconsistentConf')
@@ -31,6 +32,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const attributeTypeInconsistentRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.hint},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {

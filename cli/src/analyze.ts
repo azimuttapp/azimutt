@@ -234,7 +234,7 @@ function buildRuleReport(rule: RuleAnalyzed): AnalyzeReportRule {
         attribute: v.attribute,
         extra: v.extra,
     }))
-    return {name: rule.rule.name, level, conf, violations, totalViolations: violations.length}
+    return {name: rule.rule.name, description: rule.rule.description, level, conf, violations, totalViolations: violations.length}
 }
 
 async function writeReport(folder: string, report: AnalyzeReport, logger: Logger): Promise<void> {

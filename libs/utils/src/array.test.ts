@@ -11,6 +11,7 @@ import {
     mergeBy,
     minBy,
     partition,
+    partitionT,
     shuffle,
     zip
 } from "./array";
@@ -73,6 +74,9 @@ describe('array', () => {
     })
     test('partition', () => {
         expect(partition([1, 2, 3, 4, 5], i => i % 2 === 0)).toEqual([[2, 4], [1, 3, 5]])
+    })
+    test('partitionT', () => {
+        expect(partitionT<string, number>([1, '2', 3], i => typeof i === 'string')).toEqual([['2'], [1, 3]])
     })
     test('shuffle', () => {
         // use long array to reduce the probability to have the same one after shuffle ^^

@@ -42,6 +42,7 @@ import {
 
 const ruleId: RuleId = 'relation-missing'
 const ruleName: RuleName = 'missing relation'
+const ruleDescription: string = 'relations not present in the database but could exist'
 const CustomRuleConf = RuleConf.extend({
     ignores: RelationId.array().optional(),
 }).strict().describe('RelationMissingConf')
@@ -49,6 +50,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const relationMissingRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.medium},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {

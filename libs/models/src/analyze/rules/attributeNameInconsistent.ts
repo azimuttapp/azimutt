@@ -29,6 +29,7 @@ import {addCases, bestCase} from "./entityNameInconsistent";
 
 const ruleId: RuleId = 'attribute-name-inconsistent'
 const ruleName: RuleName = 'inconsistent attribute name'
+const ruleDescription: string = 'attributes with names not following the most common convention among attribute names'
 const CustomRuleConf = RuleConf.extend({
     ignores: AttributeId.array().optional(),
 }).strict().describe('AttributeNameInconsistentConf')
@@ -36,6 +37,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const attributeNameInconsistentRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.low},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {

@@ -1,9 +1,11 @@
 import {parse} from "postgres-array";
 import {
     groupBy,
+    Logger,
     mapEntriesAsync,
     mapValues,
     mapValuesAsync,
+    partitionT,
     pluralizeL,
     removeEmpty,
     removeUndefined,
@@ -81,6 +83,7 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
             indexesByTable[id] || [],
             jsonColumns[id] || {},
             polyColumns[id] || {},
+            opts.logger,
         )),
         relations: relations.map(r => buildRelation(r, columnsByIndex)).filter((rel): rel is Relation => !!rel),
         types: types.map(buildType),
@@ -245,7 +248,15 @@ export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     ).catch(handleError(`Failed to get tables`, [], opts))
 }
 
-function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], columnsByIndex: { [i: number]: string }, constraints: RawConstraint[], indexes: RawIndex[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>): Entity {
+function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], columnsByIndex: { [i: number]: string }, constraints: RawConstraint[], indexes: RawIndex[], jsonColumns: Record<AttributeName, ValueSchema>, polyColumns: Record<AttributeName, string[]>, logger: Logger): Entity {
+    const [pks, pksErrs] = partitionT<PrimaryKey, string>(constraints.filter(c => c.constraint_type === 'p').map(c => buildPrimaryKey(c, columnsByIndex)), pk => typeof pk !== 'string')
+    const [checks, checksErrs] = partitionT<Check, string>(constraints.filter(c => c.constraint_type === 'c').map(c => buildCheck(c, columnsByIndex)), c => typeof c !== 'string')
+    const errs = pksErrs.concat(checksErrs)
+    if (errs.length === 1) {
+        logger.warn(`Error while building ${toEntityId(table)}: ${errs[0]}`)
+    } else if (errs.length > 1) {
+        logger.warn(`Errors while building ${toEntityId(table)}:\n${errs.map(e => `  - ${e}`).join('\n')}`)
+    }
     return removeEmpty({
         schema: table.table_schema,
         name: table.table_name,
@@ -254,9 +265,9 @@ function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], c
         attrs: columns.slice(0)
             .sort((a, b) => a.column_index - b.column_index)
             .map(c => buildAttribute(c, jsonColumns[c.column_name], polyColumns[c.column_name], table.rows)),
-        pk: constraints.filter(c => c.constraint_type === 'p').map(c => buildPrimaryKey(c, columnsByIndex))[0] || undefined,
+        pk: pks[0],
         indexes: indexes.map(i => buildIndex(blockSize, i, columnsByIndex)),
-        checks: constraints.filter(c => c.constraint_type === 'c').map(c => buildCheck(c, columnsByIndex)),
+        checks: checks,
         doc: table.table_comment || undefined,
         stats: removeUndefined({
             rows: table.rows || undefined,
@@ -411,7 +422,7 @@ type RawConstraint = {
     table_name: string
     constraint_name: string
     constraint_type: 'p' | 'c' // p: primary key, c: check
-    columns: number[]
+    columns: number[] | null
     deferrable: boolean
     definition: string
     constraint_comment: string | null
@@ -437,13 +448,13 @@ export const getConstraints = (opts: ConnectorSchemaOpts) => async (conn: Conn):
                  JOIN pg_class cl ON cl.oid = c.conrelid
                  JOIN pg_namespace cn ON cn.oid = cl.relnamespace
                  LEFT JOIN pg_description d ON d.objoid = c.oid
-        WHERE c.contype IN ('p', 'c')
-          AND ${scopeWhere({schema: 'cn.nspname', entity: 'cl.relname'}, opts)}
+        WHERE c.contype IN ('p', 'c') AND ${scopeWhere({schema: 'cn.nspname', entity: 'cl.relname'}, opts)}
         ORDER BY table_schema, table_name, constraint_name;`, [], 'getConstraints'
     ).catch(handleError(`Failed to get constraints`, [], opts))
 }
 
-function buildPrimaryKey(c: RawConstraint, columns: { [i: number]: string }): PrimaryKey {
+function buildPrimaryKey(c: RawConstraint, columns: { [i: number]: string }): PrimaryKey | string {
+    if (c.columns === null) return `Missing columns for primary key${c.constraint_name ? ' ' + c.constraint_name : ''}`
     return removeUndefined({
         name: c.constraint_name,
         attrs: c.columns.map(i => [getColumnName(columns, i)]),
@@ -453,7 +464,8 @@ function buildPrimaryKey(c: RawConstraint, columns: { [i: number]: string }): Pr
     })
 }
 
-function buildCheck(c: RawConstraint, columns: { [i: number]: string }): Check {
+function buildCheck(c: RawConstraint, columns: { [i: number]: string }): Check | string {
+    if (c.columns === null) return `Missing columns for check${c.constraint_name ? ' ' + c.constraint_name : ''}${c.definition ? ' (' + c.definition + ')' : ''}`
     return removeUndefined({
         name: c.constraint_name,
         attrs: c.columns.map(i => [getColumnName(columns, i)]),
