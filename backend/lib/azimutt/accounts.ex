@@ -133,7 +133,7 @@ defmodule Azimutt.Accounts do
   defp create_or_update_profile_organization(%UserProfile{} = profile, attrs) do
     orga_attrs = attrs["team_organization"]
 
-    if orga_attrs["create"] == "true" do
+    if orga_attrs["create"] == "true" && orga_attrs["name"] != "" do
       if profile.team_organization do
         Organizations.update_organization(orga_attrs, profile.team_organization, profile.user)
       else
