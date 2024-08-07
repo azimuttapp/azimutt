@@ -134,7 +134,7 @@ project1 =
             , ( "empty", Layout [] [] [] [] (time 1202) (time 1203) )
             ]
     , tableRowsSeq = 1
-    , settings = ProjectSettings (FindPathSettings 4 "" "") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+, deleted_.+" 15 False False) OrderByProperty Bezier True False Nothing
+    , settings = ProjectSettings (FindPathSettings 4 "" "") defaultSchema [] False "" (HiddenColumns "created.+, updated.+, deleted.+" 15 False False) OrderByProperty Bezier True False Nothing
     , storage = ProjectStorage.Local
     , visibility = ProjectVisibility.None
     , version = ProjectEncodingVersion.current
@@ -238,7 +238,7 @@ project2 =
             , ( "users", Layout [ TableProps ( "public", "users" ) (gridPos 90 100) Size.zeroCanvas Tw.red [ ColumnPath.fromString "id", ColumnPath.fromString "name" ] True False False ] [] [] [] (time 1202) (time 1203) )
             ]
     , tableRowsSeq = 1
-    , settings = ProjectSettings (FindPathSettings 4 "users" "created_by") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+, deleted_.+" 15 False False) OrderByProperty Bezier True False Nothing
+    , settings = ProjectSettings (FindPathSettings 4 "users" "created_by") defaultSchema [] False "" (HiddenColumns "created.+, updated.+, deleted.+" 15 False False) OrderByProperty Bezier True False Nothing
     , storage = ProjectStorage.Local
     , visibility = ProjectVisibility.None
     , version = ProjectEncodingVersion.current
