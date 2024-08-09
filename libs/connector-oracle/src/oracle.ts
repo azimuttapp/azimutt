@@ -448,7 +448,7 @@ export const getIndexes = (opts: ScopeOpts) => async (conn: Conn): Promise<RawIn
              , MIN(i.VISIBILITY)                                                     AS VISIBILITY
         FROM ALL_INDEXES i
                  JOIN ALL_IND_COLUMNS c ON c.INDEX_OWNER = i.OWNER AND c.INDEX_NAME = i.INDEX_NAME
-                 JOIN ALL_TAB_COLS t ON t.OWNER = i.OWNER AND t.TABLE_NAME = i.TABLE_NAME AND t.COLUMN_NAME = c.COLUMN_NAME
+                 LEFT JOIN ALL_TAB_COLS t ON t.OWNER = i.OWNER AND t.TABLE_NAME = i.TABLE_NAME AND t.COLUMN_NAME = c.COLUMN_NAME
         WHERE i.DROPPED != 'YES'
           AND ${scopeWhere({schema: 'i.TABLE_OWNER', entity: 'i.TABLE_NAME'}, opts)}
           AND i.INDEX_NAME NOT IN (SELECT co.CONSTRAINT_NAME FROM ALL_CONSTRAINTS co WHERE co.CONSTRAINT_TYPE = 'P' AND ${scopeWhere({schema: 'co.OWNER', entity: 'co.TABLE_NAME'}, opts)})

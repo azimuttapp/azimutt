@@ -88,278 +88,278 @@ identity.TrustedDevices | users can add a device to their trusted ones, so they 
 
 # Inventory
 
-inventory.Brands
-  id bigint pk
-  slug varchar unique | ex: "google"
-  name varchar unique | ex: "Google"
-  created_at timestamp
-  updated_at timestamp
-  deleted_at timestamp nullable index
+C##INVENTORY.EMPLOYEES
+  ID BIGINT pk
+  FIRST_NAME VARCHAR index=name
+  LAST_NAME VARCHAR index=name
+  EMAIL VARCHAR nullable index
+  PHONE VARCHAR nullable
+  CREATED_AT TIMESTAMP
+  CREATED_BY BIGINT fk identity.Users.id
+  UPDATED_AT TIMESTAMP
+  UPDATED_BY BIGINT fk identity.Users.id
+  DELETED_AT TIMESTAMP nullable index
+  DELETED_BY BIGINT nullable fk identity.Users.id
 
-inventory.Products
-  id bigint pk
-  slug varchar unique | ex: "pixel-8-pro"
-  name varchar unique | ex: "Pixel 8 Pro"
-  brand bigint nullable fk inventory.Brands.id
-  category varchar nullable | ex: "Phones"
-  subcategory varchar nullable | ex: "Smartphones"
-  width float | typical width of the product, see Products for the real one
-  length float | typical length of the product, see Products for the real one
-  height float | typical height of the product, see Products for the real one
-  weight float | typical weight of the product, see Products for the real one
-  remarks text nullable | ex: fragile
-  created_at timestamp
-  updated_at timestamp
-  deleted_at timestamp nullable index
+C##INVENTORY.WAREHOUSES
+  ID BIGINT pk
+  NAME VARCHAR unique
+  ADDRESS GLOBAL_ADDRESS
+  MANAGER BIGINT fk C##INVENTORY.EMPLOYEES.ID
+  CREATED_AT TIMESTAMP
+  CREATED_BY BIGINT fk identity.Users.id
+  UPDATED_AT TIMESTAMP
+  UPDATED_BY BIGINT fk identity.Users.id
+  DELETED_AT TIMESTAMP nullable index
+  DELETED_BY BIGINT nullable fk identity.Users.id
 
-inventory.ProductVersions
-  id bigint pk
-  product_id bigint fk inventory.Products.id
-  sku varchar(12) unique | internal id
-  ean varchar(13) unique | european id
-  name varchar unique | ex: "Pixel 8 Pro Menthe 128 Go"
-  specs json | specificities of this version, ex: `{color: "Menthe", storage: 128}`
-  width float
-  length float
-  height float
-  weight float
-  remarks text nullable
-  created_at timestamp
-  updated_at timestamp
-  deleted_at timestamp nullable index
+C##INVENTORY.HALLS
+  ID BIGINT pk
+  WAREHOUSE_ID BIGINT fk C##INVENTORY.WAREHOUSES.ID
+  NAME VARCHAR index
+  MANAGER BIGINT fk C##INVENTORY.EMPLOYEES.ID
+  CREATED_AT TIMESTAMP
+  CREATED_BY BIGINT fk identity.Users.id
+  UPDATED_AT TIMESTAMP
+  UPDATED_BY BIGINT fk identity.Users.id
+  DELETED_AT TIMESTAMP nullable index
+  DELETED_BY BIGINT nullable fk identity.Users.id
 
-inventory.PhysicalProducts
-  id bigint pk
-  product_version_id bigint fk inventory.ProductVersions.id
-  snid varchar(12) unique | serial number of this product
-  expiration timestamp nullable | when Product has an expiration date, null otherwise
-  remarks text nullable
-  stored bigint nullable fk inventory.ShelfPositions.id
-  created_at timestamp
-  updated_at timestamp
-  deleted_at timestamp nullable index
+C##INVENTORY.AISLES
+  ID BIGINT pk
+  HALL_ID BIGINT fk C##INVENTORY.HALLS.ID
+  NAME VARCHAR index
+  MANAGER BIGINT fk C##INVENTORY.EMPLOYEES.ID
+  CREATED_AT TIMESTAMP
+  CREATED_BY BIGINT fk identity.Users.id
+  UPDATED_AT TIMESTAMP
+  UPDATED_BY BIGINT fk identity.Users.id
+  DELETED_AT TIMESTAMP nullable index
+  DELETED_BY BIGINT nullable fk identity.Users.id
 
-inventory.Employees
-  id bigint pk
-  first_name varchar index=name
-  last_name varchar index=name
-  email varchar nullable index
-  phone varchar nullable
-  created_at timestamp
-  created_by bigint fk identity.Users.id
-  updated_at timestamp
-  updated_by bigint fk identity.Users.id
-  deleted_at timestamp nullable index
-  deleted_by bigint nullable fk identity.Users.id
+C##INVENTORY.RACKS
+  ID BIGINT pk
+  AISLE_ID BIGINT fk C##INVENTORY.AISLES.ID
+  NAME VARCHAR index
+  CREATED_AT TIMESTAMP
+  CREATED_BY BIGINT fk identity.Users.id
+  UPDATED_AT TIMESTAMP
+  UPDATED_BY BIGINT fk identity.Users.id
+  DELETED_AT TIMESTAMP nullable index
+  DELETED_BY BIGINT nullable fk identity.Users.id
 
-inventory.Suppliers
-  id bigint pk
-  name varchar index
-  level int | the lower, the more priority is given to this supplier
-  currency global_currency(EUR, USD)
-  created_at timestamp
-  updated_at timestamp
-  deleted_at timestamp nullable index
+C##INVENTORY.SHELVES
+  ID BIGINT pk
+  RACK_ID BIGINT fk C##INVENTORY.RACKS.ID
+  NAME VARCHAR index
+  CREATED_AT TIMESTAMP
+  CREATED_BY BIGINT fk identity.Users.id
+  UPDATED_AT TIMESTAMP
+  UPDATED_BY BIGINT fk identity.Users.id
+  DELETED_AT TIMESTAMP nullable index
+  DELETED_BY BIGINT nullable fk identity.Users.id
 
-inventory.SupplierPrices
-  supplier_id bigint pk fk inventory.Suppliers.id
-  product_version_id bigint pk fk inventory.ProductVersions.id
-  price double
-  created_at timestamp
-  updated_at timestamp
-  deleted_at timestamp nullable index
+C##INVENTORY.SHELF_POSITIONS
+  ID BIGINT pk
+  SHELF_ID BIGINT fk C##INVENTORY.SHELVES.ID
+  NAME VARCHAR index
+  CREATED_AT TIMESTAMP
+  CREATED_BY BIGINT fk identity.Users.id
+  UPDATED_AT TIMESTAMP
+  UPDATED_BY BIGINT fk identity.Users.id
+  DELETED_AT TIMESTAMP nullable index
+  DELETED_BY BIGINT nullable fk identity.Users.id
 
-inventory.SupplierEmployees
-  supplier_id bigint pk fk inventory.Suppliers.id
-  employee_id bigint pk fk inventory.Employees.id
-  role supplier_role(delivery, sale)
-  start timestamp nullable
-  end timestamp nullable
-  created_at timestamp
-  created_by bigint fk identity.Users.id
-  updated_at timestamp
-  updated_by bigint fk identity.Users.id
-  deleted_at timestamp nullable index
-  deleted_by bigint nullable fk identity.Users.id
+C##INVENTORY.WAREHOUSE_EMPLOYEES
+  WAREHOUSE_ID BIGINT pk fk C##INVENTORY.WAREHOUSES.ID
+  EMPLOYEE_ID BIGINT pk fk C##INVENTORY.EMPLOYEES.ID
+  ROLE warehouse_role(manager, stocker, loader, receiver)
+  START TIMESTAMP nullable
+  END TIMESTAMP nullable
+  CREATED_AT TIMESTAMP
+  CREATED_BY BIGINT fk identity.Users.id
+  UPDATED_AT TIMESTAMP
+  UPDATED_BY BIGINT fk identity.Users.id
+  DELETED_AT TIMESTAMP nullable index
+  DELETED_BY BIGINT nullable fk identity.Users.id
 
-inventory.PurchaseOrders
-  id bigint pk
-  supplier_id bigint fk inventory.Suppliers.id
-  price double | total price, computed from items price x quantity
-  currency global_currency(EUR, USD)
-  details text nullable | additional text for the supplier
-  notes text nullable | internal text for employees
-  created_at timestamp
-  created_by bigint fk identity.Users.id
-  updated_at timestamp
-  updated_by bigint fk identity.Users.id
-  sent_at timestamp nullable | can't be updated once sent
-  sent_by bigint nullable fk identity.Users.id
-  paid_at timestamp nullable
-  delivered_at timestamp nullable
-  validated_at timestamp nullable
-  validated_by bigint nullable fk identity.Users.id
+C##INVENTORY.WAREHOUSE_IDENTITY_PROOFS | how to check the employee is identified, can be several
+  WAREHOUSE_ID BIGINT pk fk C##INVENTORY.WAREHOUSES.ID
+  EMPLOYEES_ID BIGINT pk fk C##INVENTORY.EMPLOYEES.ID
+  KIND identity_proof_kind(name, cni, badge) pk
+  VALUE VARCHAR
+  EXPIRE TIMESTAMP nullable
+  CREATED_AT TIMESTAMP
+  CREATED_BY BIGINT fk identity.Users.id
 
-inventory.PurchaseOrderItems
-  purchase_order_id bigint pk fk inventory.PurchaseOrders.id
-  product_version_id bigint pk fk inventory.ProductVersions.id
-  quantity int
-  price double
-  created_at timestamp
-  created_by bigint fk identity.Users.id
-  updated_at timestamp
-  updated_by bigint fk identity.Users.id
+C##INVENTORY.BRANDS
+  ID BIGINT pk
+  SLUG VARCHAR unique | ex: "google"
+  NAME VARCHAR unique | ex: "Google"
+  CREATED_AT TIMESTAMP
+  UPDATED_AT TIMESTAMP
+  DELETED_AT TIMESTAMP nullable index
 
-inventory.Warehouses
-  id bigint pk
-  name varchar unique
-  address global_address
-  manager bigint fk inventory.Employees.id
-  created_at timestamp
-  created_by bigint fk identity.Users.id
-  updated_at timestamp
-  updated_by bigint fk identity.Users.id
-  deleted_at timestamp nullable index
-  deleted_by bigint nullable fk identity.Users.id
+C##INVENTORY.PRODUCTS
+  ID BIGINT pk
+  SLUG VARCHAR unique | ex: "pixel-8-pro"
+  NAME VARCHAR unique | ex: "Pixel 8 Pro"
+  BRAND BIGINT nullable fk C##INVENTORY.BRANDS.ID
+  CATEGORY VARCHAR nullable | ex: "Phones"
+  SUBCATEGORY VARCHAR nullable | ex: "Smartphones"
+  WIDTH FLOAT | typical width of the product, see PRODUCTS for the real one
+  LENGTH FLOAT | typical length of the product, see PRODUCTS for the real one
+  HEIGHT FLOAT | typical height of the product, see PRODUCTS for the real one
+  WEIGHT FLOAT | typical weight of the product, see PRODUCTS for the real one
+  REMARKS TEXT nullable | ex: fragile
+  CREATED_AT TIMESTAMP
+  UPDATED_AT TIMESTAMP
+  DELETED_AT TIMESTAMP nullable index
 
-inventory.Halls
-  id bigint pk
-  warehouse_id bigint fk inventory.Warehouses.id
-  name varchar index
-  manager bigint fk inventory.Employees.id
-  created_at timestamp
-  created_by bigint fk identity.Users.id
-  updated_at timestamp
-  updated_by bigint fk identity.Users.id
-  deleted_at timestamp nullable index
-  deleted_by bigint nullable fk identity.Users.id
+C##INVENTORY.PRODUCT_VERSIONS
+  ID BIGINT pk
+  PRODUCT_ID BIGINT fk C##INVENTORY.PRODUCTS.ID
+  SKU VARCHAR(12) unique | internal id
+  EAN VARCHAR(13) unique | european id
+  NAME VARCHAR unique | ex: "Pixel 8 Pro Menthe 128 Go"
+  SPECS JSON | specificities of this version, ex: `{color: "Menthe", storage: 128}`
+  WIDTH FLOAT
+  LENGTH FLOAT
+  HEIGHT FLOAT
+  WEIGHT FLOAT
+  REMARKS TEXT nullable
+  CREATED_AT TIMESTAMP
+  UPDATED_AT TIMESTAMP
+  DELETED_AT TIMESTAMP nullable index
 
-inventory.Aisles
-  id bigint pk
-  hall_id bigint fk inventory.Halls.id
-  name varchar index
-  manager bigint fk inventory.Employees.id
-  created_at timestamp
-  created_by bigint fk identity.Users.id
-  updated_at timestamp
-  updated_by bigint fk identity.Users.id
-  deleted_at timestamp nullable index
-  deleted_by bigint nullable fk identity.Users.id
+C##INVENTORY.PHYSICAL_PRODUCTS
+  ID BIGINT pk
+  PRODUCT_VERSION_ID BIGINT fk C##INVENTORY.PRODUCT_VERSIONS.ID
+  SNID VARCHAR(12) unique | serial number of this product
+  EXPIRATION TIMESTAMP nullable | when Product has an expiration date, null otherwise
+  REMARKS TEXT nullable
+  STORED BIGINT nullable fk C##INVENTORY.SHELF_POSITIONS.ID
+  CREATED_AT TIMESTAMP
+  UPDATED_AT TIMESTAMP
+  DELETED_AT TIMESTAMP nullable index
 
-inventory.Racks
-  id bigint pk
-  aisle_id bigint fk inventory.Aisles.id
-  name varchar index
-  created_at timestamp
-  created_by bigint fk identity.Users.id
-  updated_at timestamp
-  updated_by bigint fk identity.Users.id
-  deleted_at timestamp nullable index
-  deleted_by bigint nullable fk identity.Users.id
+C##INVENTORY.SUPPLIERS
+  ID BIGINT pk
+  NAME VARCHAR index
+  LEVEL INT | the lower, the more priority is given to this supplier
+  CURRENCY global_currency(EUR, USD)
+  CREATED_AT TIMESTAMP
+  UPDATED_AT TIMESTAMP
+  DELETED_AT TIMESTAMP nullable index
 
-inventory.Shelves
-  id bigint pk
-  rack_id bigint fk inventory.Racks.id
-  name varchar index
-  created_at timestamp
-  created_by bigint fk identity.Users.id
-  updated_at timestamp
-  updated_by bigint fk identity.Users.id
-  deleted_at timestamp nullable index
-  deleted_by bigint nullable fk identity.Users.id
+C##INVENTORY.SUPPLIER_PRICES
+  SUPPLIER_ID BIGINT pk fk C##INVENTORY.SUPPLIERS.ID
+  PRODUCT_VERSION_ID BIGINT pk fk C##INVENTORY.PRODUCT_VERSIONS.ID
+  PRICE DOUBLE
+  CREATED_AT TIMESTAMP
+  UPDATED_AT TIMESTAMP
+  DELETED_AT TIMESTAMP nullable index
 
-inventory.ShelfPositions
-  id bigint pk
-  shelf_id bigint fk inventory.Shelves.id
-  name varchar index
-  created_at timestamp
-  created_by bigint fk identity.Users.id
-  updated_at timestamp
-  updated_by bigint fk identity.Users.id
-  deleted_at timestamp nullable index
-  deleted_by bigint nullable fk identity.Users.id
+C##INVENTORY.SUPPLIER_EMPLOYEES
+  SUPPLIER_ID BIGINT pk fk C##INVENTORY.SUPPLIERS.ID
+  EMPLOYEE_ID BIGINT pk fk C##INVENTORY.Employees.ID
+  ROLE supplier_role(delivery, sale)
+  START TIMESTAMP nullable
+  END TIMESTAMP nullable
+  CREATED_AT TIMESTAMP
+  CREATED_BY BIGINT fk identity.Users.id
+  UPDATED_AT TIMESTAMP
+  UPDATED_BY BIGINT fk identity.Users.id
+  DELETED_AT TIMESTAMP nullable index
+  DELETED_BY BIGINT nullable fk identity.Users.id
 
-inventory.WarehouseEmployees
-  warehouse_id bigint pk fk inventory.Warehouses.id
-  employee_id bigint pk fk inventory.Employees.id
-  role warehouse_role(manager, stocker, loader, receiver)
-  start timestamp nullable
-  end timestamp nullable
-  created_at timestamp
-  created_by bigint fk identity.Users.id
-  updated_at timestamp
-  updated_by bigint fk identity.Users.id
-  deleted_at timestamp nullable index
-  deleted_by bigint nullable fk identity.Users.id
+C##INVENTORY.PURCHASE_ORDERS
+  ID BIGINT pk
+  SUPPLIER_ID BIGINT fk C##INVENTORY.SUPPLIERS.ID
+  PRICE DOUBLE | total price, computed from items price x quantity
+  CURRENCY global_currency(EUR, USD)
+  DETAILS TEXT nullable | additional text for the supplier
+  NOTES TEXT nullable | internal text for employees
+  CREATED_AT TIMESTAMP
+  CREATED_BY BIGINT fk identity.Users.id
+  UPDATED_AT TIMESTAMP
+  UPDATED_BY BIGINT fk identity.Users.id
+  SENT_AT TIMESTAMP nullable | can't be updated once sent
+  SENT_BY BIGINT nullable fk identity.Users.id
+  PAID_AT TIMESTAMP nullable
+  DELIVERED_AT TIMESTAMP nullable
+  VALIDATED_AT TIMESTAMP nullable
+  VALIDATED_BY BIGINT nullable fk identity.Users.id
 
-inventory.WarehouseIdentityProofs | how to check the employee is identified, can be several
-  warehouse_id bigint pk fk inventory.Warehouses.id
-  employees_id bigint pk fk inventory.Employees.id
-  kind identity_proof_kind(name, cni, badge) pk
-  value varchar
-  expire timestamp nullable
-  created_at timestamp
-  created_by bigint fk identity.Users.id
+C##INVENTORY.PURCHASE_ORDER_ITEMS
+  PURCHASE_ORDER_ID BIGINT pk fk C##INVENTORY.PURCHASE_ORDERS.ID
+  PRODUCT_VERSION_ID BIGINT pk fk C##INVENTORY.PRODUCT_VERSIONS.ID
+  QUANTITY INT
+  PRICE DOUBLE
+  CREATED_AT TIMESTAMP
+  CREATED_BY BIGINT fk identity.Users.id
+  UPDATED_AT TIMESTAMP
+  UPDATED_BY BIGINT fk identity.Users.id
 
-inventory.Deliveries
-  id bigint pk
-  reason delivery_reason(supplier_delivery, customer_return, other)
-  accepted boolean
-  purchase_order_id bigint nullable fk inventory.PurchaseOrders.id
-  warehouse_id bigint fk inventory.WarehouseEmployees.warehouse_id
-  warehouse_employee_id bigint fk inventory.WarehouseEmployees.employee_id
-  supplier_id bigint fk inventory.SupplierEmployees.supplier_id
-  supplier_employee_id bigint fk inventory.SupplierEmployees.employee_id
-  delivered_at timestamp
+C##INVENTORY.DELIVERIES
+  ID BIGINT pk
+  REASON delivery_reason(supplier_delivery, customer_return, other)
+  ACCEPTED BOOLEAN
+  PURCHASE_ORDER_ID BIGINT nullable fk C##INVENTORY.PURCHASE_ORDERS.ID
+  WAREHOUSE_ID BIGINT fk C##INVENTORY.WAREHOUSE_EMPLOYEES.WAREHOUSE_ID
+  WAREHOUSE_EMPLOYEE_ID BIGINT fk C##INVENTORY.WAREHOUSE_EMPLOYEES.EMPLOYEE_ID
+  SUPPLIER_ID BIGINT fk C##INVENTORY.SUPPLIER_EMPLOYEES.SUPPLIER_ID
+  SUPPLIER_EMPLOYEE_ID BIGINT fk C##INVENTORY.SUPPLIER_EMPLOYEES.EMPLOYEE_ID
+  DELIVERED_AT TIMESTAMP
 
-inventory.DeliveryItems
-  delivery_id bigint pk fk inventory.Deliveries.id
-  physical_product_id bigint pk fk inventory.PhysicalProducts.id
+C##INVENTORY.DELIVERY_ITEMS
+  DELIVERY_ID BIGINT pk fk C##INVENTORY.DELIVERIES.ID
+  PHYSICAL_PRODUCT_ID BIGINT pk fk C##INVENTORY.PHYSICAL_PRODUCTS.ID
 
-inventory.Pickups
-  id bigint pk
-  reason pickup_reason(customer_delivery, supplier_return, other)
-  accepted boolean
-  warehouse_id bigint fk inventory.WarehouseEmployees.warehouse_id
-  warehouse_employee_id bigint fk inventory.WarehouseEmployees.employee_id
-  supplier_id bigint fk inventory.SupplierEmployees.supplier_id
-  supplier_employee_id bigint fk inventory.SupplierEmployees.employee_id
-  delivered_at timestamp
+C##INVENTORY.PICKUPS
+  ID BIGINT pk
+  REASON pickup_reason(customer_delivery, supplier_return, other)
+  ACCEPTED BOOLEAN
+  WAREHOUSE_ID BIGINT fk C##INVENTORY.WAREHOUSE_EMPLOYEES.WAREHOUSE_ID
+  WAREHOUSE_EMPLOYEE_ID BIGINT fk C##INVENTORY.WAREHOUSE_EMPLOYEES.EMPLOYEE_ID
+  SUPPLIER_ID BIGINT fk C##INVENTORY.SUPPLIER_EMPLOYEES.SUPPLIER_ID
+  SUPPLIER_EMPLOYEE_ID BIGINT fk C##INVENTORY.SUPPLIER_EMPLOYEES.EMPLOYEE_ID
+  DELIVERED_AT TIMESTAMP
 
-inventory.PickupItems
-  pickup_id bigint pk fk inventory.Pickups.id
-  physical_product_id bigint pk fk inventory.PhysicalProducts.id
+C##INVENTORY.PICKUP_ITEMS
+  PICKUP_ID BIGINT pk fk C##INVENTORY.PICKUPS.ID
+  PHYSICAL_PRODUCT_ID BIGINT pk fk C##INVENTORY.PHYSICAL_PRODUCTS.ID
 
-inventory.Inventories
-  id bigint pk
-  name varchar
-  warehouse_id bigint fk inventory.Warehouses.id
-  hall_id bigint nullable fk inventory.Halls.id
-  aisle_id bigint nullable fk inventory.Aisles.id
-  planned timestamp nullable
-  finished timestamp nullable
-  created_at timestamp
-  created_by bigint fk identity.Users.id
-  updated_at timestamp
-  updated_by bigint fk identity.Users.id
+C##INVENTORY.INVENTORIES
+  ID BIGINT pk
+  NAME VARCHAR
+  WAREHOUSE_ID BIGINT fk C##INVENTORY.WAREHOUSES.ID
+  HALL_ID BIGINT nullable fk C##INVENTORY.HALLS.ID
+  AISLE_ID BIGINT nullable fk C##INVENTORY.AISLES.ID
+  PLANNED TIMESTAMP nullable
+  FINISHED TIMESTAMP nullable
+  CREATED_AT TIMESTAMP
+  CREATED_BY BIGINT fk identity.Users.id
+  UPDATED_AT TIMESTAMP
+  UPDATED_BY BIGINT fk identity.Users.id
 
-inventory.InventoryMembers
-  inventory_id bigint pk fk inventory.Inventories.id
-  warehouse_id bigint pk fk inventory.WarehouseEmployees.warehouse_id
-  employee_id bigint pk fk inventory.WarehouseEmployees.employee_id
+C##INVENTORY.INVENTORY_MEMBERS
+  INVENTORY_ID BIGINT pk fk C##INVENTORY.INVENTORIES.ID
+  WAREHOUSE_ID BIGINT pk fk C##INVENTORY.WAREHOUSE_EMPLOYEES.WAREHOUSE_ID
+  EMPLOYEE_ID BIGINT pk fk C##INVENTORY.WAREHOUSE_EMPLOYEES.EMPLOYEE_ID
 
-inventory.InventoryObservations
-  id bigint pk
-  inventory_id bigint nullable fk inventory.Inventories.id
-  physical_product_id bigint fk inventory.PhysicalProducts.id
-  status inventory_status(missing, broken, degraded)
-  message text nullable
-  created_at timestamp
-  created_by bigint fk identity.Users.id
-  updated_at timestamp
-  updated_by bigint fk identity.Users.id
-  deleted_at timestamp nullable index
-  deleted_by bigint nullable fk identity.Users.id
+C##INVENTORY.INVENTORY_OBSERVATIONS
+  ID BIGINT pk
+  INVENTORY_ID BIGINT nullable fk C##INVENTORY.INVENTORIES.ID
+  PHYSICAL_PRODUCT_ID BIGINT fk C##INVENTORY.PHYSICAL_PRODUCTS.ID
+  STATUS INVENTORY_STATUS(missing, broken, degraded)
+  MESSAGE TEXT nullable
+  CREATED_AT TIMESTAMP
+  CREATED_BY BIGINT fk identity.Users.id
+  UPDATED_AT TIMESTAMP
+  UPDATED_BY BIGINT fk identity.Users.id
+  DELETED_AT TIMESTAMP nullable index
+  DELETED_BY BIGINT nullable fk identity.Users.id
 
 # Catalog
 
@@ -376,7 +376,7 @@ catalog.Categories
   deleted_at timestamp nullable index
 
 catalog.Products
-  id bigint pk fk inventory.Products.id
+  id bigint pk fk C##INVENTORY.PRODUCTS.ID
   slug varchar unique
   name varchar
   category_id bigint fk catalog.Categories.id
@@ -390,7 +390,7 @@ catalog.Products
   deleted_at timestamp nullable index
 
 catalog.ProductVersions
-  id bigint pk fk inventory.ProductVersions.id
+  id bigint pk fk C##INVENTORY.PRODUCT_VERSIONS.ID
   product_id bigint fk catalog.Products.id
   name varchar
   specs json | ex: `{color: "Bleu Azur", storage: 128}`
@@ -458,7 +458,7 @@ catalog.ProductReviews
   product_id bigint fk catalog.Products.id
   product_version_id bigint nullable fk catalog.ProductVersions.id
   invoice_id bigint nullable fk billing.Invoices.id
-  physical_product_id bigint nullable fk inventory.PhysicalProducts.id
+  physical_product_id bigint nullable fk C##INVENTORY.PHYSICAL_PRODUCTS.ID
   rating int
   review text nullable
   created_at timestamp
@@ -656,7 +656,7 @@ shipping.Shipments
 
 shipping.ShipmentItems
   shipment_id bigint pk fk shipping.Shipments.id
-  physical_product_id bigint pk fk inventory.PhysicalProducts.id
+  physical_product_id bigint pk fk C##INVENTORY.PHYSICAL_PRODUCTS.ID
   invoice_id bigint fk billing.InvoiceLines.invoice_id
   invoice_line int fk billing.InvoiceLines.index
   delivered_at timestamp nullable

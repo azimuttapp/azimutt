@@ -5,6 +5,7 @@ DROP DATABASE IF EXISTS identity;
 CREATE DATABASE identity;
 USE identity;
 
+
 CREATE TABLE identity.Users
 (
     id         BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -95,6 +96,7 @@ CREATE TABLE identity.TrustedDevices
     FOREIGN KEY (device_id) REFERENCES identity.Devices (id),
     INDEX idx_deleted_at (deleted_at)
 );
+
 
 -- insert some data
 INSERT INTO identity.Users (first_name, last_name, username, email, settings)

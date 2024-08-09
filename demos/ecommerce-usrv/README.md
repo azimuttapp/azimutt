@@ -27,6 +27,10 @@ You will have it at this url: `mariadb://root:mariadb@localhost:3307/identity`
 You can then import it in your Azimutt project or explore it with the e-commerce demo after starting your local gateway (`npx azimutt@latest gateway`)
 
 ## Inventory
+
+Import it in a [Oracle database](../../libs/connector-oracle/README.md#local-setup) with the [script_3_inventory_oracle.sql](script_3_inventory_oracle.sql).
+You will have it at this url: `oracle:thin:C##INVENTORY/inventory@localhost:1521/FREE`
+
 ## Catalog
 ## Shopping
 ## Billing

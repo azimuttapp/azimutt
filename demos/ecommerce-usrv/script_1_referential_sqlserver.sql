@@ -7,6 +7,7 @@ CREATE DATABASE Referential;
 USE Referential;
 CREATE SCHEMA [referential];
 
+
 CREATE TABLE [referential].[Countries]
 (
     [CountryId] [bigint] IDENTITY (1,1) PRIMARY KEY,
@@ -43,6 +44,7 @@ CREATE TABLE [referential].[Cities]
 );
 CREATE INDEX [IDX_Cities_StateId] ON [referential].[Cities] ([StateId]);
 CREATE INDEX [IDX_Cities_Name] ON [referential].[Cities] ([Name]);
+
 
 -- insert some data
 INSERT INTO [referential].[Countries] ([Code], [Name])

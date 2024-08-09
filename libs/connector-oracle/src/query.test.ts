@@ -1,5 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
-import {ConnectorDefaultOpts, ConnectorSchemaOpts, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/models";
+import {ConnectorSchemaOpts, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/models";
 import {connect} from "./connect";
 import {execQuery} from "./query";
 import {application, logger} from "./constants.test";
@@ -23,6 +23,7 @@ describe('query', () => {
     test.skip('execQuery2', async () => {
         const query = 'SELECT *\nFROM "C##AZIMUTT"."USERS"\nFETCH FIRST 100 ROWS ONLY;'
         const results = await connect(application, url, execQuery(query, []), opts)
+        console.log('results', results)
         expect(results.attributes).toEqual([
             {name: 'ID', ref: {schema: 'C##AZIMUTT', entity: 'USERS', attribute: ['ID']}},
             {name: 'NAME', ref: {schema: 'C##AZIMUTT', entity: 'USERS', attribute: ['NAME']}},
