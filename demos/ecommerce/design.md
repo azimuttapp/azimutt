@@ -363,9 +363,9 @@ C##INVENTORY.INVENTORY_OBSERVATIONS
 
 # Catalog
 
-catalog.Categories
+catalog.categories
   id bigint pk
-  parent bigint nullable fk catalog.Categories.id
+  parent bigint nullable fk catalog.categories.id
   depth int | easily accessible information of number of parents
   slug varchar unique
   name varchar
@@ -375,11 +375,11 @@ catalog.Categories
   updated_at timestamp
   deleted_at timestamp nullable index
 
-catalog.Products
+catalog.products
   id bigint pk fk C##INVENTORY.PRODUCTS.ID
   slug varchar unique
   name varchar
-  category_id bigint fk catalog.Categories.id
+  category_id bigint fk catalog.categories.id
   description text nullable | TODO: handle i18n
   description_html text nullable
   versions json | ex: `[{key: "color", label: "Couleur", values: [{name: "Bleu Azur", value: "#95bbe2"}]}, {key: "storage", name: "Taille", values: [{name: "128GB", value: 128}]}]`
@@ -389,9 +389,9 @@ catalog.Products
   updated_at timestamp
   deleted_at timestamp nullable index
 
-catalog.ProductVersions
+catalog.product_versions
   id bigint pk fk C##INVENTORY.PRODUCT_VERSIONS.ID
-  product_id bigint fk catalog.Products.id
+  product_id bigint fk catalog.products.id
   name varchar
   specs json | ex: `{color: "Bleu Azur", storage: 128}`
   price double
@@ -400,22 +400,22 @@ catalog.ProductVersions
   updated_at timestamp
   deleted_at timestamp nullable index
 
-catalog.ProductCrossSellOptions
-  product_id bigint pk fk catalog.Products.id
-  product_version_id bigint pk fk catalog.ProductVersions.id
+catalog.product_cross_sell_options
+  product_id bigint pk fk catalog.products.id
+  product_version_id bigint pk fk catalog.product_versions.id
   label varchar
   created_at timestamp
   updated_at timestamp
   deleted_at timestamp nullable index
 
-catalog.ProductAlternatives
-  product_id bigint pk fk catalog.Products.id
-  alternative_product_id bigint pk fk catalog.Products.id
+catalog.product_alternatives
+  product_id bigint pk fk catalog.products.id
+  alternative_product_id bigint pk fk catalog.products.id
   created_at timestamp
   updated_at timestamp
   deleted_at timestamp nullable index
 
-catalog.Assets
+catalog.assets
   id bigint pk
   kind asset_kind(picture, video, embed)
   format asset_format(1:1, 16:9)
@@ -429,34 +429,34 @@ catalog.Assets
   updated_at timestamp
   deleted_at timestamp nullable index
 
-catalog.CategoryAssets
-  category_id bigint pk fk catalog.Categories.id
-  asset_id bigint pk fk catalog.Assets.id
+catalog.category_assets
+  category_id bigint pk fk catalog.categories.id
+  asset_id bigint pk fk catalog.assets.id
   placement category_asset_placement(banner, icon)
   created_at timestamp
   updated_at timestamp
   deleted_at timestamp nullable index
 
-catalog.ProductAssets
-  product_id bigint pk fk catalog.Products.id
-  asset_id bigint pk fk catalog.Assets.id
+catalog.product_assets
+  product_id bigint pk fk catalog.products.id
+  asset_id bigint pk fk catalog.assets.id
   placement category_asset_placement(banner, icon)
   created_at timestamp
   updated_at timestamp
   deleted_at timestamp nullable index
 
-catalog.ProductVersionAssets
-  product_version_id bigint pk fk catalog.ProductVersions.id
-  asset_id bigint pk fk catalog.Assets.id
+catalog.product_version_assets
+  product_version_id bigint pk fk catalog.product_versions.id
+  asset_id bigint pk fk catalog.assets.id
   placement category_asset_placement(banner, icon)
   created_at timestamp
   updated_at timestamp
   deleted_at timestamp nullable index
 
-catalog.ProductReviews
+catalog.product_reviews
   id bigint pk
-  product_id bigint fk catalog.Products.id
-  product_version_id bigint nullable fk catalog.ProductVersions.id
+  product_id bigint fk catalog.products.id
+  product_version_id bigint nullable fk catalog.product_versions.id
   invoice_id bigint nullable fk billing.Invoices.id
   physical_product_id bigint nullable fk C##INVENTORY.PHYSICAL_PRODUCTS.ID
   rating int
@@ -468,16 +468,16 @@ catalog.ProductReviews
   deleted_at timestamp nullable index
   deleted_by bigint nullable fk identity.Users.id
 
-catalog.ProductReviewAssets
-  product_review_id bigint pk fk catalog.ProductReviews.id
-  asset_id bigint pk fk catalog.Assets.id
+catalog.product_review_assets
+  product_review_id bigint pk fk catalog.product_reviews.id
+  asset_id bigint pk fk catalog.assets.id
   created_at timestamp
   created_by bigint fk identity.Users.id
   deleted_at timestamp nullable index
   deleted_by bigint nullable fk identity.Users.id
 
-catalog.ProductReviewFeedbacks
-  product_review_id bigint pk fk catalog.ProductReviews.id
+catalog.product_review_feedbacks
+  product_review_id bigint pk fk catalog.product_reviews.id
   kind feedback_kind(like, report)
   created_at timestamp
   created_by bigint pk fk identity.Users.id
@@ -486,7 +486,7 @@ catalog.ProductReviewFeedbacks
 
 # Shopping
 
-shopping.Carts
+shopping.carts
   id bigint pk
   owner_kind cart_owner(identity.Devices, identity.Users) | Devices are used for anonymous carts, otherwise it's Users
   owner_id bigint
@@ -494,12 +494,12 @@ shopping.Carts
   created_at timestamp
   updated_at timestamp
   deleted_at timestamp nullable index
-fk shopping.Carts.owner_id -> identity.Devices.id
-fk shopping.Carts.owner_id -> identity.Users.id
+fk shopping.carts.owner_id -> identity.Devices.id
+fk shopping.carts.owner_id -> identity.Users.id
 
-shopping.CartItems
-  cart_id bigint pk fk shopping.Carts.id
-  product_version_id bigint pk fk catalog.ProductVersions.id
+shopping.cart_items
+  cart_id bigint pk fk shopping.carts.id
+  product_version_id bigint pk fk catalog.product_versions.id
   quantity int
   price double | at the time the product was added to the card, prevent price changes after a product has been added to a cart
   created_at timestamp
@@ -509,7 +509,7 @@ shopping.CartItems
   deleted_at timestamp nullable index
   deleted_by bigint nullable fk identity.Users.id
 
-shopping.Wishlists
+shopping.wishlists
   id bigint pk
   name varchar
   description text nullable
@@ -521,17 +521,17 @@ shopping.Wishlists
   deleted_at timestamp nullable index
   deleted_by bigint nullable fk identity.Users.id
 
-shopping.WishlistItems
-  wishlist_id bigint pk fk shopping.Wishlists.id
-  product_id bigint pk fk catalog.Products.id
+shopping.wishlist_items
+  wishlist_id bigint pk fk shopping.wishlists.id
+  product_id bigint pk fk catalog.products.id
   specs json nullable | if the user saved specific configuration
   created_at timestamp
   created_by bigint fk identity.Users.id
   deleted_at timestamp nullable index
   deleted_by bigint nullable fk identity.Users.id
 
-shopping.WishlistMembers
-  wishlist_id bigint pk fk shopping.Wishlists.id
+shopping.wishlist_members
+  wishlist_id bigint pk fk shopping.wishlists.id
   user_id bigint pk fk identity.Users.id
   rights wishlist_rights(edit, comment, view)
   created_at timestamp
@@ -600,7 +600,7 @@ billing.CustomerAddresses
 billing.Invoices
   id bigint pk
   reference varchar unique
-  cart_id bigint nullable fk shopping.Carts.id
+  cart_id bigint nullable fk shopping.carts.id
   customer_id bigint fk billing.Customers.id
   billing_address bigint fk billing.CustomerAddresses.id
   total_price double
@@ -612,7 +612,7 @@ billing.Invoices
 billing.InvoiceLines
   invoice_id bigint pk fk billing.Invoices.id
   index int pk
-  product_version_id bigint nullable fk catalog.ProductVersions.id
+  product_version_id bigint nullable fk catalog.product_versions.id
   description text nullable
   price double
   quantity int
