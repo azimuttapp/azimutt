@@ -628,39 +628,39 @@ billing.Payments
 # Shipping
 
 shipping.Carriers
-  id bigint pk
+  id bigint
   registration varchar
-  cargo_width float
-  cargo_length float
-  cargo_height float
-  cargo_weight float
-  created_at timestamp
-  created_by bigint nullable fk identity.Users.id
-  updated_at timestamp
-  updated_by bigint nullable fk identity.Users.id
-  deleted_at timestamp nullable index
-  deleted_by bigint nullable fk identity.Users.id
+  cargoWidth float
+  cargoLength float
+  cargoHeight float
+  cargoWeight float
+  createdAt timestamp
+  createdBy bigint nullable fk identity.Users.id
+  updatedAt timestamp
+  updatedBy bigint nullable fk identity.Users.id
+  deletedAt timestamp nullable index
+  deletedBy bigint nullable fk identity.Users.id
 
 shipping.Shipments
-  id bigint pk
-  carrier_id bigint nullable fk shipping.Carriers.id
-  created_at timestamp
-  collected_at timestamp nullable
-  collected_by bigint nullable fk identity.Users.id
-  packaged_at timestamp nullable
-  packaged_by bigint nullable fk identity.Users.id
-  loaded_at timestamp nullable
-  loaded_by bigint nullable fk identity.Users.id
-  delivered_at timestamp nullable
-  delivered_by bigint nullable fk identity.Users.id
+  id bigint
+  carrierId bigint nullable fk shipping.Carriers.id
+  createdAt timestamp
+  collectedAt timestamp nullable
+  collectedBy bigint nullable fk identity.Users.id
+  packagedAt timestamp nullable
+  packagedBy bigint nullable fk identity.Users.id
+  loadedAt timestamp nullable
+  loadedBy bigint nullable fk identity.Users.id
+  deliveredAt timestamp nullable
+  deliveredBy bigint nullable fk identity.Users.id
 
 shipping.ShipmentItems
-  shipment_id bigint pk fk shipping.Shipments.id
-  physical_product_id bigint pk fk C##INVENTORY.PHYSICAL_PRODUCTS.ID
-  invoice_id bigint fk billing.InvoiceLines.InvoiceId
-  invoice_line int fk billing.InvoiceLines.Index
-  delivered_at timestamp nullable
-  delivered_to bigint nullable fk identity.Users.id
+  shipmentId bigint fk shipping.Shipments.id
+  physicalProductId bigint fk C##INVENTORY.PHYSICAL_PRODUCTS.ID
+  invoiceId bigint fk billing.InvoiceLines.InvoiceId
+  invoiceLine int fk billing.InvoiceLines.Index
+  deliveredAt timestamp nullable
+  deliveredTo bigint nullable fk identity.Users.id
 
 # CRM
 

@@ -105,7 +105,7 @@ async function inferCollectionMixed(collection: Collection, mixed: MixedCollecti
     const pk = attrs.find(a => a.name === '_id')
     const count = await countDocuments(collection, mixed, opts)
     return removeUndefined({
-        database: collection.dbName,
+        schema: collection.dbName,
         name: mixed ? `${collection.collectionName}__${mixed.attribute}__${mixed.value}` : collection.collectionName,
         kind: undefined,
         def: undefined,

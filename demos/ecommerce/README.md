@@ -55,5 +55,11 @@ You will have it at this url: `sqlserver://sa:azimutt_42@localhost:1433/Billing`
 You can then import it in your Azimutt project or explore it with the e-commerce demo after starting your local gateway (`npx azimutt@latest gateway`)
 
 ## Shipping
+
+Import it in a [MongoDB database](../../libs/connector-mongodb/README.md#local-setup) with the [script_7_shipping_mongo.sql](./script_7_shipping_mongo.sql).
+You will have it at this url: `mongodb://localhost:27017/shipping`
+
+You can then import it in your Azimutt project or explore it with the e-commerce demo after starting your local gateway (`npx azimutt@latest gateway`)
+
 ## CRM
 ## Analytics
