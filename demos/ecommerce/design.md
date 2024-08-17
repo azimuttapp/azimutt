@@ -457,7 +457,7 @@ catalog.product_reviews
   id bigint pk
   product_id bigint fk catalog.products.id
   product_version_id bigint nullable fk catalog.product_versions.id
-  invoice_id bigint nullable fk billing.Invoices.id
+  invoice_id bigint nullable fk billing.Invoices.InvoiceId
   physical_product_id bigint nullable fk C##INVENTORY.PHYSICAL_PRODUCTS.ID
   rating int
   review text nullable
@@ -543,87 +543,87 @@ shopping.wishlist_members
 
 # Billing
 
+billing.CustomerAddresses
+  CustomerAddressesId bigint pk
+  Name varchar
+  Street varchar
+  City varchar
+  State varchar
+  ZipCode varchar
+  Country bigint fk referential.Countries.CountryId
+  Complements text nullable
+  CreatedAt timestamp
+  CreatedBy bigint fk identity.Users.id
+  DeletedAt timestamp nullable index
+  DeletedBy bigint nullable fk identity.Users.id
+
 billing.Customers
-  id bigint pk
-  name varchar
-  billing_address bigint nullable fk billing.CustomerAddresses.id
-  siret varchar nullable
-  tva varchar nullable
-  created_at timestamp
-  created_by bigint fk identity.Users.id
-  updated_at timestamp
-  updated_by bigint fk identity.Users.id
-  deleted_at timestamp nullable index
-  deleted_by bigint nullable fk identity.Users.id
+  CustomerId bigint pk
+  Name varchar
+  BillingAddress bigint nullable fk billing.CustomerAddresses.CustomerAddressesId
+  Siret varchar nullable
+  TVA varchar nullable
+  CreatedAt timestamp
+  CreatedBy bigint fk identity.Users.id
+  UpdatedAt timestamp
+  UpdatedBy bigint fk identity.Users.id
+  DeletedAt timestamp nullable index
+  DeletedBy bigint nullable fk identity.Users.id
 
 billing.CustomerMembers
-  customer_id bigint pk fk billing.Customers.id
-  user_id bigint pk fk identity.Users.id
-  can_edit boolean
-  can_invite boolean
-  can_buy boolean
-  budget_allowance int nullable
-  created_at timestamp
-  created_by bigint fk identity.Users.id
-  updated_at timestamp
-  updated_by bigint fk identity.Users.id
-  deleted_at timestamp nullable index
-  deleted_by bigint nullable fk identity.Users.id
+  CustomerId bigint pk fk billing.Customers.CustomerId
+  UserId bigint pk fk identity.Users.id
+  CanEdit boolean
+  CanInvite boolean
+  CanBuy boolean
+  BudgetAllowance int nullable
+  CreatedAt timestamp
+  CreatedBy bigint fk identity.Users.id
+  UpdatedAt timestamp
+  UpdatedBy bigint fk identity.Users.id
+  DeletedAt timestamp nullable index
+  DeletedBy bigint nullable fk identity.Users.id
 
 billing.CustomerPaymentMethods
-  id bigint pk
-  customer_id bigint fk billing.Customers.id
-  name varchar
-  kind payment_kind(card, paypal)
-  details json
-  created_at timestamp
-  created_by bigint fk identity.Users.id
-  updated_at timestamp
-  updated_by bigint fk identity.Users.id
-  deleted_at timestamp nullable index
-  deleted_by bigint nullable fk identity.Users.id
-
-billing.CustomerAddresses
-  id bigint pk
-  name varchar
-  street varchar
-  city varchar
-  state varchar
-  zipcode varchar
-  country bigint fk referential.Countries.CountryId
-  complements text nullable
-  created_at timestamp
-  created_by bigint fk identity.Users.id
-  deleted_at timestamp nullable index
-  deleted_by bigint nullable fk identity.Users.id
+  CustomerPaymentMethodId bigint pk
+  CustomerId bigint fk billing.Customers.CustomerId
+  Name varchar
+  Kind payment_kind(card, paypal)
+  Details json
+  CreatedAt timestamp
+  CreatedBy bigint fk identity.Users.id
+  UpdatedAt timestamp
+  UpdatedBy bigint fk identity.Users.id
+  DeletedAt timestamp nullable index
+  DeletedBy bigint nullable fk identity.Users.id
 
 billing.Invoices
-  id bigint pk
-  reference varchar unique
-  cart_id bigint nullable fk shopping.carts.id
-  customer_id bigint fk billing.Customers.id
-  billing_address bigint fk billing.CustomerAddresses.id
-  total_price double
-  currency global_currency(EUR, USD)
-  paid_at timestamp nullable
-  created_at timestamp
-  created_by bigint nullable fk identity.Users.id
+  InvoiceId bigint pk
+  Reference varchar unique
+  CartId bigint nullable fk shopping.carts.id
+  CustomerId bigint fk billing.Customers.CustomerId
+  BillingAddress bigint fk billing.CustomerAddresses.CustomerAddressesId
+  TotalPrice double
+  Currency global_currency(EUR, USD)
+  PaidAt timestamp nullable
+  CreatedAt timestamp
+  CreatedBy bigint nullable fk identity.Users.id
 
 billing.InvoiceLines
-  invoice_id bigint pk fk billing.Invoices.id
-  index int pk
-  product_version_id bigint nullable fk catalog.product_versions.id
-  description text nullable
-  price double
-  quantity int
+  InvoiceId bigint pk fk billing.Invoices.InvoiceId
+  Index int pk
+  ProductVersionId bigint nullable fk catalog.product_versions.id
+  Description text nullable
+  Price double
+  Quantity int
 
 billing.Payments
-  id bigint pk
-  invoice_id bigint fk billing.Invoices.id
-  payment_method_id bigint nullable fk billing.CustomerPaymentMethods.id
-  amount double
-  currency global_currency(EUR, USD)
-  created_at timestamp
+  PaymentId bigint pk
+  InvoiceId bigint fk billing.Invoices.InvoiceId
+  PaymentMethodId bigint nullable fk billing.CustomerPaymentMethods.CustomerPaymentMethodId
+  Amount double
+  Currency global_currency(EUR, USD)
+  CreatedAt timestamp
 
 # Shipping
 
@@ -657,8 +657,8 @@ shipping.Shipments
 shipping.ShipmentItems
   shipment_id bigint pk fk shipping.Shipments.id
   physical_product_id bigint pk fk C##INVENTORY.PHYSICAL_PRODUCTS.ID
-  invoice_id bigint fk billing.InvoiceLines.invoice_id
-  invoice_line int fk billing.InvoiceLines.index
+  invoice_id bigint fk billing.InvoiceLines.InvoiceId
+  invoice_line int fk billing.InvoiceLines.Index
   delivered_at timestamp nullable
   delivered_to bigint nullable fk identity.Users.id
 
