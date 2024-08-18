@@ -48,6 +48,8 @@ fk catalog.product_review_assets.created_by -> identity.Users.id
 fk catalog.product_review_assets.deleted_by -> identity.Users.id
 fk catalog.product_review_feedbacks.created_by -> identity.Users.id
 fk catalog.product_review_feedbacks.deleted_by -> identity.Users.id
+fk shopping.carts.owner_id -> identity.Devices.id
+fk shopping.carts.owner_id -> identity.Users.id
 fk shopping.cart_items.product_version_id -> catalog.product_versions.id
 fk shopping.cart_items.created_by -> identity.Users.id
 fk shopping.cart_items.updated_by -> identity.Users.id

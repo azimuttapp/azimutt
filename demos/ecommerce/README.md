@@ -1,76 +1,23 @@
-# Azimutt full demo
+# E-commerce demo
 
-Here are some technical explanations to setup the [e-commerce micro-services demo](https://azimutt.app/fe9aef15-febe-490b-a631-225367749278/91395eb9-bd5d-4205-a8d6-d03bd1968ec4) of Azimutt.
+This is a medium demo (~80 tables) showcasing Azimutt ability to explore large schemas, even with several databases (micro-services for examples).
 
-Have a look to the [associated blog](https://azimutt.app/blob/ecommerce-database-with-microservices-demo) post for more explanations of how to use it and what to look ;)
+You can find this project at [xxx](https://azimutt.app...) and explore it yourself, you will see:
 
-Each domain has its own database, here is how to set them up:
+- an overview of the schema across several databases
+- showcases per domain with sample rows
+- documentation layouts
 
-# Domains
+The project will let you access the schema and loaded data but if you want to dig into the data, you will have to set up the databases you want using Docker:
 
-## Referential
+- **Referential** domain uses [SQL Server](../../libs/connector-sqlserver/README.md#local-setup) for [source_01_referential_sqlserver.sql](./source_01_referential_sqlserver.sql) (url `sqlserver://sa:azimutt_42@localhost:1433/Referential`)
+- **Identity** domain uses [MariaDB](../../libs/connector-mariadb/README.md#local-setup) for [source_02_identity_mariadb.sql](./source_02_identity_mariadb.sql) (url `mariadb://root:mariadb@localhost:3307/identity`)
+- **Inventory** domain uses [Oracle](../../libs/connector-oracle/README.md#local-setup) for [source_03_inventory_oracle.sql](./source_03_inventory_oracle.sql) (url `oracle:thin:C##INVENTORY/inventory@localhost:1521/FREE`)
+- **Catalog** domain uses [PostgreSQL](../../libs/connector-postgres/README.md#local-setup) for [source_04_catalog_postgres.sql](./source_04_catalog_postgres.sql) (url `postgresql://postgres:postgres@localhost:5433/postgres?schema=catalog`)
+- **Shopping** domain uses [PostgreSQL](../../libs/connector-postgres/README.md#local-setup) for [source_05_shopping_postgres.sql](./source_05_shopping_postgres.sql) (url `postgresql://postgres:postgres@localhost:5433/postgres?schema=shopping`)
+- **Billing** domain uses [SQL Server](../../libs/connector-sqlserver/README.md#local-setup) for [source_06_billing_sqlserver.sql](./source_06_billing_sqlserver.sql) (url `sqlserver://sa:azimutt_42@localhost:1433/Billing`)
+- **Shipping** domain uses [MongoDB](../../libs/connector-mongodb/README.md#local-setup) for [source_07_shipping_mongo.sql](./source_07_shipping_mongo.sql) (url `mongodb://localhost:27017/shipping`)
+- **CRM** domain uses [MySQL](../../libs/connector-mysql/README.md#local-setup) for [source_08_crm_mysql.sql](./source_08_crm_mysql.sql) (url `mysql://root:mysql@localhost:3306/crm`)
+- **Analytics** domain uses [MongoDB](../../libs/connector-mongodb/README.md#local-setup) for [source_09_analytics_mongo.sql](./source_09_analytics_mongo.sql) (url `mongodb://localhost:27017/analytics`)
 
-This domain is for general data.
-
-Import it in a [SQL Server database](../../libs/connector-sqlserver/README.md#local-setup) with the [source_01_referential_sqlserver.sql](./source_01_referential_sqlserver.sql).
-You will have it at this url: `sqlserver://sa:azimutt_42@localhost:1433/Referential`
-
-You can then import it in your Azimutt project or explore it with the e-commerce demo after starting your local gateway (`npx azimutt@latest gateway`)
-
-## Identity
-
-This domain is user identity: who they are, what they can do.
-
-Import it in a [MariaDB database](../../libs/connector-mariadb/README.md#local-setup) with the [source_02_identity_mariadb.sql](./source_02_identity_mariadb.sql).
-You will have it at this url: `mariadb://root:mariadb@localhost:3307/identity`
-
-You can then import it in your Azimutt project or explore it with the e-commerce demo after starting your local gateway (`npx azimutt@latest gateway`)
-
-## Inventory
-
-Import it in a [Oracle database](../../libs/connector-oracle/README.md#local-setup) with the [source_03_inventory_oracle.sql](./source_03_inventory_oracle.sql).
-You will have it at this url: `oracle:thin:C##INVENTORY/inventory@localhost:1521/FREE`
-
-You can then import it in your Azimutt project or explore it with the e-commerce demo after starting your local gateway (`npx azimutt@latest gateway`)
-
-## Catalog
-
-Import it in a [PostgreSQL database](../../libs/connector-postgres/README.md#local-setup) with the [source_04_catalog_postgres.sql](./source_04_catalog_postgres.sql).
-You will have it at this url: `postgresql://postgres:postgres@localhost:5433/postgres?schema=catalog`
-
-You can then import it in your Azimutt project or explore it with the e-commerce demo after starting your local gateway (`npx azimutt@latest gateway`)
-
-## Shopping
-
-Import it in a [PostgreSQL database](../../libs/connector-postgres/README.md#local-setup) with the [source_05_shopping_postgres.sql](./source_05_shopping_postgres.sql).
-You will have it at this url: `postgresql://postgres:postgres@localhost:5433/postgres?schema=shopping`
-
-You can then import it in your Azimutt project or explore it with the e-commerce demo after starting your local gateway (`npx azimutt@latest gateway`)
-
-## Billing
-
-Import it in a [SQL Server database](../../libs/connector-sqlserver/README.md#local-setup) with the [source_06_billing_sqlserver.sql](./source_06_billing_sqlserver.sql).
-You will have it at this url: `sqlserver://sa:azimutt_42@localhost:1433/Billing`
-
-You can then import it in your Azimutt project or explore it with the e-commerce demo after starting your local gateway (`npx azimutt@latest gateway`)
-
-## Shipping
-
-Import it in a [MongoDB database](../../libs/connector-mongodb/README.md#local-setup) with the [source_07_shipping_mongo.sql](./source_07_shipping_mongo.sql).
-You will have it at this url: `mongodb://localhost:27017/shipping`
-
-You can then import it in your Azimutt project or explore it with the e-commerce demo after starting your local gateway (`npx azimutt@latest gateway`)
-
-## CRM
-
-Import it in a [MySQL database](../../libs/connector-mysql/README.md#local-setup) with the [source_08_crm_mysql.sql](./source_08_crm_mysql.sql).
-You will have it at this url: `mysql://root:mysql@localhost:3306/crm`
-
-You can then import it in your Azimutt project or explore it with the e-commerce demo after starting your local gateway (`npx azimutt@latest gateway`)
-
-## Analytics
-
-Import it in a [MongoDB database](../../libs/connector-mongodb/README.md#local-setup) with the [source_09_analytics_mongo.sql](./source_09_analytics_mongo.sql).
-You will have it at this url: `mongodb://localhost:27017/analytics`
-
-You can then import it in your Azimutt project or explore it with the e-commerce demo after starting your local gateway (`npx azimutt@latest gateway`)
+Once your database(s) are set up, you can launch the local gateway (`npx azimutt@latest gateway`) and navigate the project data or set up your own.

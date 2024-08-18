@@ -805,6 +805,9 @@ analytics.Events
   details json nullable | any additional info for the event
   entities json nullable | {[kind: string]: {id: string, name: string}[]}
   createdAt timestamp
+fk analytics.Events.entities:user:id -> identity.Users.id
+fk analytics.Events.entities:cart:id -> shopping.carts.id
+fk analytics.Events.entities:invoice:id -> billing.Invoices.InvoiceId
 
 analytics.Entities
   kind string unique=pk
@@ -813,3 +816,6 @@ analytics.Entities
   properties json
   createdAt timestamp
   updatedAt timestamp
+fk analytics.Entities.id -> identity.Users.id # when kind=user
+fk analytics.Entities.id -> shopping.carts.id # when kind=cart
+fk analytics.Entities.id -> billing.Invoices.InvoiceId # when kind=invoice
