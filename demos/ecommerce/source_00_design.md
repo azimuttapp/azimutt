@@ -628,7 +628,7 @@ billing.Payments
 # Shipping
 
 shipping.Carriers
-  id bigint unique
+  id bigint unique=pk
   registration varchar
   cargoWidth float
   cargoLength float
@@ -642,7 +642,7 @@ shipping.Carriers
   deletedBy bigint nullable fk identity.Users.id
 
 shipping.Shipments
-  id bigint unique
+  id bigint unique=pk
   carrierId bigint nullable fk shipping.Carriers.id
   createdAt timestamp
   collectedAt timestamp nullable
@@ -799,17 +799,17 @@ crm.LoyaltyCards
 # Analytics
 
 analytics.Events
-  id uuid pk | UUIDv7 to be time ordered
+  id uuid unique=pk | UUIDv7 to be time ordered
   name string index | in form of `$context__$object__$action`
   source event_source(website, app, admin, job) | the name of the system which emitted this event
-  details json | any additional info for the event
-  entities json | {[kind: string]: {id: string, name: string}[]}
-  created_at timestamp
+  details json nullable | any additional info for the event
+  entities json nullable | {[kind: string]: {id: string, name: string}[]}
+  createdAt timestamp
 
 analytics.Entities
-  id string pk
-  kind string
+  kind string unique=pk
+  id string unique=pk
   name string
   properties json
-  created_at timestamp
-  updated_at timestamp
+  createdAt timestamp
+  updatedAt timestamp

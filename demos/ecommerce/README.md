@@ -69,3 +69,8 @@ You will have it at this url: `mysql://root:mysql@localhost:3306/crm`
 You can then import it in your Azimutt project or explore it with the e-commerce demo after starting your local gateway (`npx azimutt@latest gateway`)
 
 ## Analytics
+
+Import it in a [MongoDB database](../../libs/connector-mongodb/README.md#local-setup) with the [source_09_analytics_mongo.sql](./source_09_analytics_mongo.sql).
+You will have it at this url: `mongodb://localhost:27017/analytics`
+
+You can then import it in your Azimutt project or explore it with the e-commerce demo after starting your local gateway (`npx azimutt@latest gateway`)
