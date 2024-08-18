@@ -65,6 +65,16 @@ identity.UserDevices | created on user login to know which users are using which
   linked_at timestamp | on login
   unlinked_at timestamp nullable | on logout
 
+identity.TrustedDevices | users can add a device to their trusted ones, so they will have longer session and less security validations
+  user_id bigint pk fk identity.Users.id
+  device_id bigint fk identity.Devices.id
+  name varchar nullable
+  kind device_kind(desktop, tablet, phone) nullable
+  usage device_usage(perso, pro) nullable
+  used_last timestamp
+  created_at timestamp
+  deleted_at timestamp nullable index
+
 identity.AuthLogs
   id bigint pk
   user_id bigint nullable fk identity.Users.id
@@ -75,16 +85,6 @@ identity.AuthLogs
   user_agent varchar
   device_id bigint fk identity.Devices.id
   created_at timestamp
-
-identity.TrustedDevices | users can add a device to their trusted ones, so they will have longer session and less security validations
-  user_id bigint pk fk identity.Users.id
-  device_id bigint fk identity.Devices.id
-  name varchar nullable
-  kind device_kind(desktop, tablet, phone) nullable
-  usage device_usage(perso, pro) nullable
-  used_last timestamp
-  created_at timestamp
-  deleted_at timestamp nullable index
 
 # Inventory
 

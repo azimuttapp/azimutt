@@ -1,7 +1,7 @@
 import {describe, expect, test} from "@jest/globals";
 import {ConnectorSchemaOpts, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/models";
 import {connect} from "./connect";
-import {getSchema} from "./sqlserver";
+import {getComments, getSchema} from "./sqlserver";
 import {application, logger} from "./constants.test";
 
 describe('sqlserver', () => {
@@ -13,5 +13,10 @@ describe('sqlserver', () => {
         const schema = await connect(application, url, getSchema(opts), opts)
         console.log('schema', schema)
         expect(schema.entities?.length).toEqual(13)
+    })
+    test.skip('getComments', async () => {
+        const comments = await connect(application, url, getComments(opts), opts)
+        console.log(`${comments.length} comments`, comments)
+        expect(comments.length).toEqual(4)
     })
 })

@@ -18,6 +18,7 @@ CREATE TABLE [referential].[Countries]
 );
 CREATE INDEX [IDX_Countries_Code] ON [referential].[Countries] ([Code]);
 CREATE INDEX [IDX_Countries_Name] ON [referential].[Countries] ([Name]);
+EXEC sp_addextendedproperty 'MS_Description', 'needs to be referenced for legal reasons', 'SCHEMA', 'referential', 'TABLE', 'Countries';
 
 CREATE TABLE [referential].[States]
 (
@@ -32,6 +33,7 @@ CREATE TABLE [referential].[States]
 CREATE INDEX [IDX_States_CountryId] ON [referential].[States] ([CountryId]);
 CREATE INDEX [IDX_States_Code] ON [referential].[States] ([Code]);
 CREATE INDEX [IDX_States_Name] ON [referential].[States] ([Name]);
+EXEC sp_addextendedproperty 'MS_Description', 'used for auto-competes', 'SCHEMA', 'referential', 'TABLE', 'States';
 
 CREATE TABLE [referential].[Cities]
 (
@@ -44,6 +46,7 @@ CREATE TABLE [referential].[Cities]
 );
 CREATE INDEX [IDX_Cities_StateId] ON [referential].[Cities] ([StateId]);
 CREATE INDEX [IDX_Cities_Name] ON [referential].[Cities] ([Name]);
+EXEC sp_addextendedproperty 'MS_Description', 'used for auto-competes', 'SCHEMA', 'referential', 'TABLE', 'Cities';
 
 
 -- insert some data

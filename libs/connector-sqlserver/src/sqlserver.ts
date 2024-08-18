@@ -124,8 +124,7 @@ const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Ra
              , c.COLUMN_DEFAULT        AS column_default
         FROM information_schema.TABLES t
                  JOIN information_schema.COLUMNS c ON c.TABLE_CATALOG = t.TABLE_CATALOG AND c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME
-        WHERE ${scopeWhere({catalog: 'c.TABLE_CATALOG', schema: 'c.TABLE_SCHEMA', entity: 'c.TABLE_NAME'}, opts)}
-        ORDER BY table_catalog, table_schema, table_name, column_index;`, [], 'getColumns'
+        WHERE ${scopeWhere({catalog: 't.TABLE_CATALOG', schema: 't.TABLE_SCHEMA', entity: 't.TABLE_NAME'}, opts)};`, [], 'getColumns'
     ).catch(handleError(`Failed to get columns`, [], opts))
 }
 
@@ -187,8 +186,7 @@ const getIndexColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promi
              , ic.key_ordinal                      as column_index
         FROM sys.indexes i
                  JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
-        WHERE ${scopeWhere({schema: 'OBJECT_SCHEMA_NAME(i.object_id)', entity: 'OBJECT_NAME(i.object_id)'}, opts)}
-        ORDER BY table_schema, table_name, constraint_name;`, [], 'getIndexColumns'
+        WHERE ${scopeWhere({schema: 'OBJECT_SCHEMA_NAME(i.object_id)', entity: 'OBJECT_NAME(i.object_id)'}, opts)};`, [], 'getIndexColumns'
     ).catch(handleError(`Failed to get index columns (pks, uniques & indexes)`, [], opts))
 }
 
@@ -240,8 +238,7 @@ const getChecks = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<Raw
                  LEFT JOIN sys.objects t ON con.parent_object_id = t.object_id
                  LEFT JOIN sys.all_columns c ON con.parent_column_id = c.column_id AND con.parent_object_id = c.object_id
         WHERE con.is_disabled = 'false'
-          AND ${scopeWhere({schema: 'SCHEMA_NAME(t.schema_id)', entity: 't.name'}, opts)}
-        ORDER BY table_schema, table_name, constraint_name;`, [], 'getChecks'
+          AND ${scopeWhere({schema: 'SCHEMA_NAME(t.schema_id)', entity: 't.name'}, opts)};`, [], 'getChecks'
     ).catch(handleError(`Failed to get checks`, [], opts))
 }
 
@@ -269,10 +266,10 @@ type RawComment = {
     comment: string
 }
 
-const getComments = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawComment[]> => {
+export const getComments = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawComment[]> => {
     // https://learn.microsoft.com/sql/relational-databases/system-catalog-views/extended-properties-catalog-views-sys-extended-properties
     // https://learn.microsoft.com/sql/relational-databases/system-catalog-views/sys-objects-transact-sql
-    // https://learn.microsoft.com/sql/relational-databases/system-compatibility-views/sys-sysusers-transact-sql
+    // https://learn.microsoft.com/sql/relational-databases/system-catalog-views/schemas-catalog-views-sys-schemas?view=sql-server-ver16
     // https://learn.microsoft.com/sql/relational-databases/system-catalog-views/sys-columns-transact-sql
     return conn.query<RawComment>(`
         SELECT s.name  AS table_schema
@@ -281,14 +278,13 @@ const getComments = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<R
              , p.value AS comment
         FROM sys.extended_properties p
                  JOIN sys.objects t ON t.object_id = p.major_id
-                 JOIN sys.sysusers s ON s.uid = t.schema_id
+                 JOIN sys.schemas s ON s.schema_id = t.schema_id
                  LEFT JOIN sys.columns c ON c.object_id = p.major_id AND c.column_id = p.minor_id
         WHERE p.class = 1
           AND p.name = 'MS_Description'
           AND p.value IS NOT NULL
           AND t.type IN ('S', 'IT', 'U', 'V')
-          AND ${scopeWhere({schema: 's.name', entity: 't.name'}, opts)}
-        ORDER BY table_schema, table_name, column_name;`, [], 'getComments'
+          AND ${scopeWhere({schema: 's.name', entity: 't.name'}, opts)};`, [], 'getComments'
     ).catch(handleError(`Failed to get comments`, [], opts))
 }
 
@@ -321,8 +317,7 @@ const getForeignKeyColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): 
                  JOIN sys.tables tab2 ON tab2.object_id = fkc.referenced_object_id
                  JOIN sys.schemas sch2 ON tab2.schema_id = sch2.schema_id
                  JOIN sys.columns col2 ON col2.column_id = referenced_column_id AND col2.object_id = tab2.object_id
-        WHERE ${scopeWhere({schema: 'sch1.name', entity: 'tab1.name'}, opts)}
-        ORDER BY src_schema, src_table, src_column;`, [], 'getForeignKeyColumns'
+        WHERE ${scopeWhere({schema: 'sch1.name', entity: 'tab1.name'}, opts)};`, [], 'getForeignKeyColumns'
     ).catch(handleError(`Failed to get foreign keys`, [], opts))
 }
 
