@@ -25,7 +25,7 @@ export const mysql: Connector = {
         const urlOptions = url.options || {}
         const options: ConnectorSchemaOpts = {
             ...opts,
-            schema: opts.schema || urlOptions['schema'],
+            schema: opts.schema || urlOptions['schema'] || url.db,
             entity: opts.entity || urlOptions['table']
         }
         return connect(application, url, getSchema(options), options).then(zodParseAsync(Database))

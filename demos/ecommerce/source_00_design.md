@@ -628,7 +628,7 @@ billing.Payments
 # Shipping
 
 shipping.Carriers
-  id bigint
+  id bigint unique
   registration varchar
   cargoWidth float
   cargoLength float
@@ -642,7 +642,7 @@ shipping.Carriers
   deletedBy bigint nullable fk identity.Users.id
 
 shipping.Shipments
-  id bigint
+  id bigint unique
   carrierId bigint nullable fk shipping.Carriers.id
   createdAt timestamp
   collectedAt timestamp nullable
@@ -655,8 +655,8 @@ shipping.Shipments
   deliveredBy bigint nullable fk identity.Users.id
 
 shipping.ShipmentItems
-  shipmentId bigint fk shipping.Shipments.id
-  physicalProductId bigint fk C##INVENTORY.PHYSICAL_PRODUCTS.ID
+  shipmentId bigint unique=pk fk shipping.Shipments.id
+  physicalProductId bigint unique=pk fk C##INVENTORY.PHYSICAL_PRODUCTS.ID
   invoiceId bigint fk billing.InvoiceLines.InvoiceId
   invoiceLine int fk billing.InvoiceLines.Index
   deliveredAt timestamp nullable
@@ -701,7 +701,7 @@ crm.SocialAccounts
   id bigint pk
   network social_network(twitter, linkedin, facebook, instagram, tiktok, snapchat)
   username varchar
-  owner_kind social_account_owner_kind(crm.People, crm.Organizations) nullable
+  owner_kind social_account_owner_kind(People, Organizations) nullable
   owner_id bigint nullable
   created_at timestamp
   created_by bigint nullable fk identity.Users.id
