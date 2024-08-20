@@ -207,10 +207,10 @@ C##INVENTORY.PRODUCTS
   BRAND BIGINT nullable fk C##INVENTORY.BRANDS.ID
   CATEGORY VARCHAR nullable | ex: "Phones"
   SUBCATEGORY VARCHAR nullable | ex: "Smartphones"
-  WIDTH FLOAT | typical width of the product, see PRODUCTS for the real one
-  LENGTH FLOAT | typical length of the product, see PRODUCTS for the real one
-  HEIGHT FLOAT | typical height of the product, see PRODUCTS for the real one
-  WEIGHT FLOAT | typical weight of the product, see PRODUCTS for the real one
+  WIDTH FLOAT | typical width of the product, see PRODUCT_VERSIONS for the real one
+  LENGTH FLOAT | typical length of the product, see PRODUCT_VERSIONS for the real one
+  HEIGHT FLOAT | typical height of the product, see PRODUCT_VERSIONS for the real one
+  WEIGHT FLOAT | typical weight of the product, see PRODUCT_VERSIONS for the real one
   REMARKS TEXT nullable | ex: fragile
   CREATED_AT TIMESTAMP
   UPDATED_AT TIMESTAMP

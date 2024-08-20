@@ -12,13 +12,13 @@ db.createCollection('Events', {
             bsonType: "object",
             required: ["id", "name", "source", "createdAt"],
             properties: {
-                id: { bsonType: "binData", description: "UUIDv7" },
-                name: { bsonType: "string", description: "Name of the event in form of `$context__$object__$action`" },
-                source: { bsonType: "string", enum: ["website", "app", "admin", "job"], description: "The name of the system which emitted this event" },
-                details: { bsonType: "object", description: "Additional info for the event in JSON format" },
+                id: { bsonType: "binData", description: "UUIDv7 to be time ordered" },
+                name: { bsonType: "string", description: "in form of `$context__$object__$action`" },
+                source: { bsonType: "string", enum: ["website", "app", "admin", "job"], description: "the name of the system which emitted this event" },
+                details: { bsonType: "object", description: "any additional info for the event" },
                 entities: {
                     bsonType: "object",
-                    description: "Entities related to the event in JSON format",
+                    description: "{[kind: string]: {id: string, name: string}[]}",
                     additionalProperties: {
                         bsonType: "array",
                         items: {
@@ -31,7 +31,7 @@ db.createCollection('Events', {
                         }
                     }
                 },
-                createdAt: { bsonType: "date", description: "Timestamp when the event was created" }
+                createdAt: { bsonType: "date" }
             }
         }
     }
@@ -43,12 +43,12 @@ db.createCollection('Entities', {
             bsonType: "object",
             required: ["kind", "id", "name", "properties", "createdAt", "updatedAt"],
             properties: {
-                kind: { bsonType: "string", description: "Type of the entity" },
-                id: { bsonType: "string", description: "Unique identifier for the entity, for its kind" },
-                name: { bsonType: "string", description: "Name of the entity" },
-                properties: { bsonType: "object", description: "Additional properties for the entity in JSON format" },
-                createdAt: { bsonType: "date", description: "Timestamp when the entity was created" },
-                updatedAt: { bsonType: "date", description: "Timestamp when the entity was last updated" }
+                kind: { bsonType: "string" },
+                id: { bsonType: "string" },
+                name: { bsonType: "string" },
+                properties: { bsonType: "object" },
+                createdAt: { bsonType: "date" },
+                updatedAt: { bsonType: "date" }
             }
         }
     }

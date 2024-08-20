@@ -8,8 +8,7 @@ USE Referential;
 CREATE SCHEMA [referential];
 
 
-CREATE TABLE [referential].[Countries]
-(
+CREATE TABLE [referential].[Countries] (
     [CountryId] [bigint] IDENTITY (1,1) PRIMARY KEY,
     [Code]      [nvarchar](5)   NOT NULL,
     [Name]      [nvarchar](255) NOT NULL,
@@ -20,8 +19,7 @@ CREATE INDEX [IDX_Countries_Code] ON [referential].[Countries] ([Code]);
 CREATE INDEX [IDX_Countries_Name] ON [referential].[Countries] ([Name]);
 EXEC sp_addextendedproperty 'MS_Description', 'needs to be referenced for legal reasons', 'SCHEMA', 'referential', 'TABLE', 'Countries';
 
-CREATE TABLE [referential].[States]
-(
+CREATE TABLE [referential].[States] (
     [StateId]   [bigint] IDENTITY (1,1) PRIMARY KEY,
     [CountryId] [bigint]        NOT NULL,
     [Code]      [nvarchar](5)   NOT NULL,
@@ -35,8 +33,7 @@ CREATE INDEX [IDX_States_Code] ON [referential].[States] ([Code]);
 CREATE INDEX [IDX_States_Name] ON [referential].[States] ([Name]);
 EXEC sp_addextendedproperty 'MS_Description', 'used for auto-competes', 'SCHEMA', 'referential', 'TABLE', 'States';
 
-CREATE TABLE [referential].[Cities]
-(
+CREATE TABLE [referential].[Cities] (
     [CityId]    [bigint] IDENTITY (1,1) PRIMARY KEY,
     [StateId]   [bigint]        NOT NULL,
     [Name]      [nvarchar](255) NOT NULL,

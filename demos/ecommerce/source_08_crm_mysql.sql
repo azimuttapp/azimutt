@@ -5,8 +5,7 @@ DROP SCHEMA IF EXISTS crm;
 CREATE SCHEMA crm;
 USE crm;
 
-CREATE TABLE People
-(
+CREATE TABLE People (
     id         BIGINT PRIMARY KEY AUTO_INCREMENT,
     name       VARCHAR(255) NOT NULL,
     email      VARCHAR(255),
@@ -20,8 +19,7 @@ CREATE TABLE People
     INDEX idx_people_deleted_at (deleted_at)
 );
 
-CREATE TABLE Organizations
-(
+CREATE TABLE Organizations (
     id         BIGINT PRIMARY KEY AUTO_INCREMENT,
     name       VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -33,8 +31,7 @@ CREATE TABLE Organizations
     INDEX idx_organizations_deleted_at (deleted_at)
 );
 
-CREATE TABLE OrganizationMembers
-(
+CREATE TABLE OrganizationMembers (
     person_id       BIGINT REFERENCES People (id),
     organization_id BIGINT REFERENCES Organizations (id),
     role            VARCHAR(255) NOT NULL,
@@ -48,8 +45,7 @@ CREATE TABLE OrganizationMembers
     INDEX idx_organization_members_deleted_at (deleted_at)
 );
 
-CREATE TABLE SocialAccounts
-(
+CREATE TABLE SocialAccounts (
     id         BIGINT PRIMARY KEY AUTO_INCREMENT,
     network    ENUM ('twitter', 'linkedin', 'facebook', 'instagram', 'tiktok', 'snapchat') NOT NULL,
     username   VARCHAR(255)                                                                NOT NULL,
@@ -64,17 +60,16 @@ CREATE TABLE SocialAccounts
     INDEX idx_social_accounts_deleted_at (deleted_at)
 );
 
-CREATE TABLE Campaigns
-(
+CREATE TABLE Campaigns (
     id         BIGINT PRIMARY KEY AUTO_INCREMENT,
     name       VARCHAR(255)                                                                  NOT NULL,
     status     ENUM ('draft', 'live', 'paused')                                              NOT NULL,
     starts     TIMESTAMP,
     ends       TIMESTAMP,
     kind       ENUM ('email', 'sms', 'push', 'twitter', 'linkedin', 'instagram', 'facebook') NOT NULL,
-    audience   TEXT,
+    audience   TEXT COMMENT 'DSL for selecting the audience, from crm.People for email & sms or from crm.SocialAccounts for others',
     subject    VARCHAR(255),
-    message    TEXT,
+    message    TEXT COMMENT 'HTML with templating using recipient info',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by BIGINT,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -84,21 +79,19 @@ CREATE TABLE Campaigns
     INDEX idx_campaigns_deleted_at (deleted_at)
 );
 
-CREATE TABLE CampaignMessages
-(
+CREATE TABLE CampaignMessages (
     id          BIGINT PRIMARY KEY AUTO_INCREMENT,
     campaign_id BIGINT REFERENCES Campaigns (id),
     contact_id  BIGINT REFERENCES People (id),
     social_id   BIGINT REFERENCES SocialAccounts (id),
-    sent_to     VARCHAR(255) NOT NULL,
+    sent_to     VARCHAR(255) NOT NULL COMMENT 'can be email, phone number, social account... depending on campaign kind',
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     sent_at     TIMESTAMP,
     opened_at   TIMESTAMP,
     clicked_at  TIMESTAMP
 );
 
-CREATE TABLE Issues
-(
+CREATE TABLE Issues (
     id         BIGINT PRIMARY KEY AUTO_INCREMENT,
     subject    VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -108,8 +101,7 @@ CREATE TABLE Issues
     INDEX idx_issues_closed_at (closed_at)
 );
 
-CREATE TABLE IssueMessages
-(
+CREATE TABLE IssueMessages (
     id         BIGINT PRIMARY KEY AUTO_INCREMENT,
     issue_id   BIGINT REFERENCES Issues (id),
     content    TEXT NOT NULL,
@@ -119,8 +111,7 @@ CREATE TABLE IssueMessages
     updated_by BIGINT
 );
 
-CREATE TABLE IssueMessageReactions
-(
+CREATE TABLE IssueMessageReactions (
     id         BIGINT PRIMARY KEY AUTO_INCREMENT,
     message_id BIGINT REFERENCES IssueMessages (id),
     kind       ENUM ('like', 'dislike') NOT NULL,
@@ -131,8 +122,7 @@ CREATE TABLE IssueMessageReactions
     INDEX idx_issue_message_reactions_deleted_at (deleted_at)
 );
 
-CREATE TABLE Discounts
-(
+CREATE TABLE Discounts (
     id          BIGINT PRIMARY KEY AUTO_INCREMENT,
     name        VARCHAR(255)                  NOT NULL,
     description VARCHAR(255),
@@ -149,11 +139,10 @@ CREATE TABLE Discounts
     INDEX idx_discounts_deleted_at (deleted_at)
 );
 
-CREATE TABLE Coupons
-(
+CREATE TABLE Coupons (
     id          BIGINT PRIMARY KEY AUTO_INCREMENT,
     discount_id BIGINT REFERENCES Discounts (id),
-    code        VARCHAR(255) UNIQUE NOT NULL,
+    code        VARCHAR(255) UNIQUE NOT NULL COMMENT 'public code to use the discount',
     expire_at   TIMESTAMP,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by  BIGINT,

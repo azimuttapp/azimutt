@@ -6,8 +6,7 @@ CREATE DATABASE identity;
 USE identity;
 
 
-CREATE TABLE identity.Users
-(
+CREATE TABLE identity.Users (
     id         BIGINT PRIMARY KEY AUTO_INCREMENT,
     first_name VARCHAR(255) NOT NULL,
     last_name  VARCHAR(255) NOT NULL,
@@ -21,8 +20,7 @@ CREATE TABLE identity.Users
     INDEX idx_deleted_at (deleted_at)
 );
 
-CREATE TABLE identity.Credentials
-(
+CREATE TABLE identity.Credentials (
     user_id       BIGINT                                                         NOT NULL REFERENCES identity.Users (id),
     provider      ENUM ('password', 'google', 'linkedin', 'facebook', 'twitter') NOT NULL COMMENT 'the used provider',
     provider_id   VARCHAR(255)                                                   NOT NULL COMMENT 'the user id from the provider, in case of password, stores the hashed password with the salt',
@@ -34,8 +32,7 @@ CREATE TABLE identity.Credentials
     PRIMARY KEY (user_id, provider, provider_id)
 );
 
-CREATE TABLE identity.PasswordResets
-(
+CREATE TABLE identity.PasswordResets (
     id           BIGINT PRIMARY KEY AUTO_INCREMENT,
     email        VARCHAR(255) NOT NULL,
     token        VARCHAR(255) NOT NULL COMMENT 'the key sent by email to allow to change the password without being logged',
@@ -46,16 +43,14 @@ CREATE TABLE identity.PasswordResets
     INDEX idx_token (token)
 );
 
-CREATE TABLE identity.Devices
-(
+CREATE TABLE identity.Devices (
     id         BIGINT PRIMARY KEY AUTO_INCREMENT,
     sid        CHAR(36)     NOT NULL UNIQUE COMMENT 'a unique id stored in the browser to track it when not logged',
     user_agent VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'first time this device is seen'
 ) COMMENT 'a device is a browser tagged by a random id in its session';
 
-CREATE TABLE identity.UserDevices
-(
+CREATE TABLE identity.UserDevices (
     user_id     BIGINT NOT NULL REFERENCES identity.Users (id),
     device_id   BIGINT NOT NULL REFERENCES identity.Devices (id),
     linked_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'on login',
@@ -63,8 +58,7 @@ CREATE TABLE identity.UserDevices
     PRIMARY KEY (user_id, device_id)
 ) COMMENT 'created on user login to know which users are using which devices';
 
-CREATE TABLE identity.TrustedDevices
-(
+CREATE TABLE identity.TrustedDevices (
     user_id    BIGINT NOT NULL REFERENCES identity.Users (id),
     device_id  BIGINT NOT NULL REFERENCES identity.Devices (id),
     name       VARCHAR(255),
@@ -77,8 +71,7 @@ CREATE TABLE identity.TrustedDevices
     INDEX idx_deleted_at (deleted_at)
 ) COMMENT 'users can add a device to their trusted ones, so they will have longer session and less security validations';
 
-CREATE TABLE identity.AuthLogs
-(
+CREATE TABLE identity.AuthLogs (
     id          BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id     BIGINT REFERENCES identity.Users (id),
     email       VARCHAR(255),

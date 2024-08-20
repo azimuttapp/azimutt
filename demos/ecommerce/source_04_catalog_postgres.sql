@@ -4,8 +4,7 @@ CREATE SCHEMA catalog;
 
 
 -- create the database
-CREATE TABLE catalog.categories
-(
+CREATE TABLE catalog.categories (
     id               BIGINT PRIMARY KEY,
     parent           BIGINT REFERENCES catalog.categories (id),
     depth            INT,
@@ -17,11 +16,10 @@ CREATE TABLE catalog.categories
     updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_at       TIMESTAMP
 );
-
 CREATE INDEX idx_categories_deleted_at ON catalog.categories (deleted_at);
+COMMENT ON COLUMN catalog.categories.depth IS 'easily accessible information of number of parents';
 
-CREATE TABLE catalog.products
-(
+CREATE TABLE catalog.products (
     id               BIGINT PRIMARY KEY,
     slug             VARCHAR(255) UNIQUE,
     name             VARCHAR(255),
@@ -35,11 +33,13 @@ CREATE TABLE catalog.products
     updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_at       TIMESTAMP
 );
-
 CREATE INDEX idx_products_deleted_at ON catalog.products (deleted_at);
+COMMENT ON COLUMN catalog.products.description IS 'TODO: handle i18n';
+COMMENT ON COLUMN catalog.products.versions IS 'ex: `[{key: "color", label: "Couleur", values: [{name: "Bleu Azur", value: "#95bbe2"}]}, {key: "storage", name: "Taille", values: [{name: "128GB", value: 128}]}]`';
+COMMENT ON COLUMN catalog.products.attributes IS 'ex: `[{key: "Marque", value: "Google"}]`';
+COMMENT ON COLUMN catalog.products.stock IS 'informative stock, may not be accurate';
 
-CREATE TABLE catalog.product_versions
-(
+CREATE TABLE catalog.product_versions (
     id         BIGINT PRIMARY KEY,
     product_id BIGINT REFERENCES catalog.products (id),
     name       VARCHAR(255),
@@ -50,11 +50,11 @@ CREATE TABLE catalog.product_versions
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP
 );
-
 CREATE INDEX idx_product_versions_deleted_at ON catalog.product_versions (deleted_at);
+COMMENT ON COLUMN catalog.product_versions.specs IS 'ex: `{color: "Bleu Azur", storage: 128}`';
+COMMENT ON COLUMN catalog.product_versions.stock IS 'informative stock, may not be accurate';
 
-CREATE TABLE catalog.product_cross_sell_options
-(
+CREATE TABLE catalog.product_cross_sell_options (
     product_id         BIGINT REFERENCES catalog.products (id),
     product_version_id BIGINT REFERENCES catalog.product_versions (id),
     label              VARCHAR(255),
@@ -63,11 +63,9 @@ CREATE TABLE catalog.product_cross_sell_options
     deleted_at         TIMESTAMP,
     PRIMARY KEY (product_id, product_version_id)
 );
-
 CREATE INDEX idx_product_cross_sell_options_deleted_at ON catalog.product_cross_sell_options (deleted_at);
 
-CREATE TABLE catalog.product_alternatives
-(
+CREATE TABLE catalog.product_alternatives (
     product_id             BIGINT REFERENCES catalog.products (id),
     alternative_product_id BIGINT REFERENCES catalog.products (id),
     created_at             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -75,11 +73,9 @@ CREATE TABLE catalog.product_alternatives
     deleted_at             TIMESTAMP,
     PRIMARY KEY (product_id, alternative_product_id)
 );
-
 CREATE INDEX idx_product_alternatives_deleted_at ON catalog.product_alternatives (deleted_at);
 
-CREATE TABLE catalog.assets
-(
+CREATE TABLE catalog.assets (
     id         BIGINT PRIMARY KEY,
     kind       VARCHAR(50),
     format     VARCHAR(10),
@@ -93,11 +89,9 @@ CREATE TABLE catalog.assets
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP
 );
-
 CREATE INDEX idx_assets_deleted_at ON catalog.assets (deleted_at);
 
-CREATE TABLE catalog.category_assets
-(
+CREATE TABLE catalog.category_assets (
     category_id BIGINT REFERENCES catalog.categories (id),
     asset_id    BIGINT REFERENCES catalog.assets (id),
     placement   VARCHAR(50),
@@ -106,11 +100,9 @@ CREATE TABLE catalog.category_assets
     deleted_at  TIMESTAMP,
     PRIMARY KEY (category_id, asset_id)
 );
-
 CREATE INDEX idx_category_assets_deleted_at ON catalog.category_assets (deleted_at);
 
-CREATE TABLE catalog.product_assets
-(
+CREATE TABLE catalog.product_assets (
     product_id BIGINT REFERENCES catalog.products (id),
     asset_id   BIGINT REFERENCES catalog.assets (id),
     placement  VARCHAR(50),
@@ -119,11 +111,9 @@ CREATE TABLE catalog.product_assets
     deleted_at TIMESTAMP,
     PRIMARY KEY (product_id, asset_id)
 );
-
 CREATE INDEX idx_product_assets_deleted_at ON catalog.product_assets (deleted_at);
 
-CREATE TABLE catalog.product_version_assets
-(
+CREATE TABLE catalog.product_version_assets (
     product_version_id BIGINT REFERENCES catalog.product_versions (id),
     asset_id           BIGINT REFERENCES catalog.assets (id),
     placement          VARCHAR(50),
@@ -132,11 +122,9 @@ CREATE TABLE catalog.product_version_assets
     deleted_at         TIMESTAMP,
     PRIMARY KEY (product_version_id, asset_id)
 );
-
 CREATE INDEX idx_product_version_assets_deleted_at ON catalog.product_version_assets (deleted_at);
 
-CREATE TABLE catalog.product_reviews
-(
+CREATE TABLE catalog.product_reviews (
     id                  BIGINT PRIMARY KEY,
     product_id          BIGINT REFERENCES catalog.products (id),
     product_version_id  BIGINT REFERENCES catalog.product_versions (id),
@@ -151,11 +139,9 @@ CREATE TABLE catalog.product_reviews
     deleted_at          TIMESTAMP,
     deleted_by          BIGINT
 );
-
 CREATE INDEX idx_product_reviews_deleted_at ON catalog.product_reviews (deleted_at);
 
-CREATE TABLE catalog.product_review_assets
-(
+CREATE TABLE catalog.product_review_assets (
     product_review_id BIGINT REFERENCES catalog.product_reviews (id),
     asset_id          BIGINT REFERENCES catalog.assets (id),
     created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -164,11 +150,9 @@ CREATE TABLE catalog.product_review_assets
     deleted_by        BIGINT,
     PRIMARY KEY (product_review_id, asset_id)
 );
-
 CREATE INDEX idx_product_review_assets_deleted_at ON catalog.product_review_assets (deleted_at);
 
-CREATE TABLE catalog.product_review_feedbacks
-(
+CREATE TABLE catalog.product_review_feedbacks (
     product_review_id BIGINT REFERENCES catalog.product_reviews (id),
     kind              VARCHAR(50),
     created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -177,7 +161,6 @@ CREATE TABLE catalog.product_review_feedbacks
     deleted_by        BIGINT,
     PRIMARY KEY (product_review_id, created_by, kind)
 );
-
 CREATE INDEX idx_product_review_feedbacks_deleted_at ON catalog.product_review_feedbacks (deleted_at);
 
 

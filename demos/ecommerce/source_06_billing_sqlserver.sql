@@ -8,8 +8,7 @@ USE Billing;
 CREATE SCHEMA [billing];
 
 
-CREATE TABLE [billing].[CustomerAddresses]
-(
+CREATE TABLE [billing].[CustomerAddresses] (
     [CustomerAddressesId] [bigint] IDENTITY (1,1) PRIMARY KEY,
     [Name]                [nvarchar](255) NOT NULL,
     [Street]              [nvarchar](255) NOT NULL,
@@ -25,8 +24,7 @@ CREATE TABLE [billing].[CustomerAddresses]
 );
 CREATE INDEX [IdxCustomerAddressesDeletedAt] ON [billing].[CustomerAddresses] ([DeletedAt]);
 
-CREATE TABLE [billing].[Customers]
-(
+CREATE TABLE [billing].[Customers] (
     [CustomerId]     [bigint] IDENTITY (1,1) PRIMARY KEY,
     [Name]           [nvarchar](255) NOT NULL,
     [BillingAddress] [bigint] REFERENCES [billing].[CustomerAddresses] ([CustomerAddressesId]),
@@ -41,8 +39,7 @@ CREATE TABLE [billing].[Customers]
 );
 CREATE INDEX [IdxCustomersDeletedAt] ON [billing].[Customers] ([DeletedAt]);
 
-CREATE TABLE [billing].[CustomerMembers]
-(
+CREATE TABLE [billing].[CustomerMembers] (
     [CustomerId]      [bigint] REFERENCES [billing].[Customers] ([CustomerId]),
     [UserId]          [bigint],
     [CanEdit]         [bit],
@@ -59,8 +56,7 @@ CREATE TABLE [billing].[CustomerMembers]
 );
 CREATE INDEX [IdxCustomerMembersDeletedAt] ON [billing].[CustomerMembers] ([DeletedAt]);
 
-CREATE TABLE [billing].[CustomerPaymentMethods]
-(
+CREATE TABLE [billing].[CustomerPaymentMethods] (
     [CustomerPaymentMethodId] [bigint] IDENTITY (1,1) PRIMARY KEY,
     [CustomerId]              [bigint] REFERENCES [billing].[Customers] ([CustomerId]),
     [Name]                    [nvarchar](255) NOT NULL,
@@ -75,8 +71,7 @@ CREATE TABLE [billing].[CustomerPaymentMethods]
 );
 CREATE INDEX [IdxCustomerPaymentMethodsDeletedAt] ON [billing].[CustomerPaymentMethods] ([DeletedAt]);
 
-CREATE TABLE [billing].[Invoices]
-(
+CREATE TABLE [billing].[Invoices] (
     [InvoiceId]      [bigint] IDENTITY (1,1) PRIMARY KEY,
     [Reference]      [nvarchar](50) UNIQUE NOT NULL,
     [CartId]         [bigint],
@@ -89,8 +84,7 @@ CREATE TABLE [billing].[Invoices]
     [CreatedBy]      [bigint]
 );
 
-CREATE TABLE [billing].[InvoiceLines]
-(
+CREATE TABLE [billing].[InvoiceLines] (
     [InvoiceId]        [bigint] REFERENCES [billing].[Invoices] ([InvoiceId]),
     [Index]            [int],
     [ProductVersionId] [bigint],
@@ -100,8 +94,7 @@ CREATE TABLE [billing].[InvoiceLines]
     PRIMARY KEY ([InvoiceId], [Index])
 );
 
-CREATE TABLE [billing].[Payments]
-(
+CREATE TABLE [billing].[Payments] (
     [PaymentId]       [bigint] IDENTITY (1,1) PRIMARY KEY,
     [InvoiceId]       [bigint] REFERENCES [billing].[Invoices] ([InvoiceId]),
     [PaymentMethodId] [bigint] REFERENCES [billing].[CustomerPaymentMethods] ([CustomerPaymentMethodId]),
