@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "azimutt.fullname" . }}
+  labels:
+    {{- include "azimutt.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.azimutt.service.type }}
+  ports:
+    - port: {{ .Values.azimutt.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "azimutt.selectorLabels" . | nindent 4 }}

@@ -78,6 +78,10 @@ Finally you will need to create the `azimutt` bucket on Stackhero:
 - use values of `S3_ROOT_ACCESS_KEY` and `S3_ROOT_SECRET_KEY` to log in
 - create a bucket named `azimutt`
 
+## Deploy on Kubernetes
+
+Please read this [guide](./charts/azimutt/README.md)
+
 ## Local development
 
 Azimutt is built with [Elixir](https://elixir-lang.org)/[Phoenix](https://www.phoenixframework.org) (backend & admin) and [Elm](https://elm-lang.org)/[elm-spa](https://www.elm-spa.dev) (editor).

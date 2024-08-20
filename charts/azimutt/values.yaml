@@ -1,0 +1,173 @@
+azimutt:
+  image:
+    # -- The Docker image repository to use.
+    repository: ghcr.io/azimuttapp/azimutt
+    # -- The tag of the Docker image. Defaults to Chart.appVersion if not specified.
+    tag: "main"
+    # -- The policy for pulling the Docker image. "Always" means always pull the latest version.
+    pullPolicy: Always
+
+  # -- Specify an array of image pull secrets to be used for private Docker registries.
+  imagePullSecrets: []
+
+  # -- Number of replicas for the application.
+  replicaCount: 1
+
+  configuration:
+    server:
+      # -- The host on which the server will run.
+      host: "localhost"
+    
+    auth:
+      password:
+        # -- Enables password-based authentication.
+        enabled: true
+      github:
+        # -- Enables GitHub authentication.
+        enabled: false
+        # -- Name of the Kubernetes secret containing GitHub SSO credentials.
+        sso_secret_name: "azimutt-auth-secret"
+
+    license:
+      # -- Enables license management.
+      enabled: false
+
+    database:
+      # -- The database connection URL.
+      url: "postgresql://postgres:CHANGE_ME_PG_PASS@azimutt-postgresql:5432/postgres"
+      # -- Whether to use IPv6 for the database connection.
+      use_ipv6: "false"
+      # -- The size of the database connection pool.
+      pool_size: 10
+      # -- Whether to enable SSL for the database connection.
+      enable_ssl: "false"
+
+    # -- S3 configuration for storage. If not enabled, local storage is used.
+    # -- More info at https://github.com/azimuttapp/azimutt/blob/main/INSTALL.md
+    storage:
+      s3:
+        # -- Enables S3 storage.
+        enabled: false
+        # -- The S3 bucket name.
+        bucket: ""
+        # -- The S3 host endpoint.
+        host: ""
+        # -- Whether to use a key for S3 access.
+        use_key: false
+        # -- The folder in the S3 bucket.
+        folder: ""
+        # -- The S3 region.
+        region: "eu-west1"
+
+    email:
+      # -- Enables email notifications.
+      enabled: false
+      # -- Email address used as the sender.
+      sender_email: "contact@azimutt.app"
+      # -- Contact email address.
+      contact_email: "contact@azimutt.app"
+      # -- Support email address.
+      support_email: "contact@azimutt.app"
+      # -- Enterprise support email address.
+      enterprise_support_email: "contact@azimutt.app"
+      mailgun:
+        # -- Enables Mailgun for sending emails.
+        enabled: false
+        # -- The Mailgun domain to use.
+        domain: ""
+        # -- The name of the Kubernetes secret containing the Mailgun API key.
+        api_key_secret_name: "azimutt-email-secret"
+        # -- The base URL for the Mailgun API.
+        base_url: ""
+      gmail:
+        # -- Enables Gmail for sending emails.
+        enabled: false
+        # -- The name of the Kubernetes secret containing the Gmail access token.
+        access_token_secret_name: "azimutt-email-secret"
+      smtp:
+        # -- Enables SMTP for sending emails.
+        enabled: false
+        # -- The SMTP relay host.
+        relay: ""
+        # -- The name of the Kubernetes secret containing SMTP credentials.
+        credentials_secret_name: "azimutt-email-secret"
+        # -- The SMTP relay port.
+        port: ""
+
+    # -- Add extra environment variables for the container.
+    extraEnv: []
+
+  # -- Override the name of the deployment.
+  nameOverride: ""
+  # -- Override the full name of the deployment.
+  fullnameOverride: ""
+
+  serviceAccount:
+    # -- Specifies whether a service account should be created.
+    create: true
+    # -- Annotations to add to the service account.
+    annotations: {}
+    # -- The name of the service account to use.
+    # -- If not set and create is true, a name is generated using the fullname template.
+    name: ""
+
+  # -- Annotations to add to the pods.
+  podAnnotations: {}
+
+  # -- Security context for the pod.
+  podSecurityContext: {}
+    # fsGroup: 2000
+
+  # -- Security context for the container.
+  securityContext: {}
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 1000
+
+  service:
+    # -- The type of Kubernetes service to create.
+    type: ClusterIP
+    # -- The port the service will expose.
+    port: 4000
+
+  resources:
+    # -- Resource limits for the container.
+    limits:
+      cpu: "1"
+      memory: "512Mi"
+    # -- Resource requests for the container.
+    requests:
+      cpu: "0.2"
+      memory: "156Mi"
+
+  autoscaling:
+    # -- Enables horizontal pod autoscaling.
+    enabled: false
+    # -- Minimum number of replicas for autoscaling.
+    minReplicas: 1
+    # -- Maximum number of replicas for autoscaling.
+    maxReplicas: 5
+    # -- Target CPU utilization percentage for autoscaling.
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+  # -- Node selector for pod assignment.
+  nodeSelector: {}
+
+  # -- Tolerations for pod scheduling.
+  tolerations: []
+
+  # -- Affinity rules for pod scheduling.
+  affinity: {}
+
+postgresql:
+  # -- Enables the deployment of a PostgreSQL database.
+  enabled: true
+  global:
+    postgresql:
+      auth:
+        # -- The password for the PostgreSQL superuser.
+        password: "CHANGE_ME_PG_PASS"

@@ -1,0 +1,28 @@
+{{- if .Values.azimutt.autoscaling.enabled }}
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "azimutt.fullname" . }}
+  labels:
+    {{- include "azimutt.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "azimutt.fullname" . }}
+  minReplicas: {{ .Values.azimutt.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.azimutt.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.azimutt.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: {{ .Values.azimutt.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.azimutt.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: {{ .Values.azimutt.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
