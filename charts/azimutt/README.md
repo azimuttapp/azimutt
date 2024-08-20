@@ -23,13 +23,14 @@ Before using the Helm chart, please run the following commands:
 kubectl create ns azimutt
 
 # Create a key that will be used for encryption
-# Learn more here: https://github.com/azimuttapp/azimutt/blob/main/INSTALL.md#environment-variables
+# Learn more here
 kubectl create secret generic azimutt-secret-key-base --from-literal=key=$(openssl rand -base64 48) -n azimutt
 ```
 
 Once done, you will need to clone the repository and run the following command from the `charts/azimutt` folder:
 
 ```bash
+helm dep update
 helm install azimutt . --namespace azimutt
 ```
 
@@ -41,6 +42,14 @@ You should see two new pods appear:
 If you want to use an external PostgreSQL database, you simply need to modify the `values.yaml` by disabling `postgresql.enabled` and updating the connection string.
 
 **Note**: This Helm chart is not versioned and does not include an ingress configuration. You will need to add one yourself.
+
+### Extend configuration
+
+If you need mailgun configuration dont forget to create a specific kubernetes secret :
+
+```bash
+kubectl create secret generic azimutt-email-secret --from-literal=mailgun-api-key=$MAILGUN_API_KEY -n azimutt
+```
 
 ## Roadmap
 

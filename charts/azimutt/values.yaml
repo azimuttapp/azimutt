@@ -34,7 +34,7 @@ azimutt:
 
     database:
       # -- The database connection URL.
-      url: "postgresql://postgres:MY_SUPER_PASSWORD@azimutt-postgresql:5432/postgres"
+      url: "postgresql://postgres:CHANGE_ME_PG_PASS@azimutt-postgresql:5432/postgres"
       # -- Whether to use IPv6 for the database connection.
       use_ipv6: "false"
       # -- The size of the database connection pool.
@@ -170,4 +170,4 @@ postgresql:
     postgresql:
       auth:
         # -- The password for the PostgreSQL superuser.
-        password: "MY_SUPER_PASSWORD"
+        password: "CHANGE_ME_PG_PASS"

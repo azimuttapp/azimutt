@@ -42,6 +42,14 @@ If you want to use an external PostgreSQL database, you simply need to modify th
 
 **Note**: This Helm chart is not versioned and does not include an ingress configuration. You will need to add one yourself.
 
+### Extend configuration
+
+If you need mailgun configuration dont forget to create a specific kubernetes secret :
+
+```bash
+kubectl create secret generic azimutt-email-secret --from-literal=mailgun-api-key=$MAILGUN_API_KEY -n azimutt
+```
+
 ## Roadmap
 
 - Version and publish the Helm chart
