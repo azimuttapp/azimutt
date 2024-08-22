@@ -16,6 +16,7 @@
 ARG ELIXIR_VERSION=1.14.3
 ARG OTP_VERSION=25.2.2
 ARG DEBIAN_VERSION=bullseye-20230109-slim
+ARG ELM_VERSION=0.19.1
 
 ARG S3_KEY_ID
 ARG S3_HOST
@@ -33,25 +34,32 @@ ARG PLATFORM=amd64
 ARG BUILDER_IMAGE="hexpm/elixir-${PLATFORM}:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
-FROM --platform=linux/${PLATFORM} ${BUILDER_IMAGE} as builder_amd64
-ONBUILD RUN wget -O - 'https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz' | gunzip -c >/usr/local/bin/elm
+# Create the two potential builder images which will grab the elm binary
+# Whichever is chosen will be copied into the final builder image by
+# inheriting the platform specific builder
+FROM --platform=linux/${PLATFORM} ${BUILDER_IMAGE} AS builder_amd64
+ONBUILD RUN wget -O - 'https://github.com/elm/compiler/releases/download/${ELM_VERSION}/binary-for-linux-64-bit.gz' | gunzip -c >/usr/local/bin/elm
 
-FROM --platform=linux/${PLATFORM} ${BUILDER_IMAGE} as builder_arm64
+FROM --platform=linux/${PLATFORM} ${BUILDER_IMAGE} AS builder_arm64
 COPY --from=kovarcodes/elmonarm:latest --chown=nobody:root /usr/local/bin/elm /usr/local/bin/elm
 
-FROM --platform=linux/${PLATFORM} builder_${PLATFORM} as builder
+FROM --platform=linux/${PLATFORM} builder_${PLATFORM} AS builder
+
+ARG NVM_VERSION=0.39.7
+ARG NPM_VERSION=9.8.1
+ARG PNPM_VERSION=9.4.0
+ARG NODE_VERSION=21.6.0
 
 # install build dependencies
 RUN apt-get update -y && apt-get install -y build-essential git nodejs npm curl wget libnuma-dev && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+RUN curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/v${NVM_VERSION}/install.sh" | bash
 ENV NVM_DIR="/root/.nvm"
-ENV NODE_VERSION=21.6.0
 RUN . "$NVM_DIR/nvm.sh" && nvm install ${NODE_VERSION}
 ENV PATH="$NVM_DIR/versions/node/v${NODE_VERSION}/bin/:${PATH}"
 
-RUN npm install -g npm@9.8.1
+RUN npm install -g npm@${NPM_VERSION}
 
 # make the elm compiler executable
 RUN chmod +x /usr/local/bin/elm
@@ -92,8 +100,7 @@ COPY pnpm-lock.yaml .
 COPY libs/ libs
 COPY frontend/ frontend
 
-RUN npm install -g pnpm@9.1.4
-RUN if [ ${PLATFORM} == "arm64" ]; then sed -iz 's/"elm-coverage": "^0.4.1",//g' frontend/package.json; fi
+RUN npm install -g pnpm@${PNPM_VERSION}
 RUN npm run build:docker
 
 # Compile the release
@@ -112,7 +119,7 @@ RUN mix release
 
 # start a new build stage so that the final image will only contain
 # the compiled release and other runtime necessities
-FROM --platform=${PLATFORM} ${RUNNER_IMAGE}
+FROM --platform=linux/${PLATFORM} ${RUNNER_IMAGE}
 
 # WORKDIR /app
 
