@@ -47,7 +47,7 @@ FROM --platform=linux/${PLATFORM} builder_${PLATFORM} AS builder
 
 ARG NVM_VERSION=0.39.7
 ARG NPM_VERSION=9.8.1
-ARG PNPM_VERSION=9.4.0
+ARG PNPM_VERSION=9.5.0
 ARG NODE_VERSION=21.6.0
 
 # install build dependencies
