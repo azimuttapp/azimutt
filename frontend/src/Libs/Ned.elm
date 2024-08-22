@@ -27,10 +27,10 @@ get key ned =
         ned.tail |> Dict.get key
 
 
-find : (comparable -> v -> Bool) -> Ned comparable v -> Maybe ( comparable, v )
+find : (comparable -> v -> Bool) -> Ned comparable v -> Maybe v
 find predicate ned =
     if ned.head |> (\( k, v ) -> predicate k v) then
-        Just ned.head
+        ned.head |> Tuple.second |> Just
 
     else
         ned.tail |> Dict.find predicate

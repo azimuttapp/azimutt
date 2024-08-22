@@ -3,15 +3,15 @@ module Components.Slices.ProjectSaveDialogBody exposing (DocState, Model, Msg(..
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon
 import Components.Atoms.Link as Link
-import Components.Molecules.Alert as Alert
 import Components.Molecules.FormLabel as FormLabel
 import Components.Molecules.InputText as InputText
 import Components.Molecules.Select as Select
+import Components.Slices.PlanDialog as PlanDialog
 import ElmBook
 import ElmBook.Actions
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, a, div, h3, input, label, p, span, text)
-import Html.Attributes exposing (checked, class, classList, disabled, href, id, name, rel, target, type_, value)
+import Html exposing (Html, div, h3, input, label, p, span, text)
+import Html.Attributes exposing (checked, class, classList, disabled, href, id, name, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Bool as Bool
 import Libs.Html exposing (bText)
@@ -22,7 +22,6 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String exposing (pluralize)
 import Libs.Tailwind as Tw
 import Libs.Time as Time
-import Models.Feature as Feature
 import Models.Organization as Organization exposing (Organization)
 import Models.Plan as Plan exposing (Plan)
 import Models.Project.ProjectName exposing (ProjectName)
@@ -30,7 +29,6 @@ import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
 import Models.Project.ProjectVisibility as ProjectVisibility
 import Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
-import Services.Backend as Backend
 
 
 type alias Model =
@@ -103,24 +101,10 @@ selectSave wrap modalClose save titleId organizations projects projectName model
                 |> Maybe.andThen
                     (\o ->
                         if o.plan.projects == Just 0 then
-                            div [ class "mt-3" ]
-                                [ Alert.withDescription { color = Tw.yellow, icon = Icon.Exclamation, title = "Can't save project" }
-                                    [ text ("You plan (" ++ o.plan.name ++ ") can't save projects. ")
-                                    , a [ href (Backend.organizationBillingUrl (Just o.id) Feature.projects.name), target "_blank", rel "noopener", class "link" ] [ text "Please upgrade" ]
-                                    , text "."
-                                    ]
-                                ]
-                                |> Just
+                            div [ class "mt-3" ] [ PlanDialog.projectsNoSaveAlert o ] |> Just
 
                         else if o |> Organization.canSaveProject orgProjects |> not then
-                            div [ class "mt-3" ]
-                                [ Alert.withDescription { color = Tw.yellow, icon = Icon.Exclamation, title = "Can't save project" }
-                                    [ text ("You already saved " ++ (orgProjects |> pluralize "project") ++ ", you need ")
-                                    , a [ href (Backend.organizationBillingUrl (Just o.id) Feature.projects.name), target "_blank", rel "noopener", class "link" ] [ text "to upgrade" ]
-                                    , text " for more."
-                                    ]
-                                ]
-                                |> Just
+                            div [ class "mt-3" ] [ PlanDialog.projectsTooManyAlert o orgProjects ] |> Just
 
                         else
                             Nothing

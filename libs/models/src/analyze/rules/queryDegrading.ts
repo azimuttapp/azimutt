@@ -21,6 +21,7 @@ import {
 
 const ruleId: RuleId = 'query-degrading'
 const ruleName: RuleName = 'degrading query'
+const ruleDescription: string = 'queries with mean execution time growing over daily/monthly rate thresholds and executions and duration over the thresholds also'
 const CustomRuleConf = RuleConf.extend({
     ignores: QueryId.array().optional(),
     minExec: z.number(),
@@ -33,6 +34,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const queryDegradingRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.high, minExec: 10, minDuration: 100, maxDegradation: 1, maxDegradationMonthly: 0.2, maxDegradationDaily: 0.1},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {

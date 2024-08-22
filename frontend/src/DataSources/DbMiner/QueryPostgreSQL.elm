@@ -10,7 +10,7 @@ import Models.DbValue as DbValue exposing (DbValue(..))
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType as ColumnType exposing (ColumnType, ParsedColumnType)
-import Models.Project.RowPrimaryKey exposing (RowPrimaryKey, altColName)
+import Models.Project.RowPrimaryKey exposing (RowPrimaryKey, labelColName)
 import Models.Project.RowValue exposing (RowValue)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.SqlFragment exposing (SqlFragment)
@@ -39,38 +39,29 @@ findRow table primaryKey =
     "SELECT *\nFROM " ++ formatTable table ++ "\nWHERE " ++ formatMatcher primaryKey ++ "\nLIMIT 1;\n"
 
 
-incomingRows : RowQuery -> Dict TableId IncomingRowsQuery -> Int -> SqlQuery
-incomingRows query relations limit =
+incomingRows : DbValue -> Dict TableId IncomingRowsQuery -> Int -> SqlQuery
+incomingRows value relations limit =
     "SELECT\n"
         ++ (relations
                 |> Dict.toList
                 |> List.map
                     (\( table, q ) ->
                         "  array(SELECT json_build_object("
-                            ++ (if q.altCols |> List.isEmpty then
+                            ++ (if q.labelCols |> List.isEmpty then
                                     ""
 
                                 else
-                                    "'" ++ altColName ++ "', CONCAT(" ++ (q.altCols |> List.map (\( col, kind ) -> formatColumn "s" col (ColumnType.parse kind)) |> List.intersperse "' '" |> String.join ", ") ++ "), "
+                                    "'" ++ labelColName ++ "', CONCAT(" ++ (q.labelCols |> List.map (\( col, kind ) -> formatColumn "s" col (ColumnType.parse kind)) |> List.intersperse "' '" |> String.join ", ") ++ "), "
                                )
                             ++ (q.primaryKey |> Nel.toList |> List.map (\( col, kind ) -> "'" ++ (col |> ColumnPath.toString) ++ "', " ++ formatColumn "s" col (ColumnType.parse kind)) |> String.join ", ")
                             ++ ")"
-                            ++ " FROM "
-                            ++ formatTable table
-                            ++ " s WHERE "
-                            ++ (q.foreignKeys |> List.map (\( fk, kind ) -> formatColumn "s" fk (ColumnType.parse kind) ++ " = " ++ formatColumn "m" query.primaryKey.head.column (DbValue.toType query.primaryKey.head.value)) |> String.join " OR ")
-                            ++ " LIMIT "
-                            ++ String.fromInt limit
-                            ++ ") as \""
-                            ++ TableId.toString table
-                            ++ "\""
+                            ++ (" FROM " ++ formatTable table ++ " s")
+                            ++ (" WHERE " ++ (q.foreignKeys |> List.map (\( fk, kind ) -> formatColumn "s" fk (ColumnType.parse kind) ++ "=" ++ formatValue value) |> String.join " OR "))
+                            ++ (" LIMIT " ++ String.fromInt limit)
+                            ++ (") AS \"" ++ TableId.toString table ++ "\"")
                     )
                 |> String.join ",\n"
            )
-        ++ "\nFROM "
-        ++ formatTable query.table
-        ++ " m\nWHERE "
-        ++ formatMatcher query.primaryKey
         ++ "\nLIMIT 1;\n"
 
 

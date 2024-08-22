@@ -1,5 +1,6 @@
 module PagesComponents.Organization_.Project_.Views.Modals.ProjectSettings exposing (viewProjectSettings)
 
+import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon as Icon exposing (Icon)
 import Components.Atoms.Icons as Icons
 import Components.Atoms.Input as Input
@@ -8,7 +9,7 @@ import Components.Molecules.Tooltip as Tooltip
 import Dict
 import Html exposing (Html, button, div, fieldset, input, label, legend, p, span, text)
 import Html.Attributes exposing (checked, class, for, id, name, placeholder, type_, value)
-import Html.Events exposing (onBlur, onClick, onInput)
+import Html.Events exposing (onClick, onInput)
 import Libs.Bool as B
 import Libs.Html exposing (bText, iText)
 import Libs.Html.Attributes exposing (ariaDescribedby, css)
@@ -17,12 +18,13 @@ import Libs.Maybe as Maybe
 import Libs.Models.DateTime as DateTime
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
-import Libs.Tailwind exposing (TwClass, focus, sm)
+import Libs.Tailwind as Tw exposing (TwClass, focus, sm)
 import Models.ColumnOrder as ColumnOrder
 import Models.OpenAIModel as OpenAIModel
+import Models.Project.DatabaseUrlStorage as DatabaseUrlStorage
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.SchemaName exposing (SchemaName)
-import Models.Project.Source exposing (Source)
+import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.Table exposing (Table)
@@ -30,7 +32,6 @@ import Models.RelationStyle as RelationStyle
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), confirm)
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
-import Ports
 import Time
 
 
@@ -44,7 +45,7 @@ viewProjectSettings zone opened erd model =
         , onClickOverlay = ModalClose (ProjectSettingsMsg PSClose)
         }
         (div [ class "pb-32" ]
-            [ viewSourcesSection (model.id ++ "-sources") zone erd model
+            [ viewSourcesSection (model.id ++ "-sources") zone erd
             , viewSchemasSection (model.id ++ "-schemas") erd
             , viewDisplaySettingsSection (model.id ++ "-display") erd
             , viewLllSettingsSection (model.id ++ "-llm") erd
@@ -52,49 +53,41 @@ viewProjectSettings zone opened erd model =
         )
 
 
-viewSourcesSection : HtmlId -> Time.Zone -> Erd -> ProjectSettingsDialog -> Html Msg
-viewSourcesSection htmlId zone erd model =
+viewSourcesSection : HtmlId -> Time.Zone -> Erd -> Html Msg
+viewSourcesSection htmlId zone erd =
     fieldset []
         [ legend [ class "font-medium text-gray-900" ] [ text "Project sources" ]
         , p [ class "text-sm text-gray-500" ] [ text "Active sources are merged to create your current schema." ]
         , div [ class "mt-1 border border-gray-300 rounded-md shadow-sm divide-y divide-gray-300" ]
-            ((erd.sources |> List.map (\s -> viewSource htmlId erd.project.id zone (model.sourceNameEdit |> Maybe.filter (\( id, _ ) -> id == s.id) |> Maybe.map Tuple.second) s)) ++ [ viewAddSource (htmlId ++ "-new") erd.project.id ])
+            ((erd.sources |> List.map (\s -> viewSource htmlId erd.project.id zone s)) ++ [ viewAddSource (htmlId ++ "-new") erd.project.id ])
         ]
 
 
-viewSource : HtmlId -> ProjectId -> Time.Zone -> Maybe String -> Source -> Html Msg
-viewSource htmlId _ zone updating source =
+viewSource : HtmlId -> ProjectId -> Time.Zone -> Source -> Html Msg
+viewSource htmlId _ zone source =
     let
         ( views, tables ) =
             source.tables |> Dict.values |> List.partition .view
 
-        inputName : HtmlId
-        inputName =
-            htmlId ++ "-name-input"
-
-        view : Icon -> String -> Time.Posix -> String -> Html Msg
+        view : Icon -> String -> Time.Posix -> Html Msg
         view =
-            \icon updatedAtText updatedAt labelTitle ->
+            \icon updatedAtText updatedAt ->
                 div [ class "px-4 py-2" ]
                     [ div [ class "flex justify-between" ]
-                        [ viewCheckbox "mt-3"
+                        [ viewCheckbox ""
                             (htmlId ++ "-" ++ SourceId.toString source.id)
-                            (updating
-                                |> Maybe.map (\inputValue -> [ input [ type_ "text", name inputName, id inputName, value inputValue, onInput (PSSourceNameUpdate source.id >> ProjectSettingsMsg), onBlur (PSSourceNameUpdateDone source.id inputValue |> ProjectSettingsMsg), class "block w-full rounded-md border-0 py-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" ] [] ])
-                                |> Maybe.withDefault [ span [ class "truncate max-w-xs" ] [ Icon.solid icon "inline", text source.name ] |> Tooltip.b labelTitle ]
-                            )
+                            [ span [ class "truncate max-w-xs" ] [ Icon.solid icon "inline", text source.name ]
+                            , source |> Source.databaseUrlStorage |> Maybe.mapOrElse (\s -> Badge.basic Tw.blue [ class "ml-1" ] [ text (DatabaseUrlStorage.toString s) ] |> Tooltip.b ("Url stored in " ++ DatabaseUrlStorage.toString s)) (text "")
+                            ]
                             source.enabled
                             (source |> PSSourceToggle |> ProjectSettingsMsg)
                         , div []
-                            [ button [ type_ "button", onClick (source |> Just |> SourceUpdateDialog.Open |> PSSourceUpdate |> ProjectSettingsMsg), css [ focus [ "outline-none" ], B.cond (source.kind /= AmlEditor && source.fromSample == Nothing) "" "hidden" ] ]
-                                [ Icon.solid Icon.Refresh "inline" ]
-                                |> Tooltip.bl "Refresh this source"
-                            , button [ type_ "button", onClick (Batch [ ModalClose (ProjectSettingsMsg PSClose), AmlSidebarMsg (AOpen (Just source.id)) ]), css [ focus [ "outline-none" ], B.cond (source.kind == AmlEditor) "" "hidden" ] ]
+                            [ button [ type_ "button", onClick (Batch [ ModalClose (ProjectSettingsMsg PSClose), AmlSidebarMsg (AOpen (Just source.id)) ]), css [ focus [ "outline-none" ], B.cond (source.kind == AmlEditor) "" "hidden" ] ]
                                 [ Icon.solid Icon.Terminal "inline" ]
-                                |> Tooltip.bl "Update this source"
-                            , button [ type_ "button", onClick (Batch [ source.name |> PSSourceNameUpdate source.id |> ProjectSettingsMsg, Ports.focus inputName |> Send ]), css [ focus [ "outline-none" ] ] ]
+                                |> Tooltip.bl "Edit AML"
+                            , button [ type_ "button", onClick (source |> Just |> SourceUpdateDialog.Open |> PSSourceUpdate |> ProjectSettingsMsg), css [ focus [ "outline-none" ], B.cond (source.fromSample == Nothing) "" "hidden" ] ]
                                 [ Icon.solid Icon.Pencil "inline" ]
-                                |> Tooltip.bl "Update source name"
+                                |> Tooltip.bl "Update source"
                             , button [ type_ "button", onClick (source.id |> PSSourceDelete |> ProjectSettingsMsg |> confirm ("Delete " ++ source.name ++ " source?") (text "Are you really sure?")), css [ focus [ "outline-none" ] ] ]
                                 [ Icon.solid Icon.Trash "inline" ]
                                 |> Tooltip.bl "Delete this source"
@@ -107,29 +100,29 @@ viewSource htmlId _ zone updating source =
                     ]
     in
     case source.kind of
-        DatabaseConnection url ->
-            view Icons.sources.database "Last fetched on " source.updatedAt ("Database " ++ url)
+        DatabaseConnection _ ->
+            view Icons.sources.database "Last fetched on " source.updatedAt
 
-        SqlLocalFile path _ modified ->
-            view Icons.sources.sql "File last modified on " modified (path ++ " file")
+        SqlLocalFile file ->
+            view Icons.sources.sql "File last modified on " file.modified
 
-        SqlRemoteFile url _ ->
-            view Icons.sources.remote "Last fetched on " source.updatedAt ("File from " ++ url)
+        SqlRemoteFile _ ->
+            view Icons.sources.remote "Last fetched on " source.updatedAt
 
-        PrismaLocalFile path _ modified ->
-            view Icons.sources.prisma "File last modified on " modified (path ++ " file")
+        PrismaLocalFile file ->
+            view Icons.sources.prisma "File last modified on " file.modified
 
-        PrismaRemoteFile url _ ->
-            view Icons.sources.remote "Last fetched on " source.updatedAt ("File from " ++ url)
+        PrismaRemoteFile _ ->
+            view Icons.sources.remote "Last fetched on " source.updatedAt
 
-        JsonLocalFile path _ modified ->
-            view Icons.sources.json "File last modified on " modified (path ++ " file")
+        JsonLocalFile file ->
+            view Icons.sources.json "File last modified on " file.modified
 
-        JsonRemoteFile url _ ->
-            view Icons.sources.remote "Last fetched on " source.updatedAt ("File from " ++ url)
+        JsonRemoteFile _ ->
+            view Icons.sources.remote "Last fetched on " source.updatedAt
 
         AmlEditor ->
-            view Icons.sources.aml "Last edited on " source.updatedAt "Created by you"
+            view Icons.sources.aml "Last edited on " source.updatedAt
 
 
 viewAddSource : HtmlId -> ProjectId -> Html Msg

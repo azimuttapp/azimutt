@@ -5,8 +5,7 @@ defmodule AzimuttWeb.OrganizationInvitationController do
   action_fallback(AzimuttWeb.FallbackController)
 
   def show(conn, %{"invitation_id" => invitation_id}) do
-    now = DateTime.utc_now()
-    current_user = conn.assigns.current_user
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
     # FIXME: remove `get_organization_plan`
     {:ok, invitation} = Organizations.get_organization_invitation(invitation_id)
     organization = invitation.organization
@@ -21,16 +20,12 @@ defmodule AzimuttWeb.OrganizationInvitationController do
   end
 
   def accept(conn, %{"invitation_id" => invitation_id}) do
-    now = DateTime.utc_now()
-    current_user = conn.assigns.current_user
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
 
     case Organizations.accept_organization_invitation(invitation_id, current_user, now) do
       {:ok, invitation} ->
         conn
-        |> put_flash(
-          :info,
-          "Welcome! You are now part of #{invitation.organization.name} organization 👍️"
-        )
+        |> put_flash(:info, "Welcome! You are now part of #{invitation.organization.name} organization 👍️")
         |> redirect(to: Routes.organization_path(conn, :show, invitation.organization_id))
 
       {:error, err} ->
@@ -44,17 +39,13 @@ defmodule AzimuttWeb.OrganizationInvitationController do
           end
 
         conn
-        |> put_flash(
-          :error,
-          "Oups, this invitation failed on acceptation#{expl} 😵"
-        )
+        |> put_flash(:error, "Oups, this invitation failed on acceptation#{expl} 😵")
         |> redirect(to: Routes.user_dashboard_path(conn, :index))
     end
   end
 
   def refuse(conn, %{"invitation_id" => invitation_id}) do
-    now = DateTime.utc_now()
-    current_user = conn.assigns.current_user
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
 
     case Organizations.refuse_organization_invitation(invitation_id, current_user, now) do
       {:ok, invitation} ->

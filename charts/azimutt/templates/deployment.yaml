@@ -1,0 +1,195 @@
+{{- $emailProvider := include "azimutt.emailProvider" . -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "azimutt.fullname" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  {{- if .Values.azimutt.annotations }}
+  annotations:
+  {{- toYaml .Values.azimutt.annotations | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "azimutt.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.azimutt.autoscaling.enabled }}
+  replicas: {{ .Values.azimutt.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "azimutt.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.azimutt.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "azimutt.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.azimutt.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "azimutt.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.azimutt.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.azimutt.securityContext | nindent 12 }}
+          image: "{{ .Values.azimutt.image.repository }}:{{ .Values.azimutt.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.azimutt.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.azimutt.service.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            {{- toYaml .Values.azimutt.resources | nindent 12 }}
+          env:
+            - name: PHX_SERVER
+              value: "true"
+            - name: PHX_PROTOCOL
+              value: "ipv4"
+            - name: PHX_HOST
+              value: {{ .Values.azimutt.configuration.server.host }}
+            - name: PORT
+              value: {{ .Values.azimutt.service.port | quote }}
+            - name: SECRET_KEY_BASE
+              valueFrom:
+                secretKeyRef:
+                  name: azimutt-secret-key-base
+                  key: key
+            {{- if .Values.azimutt.configuration.license.enabled}}
+            - name: LICENCE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: azimutt-license
+                  key: key
+            {{- end }}
+            # Database configuration
+            - name: DATABASE_URL
+              value: {{ .Values.azimutt.configuration.database.url }}
+            - name: DATABASE_IPV6
+              value: {{ .Values.azimutt.configuration.database.use_ipv6 | quote }}
+            - name: DATABASE_POOL_SIZE
+              value: {{ .Values.azimutt.configuration.database.pool_size | quote }}
+            - name: DATABASE_ENABLE_SSL
+              value: {{ .Values.azimutt.configuration.database.enable_ssl | quote }}
+            # Storage 
+            - name: FILE_STORAGE_ADAPTER
+              {{- if .Values.azimutt.configuration.storage.s3.enabled }}
+              value: "s3"
+              {{- else }}
+              value: "local"
+              {{- end }}
+            {{- if .Values.azimutt.configuration.storage.s3.enabled }}
+            - name: S3_BUCKET
+              value: {{ .Values.azimutt.configuration.storage.s3.bucket }}
+            - name: S3_HOST
+              value: {{ .Values.azimutt.configuration.storage.s3.host }}
+            {{- if .Values.azimutt.configuration.storage.s3.use_key }}
+            - name: S3_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: azimutt-storage-secret
+                  key: key-id
+            - name: S3_KEY_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: azimutt-storage-secret
+                  key: key-secret
+            {{- end }}
+            - name: S3_FOLDER
+              value: {{ .Values.azimutt.configuration.storage.s3.folder }}
+            - name: S3_FOLDER
+              value: {{ .Values.azimutt.configuration.storage.s3.region }}
+            {{- end }}
+            # Auth
+            - name: AUTH_PASSWORD
+              value: {{ .Values.azimutt.configuration.auth.password.enabled | quote }}
+            - name: AUTH_GITHUB
+              value: {{ .Values.azimutt.configuration.auth.github.enabled | quote }}
+            {{- if .Values.azimutt.configuration.auth.github.enabled }}
+            - name: GITHUB_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.azimutt.configuration.auth.github.sso_secret_name }}
+                  key: client-id
+            - name: GITHUB_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.azimutt.configuration.auth.github.sso_secret_name }}
+                  key: client-secret
+            {{- end }}
+            {{- if .Values.azimutt.configuration.email.enabled}}
+            # Email
+            - name: EMAIL_ADAPTER
+              value: {{ $emailProvider | quote }}
+            - name: SENDER_EMAIL
+              value: {{ .Values.azimutt.configuration.email.sender_email }}
+            - name: CONTACT_EMAIL
+              value: {{ .Values.azimutt.configuration.email.contact_email }}
+            - name: SUPPORT_EMAIL
+              value: {{ .Values.azimutt.configuration.email.support_email }}
+            - name: ENTERPRISE_SUPPORT_EMAIL
+              value: {{ .Values.azimutt.configuration.email.enterprise_support_email }}
+            {{- if eq $emailProvider "mailgun" }}
+            # Mailgun
+            - name: MAILGUN_DOMAIN
+              value: {{ .Values.azimutt.configuration.email.mailgun.domain }}
+            - name: MAILGUN_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.azimutt.configuration.email.mailgun.api_key_secret_name }}
+                  key: mailgun-api-key
+            - name: MAILGUN_BASE_URL
+              value: {{ .Values.azimutt.configuration.email.mailgun.base_url }}
+            {{- else if eq $emailProvider "gmail" }}
+            # Gmail
+            - name: GMAIL_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.azimutt.configuration.email.gmail.access_token_secret_name }}
+                  key: gmail-access-token
+            {{- else if eq $emailProvider "smtp" }}
+            # SMTP
+            - name: SMTP_RELAY
+              value: {{ .Values.azimutt.configuration.email.smtp.relay }}
+            - name: SMTP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.azimutt.configuration.email.smtp.credentials_secret_name }}
+                  key: username
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.azimutt.configuration.email.smtp.credentials_secret_name }}
+                  key: password
+            - name: SMTP_PORT
+              value: {{ .Values.azimutt.configuration.email.smtp.port }}
+            {{- end }}
+            {{- end }}
+            # Extra env
+            {{- with .Values.azimutt.configuration.extraEnv }}
+              {{- tpl (toYaml .) $ | nindent 12 }}
+            {{- end }}
+      {{- with .Values.azimutt.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.azimutt.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.azimutt.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,5 +1,5 @@
 import {z} from "zod";
-import {AnyError, indent, joinLast, Logger, plural, stripIndent} from "@azimutt/utils";
+import {AnyError, indent, joinLast, Logger, plural, removeUndefined, stripIndent} from "@azimutt/utils";
 import {JsValue, Millis} from "../common";
 import {DatabaseUrlParsed} from "../databaseUrl"
 import {
@@ -14,6 +14,7 @@ import {
     EntityRef,
     SchemaName
 } from "../database";
+import {ParsedSqlStatement, parseSqlStatement} from "../helpers/sql";
 
 // every connector should implement this interface
 // similar to https://github.com/planetscale/database-js?
@@ -214,5 +215,56 @@ export function handleError<T>(msg: string, onError: T, {logger, ignoreErrors}: 
         } else {
             return Promise.reject(err)
         }
+    }
+}
+
+export type QueryField = { name: string, schema?: string | undefined, table?: string | undefined, column?: string | undefined }
+
+// assign column ref to query columns by parsing the sql query
+export function buildQueryAttributes(fields: QueryField[], query: string): QueryResultsAttribute[] {
+    const keys: { [key: string]: true } = {}
+    const statement: ParsedSqlStatement | undefined = parseSqlStatement(query)
+    const wildcardTable = getWildcardSelectTable(statement)
+    const allDefinedColumns = getAllDefinedColumns(statement, fields.length)
+    return fields.map((field, i) => {
+        const name = uniqueName(field.name, keys)
+        keys[name] = true
+        const ref: AttributeRef | undefined = field.table && field.column ? {schema: field.schema, entity: field.table, attribute: [field.column]} :
+            wildcardTable ? {...wildcardTable, attribute: [field.name]} :
+                allDefinedColumns ? allDefinedColumns[i] : undefined
+        return removeUndefined({name, ref})
+    })
+}
+
+function getWildcardSelectTable(statement: ParsedSqlStatement | undefined): EntityRef | undefined {
+    if (statement && statement.command === 'SELECT') {
+        if (statement.joins === undefined && statement.columns.length === 1 && statement.columns[0].name === '*') {
+            return removeUndefined({schema: statement.table.schema, entity: statement.table.name})
+        }
+    }
+    return undefined
+}
+
+function getAllDefinedColumns(statement: ParsedSqlStatement | undefined, colCount: number): (AttributeRef | undefined)[] {
+    if (statement && statement.command === 'SELECT') {
+        if (statement.columns.length === colCount && statement.columns.every(c => c.name !== '*')) {
+            const mainEntity: EntityRef = removeUndefined({schema: statement.table.schema, entity: statement.table.name})
+            const aliases: { [alias: string]: EntityRef } = (statement.joins || []).reduce((acc, j) => {
+                return j.alias ? {...acc, [j.alias]: removeUndefined({schema: j.schema, entity: j.table})} : acc
+            }, statement.table.alias ? {[statement.table.alias]: mainEntity} : {})
+            return statement.columns.map(c => {
+                return c.col ? {...c.scope ? aliases[c.scope] : mainEntity, attribute: c.col} : undefined
+            })
+        }
+    }
+    return []
+}
+
+function uniqueName(name: string, currentNames: { [key: string]: true }, cpt: number = 1): string {
+    const newName = cpt === 1 ? name : `${name}_${cpt}`
+    if (currentNames[newName]) {
+        return uniqueName(name, currentNames, cpt + 1)
+    } else {
+        return newName
     }
 }

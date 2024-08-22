@@ -17,6 +17,7 @@ import {
 
 const ruleId: RuleId = 'entity-index-too-heavy'
 const ruleName: RuleName = 'entity with too heavy indexes'
+const ruleDescription: string = 'entities with index weight over data exceeding threshold'
 const CustomRuleConf = RuleConf.extend({
     ignores: EntityId.array().optional(),
     ratio: z.number(),
@@ -25,6 +26,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const entityIndexTooHeavyRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.medium, ratio: 1},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {

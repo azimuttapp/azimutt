@@ -23,6 +23,9 @@
                       @user.profile.previously_tried
                     ] |> Enum.join(", ") %>
                 </div>
+                <%= if @user.data do %>
+                <div class="text-xs font-medium text-slate-500">Data: <%= @user.data |> format_data() %></div>
+                <% end %>
             </div>
         </div>
         <div class="my-3"><%= render AzimuttWeb.Admin.OrganizationView, "_organizations_table.html", conn: @conn, organizations: @organizations %></div>

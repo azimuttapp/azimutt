@@ -24,7 +24,7 @@ export const mongodb: Connector = {
         const urlOptions = url.options || {}
         const options: ConnectorSchemaOpts = {
             ...opts,
-            database: opts.database || urlOptions['database'],
+            database: opts.database || urlOptions['database'] || url.db,
             entity: opts.entity || urlOptions['collection']
         }
         return connect(application, url, getSchema(options), options).then(zodParseAsync(Database))

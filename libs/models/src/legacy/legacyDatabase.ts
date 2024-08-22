@@ -30,7 +30,7 @@ export type LegacySchemaName = string
 export const LegacySchemaName = z.string()
 export type LegacyTableName = string
 export const LegacyTableName = z.string()
-export type LegacyTableId = string // ex: 'public.users'
+export type LegacyTableId = string // ex: 'public.users' or '.users' if no schema
 export const LegacyTableId = z.string()
 export type LegacyColumnName = string
 export const LegacyColumnName = z.string()
@@ -197,7 +197,7 @@ export function databaseFromLegacy(db: LegacyDatabase): Database {
 export function databaseToLegacy(db: Database): LegacyDatabase {
     return removeUndefined({
         tables: db.entities?.map(tableToLegacy) || [],
-        relations: db.relations?.map(relationToLegacy) || [],
+        relations: db.relations?.flatMap(relationToLegacy) || [],
         types: db.types?.map(typeToLegacy)
     })
 }
@@ -395,9 +395,8 @@ export function relationFromLegacy(r: LegacyRelation): Relation {
     })
 }
 
-function relationToLegacy(r: Relation): LegacyRelation {
-    const attr = r.attrs[0]
-    return { name: r.name || '', src: columnRefToLegacy2(r.src, attr.src), ref: columnRefToLegacy2(r.ref, attr.ref) }
+function relationToLegacy(r: Relation): LegacyRelation[] {
+    return r.attrs.map(attr => ({ name: r.name || '', src: columnRefToLegacy2(r.src, attr.src), ref: columnRefToLegacy2(r.ref, attr.ref) }))
 }
 
 export function tableRefFromId(id: LegacyTableId): LegacyTableRef {
@@ -406,7 +405,7 @@ export function tableRefFromId(id: LegacyTableId): LegacyTableRef {
 }
 
 export function tableRefToId(ref: LegacyTableRef): LegacyTableId {
-    return ref.schema ? `${ref.schema}.${ref.table}` : ref.table
+    return `${ref.schema}.${ref.table}`
 }
 
 export function columnRefFromLegacy(c: LegacyColumnRef): AttributeRef {

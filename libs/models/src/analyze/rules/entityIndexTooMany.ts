@@ -17,6 +17,7 @@ import {
 
 const ruleId: RuleId = 'entity-index-too-many'
 const ruleName: RuleName = 'entity with too many indexes'
+const ruleDescription: string = 'entities with number of indexes exceeding the threshold'
 const CustomRuleConf = RuleConf.extend({
     ignores: EntityId.array().optional(),
     max: z.number(),
@@ -25,6 +26,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const entityIndexTooManyRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.medium, max: 20},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {

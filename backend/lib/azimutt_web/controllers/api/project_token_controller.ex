@@ -5,8 +5,7 @@ defmodule AzimuttWeb.Api.ProjectTokenController do
   action_fallback AzimuttWeb.Api.FallbackController
 
   def index(conn, %{"organization_organization_id" => _, "project_project_id" => project_id}) do
-    now = DateTime.utc_now()
-    current_user = conn.assigns.current_user
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
 
     with {:ok, tokens} <- Projects.list_project_tokens(project_id, current_user, now),
          do: conn |> render("index.json", tokens: tokens)
@@ -20,8 +19,7 @@ defmodule AzimuttWeb.Api.ProjectTokenController do
   end
 
   def delete(conn, %{"organization_organization_id" => _, "project_project_id" => _, "token_id" => token_id}) do
-    now = DateTime.utc_now()
-    current_user = conn.assigns.current_user
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
 
     with {:ok, %ProjectToken{} = _} <- Projects.revoke_project_token(token_id, current_user, now),
          do: conn |> send_resp(:no_content, "")

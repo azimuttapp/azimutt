@@ -1,4 +1,4 @@
-module Models.Project.Source exposing (Source, addRelations, aml, databaseKind, databaseUrl, decode, encode, getColumn, getTable, refreshWith, removeRelations, toInfo)
+module Models.Project.Source exposing (Source, addRelations, aml, database, databaseKind, databaseUrl, databaseUrlStorage, decode, encode, getColumnI, getTableI, removeRelations, toInfo, updateWith)
 
 import Array exposing (Array)
 import Conf
@@ -11,21 +11,22 @@ import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.List as List
-import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
+import Libs.Models.DatabaseKind exposing (DatabaseKind)
 import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Time as Time
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.CustomType as CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
+import Models.Project.DatabaseUrlStorage exposing (DatabaseUrlStorage)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.SampleKey as SampleKey exposing (SampleKey)
 import Models.Project.SourceId as SourceId exposing (SourceId)
-import Models.Project.SourceKind as SourceKind exposing (SourceKind(..))
+import Models.Project.SourceKind as SourceKind exposing (SourceKind(..), SourceKindDatabase)
 import Models.Project.SourceLine as SourceLine exposing (SourceLine)
 import Models.Project.SourceName as SourceName exposing (SourceName)
 import Models.Project.Table as Table exposing (Table)
-import Models.Project.TableId exposing (TableId)
+import Models.Project.TableId as TableId exposing (TableId)
 import Models.SourceInfo exposing (SourceInfo)
 import Services.Lenses exposing (mapContent, mapRelations, setUpdatedAt)
 import Set exposing (Set)
@@ -75,30 +76,40 @@ toInfo source =
     }
 
 
+database : Source -> Maybe SourceKindDatabase
+database source =
+    source.kind |> SourceKind.database
+
+
+databaseKind : Source -> Maybe DatabaseKind
+databaseKind source =
+    source.kind |> SourceKind.databaseKind
+
+
 databaseUrl : Source -> Maybe DatabaseUrl
 databaseUrl source =
     source.kind |> SourceKind.databaseUrl
 
 
-databaseKind : Source -> Maybe DatabaseKind
-databaseKind source =
-    source.kind |> SourceKind.databaseUrl |> Maybe.andThen DatabaseKind.fromUrl
+databaseUrlStorage : Source -> Maybe DatabaseUrlStorage
+databaseUrlStorage source =
+    source.kind |> SourceKind.databaseUrlStorage
 
 
-getTable : TableId -> Source -> Maybe Table
-getTable table source =
-    source.tables |> Dict.get table
+getTableI : TableId -> Source -> Maybe Table
+getTableI table source =
+    source.tables |> TableId.dictGetI table
 
 
-getColumn : ColumnRef -> Source -> Maybe Column
-getColumn column source =
-    source |> getTable column.table |> Maybe.andThen (Table.getColumn column.column)
+getColumnI : ColumnRef -> Source -> Maybe Column
+getColumnI column source =
+    source |> getTableI column.table |> Maybe.andThen (Table.getColumnI column.column)
 
 
-refreshWith : Source -> Source -> Source
-refreshWith new current =
+updateWith : Source -> Source -> Source
+updateWith new current =
     if (new.id == current.id) && (new.kind |> SourceKind.same current.kind) then
-        { current | kind = new.kind, content = new.content, tables = new.tables, relations = new.relations, types = new.types, updatedAt = new.updatedAt }
+        { current | name = new.name, kind = new.kind, content = new.content, tables = new.tables, relations = new.relations, types = new.types, updatedAt = new.updatedAt }
 
     else
         current

@@ -39,7 +39,6 @@ import Models.ProjectInfo exposing (ProjectInfo)
 import Models.ProjectRef exposing (ProjectRef)
 import Models.QueryResult exposing (QueryResult)
 import Models.Size as Size
-import Models.SourceInfo as SourceInfo
 import Models.UrlInfos exposing (UrlInfos)
 import PagesComponents.Organization_.Project_.Components.AmlSidebar as AmlSidebar
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
@@ -125,7 +124,11 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdMT (mapProjectT (\p -> ( p |> setName name, Extra.history ( RenameProject p.name, RenameProject name ) ))) |> setDirtyM
 
         DeleteProject project ->
-            ( model, Ports.deleteProject project ((project.organization |> Maybe.map .id) |> Backend.organizationUrl |> Just) |> Extra.cmd )
+            ( model
+            , Ports.deleteProject project ((project.organization |> Maybe.map .id) |> Backend.organizationUrl |> Just)
+                :: (model.erd |> Maybe.filter (\erd -> erd.project.id == project.id) |> Maybe.mapOrElse (.sources >> List.map (.id >> Ports.deleteSource)) [])
+                |> Extra.cmdL
+            )
 
         GoToTable id ->
             model |> mapErdMT (goToTable now id model.erdElem) |> setDirtyM
@@ -358,10 +361,10 @@ update urlLayout zone now urlInfos organizations projects msg model =
         MemoMsg message ->
             model |> handleMemo now urlInfos message
 
-        ShowTableRow source query previous hint from ->
-            (model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.find (\r -> r.source == source.id && r.table == query.table && r.primaryKey == query.primaryKey)))
+        ShowTableRow query previous hint from ->
+            (model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.find (\r -> r.source == query.source && r.table == query.table && r.primaryKey == query.primaryKey)))
                 |> Maybe.map (\r -> model |> mapErdMT (moveToTableRow now model.erdElem r) |> Extra.defaultT)
-                |> Maybe.withDefault (model |> mapErdMT (showTableRow now source query previous hint from) |> setDirtyM)
+                |> Maybe.withDefault (model |> mapErdMT (showTableRow now query previous hint from) |> setDirtyM)
 
         DeleteTableRow id ->
             model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (deleteTableRow id)) |> setDirtyM
@@ -373,7 +376,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdMTM (\e -> e |> Erd.mapCurrentLayoutTWithTime now (mapTableRowsT (mapTableRowOrSelected id message (TableRow.update (TableRowMsg id) DropdownToggle Toast (DeleteTableRow id) (UnDeleteTableRow_ 0) now e.project e.sources model.openedDropdown message)))) |> setDirtyM
 
         AmlSidebarMsg message ->
-            model |> AmlSidebar.update now message
+            model |> AmlSidebar.update now projectRef message
 
         DetailsSidebarMsg message ->
             model.erd |> Maybe.mapOrElse (\erd -> model |> mapDetailsSidebarT (DetailsSidebar.update Noop NotesMsg TagsMsg erd message)) ( model, Extra.none )
@@ -388,10 +391,10 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> handleFindPath message
 
         LlmGenerateSqlDialogMsg message ->
-            model.erd |> Maybe.mapOrElse (\erd -> model |> mapLlmGenerateSqlT (LlmGenerateSqlDialog.update ModalOpen PromptOpen (PSLlmKeyUpdate >> ProjectSettingsMsg) erd message)) ( model, Extra.none )
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapLlmGenerateSqlT (LlmGenerateSqlDialog.update ModalOpen PromptOpen (PSLlmKeyUpdate >> ProjectSettingsMsg) projectRef erd message)) ( model, Extra.none )
 
         SchemaAnalysisMsg SAOpen ->
-            ( model |> setSchemaAnalysis (Just { id = Conf.ids.schemaAnalysisDialog, opened = "" }), Extra.cmdL [ T.sendAfter 1 (ModalOpen Conf.ids.schemaAnalysisDialog), Track.dbAnalysisOpened model.erd ] )
+            ( model |> setSchemaAnalysis (Just { id = Conf.ids.schemaAnalysisDialog, opened = "" }), [ T.sendAfter 1 (ModalOpen Conf.ids.schemaAnalysisDialog), Track.dbAnalysisOpened model.erd ] ++ B.cond (Organization.canAnalyse projectRef) [] [ Track.planLimit Feature.analysis model.erd ] |> Extra.cmdL )
 
         SchemaAnalysisMsg (SASectionToggle section) ->
             ( model |> mapSchemaAnalysisM (mapOpened (\opened -> B.cond (opened == section) "" section)), Extra.none )
@@ -415,7 +418,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapEmbedSourceParsingMT (EmbedSourceParsingDialog.update EmbedSourceParsingMsg now (model.erd |> Maybe.map .project) message) |> Extra.defaultT
 
         SourceParsed source ->
-            ( model, source |> Project.create projects source.name |> Ok |> Just |> GotProject "load" |> JsMessage |> Extra.msg )
+            ( model, source |> Project.create urlInfos.organization projects source.name |> Ok |> Just |> GotProject "load" |> JsMessage |> Extra.msg )
 
         PlanDialogColors _ PlanDialog.EnableTableChangeColor ->
             ( model |> mapErdM (mapProject (mapOrganizationM (mapPlan (setColors True)))), Ports.fireworks |> Extra.cmd )
@@ -562,13 +565,13 @@ handleJsMessage now urlLayout msg model =
 
         GotLocalFile kind file content ->
             if kind == SqlSource.kind then
-                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> SqlSource.GotFile (SourceInfo.sqlLocal now sourceId file) |> SourceUpdateDialog.SqlSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
+                ( model, SourceId.generator |> Random.generate (\sourceId -> SqlSource.GotLocalFile sourceId file content |> SourceUpdateDialog.SqlSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
 
             else if kind == PrismaSource.kind then
-                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> PrismaSource.GotFile (SourceInfo.prismaLocal now sourceId file) |> SourceUpdateDialog.PrismaSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
+                ( model, SourceId.generator |> Random.generate (\sourceId -> PrismaSource.GotLocalFile sourceId file content |> SourceUpdateDialog.PrismaSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
 
             else if kind == JsonSource.kind then
-                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> JsonSource.GotFile (SourceInfo.jsonLocal now sourceId file) |> SourceUpdateDialog.JsonSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
+                ( model, SourceId.generator |> Random.generate (\sourceId -> JsonSource.GotLocalFile sourceId file content |> SourceUpdateDialog.JsonSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
 
             else
                 ( model, "Unhandled local file kind '" ++ kind ++ "'" |> Toasts.error |> Toast |> T.send )

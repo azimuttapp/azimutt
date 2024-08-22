@@ -11,7 +11,7 @@ type alias Plan =
     -- MUST stay in sync with libs/models/src/legacy/legacyProject.ts & backend/lib/azimutt/organizations/organization_plan.ex
     { id : String
     , name : String
-    , dataExploration : Bool
+    , dataExploration : Bool -- TODO: add limitation (not done because available on all plans for now)
     , colors : Bool
     , aml : Bool
     , schemaExport : Bool
@@ -19,10 +19,10 @@ type alias Plan =
     , analysis : String
     , projectExport : Bool
     , projects : Maybe Int
-    , projectDbs : Maybe Int
+    , projectDbs : Maybe Int -- TODO
     , projectLayouts : Maybe Int
     , layoutTables : Maybe Int
-    , projectDoc : Maybe Int
+    , projectDoc : Maybe Int -- TODO
     , projectShare : Bool
     , streak : Int
     }

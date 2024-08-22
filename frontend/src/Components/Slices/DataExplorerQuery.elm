@@ -22,7 +22,7 @@ import Libs.Dict as Dict
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Models.DatabaseKind as DatabaseKind
+import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind(..))
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Notes exposing (Notes)
 import Libs.Nel exposing (Nel)
@@ -32,8 +32,9 @@ import Libs.Set as Set
 import Libs.String as String
 import Libs.Tailwind exposing (TwClass, focus)
 import Libs.Time as Time
-import Models.DbSourceInfo as DbSourceInfo exposing (DbSourceInfo)
+import Models.DbSourceInfoWithUrl as DbSourceInfoWithUrl exposing (DbSourceInfoWithUrl)
 import Models.DbValue as DbValue exposing (DbValue(..))
+import Models.Project as Project
 import Models.Project.Column as Column exposing (Column)
 import Models.Project.ColumnMeta exposing (ColumnMeta)
 import Models.Project.ColumnName exposing (ColumnName)
@@ -41,18 +42,20 @@ import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathS
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.Comment exposing (Comment)
-import Models.Project.Metadata exposing (Metadata)
+import Models.Project.DatabaseUrlStorage as DatabaseUrlStorage
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.Table as Table exposing (Table)
-import Models.Project.TableId exposing (TableId)
+import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.QueryResult as QueryResult exposing (QueryResult, QueryResultColumn, QueryResultColumnTarget, QueryResultRow, QueryResultSuccess)
 import Models.SqlQuery exposing (SqlQuery, SqlQueryOrigin)
+import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Ports
 import Services.Lenses exposing (mapState, setQuery, setState)
@@ -64,7 +67,7 @@ import Track
 
 type alias Model =
     { id : Id
-    , source : DbSourceInfo
+    , source : DbSourceInfoWithUrl
     , query : SqlQueryOrigin
     , state : State
     }
@@ -129,10 +132,10 @@ dbPrefix =
     "data-explorer-query"
 
 
-init : ProjectInfo -> Id -> DbSourceInfo -> SqlQueryOrigin -> ( Model, Extra msg )
+init : ProjectInfo -> Id -> DbSourceInfoWithUrl -> SqlQueryOrigin -> ( Model, Extra msg )
 init project id source query =
     ( { id = id, source = source, query = query, state = StateRunning }
-    , Extra.cmdL [ Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.db.url query, Track.dataExplorerQueryOpened source query project ]
+    , Extra.cmdL [ Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt id) source.id source.db.url query, Track.dataExplorerQueryOpened source query project ]
     )
 
 
@@ -197,7 +200,7 @@ update showToast project msg model =
             ( model |> mapState (mapSuccess (\s -> { s | sortBy = sort, page = 1 })), Extra.none )
 
         Refresh ->
-            ( model |> setState StateRunning, Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id) model.source.db.url model.query |> Extra.cmd )
+            ( model |> setState StateRunning, Ports.runDatabaseQuery (dbPrefix ++ "/" ++ String.fromInt model.id) model.source.id model.source.db.url model.query |> Extra.cmd )
 
         ExportData extension ->
             case model.state of
@@ -283,8 +286,8 @@ csvEscape value =
 -- VIEW
 
 
-view : (Msg -> msg) -> (HtmlId -> msg) -> ((msg -> String -> Html msg) -> msg) -> (DbSourceInfo -> RowQuery -> msg) -> msg -> (TableId -> Maybe ColumnPath -> msg) -> HtmlId -> SchemaName -> Maybe Source -> Metadata -> HtmlId -> Model -> Html msg
-view wrap toggleDropdown openModal openRow deleteQuery openNotes openedDropdown defaultSchema source metadata htmlId model =
+view : (Msg -> msg) -> (HtmlId -> msg) -> ((msg -> String -> Html msg) -> msg) -> (RowQuery -> msg) -> msg -> (TableId -> Maybe ColumnPath -> msg) -> HtmlId -> Erd -> HtmlId -> Model -> Html msg
+view wrap toggleDropdown openModal openRow deleteQuery openNotes openedDropdown erd htmlId model =
     case model.state of
         StateRunning ->
             viewCard False
@@ -358,7 +361,7 @@ view wrap toggleDropdown openModal openRow deleteQuery openNotes openedDropdown 
                       else
                         div [ class "mt-1 relative cursor-pointer", onClick (wrap ToggleQuery) ]
                             [ model.query |> viewQuery True ]
-                    , viewTable wrap openModal (openRow model.source) openNotes defaultSchema source metadata res
+                    , viewTable wrap openModal openRow openNotes erd model.source res
                     ]
                 )
                 (div [ class "flex flex-shrink-0" ]
@@ -435,8 +438,8 @@ viewActionButton icon name msg =
         [ span [ class "sr-only" ] [ text name ], Icon.outline icon "w-4 h-4" ]
 
 
-viewTable : (Msg -> msg) -> ((msg -> String -> Html msg) -> msg) -> (RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> SchemaName -> Maybe Source -> Metadata -> SuccessState -> Html msg
-viewTable wrap openModal openRow openNotes defaultSchema source metadata res =
+viewTable : (Msg -> msg) -> ((msg -> String -> Html msg) -> msg) -> (RowQuery -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> Erd -> DbSourceInfoWithUrl -> SuccessState -> Html msg
+viewTable wrap openModal openRow openNotes erd sourceInfo res =
     let
         items : List ( QueryResultRow, RowIndex )
         items =
@@ -456,10 +459,10 @@ viewTable wrap openModal openRow openNotes defaultSchema source metadata res =
 
         ( columns, rows ) =
             if res.documentMode then
-                "document" |> (\pathStr -> ( [ { path = ColumnPath.fromString pathStr, pathStr = pathStr, ref = Nothing, fk = Nothing } ], pageRows |> List.map (Tuple.mapSecond (Tuple.mapFirst (\r -> Dict.fromList [ ( pathStr, DbObject r ) ]))) ))
+                "document" |> (\pathStr -> ( [ { path = ColumnPath.fromString pathStr, pathStr = pathStr, schemaRef = Nothing, dataRef = Nothing } ], pageRows |> List.map (Tuple.mapSecond (Tuple.mapFirst (\r -> Dict.fromList [ ( pathStr, DbObject r ) ]))) ))
 
             else
-                ( res.columns |> QueryResult.buildColumnTargets source, pageRows )
+                ( res.columns |> QueryResult.buildColumnTargets erd sourceInfo, pageRows )
     in
     div [ class "mt-1" ]
         [ div [ class "flow-root" ]
@@ -470,7 +473,7 @@ viewTable wrap openModal openRow openNotes defaultSchema source metadata res =
                         [ thead []
                             [ tr [ class "bg-gray-100" ]
                                 (th [ scope "col", onClick (UpdateSort Nothing |> wrap), class "px-1 sticky left-0 text-left text-sm font-semibold text-gray-900 border-b border-r border-gray-300 bg-gray-100 cursor-pointer" ] [ text "#" ]
-                                    :: (columns |> List.map (\c -> viewTableHeader wrap openModal openNotes source metadata res.collapsed res.sortBy (items |> List.map Tuple.first) c))
+                                    :: (columns |> List.map (\c -> viewTableHeader wrap openModal openNotes erd sourceInfo res.collapsed res.sortBy (items |> List.map Tuple.first) c))
                                 )
                             ]
                         , tbody []
@@ -484,12 +487,12 @@ viewTable wrap openModal openRow openNotes defaultSchema source metadata res =
                                         in
                                         tr [ class "hover:bg-gray-100", classList [ ( "bg-gray-50", modBy 2 pi == 1 ) ] ]
                                             ([ td [ class ("px-1 sticky left-0 z-10 text-sm text-gray-900 border-r border-gray-300 hover:bg-gray-100 " ++ Bool.cond (modBy 2 pi == 1) "bg-gray-50" "bg-white") ] [ text (ri + 1 |> String.fromInt) ] ]
-                                                ++ (columns |> List.map (\c -> viewTableValue openRow (ExpandRow ri |> wrap) defaultSchema res.documentMode (res.expanded |> Set.member ri) (res.collapsed |> Set.member c.pathStr) (r |> Dict.get c.pathStr) c))
+                                                ++ (columns |> List.map (\c -> viewTableValue openRow (ExpandRow ri |> wrap) erd.settings.defaultSchema res.documentMode (res.expanded |> Set.member ri) (res.collapsed |> Set.member c.pathStr) (r |> Dict.get c.pathStr) c))
                                                 ++ (if rest |> Dict.isEmpty then
                                                         []
 
                                                     else
-                                                        [ viewTableValue openRow (ExpandRow ri |> wrap) defaultSchema res.documentMode (res.expanded |> Set.member ri) (res.collapsed |> Set.member "rest") (rest |> DbObject |> Just) { path = Nel "rest" [], pathStr = "rest", ref = Nothing, fk = Nothing } ]
+                                                        [ viewTableValue openRow (ExpandRow ri |> wrap) erd.settings.defaultSchema res.documentMode (res.expanded |> Set.member ri) (res.collapsed |> Set.member "rest") (rest |> DbObject |> Just) { path = Nel "rest" [], pathStr = "rest", schemaRef = Nothing, dataRef = Nothing } ]
                                                    )
                                             )
                                     )
@@ -502,16 +505,21 @@ viewTable wrap openModal openRow openNotes defaultSchema source metadata res =
         ]
 
 
-viewTableHeader : (Msg -> msg) -> ((msg -> String -> Html msg) -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> Maybe Source -> Metadata -> Set ColumnName -> Maybe String -> List QueryResultRow -> QueryResultColumnTarget -> Html msg
-viewTableHeader wrap openModal openNotes source metadata collapsed sortBy rows column =
+viewTableHeader : (Msg -> msg) -> ((msg -> String -> Html msg) -> msg) -> (TableId -> Maybe ColumnPath -> msg) -> Erd -> DbSourceInfoWithUrl -> Set ColumnName -> Maybe String -> List QueryResultRow -> QueryResultColumnTarget -> Html msg
+viewTableHeader wrap openModal openNotes erd sourceInfo collapsed sortBy rows column =
     let
-        comment : Maybe Comment
+        comment : Maybe String
         comment =
-            column.ref |> Maybe.andThen (\ref -> source |> Maybe.andThen (Source.getColumn ref)) |> Maybe.andThen .comment
+            column.schemaRef
+                |> Maybe.andThen
+                    (\ref ->
+                        (erd.sources |> List.findBy .id sourceInfo.id |> Maybe.andThen (Source.getColumnI ref) |> Maybe.andThen .comment |> Maybe.map .text)
+                            |> Maybe.orElse (erd.tables |> TableId.dictGetI ref.table |> Maybe.andThen (ErdTable.getColumnI ref.column) |> Maybe.andThen .comment |> Maybe.map .text)
+                    )
 
         notes : Maybe ( Notes, ColumnRef )
         notes =
-            column.ref |> Maybe.andThen (\ref -> metadata |> Dict.get ref.table |> Maybe.andThen (.columns >> Dict.get (ref.column |> ColumnPath.toString)) |> Maybe.andThen (\m -> m.notes |> Maybe.map (\n -> ( n, ref ))))
+            column.schemaRef |> Maybe.andThen (\ref -> erd.metadata |> TableId.dictGetI ref.table |> Maybe.andThen (.columns >> ColumnPath.dictGetI ref.column) |> Maybe.andThen (\m -> m.notes |> Maybe.map (\n -> ( n, ref ))))
 
         sort : Maybe ( String, Bool )
         sort =
@@ -527,7 +535,7 @@ viewTableHeader wrap openModal openNotes source metadata collapsed sortBy rows c
     else
         th [ scope "col", class "px-1 text-left text-sm font-semibold text-gray-900 border-b border-gray-300 whitespace-nowrap group" ]
             [ text (ColumnPath.show column.path)
-            , comment |> Maybe.mapOrElse (\c -> span [ title c.text, class "ml-1 opacity-50" ] [ Icon.outline Icons.comment "w-3 h-3 inline" ]) (text "")
+            , comment |> Maybe.mapOrElse (\c -> span [ title c, class "ml-1 opacity-50" ] [ Icon.outline Icons.comment "w-3 h-3 inline" ]) (text "")
             , notes |> Maybe.mapOrElse (\( n, ref ) -> button [ type_ "button", onClick (openNotes ref.table (Just ref.column)), title n, class "ml-1 opacity-50" ] [ Icon.outline Icons.notes "w-3 h-3 inline" ]) (text "")
             , button [ type_ "button", onClick (sort |> Maybe.mapOrElse (\( col, asc ) -> Bool.cond asc ("-" ++ col) col) column.pathStr |> Just |> UpdateSort |> wrap), title "Sort column", class "ml-1 opacity-50" ]
                 [ sort
@@ -607,15 +615,15 @@ doc =
         |> Chapter.renderStatefulComponentList
             [ docComponentState "success" .success (\s m -> { s | success = m })
             , docComponentState "long lines & json" .longLines (\s m -> { s | longLines = m })
-            , docComponent "failure" (\s -> view docWrap (docToggleDropdown s) docOpenModal docOpenRow docDelete docOpenNotes s.openedDropdown docDefaultSchema (Just docSource) docMetadata docHtmlId (docModel 3 docComplexQuery docStateFailure))
-            , docComponent "running" (\s -> view docWrap (docToggleDropdown s) docOpenModal docOpenRow docDelete docOpenNotes s.openedDropdown docDefaultSchema (Just docSource) docMetadata docHtmlId (docModel 4 docComplexQuery docStateRunning))
-            , docComponent "canceled" (\s -> view docWrap (docToggleDropdown s) docOpenModal docOpenRow docDelete docOpenNotes s.openedDropdown docDefaultSchema (Just docSource) docMetadata docHtmlId (docModel 5 docComplexQuery docStateCanceled))
+            , docComponent "failure" (\s -> view docWrap (docToggleDropdown s) docOpenModal docOpenRow docDelete docOpenNotes s.openedDropdown docErd docHtmlId (docModel 3 docComplexQuery docStateFailure))
+            , docComponent "running" (\s -> view docWrap (docToggleDropdown s) docOpenModal docOpenRow docDelete docOpenNotes s.openedDropdown docErd docHtmlId (docModel 4 docComplexQuery docStateRunning))
+            , docComponent "canceled" (\s -> view docWrap (docToggleDropdown s) docOpenModal docOpenRow docDelete docOpenNotes s.openedDropdown docErd docHtmlId (docModel 5 docComplexQuery docStateCanceled))
             ]
 
 
 docModel : Int -> SqlQuery -> State -> Model
 docModel id query state =
-    { id = id, source = docSource |> DbSourceInfo.fromSource |> Maybe.withDefault DbSourceInfo.zero, query = { sql = query, origin = "doc", db = DatabaseKind.PostgreSQL }, state = state }
+    { id = id, source = docSource |> DbSourceInfoWithUrl.fromSource |> Result.withDefault DbSourceInfoWithUrl.zero, query = { sql = query, origin = "doc", db = DatabaseKind.default }, state = state }
 
 
 docComplexQuery : SqlQuery
@@ -632,11 +640,6 @@ FROM events e JOIN users u on u.id = e.created_by
 GROUP BY u.id
 HAVING count(distinct to_char(e.created_at, 'yyyy-mm-dd')) >= 5 AND max(e.created_at) < NOW() - INTERVAL '30 days'
 ORDER BY last_activity DESC;"""
-
-
-docDefaultSchema : SchemaName
-docDefaultSchema =
-    "public"
 
 
 docHtmlId : HtmlId
@@ -793,11 +796,16 @@ docUsersColumnValues id slug name email provider provider_uid avatar github_user
     Dict.fromList (str ++ strOpt ++ bool ++ arr ++ obj)
 
 
+docErd : Erd
+docErd =
+    Project.create Nothing [] "Azimutt" docSource |> Erd.create
+
+
 docSource : Source
 docSource =
     { id = SourceId.zero
     , name = "azimutt_dev"
-    , kind = DatabaseConnection "postgresql://postgres:postgres@localhost:5432/azimutt_dev"
+    , kind = DatabaseConnection { kind = PostgreSQL, url = Just "postgresql://postgres:postgres@localhost:5432/azimutt_dev", storage = DatabaseUrlStorage.Project }
     , content = Array.empty
     , tables =
         [ docTable "public" "users" [ ( "id", "uuid", False ), ( "slug", "varchar", False ), ( "name", "varchar", False ), ( "email", "varchar", False ), ( "provider", "varchar", True ), ( "provider_uid", "varchar", True ), ( "avatar", "varchar", False ), ( "github_username", "varchar", True ), ( "twitter_username", "varchar", True ), ( "is_admin", "boolean", False ), ( "hashed_password", "varchar", True ), ( "last_signin", "timestamp", False ), ( "created_at", "timestamp", False ), ( "updated_at", "timestamp", False ), ( "confirmed_at", "timestamp", True ), ( "deleted_at", "timestamp", True ), ( "data", "json", False ), ( "onboarding", "json", False ), ( "provider_data", "json", True ), ( "tags", "varchar[]", False ) ]
@@ -842,11 +850,6 @@ docRelation ( fromSchema, fromTable, fromColumn ) ( toSchema, toTable, toColumn 
     Relation.new (fromTable ++ "." ++ fromColumn ++ "->" ++ toTable ++ "." ++ toColumn) { table = ( fromSchema, fromTable ), column = Nel fromColumn [] } { table = ( toSchema, toTable ), column = Nel toColumn [] }
 
 
-docMetadata : Metadata
-docMetadata =
-    Dict.empty
-
-
 
 -- DOC HELPERS
 
@@ -858,7 +861,7 @@ docComponent name render =
 
 docComponentState : String -> (DocState -> Model) -> (DocState -> Model -> DocState) -> ( String, SharedDocState x -> Html (ElmBook.Msg (SharedDocState x)) )
 docComponentState name get set =
-    ( name, \{ dataExplorerQueryDocState } -> dataExplorerQueryDocState |> (\s -> get s |> (\m -> view (docUpdate s get set) (docToggleDropdown s) docOpenModal docOpenRow docDelete docOpenNotes s.openedDropdown docDefaultSchema (Just docSource) docMetadata (docHtmlId ++ "-" ++ String.fromInt m.id) m)) )
+    ( name, \{ dataExplorerQueryDocState } -> dataExplorerQueryDocState |> (\s -> get s |> (\m -> view (docUpdate s get set) (docToggleDropdown s) docOpenModal docOpenRow docDelete docOpenNotes s.openedDropdown docErd (docHtmlId ++ "-" ++ String.fromInt m.id) m)) )
 
 
 docUpdate : DocState -> (DocState -> Model) -> (DocState -> Model -> DocState) -> Msg -> ElmBook.Msg (SharedDocState x)
@@ -895,9 +898,9 @@ docOpenModal _ =
     logAction "openModal"
 
 
-docOpenRow : DbSourceInfo -> RowQuery -> ElmBook.Msg state
+docOpenRow : RowQuery -> ElmBook.Msg state
 docOpenRow =
-    \_ _ -> logAction "openRow"
+    \_ -> logAction "openRow"
 
 
 docDelete : ElmBook.Msg state

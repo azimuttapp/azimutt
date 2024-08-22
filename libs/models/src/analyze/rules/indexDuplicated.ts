@@ -30,6 +30,7 @@ import {
 
 const ruleId: RuleId = 'index-duplicated'
 const ruleName: RuleName = 'duplicated index'
+const ruleDescription: string = 'indexes with all columns covered by other indexes'
 const CustomRuleConf = RuleConf.extend({
     ignores: AttributesId.array().optional()
 }).strict().describe('IndexDuplicatedConf')
@@ -37,6 +38,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const indexDuplicatedRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.high},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {

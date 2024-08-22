@@ -19,6 +19,7 @@ import {
 
 const ruleId: RuleId = 'index-unused'
 const ruleName: RuleName = 'unused index'
+const ruleDescription: string = 'indexes with the same number of scans during the threshold period or the last scan older than the threshold'
 const CustomRuleConf = RuleConf.extend({
     ignores: ConstraintId.array().optional(),
     minDays: z.number()
@@ -27,6 +28,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const indexUnusedRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.medium, minDays: 10},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {

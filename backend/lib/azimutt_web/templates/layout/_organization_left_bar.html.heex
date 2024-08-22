@@ -49,7 +49,7 @@
                         </div>
                     <% end %>
                     <%= if !Azimutt.config(:skip_public_site) do %>
-                        <%= plan_badge(@organization.plan) %>
+                        <%= plan_badge(@plan.id) %>
                     <% end %>
                     <%= if @organization.clever_cloud_resource do %>
                         <a href={CleverCloud.app_url()} target="_blank" rel="noopener" class="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-indigo-100 text-indigo-800">Clever Cloud Add-on</a>
@@ -64,16 +64,19 @@
                     <%= if @organization.description do %>
                         <p class="text-sm text-gray-500 py-4"><%= @organization.description %></p>
                     <% end %>
+                    <%= if Azimutt.Organizations.writer?(@organization, @current_user) do %>
                     <div class="flex flex-col sm:flex-row xl:flex-col py-2">
                         <%= link "New Project", to: Routes.elm_path(@conn, :orga_new, @organization), class: "inline-flex items-center justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 xl:w-full" %>
                     </div>
+                    <% end %>
                 </div>
                 <nav class="space-y-1">
+                    <% is_owner = Azimutt.Organizations.owner?(@organization, @current_user) %>
                     <% links = [
                         %{label: "Projects", icon: "home", path: Routes.organization_path(@conn, :show, @organization)},
                         if(!@organization.is_personal, do: %{label: "Members", icon: "user-group", path: Routes.organization_member_path(@conn, :index, @organization)}, else: nil),
-                        if(StripeSrv.stripe_configured?(), do: %{label: "Billing", icon: "credit-card", path: Routes.organization_billing_path(@conn, :index, @organization, source: "left-menu")}, else: nil),
-                        %{label: "Settings", icon: "adjustments-horizontal", path: Routes.organization_path(@conn, :edit, @organization)}
+                        if(is_owner && StripeSrv.stripe_configured?(), do: %{label: "Billing", icon: "credit-card", path: Routes.organization_billing_path(@conn, :index, @organization, source: "left-menu")}, else: nil),
+                        if(is_owner, do: %{label: "Settings", icon: "adjustments-horizontal", path: Routes.organization_path(@conn, :edit, @organization)}, else: nil)
                     ] |> Enum.filter(fn l -> l != nil end) %>
                     <%= for link <- links do %>
                         <a href={link.path} class={active(@conn.request_path, link.path)} data-phx-link="redirect" data-phx-link-state="push">

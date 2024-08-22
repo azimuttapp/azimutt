@@ -1,6 +1,7 @@
 module PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf, embedDefault, project)
 
 import Models.ProjectTokenId exposing (ProjectTokenId)
+import Models.UserRole as UserRole exposing (UserRole)
 
 
 type alias ErdConf =
@@ -20,12 +21,12 @@ type alias ErdConf =
     }
 
 
-project : Maybe ProjectTokenId -> ErdConf
-project token =
+project : Maybe ProjectTokenId -> UserRole -> ErdConf
+project token role =
     -- used for real app
     -- if token is present, we are in sharing mode so disabled the sharing menu and the save action
     { fullscreen = False
-    , save = token == Nothing
+    , save = token == Nothing && role /= UserRole.Reader
     , hover = True
     , select = True
     , move = True
@@ -36,7 +37,7 @@ project token =
     , findPath = True
     , layoutManagement = True
     , projectManagement = True
-    , sharing = token == Nothing
+    , sharing = token == Nothing && role /= UserRole.Reader
     }
 
 

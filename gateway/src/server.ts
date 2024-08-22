@@ -24,7 +24,7 @@ export async function startServer(config: Config): Promise<FastifyInstance> {
     if (config.CORS_ALLOW_ORIGIN) {
         await server.register(cors, {origin: config.CORS_ALLOW_ORIGIN, credentials: true})
     }
-    await server.register(routes)
+    await server.register(routes(config))
     await server.ready()
 
     const host = config.API_HOST

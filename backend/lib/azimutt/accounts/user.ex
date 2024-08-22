@@ -4,7 +4,7 @@ defmodule Azimutt.Accounts.User do
   use Azimutt.Schema
   import Ecto.Changeset
   alias Azimutt.Accounts.User
-  alias Azimutt.Organizations.Organization
+  alias Azimutt.Accounts.UserProfile
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Utils.Slugme
 
@@ -28,8 +28,8 @@ defmodule Azimutt.Accounts.User do
     field :confirmed_at, :utc_datetime_usec
     field :deleted_at, :utc_datetime_usec
 
-    has_one :profile, Azimutt.Accounts.UserProfile
-    many_to_many :organizations, Organization, join_through: OrganizationMember
+    has_one :profile, UserProfile
+    has_many :members, OrganizationMember
   end
 
   def search_fields, do: [:slug, :name, :email, :github_username, :twitter_username]

@@ -34,6 +34,7 @@ import {
 
 const ruleId: RuleId = 'attribute-type-bad'
 const ruleName: RuleName = 'bad attribute type'
+const ruleDescription: string = 'text attributes with all statistic values that could have been an other type (int, decimal, uuid, timestamp)'
 const CustomRuleConf = RuleConf.extend({
     ignores: AttributeId.array().optional()
 }).strict().describe('AttributeTypeBadConf')
@@ -41,6 +42,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const attributeTypeBadRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.medium},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {

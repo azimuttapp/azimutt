@@ -1,5 +1,5 @@
 import {errorToString} from "@azimutt/utils";
-import {LegacyProjectId, LegacyProjectJson, zodParse, zodStringify} from "@azimutt/models";
+import {DatabaseUrl, LegacyProjectId, LegacyProjectJson, SourceId, zodParse, zodStringify} from "@azimutt/models";
 import {StorageApi, StorageKind} from "./api";
 import {Logger} from "../logger";
 import * as Json from "../../utils/json";
@@ -12,18 +12,35 @@ export class LocalStorageStorage implements StorageApi {
     }
 
     public kind: StorageKind = 'localStorage'
-    private prefix = 'project-'
+    private prefixProject = 'project-'
+    private prefixConnection = 'connection-'
 
     constructor(private logger: Logger) {
     }
 
+    getDbUrl = async (id: SourceId): Promise<DatabaseUrl | undefined> => {
+        this.logger.debug(`localStorage.getDbUrl(${id})`)
+        const url = window.localStorage.getItem(this.connectionKey(id))
+        return url || undefined
+    }
+
+    setDbUrl = async (id: SourceId, url: DatabaseUrl): Promise<void> => {
+        this.logger.debug(`localStorage.setDbUrl(${id})`)
+        window.localStorage.setItem(this.connectionKey(id), url)
+    }
+
+    removeDbUrl = async (id: SourceId): Promise<void> => {
+        this.logger.debug(`localStorage.removeDbUrl(${id})`)
+        window.localStorage.removeItem(this.connectionKey(id))
+    }
+
     loadProject = (id: LegacyProjectId): Promise<LegacyProjectJson> => {
         this.logger.debug(`localStorage.loadProject(${id})`)
-        return Promise.resolve(this.getProject(this.idToKey(id))).then(p => p ? p : Promise.reject(`Not found`))
+        return Promise.resolve(this.getProject(this.projectKey(id))).then(p => p ? p : Promise.reject(`Not found`))
     }
     createProject = (id: LegacyProjectId, p: LegacyProjectJson): Promise<LegacyProjectJson> => {
         this.logger.debug(`localStorage.createProject(${id})`, p)
-        const key = this.idToKey(id)
+        const key = this.projectKey(id)
         if (window.localStorage.getItem(key) === null) {
             return this.setProject(key, p)
         } else {
@@ -32,7 +49,7 @@ export class LocalStorageStorage implements StorageApi {
     }
     updateProject = (id: LegacyProjectId, p: LegacyProjectJson): Promise<LegacyProjectJson> => {
         this.logger.debug(`localStorage.updateProject(${id})`, p)
-        const key = this.idToKey(id)
+        const key = this.projectKey(id)
         if (window.localStorage.getItem(key) === null) {
             return Promise.reject(`Project ${id} doesn't exists in ${this.kind}`)
         } else {
@@ -41,11 +58,12 @@ export class LocalStorageStorage implements StorageApi {
     }
     deleteProject = (id: LegacyProjectId): Promise<void> => {
         this.logger.debug(`localStorage.deleteProject(${id})`)
-        window.localStorage.removeItem(this.idToKey(id))
+        window.localStorage.removeItem(this.projectKey(id))
         return Promise.resolve()
     }
 
-    private idToKey = (id: LegacyProjectId): string => this.prefix + id
+    private projectKey = (id: LegacyProjectId): string => this.prefixProject + id
+    private connectionKey = (id: SourceId): string => this.prefixConnection + id
     private getProject = (key: string): Promise<LegacyProjectJson> => {
         const value = window.localStorage.getItem(key)
         if (value === null) {

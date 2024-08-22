@@ -106,6 +106,13 @@ export const partition = <T>(arr: T[], p: (t: T) => boolean): [T[], T[]] => {
     return [ok, ko]
 }
 
+export const partitionT = <T, U>(arr: (T | U)[], isT: (t: T | U) => t is T): [T[], U[]] => {
+    const ts = [] as T[]
+    const us = [] as U[]
+    arr.forEach(i => isT(i) ? ts.push(i) : us.push(i))
+    return [ts, us]
+}
+
 export const shuffle = <T>(array: T[]): T[] => {
     // Fisher-Yates shuffle
     const arr = [...array] // shallow copy of array to avoid in-place updates

@@ -56,13 +56,13 @@ parse kind =
     else if kind |> Regex.matchI "^ARRAY<.*>$" then
         Array (parse (kind |> String.dropLeft 6 |> String.dropRight 1))
 
-    else if (kind |> Regex.matchI "^(tiny|medium|long|ci)?text$") || (kind |> Regex.matchI "^character( varying)? ?(\\(\\d+\\))?$") || (kind |> Regex.matchI "^n?(var)?char ?(\\([^)]+\\))?( CHARACTER SET [^ ]+)?$") || (kind |> Regex.matchI "^string(\\(\\d+\\))?$") then
+    else if (kind |> Regex.matchI "^(tiny|medium|long|ci)?text$") || (kind |> Regex.matchI "^character(\\s+varying)?\\s*(\\(\\d+\\))?$") || (kind |> Regex.matchI "^n?(var)?char\\d?\\s*(\\([^)]+\\))?(\\s+CHARACTER\\s+SET\\s+[^ ]+)?$") || (kind |> Regex.matchI "^string(\\(\\d+\\))?$") || (kind |> Regex.matchI "^clob$") then
         Text
 
-    else if (kind |> Regex.matchI "integer|bit") || (kind |> Regex.matchI "number\\(\\d+(\\s*,\\s*0)?\\)") || (kind |> Regex.matchI "^(small)?serial$") || (kind |> Regex.matchI "^(tiny|small|big)?int ?(\\d+)?(\\(\\d+\\))?( unsigned)?$") then
+    else if (kind |> Regex.matchI "integer|bit") || (kind |> Regex.matchI "number\\(\\d+(\\s*,\\s*0)?\\)") || (kind |> Regex.matchI "^(small)?serial$") || (kind |> Regex.matchI "^(tiny|small|big)?int\\s*(\\d+)?(\\(\\d+\\))?(\\s+unsigned)?$") then
         Int
 
-    else if (kind |> Regex.matchI "double precision") || (kind |> Regex.matchI "number") || (kind |> Regex.matchI "^numeric ?(\\(\\d+,\\d+\\))?$") || (kind |> Regex.matchI "^decimal ?(\\(\\d+,\\d+\\))?$") then
+    else if (kind |> Regex.matchI "double(\\s+precision)?") || (kind |> Regex.matchI "number") || (kind |> Regex.matchI "^numeric\\s*(\\(\\d+,\\d+\\))?$") || (kind |> Regex.matchI "^decimal\\s*(\\(\\d+,\\d+\\))?$") then
         Float
 
     else if kind |> Regex.matchI "bool(ean)?" then
@@ -71,13 +71,13 @@ parse kind =
     else if kind |> Regex.matchI "date$" then
         Date
 
-    else if kind |> Regex.matchI "^time ?(\\(\\d+\\))?( with(out)? time zone)?$" then
+    else if kind |> Regex.matchI "^time\\s*(\\(\\d+\\))?(\\s+with(out)?\\s+time\\s+zone)?$" then
         Time
 
-    else if (kind |> Regex.matchI "^datetime(offset)?$") || (kind |> Regex.matchI "^timestamp(tz)? ?(\\(\\d+\\))?( with(out)? time zone)?$") then
+    else if (kind |> Regex.matchI "^datetime(offset)?$") || (kind |> Regex.matchI "^timestamp(tz)?\\s*(\\(\\d+\\))?(\\s+with(out)?\\s+time\\s+zone)?$") then
         Instant
 
-    else if kind |> Regex.matchI "^interval ?(\\(\\d+\\))?$" then
+    else if kind |> Regex.matchI "^interval\\s*(\\(\\d+\\))?$" then
         Interval
 
     else if kind |> Regex.matchI "uuid" then

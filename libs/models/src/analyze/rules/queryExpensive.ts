@@ -19,6 +19,7 @@ import {
 
 const ruleId: RuleId = 'query-expensive'
 const ruleName: RuleName = 'expensive query'
+const ruleDescription: string = 'top 20 queries by total execution time'
 const CustomRuleConf = RuleConf.extend({
     ignores: QueryId.array().optional(),
 }).strict().describe('QueryExpensiveConf')
@@ -26,6 +27,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const queryExpensiveRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.hint},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {

@@ -22,50 +22,40 @@ defmodule Azimutt.Admin do
   def count_heroku_resources, do: Heroku.Resource |> Repo.aggregate(:count, :id)
   def count_projects, do: Project |> Repo.aggregate(:count, :id)
 
-  def list_users(%Page.Info{} = p) do
-    User |> preload(:profile) |> Page.get(p)
-  end
+  def list_users(%Page.Info{} = p), do: User |> preload(:profile) |> Page.get(p)
 
   def get_user(id) do
     User
     |> where([u], u.id == ^id)
-    |> preload(organizations: [:clever_cloud_resource, :heroku_resource, :created_by, :members, projects: [:organization]])
-    |> preload(:profile)
+    |> preload([:profile, members: [organization: [:members, :created_by, :clever_cloud_resource, :heroku_resource, projects: [:organization]]]])
     |> Repo.one()
     |> Result.from_nillable()
   end
 
   def list_organizations(%Page.Info{} = p) do
     Organization
-    |> preload(:projects)
-    |> preload(:members)
-    |> preload(:invitations)
-    |> preload(:clever_cloud_resource)
-    |> preload(:heroku_resource)
-    |> preload(:created_by)
+    |> preload([:invitations, :members, :projects, :created_by, :clever_cloud_resource, :heroku_resource])
     |> Page.get(p)
   end
 
   def get_organization(id) do
     Organization
     |> where([o], o.id == ^id)
-    |> preload(projects: [:organization])
-    |> preload(members: [:user, :created_by, :updated_by])
-    |> preload(invitations: [:answered_by, :created_by])
-    |> preload(:clever_cloud_resource)
-    |> preload(:heroku_resource)
-    |> preload(:created_by)
-    |> preload(:updated_by)
+    |> preload([
+      :created_by,
+      :updated_by,
+      :clever_cloud_resource,
+      :heroku_resource,
+      invitations: [:answered_by, :created_by],
+      members: [:user, :created_by, :updated_by],
+      projects: [:organization]
+    ])
     |> Repo.one()
     |> Result.from_nillable()
   end
 
-  def list_projects(%Page.Info{} = p) do
-    Project
-    |> preload(:organization)
-    |> preload(:created_by)
-    |> Page.get(p)
-  end
+  def list_projects(%Page.Info{} = p),
+    do: Project |> preload([:organization, :created_by]) |> Page.get(p)
 
   def get_project(id) do
     Project
@@ -121,12 +111,7 @@ defmodule Azimutt.Admin do
     |> Page.get(p)
   end
 
-  defp query_events do
-    Event
-    |> preload(:project)
-    |> preload(:organization)
-    |> preload(:created_by)
-  end
+  defp query_events, do: Event |> preload([:organization, :project, :created_by])
 
   def daily_created_users, do: User |> daily_creations()
   def daily_created_projects, do: Project |> daily_creations()

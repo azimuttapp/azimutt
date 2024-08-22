@@ -21,6 +21,7 @@ import {
 
 const ruleId: RuleId = 'entity-grow-fast'
 const ruleName: RuleName = 'fast growing entity'
+const ruleDescription: string = 'entities with rows or bytes growing over the daily/monthly/yearly rate thresholds and a size over the thresholds also'
 const CustomRuleConf = RuleConf.extend({
     ignores: EntityId.array().optional(),
     minRows: z.number(),
@@ -33,6 +34,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const entityGrowFastRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.medium, minRows: 10000, minSize: 10 * Mo, maxGrowthYearly: 2, maxGrowthMonthly: 0.1, maxGrowthDaily: 0.01},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {
@@ -65,6 +67,8 @@ export const entityGrowFastRule: Rule<CustomRuleConf> = {
                         periodMillis: r.period,
                         growth: r.growth,
                         kind: r.kind,
+                        previousIndexes: r.previous?.indexes?.length,
+                        currentIndexes: r.current.indexes?.length,
                         previous: r.previous?.stats,
                         current: r.current.stats,
                     })

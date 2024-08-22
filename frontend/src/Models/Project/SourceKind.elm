@@ -1,16 +1,17 @@
-module Models.Project.SourceKind exposing (SourceKind(..), databaseUrl, decode, encode, isDatabase, isUser, path, same, toString)
+module Models.Project.SourceKind exposing (SourceKind(..), SourceKindDatabase, SourceKindFileLocal, SourceKindFileRemote, database, databaseKind, databaseUrl, databaseUrlStorage, decode, encode, isDatabase, isUser, same, setDatabaseUrl, setDatabaseUrlStorage, toString)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
+import Libs.Maybe as Maybe
+import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.FileName as FileName exposing (FileName)
 import Libs.Models.FileSize as FileSize exposing (FileSize)
 import Libs.Models.FileUpdatedAt as FileUpdatedAt exposing (FileUpdatedAt)
 import Libs.Models.FileUrl as FileUrl exposing (FileUrl)
-import Libs.Tuple as Tuple
-import Libs.Tuple3 as Tuple3
+import Models.Project.DatabaseUrlStorage as DatabaseUrlStorage exposing (DatabaseUrlStorage)
 
 
 
@@ -24,14 +25,26 @@ import Libs.Tuple3 as Tuple3
 
 
 type SourceKind
-    = DatabaseConnection DatabaseUrl
-    | SqlLocalFile FileName FileSize FileUpdatedAt
-    | SqlRemoteFile FileUrl FileSize
-    | PrismaLocalFile FileName FileSize FileUpdatedAt
-    | PrismaRemoteFile FileUrl FileSize
-    | JsonLocalFile FileName FileSize FileUpdatedAt
-    | JsonRemoteFile FileUrl FileSize
+    = DatabaseConnection SourceKindDatabase
+    | SqlLocalFile SourceKindFileLocal
+    | SqlRemoteFile SourceKindFileRemote
+    | PrismaLocalFile SourceKindFileLocal
+    | PrismaRemoteFile SourceKindFileRemote
+    | JsonLocalFile SourceKindFileLocal
+    | JsonRemoteFile SourceKindFileRemote
     | AmlEditor
+
+
+type alias SourceKindDatabase =
+    { kind : DatabaseKind, url : Maybe DatabaseUrl, storage : DatabaseUrlStorage }
+
+
+type alias SourceKindFileLocal =
+    { name : FileName, size : FileSize, modified : FileUpdatedAt }
+
+
+type alias SourceKindFileRemote =
+    { url : FileUrl, size : FileSize }
 
 
 isUser : SourceKind -> Bool
@@ -54,42 +67,72 @@ isDatabase kind =
             False
 
 
-databaseUrl : SourceKind -> Maybe DatabaseUrl
-databaseUrl kind =
+database : SourceKind -> Maybe SourceKindDatabase
+database kind =
     case kind of
-        DatabaseConnection url ->
-            Just url
+        DatabaseConnection db ->
+            Just db
 
         _ ->
             Nothing
 
 
-path : SourceKind -> String
-path sourceContent =
-    case sourceContent of
-        DatabaseConnection url ->
-            url
+databaseKind : SourceKind -> Maybe DatabaseKind
+databaseKind kind =
+    case kind of
+        DatabaseConnection db ->
+            Just db.kind
 
-        SqlLocalFile name _ _ ->
-            name
+        _ ->
+            Nothing
 
-        SqlRemoteFile url _ ->
-            url
 
-        PrismaLocalFile name _ _ ->
-            name
+databaseUrl : SourceKind -> Maybe DatabaseUrl
+databaseUrl kind =
+    case kind of
+        DatabaseConnection db ->
+            db.url
 
-        PrismaRemoteFile url _ ->
-            url
+        _ ->
+            Nothing
 
-        JsonLocalFile name _ _ ->
-            name
 
-        JsonRemoteFile url _ ->
-            url
+setDatabaseUrl : Maybe DatabaseUrl -> SourceKind -> SourceKind
+setDatabaseUrl newUrl kind =
+    case kind of
+        DatabaseConnection db ->
+            if db.url /= newUrl then
+                DatabaseConnection { db | url = newUrl }
 
-        AmlEditor ->
-            ""
+            else
+                kind
+
+        _ ->
+            kind
+
+
+databaseUrlStorage : SourceKind -> Maybe DatabaseUrlStorage
+databaseUrlStorage kind =
+    case kind of
+        DatabaseConnection db ->
+            Just db.storage
+
+        _ ->
+            Nothing
+
+
+setDatabaseUrlStorage : DatabaseUrlStorage -> SourceKind -> SourceKind
+setDatabaseUrlStorage newStorage kind =
+    case kind of
+        DatabaseConnection db ->
+            if db.storage /= newStorage then
+                DatabaseConnection { db | storage = newStorage }
+
+            else
+                kind
+
+        _ ->
+            kind
 
 
 same : SourceKind -> SourceKind -> Bool
@@ -98,22 +141,22 @@ same k2 k1 =
         ( DatabaseConnection _, DatabaseConnection _ ) ->
             True
 
-        ( SqlLocalFile _ _ _, SqlLocalFile _ _ _ ) ->
+        ( SqlLocalFile _, SqlLocalFile _ ) ->
             True
 
-        ( SqlRemoteFile _ _, SqlRemoteFile _ _ ) ->
+        ( SqlRemoteFile _, SqlRemoteFile _ ) ->
             True
 
-        ( PrismaLocalFile _ _ _, PrismaLocalFile _ _ _ ) ->
+        ( PrismaLocalFile _, PrismaLocalFile _ ) ->
             True
 
-        ( PrismaRemoteFile _ _, PrismaRemoteFile _ _ ) ->
+        ( PrismaRemoteFile _, PrismaRemoteFile _ ) ->
             True
 
-        ( JsonLocalFile _ _ _, JsonLocalFile _ _ _ ) ->
+        ( JsonLocalFile _, JsonLocalFile _ ) ->
             True
 
-        ( JsonRemoteFile _ _, JsonRemoteFile _ _ ) ->
+        ( JsonRemoteFile _, JsonRemoteFile _ ) ->
             True
 
         ( AmlEditor, AmlEditor ) ->
@@ -129,22 +172,22 @@ toString value =
         DatabaseConnection _ ->
             "DatabaseConnection"
 
-        SqlLocalFile _ _ _ ->
+        SqlLocalFile _ ->
             "SqlLocalFile"
 
-        SqlRemoteFile _ _ ->
+        SqlRemoteFile _ ->
             "SqlRemoteFile"
 
-        PrismaLocalFile _ _ _ ->
+        PrismaLocalFile _ ->
             "PrismaLocalFile"
 
-        PrismaRemoteFile _ _ ->
+        PrismaRemoteFile _ ->
             "PrismaRemoteFile"
 
-        JsonLocalFile _ _ _ ->
+        JsonLocalFile _ ->
             "JsonLocalFile"
 
-        JsonRemoteFile _ _ ->
+        JsonRemoteFile _ ->
             "JsonRemoteFile"
 
         AmlEditor ->
@@ -154,51 +197,29 @@ toString value =
 encode : SourceKind -> Value
 encode value =
     case value of
-        DatabaseConnection url ->
-            Encode.notNullObject
-                [ ( "kind", "DatabaseConnection" |> Encode.string )
-                , ( "url", url |> DatabaseUrl.encode )
-                ]
+        DatabaseConnection db ->
+            encodeDatabase "DatabaseConnection" db
 
-        SqlLocalFile name size modified ->
-            encodeLocal "SqlLocalFile" name size modified
+        SqlLocalFile file ->
+            encodeLocal "SqlLocalFile" file
 
-        SqlRemoteFile name size ->
-            encodeRemote "SqlRemoteFile" name size
+        SqlRemoteFile file ->
+            encodeRemote "SqlRemoteFile" file
 
-        PrismaLocalFile name size modified ->
-            encodeLocal "PrismaLocalFile" name size modified
+        PrismaLocalFile file ->
+            encodeLocal "PrismaLocalFile" file
 
-        PrismaRemoteFile name size ->
-            encodeRemote "PrismaRemoteFile" name size
+        PrismaRemoteFile file ->
+            encodeRemote "PrismaRemoteFile" file
 
-        JsonLocalFile name size modified ->
-            encodeLocal "JsonLocalFile" name size modified
+        JsonLocalFile file ->
+            encodeLocal "JsonLocalFile" file
 
-        JsonRemoteFile name size ->
-            encodeRemote "JsonRemoteFile" name size
+        JsonRemoteFile file ->
+            encodeRemote "JsonRemoteFile" file
 
         AmlEditor ->
             Encode.notNullObject [ ( "kind", "AmlEditor" |> Encode.string ) ]
-
-
-encodeLocal : String -> FileName -> FileSize -> FileUpdatedAt -> Value
-encodeLocal kind name size modified =
-    Encode.notNullObject
-        [ ( "kind", kind |> Encode.string )
-        , ( "name", name |> FileName.encode )
-        , ( "size", size |> FileSize.encode )
-        , ( "modified", modified |> FileUpdatedAt.encode )
-        ]
-
-
-encodeRemote : String -> FileUrl -> FileSize -> Value
-encodeRemote kind name size =
-    Encode.notNullObject
-        [ ( "kind", kind |> Encode.string )
-        , ( "url", name |> FileUrl.encode )
-        , ( "size", size |> FileSize.encode )
-        ]
 
 
 decode : Decode.Decoder SourceKind
@@ -207,35 +228,35 @@ decode =
         (\kind ->
             case kind of
                 "DatabaseConnection" ->
-                    decodeDatabaseConnection
+                    decodeDatabase
 
                 "SqlLocalFile" ->
-                    decodeLocalFile |> Decode.map (Tuple3.apply SqlLocalFile)
+                    decodeLocalFile |> Decode.map SqlLocalFile
 
                 "SqlRemoteFile" ->
-                    decodeRemoteFile |> Decode.map (Tuple.apply SqlRemoteFile)
+                    decodeRemoteFile |> Decode.map SqlRemoteFile
 
                 "PrismaLocalFile" ->
-                    decodeLocalFile |> Decode.map (Tuple3.apply PrismaLocalFile)
+                    decodeLocalFile |> Decode.map PrismaLocalFile
 
                 "PrismaRemoteFile" ->
-                    decodeRemoteFile |> Decode.map (Tuple.apply PrismaRemoteFile)
+                    decodeRemoteFile |> Decode.map PrismaRemoteFile
 
                 "JsonLocalFile" ->
-                    decodeLocalFile |> Decode.map (Tuple3.apply JsonLocalFile)
+                    decodeLocalFile |> Decode.map JsonLocalFile
 
                 "JsonRemoteFile" ->
-                    decodeRemoteFile |> Decode.map (Tuple.apply JsonRemoteFile)
+                    decodeRemoteFile |> Decode.map JsonRemoteFile
 
                 "AmlEditor" ->
                     Decode.succeed AmlEditor
 
                 -- legacy names:
                 "LocalFile" ->
-                    decodeLocalFile |> Decode.map (Tuple3.apply SqlLocalFile)
+                    decodeLocalFile |> Decode.map SqlLocalFile
 
                 "RemoteFile" ->
-                    decodeRemoteFile |> Decode.map (Tuple.apply SqlRemoteFile)
+                    decodeRemoteFile |> Decode.map SqlRemoteFile
 
                 "UserDefined" ->
                     Decode.succeed AmlEditor
@@ -245,22 +266,59 @@ decode =
         )
 
 
-decodeDatabaseConnection : Decode.Decoder SourceKind
-decodeDatabaseConnection =
-    Decode.map DatabaseConnection
-        (Decode.field "url" DatabaseUrl.decode)
+encodeLocal : String -> SourceKindFileLocal -> Value
+encodeLocal kind file =
+    Encode.notNullObject
+        [ ( "kind", kind |> Encode.string )
+        , ( "name", file.name |> FileName.encode )
+        , ( "size", file.size |> FileSize.encode )
+        , ( "modified", file.modified |> FileUpdatedAt.encode )
+        ]
 
 
-decodeLocalFile : Decode.Decoder ( FileName, FileSize, FileUpdatedAt )
+decodeLocalFile : Decode.Decoder SourceKindFileLocal
 decodeLocalFile =
-    Decode.map3 Tuple3.new
+    Decode.map3 (\name size modified -> { name = name, size = size, modified = modified })
         (Decode.field "name" FileName.decode)
         (Decode.field "size" FileSize.decode)
         (Decode.field "modified" FileUpdatedAt.decode)
 
 
-decodeRemoteFile : Decode.Decoder ( FileUrl, FileSize )
+encodeRemote : String -> SourceKindFileRemote -> Value
+encodeRemote kind file =
+    Encode.notNullObject
+        [ ( "kind", kind |> Encode.string )
+        , ( "url", file.url |> FileUrl.encode )
+        , ( "size", file.size |> FileSize.encode )
+        ]
+
+
+decodeRemoteFile : Decode.Decoder SourceKindFileRemote
 decodeRemoteFile =
-    Decode.map2 Tuple.new
+    Decode.map2 (\url size -> { url = url, size = size })
         (Decode.field "url" FileUrl.decode)
         (Decode.field "size" FileSize.decode)
+
+
+encodeDatabase : String -> SourceKindDatabase -> Value
+encodeDatabase kind db =
+    Encode.notNullObject
+        [ ( "kind", kind |> Encode.string )
+        , ( "engine", db.kind |> DatabaseKind.encode )
+        , ( "url", db.url |> Encode.maybe DatabaseUrl.encode )
+        , ( "storage", db.storage |> DatabaseUrlStorage.encode )
+        ]
+
+
+decodeDatabase : Decode.Decoder SourceKind
+decodeDatabase =
+    Decode.oneOf
+        [ Decode.map3 (\kind url storage -> DatabaseConnection { kind = kind, url = url, storage = storage })
+            (Decode.field "engine" DatabaseKind.decode)
+            (Decode.maybeField "url" DatabaseUrl.decode)
+            (Decode.field "storage" DatabaseUrlStorage.decode)
+        , Decode.map (\( kind, url ) -> DatabaseConnection { kind = kind, url = Just url, storage = DatabaseUrlStorage.Project })
+            (Decode.field "url" DatabaseUrl.decode
+                |> Decode.andThen (\url -> url |> DatabaseKind.fromUrl |> Maybe.tuple url |> Decode.fromMaybe "Unknown DatabaseKind from url")
+            )
+        ]

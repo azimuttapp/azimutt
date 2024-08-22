@@ -6,6 +6,7 @@ defmodule AzimuttWeb.OrganizationController do
   alias Azimutt.Projects
   alias Azimutt.Tracking
   alias Azimutt.Utils.Uuid
+  import AzimuttWeb.Utils.ControllerHelpers, only: [for_owners: 4]
   action_fallback AzimuttWeb.FallbackController
 
   def new(conn, _params) do
@@ -60,8 +61,10 @@ defmodule AzimuttWeb.OrganizationController do
 
     with {:ok, organization} <- Organizations.get_organization(organization_id, current_user),
          {:ok, plan} <- Organizations.get_organization_plan(organization, current_user) do
-      changeset = Organization.update_changeset(organization, %{}, current_user)
-      render(conn, "edit.html", organization: organization, plan: plan, changeset: changeset)
+      for_owners(conn, organization, current_user, fn ->
+        changeset = Organization.update_changeset(organization, %{}, current_user)
+        render(conn, "edit.html", organization: organization, plan: plan, changeset: changeset)
+      end)
     end
   end
 
@@ -69,26 +72,30 @@ defmodule AzimuttWeb.OrganizationController do
     current_user = conn.assigns.current_user
     {:ok, organization} = Organizations.get_organization(organization_id, current_user)
 
-    case Organizations.update_organization(organization_attrs, organization, current_user) do
-      {:ok, organization} ->
-        conn
-        |> put_flash(:info, "Organization updated successfully.")
-        |> redirect(to: Routes.organization_path(conn, :show, organization))
+    for_owners(conn, organization, current_user, fn ->
+      case Organizations.update_organization(organization_attrs, organization, current_user) do
+        {:ok, organization} ->
+          conn
+          |> put_flash(:info, "Organization updated successfully.")
+          |> redirect(to: Routes.organization_path(conn, :show, organization))
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        with {:ok, plan} <- Organizations.get_organization_plan(organization, current_user),
-             do: render(conn, "edit.html", organization: organization, plan: plan, changeset: changeset)
-    end
+        {:error, %Ecto.Changeset{} = changeset} ->
+          with {:ok, plan} <- Organizations.get_organization_plan(organization, current_user),
+               do: render(conn, "edit.html", organization: organization, plan: plan, changeset: changeset)
+      end
+    end)
   end
 
   def delete(conn, %{"organization_id" => organization_id}) do
-    now = DateTime.utc_now()
-    current_user = conn.assigns.current_user
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
     {:ok, organization} = Organizations.get_organization(organization_id, current_user)
-    {:ok, _organization} = Organizations.delete_organization(organization, now)
 
-    conn
-    |> put_flash(:info, "Organization deleted successfully.")
-    |> redirect(to: Routes.organization_path(conn, :index))
+    for_owners(conn, organization, current_user, fn ->
+      {:ok, _organization} = Organizations.delete_organization(organization, now)
+
+      conn
+      |> put_flash(:info, "Organization deleted successfully.")
+      |> redirect(to: Routes.organization_path(conn, :index))
+    end)
   end
 end

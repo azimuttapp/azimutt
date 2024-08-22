@@ -12,7 +12,7 @@
             "jfmengels/elm-review-debug": "1.0.8",
             "jfmengels/elm-review-the-elm-architecture": "1.0.3",
             "jfmengels/elm-review-unused": "1.2.3",
-            "stil4m/elm-syntax": "7.3.2"
+            "stil4m/elm-syntax": "7.3.4"
         },
         "indirect": {
             "elm/bytes": "1.0.8",

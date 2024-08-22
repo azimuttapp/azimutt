@@ -7,8 +7,17 @@
     </head>
     <body>
         <%= render "_hello_comment.html" %>
-        <script>window.env = '<%= Azimutt.config(:environment) %>'</script>
-        <script>window.gateway_url = '<%= Azimutt.config(:gateway_url) %>'</script>
+        <%
+        org_id = @conn.params["organization_id"]
+        member = org_id && assigns[:current_user] && assigns[:current_user].members |> Enum.find(fn m -> m.organization_id == org_id end)
+        plan = member && Azimutt.Organizations.get_organization_plan(member.organization, assigns[:current_user]) |> Azimutt.Utils.Result.or_else(nil)
+        org_gateway = plan && Azimutt.features().gateway_custom[plan] && member.organization.gateway
+        %>
+        <script>
+            window.env = '<%= Azimutt.config(:environment) %>'
+            window.gateway_url = '<%= org_gateway || Azimutt.config(:gateway_url) %>'
+            window.role = '<%= member && member.role || :owner %>'
+        </script>
         <%= if Azimutt.config(:sentry_frontend_dsn) do %><script>window.sentry_frontend_dsn = '<%= Azimutt.config(:sentry_frontend_dsn) %>'</script><% end %>
         <script type="text/javascript" src={Routes.static_path(@conn, "/elm/script.js")} />
         <%= render "_scripts.html", conn: @conn, current_user: assigns[:current_user] %>

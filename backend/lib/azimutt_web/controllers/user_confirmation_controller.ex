@@ -4,8 +4,7 @@ defmodule AzimuttWeb.UserConfirmationController do
   action_fallback AzimuttWeb.FallbackController
 
   def new(conn, _params) do
-    current_user = conn.assigns.current_user
-    now = DateTime.utc_now()
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
 
     if current_user.confirmed_at do
       conn |> redirect(to: Routes.user_dashboard_path(conn, :index))
@@ -36,8 +35,7 @@ defmodule AzimuttWeb.UserConfirmationController do
   end
 
   def confirm(conn, %{"token" => token}) do
-    current_user = conn.assigns.current_user
-    now = DateTime.utc_now()
+    {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
 
     if current_user.confirmed_at do
       conn |> redirect(to: Routes.user_dashboard_path(conn, :index))

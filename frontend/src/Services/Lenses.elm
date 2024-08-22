@@ -42,11 +42,13 @@ module Services.Lenses exposing
     , mapIndex
     , mapJsonSourceMT
     , mapJsonSourceT
+    , mapKind
     , mapLayouts
     , mapLayoutsD
     , mapLayoutsDT
     , mapLayoutsDTL
     , mapLayoutsDTM
+    , mapLinkedBy
     , mapList
     , mapLlm
     , mapLlmGenerateSqlT
@@ -167,9 +169,11 @@ module Services.Lenses exposing
     , setIsOpen
     , setJsonSource
     , setKey
+    , setKind
     , setLast
     , setLayoutOnLoad
     , setLayouts
+    , setLinkedBy
     , setList
     , setLlm
     , setLlmGenerateSql
@@ -752,6 +756,16 @@ setKey =
     set_ .key (\value item -> { item | key = value })
 
 
+setKind : v -> { item | kind : v } -> { item | kind : v }
+setKind =
+    set_ .kind (\value item -> { item | kind = value })
+
+
+mapKind : (v -> v) -> { item | kind : v } -> { item | kind : v }
+mapKind =
+    map_ .kind setKind
+
+
 setLast : v -> { item | last : v } -> { item | last : v }
 setLast =
     set_ .last (\value item -> { item | last = value })
@@ -790,6 +804,16 @@ mapLayoutsDTM =
 mapLayoutsDTL : comparable -> (v -> ( v, List a )) -> { item | layouts : Dict comparable v } -> ( { item | layouts : Dict comparable v }, List a )
 mapLayoutsDTL =
     mapDTL_ .layouts setLayouts
+
+
+setLinkedBy : v -> { item | linkedBy : v } -> { item | linkedBy : v }
+setLinkedBy =
+    set_ .linkedBy (\value item -> { item | linkedBy = value })
+
+
+mapLinkedBy : (v -> v) -> { item | linkedBy : v } -> { item | linkedBy : v }
+mapLinkedBy =
+    map_ .linkedBy setLinkedBy
 
 
 setList : v -> { item | list : v } -> { item | list : v }

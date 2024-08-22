@@ -21,7 +21,7 @@ import {
     uniqueFromLegacy
 } from "./legacyDatabase";
 import {zodParse} from "../zod";
-import {Attribute, Database, Entity, Type} from "../database";
+import {Attribute, Database, DatabaseKind, Entity, Type} from "../database";
 import {parseDatabaseUrl} from "../databaseUrl";
 import {OpenAIKey, OpenAIModel} from "../llm";
 
@@ -54,15 +54,16 @@ export const LegacyZoomLevel = z.number()
 export type LegacyProjectTokenId = Uuid
 export const LegacyProjectTokenId = Uuid
 
-export interface LegacyDatabaseConnection {
-    kind: 'DatabaseConnection',
-    url: string
-}
+export const DatabaseUrlStorage = z.enum(['memory', 'browser', 'project'])
+export type DatabaseUrlStorage = z.infer<typeof DatabaseUrlStorage>
 
 export const LegacyDatabaseConnection = z.object({
     kind: z.literal('DatabaseConnection'),
-    url: z.string()
+    engine: DatabaseKind.optional(),
+    url: z.string().optional(),
+    storage: DatabaseUrlStorage.optional(),
 }).strict()
+export type LegacyDatabaseConnection = z.infer<typeof LegacyDatabaseConnection>
 
 export interface LegacySqlLocalFile {
     kind: 'SqlLocalFile',
@@ -447,7 +448,7 @@ export const LegacyRowPrimaryKey = LegacyRowValue.array()
 export interface LegacyTableRowColumn {
     path: LegacyColumnPathStr
     value: LegacyJsValue
-    linkedBy?: Record<LegacyTableId, LegacyRowPrimaryKey[]>
+    linkedBy?: Record<LegacyTableId, LegacyRowPrimaryKey[]> // legacy, keep it only for retro-compatibility
 }
 
 export const LegacyTableRowColumn = z.object({
@@ -869,7 +870,7 @@ export function sourceToDatabase(s: LegacySource): Database {
         types: s.types?.map(projectTypeFromLegacy),
         stats: removeUndefined({
             name: s.name,
-            kind: s.kind.kind === 'DatabaseConnection' ? parseDatabaseUrl(s.kind.url).kind : undefined
+            kind: s.kind.kind === 'DatabaseConnection' ? (s.kind.engine ? s.kind.engine : s.kind.url ? parseDatabaseUrl(s.kind.url).kind : undefined) : undefined
         })
     })
 }

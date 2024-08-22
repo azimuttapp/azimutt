@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn, ErdNestedColumns(..), create, flatten, getColumn, unpack, withNullable)
+module PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn, ErdNestedColumns(..), create, flatten, getColumnI, unpack, withNullable)
 
 import Dict exposing (Dict)
 import Libs.Dict as Dict
@@ -96,11 +96,11 @@ unpack column =
     }
 
 
-getColumn : ColumnPath -> ErdColumn -> Maybe ErdColumn
-getColumn path column =
+getColumnI : ColumnPath -> ErdColumn -> Maybe ErdColumn
+getColumnI path column =
     column.columns
-        |> Maybe.andThen (\(ErdNestedColumns cols) -> cols |> Ned.get path.head)
-        |> Maybe.andThen (\col -> path.tail |> Nel.fromList |> Maybe.mapOrElse (\next -> getColumn next col) (Just col))
+        |> Maybe.andThen (\(ErdNestedColumns cols) -> cols |> Ned.get path.head |> Maybe.orElse (cols |> Ned.find (\k _ -> String.toLower k == String.toLower path.head)))
+        |> Maybe.andThen (\col -> path.tail |> Nel.fromList |> Maybe.mapOrElse (\next -> getColumnI next col) (Just col))
 
 
 flatten : ErdColumn -> List ErdColumn

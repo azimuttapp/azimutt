@@ -25,6 +25,7 @@ export const AttributePath = AttributeName.array()
 export type AttributePath = z.infer<typeof AttributePath>
 export const AttributeType = z.string()
 export type AttributeType = z.infer<typeof AttributeType>
+// FIXME: remove unknown from AttributeValue
 export const AttributeValue = z.union([z.string(), z.number(), z.boolean(), z.date(), z.null(), z.unknown()])
 export type AttributeValue = z.infer<typeof AttributeValue>
 export const ConstraintName = z.string()
@@ -124,7 +125,7 @@ export const AttributeTypeParsed = z.object({
 export type AttributeTypeParsed = z.infer<typeof AttributeTypeParsed>
 
 export const AttributeStats = z.object({
-    nulls: z.number().optional(), // percentage of nulls
+    nulls: z.number().optional(), // percentage of nulls, between 0 and 1
     bytesAvg: z.number().optional(), // average bytes for a value
     cardinality: z.number().optional(), // number of different values
     commonValues: z.object({
@@ -231,7 +232,6 @@ export const DatabaseStats = z.object({
     version: z.string(),
     extractedAt: DateTime, // when the database was extracted
     extractionDuration: Millis,
-    // url? host? options?
     size: z.number(), // used bytes
 }).partial().strict()
 export type DatabaseStats = z.infer<typeof DatabaseStats>

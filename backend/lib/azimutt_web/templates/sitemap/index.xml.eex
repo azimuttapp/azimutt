@@ -2,11 +2,11 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc><%= Routes.website_url(@conn, :index) %></loc><lastmod>2023-01-08</lastmod></url>
   <url><loc><%= Routes.website_url(@conn, :use_cases_index) %></loc><lastmod>2023-01-20</lastmod></url>
-  <%= for use_case <- Azimutt.use_cases do %>
+  <%= for use_case <- Azimutt.showcase_usages do %>
   <url><loc><%= Routes.website_url(@conn, :use_cases_show, use_case.id) %></loc><lastmod>2023-01-20</lastmod></url>
   <% end %>
   <url><loc><%= Routes.website_url(@conn, :features_index) %></loc><lastmod>2023-03-10</lastmod></url>
-  <%= for feature <- Azimutt.features do %>
+  <%= for feature <- Azimutt.showcase_features do %>
   <url><loc><%= Routes.website_url(@conn, :features_show, feature.id) %></loc><lastmod>2023-03-10</lastmod></url>
   <% end %>
   <url><loc><%= Routes.website_url(@conn, :pricing) %></loc><lastmod>2023-03-10</lastmod></url>

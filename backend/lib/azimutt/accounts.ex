@@ -10,25 +10,15 @@ defmodule Azimutt.Accounts do
 
   ## Database getters
 
-  def get_user(id) when is_binary(id) do
-    Repo.get(User, id)
-    |> Repo.preload([:organizations])
-    |> Result.from_nillable()
-  end
+  def get_user(id) when is_binary(id), do: Repo.get(User, id) |> Result.from_nillable()
 
-  def get_user_by_provider(provider, provider_uid) when is_binary(provider) and is_binary(provider_uid) do
-    Repo.get_by(User, provider: provider, provider_uid: provider_uid)
-    |> Repo.preload([:organizations])
-    |> Result.from_nillable()
-  end
+  def get_user_by_provider(provider, provider_uid) when is_binary(provider) and is_binary(provider_uid),
+    do: Repo.get_by(User, provider: provider, provider_uid: provider_uid) |> Result.from_nillable()
 
   def get_user_by_provider(_provider, _provider_uid), do: {:error, :not_found}
 
-  def get_user_by_email(email) when is_binary(email) do
-    Repo.get_by(User, email: email)
-    |> Repo.preload([:organizations])
-    |> Result.from_nillable()
-  end
+  def get_user_by_email(email) when is_binary(email),
+    do: Repo.get_by(User, email: email) |> Result.from_nillable()
 
   def get_user_by_email(_email), do: {:error, :not_found}
 
@@ -92,7 +82,7 @@ defmodule Azimutt.Accounts do
         Tracking.user_created(user, method, if(user.data, do: user.data.attributed_to, else: nil))
 
         if Azimutt.config(:global_organization) do
-          OrganizationMember.new_member_changeset(Azimutt.config(:global_organization), user) |> Repo.insert()
+          OrganizationMember.new_member_changeset(Azimutt.config(:global_organization), user, nil) |> Repo.insert()
         end
 
         {:ok, user}
@@ -115,7 +105,7 @@ defmodule Azimutt.Accounts do
     Repo.get_by(UserProfile, user_id: user.id)
     |> Result.from_nillable()
     |> Result.flat_map_error(fn _ -> create_profile(user, %{}) end)
-    |> Result.map(fn p -> p |> Repo.preload(:user) |> Repo.preload(:team_organization) end)
+    |> Result.map(fn p -> p |> Repo.preload([:user, :team_organization]) end)
   end
 
   defp create_profile(%User{} = user, attrs) do
@@ -143,7 +133,7 @@ defmodule Azimutt.Accounts do
   defp create_or_update_profile_organization(%UserProfile{} = profile, attrs) do
     orga_attrs = attrs["team_organization"]
 
-    if orga_attrs["create"] == "true" do
+    if orga_attrs["create"] == "true" && orga_attrs["name"] != "" do
       if profile.team_organization do
         Organizations.update_organization(orga_attrs, profile.team_organization, profile.user)
       else
@@ -405,16 +395,17 @@ defmodule Azimutt.Accounts do
 
   def get_user_organizations(%User{} = user) do
     if Azimutt.config(:global_organization) && Azimutt.config(:global_organization_alone) do
-      user.organizations |> Enum.filter(fn orga -> orga.id == Azimutt.config(:global_organization) end)
+      user.members |> Enum.map(fn m -> m.organization end) |> Enum.filter(fn org -> org.id == Azimutt.config(:global_organization) end)
     else
-      user.organizations |> Enum.filter(fn orga -> orga.deleted_at == nil end)
+      user.members |> Enum.map(fn m -> m.organization end) |> Enum.filter(fn org -> org.deleted_at == nil end)
     end
   end
 
   def get_user_default_organization(%User{} = user) do
     if Azimutt.config(:global_organization) do
-      user.organizations
-      |> Enum.filter(fn orga -> orga.id == Azimutt.config(:global_organization) end)
+      user.members
+      |> Enum.map(fn m -> m.organization end)
+      |> Enum.filter(fn org -> org.id == Azimutt.config(:global_organization) end)
       |> List.first() || get_user_personal_organization(user)
     else
       get_user_personal_organization(user)
@@ -426,9 +417,8 @@ defmodule Azimutt.Accounts do
       profile = user.profile |> Repo.preload(:team_organization)
       profile.team_organization
     else
-      user.organizations
-      |> Enum.filter(fn orga -> orga.is_personal == true end)
-      |> List.first() || user.organizations |> List.first()
+      orgs = user.members |> Enum.map(fn m -> m.organization end)
+      orgs |> Enum.filter(fn org -> org.is_personal == true end) |> List.first() || orgs |> List.first()
     end
   end
 end

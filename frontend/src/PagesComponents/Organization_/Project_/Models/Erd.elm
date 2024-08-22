@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, countLayoutTables, countLayouts, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getLayoutTable, getProjectRef, getTable, isShown, mapCurrentLayout, mapCurrentLayoutT, mapCurrentLayoutTMWithTime, mapCurrentLayoutTWithTime, mapCurrentLayoutWithTime, mapIgnoredRelationsT, mapSettings, mapSource, mapSourceT, mapSources, mapSourcesT, setIgnoredRelations, setSettings, setSources, toSchema, unpack, viewportM, viewportToCanvas)
+module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, countLayoutTables, countLayouts, create, currentLayout, defaultSchemaM, getColumnI, getColumnPos, getLayoutTable, getProjectRef, getTableI, isShown, mapCurrentLayout, mapCurrentLayoutT, mapCurrentLayoutTMWithTime, mapCurrentLayoutTWithTime, mapCurrentLayoutWithTime, mapIgnoredRelationsT, mapSettings, mapSource, mapSourceT, mapSources, mapSourcesT, setIgnoredRelations, setSettings, setSources, toSchema, unpack, viewportM, viewportToCanvas)
 
 import Conf
 import Dict exposing (Dict)
@@ -24,7 +24,7 @@ import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.Table exposing (Table)
-import Models.Project.TableId exposing (TableId)
+import Models.Project.TableId as TableId exposing (TableId)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.ProjectRef exposing (ProjectRef)
 import Models.Size as Size
@@ -166,14 +166,14 @@ countLayoutTables erd =
     erd |> Maybe.mapOrElse (currentLayout >> .tables >> List.length) 0
 
 
-getTable : TableId -> Erd -> Maybe ErdTable
-getTable tableId erd =
-    erd.tables |> ErdTable.getTable erd.settings.defaultSchema tableId
+getTableI : TableId -> Erd -> Maybe ErdTable
+getTableI tableId erd =
+    erd.tables |> TableId.dictGetI tableId
 
 
-getColumn : ColumnRef -> Erd -> Maybe ErdColumn
-getColumn ref erd =
-    erd |> getTable ref.table |> Maybe.andThen (ErdTable.getColumn ref.column)
+getColumnI : ColumnRef -> Erd -> Maybe ErdColumn
+getColumnI ref erd =
+    erd |> getTableI ref.table |> Maybe.andThen (ErdTable.getColumnI ref.column)
 
 
 getColumnPos : ColumnRef -> Erd -> Maybe Position.Canvas

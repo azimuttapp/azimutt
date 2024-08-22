@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, copyToClipboard, createProject, createProjectTmp, deleteProject, downloadFile, fireworks, focus, fullscreen, getColumnStats, getDatabaseSchema, getPrismaSchema, getProject, getTableStats, listenHotkeys, llmGenerateSql, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableRowSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, copyToClipboard, createProject, createProjectTmp, deleteProject, deleteSource, downloadFile, fireworks, focus, fullscreen, getColumnStats, getDatabaseSchema, getPrismaSchema, getProject, getTableStats, listenHotkeys, llmGenerateSql, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableRowSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
 
 import DataSources.JsonMiner.JsonSchema as JsonSchema exposing (JsonSchema)
 import Dict exposing (Dict)
@@ -132,6 +132,11 @@ deleteProject project redirect =
     messageToJs (DeleteProject project redirect)
 
 
+deleteSource : SourceId -> Cmd msg
+deleteSource source =
+    messageToJs (DeleteSource source)
+
+
 projectDirty : Bool -> Cmd msg
 projectDirty dirty =
     messageToJs (ProjectDirty dirty)
@@ -157,9 +162,9 @@ getColumnStats column ( source, database ) =
     messageToJs (GetColumnStats source database column)
 
 
-runDatabaseQuery : String -> DatabaseUrl -> SqlQueryOrigin -> Cmd msg
-runDatabaseQuery context database query =
-    messageToJs (RunDatabaseQuery context database query)
+runDatabaseQuery : String -> SourceId -> DatabaseUrl -> SqlQueryOrigin -> Cmd msg
+runDatabaseQuery context source database query =
+    messageToJs (RunDatabaseQuery context source database query)
 
 
 getPrismaSchema : String -> Cmd msg
@@ -266,6 +271,7 @@ type ElmMsg
     | UpdateProject Project
     | MoveProjectTo Project ProjectStorage
     | DeleteProject ProjectInfo (Maybe String)
+    | DeleteSource SourceId
     | ProjectDirty Bool
     | DownloadFile FileName FileContent
     | CopyToClipboard String
@@ -273,7 +279,7 @@ type ElmMsg
     | GetDatabaseSchema DatabaseUrl
     | GetTableStats SourceId DatabaseUrl TableId
     | GetColumnStats SourceId DatabaseUrl ColumnRef
-    | RunDatabaseQuery String DatabaseUrl SqlQueryOrigin
+    | RunDatabaseQuery String SourceId DatabaseUrl SqlQueryOrigin
     | GetPrismaSchema String
     | ObserveSizes (List HtmlId)
     | LlmGenerateSql OpenAIKey OpenAIModel String DatabaseKind Source
@@ -393,6 +399,9 @@ elmEncoder elm =
         DeleteProject project redirect ->
             Encode.object [ ( "kind", "DeleteProject" |> Encode.string ), ( "project", project |> ProjectInfo.encode ), ( "redirect", redirect |> Encode.maybe Encode.string ) ]
 
+        DeleteSource source ->
+            Encode.object [ ( "kind", "DeleteSource" |> Encode.string ), ( "source", source |> SourceId.encode ) ]
+
         ProjectDirty dirty ->
             Encode.object [ ( "kind", "ProjectDirty" |> Encode.string ), ( "dirty", dirty |> Encode.bool ) ]
 
@@ -414,8 +423,8 @@ elmEncoder elm =
         GetColumnStats source database column ->
             Encode.object [ ( "kind", "GetColumnStats" |> Encode.string ), ( "source", source |> SourceId.encode ), ( "database", database |> DatabaseUrl.encode ), ( "column", column |> ColumnRef.encode ) ]
 
-        RunDatabaseQuery context database query ->
-            Encode.object [ ( "kind", "RunDatabaseQuery" |> Encode.string ), ( "context", context |> Encode.string ), ( "database", database |> DatabaseUrl.encode ), ( "query", query |> SqlQuery.encodeOrigin ) ]
+        RunDatabaseQuery context source database query ->
+            Encode.object [ ( "kind", "RunDatabaseQuery" |> Encode.string ), ( "context", context |> Encode.string ), ( "source", source |> SourceId.encode ), ( "database", database |> DatabaseUrl.encode ), ( "query", query |> SqlQuery.encodeOrigin ) ]
 
         GetPrismaSchema content ->
             Encode.object [ ( "kind", "GetPrismaSchema" |> Encode.string ), ( "content", content |> Encode.string ) ]

@@ -1,27 +1,27 @@
 <div class="px-3 py-12">
     <h2 class="text-3xl font-semibold leading-7 text-indigo-600 text-center">Billing</h2>
-    <%= if @organization.plan == "enterprise" do %>
+    <%= if @plan.id == :enterprise do %>
         <p class="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-600">
             Thank you for using Azimutt.
-            You are currently on <span title={@organization.plan_status}><%= AzimuttWeb.LayoutView.plan_badge(@organization.plan) %></span><br>
+            You are currently on <span title={@organization.plan_status}><%= AzimuttWeb.LayoutView.plan_badge(@plan.id) %></span><br>
             For any change or question, please contact <a href={"mailto:#{Azimutt.config(:enterprise_support_email)}"} class="underline text-indigo-600 hover:text-indigo-900"><%= Azimutt.config(:enterprise_support_email) %></a>.
         </p>
     <% else %>
         <p class="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-600">
             Thank you for using Azimutt.
-            You are currently on <span title={@organization.plan_status}><%= AzimuttWeb.LayoutView.plan_badge(@organization.plan) %></span>
+            You are currently on <span title={@organization.plan_status}><%= AzimuttWeb.LayoutView.plan_badge(@plan.id) %></span>
             <%= if @organization.plan_seats > 1 do %>
                 with <b><%= @organization.plan_seats %> seats</b>.
             <% end %>
             <br>
             More details on <a href={Routes.website_path(@conn, :pricing)} target="_blank" rel="noopener noreferrer" class="underline">pricing page</a>.
             Don't hesitate to <a href={"mailto:#{Azimutt.config(:contact_email)}"} class="underline">reach out</a> for any question.<br>
-            <% max_seats = Azimutt.limits().users[String.to_atom(@organization.plan)] %>
+            <% max_seats = Azimutt.features().users[@plan.id] %>
             <%= if max_seats == nil || max_seats > 1 do %>
                 Change your seats or plan using the "Manage your subscription" button.
             <% end %>
         </p>
-        <%= if @organization.plan == "pro" do %>
+        <%= if @plan.id == :pro do %>
             <div class="mt-3 max-w-xl mx-auto rounded bg-yellow-50 p-4">
                 <div class="flex">
                     <div class="flex-shrink-0">

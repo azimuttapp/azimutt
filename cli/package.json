@@ -1,6 +1,6 @@
 {
   "name": "azimutt",
-  "version": "0.1.20",
+  "version": "0.1.24",
   "description": "Export database schema from relational or document databases. Import it to https://azimutt.app",
   "keywords": [
     "database",
@@ -56,11 +56,11 @@
     "@types/clear": "^0.1.4",
     "@types/figlet": "^1.5.8",
     "@types/jest": "^29.5.12",
-    "@types/node": "^20.14.9",
+    "@types/node": "^22.1.0",
     "jest": "^29.7.0",
     "nodemon": "^3.1.4",
-    "ts-jest": "^29.1.5",
+    "ts-jest": "^29.2.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.4"
   }
 }

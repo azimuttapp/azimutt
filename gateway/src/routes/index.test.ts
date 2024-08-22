@@ -10,6 +10,7 @@ describe('GET /', async () => {
         API_HOST: 'localhost',
         API_PORT: '1234',
         CORS_ALLOW_ORIGIN: 'http://localhost:4000',
+        DATASOURCE_URLS: 'postgresql://postgres:postgres@localhost/azimutt_dev',
     }))
     test('Should return hello world', async () => {
         const response = await server.inject({method: 'GET', path: '/'})

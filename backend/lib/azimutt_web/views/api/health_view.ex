@@ -1,5 +1,6 @@
 defmodule AzimuttWeb.Api.HealthView do
   use AzimuttWeb, :view
+  alias Azimutt.Utils.Mapx
   alias Azimutt.Utils.Result
   alias Ecto.Adapters.SQL
 
@@ -15,7 +16,9 @@ defmodule AzimuttWeb.Api.HealthView do
       logged: params[:user] != nil,
       database: SQL.query(Azimutt.Repo, "SELECT true;", []) |> Result.map(fn r -> r.rows |> hd() |> hd() end) |> Result.or_else(false),
       config: if(is_admin, do: build_config(), else: nil),
-      server_started: if(is_admin, do: Azimutt.config(:server_started), else: nil)
+      server_started: if(is_admin, do: Azimutt.config(:server_started), else: nil),
+      version: Azimutt.config(:version),
+      version_date: Azimutt.config(:version_date)
     }
   end
 
@@ -25,6 +28,7 @@ defmodule AzimuttWeb.Api.HealthView do
       message: Azimutt.config(:commit_message),
       date: Azimutt.config(:commit_date)
     }
+    |> Mapx.filter(fn {_, v} -> !is_nil(v) end)
   end
 
   defp build_config do
@@ -59,5 +63,6 @@ defmodule AzimuttWeb.Api.HealthView do
       twitter: Azimutt.config(:twitter),
       github: Azimutt.config(:github)
     }
+    |> Mapx.filter(fn {_, v} -> !is_nil(v) end)
   end
 end

@@ -1,6 +1,7 @@
-module Libs.Dict exposing (alter, any, count, filterMap, find, from, fromIndexedList, fromListBy, fromListIndexedMap, fromListMap, fuse, getOrElse, getResult, mapBoth, mapKeys, mapValues, nonEmpty, notMember, set, updateT, zip)
+module Libs.Dict exposing (alter, any, count, filterMap, find, findMap, from, fromIndexedList, fromListBy, fromListIndexedMap, fromListMap, fuse, getOrElse, getResult, mapBoth, mapKeys, mapValues, nonEmpty, notMember, set, updateT, zip)
 
 import Dict exposing (Dict)
+import Libs.List as List
 
 
 nonEmpty : Dict k a -> Bool
@@ -73,7 +74,7 @@ any predicate dict =
     find predicate dict /= Nothing
 
 
-find : (comparable -> v -> Bool) -> Dict comparable v -> Maybe ( comparable, v )
+find : (comparable -> v -> Bool) -> Dict comparable v -> Maybe v
 find predicate dict =
     Dict.foldl
         (\k v acc ->
@@ -83,13 +84,18 @@ find predicate dict =
 
                 Nothing ->
                     if predicate k v then
-                        Just ( k, v )
+                        Just v
 
                     else
                         Nothing
         )
         Nothing
         dict
+
+
+findMap : (comparable -> a -> Maybe b) -> Dict comparable a -> Maybe b
+findMap f dict =
+    dict |> Dict.toList |> List.findMap (\( k, a ) -> f k a)
 
 
 filterMap : (comparable -> a -> Maybe b) -> Dict comparable a -> Dict comparable b

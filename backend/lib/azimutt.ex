@@ -97,8 +97,7 @@ defmodule Azimutt do
 
   def active_plans, do: [plans().free, plans().solo, plans().team, plans().enterprise]
 
-  # MUST stay in sync with frontend/src/Conf.elm (`features`)
-  def limits do
+  def features do
     %{
       # Database features
       schema_exploration: %{name: "Schema exploration", free: true, solo: true, team: true, enterprise: true, pro: true},
@@ -126,8 +125,8 @@ defmodule Azimutt do
       projects: %{name: "Max projects", free: 0, solo: 1, team: 5, enterprise: nil, pro: nil, description: "0 means you can create a project but can't save it."},
       project_dbs: %{name: "Max db/project", free: 1, solo: 1, team: 3, enterprise: nil, pro: nil},
       project_layouts: %{name: "Max layout/project", free: 1, solo: 3, team: 20, enterprise: nil, pro: nil},
-      layout_tables: %{name: "Max table/layout", free: 10, solo: 10, team: 40, enterprise: nil, pro: nil},
-      project_doc: %{name: "Max doc/project", free: 10, solo: 10, team: 1000, enterprise: nil, pro: nil},
+      layout_tables: %{name: "Max table/layout", free: 10, solo: 15, team: 40, enterprise: nil, pro: nil},
+      project_doc: %{name: "Max doc/project", free: 10, solo: 30, team: 1000, enterprise: nil, pro: nil},
       # Extended integration
       project_share: %{name: "Sharing project", free: false, solo: false, team: false, enterprise: true, pro: true, description: "Use private links & embed to share with guest."},
       api: %{name: "API access", free: false, solo: false, team: false, enterprise: true, pro: true, description: "Fetch and update sources and documentation programmatically."},
@@ -155,7 +154,7 @@ defmodule Azimutt do
     ]
   end
 
-  def use_cases do
+  def showcase_usages do
     [
       %{
         id: "explore",
@@ -181,7 +180,7 @@ defmodule Azimutt do
     ]
   end
 
-  def features do
+  def showcase_features do
     [
       %{
         id: "erd",

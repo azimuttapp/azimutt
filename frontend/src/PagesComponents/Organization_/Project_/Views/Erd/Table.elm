@@ -124,7 +124,7 @@ viewTable conf zoom args layout meta tableLayout table =
                 , columnHover = \col -> HoverTable ( table.id, Just col )
                 , columnClick = B.maybe virtualRelation (\col e -> VirtualRelationMsg (VRUpdate { table = table.id, column = col } e.clientPos))
                 , columnDblClick = \col -> { table = table.id, column = col } |> DetailsSidebar.ShowColumn |> DetailsSidebarMsg
-                , columnRightClick = \i col -> ContextMenuCreate (B.cond (tableLayout.columns |> ErdColumnProps.member col) ColumnContextMenu.view ColumnContextMenu.viewHidden platform i { table = table.id, column = col } (table |> ErdTable.getColumn col) (meta.columns |> ColumnPath.get col |> Maybe.andThen .notes))
+                , columnRightClick = \i col -> ContextMenuCreate (B.cond (tableLayout.columns |> ErdColumnProps.member col) ColumnContextMenu.view ColumnContextMenu.viewHidden platform i { table = table.id, column = col } (table |> ErdTable.getColumnI col) (meta.columns |> ColumnPath.get col |> Maybe.andThen .notes))
                 , notesClick = \col -> NotesMsg (NOpen table.id col)
                 , relationsIconClick =
                     \cols isOut ->

@@ -1,16 +1,9 @@
-import mssql, {config, ConnectionPool, IOptions, IResult, ISqlType} from "mssql";
+import mssql from "mssql";
 import {AnyError} from "@azimutt/utils";
-import {
-    AttributeValue,
-    ConnectorDefaultOpts,
-    DatabaseUrlParsed,
-    logQueryIfNeeded,
-    parseDatabaseOptions,
-    queryError
-} from "@azimutt/models";
+import {AttributeValue, ConnectorDefaultOpts, DatabaseUrlParsed, logQueryIfNeeded, queryError} from "@azimutt/models";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
-    const connection: ConnectionPool = await mssql.connect(buildconfig(application, url))
+    const connection: mssql.ConnectionPool = await mssql.connect(buildconfig(application, url))
         .catch(_ => mssql.connect(url.full))
         .catch(err => Promise.reject(connectionError(err)))
     let queryCpt = 1
@@ -25,7 +18,7 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, async (sql, parameters) => {
                 const request = connection.request() as any
                 request.arrayRowMode = true
-                const result: IResult<AttributeValue[]> & { columns: ColumnMetadata[][] } = await request.query(sql)
+                const result: mssql.IResult<AttributeValue[]> & { columns: ColumnMetadata[][] } = await request.query(sql)
                     .catch((err: AnyError) => Promise.reject(queryError(name, sql, err)))
                 return {rows: result.recordset as AttributeValue[][], fields: result.columns[0]}
             }, r => r.rows.length, opts)
@@ -47,14 +40,10 @@ export interface Conn {
 
 export type QueryResultValue = AttributeValue
 export type QueryResultRow = { [column: string]: QueryResultValue }
-export type QueryResultField = { name: string }
 export type QueryResultRowArray = QueryResultValue[]
-export type QueryResultArrayMode = {
-    fields: QueryResultField[],
-    rows: QueryResultRowArray[]
-}
+export type QueryResultArrayMode = { fields: ColumnMetadata[], rows: QueryResultRowArray[] }
 
-function buildconfig(application: string, url: DatabaseUrlParsed): config {
+function buildconfig(application: string, url: DatabaseUrlParsed): mssql.config {
     const urlOptions = url.options || {}
     return {
         server: url.host,
@@ -69,8 +58,8 @@ function buildconfig(application: string, url: DatabaseUrlParsed): config {
             trustedConnection: ['true', 'yes'].indexOf((urlOptions['trusted_connection'] || '').toLowerCase()) != -1, // default: false
             // ??? MultipleActiveResultSets=False
             // ??? persist security info=True
-        } as IOptions
-    } as config
+        } as mssql.IOptions
+    } as mssql.config
 }
 
 function connectionError(err: AnyError): AnyError {
@@ -84,7 +73,7 @@ export type ColumnMetadata = {
     index: number;
     name: string;
     length: number;
-    type: (() => ISqlType) | ISqlType;
+    type: (() => mssql.ISqlType) | mssql.ISqlType;
     udt?: any;
     scale?: number | undefined;
     precision?: number | undefined;

@@ -6,7 +6,8 @@ import {
     ConnectorDefaultOpts,
     DatabaseUrlParsed,
     logQueryIfNeeded,
-    queryError
+    queryError,
+    QueryField
 } from "@azimutt/models";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
@@ -18,6 +19,7 @@ export async function connect<T>(application: string, url: DatabaseUrlParsed, ex
         url,
         query<T extends QueryResultRow>(sql: string, parameters: any[] = [], name?: string): Promise<T[]> {
             return logQueryIfNeeded(queryCpt++, name, sql, parameters, (sql, parameters) => {
+                // can't upgrade lib: `Property 'query' does not exist on type 'Connection'.` (needs fix)
                 return connection.query<RowDataPacket[]>({sql, values: parameters})
                     .then(([rows]) => rows as T[], err => Promise.reject(queryError(name, sql, err)))
             }, r => r.length, opts)
@@ -45,12 +47,8 @@ export interface Conn {
 
 export type QueryResultValue = AttributeValue
 export type QueryResultRow = { [column: string]: QueryResultValue }
-export type QueryResultField = { name: string }
 export type QueryResultRowArray = QueryResultValue[]
-export type QueryResultArrayMode = {
-    fields: QueryResultField[],
-    rows: QueryResultRowArray[]
-}
+export type QueryResultArrayMode = { fields: QueryField[], rows: QueryResultRowArray[] }
 
 function buildConfig(application: string, url: DatabaseUrlParsed): ConnectionOptions {
     return {

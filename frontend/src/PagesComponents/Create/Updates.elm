@@ -44,10 +44,10 @@ update req now projects projectsLoaded urlOrganization msg model =
                     storage =
                         req.query |> Dict.get "storage" |> Maybe.andThen ProjectStorage.fromString
                 in
-                ( (req.query |> Dict.get "database" |> Maybe.map (\_ -> { model | databaseSource = Just (DatabaseSource.init Nothing (createProject projects storage name)) }))
-                    |> Maybe.orElse (req.query |> Dict.get "sql" |> Maybe.map (\_ -> { model | sqlSource = Just (SqlSource.init Nothing (Tuple.second >> createProject projects storage name)) }))
-                    |> Maybe.orElse (req.query |> Dict.get "prisma" |> Maybe.map (\_ -> { model | prismaSource = Just (PrismaSource.init Nothing (createProject projects storage name)) }))
-                    |> Maybe.orElse (req.query |> Dict.get "json" |> Maybe.map (\_ -> { model | jsonSource = Just (JsonSource.init Nothing (createProject projects storage name)) }))
+                ( (req.query |> Dict.get "database" |> Maybe.map (\_ -> { model | databaseSource = Just (DatabaseSource.init Nothing (createProject urlOrganization projects storage name)) }))
+                    |> Maybe.orElse (req.query |> Dict.get "sql" |> Maybe.map (\_ -> { model | sqlSource = Just (SqlSource.init Nothing (Tuple.second >> createProject urlOrganization projects storage name)) }))
+                    |> Maybe.orElse (req.query |> Dict.get "prisma" |> Maybe.map (\_ -> { model | prismaSource = Just (PrismaSource.init Nothing (createProject urlOrganization projects storage name)) }))
+                    |> Maybe.orElse (req.query |> Dict.get "json" |> Maybe.map (\_ -> { model | jsonSource = Just (JsonSource.init Nothing (createProject urlOrganization projects storage name)) }))
                     |> Maybe.withDefault model
                 , (req.query |> Dict.get "database" |> Maybe.map (DatabaseSource.GetSchema >> DatabaseSourceMsg >> T.send))
                     |> Maybe.orElse (req.query |> Dict.get "sql" |> Maybe.map (SqlSource.GetRemoteFile >> SqlSourceMsg >> T.send))
@@ -72,7 +72,7 @@ update req now projects projectsLoaded urlOrganization msg model =
             model |> mapJsonSourceMT (JsonSource.update JsonSourceMsg now Nothing message) |> Extra.unpackTM
 
         AmlSourceMsg storage name ->
-            ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create projects name >> CreateProjectTmp storage) )
+            ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create urlOrganization projects name >> CreateProjectTmp storage) )
 
         CreateProjectTmp storage project ->
             ( model
@@ -90,9 +90,9 @@ update req now projects projectsLoaded urlOrganization msg model =
             model |> handleJsMessage req urlOrganization message
 
 
-createProject : List ProjectInfo -> Maybe ProjectStorage -> ProjectName -> Result String Source -> Msg
-createProject projects storage name =
-    Result.fold (Toasts.error >> Toast) (Project.create projects name >> CreateProjectTmp storage)
+createProject : Maybe OrganizationId -> List ProjectInfo -> Maybe ProjectStorage -> ProjectName -> Result String Source -> Msg
+createProject urlOrganization projects storage name =
+    Result.fold (Toasts.error >> Toast) (Project.create urlOrganization projects name >> CreateProjectTmp storage)
 
 
 handleJsMessage : Request.With params -> Maybe OrganizationId -> JsMsg -> Model -> ( Model, Cmd Msg )

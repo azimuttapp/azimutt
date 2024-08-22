@@ -8,10 +8,12 @@ import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Models.Notes as Notes exposing (Notes, NotesKey)
 import Libs.String as String
 import Libs.Time as Time
 import Models.Organization as Organization exposing (Organization)
+import Models.OrganizationId exposing (OrganizationId)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
@@ -54,13 +56,13 @@ type alias Project =
     }
 
 
-create : List { a | name : ProjectName } -> ProjectName -> Source -> Project
-create projects name source =
+create : Maybe OrganizationId -> List { a | organization : Maybe { b | id : OrganizationId }, name : ProjectName } -> ProjectName -> Source -> Project
+create organization projects name source =
     Project
         Nothing
         ProjectId.zero
         ProjectSlug.zero
-        (String.unique (projects |> List.map .name) name)
+        (String.unique (organization |> Maybe.mapOrElse (\id -> projects |> List.filter (\p -> p.organization |> Maybe.any (\o -> o.id == id))) projects |> List.map .name) name)
         Nothing
         [ source ]
         Dict.empty

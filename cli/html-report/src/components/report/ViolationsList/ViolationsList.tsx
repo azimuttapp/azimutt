@@ -1,8 +1,6 @@
 import { useReport } from "@/hooks/useReport"
 import { ViolationsListItem } from "./ViolationsListItem"
 
-export interface ViolationsListProps {}
-
 export const ViolationsList = () => {
   const { filteredRules } = useReport()
 

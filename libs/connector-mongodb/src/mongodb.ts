@@ -101,14 +101,16 @@ async function getDistinctValues(collection: Collection, attribute: AttributeNam
 
 async function inferCollectionMixed(collection: Collection, mixed: MixedCollection | null, opts: ConnectorSchemaOpts): Promise<Entity> {
     const documents = await getSampleDocuments(collection, mixed, opts)
+    const attrs = schemaToAttributes(valuesToSchema(documents))
+    const pk = attrs.find(a => a.name === '_id')
     const count = await countDocuments(collection, mixed, opts)
     return removeUndefined({
         database: collection.dbName,
         name: mixed ? `${collection.collectionName}__${mixed.attribute}__${mixed.value}` : collection.collectionName,
         kind: undefined,
         def: undefined,
-        attrs: schemaToAttributes(valuesToSchema(documents)),
-        pk: undefined,
+        attrs,
+        pk: pk ? removeUndefined({name: undefined, attrs: [[pk.name]], doc: undefined, stats: undefined, extra: undefined}) : undefined,
         indexes: undefined,
         checks: undefined,
         doc: undefined,

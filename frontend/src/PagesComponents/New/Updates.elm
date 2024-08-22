@@ -16,7 +16,6 @@ import Models.Project.ProjectId as ProjectId
 import Models.Project.Source as Source
 import Models.Project.SourceId as SourceId
 import Models.ProjectInfo exposing (ProjectInfo)
-import Models.SourceInfo as SourceInfo
 import PagesComponents.New.Models exposing (Model, Msg(..), Tab(..))
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra
 import Ports exposing (JsMsg(..))
@@ -123,7 +122,7 @@ update req now projects urlOrganization msg model =
             ( model, Cmd.batch [ Ports.createProjectTmp project, Track.projectDraftCreated project ] )
 
         CreateEmptyProject name ->
-            ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create projects name >> CreateProjectTmp) )
+            ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create urlOrganization projects name >> CreateProjectTmp) )
 
         DropdownToggle id ->
             ( model |> Dropdown.update id, Cmd.none )
@@ -144,27 +143,27 @@ update req now projects urlOrganization msg model =
             ( model |> mapOpenedDialogs (List.drop 1), message |> T.sendAfter Conf.ui.closeDuration )
 
         JsMessage message ->
-            model |> handleJsMessage req now urlOrganization message
+            model |> handleJsMessage req urlOrganization message
 
         Noop _ ->
             ( model, Cmd.none )
 
 
-handleJsMessage : Request.With params -> Time.Posix -> Maybe OrganizationId -> JsMsg -> Model -> ( Model, Cmd Msg )
-handleJsMessage req now urlOrganization msg model =
+handleJsMessage : Request.With params -> Maybe OrganizationId -> JsMsg -> Model -> ( Model, Cmd Msg )
+handleJsMessage req urlOrganization msg model =
     case msg of
         GotLocalFile kind file content ->
             if kind == ProjectSource.kind then
                 ( model, content |> ProjectSource.GotFile |> ProjectSourceMsg |> T.send )
 
             else if kind == SqlSource.kind then
-                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> SqlSource.GotFile (SourceInfo.sqlLocal now sourceId file) |> SqlSourceMsg) )
+                ( model, SourceId.generator |> Random.generate (\sourceId -> SqlSource.GotLocalFile sourceId file content |> SqlSourceMsg) )
 
             else if kind == PrismaSource.kind then
-                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> PrismaSource.GotFile (SourceInfo.prismaLocal now sourceId file) |> PrismaSourceMsg) )
+                ( model, SourceId.generator |> Random.generate (\sourceId -> PrismaSource.GotLocalFile sourceId file content |> PrismaSourceMsg) )
 
             else if kind == JsonSource.kind then
-                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> JsonSource.GotFile (SourceInfo.jsonLocal now sourceId file) |> JsonSourceMsg) )
+                ( model, SourceId.generator |> Random.generate (\sourceId -> JsonSource.GotLocalFile sourceId file content |> JsonSourceMsg) )
 
             else
                 ( model, "Unhandled local file kind '" ++ kind ++ "'" |> Toasts.error |> Toast |> T.send )

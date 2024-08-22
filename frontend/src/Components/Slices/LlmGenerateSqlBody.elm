@@ -5,6 +5,7 @@ import Components.Atoms.Badge as Badge
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon
 import Components.Molecules.Tooltip as Tooltip
+import Components.Slices.PlanDialog as PlanDialog
 import Conf
 import Dict
 import ElmBook
@@ -27,11 +28,13 @@ import Libs.Task as T
 import Libs.Time as Time
 import Libs.Tuple3 as Tuple3
 import Models.OpenAIModel as OpenAIModel exposing (OpenAIModel)
+import Models.Organization as Organization
 import Models.Position as Position
 import Models.Project as Project
 import Models.Project.Column as Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPathStr)
+import Models.Project.DatabaseUrlStorage as DatabaseUrlStorage
 import Models.Project.Relation exposing (Relation)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId, SourceIdStr)
@@ -40,6 +43,7 @@ import Models.Project.SourceName exposing (SourceName)
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableIdStr)
 import Models.Project.TableName exposing (TableName)
+import Models.ProjectRef as ProjectRef exposing (ProjectRef)
 import Models.Size as Size
 import Models.SqlQuery exposing (SqlQuery, SqlQueryOrigin)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
@@ -137,11 +141,15 @@ promptLlmKey openPrompt updateLlmKey =
         ""
 
 
-view : (Msg -> msg) -> (Cmd msg -> msg) -> (List msg -> msg) -> (String -> msg) -> (SourceId -> SqlQueryOrigin -> msg) -> msg -> HtmlId -> Erd -> Model -> Html msg
-view wrap send batch toastSuccess openDataExplorer onClose titleId erd model =
+view : (Msg -> msg) -> (Cmd msg -> msg) -> (List msg -> msg) -> (String -> msg) -> (SourceId -> SqlQueryOrigin -> msg) -> msg -> HtmlId -> ProjectRef -> Erd -> Model -> Html msg
+view wrap send batch toastSuccess openDataExplorer onClose titleId projectRef erd model =
     let
         ( sourceHtmlId, promptHtmlId, sqlHtmlId ) =
             ( model.id ++ "-source", model.id ++ "-prompt", model.id ++ "-sql" )
+
+        aiDisabled : Bool
+        aiDisabled =
+            projectRef |> Organization.canUseAi |> not
     in
     div [ class "" ]
         [ div [ css [ "px-6 pt-6", sm [ "flex items-start" ] ] ]
@@ -154,15 +162,20 @@ view wrap send batch toastSuccess openDataExplorer onClose titleId erd model =
                     , Badge.basic Tw.green [ class "ml-1" ] [ text "Beta" ] |> Tooltip.br "SQL generation is free while in beta."
                     ]
                 , p [ class "mt-1 text-sm leading-6 text-gray-600" ] [ text "Write in plain english the query you want, Azimutt will generate it for you." ]
+                , if aiDisabled then
+                    div [ class "mt-3" ] [ PlanDialog.aiDisabledAlert projectRef ]
+
+                  else
+                    div [] []
                 , if model.sources |> List.isEmpty then
-                    p [ class "mt-4 rounded bg-yellow-50 p-4 text-sm text-yellow-700" ]
+                    p [ class "mt-3 rounded bg-yellow-50 p-4 text-sm text-yellow-700" ]
                         [ text "SQL queries are built for a specific database"
                         , br [] []
                         , text "Add a source with URL connection to generate and execute SQL queries."
                         ]
 
                   else
-                    div [ class "mt-4" ]
+                    div [ class "mt-3" ]
                         [ div [ class "flex items-center justify-between" ]
                             [ label [ for promptHtmlId, class "block text-sm font-medium leading-6 text-gray-900" ] [ text "What do you want?" ]
                             , if List.length model.sources > 1 then
@@ -171,7 +184,7 @@ view wrap send batch toastSuccess openDataExplorer onClose titleId erd model =
                                     sourceValue =
                                         model.source |> Maybe.mapOrElse (Tuple3.first >> SourceId.toString) ""
                                 in
-                                select [ name sourceHtmlId, id sourceHtmlId, onInput (SourceId.fromString >> SetSource >> wrap), class "rounded-md border-gray-300 py-1 pl-2 pr-8 text-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500" ]
+                                select [ name sourceHtmlId, id sourceHtmlId, onInput (SourceId.fromString >> SetSource >> wrap), disabled aiDisabled, class "rounded-md border-gray-300 py-1 pl-2 pr-8 text-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 disabled:text-gray-500 disabled:bg-gray-50" ]
                                     ((model.sources |> List.map (\( id, name, _ ) -> { value = SourceId.toString id, label = name })) |> List.map (\i -> option [ value i.value, selected (i.value == sourceValue) ] [ text i.label ]))
 
                               else
@@ -184,7 +197,7 @@ view wrap send batch toastSuccess openDataExplorer onClose titleId erd model =
                                 , id promptHtmlId
                                 , value model.prompt
                                 , onInput (SetPrompt >> wrap)
-                                , disabled model.loading
+                                , disabled (aiDisabled || model.loading)
                                 , autofocus True
                                 , placeholder "Who is the last created user?"
                                 , class "block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 disabled:text-gray-500 disabled:bg-gray-50"
@@ -308,7 +321,7 @@ doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "LlmGenerateSqlBody"
         |> Chapter.renderStatefulComponentList
-            [ docComponent "dynamic" (\model -> view docUpdateStateDynamic docSend docBatch docToast docOpenDatExplorer docOnClose docTitleId docErd model.dynamic)
+            [ docComponent "dynamic" (\model -> view docUpdateStateDynamic docSend docBatch docToast docOpenDatExplorer docOnClose docTitleId docProjectRef docErd model.dynamic)
             , docComponentStatic "empty" docModelEmpty
             , docComponentStatic "with prompt" { docModelEmpty | prompt = "Who is Loïc?" }
             , docComponentStatic "loading" { docModelEmpty | prompt = "Who is Loïc?", loading = True }
@@ -326,7 +339,7 @@ docComponent name render =
 
 docComponentStatic : String -> Model -> ( String, SharedDocState x -> Html (ElmBook.Msg state) )
 docComponentStatic name model =
-    ( name, \_ -> view docWrap docSend docBatch docToast docOpenDatExplorer docOnClose docTitleId docErd { model | id = name } )
+    ( name, \_ -> view docWrap docSend docBatch docToast docOpenDatExplorer docOnClose docTitleId docProjectRef docErd { model | id = name } )
 
 
 docUpdateStateDynamic : Msg -> ElmBook.Msg (SharedDocState x)
@@ -395,10 +408,15 @@ docModelEmpty =
     { id = "", sources = [ ( docSource.id, docSource.name, PostgreSQL ) ], source = Just ( docSource.id, docSource.name, PostgreSQL ), prompt = "", loading = False, generatedSql = Nothing }
 
 
+docProjectRef : ProjectRef
+docProjectRef =
+    ProjectRef.one
+
+
 docErd : Erd
 docErd =
     docSource
-        |> Project.create [] "Azimutt"
+        |> Project.create Nothing [] "Azimutt"
         |> Erd.create
         |> setLayouts (Dict.fromList [ ( "init layout", docBuildLayout [ ( "users", [ "id", "name" ] ) ] ) ])
         |> setCurrentLayout "init layout"
@@ -408,7 +426,7 @@ docSource : Source
 docSource =
     { id = SourceId.one
     , name = "azimutt_dev"
-    , kind = DatabaseConnection "postgresql://postgres:postgres@localhost/azimutt_dev"
+    , kind = DatabaseConnection { kind = PostgreSQL, url = Just "postgresql://postgres:postgres@localhost/azimutt_dev", storage = DatabaseUrlStorage.Project }
     , content = Array.empty
     , tables =
         [ { docTableEmpty
@@ -445,7 +463,7 @@ docSource2 : Source
 docSource2 =
     { id = SourceId.two
     , name = "cockpit_dev"
-    , kind = DatabaseConnection "postgresql://postgres:postgres@localhost/cockpit_dev"
+    , kind = DatabaseConnection { kind = PostgreSQL, url = Just "postgresql://postgres:postgres@localhost/cockpit_dev", storage = DatabaseUrlStorage.Project }
     , content = Array.empty
     , tables = Dict.empty
     , relations = []

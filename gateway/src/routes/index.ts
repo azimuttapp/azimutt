@@ -2,9 +2,10 @@ import process from "process";
 import {TSchema} from "@sinclair/typebox"
 import {FastifyPluginAsync, FastifyReply} from "fastify"
 import {RouteShorthandOptions} from "fastify/types/route"
-import {Logger} from "@azimutt/utils"
+import {Logger, removeUndefined} from "@azimutt/utils"
 import {
     AttributeRef,
+    columnNameFromLegacy,
     columnStatsToLegacy,
     Connector,
     databaseToLegacy,
@@ -16,19 +17,24 @@ import {
     tableStatsToLegacy
 } from "@azimutt/models"
 import {version} from "../version";
+import {Config} from "../plugins/config";
 import {
+    ColumnStatsResponse,
+    DbColumnStatsParams,
     DbQueryParams,
-    DbQueryResponse,
+    DbSchemaParams,
+    DbTableStatsParams,
+    DsColumnStatsParams,
+    DsQueryParams,
+    DsSchemaParams,
+    DsTableStatsParams,
     ErrorResponse,
     FailureResponse,
-    GetColumnStatsParams,
-    GetColumnStatsResponse,
-    GetSchemaParams,
-    GetSchemaResponse,
-    GetTableStatsParams,
-    GetTableStatsResponse,
     ParseUrlParams,
-    ParseUrlResponse
+    ParseUrlResponse,
+    QueryResponse,
+    SchemaResponse,
+    TableStatsResponse
 } from "../schemas"
 import {getConnector} from "../services/connector"
 import {track} from "../services/tracking";
@@ -41,29 +47,40 @@ const logger: Logger = {
     error: (text: string) => console.error(text)
 }
 
-const routes: FastifyPluginAsync = async (server) => {
+const routes: (config: Config) => FastifyPluginAsync = (config: Config) => async (server) => {
     server.get('/', async () => ({status: 200, version}))
     server.get('/ping', async () => ({status: 200}))
     server.get('/health', async () => ({status: 200, version}))
     server.get('/status', async () => ({status: 200, version, node: process.versions.node}))
 
-    server.get<Get<ParseUrlParams, ParseUrlResponse>>('/gateway/parse-url', get(ParseUrlParams, ParseUrlResponse), async req => parseDatabaseUrl(req.query.url))
-    server.post<Post<ParseUrlParams, ParseUrlResponse>>('/gateway/parse-url', post(ParseUrlParams, ParseUrlResponse), async req => parseDatabaseUrl(req.body.url))
+    server.get<Get<undefined, ParseUrlParams, ParseUrlResponse>>('/gateway/parse-url', get(undefined, ParseUrlParams, ParseUrlResponse), async req => parseDatabaseUrl(req.query.url))
+    server.post<Post<undefined, undefined, ParseUrlParams, ParseUrlResponse>>('/gateway/parse-url', post(undefined, undefined, ParseUrlParams, ParseUrlResponse), async req => parseDatabaseUrl(req.body.url))
+    server.get<Get<{slug: string}, undefined, {status: number}>>('/gateway/data-sources/:slug', async () => ({status: 200}))
 
-    server.get<Get<GetSchemaParams, GetSchemaResponse>>('/gateway/schema', get(GetSchemaParams, GetSchemaResponse), async (req, res) => await getDatabaseSchema(req.query, res))
-    server.post<Post<GetSchemaParams, GetSchemaResponse>>('/gateway/schema', post(GetSchemaParams, GetSchemaResponse), async (req, res) => await getDatabaseSchema(req.body, res))
+    server.get<Get<undefined, DbSchemaParams, SchemaResponse>>('/gateway/schema', get(undefined, DbSchemaParams, SchemaResponse), async (req, res) => await getDatabaseSchema(req.query, res))
+    server.post<Post<undefined, undefined, DbSchemaParams, SchemaResponse>>('/gateway/schema', post(undefined, undefined, DbSchemaParams, SchemaResponse), async (req, res) => await getDatabaseSchema(req.body, res))
+    server.get<Get<{slug: string}, DsSchemaParams, SchemaResponse>>('/gateway/data-sources/:slug/schema', get(undefined, DsSchemaParams, SchemaResponse), async (req, res) => await withDatasource(req.params.slug, res, url => getDatabaseSchema({...req.query, url}, res)))
+    server.post<Post<{slug: string}, undefined, DsSchemaParams, SchemaResponse>>('/gateway/data-sources/:slug/schema', post(undefined, undefined, DsSchemaParams, SchemaResponse), async (req, res) => await withDatasource(req.params.slug, res, url => getDatabaseSchema({...req.body, url}, res)))
 
-    server.get<Get<DbQueryParams, DbQueryResponse>>('/gateway/query', get(DbQueryParams, DbQueryResponse), async (req, res) => await queryDatabase(req.query, res))
-    server.post<Post<DbQueryParams, DbQueryResponse>>('/gateway/query', post(DbQueryParams, DbQueryResponse), async (req, res) => await queryDatabase(req.body, res))
+    server.get<Get<undefined, DbQueryParams, QueryResponse>>('/gateway/query', get(undefined, DbQueryParams, QueryResponse), async (req, res) => await queryDatabase(req.query, res))
+    server.post<Post<undefined, undefined, DbQueryParams, QueryResponse>>('/gateway/query', post(undefined, undefined, DbQueryParams, QueryResponse), async (req, res) => await queryDatabase(req.body, res))
+    server.get<Get<{slug: string}, DsQueryParams, QueryResponse>>('/gateway/data-sources/:slug/query', get(undefined, DsQueryParams, QueryResponse), async (req, res) => await withDatasource(req.params.slug, res, url => queryDatabase({...req.query, url}, res)))
+    server.post<Post<{slug: string}, undefined, DsQueryParams, QueryResponse>>('/gateway/data-sources/:slug/query', post(undefined, undefined, DsQueryParams, QueryResponse), async (req, res) => await withDatasource(req.params.slug, res, url => queryDatabase({...req.body, url}, res)))
 
-    server.get<Get<GetTableStatsParams, GetTableStatsResponse>>('/gateway/table-stats', get(GetTableStatsParams, GetTableStatsResponse), async (req, res) => await getTableStats(req.query, res))
-    server.post<Post<GetTableStatsParams, GetTableStatsResponse>>('/gateway/table-stats', post(GetTableStatsParams, GetTableStatsResponse), async (req, res) => await getTableStats(req.body, res))
+    server.get<Get<undefined, DbTableStatsParams, TableStatsResponse>>('/gateway/table-stats', get(undefined, DbTableStatsParams, TableStatsResponse), async (req, res) => await getTableStats(req.query, res))
+    server.post<Post<undefined, undefined, DbTableStatsParams, TableStatsResponse>>('/gateway/table-stats', post(undefined, undefined, DbTableStatsParams, TableStatsResponse), async (req, res) => await getTableStats(req.body, res))
+    server.get<Get<{slug: string}, DsTableStatsParams, TableStatsResponse>>('/gateway/data-sources/:slug/table-stats', get(undefined, DsTableStatsParams, TableStatsResponse), async (req, res) => await withDatasource(req.params.slug, res, url => getTableStats({...req.query, url}, res)))
+    server.post<Post<{slug: string}, undefined, DsTableStatsParams, TableStatsResponse>>('/gateway/data-sources/:slug/table-stats', post(undefined, undefined, DsTableStatsParams, TableStatsResponse), async (req, res) => await withDatasource(req.params.slug, res, url => getTableStats({...req.body, url}, res)))
 
-    server.get<Get<GetColumnStatsParams, GetColumnStatsResponse>>('/gateway/column-stats', get(GetColumnStatsParams, GetColumnStatsResponse), async (req, res) => await getColumnStats(req.query, res))
-    server.post<Post<GetColumnStatsParams, GetColumnStatsResponse>>('/gateway/column-stats', post(GetColumnStatsParams, GetColumnStatsResponse), async (req, res) => await getColumnStats(req.body, res))
+    server.get<Get<undefined, DbColumnStatsParams, ColumnStatsResponse>>('/gateway/column-stats', get(undefined, DbColumnStatsParams, ColumnStatsResponse), async (req, res) => await getColumnStats(req.query, res))
+    server.post<Post<undefined, undefined, DbColumnStatsParams, ColumnStatsResponse>>('/gateway/column-stats', post(undefined, undefined, DbColumnStatsParams, ColumnStatsResponse), async (req, res) => await getColumnStats(req.body, res))
+    server.get<Get<{slug: string}, DsColumnStatsParams, ColumnStatsResponse>>('/gateway/data-sources/:slug/column-stats', get(undefined, DsColumnStatsParams, ColumnStatsResponse), async (req, res) => await withDatasource(req.params.slug, res, url => getColumnStats({...req.query, url}, res)))
+    server.post<Post<{slug: string}, undefined, DsColumnStatsParams, ColumnStatsResponse>>('/gateway/data-sources/:slug/column-stats', post(undefined, undefined, DsColumnStatsParams, ColumnStatsResponse), async (req, res) => await withDatasource(req.params.slug, res, url => getColumnStats({...req.body, url}, res)))
+
+    buildDataSources(config)
 }
 
-function getDatabaseSchema(params: GetSchemaParams, res: FastifyReply): Promise<GetSchemaResponse | FastifyReply> {
+function getDatabaseSchema(params: DbSchemaParams, res: FastifyReply): Promise<SchemaResponse | FastifyReply> {
     return withConnector(params.url, res, (url, conn) => {
         track('gateway__database__get_schema', {version, database: url.kind}, 'gateway').then(() => {})
         const urlOptions = url.options || {}
@@ -86,17 +103,17 @@ function getDatabaseSchema(params: GetSchemaParams, res: FastifyReply): Promise<
     })
 }
 
-function queryDatabase(params: DbQueryParams, res: FastifyReply): Promise<DbQueryResponse | FastifyReply> {
+function queryDatabase(params: DbQueryParams, res: FastifyReply): Promise<QueryResponse | FastifyReply> {
     return withConnector(params.url, res, (url, conn) => conn.execute(buildApp(params.user), url, params.query, [], {logger}).then(queryResultsToLegacy))
 }
 
-function getTableStats(params: GetTableStatsParams, res: FastifyReply): Promise<GetTableStatsResponse | FastifyReply> {
+function getTableStats(params: DbTableStatsParams, res: FastifyReply): Promise<TableStatsResponse | FastifyReply> {
     const ref: EntityRef = {schema: params.schema, entity: params.table}
     return withConnector(params.url, res, (url, conn) => conn.getEntityStats(buildApp(params.user), url, ref, {logger}).then(tableStatsToLegacy))
 }
 
-function getColumnStats(params: GetColumnStatsParams, res: FastifyReply): Promise<GetColumnStatsResponse | FastifyReply> {
-    const ref: AttributeRef = {schema: params.schema, entity: params.table, attribute: [params.column]}
+function getColumnStats(params: DbColumnStatsParams, res: FastifyReply): Promise<ColumnStatsResponse | FastifyReply> {
+    const ref: AttributeRef = {schema: params.schema, entity: params.table, attribute: columnNameFromLegacy(params.column)}
     return withConnector(params.url, res, (url, conn) => conn.getAttributeStats(buildApp(params.user), url, ref, {logger}).then(columnStatsToLegacy))
 }
 
@@ -110,43 +127,78 @@ async function withConnector<T>(url: DatabaseUrl, res: FastifyReply, exec: (url:
     }
 }
 
+const dataSources: {[slug: string]: DatabaseUrl} = {}
+
+function buildDataSources(config: Config): void {
+    // urls from env
+    (config.DATASOURCE_URLS || '').split(',').map(url => url.trim()).filter(url => !!url).forEach(url => {
+        const parsed = parseDatabaseUrl(url.trim())
+        if (parsed.db) {
+            dataSources[parsed.db] = parsed.full
+        }
+    })
+    // urls from file
+    // TODO: must define format, json? text?
+
+    const slugs = Object.keys(dataSources)
+    if (slugs.length > 0) {
+        logger.log('Gateway data-sources:')
+        slugs.forEach(slug => logger.log(`  - ${config.API_HOST}:${config.API_PORT}/gateway/data-sources/${slug}`))
+    }
+}
+
+async function withDatasource<T>(datasource: string, res: FastifyReply, exec: (url: DatabaseUrl) => Promise<T>): Promise<T | FastifyReply> {
+    const url = dataSources[datasource]
+    if (url) {
+        return await exec(url)
+    } else {
+        return res.status(400).send({error: `Unknown datasource: ${datasource}`})
+    }
+}
+
 function buildApp(user: string | undefined): string {
     return user ? `${application}:${user}` : application
 }
 
-type Get<Params, Response> = {
-    Querystring: Params,
+type Get<Params = undefined, Query = undefined, Response = undefined> = {
+    Params: Params
+    Querystring: Query
     Reply: Response | ErrorResponse | FailureResponse
 }
 
-function get(params: TSchema, response: TSchema): RouteShorthandOptions {
+function get(params: TSchema | undefined, query: TSchema | undefined, response: TSchema): RouteShorthandOptions {
     return {
-        schema: {
-            querystring: params,
+        schema: removeUndefined({
+            params: params,
+            querystring: query,
             response: {
                 200: response,
                 400: ErrorResponse,
                 500: FailureResponse,
             },
-        },
+        }),
     }
 }
 
-type Post<Params, Response> = {
-    Body: Params,
+type Post<Params = undefined, Query = undefined, Body = undefined, Response = undefined> = {
+    Params: Params
+    Querystring: Query
+    Body: Body,
     Reply: Response | ErrorResponse | FailureResponse
 }
 
-function post(params: TSchema, response: TSchema): RouteShorthandOptions {
+function post(params: TSchema | undefined, query: TSchema | undefined, body: TSchema | undefined, response: TSchema): RouteShorthandOptions {
     return {
-        schema: {
-            body: params,
+        schema: removeUndefined({
+            params: params,
+            querystring: query,
+            body: body,
             response: {
                 200: response,
                 400: ErrorResponse,
                 500: FailureResponse,
             },
-        },
+        }),
     }
 }
 

@@ -189,12 +189,14 @@ export class Backend {
 
     private gatewayPost = async <Body, Response>(path: string, body: Body, zod: ZodType<Response>): Promise<Response> => {
         const gateway_local = 'http://localhost:4177'
-        return Http.postJson(`${gateway_local}/gateway${path}`, body, zod).catch(async localErr => {
-            if (localErr instanceof TypeError && localErr.message === 'NetworkError when attempting to fetch resource.') {
-                return Http.postJson(`${window.gateway_url}/gateway${path}`, body, zod).catch(remoteErr => Promise.reject(`${window.gateway_url}: ${errorToString(remoteErr)}`))
-            } else {
-                return Promise.reject(`${gateway_local}: ${errorToString(localErr)}`)
-            }
+        return Http.getJson(`${gateway_local}/ping`, GatewayPing).then(_ => {
+            return Http.postJson(`${gateway_local}/gateway${path}`, body, zod)
+                .catch(err => Promise.reject(`Local gateway: ${errorToString(err)}`))
+        }, _ => {
+            const gateway_remote = window.gateway_url || ''
+            return Http.getJson(`${gateway_remote}/ping`, GatewayPing)
+                .then(_ => Http.postJson(`${gateway_remote}/gateway${path}`, body, zod))
+                .catch(err => Promise.reject(`${gateway_remote.includes('azimutt.app') ? 'Azimutt gateway' : 'Custom gateway'}: ${errorToString(err)}, forgot to start the local gateway? (npx azimutt@latest gateway)`))
         })
     }
 }
@@ -301,6 +303,11 @@ interface ProjectWithContentResponse extends ProjectResponse {
 export const ProjectWithContentResponse = ProjectResponse.extend({
     content: z.string().optional()
 }).strict().describe('ProjectWithContentResponse')
+
+const GatewayPing = z.object({
+    status: z.literal(200)
+}).strict()
+export type GatewayPing = z.infer<typeof GatewayPing>
 
 function toStats(s: ProjectStatsResponse): LegacyProjectStats {
     return {

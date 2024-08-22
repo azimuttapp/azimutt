@@ -207,7 +207,7 @@ type alias SchemaAnalysisDialog =
 
 
 type alias ProjectSettingsDialog =
-    { id : HtmlId, sourceNameEdit : Maybe ( SourceId, String ) }
+    { id : HtmlId }
 
 
 type alias HelpDialog =
@@ -286,7 +286,7 @@ type Msg
     | TagsMsg TagsMsg
     | GroupMsg GroupMsg
     | MemoMsg MemoMsg
-    | ShowTableRow DbSourceInfo RowQuery (Maybe TableRow.SuccessState) (Maybe PositionHint) String
+    | ShowTableRow RowQuery (Maybe TableRow.SuccessState) (Maybe PositionHint) String
     | DeleteTableRow TableRow.Id
     | UnDeleteTableRow_ Int TableRow
     | TableRowMsg TableRow.Id TableRow.Msg
@@ -406,8 +406,6 @@ type ProjectSettingsMsg
     = PSOpen
     | PSClose
     | PSSourceToggle Source
-    | PSSourceNameUpdate SourceId String
-    | PSSourceNameUpdateDone SourceId String
     | PSSourceDelete SourceId
     | PSSourceUnDelete_ Int Source
     | PSSourceUpdate SourceUpdateDialog.Msg

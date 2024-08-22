@@ -15,6 +15,7 @@ const ConfigSchema = Type.Strict(
         API_HOST: Type.String(),
         API_PORT: Type.String(),
         CORS_ALLOW_ORIGIN: Type.Optional(Type.String()),
+        DATASOURCE_URLS: Type.Optional(Type.String()), // db urls separated with a comma, data-sources stored inside the gateway
     })
 )
 
@@ -36,6 +37,7 @@ export const configFromEnv = (): Config => {
         API_HOST: env.API_HOST,
         API_PORT: env.API_PORT,
         CORS_ALLOW_ORIGIN: env.CORS_ALLOW_ORIGIN,
+        DATASOURCE_URLS: env.DATASOURCE_URLS,
     } as Config)
 }
 

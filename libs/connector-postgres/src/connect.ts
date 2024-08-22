@@ -5,7 +5,8 @@ import {
     ConnectorDefaultOpts,
     DatabaseUrlParsed,
     logQueryIfNeeded,
-    queryError
+    queryError,
+    QueryField
 } from "@azimutt/models";
 
 export async function connect<T>(application: string, url: DatabaseUrlParsed, exec: (c: Conn) => Promise<T>, opts: ConnectorDefaultOpts): Promise<T> {
@@ -43,12 +44,9 @@ export interface Conn {
 
 export type QueryResultValue = AttributeValue
 export type QueryResultRow = { [column: string]: QueryResultValue }
-export type QueryResultField = { name: string, tableID: number, columnID: number, dataTypeID: number, format: string }
+export type QueryResultField = QueryField & { tableID: number, columnID: number, dataTypeID: number, format: string }
 export type QueryResultRowArray = QueryResultValue[]
-export type QueryResultArrayMode = {
-    fields: QueryResultField[],
-    rows: QueryResultRowArray[]
-}
+export type QueryResultArrayMode = { fields: QueryResultField[], rows: QueryResultRowArray[] }
 
 async function createConnection(config: string | ClientConfig): Promise<Client> {
     const client = new Client(config)

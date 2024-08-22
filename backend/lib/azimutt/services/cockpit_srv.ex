@@ -73,7 +73,7 @@ defmodule Azimutt.Services.CockpitSrv do
   end
 
   def send_event(%Event{} = event) do
-    full_event = event |> Azimutt.Repo.preload(:organization) |> Azimutt.Repo.preload(:project)
+    full_event = event |> Azimutt.Repo.preload([:organization, :project])
 
     post("/api/events", %{
       id: event.id,

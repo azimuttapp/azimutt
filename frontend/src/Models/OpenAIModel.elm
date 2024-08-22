@@ -2,6 +2,7 @@ module Models.OpenAIModel exposing (OpenAIModel, all, decode, default, encode, f
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
+import Libs.Json.Decode as Decode
 
 
 type OpenAIModel
@@ -69,4 +70,4 @@ encode model =
 
 decode : Decoder OpenAIModel
 decode =
-    Decode.string |> Decode.andThen (\v -> v |> fromString |> Maybe.map Decode.succeed |> Maybe.withDefault (Decode.fail ("'" ++ v ++ "' is not a valid OpenAIModel")))
+    Decode.string |> Decode.andThen (\v -> v |> fromString |> Decode.fromMaybe ("'" ++ v ++ "' is not a valid OpenAIModel"))

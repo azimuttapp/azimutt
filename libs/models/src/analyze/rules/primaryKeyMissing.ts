@@ -1,7 +1,7 @@
 import {z} from "zod";
 import {isNotUndefined} from "@azimutt/utils";
 import {Timestamp} from "../../common";
-import {Database, Entity, EntityId, EntityRef} from "../../database";
+import {Database, Entity, EntityId, EntityKind, EntityRef} from "../../database";
 import {entityRefFromId, entityRefSame, entityToId, entityToRef} from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
 import {
@@ -23,6 +23,7 @@ import {
 
 const ruleId: RuleId = 'primary-key-missing'
 const ruleName: RuleName = 'missing primary key'
+const ruleDescription: string = 'entities with no primary key (only tables)'
 const CustomRuleConf = RuleConf.extend({
     ignores: EntityId.array().optional(),
 }).strict().describe('PrimaryKeyMissingConf')
@@ -30,6 +31,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const primaryKeyMissingRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.high},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {
@@ -50,5 +52,5 @@ export const primaryKeyMissingRule: Rule<CustomRuleConf> = {
 
 // same as frontend/src/PagesComponents/Organization_/Project_/Views/Modals/SchemaAnalysis/PrimaryKeyMissing.elm
 export function isPrimaryKeysMissing(entity: Entity): boolean {
-    return !entity.pk && (entity.kind === undefined || entity.kind === 'table')
+    return (entity.kind === undefined || entity.kind === EntityKind.enum.table) && entity.pk === undefined
 }

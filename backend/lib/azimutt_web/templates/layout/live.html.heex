@@ -1,11 +1,15 @@
 <main class="container" data-layout="live">
   <p class="alert alert-info" role="alert"
-    phx-click="lv:clear-flash"
-    phx-value-key="info"><%= live_flash(@flash, :info) %></p>
+     phx-click="lv:clear-flash"
+     phx-value-key="info"><%= live_flash(@flash, :info) %></p>
+
+  <p class="alert alert-warning" role="alert"
+     phx-click="lv:clear-flash"
+     phx-value-key="warn"><%= live_flash(@flash, :warn) %></p>
 
   <p class="alert alert-danger" role="alert"
-    phx-click="lv:clear-flash"
-    phx-value-key="error"><%= live_flash(@flash, :error) %></p>
+     phx-click="lv:clear-flash"
+     phx-value-key="error"><%= live_flash(@flash, :error) %></p>
 
   <%= @inner_content %>
 </main>

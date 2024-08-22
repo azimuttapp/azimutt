@@ -17,6 +17,7 @@ import {
 
 const ruleId: RuleId = 'entity-too-large'
 const ruleName: RuleName = 'entity too large'
+const ruleDescription: string = 'entities with number of attributes exceeding the threshold'
 const CustomRuleConf = RuleConf.extend({
     ignores: EntityId.array().optional(),
     max: z.number()
@@ -25,6 +26,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const entityTooLargeRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.medium, max: 30},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {

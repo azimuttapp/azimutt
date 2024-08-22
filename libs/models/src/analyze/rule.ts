@@ -6,6 +6,8 @@ import {DatabaseQuery} from "../interfaces/connector";
 export interface Rule<Conf extends RuleConf = RuleConf> {
     id: RuleId
     name: RuleName
+    description: string
+    explanation?: string
     conf: Conf
     zConf: ZodType<Conf>
 
@@ -46,6 +48,7 @@ export type AnalyzeReportViolation = z.infer<typeof AnalyzeReportViolation>
 
 export const AnalyzeReportRule = z.object({
     name: z.string(),
+    description: z.string().optional(), // optional for retro-compatibility
     level: RuleLevel,
     conf: z.record(z.string(), z.any()),
     violations: AnalyzeReportViolation.array(),

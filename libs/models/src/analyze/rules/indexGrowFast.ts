@@ -21,6 +21,7 @@ import {
 
 const ruleId: RuleId = 'index-grow-fast'
 const ruleName: RuleName = 'fast growing index'
+const ruleDescription: string = 'indexes with rows or bytes growing over the daily/monthly/yearly rate thresholds and a size over the thresholds also'
 const CustomRuleConf = RuleConf.extend({
     ignores: ConstraintId.array().optional(),
     minSize: Bytes,
@@ -32,6 +33,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const indexGrowFastRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.medium, minSize: 10 * Mo, maxGrowthYearly: 2, maxGrowthMonthly: 0.1, maxGrowthDaily: 0.01},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {

@@ -17,8 +17,7 @@ defmodule Azimutt.Heroku do
   def all_resources do
     Resource
     |> order_by([r], desc: [r.deleted_at, r.created_at])
-    |> preload(:organization)
-    |> preload(organization: :projects)
+    |> preload(organization: [:projects])
     |> Repo.all()
   end
 
@@ -72,7 +71,7 @@ defmodule Azimutt.Heroku do
         {:ok, :already_member}
 
       existing_members < organization.plan_seats ->
-        OrganizationMember.new_member_changeset(organization.id, current_user)
+        OrganizationMember.new_member_changeset(organization.id, current_user, nil)
         |> Repo.insert()
         |> Result.map(fn _ -> :member_added end)
 

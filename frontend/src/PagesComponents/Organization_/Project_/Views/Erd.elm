@@ -37,11 +37,9 @@ import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.Group as Group exposing (Group)
 import Models.Project.Metadata exposing (Metadata)
-import Models.Project.Relation exposing (Relation)
 import Models.Project.RowValue exposing (RowValue)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
-import Models.Project.SourceId as SourceId exposing (SourceId, SourceIdStr)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableMeta as TableMeta exposing (TableMeta)
 import Models.Project.TableRow as TableRow exposing (TableRow, TableRowColumn)
@@ -125,7 +123,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
 
         tableRowRelations : List TableRowRelation
         tableRowRelations =
-            buildRowRelations erd.sources tableRows
+            buildRowRelations erd tableRows
 
         memos : List Memo
         memos =
@@ -146,7 +144,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
                         vr.src
                             |> Maybe.andThen
                                 (\src ->
-                                    (erd |> Erd.getColumn src)
+                                    (erd |> Erd.getColumnI src)
                                         |> Maybe.map
                                             (\ref ->
                                                 ( ( Relation.buildColumnInfo src.column (layoutTables |> List.findBy .id src.table), ref )
@@ -177,7 +175,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
               hiddenTables |> viewHiddenTables erd.settings.defaultSchema
             , groups |> viewGroups platform erd.settings.defaultSchema editGroup
             , tableRowRelations |> viewRelationRows conf erd.settings.relationStyle hoverTableRow
-            , tableRows |> viewTableRows now platform conf cursorMode erd.settings.defaultSchema openedDropdown openedPopover erd.sources hoverTableRow tableRowRelations erd.metadata
+            , tableRows |> viewTableRows now platform conf cursorMode erd.settings.defaultSchema openedDropdown openedPopover erd hoverTableRow tableRowRelations
             , erd.relations |> Lazy.lazy5 viewRelations conf erd.settings.defaultSchema erd.settings.relationStyle displayedTables
             , layoutTables |> viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.defaultSchema selected erd.settings.columnBasicTypes erd.tables erd.metadata layout
             , memos |> viewMemos platform conf cursorMode editMemo
@@ -257,8 +255,8 @@ viewRelations conf defaultSchema style tableLayouts relations =
         )
 
 
-viewTableRows : Time.Posix -> Platform -> ErdConf -> CursorMode -> SchemaName -> HtmlId -> HtmlId -> List Source -> Maybe TableRowHover -> List TableRowRelation -> Metadata -> List ( TableRow, Color ) -> Html Msg
-viewTableRows now platform conf cursorMode defaultSchema openedDropdown openedPopover sources hoverRow rowRelations metadata tableRows =
+viewTableRows : Time.Posix -> Platform -> ErdConf -> CursorMode -> SchemaName -> HtmlId -> HtmlId -> Erd -> Maybe TableRowHover -> List TableRowRelation -> List ( TableRow, Color ) -> Html Msg
+viewTableRows now platform conf cursorMode defaultSchema openedDropdown openedPopover erd hoverRow rowRelations tableRows =
     let
         rowRelationsBySrc : Dict TableRow.Id (List TableRowRelation)
         rowRelationsBySrc =
@@ -284,11 +282,14 @@ viewTableRows now platform conf cursorMode defaultSchema openedDropdown openedPo
                         openedDropdown
                         openedPopover
                         (TableRow.toHtmlId row.id)
-                        (sources |> List.findBy .id row.source |> Maybe.andThen DbSource.fromSource)
+                        erd
+                        (erd.sources |> List.findBy .id row.source |> Maybe.andThen DbSource.fromSource)
+                        (erd.tables |> TableId.dictGetI row.table)
+                        (erd.relations |> List.filter (\r -> r.src.table == row.table || r.ref.table == row.table))
+                        (erd.metadata |> Dict.get row.table)
                         hoverRow
                         ((rowRelationsBySrc |> Dict.getOrElse row.id []) ++ (rowRelationsByRef |> Dict.getOrElse row.id []))
                         color
-                        (metadata |> Dict.get row.table)
                         row
                     )
                 )
@@ -505,33 +506,28 @@ hoverRowFromString str =
             Nothing
 
 
-buildRowRelations : List Source -> List ( TableRow, Color ) -> List TableRowRelation
-buildRowRelations sources rows =
+buildRowRelations : Erd -> List ( TableRow, Color ) -> List TableRowRelation
+buildRowRelations erd rows =
     let
-        successRows : Dict SourceIdStr (Dict TableId (List TableRowSuccess))
+        successRows : Dict TableId (List TableRowSuccess)
         successRows =
             rows
                 |> List.filterMap (\( r, c ) -> r |> TableRow.stateSuccess |> Maybe.filter (\_ -> r.size /= Size.zeroCanvas) |> Maybe.map (\s -> { row = r, state = s, color = c }))
-                |> List.groupBy (.row >> .source >> SourceId.toString)
-                |> Dict.map (\_ -> List.groupBy (.row >> .table))
+                |> List.groupBy (.row >> .table)
 
-        sourceRelations : Dict SourceIdStr (Dict ( TableId, ColumnName ) (List Relation))
+        sourceRelations : Dict ( TableId, ColumnName ) (List ErdRelation)
         sourceRelations =
-            sources
-                |> List.filter (\s -> successRows |> Dict.member (SourceId.toString s.id))
-                |> List.map (\s -> ( SourceId.toString s.id, s ))
-                |> List.map (Tuple.mapSecond (.relations >> List.groupBy (\r -> ( r.src.table, r.src.column.head ))))
-                |> Dict.fromList
+            erd.relations
+                |> List.groupBy (\r -> ( r.src.table, r.src.column.head ))
 
-        getRelations : SourceId -> TableId -> ColumnPathStr -> List Relation
-        getRelations source table column =
-            sourceRelations |> Dict.get (SourceId.toString source) |> Maybe.andThen (Dict.get ( table, column )) |> Maybe.withDefault []
+        getRelations : TableId -> ColumnPathStr -> List ErdRelation
+        getRelations table column =
+            sourceRelations |> Dict.get ( table, column ) |> Maybe.withDefault []
 
-        getRowValues : SourceId -> TableId -> RowValue -> List TableRowRelationColumn
-        getRowValues source table value =
+        getRowValues : TableId -> RowValue -> List TableRowRelationColumn
+        getRowValues table value =
             successRows
-                |> Dict.get (SourceId.toString source)
-                |> Maybe.andThen (Dict.get table)
+                |> Dict.get table
                 |> Maybe.withDefault []
                 |> List.filterMap (\r -> r.state.columns |> List.zipWithIndex |> List.find (\( v, _ ) -> v.path == value.column && v.value == value.value) |> Maybe.map (TableRow.initRelationColumn r))
 
@@ -539,7 +535,7 @@ buildRowRelations sources rows =
         relations =
             successRows
                 |> Dict.toList
-                |> List.concatMap (Tuple.second >> Dict.toList >> List.concatMap Tuple.second)
+                |> List.concatMap Tuple.second
                 |> List.concatMap
                     (\r ->
                         r.state.columns
@@ -547,8 +543,8 @@ buildRowRelations sources rows =
                             |> List.indexedMap (\i c -> TableRow.initRelationColumn r ( c, i ))
                             |> List.concatMap
                                 (\src ->
-                                    getRelations src.row.source src.row.table src.column.pathStr
-                                        |> List.concatMap (\rel -> getRowValues src.row.source rel.ref.table { column = rel.ref.column, value = src.column.value })
+                                    getRelations src.row.table src.column.pathStr
+                                        |> List.concatMap (\rel -> getRowValues rel.ref.table { column = rel.ref.column, value = src.column.value })
                                         |> List.map (TableRow.initRelation src)
                                 )
                     )

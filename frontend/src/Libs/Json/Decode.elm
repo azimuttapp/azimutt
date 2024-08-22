@@ -1,4 +1,4 @@
-module Libs.Json.Decode exposing (customDict, customNed, defaultField, defaultFieldDeep, errorToHtml, errorToStringNoValue, filter, map10, map11, map12, map13, map14, map15, map16, map17, map18, map19, map20, map9, matchOn, maybeField, maybeWithDefault, nel, set, tuple)
+module Libs.Json.Decode exposing (customDict, customNed, defaultField, defaultFieldDeep, errorToHtml, errorToStringNoValue, filter, fromMaybe, map10, map11, map12, map13, map14, map15, map16, map17, map18, map19, map20, map9, matchOn, maybeField, maybeWithDefault, nel, set, tuple)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
@@ -169,6 +169,11 @@ errorOneOf i error =
 indent : String -> String
 indent str =
     String.join "\n    " (String.split "\n" str)
+
+
+fromMaybe : String -> Maybe a -> Decode.Decoder a
+fromMaybe error maybe =
+    maybe |> Maybe.map Decode.succeed |> Maybe.withDefault (Decode.fail error)
 
 
 map9 : (a -> b -> c -> d -> e -> f -> g -> h -> i -> value) -> Decode.Decoder a -> Decode.Decoder b -> Decode.Decoder c -> Decode.Decoder d -> Decode.Decoder e -> Decode.Decoder f -> Decode.Decoder g -> Decode.Decoder h -> Decode.Decoder i -> Decode.Decoder value

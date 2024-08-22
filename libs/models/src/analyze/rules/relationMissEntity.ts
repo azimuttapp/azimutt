@@ -25,6 +25,7 @@ import {
 
 const ruleId: RuleId = 'relation-miss-entity'
 const ruleName: RuleName = 'entity not found in relation'
+const ruleDescription: string = 'relations with an entity not found in the database'
 const CustomRuleConf = RuleConf.extend({
     ignores: EntityId.array().optional(),
 }).strict().describe('RelationMissEntityConf')
@@ -32,6 +33,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const relationMissEntityRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.high},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {

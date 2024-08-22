@@ -1,5 +1,6 @@
-import {isNotUndefined, maxLen, removeUndefined} from "@azimutt/utils";
+import {isNotUndefined, maxLen, removeEmpty, removeUndefined} from "@azimutt/utils";
 import {EntityRef} from "../database";
+import {removeQuotes} from "../databaseUtils";
 
 export function getMainEntity(sql: string): EntityRef | undefined {
     const res = sql.match(new RegExp(insertRegex, 'i'))
@@ -44,4 +45,196 @@ export function formatSql(sql: string): string {
     } else {
         return singleLine
     }
+}
+
+// (basic) SQL Parser
+
+export type ParsedSqlScript = ParsedSqlStatement[]
+export type ParsedSqlStatement = ParsedSelectStatement
+export type ParsedSelectStatement = {command: 'SELECT', table: ParsedSelectTable, columns: ParsedSelectColumn[], joins?: ParsedSelectJoin[], where?: ParsedSelectWhere, groupBy?: ParsedSelectGroupBy, having?: ParsedSelectHaving, orderBy?: ParsedSelectOrderBy, offset?: ParsedSelectOffset, limit?: ParsedSelectLimit}
+export type ParsedSelectTable = {name: string, schema?: string, alias?: string}
+export type ParsedSelectColumn = {name: string, scope?: string, col?: string[], def?: string}
+export type ParsedSelectJoin = {table: string, schema?: string, alias?: string, kind?: 'INNER' | 'LEFT' | 'RIGHT' | 'FULL', on?: ParsedSqlCondition}
+export type ParsedSelectWhere = ParsedSqlCondition
+export type ParsedSelectGroupBy = string // TODO
+export type ParsedSelectHaving = ParsedSqlCondition
+export type ParsedSelectOrderBy = string // TODO
+export type ParsedSelectOffset = number
+export type ParsedSelectLimit = number
+export type ParsedSqlCondition = ParsedSqlConditionBool | ParsedSqlConditionExp | ParsedSqlConditionNull | ParsedSqlConditionIn | string
+export type ParsedSqlConditionBool = { op: 'AND' | 'OR', left: ParsedSqlCondition, right: ParsedSqlCondition }
+export type ParsedSqlConditionExp = { op: '=' | '!=' | '>' | '>=' | '<' | '<=' | '<>' | 'LIKE', left: ParsedSqlValue, right: ParsedSqlValue }
+export type ParsedSqlConditionNull = { op: 'NULL' | 'NOT NULL', value: ParsedSqlValue }
+export type ParsedSqlConditionIn = { op: 'IN' | 'NOT IN', value: ParsedSqlValue, values: ParsedSqlValue[] }
+export type ParsedSqlValue = {column: string, scope?: string} | string | number
+
+export function parseSqlScript(script: string): ParsedSqlScript {
+    return script
+        .split('\n') // get lines
+        .filter(line => !!line.trim() && !line.trim().startsWith('--')) // remove empty & comment lines
+        .join('\n')
+        .split(';') // get statements (naive)
+        .map(s => parseSqlStatement(s.trim() + ';'))
+        .filter(isNotUndefined)
+}
+
+export function parseSqlStatement(statement: string): ParsedSqlStatement | undefined {
+    try {
+        if (statement.trim().match(/^SELECT\s+/i)) {
+            return parseSelectStatement(statement)
+        } else {
+            return undefined
+        }
+    } catch {
+        return undefined
+    }
+}
+
+export function parseSelectStatement(statement: string): ParsedSelectStatement | undefined {
+    const selectRegex = 'SELECT(?:\\s+DISTINCT)?(?:\\s+TOP\\s+(\\d+))?\\s+(.+?)'
+    const fromRegex = 'FROM\\s+(.+?)'
+    const whereRegex = 'WHERE\\s+(.+?)'
+    const groupByRegex = 'GROUP\\s+BY\\s+(.+?)'
+    const havingRegex = 'HAVING\\s+(.+?)'
+    const orderByRegex = 'ORDER\\s+BY\\s+(.+?)'
+    const limitRegex = 'LIMIT\\s+(\\d+)'
+    const offsetRegex = 'OFFSET\\s+(\\d+)(?:\\s+ROWS?)?'
+    const fetchRegex = 'FETCH\\s+(?:FIRST|NEXT)\\s+(\\d+)\\s+ROWS?\\s+ONLY'
+    const optRegex = [whereRegex, groupByRegex, havingRegex, orderByRegex, limitRegex, offsetRegex, fetchRegex].map(r => `(?:\\s+${r})?`).join('')
+    const regex = new RegExp(`^${selectRegex}\\s+${fromRegex}${optRegex}\\s*;$`, 'i')
+
+    const [, top, select, from, where, groupBy, having, orderBy, limit, offset, fetch] = statement.trim().match(regex) || []
+    const parsedColumns: ParsedSelectColumn[] = (select || '').split(',').map((c, i) => parseSelectColumn(c.trim(), i + 1)).filter(c => !!c)
+    const parsedTable: { table: ParsedSelectTable; joins?: ParsedSelectJoin[] } | undefined = parseSelectTable(from || '')
+    if (parsedTable && parsedColumns.length > 0) {
+        return removeEmpty({
+            command: 'SELECT' as const,
+            table: parsedTable.table,
+            columns: parsedColumns,
+            joins: parsedTable.joins,
+            where: where && parseCondition(where),
+            groupBy,
+            having: having && parseCondition(having),
+            orderBy,
+            offset: offset ? parseInt(offset) : undefined,
+            limit: limit ? parseInt(limit) : fetch ? parseInt(fetch) : top ? parseInt(top) : undefined
+        })
+    } else {
+        return undefined
+    }
+}
+
+export function parseSelectColumn(column: string, index: number): ParsedSelectColumn | undefined {
+    const [, scope, def, alias] = column.match(/^(?:(.+?)\.)?(.+?)(?:\s+AS\s+(.+?))?$/i) || []
+    if (def?.match(/^([a-zA-Z0-9_$#]+?|["`].+?["`]?)$/i)) { // simple column
+        return removeUndefined({name: removeQuotes(alias || def), scope: scope ? removeQuotes(scope) : undefined, col: [removeQuotes(def)]})
+    } else if(def === '*') {
+        return removeUndefined({name: '*', scope: scope ? removeQuotes(scope) : undefined})
+    } else {
+        return removeUndefined({name: removeQuotes(alias || `col_${index}`), def: def ? removeQuotes(def) : undefined})
+    }
+}
+
+export function parseSelectTable(tables: string): {table: ParsedSelectTable, joins?: ParsedSelectJoin[]} | undefined {
+    const [table, ...joins] = tables.replaceAll(/((?:INNER|LEFT|RIGHT|FULL)(?:\s+OUTER)?\s+)?JOIN\s+/gi, 'JOIN $1').split(/JOIN\s+/i) || []
+    const [, tableSchema, tableName, tableAlias] = ((table || '').trim().match(/^(?:(.+?)\.)?(.+?)(?:\s+(.+?))?$/i) || []).map(r => r ? removeQuotes(r) : undefined)
+    if (tableName) {
+        const tableFormatted: ParsedSelectTable = removeUndefined({name: tableName, schema: tableSchema, alias: tableAlias})
+        const joinsFormatted: ParsedSelectJoin[] = joins.map(j => {
+            const [, kind, schema, table, alias, on] = (j.trim().match(/^((?:INNER|LEFT|RIGHT|FULL)(?:\s+OUTER)?\s+)?(?:(.+?)\.)?(.+?)(?:\s+(.+?))?\s+ON\s+(.+?)$/i) || []).map(r => r ? removeQuotes(r) : undefined)
+            return table ? removeUndefined({table, schema, alias, kind: parseSelectJoinKind(kind || ''), on: parseCondition(on || '')}) : undefined
+        }).filter(j => !!j)
+        return removeEmpty({table: tableFormatted, joins: joinsFormatted})
+    } else {
+        return undefined
+    }
+}
+
+export function parseSelectJoinKind(kind: string): ParsedSelectJoin['kind'] | undefined {
+    if (kind.match(/^INNER\s+/i)) return 'INNER'
+    if (kind.match(/^LEFT\s+/i)) return 'LEFT'
+    if (kind.match(/^RIGHT\s+/i)) return 'RIGHT'
+    if (kind.match(/^FULL\s+/i)) return 'FULL'
+    return undefined
+}
+
+export function parseCondition(cond: string): ParsedSqlCondition | undefined {
+    if (cond.search(/AND|OR/i) !== -1) {
+        return parseConditionBool(cond)
+    } else if (cond.search(/[=<>]|\s+LIKE\s+/) !== -1) {
+        return parseConditionExp(cond)
+    } else if (cond.search(/\s+NULL/i) !== -1) {
+        return parseConditionNull(cond)
+    } else if (cond.search(/\s+IN\s+\(/i) !== -1) {
+        return parseConditionIn(cond)
+    } else {
+        return cond // can't parse condition yet :/
+    }
+}
+
+export function parseConditionBool(cond: string): ParsedSqlCondition | ParsedSqlConditionBool | string {
+    return cond.replaceAll(/\s+(AND|OR)\s+/gi, '|$1 ').split('|').reduce((acc, item) => {
+        if (acc === undefined) {
+            return parseCondition(item)
+        } else {
+            const [, opS, rightS] = item.match(/^(AND|OR)\s+(.+?)$/i) || []
+            const op = parseSqlConditionBoolOp(opS)
+            const right = parseCondition(rightS)
+            return op && right ? {op, left: acc, right} : acc
+        }
+    }, undefined as ParsedSqlCondition | ParsedSqlConditionBool | undefined) || cond
+}
+
+export function parseSqlConditionBoolOp(kind: string): ParsedSqlConditionBool['op'] | undefined {
+    if (kind.match(/^AND$/i)) return 'AND'
+    if (kind.match(/^OR$/i)) return 'OR'
+    return undefined
+}
+
+export function parseConditionExp(cond: string): ParsedSqlConditionExp | string {
+    const [, leftS, opS, rightS] = cond.match(/^(.+?)\s*(=|!=|>|>=|<|<=|<>|LIKE)\s*(.+?)$/) || []
+    const op = parseSqlConditionExpOp(opS || '')
+    const left = parseValue(leftS || '')
+    const right = parseValue(rightS || '')
+    return op && left !== undefined && right !== undefined ? {op, left, right} : cond
+}
+
+export function parseSqlConditionExpOp(kind: string): ParsedSqlConditionExp['op'] | undefined {
+    if (kind === '=') return kind
+    if (kind === '!=') return kind
+    if (kind === '>') return kind
+    if (kind === '>=') return kind
+    if (kind === '<') return kind
+    if (kind === '<=') return kind
+    if (kind === '<>') return kind
+    if (kind === 'LIKE') return kind
+    return undefined
+}
+
+export function parseConditionNull(cond: string): ParsedSqlConditionNull | string {
+    const [, valueS, not] = cond.match(/^(.+?)\s+IS\s+(NOT\s+)?NULL$/i) || []
+    const op: ParsedSqlConditionNull['op'] = (not || '').trim().match(/^NOT$/i) ? 'NOT NULL' : 'NULL'
+    const value = parseValue(valueS || '')
+    return value ? {op, value} : cond
+}
+
+export function parseConditionIn(cond: string): ParsedSqlConditionIn | string {
+    const [, valueS, not, valuesS] = cond.match(/^(.+?)\s+(NOT\s+)?IN\s+\((.+?)\)$/i) || []
+    const op: ParsedSqlConditionIn['op'] = (not || '').trim().match(/^NOT$/i) ? 'NOT IN' : 'IN'
+    const value = parseValue(valueS || '')
+    const values = valuesS.split(',').map(v => parseValue(v.trim())).filter(isNotUndefined)
+    return value ? {op, value, values} : cond
+}
+
+export function parseValue(value: string): ParsedSqlValue | undefined {
+    let res: RegExpMatchArray | null = value.match(/^(\d+)$/)
+    if (res) return parseInt(res[1])
+
+    res = value.match(/^'([^']+)'$/)
+    if (res) return res[1]
+
+    res = value.match(/^(?:(.+?)\.)?([a-zA-Z0-9_$#]+?|["`].+?["`])$/i)
+    if (res) return removeUndefined({column: removeQuotes(res[2]), scope: res[1] ? removeQuotes(res[1]) : undefined})
+
+    return undefined
 }

@@ -17,6 +17,7 @@ import {
 
 const ruleId: RuleId = 'entity-index-none'
 const ruleName: RuleName = 'entity without index'
+const ruleDescription: string = 'entities with no primary key and no index (only tables)'
 const CustomRuleConf = RuleConf.extend({
     ignores: EntityId.array().optional(),
 }).strict().describe('EntityIndexNoneConf')
@@ -24,6 +25,7 @@ type CustomRuleConf = z.infer<typeof CustomRuleConf>
 export const entityIndexNoneRule: Rule<CustomRuleConf> = {
     id: ruleId,
     name: ruleName,
+    description: ruleDescription,
     conf: {level: RuleLevel.enum.high},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {

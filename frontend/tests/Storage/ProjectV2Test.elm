@@ -92,7 +92,7 @@ project0 =
     , slug = Uuid.zero
     , name = "Project 0"
     , description = Nothing
-    , sources = [ Source src1 "source 1" (SqlLocalFile "structure.sql" 10000 (time 1102)) Array.empty Dict.empty [] Dict.empty True Nothing (time 1100) (time 1101) ]
+    , sources = [ Source src1 "source 1" (SqlLocalFile { name = "structure.sql", size = 10000, modified = time 1102 }) Array.empty Dict.empty [] Dict.empty True Nothing (time 1100) (time 1101) ]
     , ignoredRelations = Dict.empty
     , metadata = Dict.empty
     , layouts = Dict.fromList [ ( "initial layout", Layout [] [] [] [] (time 1200) (time 1201) ) ]
@@ -125,7 +125,7 @@ project1 =
     , slug = Uuid.zero
     , name = "Project 0"
     , description = Nothing
-    , sources = [ Source src1 "source 1" (SqlLocalFile "structure.sql" 10000 (time 200)) Array.empty tables1 [] Dict.empty True (Just "basic") (time 1100) (time 1101) ]
+    , sources = [ Source src1 "source 1" (SqlLocalFile { name = "structure.sql", size = 10000, modified = time 200 }) Array.empty tables1 [] Dict.empty True (Just "basic") (time 1100) (time 1101) ]
     , ignoredRelations = Dict.empty
     , metadata = Dict.empty
     , layouts =
@@ -134,7 +134,7 @@ project1 =
             , ( "empty", Layout [] [] [] [] (time 1202) (time 1203) )
             ]
     , tableRowsSeq = 1
-    , settings = ProjectSettings (FindPathSettings 4 "" "") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False Nothing
+    , settings = ProjectSettings (FindPathSettings 4 "" "") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+, deleted_.+" 15 False False) OrderByProperty Bezier True False Nothing
     , storage = ProjectStorage.Local
     , visibility = ProjectVisibility.None
     , version = ProjectEncodingVersion.current
@@ -198,7 +198,7 @@ project2 =
     , sources =
         [ Source src1
             "source 1"
-            (SqlLocalFile "structure.sql" 10000 (time 200))
+            (SqlLocalFile { name = "structure.sql", size = 10000, modified = time 200 })
             (Array.fromList
                 [ ""
                 , ""
@@ -238,7 +238,7 @@ project2 =
             , ( "users", Layout [ TableProps ( "public", "users" ) (gridPos 90 100) Size.zeroCanvas Tw.red [ ColumnPath.fromString "id", ColumnPath.fromString "name" ] True False False ] [] [] [] (time 1202) (time 1203) )
             ]
     , tableRowsSeq = 1
-    , settings = ProjectSettings (FindPathSettings 4 "users" "created_by") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False Nothing
+    , settings = ProjectSettings (FindPathSettings 4 "users" "created_by") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+, deleted_.+" 15 False False) OrderByProperty Bezier True False Nothing
     , storage = ProjectStorage.Local
     , visibility = ProjectVisibility.None
     , version = ProjectEncodingVersion.current

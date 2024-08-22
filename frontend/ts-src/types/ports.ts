@@ -25,6 +25,7 @@ import {
     OpenAIModel,
     Position,
     Size,
+    SourceId,
     SqlStatement,
     Timestamp
 } from "@azimutt/models";
@@ -36,6 +37,7 @@ import {
     Platform,
     PositionViewport,
     ToastLevel,
+    UserRole,
     ViewPosition
 } from "./basics";
 import {Env} from "../utils/env";
@@ -58,6 +60,7 @@ export interface ElmFlags {
     conf: {
         env: Env
         platform: Platform
+        role: UserRole
         desktop: boolean
     }
 }
@@ -136,6 +139,8 @@ export type MoveProjectTo = { kind: 'MoveProjectTo', project: LegacyProject, sto
 export const MoveProjectTo = z.object({kind: z.literal('MoveProjectTo'), project: LegacyProject, storage: LegacyProjectStorage}).strict()
 export type DeleteProject = { kind: 'DeleteProject', project: LegacyProjectInfo, redirect: string | null }
 export const DeleteProject = z.object({kind: z.literal('DeleteProject'), project: LegacyProjectInfo, redirect: z.string().nullable()}).strict()
+export type DeleteSource = { kind: 'DeleteSource', source: SourceId }
+export const DeleteSource = z.object({kind: z.literal('DeleteSource'), source: SourceId}).strict()
 export type ProjectDirty = { kind: 'ProjectDirty', dirty: boolean }
 export const ProjectDirty = z.object({kind: z.literal('ProjectDirty'), dirty: z.boolean()}).strict()
 export type DownloadFile = { kind: 'DownloadFile', filename: FileName, content: FileContent }
@@ -150,8 +155,8 @@ export type GetTableStats = { kind: 'GetTableStats', source: LegacySourceId, dat
 export const GetTableStats = z.object({kind: z.literal('GetTableStats'), source: LegacySourceId, database: DatabaseUrl, table: LegacyTableId}).strict()
 export type GetColumnStats = { kind: 'GetColumnStats', source: LegacySourceId, database: DatabaseUrl, column: LegacyColumnRef }
 export const GetColumnStats = z.object({kind: z.literal('GetColumnStats'), source: LegacySourceId, database: DatabaseUrl, column: LegacyColumnRef}).strict()
-export type RunDatabaseQuery = { kind: 'RunDatabaseQuery', context: string, database: DatabaseUrl, query: LegacySqlQueryOrigin }
-export const RunDatabaseQuery = z.object({kind: z.literal('RunDatabaseQuery'), context: z.string(), database: DatabaseUrl, query: LegacySqlQueryOrigin}).strict()
+export type RunDatabaseQuery = { kind: 'RunDatabaseQuery', context: string, source: SourceId, database: DatabaseUrl, query: LegacySqlQueryOrigin }
+export const RunDatabaseQuery = z.object({kind: z.literal('RunDatabaseQuery'), context: z.string(), source: SourceId, database: DatabaseUrl, query: LegacySqlQueryOrigin}).strict()
 export type GetPrismaSchema = { kind: 'GetPrismaSchema', content: string }
 export const GetPrismaSchema = z.object({kind: z.literal('GetPrismaSchema'), content: z.string()}).strict()
 export type ObserveSizes = { kind: 'ObserveSizes', ids: HtmlId[] }
@@ -168,8 +173,8 @@ export type Fireworks = { kind: 'Fireworks' }
 export const Fireworks = z.object({kind: z.literal('Fireworks')}).strict()
 export type Track = { kind: 'Track', event: TrackEvent }
 export const Track = z.object({kind: z.literal('Track'), event: TrackEvent}).strict()
-export type ElmMsg = Click | MouseDown | Focus | Blur | ScrollTo | Fullscreen | SetMeta | AutofocusWithin | Toast | GetProject | CreateProjectTmp | UpdateProjectTmp | CreateProject | UpdateProject | MoveProjectTo | DeleteProject | ProjectDirty | DownloadFile | CopyToClipboard | GetLocalFile | GetDatabaseSchema | GetTableStats | GetColumnStats | RunDatabaseQuery | GetPrismaSchema | ObserveSizes | ListenKeys | LlmGenerateSql | Confetti | ConfettiPride | Fireworks | Track
-export const ElmMsg = z.discriminatedUnion('kind', [Click, MouseDown, Focus, Blur, ScrollTo, Fullscreen, SetMeta, AutofocusWithin, Toast, GetProject, CreateProjectTmp, UpdateProjectTmp, CreateProject, UpdateProject, MoveProjectTo, DeleteProject, ProjectDirty, DownloadFile, CopyToClipboard, GetLocalFile, GetDatabaseSchema, GetTableStats, GetColumnStats, RunDatabaseQuery, GetPrismaSchema, ObserveSizes, ListenKeys, LlmGenerateSql, Confetti, ConfettiPride, Fireworks, Track]).describe('ElmMsg')
+export type ElmMsg = Click | MouseDown | Focus | Blur | ScrollTo | Fullscreen | SetMeta | AutofocusWithin | Toast | GetProject | CreateProjectTmp | UpdateProjectTmp | CreateProject | UpdateProject | MoveProjectTo | DeleteProject | DeleteSource | ProjectDirty | DownloadFile | CopyToClipboard | GetLocalFile | GetDatabaseSchema | GetTableStats | GetColumnStats | RunDatabaseQuery | GetPrismaSchema | ObserveSizes | ListenKeys | LlmGenerateSql | Confetti | ConfettiPride | Fireworks | Track
+export const ElmMsg = z.discriminatedUnion('kind', [Click, MouseDown, Focus, Blur, ScrollTo, Fullscreen, SetMeta, AutofocusWithin, Toast, GetProject, CreateProjectTmp, UpdateProjectTmp, CreateProject, UpdateProject, MoveProjectTo, DeleteProject, DeleteSource, ProjectDirty, DownloadFile, CopyToClipboard, GetLocalFile, GetDatabaseSchema, GetTableStats, GetColumnStats, RunDatabaseQuery, GetPrismaSchema, ObserveSizes, ListenKeys, LlmGenerateSql, Confetti, ConfettiPride, Fireworks, Track]).describe('ElmMsg')
 
 
 export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }
@@ -192,8 +197,8 @@ export type GotColumnStats = { kind: 'GotColumnStats', source: LegacySourceId, s
 export const GotColumnStats = z.object({kind: z.literal('GotColumnStats'), source: LegacySourceId, stats: LegacyColumnStats}).strict()
 export type GotColumnStatsError = { kind: 'GotColumnStatsError', source: LegacySourceId, column: LegacyColumnRef, error: string }
 export const GotColumnStatsError = z.object({kind: z.literal('GotColumnStatsError'), source: LegacySourceId, column: LegacyColumnRef, error: z.string()}).strict()
-export type GotDatabaseQueryResult = { kind: 'GotDatabaseQueryResult', context: string, query: LegacySqlQueryOrigin, result: string | {columns: LegacyDatabaseQueryResultsColumn[], rows: LegacyJsValue[]}, started: number, finished: number }
-export const GotDatabaseQueryResult = z.object({kind: z.literal('GotDatabaseQueryResult'), context: z.string(), query: LegacySqlQueryOrigin, result: z.union([z.string(), z.object({columns: LegacyDatabaseQueryResultsColumn.array(), rows: LegacyJsValue.array() })]), started: z.number(), finished: z.number()}).strict()
+export type GotDatabaseQueryResult = { kind: 'GotDatabaseQueryResult', context: string, source: SourceId, query: LegacySqlQueryOrigin, result: string | {columns: LegacyDatabaseQueryResultsColumn[], rows: LegacyJsValue[]}, started: number, finished: number }
+export const GotDatabaseQueryResult = z.object({kind: z.literal('GotDatabaseQueryResult'), context: z.string(), source: SourceId, query: LegacySqlQueryOrigin, result: z.union([z.string(), z.object({columns: LegacyDatabaseQueryResultsColumn.array(), rows: LegacyJsValue.array() })]), started: z.number(), finished: z.number()}).strict()
 export type GotPrismaSchema = { kind: 'GotPrismaSchema', schema: LegacyDatabase }
 export const GotPrismaSchema = z.object({kind: z.literal('GotPrismaSchema'), schema: LegacyDatabase}).strict()
 export type GotPrismaSchemaError = { kind: 'GotPrismaSchemaError', error: string }
