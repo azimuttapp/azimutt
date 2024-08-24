@@ -105,32 +105,30 @@ CREATE TABLE [billing].[Payments] (
 
 
 -- insert some data
-INSERT INTO [billing].[CustomerAddresses] ([Name], [Street], [City], [State], [ZipCode], [Country], [CreatedBy])
-VALUES ('Billing Address 1', '123 Main St', 'Anytown', 'Anystate', '12345', 1, 1),
-       ('Billing Address 2', '456 Elm St', 'Othertown', 'Otherstate', '67890', 2, 2);
+INSERT INTO [billing].[CustomerAddresses] ([Name], [Street], [City], [State], [ZipCode], [Country], [Complements], [CreatedBy])
+VALUES ('SpongeHome', '124 Conch Street', 'Bikini Bottom', 'Pacific Ocean', '12345', 1, 'Pineapple house next to Squidward', 102);
 
 INSERT INTO [billing].[Customers] ([Name], [BillingAddress], [Siret], [TVA], [CreatedBy], [UpdatedBy])
-VALUES ('Customer A', NULL, '12345678901234', 'FR12345678901', 1, 1),
-       ('Customer B', NULL, '98765432109876', 'DE09876543210', 2, 2);
+VALUES ('SpongeBob', 1, NULL, NULL, 102, 102),
+       ('Krusty Enterprises', 1, '12345678900010', 'FR12345678901', 102, 102);
 
-INSERT INTO [billing].[CustomerMembers] ([CustomerId], [UserId], [CanEdit], [CanInvite], [CanBuy], [BudgetAllowance],
-                                         [CreatedBy], [UpdatedBy])
-VALUES (1, 1, 1, 1, 1, 1000, 1, 1),
-       (2, 2, 1, 0, 1, 500, 2, 2);
+INSERT INTO [billing].[CustomerMembers] ([CustomerId], [UserId], [CanEdit], [CanInvite], [CanBuy], [BudgetAllowance], [CreatedBy], [UpdatedBy])
+VALUES (1, 102, 1, 1, 1, NULL, 102, 102),
+       (2, 102, 1, 1, 1, NULL, 102, 102),
+       (2, 103, 1, 0, 1, 500, 102, 102);
 
 INSERT INTO [billing].[CustomerPaymentMethods] ([CustomerId], [Name], [Kind], [Details], [CreatedBy], [UpdatedBy])
-VALUES (1, 'Credit Card', 'card', '{"card_number": "4111111111111111", "expiry_date": "12/23"}', 1, 1),
-       (2, 'PayPal', 'paypal', '{"paypal_account": "customer_b@paypal.com"}', 2, 2);
+VALUES (1, 'PayPal perso', 'paypal', '{"paypal_account": "spongebob@bikinibottom.com"}', 102, 102),
+       (2, 'Company Card', 'card', '{"card_number": "4111111111111111", "expiry_date": "12/28"}', 102, 102);
 
-INSERT INTO [billing].[Invoices] ([Reference], [CartId], [CustomerId], [BillingAddress], [TotalPrice], [Currency],
-                                  [CreatedBy])
-VALUES ('INV-001', 1, 1, 1, 200.00, 'USD', 1),
-       ('INV-002', 2, 2, 2, 300.00, 'EUR', 2);
+INSERT INTO [billing].[Invoices] ([Reference], [CartId], [CustomerId], [BillingAddress], [TotalPrice], [Currency], [CreatedBy])
+VALUES ('INV-001', 1, 1, 1, 1323, 'EUR', 102);
 
 INSERT INTO [billing].[InvoiceLines] ([InvoiceId], [Index], [ProductVersionId], [Description], [Price], [Quantity])
-VALUES (1, 1, 1, 'Product 1 Description', 100.00, 2),
-       (2, 1, 2, 'Product 2 Description', 150.00, 2);
+VALUES (1, 1, 1, 'Pixel 8 Obsidian 128 Go', 599, 1),
+       (1, 2, 2, 'Pixel 8 Obsidian 256 Go', 659, 1),
+       (1, 3, 15, 'Pixel 8 Case Hazel', 35, 1),
+       (1, 4, 20, 'Pixel 8 Case Signature Clear', 30, 1);
 
 INSERT INTO [billing].[Payments] ([InvoiceId], [PaymentMethodId], [Amount], [Currency])
-VALUES (1, 1, 200.00, 'USD'),
-       (2, 2, 300.00, 'EUR');
+VALUES (1, 1, 1323, 'EUR');

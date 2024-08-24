@@ -167,48 +167,147 @@ CREATE INDEX idx_product_review_feedbacks_deleted_at ON catalog.product_review_f
 -- insert some data
 INSERT INTO catalog.categories (id, parent, depth, slug, name, description, description_html)
 VALUES (1, NULL, 0, 'electronics', 'Electronics', 'All electronic items', '<p>All electronic items</p>'),
-       (2, 1, 1, 'phones', 'Phones', 'All kinds of phones', '<p>All kinds of phones</p>');
+       (2, 1, 1, 'phones', 'Phones', 'All kinds of phones', '<p>All kinds of phones</p>'),
+       (3, 2, 2, 'smartphones', 'SmartPhones', 'Most advanced phones', '<p>Most advanced phones</p>'),
+       (4, 1, 1, 'accessories', 'Accessories', 'Useful accessories', '<p>Useful accessories</p>');
 
 INSERT INTO catalog.products (id, slug, name, category_id, description, description_html, versions, attributes, stock)
-VALUES (1, 'pixel-8-pro', 'Pixel 8 Pro', 2, 'A high-end smartphone by Google', '<p>A high-end smartphone by Google</p>','[{"key": "color", "label": "Couleur", "values": [{"name": "Bleu Azur", "value": "#95bbe2"}]}, {"key": "storage", "label": "Taille", "values": [{"name": "128GB", "value": 128}]}]', '[{"key": "Marque", "value": "Google"}]', 100),
-       (2, 'iphone-14', 'iPhone 14', 2, 'The latest iPhone by Apple', '<p>The latest iPhone by Apple</p>', '[{"key": "color", "label": "Couleur", "values": [{"name": "Noir", "value": "#000000"}]}, {"key": "storage", "label": "Taille", "values": [{"name": "256GB", "value": 256}]}]', '[{"key": "Marque", "value": "Apple"}]', 50);
+VALUES (1, 'pixel-8', 'Pixel 8', 3, 'A high-end smartphone by Google', '<p>A high-end smartphone by Google</p>','[{"key": "color", "label": "Color", "values": [{"name": "Obsidian", "value": "#202020"}, {"name": "Hazel", "value": "#8B8D8B"}, {"name": "Rose", "value": "#F1DDD2"}, {"name": "Mint", "value": "#DDF2E5"}]}, {"key": "storage", "label": "Storage", "values": [{"name": "128 GB", "value": 128}, {"name": "256 GB", "value": 256}]}]', '[{"key": "Brand", "value": "Google"}, {"key": "Screen size", "value": "6,2\""}, {"key": "RAM", "value": "8 Go"}, {"key": "Weight", "value": "187 g"}]', 11),
+       (2, 'pixel-8-pro', 'Pixel 8 Pro', 3, 'A high-end smartphone by Google', '<p>A high-end smartphone by Google</p>','[]', '[]', 9),
+       (3, 'pixel-8a', 'Pixel 8a', 3, 'A high-end smartphone by Google', '<p>A high-end smartphone by Google</p>','[]', '[]', 0),
+       (4, 'pixel-9', 'Pixel 9', 3, 'A high-end smartphone by Google', '<p>A high-end smartphone by Google</p>','[]', '[]', 0),
+       (5, 'pixel-9-pro', 'Pixel 9 Pro', 3, 'A high-end smartphone by Google', '<p>A high-end smartphone by Google</p>','[]', '[]', 0),
+       (6, 'pixel-9-pro-xl', 'Pixel 9 Pro XL', 3, 'A high-end smartphone by Google', '<p>A high-end smartphone by Google</p>','[]', '[]', 0),
+       (7, 'pixel-9-pro-fold', 'Pixel 9 Pro Fold', 3, 'A high-end smartphone by Google', '<p>A high-end smartphone by Google</p>','[]', '[]', 0),
+       (8, 'pixel-8-case', 'Pixel 8 Case', 4, 'Protect your phone with class!', '<p>Protect your phone with class!</p>','[]', '[]', 5),
+       (9, 'pixel-8-casemate-signature', 'Pixel 8 Case Signature', 4, 'Protect your phone with class!', '<p>Protect your phone with class!</p>','[]', '[]', 3);
 
 INSERT INTO catalog.product_versions (id, product_id, name, specs, price, stock)
-VALUES (1, 1, 'Pixel 8 Pro Menthe 128 Go', '{"color": "Menthe", "storage": 128}', 899.99, 50),
-       (2, 2, 'iPhone 14 Noir 256 Go', '{"color": "Noir", "storage": 256}', 1099.99, 25);
+VALUES (1, 1, 'Pixel 8 Obsidian 128 Go', '{"color": "Obsidian", "storage": 128}', 599, 2),
+       (2, 1, 'Pixel 8 Obsidian 256 Go', '{"color": "Obsidian", "storage": 256}', 659, 1),
+       (3, 1, 'Pixel 8 Hazel 128 Go', '{"color": "Hazel", "storage": 128}', 599, 2),
+       (4, 1, 'Pixel 8 Hazel 256 Go', '{"color": "Hazel", "storage": 256}', 659, 0),
+       (5, 1, 'Pixel 8 Rose 128 Go', '{"color": "Rose", "storage": 128}', 599, 2),
+       (6, 1, 'Pixel 8 Rose 256 Go', '{"color": "Rose", "storage": 256}', 659, 0),
+       (7, 1, 'Pixel 8 Mint 128 Go', '{"color": "Mint", "storage": 128}', 599, 2),
+       (8, 2, 'Pixel 8 Pro Obsidian 128 Go', '{"color": "Obsidian", "storage": 128}', 899, 3),
+       (9, 2, 'Pixel 8 Pro Obsidian 256 Go', '{"color": "Obsidian", "storage": 256}', 959, 1),
+       (10, 2, 'Pixel 8 Pro Obsidian 512 Go', '{"color": "Obsidian", "storage": 512}', 1099, 1),
+       (11, 2, 'Pixel 8 Pro Bay 128 Go', '{"color": "Bay", "storage": 128}', 899, 1),
+       (12, 2, 'Pixel 8 Pro Bay 256 Go', '{"color": "Bay", "storage": 256}', 959, 1),
+       (13, 2, 'Pixel 8 Pro Porcelain 128 Go', '{"color": "Porcelain", "storage": 128}', 899, 1),
+       (14, 2, 'Pixel 8 Pro Porcelain 256 Go', '{"color": "Porcelain", "storage": 256}', 959, 1),
+       (15, 8, 'Pixel 8 Case Hazel', '{"color": "Hazel"}', 35, 2),
+       (16, 8, 'Pixel 8 Case Coral', '{"color": "Coral"}', 35, 2),
+       (17, 8, 'Pixel 8 Case Mint', '{"color": "Mint"}', 35, 0),
+       (18, 8, 'Pixel 8 Case Rose', '{"color": "Rose"}', 35, 0),
+       (19, 8, 'Pixel 8 Case Charcoal', '{"color": "Charcoal"}', 35, 0),
+       (20, 9, 'Pixel 8 Case Signature Clear', '{}', 30, 2);
 
 INSERT INTO catalog.product_cross_sell_options (product_id, product_version_id, label)
-VALUES (1, 2, 'Buy with iPhone 14 case'),
-       (2, 1, 'Buy with Pixel 8 Pro case');
+VALUES (1, 15, 'Protect your phone'),
+       (1, 20, 'Protect your phone');
 
 INSERT INTO catalog.product_alternatives (product_id, alternative_product_id)
 VALUES (1, 2),
-       (2, 1);
+       (1, 3),
+       (1, 4),
+       (2, 1),
+       (2, 3),
+       (2, 4),
+       (3, 1),
+       (3, 2),
+       (3, 4),
+       (4, 1),
+       (4, 5),
+       (4, 6),
+       (4, 7),
+       (5, 1),
+       (5, 4),
+       (5, 6),
+       (5, 7),
+       (6, 1),
+       (6, 4),
+       (6, 5),
+       (6, 7),
+       (7, 1),
+       (7, 4),
+       (7, 5),
+       (7, 6);
 
 INSERT INTO catalog.assets (id, kind, format, size, path, alt, width, height, weight)
-VALUES (1, 'picture', '1:1', 'high', '/images/pixel-8-pro.png', 'Pixel 8 Pro Image', 1024, 1024, 500),
-       (2, 'picture', '1:1', 'high', '/images/iphone-14.png', 'iPhone 14 Image', 1024, 1024, 500);
+VALUES (1, 'picture', '16:9', 'high', '/images/categories/electronics/banner.png', 'Electronics banner', 1600, 900, 500),
+       (2, 'picture', '16:9', 'high', '/images/categories/electronics/phones/banner.png', 'Phones banner', 1600, 900, 500),
+       (3, 'picture', '16:9', 'high', '/images/categories/electronics/phones/smartphones/banner.png', 'SmartPhones banner', 1600, 900, 500),
+       (4, 'picture', '16:9', 'high', '/images/categories/electronics/accessories/banner.png', 'Accessories banner', 1600, 900, 500),
+       (5, 'picture', '1:1', 'high', '/images/categories/electronics/icon.png', 'Electronics icon', 150, 150, 345),
+       (6, 'picture', '3:4', 'high', '/images/products/pixel-8/obsidian/shot.png', 'Pixel 8 Obsidian shot', 360, 480, 474),
+       (7, 'picture', '3:4', 'high', '/images/products/pixel-8/hazel/shot.png', 'Pixel 8 Hazel shot', 360, 480, 474),
+       (8, 'picture', '3:4', 'high', '/images/products/pixel-8/rose/shot.png', 'Pixel 8 Rose shot', 360, 480, 474),
+       (9, 'picture', '3:4', 'high', '/images/products/pixel-8/mint/shot.png', 'Pixel 8 Mint shot', 360, 480, 474),
+       (10, 'picture', '3:4', 'high', '/images/products/pixel-8-pro/obsidian/shot.png', 'Pixel 8 Pro Obsidian shot', 360, 480, 474),
+       (11, 'picture', '3:4', 'high', '/images/products/pixel-8-pro/bay/shot.png', 'Pixel 8 Pro Bay shot', 360, 480, 474),
+       (12, 'picture', '3:4', 'high', '/images/products/pixel-8-pro/porcelain/shot.png', 'Pixel 8 Pro Porcelain shot', 360, 480, 474),
+       (13, 'picture', '3:4', 'high', '/images/products/pixel-8a/shot.png', 'Pixel 8a shot', 360, 480, 474),
+       (14, 'picture', '3:4', 'high', '/images/products/pixel-9/shot.png', 'Pixel 9 shot', 360, 480, 474),
+       (15, 'picture', '3:4', 'high', '/images/products/pixel-9-pro/shot.png', 'Pixel 9 Pro shot', 360, 480, 474),
+       (16, 'picture', '3:4', 'high', '/images/products/pixel-9-pro-xl/shot.png', 'Pixel 9 Pro XL shot', 360, 480, 474),
+       (17, 'picture', '3:4', 'high', '/images/products/pixel-9-pro-fold/shot.png', 'Pixel 9 Pro Fold shot', 360, 480, 474),
+       (18, 'picture', '3:4', 'high', '/images/products/pixel-8-case/hazel/shot.png', 'Pixel 8 Case Hazel shot', 360, 480, 474),
+       (19, 'picture', '3:4', 'high', '/images/products/pixel-8-case/coral/shot.png', 'Pixel 8 Case Coral shot', 360, 480, 474),
+       (20, 'picture', '3:4', 'high', '/images/products/pixel-8-case/mint/shot.png', 'Pixel 8 Case Mint shot', 360, 480, 474),
+       (21, 'picture', '3:4', 'high', '/images/products/pixel-8-case/rose/shot.png', 'Pixel 8 Case Rose shot', 360, 480, 474),
+       (22, 'picture', '3:4', 'high', '/images/products/pixel-8-case/charcoal/shot.png', 'Pixel 8 Case Charcoal shot', 360, 480, 474),
+       (23, 'picture', '3:4', 'high', '/images/products/pixel-8-casemate-signature/shot.png', 'Pixel 8 Case Signature shot', 360, 480, 474),
+       (24, 'picture', '16:9', 'high', '/uploads/users/102/2024-08-24/9ab74d.jpg', 'User upload', 1280, 720, 12845);
 
 INSERT INTO catalog.category_assets (category_id, asset_id, placement)
 VALUES (1, 1, 'banner'),
-       (2, 2, 'icon');
+       (2, 2, 'banner'),
+       (3, 3, 'banner'),
+       (4, 4, 'banner'),
+       (1, 5, 'icon');
 
 INSERT INTO catalog.product_assets (product_id, asset_id, placement)
-VALUES (1, 1, 'banner'),
-       (2, 2, 'icon');
+VALUES (1, 6, 'main'),
+       (2, 10, 'main'),
+       (3, 13, 'main'),
+       (4, 14, 'main'),
+       (5, 15, 'main'),
+       (6, 16, 'main'),
+       (7, 17, 'main'),
+       (8, 18, 'main'),
+       (9, 23, 'main');
 
 INSERT INTO catalog.product_version_assets (product_version_id, asset_id, placement)
-VALUES (1, 1, 'banner'),
-       (2, 2, 'icon');
+VALUES (1, 6, 'main'),
+       (2, 6, 'main'),
+       (3, 7, 'main'),
+       (4, 7, 'main'),
+       (5, 8, 'main'),
+       (6, 8, 'main'),
+       (7, 9, 'main'),
+       (8, 10, 'main'),
+       (9, 10, 'main'),
+       (10, 10, 'main'),
+       (11, 11, 'main'),
+       (12, 11, 'main'),
+       (13, 12, 'main'),
+       (14, 12, 'main'),
+       (15, 18, 'main'),
+       (16, 19, 'main'),
+       (17, 20, 'main'),
+       (18, 21, 'main'),
+       (19, 22, 'main'),
+       (20, 23, 'main');
 
-INSERT INTO catalog.product_reviews (id, product_id, product_version_id, rating, review, created_by, updated_by)
-VALUES (1, 1, 1, 5, 'Amazing phone!', 1, 1),
-       (2, 2, 2, 4, 'Great, but too expensive.', 2, 2);
+INSERT INTO catalog.product_reviews (id, product_id, product_version_id, invoice_id, physical_product_id, rating, review, created_by, updated_by)
+VALUES (1, 1, 1, 1, 1, 5, 'Amazing phone!', 102, 102),
+       (2, 2, 2, 1, 4, 4, 'Great, but too expensive.', 103, 103);
 
 INSERT INTO catalog.product_review_assets (product_review_id, asset_id, created_by)
-VALUES (1, 1, 1),
-       (2, 2, 2);
+VALUES (1, 24, 102);
 
 INSERT INTO catalog.product_review_feedbacks (product_review_id, kind, created_by)
-VALUES (1, 'like', 1),
-       (2, 'report', 2);
+VALUES (1, 'like', 104),
+       (2, 'report', 105);

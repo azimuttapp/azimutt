@@ -76,21 +76,24 @@ CREATE INDEX idx_wishlist_members_deleted_at ON shopping.wishlist_members (delet
 
 -- insert some data
 INSERT INTO shopping.carts (id, owner_kind, owner_id, expire_at)
-VALUES (1, 'identity.Users', 1, CURRENT_TIMESTAMP + INTERVAL '1 day'),
-       (2, 'identity.Devices', 1, CURRENT_TIMESTAMP + INTERVAL '1 day');
+VALUES (1, 'Users', 102, CURRENT_TIMESTAMP + INTERVAL '1 day'),
+       (2, 'Devices', 1, CURRENT_TIMESTAMP + INTERVAL '1 day');
 
 INSERT INTO shopping.cart_items (cart_id, product_version_id, quantity, price, created_by, updated_by)
-VALUES (1, 1, 2, 899.99, 1, 1),
-       (2, 2, 1, 1099.99, 2, 2);
+VALUES (1, 1, 1, 599, 102, 102),
+       (1, 2, 1, 659, 102, 102),
+       (1, 15, 1, 35, 102, 102),
+       (1, 20, 1, 30, 102, 102),
+       (2, 7, 2, 599, NULL, NULL);
 
 INSERT INTO shopping.wishlists (id, name, description, public, created_by, updated_by)
-VALUES (1, 'John''s Wishlist', 'John''s favorite products', TRUE, 1, 1),
-       (2, 'Jane''s Wishlist', 'Jane''s favorite products', FALSE, 2, 2);
+VALUES (1, 'Bob''s Wishlist', 'Bob''s favorite products', TRUE, 102, 102);
 
 INSERT INTO shopping.wishlist_items (wishlist_id, product_id, specs, created_by)
-VALUES (1, 1, '{"color": "Menthe", "storage": 128}', 1),
-       (2, 2, '{"color": "Noir", "storage": 256}', 2);
+VALUES (1, 1, '{"color": "Obsidian", "storage": 128}', 102),
+       (1, 2, '{"color": "Obsidian", "storage": 256}', 102),
+       (1, 8, '{"color": "Coral"}', 102);
 
 INSERT INTO shopping.wishlist_members (wishlist_id, user_id, rights, created_by, updated_by)
-VALUES (1, 1, 'edit', 1, 1),
-       (2, 2, 'view', 2, 2);
+VALUES (1, 102, 'edit', 102, 102),
+       (1, 103, 'view', 102, 102);

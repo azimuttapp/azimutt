@@ -207,10 +207,10 @@ C##INVENTORY.PRODUCTS
   BRAND BIGINT nullable fk C##INVENTORY.BRANDS.ID
   CATEGORY VARCHAR nullable | ex: "Phones"
   SUBCATEGORY VARCHAR nullable | ex: "Smartphones"
-  WIDTH FLOAT | typical width of the product, see PRODUCT_VERSIONS for the real one
-  LENGTH FLOAT | typical length of the product, see PRODUCT_VERSIONS for the real one
-  HEIGHT FLOAT | typical height of the product, see PRODUCT_VERSIONS for the real one
-  WEIGHT FLOAT | typical weight of the product, see PRODUCT_VERSIONS for the real one
+  WIDTH FLOAT | typical width of the product in millis, see PRODUCT_VERSIONS for the real one
+  LENGTH FLOAT | typical length of the product in millis, see PRODUCT_VERSIONS for the real one
+  HEIGHT FLOAT | typical height of the product in millis, see PRODUCT_VERSIONS for the real one
+  WEIGHT FLOAT | typical weight of the product in grams, see PRODUCT_VERSIONS for the real one
   REMARKS TEXT nullable | ex: fragile
   CREATED_AT TIMESTAMP
   UPDATED_AT TIMESTAMP
@@ -223,10 +223,10 @@ C##INVENTORY.PRODUCT_VERSIONS
   EAN VARCHAR(13) unique | european id
   NAME VARCHAR unique | ex: "Pixel 8 Pro Menthe 128 Go"
   SPECS JSON | specificities of this version, ex: `{color: "Menthe", storage: 128}`
-  WIDTH FLOAT
-  LENGTH FLOAT
-  HEIGHT FLOAT
-  WEIGHT FLOAT
+  WIDTH FLOAT | in millis
+  LENGTH FLOAT | in millis
+  HEIGHT FLOAT | in millis
+  WEIGHT FLOAT | in grams
   REMARKS TEXT nullable
   CREATED_AT TIMESTAMP
   UPDATED_AT TIMESTAMP
@@ -630,10 +630,11 @@ billing.Payments
 shipping.Carriers
   id bigint unique=pk
   registration varchar
-  cargoWidth float
-  cargoLength float
-  cargoHeight float
-  cargoWeight float
+  licensePlate varchar
+  cargoWidth float | inner cargo width in millimeters
+  cargoLength float | inner cargo length in millimeters
+  cargoHeight float | inner cargo height in millimeters
+  cargoWeight float | maximum weight for the cargo, in kilograms
   createdAt timestamp
   createdBy bigint nullable fk identity.Users.id
   updatedAt timestamp
@@ -660,7 +661,7 @@ shipping.ShipmentItems
   invoiceId bigint fk billing.InvoiceLines.InvoiceId
   invoiceLine int fk billing.InvoiceLines.Index
   deliveredAt timestamp nullable
-  deliveredTo bigint nullable fk identity.Users.id
+  deliveredTo bigint nullable fk identity.Users.id | the User who got the delivered package
 
 # CRM
 
