@@ -2,23 +2,23 @@
 
 referential.Countries | needs to be referenced for legal reasons
   CountryId bigint pk
-  Code varchar
-  Name varchar
+  Code varchar unique
+  Name varchar unique
   CreatedAt timestamp
   DeletedAt timestamp nullable
 
 referential.States | used for auto-competes
   StateId bigint pk
   CountryId bigint fk referential.Countries.CountryId
-  Code varchar
-  Name varchar
+  Code varchar index
+  Name varchar index
   CreatedAt timestamp
   DeletedAt timestamp nullable
 
 referential.Cities | used for auto-competes
   CityId bigint pk
   StateId bigint fk referential.States.StateId
-  Name varchar
+  Name varchar index
   CreatedAt timestamp
   DeletedAt timestamp nullable
 
@@ -185,7 +185,7 @@ C##INVENTORY.WAREHOUSE_EMPLOYEES
 
 C##INVENTORY.WAREHOUSE_IDENTITY_PROOFS | how to check the employee is identified, can be several
   WAREHOUSE_ID BIGINT pk fk C##INVENTORY.WAREHOUSES.ID
-  EMPLOYEES_ID BIGINT pk fk C##INVENTORY.EMPLOYEES.ID
+  EMPLOYEE_ID BIGINT pk fk C##INVENTORY.EMPLOYEES.ID
   KIND identity_proof_kind(name, cni, badge) pk
   VALUE VARCHAR
   EXPIRE TIMESTAMP nullable
@@ -629,7 +629,7 @@ billing.Payments
 
 shipping.Carriers
   id bigint unique=pk
-  registration varchar
+  registration varchar index
   licensePlate varchar
   cargoWidth float | inner cargo width in millimeters
   cargoLength float | inner cargo length in millimeters
@@ -658,7 +658,7 @@ shipping.Shipments
 shipping.ShipmentItems
   shipmentId bigint unique=pk fk shipping.Shipments.id
   physicalProductId bigint unique=pk fk C##INVENTORY.PHYSICAL_PRODUCTS.ID
-  invoiceId bigint fk billing.InvoiceLines.InvoiceId
+  invoiceId bigint index fk billing.InvoiceLines.InvoiceId
   invoiceLine int fk billing.InvoiceLines.Index
   deliveredAt timestamp nullable
   deliveredTo bigint nullable fk identity.Users.id | the User who got the delivered package
@@ -805,7 +805,7 @@ analytics.Events
   source event_source(website, app, admin, job) | the name of the system which emitted this event
   details json nullable | any additional info for the event
   entities json nullable | {[kind: string]: {id: string, name: string}[]}
-  createdAt timestamp
+  createdAt timestamp index
 fk analytics.Events.entities:user:id -> identity.Users.id
 fk analytics.Events.entities:cart:id -> shopping.carts.id
 fk analytics.Events.entities:invoice:id -> billing.Invoices.InvoiceId
@@ -813,7 +813,7 @@ fk analytics.Events.entities:invoice:id -> billing.Invoices.InvoiceId
 analytics.Entities
   kind string unique=pk
   id string unique=pk
-  name string
+  name string index
   properties json
   createdAt timestamp
   updatedAt timestamp

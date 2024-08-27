@@ -15,8 +15,8 @@ CREATE TABLE [referential].[Countries] (
     [CreatedAt] [datetime]      NOT NULL DEFAULT GETDATE(),
     [DeletedAt] [datetime]
 );
-CREATE INDEX [IDX_Countries_Code] ON [referential].[Countries] ([Code]);
-CREATE INDEX [IDX_Countries_Name] ON [referential].[Countries] ([Name]);
+CREATE UNIQUE INDEX [IDX_Countries_Code] ON [referential].[Countries] ([Code]);
+CREATE UNIQUE INDEX [IDX_Countries_Name] ON [referential].[Countries] ([Name]);
 EXEC sp_addextendedproperty 'MS_Description', 'needs to be referenced for legal reasons', 'SCHEMA', 'referential', 'TABLE', 'Countries';
 
 CREATE TABLE [referential].[States] (

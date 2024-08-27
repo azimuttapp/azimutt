@@ -2,7 +2,7 @@
 
 This is a medium demo (~80 tables) showcasing Azimutt ability to explore large schemas, even with several databases (micro-services for examples).
 
-You can find this project at [xxx](https://azimutt.app...) and explore it yourself, you will see:
+You can find this project directly on [Azimutt](https://azimutt.app...) and explore it yourself, you will see:
 
 - an overview of the schema across several databases
 - showcases per domain with sample rows

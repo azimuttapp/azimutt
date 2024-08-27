@@ -36,6 +36,8 @@ db.createCollection('Events', {
         }
     }
 });
+db.Events.createIndex({ name: 1 });
+db.Events.createIndex({ createdAt: 1 });
 
 db.createCollection('Entities', {
     validator: {
@@ -53,6 +55,7 @@ db.createCollection('Entities', {
         }
     }
 });
+db.Entities.createIndex({ name: 1 });
 
 
 // insert some data

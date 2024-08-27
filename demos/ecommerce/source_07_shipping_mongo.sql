@@ -30,6 +30,7 @@ db.createCollection('Carriers', {
         }
     }
 });
+db.Carriers.createIndex({ registration: 1 });
 
 db.createCollection('Shipments', {
     validator: {
@@ -69,6 +70,8 @@ db.createCollection('ShipmentItems', {
         }
     }
 });
+db.ShipmentItems.createIndex({ shipmentId: 1 });
+db.ShipmentItems.createIndex({ invoiceId: 1 });
 
 
 // insert some data
