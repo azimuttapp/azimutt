@@ -397,17 +397,17 @@ importers:
         specifier: ^0.1.1
         version: 0.1.1
       '@azimutt/connector-mariadb':
+        specifier: ^0.1.5
+        version: 0.1.5
+      '@azimutt/connector-mongodb':
+        specifier: ^0.1.3
+        version: 0.1.3(socks@2.8.3)
+      '@azimutt/connector-mysql':
         specifier: ^0.1.4
         version: 0.1.4
-      '@azimutt/connector-mongodb':
-        specifier: ^0.1.2
-        version: 0.1.2(socks@2.8.3)
-      '@azimutt/connector-mysql':
-        specifier: ^0.1.3
-        version: 0.1.3
       '@azimutt/connector-oracle':
-        specifier: ^0.1.1
-        version: 0.1.1
+        specifier: ^0.1.2
+        version: 0.1.2
       '@azimutt/connector-postgres':
         specifier: ^0.1.9
         version: 0.1.9(pg-native@3.0.1)
@@ -415,11 +415,11 @@ importers:
         specifier: ^0.1.1
         version: 0.1.1(asn1.js@5.4.1)
       '@azimutt/connector-sqlserver':
-        specifier: ^0.1.2
-        version: 0.1.2
+        specifier: ^0.1.3
+        version: 0.1.3
       '@azimutt/models':
-        specifier: ^0.1.13
-        version: 0.1.13
+        specifier: ^0.1.14
+        version: 0.1.14
       '@azimutt/utils':
         specifier: ^0.1.5
         version: 0.1.5
@@ -1198,17 +1198,17 @@ packages:
   '@azimutt/connector-couchbase@0.1.1':
     resolution: {integrity: sha512-c0ZSWRqR+I6qzrgROUpoAuzkTWdPEz6Jz/Na+0Lt/1Uqyr9Vj1JSm4dwgh53RN0G8kC4HPJWpD8gC58Z0tyErA==}
 
-  '@azimutt/connector-mariadb@0.1.4':
-    resolution: {integrity: sha512-BPJn9pQH2vUW+vTMzustGIaCBLu+9OXRMotEz59htXLNYgg7nYjyoai9br+N8Tt6jbMRSHKAen43tIljK8UhDg==}
+  '@azimutt/connector-mariadb@0.1.5':
+    resolution: {integrity: sha512-t+LUFDekbtYvcGgb/jASWV0LGMkB4c/bEMEacy6qcoq7u0KssN3JrTOOHCBo8IgURvAGBZ1qA/+FlpKdenCgqg==}
 
-  '@azimutt/connector-mongodb@0.1.2':
-    resolution: {integrity: sha512-gjdfIOMEzvOA1k3KBo5Ba/ZpC0uXohnA/MPGgU7kBlEZ/p6HAOgrtAothRvrJ56XApAoW0UHp09BtB6uWJmDaw==}
+  '@azimutt/connector-mongodb@0.1.3':
+    resolution: {integrity: sha512-AzHQ4zK5zhIOTo3b7X53pCxq5LKRHx1I/VS16kT5X1JrpjnkMOXKXvWpm8deJhYtVmIzdvmrtxSprO66YK8pZQ==}
 
-  '@azimutt/connector-mysql@0.1.3':
-    resolution: {integrity: sha512-q3RhGgH2UONi9piyQquwNiFirkCxvWo+uNoSGLSh7sebwXMczDZLNrtK/4HYbjCXDTnBXcx/OGGB8vspGXQcNQ==}
+  '@azimutt/connector-mysql@0.1.4':
+    resolution: {integrity: sha512-ImKpIOvX+i7BnjU1zZBNG+RBYhfFrHM7d0btYMeBzfVI7S9ixFiDERYlDPeuIvZ5D0w2mDZqTzWZemGYJ0p2sg==}
 
-  '@azimutt/connector-oracle@0.1.1':
-    resolution: {integrity: sha512-lsuDN49RzUyzqCyX0Mzca5sAJKh0Ru02zdCENOivbZ+q5OkOkRJm5qg0eiNJDxlz30kfSY/CPzGEyu8eEtTigw==}
+  '@azimutt/connector-oracle@0.1.2':
+    resolution: {integrity: sha512-/aHOZibcORwL2c6bSnefGB5p8cuFayIZA498EVSYLoXlctZhXwbd/KfDS5WXDhNc7YABsUfMUOH08zNmh9hgAA==}
 
   '@azimutt/connector-postgres@0.1.9':
     resolution: {integrity: sha512-ZVl0/R741vMU1E7wwvXaAWnvvfuiwvPR1/MklaVXhG4ijCzjpi0T+vvk7qlX8W0uJeSqG+z/1UMBF1sxRPE27Q==}
@@ -1216,11 +1216,11 @@ packages:
   '@azimutt/connector-snowflake@0.1.1':
     resolution: {integrity: sha512-S8zM9fppxFGDb5hLO6o0lUfY/5MELncjy7KuK9VBcpKbf7OLO+YWpj8pnc0NloeEemdSyL8G4CKyXzEEgN36ZQ==}
 
-  '@azimutt/connector-sqlserver@0.1.2':
-    resolution: {integrity: sha512-idBQtULAvKuXUoI7JfWAoMCXWfVolPMNAbogxe/oxXqLKjKHbDuohyLwgyFmBpEEwr2dwSayucIp1Zfw8zh5AQ==}
+  '@azimutt/connector-sqlserver@0.1.3':
+    resolution: {integrity: sha512-gFvHYZRyRRHigQt2Aw586Nr8qA9rtg10jN1hmjVZXck0m1f6tZzBjd9dTBWR3fEIMZYse4qiv1XwxYyBykSYhg==}
 
-  '@azimutt/models@0.1.13':
-    resolution: {integrity: sha512-ppElflwEJdeFaiqh0NhpY0foI/mcN5W3V5wWyHDMwAYYqw0C1WLcL2KHsgQGWGbRNFTN96bjkzZG57S8U+M3Tg==}
+  '@azimutt/models@0.1.14':
+    resolution: {integrity: sha512-rzF1OYLZufeBlf6v32eZ/9HI5+muCO1oJ4a6iS3j5b4J5hjJoN3jWwPUmA3+n0Wp2VY16UV/whWiWM+hlsL+/Q==}
 
   '@azimutt/utils@0.1.5':
     resolution: {integrity: sha512-QhfsGJqlfnUP+nOyhVXANNhBvMqYnQO6B6KoaOnZ+f0BpDGchs4BjMYy81rFYIPzoNSRg7qiQGmbw+zLjpZtBg==}
@@ -9709,7 +9709,7 @@ snapshots:
 
   '@azimutt/connector-bigquery@0.1.1':
     dependencies:
-      '@azimutt/models': 0.1.13
+      '@azimutt/models': 0.1.14
       '@azimutt/utils': 0.1.5
       '@google-cloud/bigquery': 7.7.0(encoding@0.1.13)
     transitivePeerDependencies:
@@ -9718,24 +9718,24 @@ snapshots:
 
   '@azimutt/connector-couchbase@0.1.1':
     dependencies:
-      '@azimutt/models': 0.1.13
+      '@azimutt/models': 0.1.14
       '@azimutt/utils': 0.1.5
       couchbase: 4.3.1
     transitivePeerDependencies:
       - encoding
       - supports-color
 
-  '@azimutt/connector-mariadb@0.1.4':
+  '@azimutt/connector-mariadb@0.1.5':
     dependencies:
-      '@azimutt/models': 0.1.13
+      '@azimutt/models': 0.1.14
       '@azimutt/utils': 0.1.5
       mariadb: 3.3.1
     transitivePeerDependencies:
       - encoding
 
-  '@azimutt/connector-mongodb@0.1.2(socks@2.8.3)':
+  '@azimutt/connector-mongodb@0.1.3(socks@2.8.3)':
     dependencies:
-      '@azimutt/models': 0.1.13
+      '@azimutt/models': 0.1.14
       '@azimutt/utils': 0.1.5
       mongodb: 6.8.0(socks@2.8.3)
     transitivePeerDependencies:
@@ -9748,17 +9748,17 @@ snapshots:
       - snappy
       - socks
 
-  '@azimutt/connector-mysql@0.1.3':
+  '@azimutt/connector-mysql@0.1.4':
     dependencies:
-      '@azimutt/models': 0.1.13
+      '@azimutt/models': 0.1.14
       '@azimutt/utils': 0.1.5
       mysql2: 3.3.5
     transitivePeerDependencies:
       - encoding
 
-  '@azimutt/connector-oracle@0.1.1':
+  '@azimutt/connector-oracle@0.1.2':
     dependencies:
-      '@azimutt/models': 0.1.13
+      '@azimutt/models': 0.1.14
       '@azimutt/utils': 0.1.5
       oracledb: 6.6.0
     transitivePeerDependencies:
@@ -9766,7 +9766,7 @@ snapshots:
 
   '@azimutt/connector-postgres@0.1.9(pg-native@3.0.1)':
     dependencies:
-      '@azimutt/models': 0.1.13
+      '@azimutt/models': 0.1.14
       '@azimutt/utils': 0.1.5
       pg: 8.12.0(pg-native@3.0.1)
       postgres-array: 3.0.2
@@ -9776,7 +9776,7 @@ snapshots:
 
   '@azimutt/connector-snowflake@0.1.1(asn1.js@5.4.1)':
     dependencies:
-      '@azimutt/models': 0.1.13
+      '@azimutt/models': 0.1.14
       '@azimutt/utils': 0.1.5
       snowflake-sdk: 1.10.1(asn1.js@5.4.1)(encoding@0.1.13)
     transitivePeerDependencies:
@@ -9785,16 +9785,16 @@ snapshots:
       - encoding
       - supports-color
 
-  '@azimutt/connector-sqlserver@0.1.2':
+  '@azimutt/connector-sqlserver@0.1.3':
     dependencies:
-      '@azimutt/models': 0.1.13
+      '@azimutt/models': 0.1.14
       '@azimutt/utils': 0.1.5
       mssql: 11.0.1
     transitivePeerDependencies:
       - encoding
       - supports-color
 
-  '@azimutt/models@0.1.13':
+  '@azimutt/models@0.1.14':
     dependencies:
       '@azimutt/utils': 0.1.5
       openai: 4.54.0(encoding@0.1.13)
