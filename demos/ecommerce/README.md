@@ -2,13 +2,13 @@
 
 This is a medium demo (~80 tables) showcasing Azimutt ability to explore large schemas, even with several databases (micro-services for examples).
 
-You can find this project directly on [Azimutt](https://azimutt.app...) and explore it yourself, you will see:
+You can find this project directly on [Azimutt](https://azimutt.app/45f571a6-d9b8-4752-8a13-93ac0d2b7984/c00d0c45-8db2-46b7-9b51-eba661640c3c?token=59166798-32de-4f46-a1b4-0f7327a91336) and explore it yourself, you will see:
 
 - an overview of the schema across several databases
 - showcases per domain with sample rows
 - documentation layouts
 
-The project will let you access the schema and loaded data but if you want to dig into the data, you will have to set up the databases you want using Docker:
+The project will let you access the schema and loaded data, but if you want to dig into the data, you will have to set up the databases you want using Docker:
 
 - **Referential** needs [SQL Server](../../libs/connector-sqlserver/README.md#local-setup) with [referential script](./source_01_referential_sqlserver.sql) (url `sqlserver://sa:azimutt_42@localhost:1433/Referential`)
 - **Identity** needs [MariaDB](../../libs/connector-mariadb/README.md#local-setup) with [identity script](./source_02_identity_mariadb.sql) (url `mariadb://root:mariadb@localhost:3307/identity`)
