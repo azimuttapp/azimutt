@@ -73,4 +73,6 @@ defmodule AzimuttWeb.WebsiteController do
   def terms(conn, _params), do: conn |> render("terms.html")
 
   def privacy(conn, _params), do: conn |> render("privacy.html")
+
+  def resources(conn, _params), do: conn |> render("resources.html")
 end

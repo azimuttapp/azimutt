@@ -8,7 +8,7 @@
             <div class="sm:col-span-6">
                 <%= label f, :name, "Organization name", class: "block text-sm font-medium text-gray-700" %>
                 <div class="mt-1">
-                    <%= text_input f, :name, class: "block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
+                    <%= text_input f, :name, required: true, class: "block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
                     <%= error_tag f, :name %>
                 </div>
             </div>

@@ -58,6 +58,7 @@ defmodule AzimuttWeb.Router do
     get("/sitemap.xml", SitemapController, :index)
     get("/terms", WebsiteController, :terms)
     get("/privacy", WebsiteController, :privacy)
+    get("/resources", WebsiteController, :resources)
   end
 
   # auth routes
