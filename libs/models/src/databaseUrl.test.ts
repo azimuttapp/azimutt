@@ -117,6 +117,16 @@ describe('databaseUrl', () => {
             host: 'localhost',
             port: 5221,
         })
+        expect(parseDatabaseUrl('oracle:thin:system/oracle@localhost:1521/FREE?schema=C##AZIMUTT')).toEqual({
+            full: 'oracle:thin:system/oracle@localhost:1521/FREE?schema=C##AZIMUTT',
+            kind: 'oracle',
+            user: 'system',
+            pass: 'oracle',
+            host: 'localhost',
+            port: 1521,
+            db: 'FREE',
+            options: {schema: 'C##AZIMUTT'}
+        })
     })
     test('parse postgres url', () => {
         expect(parseDatabaseUrl('postgres://postgres0.example.com')).toEqual({

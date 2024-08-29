@@ -125,6 +125,7 @@ defmodule Azimutt.Organizations.Organization do
       :gateway
     ])
     |> put_change(:updated_by_id, current_user.id)
+    |> validate_required([:name])
   end
 
   def free_trial_changeset(%Organization{} = organization, now) do

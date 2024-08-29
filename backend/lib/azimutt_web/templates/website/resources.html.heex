@@ -1,0 +1,23 @@
+<div class="bg-gray-50 pb-24">
+    <div class="mx-auto max-w-7xl">
+        <div class="pt-3">
+            <h3 class="text-base font-semibold leading-6 text-gray-900">Resources</h3>
+            <p class="mt-2 max-w-4xl text-sm text-gray-500">Some images you can use in Azimutt layouts.</p>
+        </div>
+        <div class="mt-6 overflow-hidden rounded-md bg-white shadow">
+            <ul role="list" class="divide-y divide-gray-200">
+                <%= for path <- Path.wildcard("priv/static/images/resources/**/*") |> Enum.filter(&File.regular?/1) |> Enum.sort() do %>
+                <li class="px-6 py-4">
+                    <div class="flex min-w-0 gap-x-4">
+                        <a href={path |> String.slice(11..-1)} target="_blank"><img class="h-12 flex-none" src={path |> String.slice(11..-1)}></a>
+                        <div class="min-w-0 flex-auto">
+                            <p class="text-sm font-semibold leading-6 text-gray-900"><%= path |> String.slice(29..-5) |> String.split("/") |> Enum.join(" ") %></p>
+                            <p class="mt-1 truncate text-xs leading-5 text-gray-500"><%= path |> String.slice(11..-1) %></p>
+                        </div>
+                    </div>
+                </li>
+                <% end %>
+            </ul>
+        </div>
+    </div>
+</div>

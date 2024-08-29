@@ -811,7 +811,7 @@ viewFooter now source row =
                 StateSuccess s ->
                     s.loadedAt
     in
-    div [ class "px-3 py-1 bg-default-50 text-right italic border-t border-gray-200" ]
+    div [ class "px-3 py-1 bg-default-50 text-right italic border-t border-gray-200 truncate" ]
         [ text "from "
         , source |> Maybe.mapOrElse (\s -> text s.name) (span [ title (SourceId.toString row.source) ] [ text "unknown source" ])
         , text ", "

@@ -26,7 +26,7 @@ export const oracle: Connector = {
       const urlOptions = url.options || {}
       const options: ConnectorSchemaOpts = {
           ...opts,
-          schema: opts.schema || urlOptions['schema'] || urlOptions['owner'],
+          schema: opts.schema || urlOptions['schema'] || urlOptions['owner'] || urlOptions['user'],
           entity: opts.entity || urlOptions['table'],
       }
       return connect(application, url, getSchema(options), options).then(zodParseAsync(Database))

@@ -22,7 +22,7 @@
 
 Azimutt is a full-stack database exploration tool, from modern ERD made for real world databases (big & messy), to fast data navigation, but also documentation everywhere and whole database analysis.
 
-[![Azimutt screenshot](docs/_assets/azimutt.png)](https://azimutt.app/gallery/gospeak)
+[![Azimutt screenshot](docs/_assets/azimutt.png)](https://azimutt.app/45f571a6-d9b8-4752-8a13-93ac0d2b7984/c00d0c45-8db2-46b7-9b51-eba661640c3c?token=59166798-32de-4f46-a1b4-0f7327a91336)
 
 **Why building Azimutt?**
 

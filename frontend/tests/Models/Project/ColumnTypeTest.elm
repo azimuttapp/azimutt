@@ -56,6 +56,8 @@ suite =
             , testParse "interval(6)" "Interval"
             , testParse "bytea" "Binary"
             , testParse "uuid" "Uuid"
+            , testParse "enum(1, 2)" "Int"
+            , testParse "enum('a', 'b')" "Text"
             , testParse "bigint[]" "Int[]"
             , testParse "character varying(255)[]" "Text[]"
             , describe "BigQuery"

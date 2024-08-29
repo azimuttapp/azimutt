@@ -56,10 +56,10 @@ parse kind =
     else if kind |> Regex.matchI "^ARRAY<.*>$" then
         Array (parse (kind |> String.dropLeft 6 |> String.dropRight 1))
 
-    else if (kind |> Regex.matchI "^(tiny|medium|long|ci)?text$") || (kind |> Regex.matchI "^character(\\s+varying)?\\s*(\\(\\d+\\))?$") || (kind |> Regex.matchI "^n?(var)?char\\d?\\s*(\\([^)]+\\))?(\\s+CHARACTER\\s+SET\\s+[^ ]+)?$") || (kind |> Regex.matchI "^string(\\(\\d+\\))?$") || (kind |> Regex.matchI "^clob$") then
+    else if (kind |> Regex.matchI "^(tiny|medium|long|ci)?text$") || (kind |> Regex.matchI "^character(\\s+varying)?\\s*(\\(\\d+\\))?$") || (kind |> Regex.matchI "^n?(var)?char\\d?\\s*(\\([^)]+\\))?(\\s+CHARACTER\\s+SET\\s+[^ ]+)?$") || (kind |> Regex.matchI "^string(\\(\\d+\\))?$") || (kind |> Regex.matchI "^clob$") || (kind |> Regex.matchI "^enum\\('.+'\\)$") then
         Text
 
-    else if (kind |> Regex.matchI "integer|bit") || (kind |> Regex.matchI "number\\(\\d+(\\s*,\\s*0)?\\)") || (kind |> Regex.matchI "^(small)?serial$") || (kind |> Regex.matchI "^(tiny|small|big)?int\\s*(\\d+)?(\\(\\d+\\))?(\\s+unsigned)?$") then
+    else if (kind |> Regex.matchI "integer|bit") || (kind |> Regex.matchI "number\\(\\d+(\\s*,\\s*0)?\\)") || (kind |> Regex.matchI "^(small)?serial$") || (kind |> Regex.matchI "^(tiny|small|big)?int\\s*(\\d+)?(\\(\\d+\\))?(\\s+unsigned)?$") || (kind |> Regex.matchI "^enum\\(\\d+.*\\)$") then
         Int
 
     else if (kind |> Regex.matchI "double(\\s+precision)?") || (kind |> Regex.matchI "number") || (kind |> Regex.matchI "^numeric\\s*(\\(\\d+,\\d+\\))?$") || (kind |> Regex.matchI "^decimal\\s*(\\(\\d+,\\d+\\))?$") then

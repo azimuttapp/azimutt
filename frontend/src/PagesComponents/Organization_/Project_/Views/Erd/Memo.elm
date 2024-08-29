@@ -75,7 +75,7 @@ viewMemo platform conf cursorMode editM memo =
 
 viewMarkdown : String -> Html msg
 viewMarkdown content =
-    Markdown.prose "prose-img:pointer-events-none" content
+    Markdown.prose "prose-img:pointer-events-none max-w-full" content
 
 
 handlePointerDown : HtmlId -> PointerEvent -> Msg

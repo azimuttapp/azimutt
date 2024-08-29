@@ -53,7 +53,7 @@ init defaultSchema =
     , removedSchemas = []
     , removeViews = False
     , removedTables = ""
-    , hiddenColumns = { list = "created_.+, updated_.+, deleted_.+", max = 15, props = False, relations = False }
+    , hiddenColumns = { list = "created.+, updated.+, deleted.+", max = 15, props = False, relations = False }
     , columnOrder = ColumnOrder.OrderByProperty
     , relationStyle = RelationStyle.Bezier
     , columnBasicTypes = True
