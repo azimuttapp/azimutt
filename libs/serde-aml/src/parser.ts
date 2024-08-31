@@ -5,16 +5,18 @@ import {ParserError, ParserPosition, ParserResult} from "@azimutt/models";
 // special
 const WhiteSpace = createToken({name: 'WhiteSpace', pattern: /[ \t]+/})
 const Identifier = createToken({ name: 'Identifier', pattern: /[a-zA-Z_]\w*|"([^\\"]|\\\\|\\")*"/ })
+const Expression = createToken({ name: 'Expression', pattern: /`[^`]+`/ })
 const Note = createToken({ name: 'Note', pattern: /\|[^#\n]*/ })
 // const NoteMultiline = createToken({ name: 'NoteMultiline', pattern: /\|\|\|.*\|\|\|/ })
 const Comment = createToken({ name: 'Comment', pattern: /#[^\n]*/ })
 
 // values
+const Null = createToken({ name: 'Null', pattern: /null/ })
 const Float = createToken({ name: 'Float', pattern: /\d+\.\d+/ })
 const Integer = createToken({ name: 'Integer', pattern: /\d+/, longer_alt: Float })
 const String = createToken({ name: 'String', pattern: /'([^\\']|\\\\|\\')*'/ })
 const Boolean = createToken({ name: 'Boolean', pattern: /true|false/, longer_alt: Identifier })
-const valueTokens: TokenType[] = [Integer, Float, String, Boolean]
+const valueTokens: TokenType[] = [Integer, Float, String, Boolean, Null]
 
 // keywords
 const Namespace = createToken({ name: 'Namespace', pattern: /namespace/, longer_alt: Identifier })
@@ -45,7 +47,7 @@ const RCurly = createToken({ name: 'RCurly', pattern: /\}/ })
 const charTokens: TokenType[] = [Dot, Comma, Colon, Equal, Dash, GreaterThan, LowerThan, LParen, RParen, LCurly, RCurly]
 
 // token order is important as they are tried in order, so the Identifier must be last
-const allTokens: TokenType[] = [WhiteSpace, NewLine, ...charTokens, ...keywordTokens, ...valueTokens, Identifier, Note, Comment]
+const allTokens: TokenType[] = [WhiteSpace, NewLine, ...charTokens, ...keywordTokens, ...valueTokens, Expression, Identifier, Note, Comment]
 
 export type TokenInfo = {token: string, offset: ParserPosition, line: ParserPosition, column: ParserPosition}
 
@@ -76,22 +78,28 @@ export type EntityRefAst = { entity: IdentifierAst } & NamespaceRefAst
 export type AttributePathAst = IdentifierAst & { path?: IdentifierAst[] }
 export type AttributeRefAst = EntityRefAst & { attr: AttributePathAst }
 export type AttributeRefCompositeAst = EntityRefAst & { attrs: AttributePathAst[] }
-export type AttributeValueAst = IdentifierAst | IntegerAst
+export type AttributeValueAst = NullAst | NumberAst | BooleanAst | ExpressionAst | IdentifierAst // TODO: add date
 
 export type ExtraAst = { properties?: PropertiesAst, note?: NoteAst, comment?: CommentAst }
 export type PropertiesAst = PropertyAst[]
 export type PropertyAst = { key: IdentifierAst, value?: PropertyValueAst }
-export type PropertyValueAst = IdentifierAst | IntegerAst
+export type PropertyValueAst = NullAst | NumberAst | BooleanAst | ExpressionAst | IdentifierAst
 export type NoteAst = { note: string, parser: TokenInfo }
 export type CommentAst = { comment: string, parser: TokenInfo }
+export type NullAst = { null: true, parser: TokenInfo }
+export type NumberAst = { value: number, parser: TokenInfo }
+export type BooleanAst = { flag: boolean, parser: TokenInfo }
 export type IdentifierAst = { identifier: string, parser: TokenInfo }
-export type IntegerAst = { value: number, parser: TokenInfo }
+export type ExpressionAst = { expression: string, parser: TokenInfo }
 
 // TODO: indentation: https://github.com/chevrotain/chevrotain/blob/master/examples/lexer/python_indentation/python_indentation.js
 // TODO: legacy rules
 class AmlParser extends EmbeddedActionsParser {
     // common
-    integerRule: () => IntegerAst
+    nullRule: () => NullAst
+    numberRule: () => NumberAst
+    booleanRule: () => BooleanAst
+    expressionRule: () => ExpressionAst
     identifierRule: () => IdentifierAst
     commentRule: () => CommentAst
     noteRule: () => NoteAst
@@ -126,9 +134,32 @@ class AmlParser extends EmbeddedActionsParser {
         const $ = this
 
         // common rules
-        this.integerRule = $.RULE<() => IntegerAst>('integerRule', () => {
-            const token = $.CONSUME(Integer)
-            return {value: parseInt(token.image), parser: parserInfo(token)}
+        this.nullRule = $.RULE<() => NullAst>('nullRule', () => {
+            const token = $.CONSUME(Null)
+            return {null: true, parser: parserInfo(token)}
+        })
+
+        this.numberRule = $.RULE<() => NumberAst>('numberRule', () => {
+            return $.OR([
+                { ALT: () => {
+                    const token = $.CONSUME(Float)
+                    return {value: parseFloat(token.image), parser: parserInfo(token)}
+                }},
+                { ALT: () => {
+                    const token = $.CONSUME(Integer)
+                    return {value: parseInt(token.image), parser: parserInfo(token)}
+                }},
+            ])
+        })
+
+        this.booleanRule = $.RULE<() => BooleanAst>('booleanRule', () => {
+            const token = $.CONSUME(Boolean)
+            return {flag: token.image.toLowerCase() === 'true', parser: parserInfo(token)}
+        })
+
+        this.expressionRule = $.RULE<() => ExpressionAst>('expressionRule', () => {
+            const token = $.CONSUME(Expression)
+            return {expression: token.image.slice(1, -1), parser: parserInfo(token)}
         })
 
         this.identifierRule = $.RULE<() => IdentifierAst>('identifierRule', () => {
@@ -161,9 +192,13 @@ class AmlParser extends EmbeddedActionsParser {
         })
 
         const propertyValueRule = $.RULE<() => PropertyValueAst>('propertyValueRule', () => {
+            // TODO: be more flexible: string value: anything without ',' + add business rules for tags for example (split values?)
             return $.OR([
+                { ALT: () => $.SUBRULE($.nullRule) },
+                { ALT: () => $.SUBRULE($.numberRule) },
+                { ALT: () => $.SUBRULE($.booleanRule) },
+                { ALT: () => $.SUBRULE($.expressionRule) },
                 { ALT: () => $.SUBRULE($.identifierRule) },
-                { ALT: () => $.SUBRULE($.integerRule) },
             ])
         })
         const propertyRule = $.RULE<() => PropertyAst>('propertyRule', () => {
@@ -247,8 +282,11 @@ class AmlParser extends EmbeddedActionsParser {
 
         this.attributeValueRule = $.RULE<() => AttributeValueAst>('attributeValueRule', () => {
             return $.OR([
+                { ALT: () => $.SUBRULE($.nullRule) },
+                { ALT: () => $.SUBRULE($.numberRule) },
+                { ALT: () => $.SUBRULE($.booleanRule) },
+                { ALT: () => $.SUBRULE($.expressionRule) },
                 { ALT: () => $.SUBRULE($.identifierRule) },
-                { ALT: () => $.SUBRULE($.integerRule) },
             ])
         })
 

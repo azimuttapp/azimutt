@@ -3,23 +3,15 @@ import {describe, expect, test} from "@jest/globals";
 import {Database} from "@azimutt/models";
 import {generate, parse} from "./aml";
 
-describe.skip('aml', () => {
-    test('very basic schema', () => {
-        const input = `
-users
-  id uuid pk
-  name varchar
-`
-        expect(parse(input)).toEqual({result: {entities: [{name: 'users', attrs: [{name: 'id', type: 'uuid'}, {name: 'name', type: 'varchar'}]}]}})
-    })
+describe('aml', () => {
     test('basic schema', () => {
         const input = `
 users
-  id integer pk
+  id int pk
   name varchar
 
-posts
-  id integer pk
+posts | all posts
+  id int pk
   title varchar | Title of the post
   author int -> users(id)
 `
@@ -27,45 +19,55 @@ posts
             entities: [{
                 name: 'users',
                 attrs: [
-                    {name: 'id', type: 'integer'},
+                    {name: 'id', type: 'int'},
                     {name: 'name', type: 'varchar'}
                 ],
-                pk: {attrs: [['id']]}
+                pk: {attrs: [['id']]},
+                extra: {statement: 1}
             }, {
                 name: 'posts',
                 attrs: [
-                    {name: 'id', type: 'integer'},
+                    {name: 'id', type: 'int'},
                     {name: 'title', type: 'varchar', doc: 'Title of the post'},
-                    {name: 'author', type: 'integer'},
+                    {name: 'author', type: 'int'},
                 ],
-                pk: {attrs: [['id']]}
+                pk: {attrs: [['id']]},
+                doc: 'all posts',
+                extra: {statement: 2}
             }],
             relations: [
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]}
-            ],
-            extra: {source: 'serde-AML'}
+                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {statement: 2}}
+            ]
         }
-        expect(parse(input)).toEqual({result: parsed})
-        expect(generate(parsed)).toEqual(input)
+        const {extra, ...db} = parse(input).result || {}
+        expect(db).toEqual(parsed)
+        expect(generate(parsed)).toEqual(input.trim() + '\n')
     })
-    test('complex schema',  () => {
-        const source = fs.readFileSync('./resources/complex.aml', 'utf8')
-        const parsed: Database = JSON.parse(fs.readFileSync('./resources/complex.json', 'utf8'))
-        expect(parse(source).result).toEqual(parsed)
-        expect(generate(parsed)).toEqual(source)
+    test.skip('complex schema',  () => {
+        const input = fs.readFileSync('./resources/complex.aml', 'utf8')
+        const result = fs.readFileSync('./resources/complex.json', 'utf8')
+        const parsed: Database = JSON.parse(result)
+        const res = parse(input)
+        // console.log('input', input)
+        // console.log('result', result)
+        console.log('res', JSON.stringify(res, null, 2))
+        const {extra, ...db} = res.result || {}
+        expect(db).toEqual(parsed)
+        expect(generate(parsed)).toEqual(input.trim() + '\n')
     })
     test('empty schema',  () => {
-        const source = ``
-        const parsed: Database = {extra: {source: 'serde-AML'}}
-        expect(parse(source).result).toEqual(parsed)
-        expect(generate(parsed)).toEqual(source)
+        const input = ``
+        const parsed: Database = {}
+        const {extra, ...db} = parse(input).result || {}
+        expect(db).toEqual(parsed)
+        expect(generate(parsed)).toEqual(input)
     })
-    test('bad schema',  () => {
-        const source = `a bad schema`
-        const error = [
-            {message: "A Custom element shouldn't have a name", start: {line: 3, column: 15}, end: {line: 3, column: 17}}
-        ]
-        expect(parse(source).result).toEqual(error)
+    test('bad schema', () => {
+        expect(parse(`a bad schema`)).toEqual({errors: [{
+            name: 'MismatchedTokenException',
+            message: "Expecting token of type --> NewLine <-- but found --> 'bad' <--",
+            position: {offset: [2, 4], line: [1, 1], column: [3, 5]}
+        }]})
     })
     describe('entities', () => {
         // TODO

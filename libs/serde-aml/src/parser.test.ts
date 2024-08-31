@@ -152,6 +152,36 @@ comments
                     type: {identifier: 'int', parser: {token: 'Identifier', offset: [5, 7], line: [1, 1], column: [6, 8]}},
                     defaultValue: {value: 0, parser: {token: 'Integer', offset: [9, 9], line: [1, 1], column: [10, 10]}},
                 }})
+                expect(parseRule(p => p.attributeRule(), '  price decimal=41.9\n')).toEqual({result: {
+                    nesting: 0,
+                    name: {identifier: 'price', parser: {token: 'Identifier', offset: [2, 6], line: [1, 1], column: [3, 7]}},
+                    type: {identifier: 'decimal', parser: {token: 'Identifier', offset: [8, 14], line: [1, 1], column: [9, 15]}},
+                    defaultValue: {value: 41.9, parser: {token: 'Float', offset: [16, 19], line: [1, 1], column: [17, 20]}},
+                }})
+                expect(parseRule(p => p.attributeRule(), '  role varchar=guest\n')).toEqual({result: {
+                    nesting: 0,
+                    name: {identifier: 'role', parser: {token: 'Identifier', offset: [2, 5], line: [1, 1], column: [3, 6]}},
+                    type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [7, 13], line: [1, 1], column: [8, 14]}},
+                    defaultValue: {identifier: 'guest', parser: {token: 'Identifier', offset: [15, 19], line: [1, 1], column: [16, 20]}},
+                }})
+                expect(parseRule(p => p.attributeRule(), '  is_admin boolean=false\n')).toEqual({result: {
+                    nesting: 0,
+                    name: {identifier: 'is_admin', parser: {token: 'Identifier', offset: [2, 9], line: [1, 1], column: [3, 10]}},
+                    type: {identifier: 'boolean', parser: {token: 'Identifier', offset: [11, 17], line: [1, 1], column: [12, 18]}},
+                    defaultValue: {flag: false, parser: {token: 'Boolean', offset: [19, 23], line: [1, 1], column: [20, 24]}},
+                }})
+                expect(parseRule(p => p.attributeRule(), '  created_at timestamp=`now()`\n')).toEqual({result: {
+                    nesting: 0,
+                    name: {identifier: 'created_at', parser: {token: 'Identifier', offset: [2, 11], line: [1, 1], column: [3, 12]}},
+                    type: {identifier: 'timestamp', parser: {token: 'Identifier', offset: [13, 21], line: [1, 1], column: [14, 22]}},
+                    defaultValue: {expression: 'now()', parser: {token: 'Expression', offset: [23, 29], line: [1, 1], column: [24, 30]}},
+                }})
+                expect(parseRule(p => p.attributeRule(), '  source varchar=null\n')).toEqual({result: {
+                    nesting: 0,
+                    name: {identifier: 'source', parser: {token: 'Identifier', offset: [2, 7], line: [1, 1], column: [3, 8]}},
+                    type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [9, 15], line: [1, 1], column: [10, 16]}},
+                    defaultValue: {null: true, parser: {token: 'Null', offset: [17, 20], line: [1, 1], column: [18, 21]}},
+                }})
             })
             test('nullable', () => {
                 expect(parseRule(p => p.attributeRule(), '  id nullable\n')).toEqual({result: {
@@ -392,8 +422,9 @@ comments
     })
     describe('common', () => {
         test('integerRule', () => {
-            expect(parseRule(p => p.integerRule(), '12')).toEqual({result: {value: 12, parser: {token: 'Integer', offset: [0, 1], line: [1, 1], column: [1, 2]}}})
-            expect(parseRule(p => p.integerRule(), 'bad')).toEqual({errors: [{name: 'MismatchedTokenException', message: "Expecting token of type --> Integer <-- but found --> 'bad' <--", position: {offset: [0, 2], line: [1, 1], column: [1, 3]}}]})
+            expect(parseRule(p => p.numberRule(), '12')).toEqual({result: {value: 12, parser: {token: 'Integer', offset: [0, 1], line: [1, 1], column: [1, 2]}}})
+            expect(parseRule(p => p.numberRule(), '1.2')).toEqual({result: {value: 1.2, parser: {token: 'Float', offset: [0, 2], line: [1, 1], column: [1, 3]}}})
+            expect(parseRule(p => p.numberRule(), 'bad')).toEqual({errors: [{name: 'NoViableAltException', message: "Expecting: one of these possible Token sequences:\n  1. [Float]\n  2. [Integer]\nbut found: 'bad'", position: {offset: [0, 2], line: [1, 1], column: [1, 3]}}]})
         })
         test('identifierRule', () => {
             expect(parseRule(p => p.identifierRule(), 'id')).toEqual({result: {identifier: 'id', parser: {token: 'Identifier', offset: [0, 1], line: [1, 1], column: [1, 2]}}})
