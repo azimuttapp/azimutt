@@ -1,11 +1,13 @@
-import {isNotUndefined, partition, removeEmpty, removeUndefined, zip} from "@azimutt/utils";
+import {groupBy, isNotUndefined, partition, removeEmpty, removeUndefined, zip} from "@azimutt/utils";
 import {
     Attribute,
     AttributePath,
     AttributeValue,
+    Check,
     Database,
     Entity,
     EntityRef,
+    Index,
     Namespace,
     ParserResult,
     Relation,
@@ -80,17 +82,20 @@ function buildEntity(statement: number, e: parser.EntityAst, namespace: Namespac
     const entityNamespace = {...namespace, ...astNamespace}
     const pkAttrs = e.attrs.filter(a => a.primaryKey).map(a => [a.name.identifier]) // TODO: handle nested attrs
     const attrs = e.attrs.map(a => buildAttribute(statement, a, {...entityNamespace, entity: e.name.identifier})) // TODO: handle nested attrs
+    const indexes: Index[] = buildIndexes(e.attrs.map(a => ({path: [a.name.identifier], index: a.index}))).map(i => removeUndefined({name: i.value, attrs: i.attrs}))
+    const uniques: Index[] = buildIndexes(e.attrs.map(a => ({path: [a.name.identifier], index: a.unique}))).map(i => removeUndefined({name: i.value, attrs: i.attrs, unique: true}))
+    const checks: Check[] = buildIndexes(e.attrs.map(a => ({path: [a.name.identifier], index: a.check}))).map(i => removeUndefined({predicate: i.value || '', attrs: i.attrs}))
     const relations: Relation[] = attrs.map(a => a.relation).filter(isNotUndefined)
     return {
-        entity: removeUndefined({
+        entity: removeEmpty({
             ...entityNamespace,
             name: e.name.identifier,
             kind: undefined, // TODO: use props?
             def: undefined,
             attrs: attrs.map(a => a.attribute),
             pk: pkAttrs.length > 0 ? {attrs: pkAttrs} : undefined,
-            indexes: undefined, // TODO
-            checks: undefined, // TODO
+            indexes: uniques.concat(indexes),
+            checks: checks,
             doc: e.note?.note,
             stats: undefined,
             extra: {statement},
@@ -103,6 +108,13 @@ function genEntity(e: Entity, relations: Relation[]): string {
     const note = e.doc ? ' | ' + e.doc : ''
     const comment = e.extra && 'comment' in e.extra ? ' # ' + e.extra.comment : ''
     return `${e.name}${note}${comment}\n` + e.attrs.map(a => genAttribute(a, e, relations.filter(r => r.attrs[0].src[0] === a.name))).join('')
+}
+
+function buildIndexes(indexes: {path: AttributePath, index: parser.AttributeConstraintAst | undefined}[]): {value: string | undefined, attrs: AttributePath[]}[] {
+    const indexesByName: Record<string, {path: AttributePath, name: string}[]> = groupBy(indexes.map(i => i.index ? {path: i.path, name: i.index.value?.identifier || ''} : undefined).filter(isNotUndefined), i => i.name)
+    const singleIndexes: {value: string | undefined, attrs: AttributePath[]}[] = (indexesByName[''] || []).map(i => ({value: undefined, attrs: [i.path]}))
+    const compositeIndexes: {value: string | undefined, attrs: AttributePath[]}[] = Object.entries(indexesByName).filter(([k, _]) => k !== '').map(([value, values]) => ({value, attrs: values.map(v => v.path)}))
+    return compositeIndexes.concat(singleIndexes)
 }
 
 function buildAttribute(statement: number, a: parser.AttributeAst, entity: EntityRef): { attribute: Attribute, relation?: Relation } {
@@ -126,10 +138,12 @@ function buildAttribute(statement: number, a: parser.AttributeAst, entity: Entit
 function genAttribute(a: Attribute, e: Entity, relations: Relation[]): string {
     const type = a.type && a.type !== defaultType ? ' ' + a.type : ''
     const pk = e.pk && e.pk.attrs.some(attr => attr.length === 1 && attr[0] === a.name) ? ' pk' : '' // TODO: handle nested attrs
+    const indexes = (e.indexes || []).filter(i => i.attrs.some(attr => attr.length === 1 && attr[0] === a.name)).map(i => ` ${i.unique ? 'unique' : 'index'}${i.name ? `=${i.name}` : ''}`).join('') // TODO: handle nested attrs
+    const checks = (e.checks || []).filter(i => i.attrs.some(attr => attr.length === 1 && attr[0] === a.name)).map(i => ` check${i.predicate ? `="${i.predicate}"` : ''}`).join('') // TODO: handle nested attrs
     const rel = relations.map(r => ' ' + genRelationTarget(r)).join('')
     const note = a.doc ? ' | ' + a.doc : ''
     const comment = a.extra && 'comment' in a.extra ? ' # ' + a.extra.comment : ''
-    return `  ${a.name}${type}${pk}${rel}${note}${comment}\n`
+    return `  ${a.name}${type}${pk}${indexes}${checks}${rel}${note}${comment}\n`
 }
 
 function buildRelationStatement(statement: number, r: parser.RelationAst): Relation {
@@ -156,7 +170,7 @@ function buildRelation(statement: number, kind: parser.RelationKindAst | undefin
 }
 
 function genRelation(r: Relation): string {
-    return `rel ${getAttributeRef(r.src, r.attrs.map(a => a.src))} ${genRelationTarget(r)}`
+    return `rel ${getAttributeRef(r.src, r.attrs.map(a => a.src))} ${genRelationTarget(r)}\n`
 }
 
 function genRelationTarget(r: Relation): string {

@@ -420,6 +420,11 @@ comments
             expect(parseRule(p => p.typeRule(), 'type bug_value range(subtype = float8, subtype_diff = float8mi)')).toEqual({result: {}})
         })
     })
+    describe('emptyStatementRule', () => {
+        test('basic', () => expect(parseRule(p => p.emptyStatementRule(), '\n')).toEqual({result: {statement: 'Empty'}}))
+        test('with spaces', () => expect(parseRule(p => p.emptyStatementRule(), '  \n')).toEqual({result: {statement: 'Empty'}}))
+        test('with comment', () => expect(parseRule(p => p.emptyStatementRule(), ' # hello\n')).toEqual({result: {statement: 'Empty', comment: {comment: 'hello', parser: {token: 'Comment', offset: [1, 7], line: [1, 1], column: [2, 8]}}}}))
+    })
     describe('common', () => {
         test('integerRule', () => {
             expect(parseRule(p => p.numberRule(), '12')).toEqual({result: {value: 12, parser: {token: 'Integer', offset: [0, 1], line: [1, 1], column: [1, 2]}}})

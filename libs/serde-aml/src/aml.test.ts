@@ -4,7 +4,7 @@ import {Database} from "@azimutt/models";
 import {generate, parse} from "./aml";
 
 describe('aml', () => {
-    test('basic schema', () => {
+    test('sample schema', () => {
         const input = `
 users
   id int pk
@@ -12,8 +12,11 @@ users
 
 posts | all posts
   id int pk
-  title varchar | Title of the post
-  author int -> users(id)
+  title varchar index | Title of the post
+  author int check="author > 0" -> users(id)
+  created_by int
+
+rel posts(created_by) -> users(id)
 `
         const parsed: Database = {
             entities: [{
@@ -30,13 +33,17 @@ posts | all posts
                     {name: 'id', type: 'int'},
                     {name: 'title', type: 'varchar', doc: 'Title of the post'},
                     {name: 'author', type: 'int'},
+                    {name: 'created_by', type: 'int'},
                 ],
                 pk: {attrs: [['id']]},
+                indexes: [{attrs: [['title']]}],
+                checks: [{attrs: [['author']], predicate: 'author > 0'}],
                 doc: 'all posts',
                 extra: {statement: 2}
             }],
             relations: [
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {statement: 2}}
+                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {statement: 2}},
+                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}], extra: {statement: 3}},
             ]
         }
         const {extra, ...db} = parse(input).result || {}

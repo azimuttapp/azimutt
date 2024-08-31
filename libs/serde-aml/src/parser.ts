@@ -57,7 +57,7 @@ export type NamespaceAst = { statement: 'Namespace', schema: IdentifierAst, cata
 export type EntityAst = { statement: 'Entity', name: IdentifierAst, alias?: IdentifierAst, attrs: AttributeAst[] } & NamespaceRefAst & ExtraAst
 export type RelationAst = { statement: 'Relation', kind: RelationKindAst, src: AttributeRefCompositeAst, ref: AttributeRefCompositeAst, polymorphic?: RelationPolymorphicAst } & ExtraAst
 export type TypeAst = { statement: 'Type', name: IdentifierAst, content: TypeEnumAst | TypeStructAst | TypeCustomAst }
-export type EmptyStatementAst = { statement: 'Empty' }
+export type EmptyStatementAst = { statement: 'Empty', comment?: CommentAst }
 
 export type AttributeAst = { nesting: number, name: IdentifierAst, nullable?: {parser: TokenInfo} } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst
 export type AttributeTypeAst = { type?: IdentifierAst, enumValues?: AttributeValueAst[], defaultValue?: AttributeValueAst }
@@ -469,8 +469,9 @@ class AmlParser extends EmbeddedActionsParser {
         })
         this.emptyStatementRule = $.RULE<() => EmptyStatementAst>('emptyStatementRule', () => {
             $.OPTION(() => $.CONSUME(WhiteSpace))
+            const comment = $.OPTION2(() => $.SUBRULE($.commentRule))
             $.CONSUME(NewLine)
-            return {statement: 'Empty'}
+            return removeUndefined({statement: 'Empty' as const, comment})
         })
 
         // general rules
