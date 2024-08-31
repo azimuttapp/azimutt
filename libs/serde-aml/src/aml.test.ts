@@ -4,16 +4,25 @@ import {Database} from "@azimutt/models";
 import {generate, parse} from "./aml";
 
 describe.skip('aml', () => {
+    test('very basic schema', () => {
+        const input = `
+users
+  id uuid pk
+  name varchar
+`
+        expect(parse(input)).toEqual({result: {entities: [{name: 'users', attrs: [{name: 'id', type: 'uuid'}, {name: 'name', type: 'varchar'}]}]}})
+    })
     test('basic schema', () => {
-        const source = `
-            users
-              id integer pk
-              name varchar
+        const input = `
+users
+  id integer pk
+  name varchar
 
-            posts
-              id integer pk
-              title varchar | Title of the post
-              author int fk users.id`
+posts
+  id integer pk
+  title varchar | Title of the post
+  author int -> users(id)
+`
         const parsed: Database = {
             entities: [{
                 name: 'users',
@@ -36,8 +45,8 @@ describe.skip('aml', () => {
             ],
             extra: {source: 'serde-AML'}
         }
-        expect(parse(source).result).toEqual(parsed)
-        expect(generate(parsed)).toEqual(source)
+        expect(parse(input)).toEqual({result: parsed})
+        expect(generate(parsed)).toEqual(input)
     })
     test('complex schema',  () => {
         const source = fs.readFileSync('./resources/complex.aml', 'utf8')

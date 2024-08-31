@@ -3,8 +3,8 @@ import {removeEmpty, removeUndefined} from "@azimutt/utils";
 import {ParserError, ParserPosition, ParserResult} from "@azimutt/models";
 
 // special
-const WhiteSpace = createToken({name: 'WhiteSpace', pattern: /\s+/, group: Lexer.SKIPPED})
-const Identifier = createToken({ name: 'Identifier', pattern: /"([^\\"]|\\\\|\\")*"|[a-zA-Z]\w*/ })
+const WhiteSpace = createToken({name: 'WhiteSpace', pattern: /[ \t]+/})
+const Identifier = createToken({ name: 'Identifier', pattern: /[a-zA-Z_]\w*|"([^\\"]|\\\\|\\")*"/ })
 const Note = createToken({ name: 'Note', pattern: /\|[^#\n]*/ })
 // const NoteMultiline = createToken({ name: 'NoteMultiline', pattern: /\|\|\|.*\|\|\|/ })
 const Comment = createToken({ name: 'Comment', pattern: /#[^\n]*/ })
@@ -30,6 +30,7 @@ const Enum = createToken({ name: 'Enum', pattern: /enum/, longer_alt: Identifier
 const keywordTokens: TokenType[] = [Namespace, As, Nullable, PrimaryKey, Index, Unique, Check, Relation, Type]
 
 // chars
+const NewLine = createToken({ name: 'NewLine', pattern: /\r?\n/ })
 const Dot = createToken({ name: 'Dot', pattern: /\./ })
 const Comma = createToken({ name: 'Comma', pattern: /,/ })
 const Colon = createToken({ name: 'Colon', pattern: /:/ })
@@ -44,18 +45,19 @@ const RCurly = createToken({ name: 'RCurly', pattern: /\}/ })
 const charTokens: TokenType[] = [Dot, Comma, Colon, Equal, Dash, GreaterThan, LowerThan, LParen, RParen, LCurly, RCurly]
 
 // token order is important as they are tried in order, so the Identifier must be last
-const allTokens: TokenType[] = [WhiteSpace, ...charTokens, ...keywordTokens, ...valueTokens, Identifier, Note, Comment]
+const allTokens: TokenType[] = [WhiteSpace, NewLine, ...charTokens, ...keywordTokens, ...valueTokens, Identifier, Note, Comment]
 
 export type TokenInfo = {token: string, offset: ParserPosition, line: ParserPosition, column: ParserPosition}
 
 export type AmlAst = StatementAst[]
-export type StatementAst = NamespaceAst | EntityAst | RelationAst | TypeAst
-export type NamespaceAst = { command: 'NAMESPACE', schema: IdentifierAst, catalog?: IdentifierAst, database?: IdentifierAst }
-export type EntityAst = { command: 'ENTITY', name: IdentifierAst, alias?: IdentifierAst, attrs: AttributeAst[] } & NamespaceRefAst & ExtraAst
-export type RelationAst = { command: 'RELATION', kind: RelationKindAst, src: AttributeRefCompositeAst, ref: AttributeRefCompositeAst, polymorphic?: RelationPolymorphicAst } & ExtraAst
-export type TypeAst = { command: 'TYPE', name: IdentifierAst, content: TypeEnumAst | TypeStructAst | TypeCustomAst }
+export type StatementAst = NamespaceAst | EntityAst | RelationAst | TypeAst | EmptyStatementAst
+export type NamespaceAst = { statement: 'Namespace', schema: IdentifierAst, catalog?: IdentifierAst, database?: IdentifierAst }
+export type EntityAst = { statement: 'Entity', name: IdentifierAst, alias?: IdentifierAst, attrs: AttributeAst[] } & NamespaceRefAst & ExtraAst
+export type RelationAst = { statement: 'Relation', kind: RelationKindAst, src: AttributeRefCompositeAst, ref: AttributeRefCompositeAst, polymorphic?: RelationPolymorphicAst } & ExtraAst
+export type TypeAst = { statement: 'Type', name: IdentifierAst, content: TypeEnumAst | TypeStructAst | TypeCustomAst }
+export type EmptyStatementAst = { statement: 'Empty' }
 
-export type AttributeAst = { name: IdentifierAst, nullable?: {parser: TokenInfo} } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst
+export type AttributeAst = { nesting: number, name: IdentifierAst, nullable?: {parser: TokenInfo} } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst
 export type AttributeTypeAst = { type?: IdentifierAst, enumValues?: AttributeValueAst[], defaultValue?: AttributeValueAst }
 export type AttributeConstraintsAst = { primaryKey?: { parser: TokenInfo }, index?: AttributeConstraintAst, unique?: AttributeConstraintAst, check?: AttributeConstraintAst }
 export type AttributeConstraintAst = { parser: TokenInfo, value?: IdentifierAst }
@@ -115,8 +117,9 @@ class AmlParser extends EmbeddedActionsParser {
     typeRule: () => TypeAst
 
     // general
-    // amlStatementRule: () => AmlStatementAst
-    // amlRule: () => AmlAst
+    emptyStatementRule: () => EmptyStatementAst
+    statementRule: () => StatementAst
+    amlRule: () => AmlAst
 
     constructor(tokens: TokenType[]) {
         super(tokens)
@@ -165,8 +168,10 @@ class AmlParser extends EmbeddedActionsParser {
         })
         const propertyRule = $.RULE<() => PropertyAst>('propertyRule', () => {
             const key = $.SUBRULE($.identifierRule)
-            const value = $.OPTION(() => {
+            $.OPTION(() => $.CONSUME(WhiteSpace))
+            const value = $.OPTION2(() => {
                 $.CONSUME(Colon)
+                $.OPTION3(() => $.CONSUME2(WhiteSpace))
                 return $.SUBRULE(propertyValueRule)
             })
             return {key, value}
@@ -176,7 +181,11 @@ class AmlParser extends EmbeddedActionsParser {
             $.CONSUME(LCurly)
             $.MANY_SEP({
                 SEP: Comma,
-                DEF: () => props.push($.SUBRULE(propertyRule))
+                DEF: () => {
+                    $.OPTION(() => $.CONSUME(WhiteSpace))
+                    props.push($.SUBRULE(propertyRule))
+                    $.OPTION2(() => $.CONSUME2(WhiteSpace))
+                }
             })
             $.CONSUME(RCurly)
             return props
@@ -184,8 +193,10 @@ class AmlParser extends EmbeddedActionsParser {
 
         this.extraRule = $.RULE<() => ExtraAst>('extraRule', () => {
             const properties = $.OPTION(() => $.SUBRULE($.propertiesRule))
-            const note = $.OPTION2(() => $.SUBRULE2($.noteRule))
-            const comment = $.OPTION3(() => $.SUBRULE3($.commentRule))
+            $.OPTION2(() => $.CONSUME(WhiteSpace))
+            const note = $.OPTION3(() => $.SUBRULE2($.noteRule))
+            $.OPTION4(() => $.CONSUME2(WhiteSpace))
+            const comment = $.OPTION5(() => $.SUBRULE3($.commentRule))
             return removeUndefined({properties, note, comment})
         })
 
@@ -224,7 +235,11 @@ class AmlParser extends EmbeddedActionsParser {
             const attrs: AttributePathAst[] = []
             $.AT_LEAST_ONE_SEP({
                 SEP: Comma,
-                DEF: () => attrs.push($.SUBRULE($.attributePathRule))
+                DEF: () => {
+                    $.OPTION(() => $.CONSUME(WhiteSpace))
+                    attrs.push($.SUBRULE($.attributePathRule))
+                    $.OPTION2(() => $.CONSUME2(WhiteSpace))
+                }
             })
             $.CONSUME(RParen)
             return {...entity, attrs}
@@ -240,11 +255,13 @@ class AmlParser extends EmbeddedActionsParser {
         // namespace rules
         this.namespaceRule = $.RULE<() => NamespaceAst>('namespaceRule', () => {
             $.CONSUME(Namespace)
+            $.CONSUME(WhiteSpace)
             const first = $.SUBRULE($.identifierRule)
             const second = $.OPTION(() => $.SUBRULE(nestedRule))
             const third = $.OPTION2(() => $.SUBRULE2(nestedRule))
+            $.CONSUME(NewLine)
             const [schema, catalog, database] = [third, second, first].filter(i => !!i)
-            return removeUndefined({command: 'NAMESPACE' as const, schema: schema || first, catalog, database})
+            return removeUndefined({statement: 'Namespace' as const, schema: schema || first, catalog, database})
         })
 
         // entity rules
@@ -256,12 +273,16 @@ class AmlParser extends EmbeddedActionsParser {
                     const values: AttributeValueAst[] = []
                     $.AT_LEAST_ONE_SEP({
                         SEP: Comma,
-                        DEF: () => values.push($.SUBRULE($.attributeValueRule))
+                        DEF: () => {
+                            $.OPTION3(() => $.CONSUME(WhiteSpace))
+                            values.push($.SUBRULE($.attributeValueRule))
+                            $.OPTION4(() => $.CONSUME2(WhiteSpace))
+                        }
                     })
                     $.CONSUME(RParen)
                     return values
                 })
-                const defaultValue = $.OPTION3(() => {
+                const defaultValue = $.OPTION5(() => {
                     $.CONSUME(Equal)
                     return $.SUBRULE2($.attributeValueRule)
                 })
@@ -269,64 +290,85 @@ class AmlParser extends EmbeddedActionsParser {
             })
             return {type: res?.type, enumValues: res?.enumValues, defaultValue: res?.defaultValue}
         })
+        const attributeConstraintPkRule = $.RULE<() => { parser: TokenInfo }>('attributeConstraintPkRule', () => {
+            const pk = $.CONSUME(PrimaryKey)
+            return {parser: parserInfo(pk)}
+        })
+        const attributeConstraintIndexRule = $.RULE<() => AttributeConstraintAst>('attributeConstraintIndexRule', () => {
+            const token = $.CONSUME(Index)
+            const value = $.OPTION(() => {
+                $.CONSUME(Equal)
+                return $.SUBRULE($.identifierRule)
+            })
+            return removeUndefined({parser: parserInfo(token), value})
+        })
+        const attributeConstraintUniqueRule = $.RULE<() => AttributeConstraintAst | undefined>('attributeConstraintUniqueRule', () => {
+            const token = $.CONSUME(Unique)
+            const value = $.OPTION(() => {
+                $.CONSUME(Equal)
+                return $.SUBRULE($.identifierRule)
+            })
+            return removeUndefined({parser: parserInfo(token), value})
+        })
+        const attributeConstraintCheckRule = $.RULE<() => AttributeConstraintAst | undefined>('attributeConstraintCheckRule', () => {
+            const token = $.CONSUME(Check)
+            const value = $.OPTION(() => {
+                $.CONSUME(Equal)
+                return $.SUBRULE($.identifierRule)
+            })
+            return removeUndefined({parser: parserInfo(token), value})
+        })
         const attributeConstraintsRule = $.RULE<() => AttributeConstraintsAst>('attributeConstraintsRule', () => {
-            const pk = $.OPTION(() => $.CONSUME(PrimaryKey))
-            const primaryKey = pk ? {parser: parserInfo(pk)} : undefined
-            const index = $.OPTION2(() => {
-                const token = $.CONSUME(Index)
-                const value = $.OPTION3(() => {
-                    $.CONSUME(Equal)
-                    return $.SUBRULE($.identifierRule)
-                })
-                return removeUndefined({parser: parserInfo(token), value})
-            })
-            const unique = $.OPTION4(() => {
-                const token = $.CONSUME(Unique)
-                const value = $.OPTION5(() => {
-                    $.CONSUME2(Equal)
-                    return $.SUBRULE2($.identifierRule)
-                })
-                return removeUndefined({parser: parserInfo(token), value})
-            })
-            const check = $.OPTION6(() => {
-                const token = $.CONSUME(Check)
-                const value = $.OPTION7(() => {
-                    $.CONSUME3(Equal)
-                    return $.SUBRULE3($.identifierRule)
-                })
-                return removeUndefined({parser: parserInfo(token), value})
-            })
+            const primaryKey = $.OPTION(() => $.SUBRULE(attributeConstraintPkRule))
+            $.OPTION2(() => $.CONSUME(WhiteSpace))
+            const index = $.OPTION3(() => $.SUBRULE(attributeConstraintIndexRule))
+            $.OPTION4(() => $.CONSUME2(WhiteSpace))
+            const unique = $.OPTION5(() => $.SUBRULE(attributeConstraintUniqueRule))
+            $.OPTION6(() => $.CONSUME3(WhiteSpace))
+            const check = $.OPTION7(() => $.SUBRULE(attributeConstraintCheckRule))
             return removeUndefined({primaryKey, index, unique, check})
         })
         const attributeRelationRule = $.RULE<() => AttributeRelationAst>('attributeRelationRule', () => {
             const refCardinality = $.SUBRULE(relationCardinalityRule)
             const polymorphic = $.OPTION(() => $.SUBRULE(relationPolymorphicRule))
             const srcCardinality = $.SUBRULE2(relationCardinalityRule)
+            $.OPTION2(() => $.CONSUME(WhiteSpace))
             const ref = $.SUBRULE2($.attributeRefCompositeRule)
             return removeUndefined({kind: `${srcCardinality}-${refCardinality}` as const, ref, polymorphic})
         })
         this.attributeRule = $.RULE<() => AttributeAst>('attributeRule', () => {
+            const spaces = $.CONSUME(WhiteSpace)
+            const nesting = Math.round(spaces.image.split('').reduce((i, c) => c === '\t' ? i + 1 : i + 0.5, 0)) - 1
             const name = $.SUBRULE($.identifierRule)
+            $.OPTION(() => $.CONSUME2(WhiteSpace))
             const {type, enumValues, defaultValue} = $.SUBRULE(attributeTypeRule)
-            const isNull = $.OPTION(() => $.CONSUME(Nullable))
+            $.OPTION2(() => $.CONSUME3(WhiteSpace))
+            const isNull = $.OPTION3(() => $.CONSUME(Nullable))
             const nullable = isNull ? {parser: parserInfo(isNull)} : undefined
+            $.OPTION4(() => $.CONSUME4(WhiteSpace))
             const constraints = $.SUBRULE(attributeConstraintsRule)
-            const relation = $.OPTION2(() => $.SUBRULE(attributeRelationRule))
+            $.OPTION5(() => $.CONSUME5(WhiteSpace))
+            const relation = $.OPTION6(() => $.SUBRULE(attributeRelationRule))
+            $.OPTION7(() => $.CONSUME6(WhiteSpace))
             const extra = $.SUBRULE($.extraRule)
-            // TODO: nested attrs?
-            return removeUndefined({name, type, enumValues, defaultValue, nullable, ...constraints, relation, ...extra})
+            $.CONSUME(NewLine)
+            return removeUndefined({nesting, name, type, enumValues, defaultValue, nullable, ...constraints, relation, ...extra})
         })
 
         this.entityRule = $.RULE<() => EntityAst>('entityRule', () => {
             const {entity, ...namespace} = $.SUBRULE($.entityRefRule)
-            const alias = $.OPTION(() => {
+            $.OPTION(() => $.CONSUME(WhiteSpace))
+            const alias = $.OPTION2(() => {
                 $.CONSUME(As)
+                $.CONSUME2(WhiteSpace)
                 return $.SUBRULE($.identifierRule)
             })
+            $.OPTION3(() => $.CONSUME3(WhiteSpace))
             const extra = $.SUBRULE($.extraRule)
+            $.CONSUME(NewLine)
             const attrs: AttributeAst[] = []
             $.MANY(() => attrs.push($.SUBRULE($.attributeRule)))
-            return removeEmpty({command: 'ENTITY' as const, name: entity, ...namespace, alias, ...extra, attrs})
+            return removeEmpty({statement: 'Entity' as const, name: entity, ...namespace, alias, ...extra, attrs})
         })
 
         // relation rules
@@ -345,13 +387,17 @@ class AmlParser extends EmbeddedActionsParser {
         })
         this.relationRule = $.RULE<() => RelationAst>('relationRule', () => {
             $.CONSUME(Relation)
+            $.CONSUME(WhiteSpace)
             const src = $.SUBRULE($.attributeRefCompositeRule)
+            $.OPTION(() => $.CONSUME2(WhiteSpace))
             const {kind, ref, polymorphic} = $.SUBRULE(attributeRelationRule)
+            $.OPTION2(() => $.CONSUME3(WhiteSpace))
             const extra = $.SUBRULE($.extraRule)
-            return removeUndefined({command: 'RELATION' as const, kind, src, ref, polymorphic, ...extra})
+            $.CONSUME(NewLine)
+            return removeUndefined({statement: 'Relation' as const, kind, src, ref, polymorphic, ...extra})
         })
 
-        // type rules
+        // TODO: type rules
         const typeEnumRule = $.RULE<() => TypeEnumAst>('typeEnumRule', () => {
             $.CONSUME(Enum)
             $.CONSUME(LParen)
@@ -380,26 +426,33 @@ class AmlParser extends EmbeddedActionsParser {
                 { ALT: () => $.SUBRULE(typeStructRule) },
                 { ALT: () => $.SUBRULE(typeCustomRule) },
             ])
-            return {command: 'TYPE', name, content}
+            $.CONSUME(NewLine)
+            return {statement: 'Type', name, content}
+        })
+        this.emptyStatementRule = $.RULE<() => EmptyStatementAst>('emptyStatementRule', () => {
+            $.OPTION(() => $.CONSUME(WhiteSpace))
+            $.CONSUME(NewLine)
+            return {statement: 'Empty'}
         })
 
-
         // general rules
-        /*this.amlStatementRule = $.RULE<() => AmlStatementAst>('amlStatementRule', () => {
+        this.statementRule = $.RULE<() => StatementAst>('statementRule', () => {
             return $.OR([
-                // { ALT: () => $.SUBRULE($.entityRule) },
-                // { ALT: () => $.SUBRULE($.relationRule) },
-                // { ALT: () => $.SUBRULE($.typeRule) },
+                { ALT: () => $.SUBRULE($.namespaceRule) },
+                { ALT: () => $.SUBRULE($.entityRule) },
+                { ALT: () => $.SUBRULE($.relationRule) },
+                { ALT: () => $.SUBRULE($.typeRule) },
+                { ALT: () => $.SUBRULE($.emptyStatementRule) },
             ])
         })
 
         this.amlRule = $.RULE<() => AmlAst>('amlRule', () => {
-            let stmts: AmlStatementAst[] = []
+            let stmts: StatementAst[] = []
             $.MANY({
-                DEF: () => stmts.push($.SUBRULE($.amlStatementRule))
+                DEF: () => stmts.push($.SUBRULE($.statementRule))
             })
             return stmts
-        })*/
+        })
 
         this.performSelfAnalysis()
     }
@@ -419,9 +472,9 @@ export function parseRule<T>(parse: (p: AmlParser) => T, input: string): ParserR
     return ParserResult.success(res)
 }
 
-/*export function parse(input: string): ParserResult<AmlAst> {
+export function parse(input: string): ParserResult<AmlAst> {
     return parseRule(p => p.amlRule(), input)
-}*/
+}
 
 function formatError(err: IRecognitionException): ParserError {
     const {offset, line, column} = parserInfo(err.token)

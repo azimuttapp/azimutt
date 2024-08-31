@@ -14,7 +14,7 @@ describe('docs', () => {
     const amlFiles: {[path: string]: string} = Object.fromEntries(amlPaths.map(path => [path, fs.readFileSync(path, 'utf8')]))
 
     test('parse AML snippets', () => {
-        const amlRegex = /```aml(.*?)```/gms
+        const amlRegex = /```aml(.*?)```/gm
         const errorFiles = Object.entries(amlFiles).map(([path, content]) => {
             const matches = content.match(amlRegex) || []
             const errors = matches.map(aml => aml.replace(/^```aml/, '').replace(/```$/, '')).map((aml, index) => {
@@ -79,7 +79,7 @@ function getLinks(markdown: string): string[] {
 }
 
 function getAnchors(markdown: string): Set<string> {
-    const codeRegex = /^```(?:[a-z]*)?$(.*?)^```$/gms
+    const codeRegex = /^```(?:[a-z]*)?$(.*?)^```$/gm
     const titleRegex = /^#+(.+)$/gm
     const titles = markdown
         .replace(codeRegex, '') // remove code blocks from markdown (may contain comments starting with #, like titles)
