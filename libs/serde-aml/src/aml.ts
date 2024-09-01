@@ -146,13 +146,20 @@ function buildAttribute(statement: number, a: parser.AttributeAstNested, entity:
 function genAttribute(a: Attribute, e: Entity, relations: Relation[], parents: AttributePath = []): string {
     const path = [...parents, a.name]
     const indent = '  '.repeat(path.length)
-    const type = a.type && a.type !== defaultType ? ' ' + a.type : ''
     const pk = e.pk && e.pk.attrs.some(attr => attributePathSame(attr, path)) ? ' pk' : ''
     const indexes = (e.indexes || []).filter(i => i.attrs.some(attr => attributePathSame(attr, path))).map(i => ` ${i.unique ? 'unique' : 'index'}${i.name ? `=${i.name}` : ''}`).join('')
     const checks = (e.checks || []).filter(i => i.attrs.some(attr => attributePathSame(attr, path))).map(i => ` check${i.predicate ? `="${i.predicate}"` : ''}`).join('')
     const rel = relations.map(r => ' ' + genRelationTarget(r)).join('')
     const nested = a.attrs?.map(aa => genAttribute(aa, e, relations, path)).join('') || ''
-    return `${indent}${a.name}${type}${pk}${indexes}${checks}${rel}${genNote(a.doc, indent)}${genCommentExtra(a)}\n` + nested
+    return `${indent}${a.name}${genAttributeType(a)}${pk}${indexes}${checks}${rel}${genNote(a.doc, indent)}${genCommentExtra(a)}\n` + nested
+}
+
+function genAttributeType(a: Attribute): string {
+    // regex from `Identifier` token: libs/serde-aml/src/parser.ts:7
+    const type = a.type && a.type !== defaultType ? ' ' + (a.type.match(/^[a-zA-Z_]\w*$/) ? a.type : '"' + a.type + '"') : ''
+    // TODO: enum values
+    const defaultValue = a.default !== undefined ? `=${a.default}` : ''
+    return type ? type + defaultValue : ''
 }
 
 function buildRelationStatement(statement: number, r: parser.RelationAst): Relation {
@@ -232,7 +239,7 @@ function buildAttrValue(a: parser.AttributeValueAst): AttributeValue {
     } else if ('identifier' in a) {
         return a.identifier
     } else {
-        return a.expression
+        return '`' + a.expression + '`'
     }
 }
 

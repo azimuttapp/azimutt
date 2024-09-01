@@ -12,21 +12,23 @@ users |||
 |||
   id int pk # users primary key
   name varchar
+  role user_role=guest
   settings json
-    address json
-      number number
-      street string
-      city string index=address
-      country string index=address
     github string |||
       multiline note
       for github
     |||
     twitter string
+    address json
+      number number
+      street string
+      city string index=address
+      country string index=address
+  created_at timestamp=\`now()\`
 
 posts | all posts # an other entity
   id int pk
-  title varchar index | Title of the post
+  title "varchar(100)" index | Title of the post
   author int check="author > 0" -> users(id)
   created_by int
 
@@ -38,16 +40,18 @@ rel posts(created_by) -> users(id)
                 attrs: [
                     {name: 'id', type: 'int', extra: {comment: 'users primary key'}},
                     {name: 'name', type: 'varchar'},
+                    {name: 'role', type: 'user_role', default: 'guest'},
                     {name: 'settings', type: 'json', attrs: [
+                        {name: 'github', type: 'string', doc: "multiline note\nfor github"},
+                        {name: 'twitter', type: 'string'},
                         {name: 'address', type: 'json', attrs: [
                             {name: 'number', type: 'number'},
                             {name: 'street', type: 'string'},
                             {name: 'city', type: 'string'},
                             {name: 'country', type: 'string'},
                         ]},
-                        {name: 'github', type: 'string', doc: "multiline note\nfor github"},
-                        {name: 'twitter', type: 'string'},
                     ]},
+                    {name: 'created_at', type: 'timestamp', default: '`now()`'},
                 ],
                 pk: {attrs: [['id']]},
                 indexes: [{name: 'address', attrs: [['settings', 'address', 'city'], ['settings', 'address', 'country']]}],
@@ -57,7 +61,7 @@ rel posts(created_by) -> users(id)
                 name: 'posts',
                 attrs: [
                     {name: 'id', type: 'int'},
-                    {name: 'title', type: 'varchar', doc: 'Title of the post'},
+                    {name: 'title', type: 'varchar(100)', doc: 'Title of the post'},
                     {name: 'author', type: 'int'},
                     {name: 'created_by', type: 'int'},
                 ],

@@ -46,8 +46,12 @@ const LCurly = createToken({ name: 'LCurly', pattern: /\{/ })
 const RCurly = createToken({ name: 'RCurly', pattern: /}/ })
 const charTokens: TokenType[] = [Dot, Comma, Colon, Equal, Dash, GreaterThan, LowerThan, LParen, RParen, LCurly, RCurly]
 
+// legacy tokens
+const ForeignKey = createToken({ name: 'ForeignKey', pattern: /fk/ })
+const legacyTokens: TokenType[] = [ForeignKey]
+
 // token order is important as they are tried in order, so the Identifier must be last
-const allTokens: TokenType[] = [WhiteSpace, NewLine, ...charTokens, ...keywordTokens, ...valueTokens, Expression, Identifier, NoteMultiline, Note, Comment]
+const allTokens: TokenType[] = [WhiteSpace, NewLine, ...charTokens, ...keywordTokens, ...legacyTokens, ...valueTokens, Expression, Identifier, NoteMultiline, Note, Comment]
 
 export type TokenInfo = {token: string, offset: ParserPosition, line: ParserPosition, column: ParserPosition}
 
@@ -93,7 +97,6 @@ export type BooleanAst = { flag: boolean, parser: TokenInfo }
 export type IdentifierAst = { identifier: string, parser: TokenInfo }
 export type ExpressionAst = { expression: string, parser: TokenInfo }
 
-// TODO: legacy rules
 class AmlParser extends EmbeddedActionsParser {
     // common
     nullRule: () => NullAst
@@ -255,28 +258,57 @@ class AmlParser extends EmbeddedActionsParser {
             return removeEmpty({...attr, path})
         })
 
+        const legacyAttributePathRule = $.RULE<() => IdentifierAst[]>('legacyAttributePathRule', () => {
+            const path: IdentifierAst[] = []
+            $.MANY(() => {
+                $.CONSUME(Colon)
+                path.push($.SUBRULE($.identifierRule))
+            })
+            return path
+        })
+
         this.attributeRefRule = $.RULE<() => AttributeRefAst>('attributeRefRule', () => {
             const entity = $.SUBRULE($.entityRefRule)
-            $.CONSUME(LParen)
-            const attr = $.SUBRULE($.attributePathRule)
-            $.CONSUME(RParen)
-            return {...entity, attr}
+            return $.OR([{
+                ALT: () => {
+                    $.CONSUME(LParen)
+                    const attr = $.SUBRULE($.attributePathRule)
+                    $.CONSUME(RParen)
+                    return {...entity, attr}
+                }
+            }, {
+                ALT: () => {
+                    // legacy fallback
+                    const path = $.SUBRULE(legacyAttributePathRule)
+                    return removeUndefined({schema: entity.catalog, entity: entity.schema, attr: removeEmpty({...entity.entity, path})}) // TODO: add warning in AST
+                }
+            }])
         })
 
         this.attributeRefCompositeRule = $.RULE<() => AttributeRefCompositeAst>('attributeRefCompositeRule', () => {
             const entity = $.SUBRULE($.entityRefRule)
-            $.CONSUME(LParen)
-            const attrs: AttributePathAst[] = []
-            $.AT_LEAST_ONE_SEP({
-                SEP: Comma,
-                DEF: () => {
-                    $.OPTION(() => $.CONSUME(WhiteSpace))
-                    attrs.push($.SUBRULE($.attributePathRule))
-                    $.OPTION2(() => $.CONSUME2(WhiteSpace))
+            return $.OR([{
+                ALT: () => {
+                    $.CONSUME(LParen)
+                    const attrs: AttributePathAst[] = []
+                    $.AT_LEAST_ONE_SEP({
+                        SEP: Comma,
+                        DEF: () => {
+                            $.OPTION(() => $.CONSUME(WhiteSpace))
+                            attrs.push($.SUBRULE($.attributePathRule))
+                            $.OPTION2(() => $.CONSUME2(WhiteSpace))
+                        }
+                    })
+                    $.CONSUME(RParen)
+                    return {...entity, attrs}
                 }
-            })
-            $.CONSUME(RParen)
-            return {...entity, attrs}
+            }, {
+                ALT: () => {
+                    // legacy fallback
+                    const path = $.SUBRULE(legacyAttributePathRule)
+                    return removeUndefined({schema: entity.catalog, entity: entity.schema, attrs: [removeEmpty({...entity.entity, path})]}) // TODO: add warning in AST
+                }
+            }])
         })
 
         this.attributeValueRule = $.RULE<() => AttributeValueAst>('attributeValueRule', () => {
@@ -366,12 +398,22 @@ class AmlParser extends EmbeddedActionsParser {
             return removeUndefined({primaryKey, index, unique, check})
         })
         const attributeRelationRule = $.RULE<() => AttributeRelationAst>('attributeRelationRule', () => {
-            const refCardinality = $.SUBRULE(relationCardinalityRule)
-            const polymorphic = $.OPTION(() => $.SUBRULE(relationPolymorphicRule))
-            const srcCardinality = $.SUBRULE2(relationCardinalityRule)
+            const {kind, polymorphic} = $.OR([{
+                ALT: () => {
+                    const refCardinality = $.SUBRULE(relationCardinalityRule)
+                    const polymorphic = $.OPTION(() => $.SUBRULE(relationPolymorphicRule))
+                    const srcCardinality = $.SUBRULE2(relationCardinalityRule)
+                    return {kind: `${srcCardinality}-${refCardinality}` as const, polymorphic}
+                }
+            }, {
+                ALT: () => {
+                    $.CONSUME(ForeignKey)
+                    return {kind: 'n-1', polymorphic: undefined} // TODO: add warning in AST
+                }
+            }])
             $.OPTION2(() => $.CONSUME(WhiteSpace))
             const ref = $.SUBRULE2($.attributeRefCompositeRule)
-            return removeUndefined({kind: `${srcCardinality}-${refCardinality}` as const, ref, polymorphic})
+            return removeUndefined({kind, ref, polymorphic})
         })
         this.attributeRule = $.RULE<() => AttributeAstFlat>('attributeRule', () => {
             const spaces = $.CONSUME(WhiteSpace)
@@ -423,7 +465,10 @@ class AmlParser extends EmbeddedActionsParser {
             return {attr, value}
         })
         this.relationRule = $.RULE<() => RelationAst>('relationRule', () => {
-            $.CONSUME(Relation)
+            $.OR([
+                { ALT: () => $.CONSUME(Relation) },
+                { ALT: () => $.CONSUME(ForeignKey) }, // TODO: add warning in AST
+            ])
             $.CONSUME(WhiteSpace)
             const src = $.SUBRULE($.attributeRefCompositeRule)
             $.OPTION(() => $.CONSUME2(WhiteSpace))

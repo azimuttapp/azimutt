@@ -1,4 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
+import {removeFieldsDeep} from "@azimutt/utils";
 import {nestAttributes, parse, parseRule} from "./parser";
 
 describe('aml parser', () => {
@@ -402,7 +403,7 @@ comments
             }})
         })
         test('bad', () => {
-            expect(parseRule(p => p.relationRule(), 'bad')).toEqual({errors: [{name: 'MismatchedTokenException', message: "Expecting token of type --> Relation <-- but found --> 'bad' <--", position: {offset: [0, 2], line: [1, 1], column: [1, 3]}}]})
+            expect(parseRule(p => p.relationRule(), 'bad')).toEqual({errors: [{name: 'NoViableAltException', message: "Expecting: one of these possible Token sequences:\n  1. [Relation]\n  2. [ForeignKey]\nbut found: 'bad'", position: {offset: [0, 2], line: [1, 1], column: [1, 3]}}]})
         })
     })
     describe.skip('typeRule', () => {
@@ -420,6 +421,67 @@ comments
         test('basic', () => expect(parseRule(p => p.emptyStatementRule(), '\n')).toEqual({result: {statement: 'Empty'}}))
         test('with spaces', () => expect(parseRule(p => p.emptyStatementRule(), '  \n')).toEqual({result: {statement: 'Empty'}}))
         test('with comment', () => expect(parseRule(p => p.emptyStatementRule(), ' # hello\n')).toEqual({result: {statement: 'Empty', comment: {comment: 'hello', parser: {token: 'Comment', offset: [1, 7], line: [1, 1], column: [2, 8]}}}}))
+    })
+    describe('legacy', () => {
+        test('attribute relation', () => {
+            const v1 = parseRule(p => p.attributeRule(), '  user_id fk users.id\n')
+            const v2 = parseRule(p => p.attributeRule(), '  user_id -> users(id)\n')
+            expect(v1).toEqual({result: {
+                nesting: 0,
+                name: {identifier: 'user_id', parser: {token: 'Identifier', offset: [2, 8], line: [1, 1], column: [3, 9]}},
+                relation: {
+                    kind: 'n-1',
+                    ref: {
+                        entity: {identifier: 'users', parser: {token: 'Identifier', offset: [13, 17], line: [1, 1], column: [14, 18]}},
+                        attrs: [{identifier: 'id', parser: {token: 'Identifier', offset: [19, 20], line: [1, 1], column: [20, 21]}}]
+                    }
+                }
+            }})
+            expect(v1).toEqual(v2)
+        })
+        test('standalone relation', () => {
+            const v1 = parseRule(p => p.relationRule(), 'fk groups.owner -> users.id\n')
+            const v2 = parseRule(p => p.relationRule(), 'rel groups(owner) -> users(id)\n')
+            expect(v1).toEqual({result: {
+                statement: 'Relation',
+                kind: 'n-1',
+                src: {
+                    entity: {identifier: 'groups', parser: {token: 'Identifier', offset: [3, 8], line: [1, 1], column: [4, 9]}},
+                    attrs: [{identifier: 'owner', parser: {token: 'Identifier', offset: [10, 14], line: [1, 1], column: [11, 15]}}]
+                },
+                ref: {
+                    entity: {identifier: 'users', parser: {token: 'Identifier', offset: [19, 23], line: [1, 1], column: [20, 24]}},
+                    attrs: [{identifier: 'id', parser: {token: 'Identifier', offset: [25, 26], line: [1, 1], column: [26, 27]}}]
+                }
+            }})
+            expect(removeFieldsDeep(v1, ['parser'])).toEqual(removeFieldsDeep(v2, ['parser']))
+        })
+        test('nested attribute', () => {
+            const v1 = parseRule(p => p.attributeRefRule(), 'users.settings:github')
+            const v2 = parseRule(p => p.attributeRefRule(), 'users(settings.github)')
+            expect(v1).toEqual({result: {
+                entity: {identifier: 'users', parser: {token: 'Identifier', offset: [0, 4], line: [1, 1], column: [1, 5]}},
+                attr: {
+                    identifier: 'settings',
+                    parser: {token: 'Identifier', offset: [6, 13], line: [1, 1], column: [7, 14]},
+                    path: [{identifier: 'github', parser: {token: 'Identifier', offset: [15, 20], line: [1, 1], column: [16, 21]}}]
+                }
+            }})
+            expect(v1).toEqual(v2)
+        })
+        test('nested attribute composite', () => {
+            const v1 = parseRule(p => p.attributeRefCompositeRule(), 'users.settings:github')
+            const v2 = parseRule(p => p.attributeRefCompositeRule(), 'users(settings.github)')
+            expect(v1).toEqual({result: {
+                entity: {identifier: 'users', parser: {token: 'Identifier', offset: [0, 4], line: [1, 1], column: [1, 5]}},
+                attrs: [{
+                    identifier: 'settings',
+                    parser: {token: 'Identifier', offset: [6, 13], line: [1, 1], column: [7, 14]},
+                    path: [{identifier: 'github', parser: {token: 'Identifier', offset: [15, 20], line: [1, 1], column: [16, 21]}}]
+                }]
+            }})
+            expect(v1).toEqual(v2)
+        })
     })
     describe('common', () => {
         test('integerRule', () => {
