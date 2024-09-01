@@ -1,5 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
-import {parse, parseRule} from "./parser";
+import {nestAttributes, parse, parseRule} from "./parser";
 
 describe('aml parser', () => {
     test('empty', () => {
@@ -15,13 +15,11 @@ users
             statement: 'Entity',
             name: {identifier: 'users', parser: {token: 'Identifier', offset: [1, 5], line: [2, 2], column: [1, 5]}},
             attrs: [{
-                nesting: 0,
-                name: {identifier: 'id', parser: {token: 'Identifier', offset: [9, 10], line: [3, 3], column: [3, 4]}},
+                path: [{identifier: 'id', parser: {token: 'Identifier', offset: [9, 10], line: [3, 3], column: [3, 4]}}],
                 type: {identifier: 'uuid', parser: {token: 'Identifier', offset: [12, 15], line: [3, 3], column: [6, 9]}},
                 primaryKey: {parser: {token: 'PrimaryKey', offset: [17, 18], line: [3, 3], column: [11, 12]}},
             }, {
-                nesting: 0,
-                name: {identifier: 'name', parser: {token: 'Identifier', offset: [22, 25], line: [4, 4], column: [3, 6]}},
+                path: [{identifier: 'name', parser: {token: 'Identifier', offset: [22, 25], line: [4, 4], column: [3, 6]}}],
                 type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [27, 33], line: [4, 4], column: [8, 14]}},
             }]
         }]
@@ -101,13 +99,11 @@ comments
                 statement: 'Entity',
                 name: {identifier: 'users', parser: {token: 'Identifier', offset: [0, 4], line: [1, 1], column: [1, 5]}},
                 attrs: [{
-                    nesting: 0,
-                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [8, 9], line: [2, 2], column: [3, 4]}},
+                    path: [{identifier: 'id', parser: {token: 'Identifier', offset: [8, 9], line: [2, 2], column: [3, 4]}}],
                     type: {identifier: 'uuid', parser: {token: 'Identifier', offset: [11, 14], line: [2, 2], column: [6, 9]}},
                     primaryKey: {parser: {token: 'PrimaryKey', offset: [16, 17], line: [2, 2], column: [11, 12]}},
                 }, {
-                    nesting: 0,
-                    name: {identifier: 'name', parser: {token: 'Identifier', offset: [21, 24], line: [3, 3], column: [3, 6]}},
+                    path: [{identifier: 'name', parser: {token: 'Identifier', offset: [21, 24], line: [3, 3], column: [3, 6]}}],
                     type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [26, 32], line: [3, 3], column: [8, 14]}},
                 }],
             }})
@@ -528,6 +524,65 @@ comments
         test('columnValueRule', () => {
             expect(parseRule(p => p.attributeValueRule(), 'User')).toEqual({result: {identifier: 'User', parser: {token: 'Identifier', offset: [0, 3], line: [1, 1], column: [1, 4]}}})
             expect(parseRule(p => p.attributeValueRule(), '42')).toEqual({result: {value: 42, parser: {token: 'Integer', offset: [0, 1], line: [1, 1], column: [1, 2]}}})
+        })
+    })
+    describe('utils', () => {
+        test('nestAttributes', () => {
+            expect(nestAttributes([])).toEqual([])
+            expect(nestAttributes([{
+                nesting: 0,
+                name: {identifier: 'id', parser: {token: 'Identifier', offset: [8, 9], line: [2, 2], column: [3, 4]}},
+                type: {identifier: 'int', parser: {token: 'Identifier', offset: [11, 13], line: [2, 2], column: [6, 8]}},
+                primaryKey: {parser: {token: 'PrimaryKey', offset: [15, 16], line: [2, 2], column: [10, 11]}}
+            }, {
+                nesting: 0,
+                name: {identifier: 'name', parser: {token: 'Identifier', offset: [20, 23], line: [3, 3], column: [3, 6]}},
+                type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [25, 31], line: [3, 3], column: [8, 14]}}
+            }, {
+                nesting: 0,
+                name: {identifier: 'settings', parser: {token: 'Identifier', offset: [35, 42], line: [4, 4], column: [3, 10]}},
+                type: {identifier: 'json', parser: {token: 'Identifier', offset: [44, 47], line: [4, 4], column: [12, 15]}}
+            }, {
+                nesting: 1,
+                name: {identifier: 'address', parser: {token: 'Identifier', offset: [53, 59], line: [5, 5], column: [5, 11]}},
+                type: {identifier: 'json', parser: {token: 'Identifier', offset: [61, 64], line: [5, 5], column: [13, 16]}}
+            }, {
+                nesting: 2,
+                name: {identifier: 'street', parser: {token: 'Identifier', offset: [72, 77], line: [6, 6], column: [7, 12]}},
+                type: {identifier: 'string', parser: {token: 'Identifier', offset: [79, 84], line: [6, 6], column: [14, 19]}}
+            }, {
+                nesting: 2,
+                name: {identifier: 'city', parser: {token: 'Identifier', offset: [92, 95], line: [7, 7], column: [7, 10]}},
+                type: {identifier: 'string', parser: {token: 'Identifier', offset: [97, 102], line: [7, 7], column: [12, 17]}}
+            }, {
+                nesting: 1,
+                name: {identifier: 'github', parser: {token: 'Identifier', offset: [108, 113], line: [8, 8], column: [5, 10]}},
+                type: {identifier: 'string', parser: {token: 'Identifier', offset: [115, 120], line: [8, 8], column: [12, 17]}}
+            }])).toEqual([{
+                path: [{identifier: 'id', parser: {token: 'Identifier', offset: [8, 9], line: [2, 2], column: [3, 4]}}],
+                type: {identifier: 'int', parser: {token: 'Identifier', offset: [11, 13], line: [2, 2], column: [6, 8]}},
+                primaryKey: {parser: {token: 'PrimaryKey', offset: [15, 16], line: [2, 2], column: [10, 11]}},
+            }, {
+                path: [{identifier: 'name', parser: {token: 'Identifier', offset: [20, 23], line: [3, 3], column: [3, 6]}}],
+                type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [25, 31], line: [3, 3], column: [8, 14]}},
+            }, {
+                path: [{identifier: 'settings', parser: {token: 'Identifier', offset: [35, 42], line: [4, 4], column: [3, 10]}}],
+                type: {identifier: 'json', parser: {token: 'Identifier', offset: [44, 47], line: [4, 4], column: [12, 15]}},
+                attrs: [{
+                    path: [{identifier: 'settings', parser: {token: 'Identifier', offset: [35, 42], line: [4, 4], column: [3, 10]}}, {identifier: 'address', parser: {token: 'Identifier', offset: [53, 59], line: [5, 5], column: [5, 11]}}],
+                    type: {identifier: 'json', parser: {token: 'Identifier', offset: [61, 64], line: [5, 5], column: [13, 16]}},
+                    attrs: [{
+                        path: [{identifier: 'settings', parser: {token: 'Identifier', offset: [35, 42], line: [4, 4], column: [3, 10]}}, {identifier: 'address', parser: {token: 'Identifier', offset: [53, 59], line: [5, 5], column: [5, 11]}}, {identifier: 'street', parser: {token: 'Identifier', offset: [72, 77], line: [6, 6], column: [7, 12]}}],
+                        type: {identifier: 'string', parser: {token: 'Identifier', offset: [79, 84], line: [6, 6], column: [14, 19]}},
+                    }, {
+                        path: [{identifier: 'settings', parser: {token: 'Identifier', offset: [35, 42], line: [4, 4], column: [3, 10]}}, {identifier: 'address', parser: {token: 'Identifier', offset: [53, 59], line: [5, 5], column: [5, 11]}}, {identifier: 'city', parser: {token: 'Identifier', offset: [92, 95], line: [7, 7], column: [7, 10]}}],
+                        type: {identifier: 'string', parser: {token: 'Identifier', offset: [97, 102], line: [7, 7], column: [12, 17]}},
+                    }]
+                }, {
+                    path: [{identifier: 'settings', parser: {token: 'Identifier', offset: [35, 42], line: [4, 4], column: [3, 10]}}, {identifier: 'github', parser: {token: 'Identifier', offset: [108, 113], line: [8, 8], column: [5, 10]}}],
+                    type: {identifier: 'string', parser: {token: 'Identifier', offset: [115, 120], line: [8, 8], column: [12, 17]}},
+                }]
+            }])
         })
     })
 })

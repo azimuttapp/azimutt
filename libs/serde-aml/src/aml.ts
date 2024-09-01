@@ -2,6 +2,7 @@ import {groupBy, isNotUndefined, partition, removeEmpty, removeUndefined, zip} f
 import {
     Attribute,
     AttributePath,
+    attributePathSame,
     AttributeValue,
     Check,
     Database,
@@ -80,12 +81,12 @@ function buildNamespace(statement: number, n: parser.NamespaceAst, current: Name
 function buildEntity(statement: number, e: parser.EntityAst, namespace: Namespace): { entity: Entity, relations: Relation[] } {
     const astNamespace = removeUndefined({schema: e.schema?.identifier, catalog: e.catalog?.identifier, database: e.database?.identifier})
     const entityNamespace = {...namespace, ...astNamespace}
-    const pkAttrs = e.attrs.filter(a => a.primaryKey).map(a => [a.name.identifier]) // TODO: handle nested attrs
-    const attrs = e.attrs.map(a => buildAttribute(statement, a, {...entityNamespace, entity: e.name.identifier})) // TODO: handle nested attrs
-    const indexes: Index[] = buildIndexes(e.attrs.map(a => ({path: [a.name.identifier], index: a.index}))).map(i => removeUndefined({name: i.value, attrs: i.attrs}))
-    const uniques: Index[] = buildIndexes(e.attrs.map(a => ({path: [a.name.identifier], index: a.unique}))).map(i => removeUndefined({name: i.value, attrs: i.attrs, unique: true}))
-    const checks: Check[] = buildIndexes(e.attrs.map(a => ({path: [a.name.identifier], index: a.check}))).map(i => removeUndefined({predicate: i.value || '', attrs: i.attrs}))
-    const relations: Relation[] = attrs.map(a => a.relation).filter(isNotUndefined)
+    const attrs = e.attrs.map(a => buildAttribute(statement, a, {...entityNamespace, entity: e.name.identifier}))
+    const flatAttrs = flattenAttributes(e.attrs)
+    const pkAttrs = flatAttrs.filter(a => a.primaryKey).map(a => a.path.map(p => p.identifier))
+    const indexes: Index[] = buildIndexes(flatAttrs.map(a => ({path: a.path.map(p => p.identifier), index: a.index}))).map(i => removeUndefined({name: i.value, attrs: i.attrs}))
+    const uniques: Index[] = buildIndexes(flatAttrs.map(a => ({path: a.path.map(p => p.identifier), index: a.unique}))).map(i => removeUndefined({name: i.value, attrs: i.attrs, unique: true}))
+    const checks: Check[] = buildIndexes(flatAttrs.map(a => ({path: a.path.map(p => p.identifier), index: a.check}))).map(i => removeUndefined({predicate: i.value || '', attrs: i.attrs}))
     return {
         entity: removeEmpty({
             ...entityNamespace,
@@ -100,8 +101,15 @@ function buildEntity(statement: number, e: parser.EntityAst, namespace: Namespac
             stats: undefined,
             extra: {statement},
         }),
-        relations
+        relations: attrs.flatMap(a => a.relations)
     }
+}
+
+function flattenAttributes(attributes: parser.AttributeAstNested[]): parser.AttributeAstNested[] {
+    return attributes.flatMap(a => {
+        const {attrs, ...values} = a
+        return [values].concat(flattenAttributes(attrs || []))
+    })
 }
 
 function genEntity(e: Entity, relations: Relation[]): string {
@@ -117,33 +125,36 @@ function buildIndexes(indexes: {path: AttributePath, index: parser.AttributeCons
     return compositeIndexes.concat(singleIndexes)
 }
 
-function buildAttribute(statement: number, a: parser.AttributeAst, entity: EntityRef): { attribute: Attribute, relation?: Relation } {
-    const relation = a.relation ? buildRelationAttribute(statement, a.relation, entity, [[a.name.identifier]]) : undefined // TODO: handle nested attrs
+function buildAttribute(statement: number, a: parser.AttributeAstNested, entity: EntityRef): { attribute: Attribute, relations: Relation[] } {
+    const relation = a.relation ? [buildRelationAttribute(statement, a.relation, entity, [a.path.map(p => p.identifier)])] : []
+    const nested = a.attrs?.map(aa => buildAttribute(statement, aa, entity))
     return {
         attribute: removeEmpty({
-            name: a.name.identifier,
+            name: a.path[a.path.length - 1].identifier,
             type: a.type?.identifier || defaultType,
             null: a.nullable ? true : undefined,
             gen: undefined,
             default: a.defaultValue ? buildAttrValue(a.defaultValue) : undefined,
-            attrs: undefined, // TODO z.lazy(() => Attribute.array().optional()),
+            attrs: nested?.map(n => n.attribute),
             doc: a.note?.note,
             stats: undefined,
             extra: removeUndefined({comment: a.comment?.comment})
         }),
-        relation
+        relations: relation.concat(nested?.flatMap(n => n.relations) || [])
     }
 }
 
-function genAttribute(a: Attribute, e: Entity, relations: Relation[]): string {
+function genAttribute(a: Attribute, e: Entity, relations: Relation[], parents: AttributePath = []): string {
+    const path = [...parents, a.name]
     const type = a.type && a.type !== defaultType ? ' ' + a.type : ''
-    const pk = e.pk && e.pk.attrs.some(attr => attr.length === 1 && attr[0] === a.name) ? ' pk' : '' // TODO: handle nested attrs
-    const indexes = (e.indexes || []).filter(i => i.attrs.some(attr => attr.length === 1 && attr[0] === a.name)).map(i => ` ${i.unique ? 'unique' : 'index'}${i.name ? `=${i.name}` : ''}`).join('') // TODO: handle nested attrs
-    const checks = (e.checks || []).filter(i => i.attrs.some(attr => attr.length === 1 && attr[0] === a.name)).map(i => ` check${i.predicate ? `="${i.predicate}"` : ''}`).join('') // TODO: handle nested attrs
+    const pk = e.pk && e.pk.attrs.some(attr => attributePathSame(attr, path)) ? ' pk' : ''
+    const indexes = (e.indexes || []).filter(i => i.attrs.some(attr => attributePathSame(attr, path))).map(i => ` ${i.unique ? 'unique' : 'index'}${i.name ? `=${i.name}` : ''}`).join('')
+    const checks = (e.checks || []).filter(i => i.attrs.some(attr => attributePathSame(attr, path))).map(i => ` check${i.predicate ? `="${i.predicate}"` : ''}`).join('')
     const rel = relations.map(r => ' ' + genRelationTarget(r)).join('')
     const note = a.doc ? ' | ' + a.doc : ''
     const comment = a.extra && 'comment' in a.extra ? ' # ' + a.extra.comment : ''
-    return `  ${a.name}${type}${pk}${indexes}${checks}${rel}${note}${comment}\n`
+    const nested = a.attrs?.map(aa => genAttribute(aa, e, relations, path)).join('') || ''
+    return `${'  '.repeat(path.length)}${a.name}${type}${pk}${indexes}${checks}${rel}${note}${comment}\n` + nested
 }
 
 function buildRelationStatement(statement: number, r: parser.RelationAst): Relation {

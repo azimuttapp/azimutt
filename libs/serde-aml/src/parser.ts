@@ -43,7 +43,7 @@ const LowerThan = createToken({ name: 'LowerThan', pattern: /</ })
 const LParen = createToken({ name: 'LParen', pattern: /\(/ })
 const RParen = createToken({ name: 'RParen', pattern: /\)/ })
 const LCurly = createToken({ name: 'LCurly', pattern: /\{/ })
-const RCurly = createToken({ name: 'RCurly', pattern: /\}/ })
+const RCurly = createToken({ name: 'RCurly', pattern: /}/ })
 const charTokens: TokenType[] = [Dot, Comma, Colon, Equal, Dash, GreaterThan, LowerThan, LParen, RParen, LCurly, RCurly]
 
 // token order is important as they are tried in order, so the Identifier must be last
@@ -54,12 +54,13 @@ export type TokenInfo = {token: string, offset: ParserPosition, line: ParserPosi
 export type AmlAst = StatementAst[]
 export type StatementAst = NamespaceAst | EntityAst | RelationAst | TypeAst | EmptyStatementAst
 export type NamespaceAst = { statement: 'Namespace', schema: IdentifierAst, catalog?: IdentifierAst, database?: IdentifierAst }
-export type EntityAst = { statement: 'Entity', name: IdentifierAst, alias?: IdentifierAst, attrs: AttributeAst[] } & NamespaceRefAst & ExtraAst
+export type EntityAst = { statement: 'Entity', name: IdentifierAst, alias?: IdentifierAst, attrs: AttributeAstNested[] } & NamespaceRefAst & ExtraAst
 export type RelationAst = { statement: 'Relation', kind: RelationKindAst, src: AttributeRefCompositeAst, ref: AttributeRefCompositeAst, polymorphic?: RelationPolymorphicAst } & ExtraAst
 export type TypeAst = { statement: 'Type', name: IdentifierAst, content: TypeEnumAst | TypeStructAst | TypeCustomAst }
 export type EmptyStatementAst = { statement: 'Empty', comment?: CommentAst }
 
-export type AttributeAst = { nesting: number, name: IdentifierAst, nullable?: {parser: TokenInfo} } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst
+export type AttributeAstFlat = { nesting: number, name: IdentifierAst, nullable?: {parser: TokenInfo} } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst
+export type AttributeAstNested = { path: IdentifierAst[], nullable?: {parser: TokenInfo} } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst & { attrs?: AttributeAstNested[] }
 export type AttributeTypeAst = { type?: IdentifierAst, enumValues?: AttributeValueAst[], defaultValue?: AttributeValueAst }
 export type AttributeConstraintsAst = { primaryKey?: { parser: TokenInfo }, index?: AttributeConstraintAst, unique?: AttributeConstraintAst, check?: AttributeConstraintAst }
 export type AttributeConstraintAst = { parser: TokenInfo, value?: IdentifierAst }
@@ -70,7 +71,7 @@ export type RelationKindAst = `${RelationCardinalityAst}-${RelationCardinalityAs
 export type RelationPolymorphicAst = { attr: AttributePathAst, value: AttributeValueAst }
 
 export type TypeEnumAst = { kind: 'enum', values: AttributeValueAst[] }
-export type TypeStructAst = { kind: 'struct', attrs: AttributeAst[] }
+export type TypeStructAst = { kind: 'struct', attrs: AttributeAstNested[] }
 export type TypeCustomAst = { kind: 'custom', definition: IdentifierAst }
 
 export type NamespaceRefAst = { schema?: IdentifierAst, catalog?: IdentifierAst, database?: IdentifierAst }
@@ -92,7 +93,6 @@ export type BooleanAst = { flag: boolean, parser: TokenInfo }
 export type IdentifierAst = { identifier: string, parser: TokenInfo }
 export type ExpressionAst = { expression: string, parser: TokenInfo }
 
-// TODO: indentation: https://github.com/chevrotain/chevrotain/blob/master/examples/lexer/python_indentation/python_indentation.js
 // TODO: legacy rules
 class AmlParser extends EmbeddedActionsParser {
     // common
@@ -115,7 +115,7 @@ class AmlParser extends EmbeddedActionsParser {
     namespaceRule: () => NamespaceAst
 
     // entity
-    attributeRule: () => AttributeAst
+    attributeRule: () => AttributeAstFlat
     entityRule: () => EntityAst
 
     // relation
@@ -374,7 +374,7 @@ class AmlParser extends EmbeddedActionsParser {
             const ref = $.SUBRULE2($.attributeRefCompositeRule)
             return removeUndefined({kind: `${srcCardinality}-${refCardinality}` as const, ref, polymorphic})
         })
-        this.attributeRule = $.RULE<() => AttributeAst>('attributeRule', () => {
+        this.attributeRule = $.RULE<() => AttributeAstFlat>('attributeRule', () => {
             const spaces = $.CONSUME(WhiteSpace)
             const nesting = Math.round(spaces.image.split('').reduce((i, c) => c === '\t' ? i + 1 : i + 0.5, 0)) - 1
             const name = $.SUBRULE($.identifierRule)
@@ -404,9 +404,9 @@ class AmlParser extends EmbeddedActionsParser {
             $.OPTION3(() => $.CONSUME3(WhiteSpace))
             const extra = $.SUBRULE($.extraRule)
             $.CONSUME(NewLine)
-            const attrs: AttributeAst[] = []
+            const attrs: AttributeAstFlat[] = []
             $.MANY(() => attrs.push($.SUBRULE($.attributeRule)))
-            return removeEmpty({statement: 'Entity' as const, name: entity, ...namespace, alias, ...extra, attrs})
+            return removeEmpty({statement: 'Entity' as const, name: entity, ...namespace, alias, ...extra, attrs: nestAttributes(attrs)})
         })
 
         // relation rules
@@ -446,10 +446,10 @@ class AmlParser extends EmbeddedActionsParser {
         })
         const typeStructRule = $.RULE<() => TypeStructAst>('typeStructRule', () => {
             $.CONSUME(LCurly)
-            const attrs: AttributeAst[] = []
+            const attrs: AttributeAstFlat[] = []
             // TODO
             $.CONSUME(RCurly)
-            return { kind: 'struct', attrs }
+            return { kind: 'struct', attrs: nestAttributes(attrs) }
         })
         const typeCustomRule = $.RULE<() => TypeCustomAst>('typeCustomRule', () => {
             // TODO
@@ -527,4 +527,37 @@ function parserInfo(token: IToken): TokenInfo {
         line: [token.startLine || 0, token.endLine || 0],
         column: [token.startColumn || 0, token.endColumn || 0]
     }
+}
+
+// utils functions
+
+export function nestAttributes(attributes: AttributeAstFlat[]): AttributeAstNested[] {
+    const results: AttributeAstNested[] = []
+    let path: IdentifierAst[] = []
+    let parents: AttributeAstNested[] = []
+    let curNesting = 0
+    attributes.forEach(attribute => {
+        const {nesting, name, ...values} = attribute
+        if (nesting === 0 || parents.length === 0) { // empty parents is when first attr is not at nesting 0
+            path = [name]
+            parents = [{path, ...values}]
+            curNesting = 0
+            results.push(parents[0]) // add top level attrs to results
+        } else if (nesting > curNesting) { // deeper: append to `path` & `parents`
+            path = [...path, name]
+            parents = [...parents, {path, ...values}]
+            curNesting = curNesting + 1 // go only one level deeper at the time (even if nesting is higher)
+            // if (nesting > curNesting + 1) console.log(`bad nesting (+${nesting - curNesting}) on attr ${JSON.stringify(attribute)}`) // TODO: add warning in ast
+            parents[parents.length - 2].attrs = [...(parents[parents.length - 2].attrs || []), parents[parents.length - 1]] // add to parent
+        } else if (nesting <= curNesting) { // same level or up: replace n+1 last values in `path` & `parents`
+            const n = curNesting - nesting
+            path = [...path.slice(0, -(n + 1)), name]
+            parents = [...parents.slice(0, -(n + 1)), {path, ...values}]
+            curNesting = nesting
+            parents[parents.length - 2].attrs = [...(parents[parents.length - 2].attrs || []), parents[parents.length - 1]] // add to parent
+        } else { // should never happen, `nesting` is always > or <= to `curNesting`
+            throw new Error(`Should never happen (nesting: ${nesting}, curNesting: ${curNesting})`)
+        }
+    })
+    return results
 }

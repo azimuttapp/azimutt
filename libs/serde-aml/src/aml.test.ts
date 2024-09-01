@@ -9,6 +9,14 @@ describe('aml', () => {
 users
   id int pk
   name varchar
+  settings json
+    address json
+      number number
+      street string
+      city string index=address
+      country string index=address
+    github string
+    twitter string
 
 posts | all posts
   id int pk
@@ -23,9 +31,20 @@ rel posts(created_by) -> users(id)
                 name: 'users',
                 attrs: [
                     {name: 'id', type: 'int'},
-                    {name: 'name', type: 'varchar'}
+                    {name: 'name', type: 'varchar'},
+                    {name: 'settings', type: 'json', attrs: [
+                        {name: 'address', type: 'json', attrs: [
+                            {name: 'number', type: 'number'},
+                            {name: 'street', type: 'string'},
+                            {name: 'city', type: 'string'},
+                            {name: 'country', type: 'string'},
+                        ]},
+                        {name: 'github', type: 'string'},
+                        {name: 'twitter', type: 'string'},
+                    ]},
                 ],
                 pk: {attrs: [['id']]},
+                indexes: [{name: 'address', attrs: [['settings', 'address', 'city'], ['settings', 'address', 'country']]}],
                 extra: {statement: 1}
             }, {
                 name: 'posts',
