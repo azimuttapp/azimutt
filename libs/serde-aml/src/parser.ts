@@ -1,5 +1,5 @@
 import {createToken, EmbeddedActionsParser, IRecognitionException, IToken, Lexer, TokenType} from "chevrotain";
-import {removeEmpty, removeUndefined} from "@azimutt/utils";
+import {removeEmpty, removeUndefined, stripIndent} from "@azimutt/utils";
 import {ParserError, ParserPosition, ParserResult} from "@azimutt/models";
 
 // special
@@ -7,7 +7,7 @@ const WhiteSpace = createToken({name: 'WhiteSpace', pattern: /[ \t]+/})
 const Identifier = createToken({ name: 'Identifier', pattern: /[a-zA-Z_]\w*|"([^\\"]|\\\\|\\")*"/ })
 const Expression = createToken({ name: 'Expression', pattern: /`[^`]+`/ })
 const Note = createToken({ name: 'Note', pattern: /\|[^#\n]*/ })
-// const NoteMultiline = createToken({ name: 'NoteMultiline', pattern: /\|\|\|.*\|\|\|/ })
+const NoteMultiline = createToken({ name: 'NoteMultiline', pattern: /\|\|\|[^]*?\|\|\|/, line_breaks: true })
 const Comment = createToken({ name: 'Comment', pattern: /#[^\n]*/ })
 
 // values
@@ -47,7 +47,7 @@ const RCurly = createToken({ name: 'RCurly', pattern: /}/ })
 const charTokens: TokenType[] = [Dot, Comma, Colon, Equal, Dash, GreaterThan, LowerThan, LParen, RParen, LCurly, RCurly]
 
 // token order is important as they are tried in order, so the Identifier must be last
-const allTokens: TokenType[] = [WhiteSpace, NewLine, ...charTokens, ...keywordTokens, ...valueTokens, Expression, Identifier, Note, Comment]
+const allTokens: TokenType[] = [WhiteSpace, NewLine, ...charTokens, ...keywordTokens, ...valueTokens, Expression, Identifier, NoteMultiline, Note, Comment]
 
 export type TokenInfo = {token: string, offset: ParserPosition, line: ParserPosition, column: ParserPosition}
 
@@ -177,18 +177,17 @@ class AmlParser extends EmbeddedActionsParser {
         })
 
         this.noteRule = $.RULE<() => NoteAst>('noteRule', () => {
-            /*return $.OR([
-                { ALT: () => {
+            return $.OR([{
+                ALT: () => {
                     const token = $.CONSUME(NoteMultiline)
-                    return {note: token.image.slice(1).trim(), parser: parserInfo(token)}
-                }},
-                { ALT: () => {
+                    return {note: stripIndent(token.image.slice(3, -3)), parser: parserInfo(token)}
+                }
+            }, {
+                ALT: () => {
                     const token = $.CONSUME(Note)
                     return {note: token.image.slice(1).trim(), parser: parserInfo(token)}
-                }},
-            ])*/
-            const token = $.CONSUME(Note)
-            return {note: token.image.slice(1).trim(), parser: parserInfo(token)}
+                }
+            }])
         })
 
         const propertyValueRule = $.RULE<() => PropertyValueAst>('propertyValueRule', () => {

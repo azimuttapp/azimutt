@@ -439,8 +439,8 @@ comments
         })
         test('noteRule', () => {
             expect(parseRule(p => p.noteRule(), '| a note')).toEqual({result: {note: 'a note', parser: {token: 'Note', offset: [0, 7], line: [1, 1], column: [1, 8]}}})
-            // TODO expect(parseRule(p => p.noteRule(), '|||\n   a note\n   multiline\n|||')).toEqual({result: {note: 'a note\nmultiline', parser: {token: 'Note', offset: [0, 7], line: [1, 1], column: [1, 8]}}})
-            expect(parseRule(p => p.noteRule(), 'bad')).toEqual({errors: [{name: 'MismatchedTokenException', message: "Expecting token of type --> Note <-- but found --> 'bad' <--", position: {offset: [0, 2], line: [1, 1], column: [1, 3]}}]})
+            expect(parseRule(p => p.noteRule(), '|||\n   a note\n   multiline\n|||')).toEqual({result: {note: 'a note\nmultiline', parser: {token: 'NoteMultiline', offset: [0, 29], line: [1, 4], column: [1, 3]}}})
+            expect(parseRule(p => p.noteRule(), 'bad')).toEqual({errors: [{name: 'NoViableAltException', message: "Expecting: one of these possible Token sequences:\n  1. [NoteMultiline]\n  2. [Note]\nbut found: 'bad'", position: {offset: [0, 2], line: [1, 1], column: [1, 3]}}]})
         })
         test('propertiesRule', () => {
             expect(parseRule(p => p.propertiesRule(), '{}')).toEqual({result: []})

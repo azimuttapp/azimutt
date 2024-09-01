@@ -6,8 +6,11 @@ import {generate, parse} from "./aml";
 describe('aml', () => {
     test('sample schema', () => {
         const input = `
-users
-  id int pk
+users |||
+  list
+  all users
+|||
+  id int pk # users primary key
   name varchar
   settings json
     address json
@@ -15,10 +18,13 @@ users
       street string
       city string index=address
       country string index=address
-    github string
+    github string |||
+      multiline note
+      for github
+    |||
     twitter string
 
-posts | all posts
+posts | all posts # an other entity
   id int pk
   title varchar index | Title of the post
   author int check="author > 0" -> users(id)
@@ -30,7 +36,7 @@ rel posts(created_by) -> users(id)
             entities: [{
                 name: 'users',
                 attrs: [
-                    {name: 'id', type: 'int'},
+                    {name: 'id', type: 'int', extra: {comment: 'users primary key'}},
                     {name: 'name', type: 'varchar'},
                     {name: 'settings', type: 'json', attrs: [
                         {name: 'address', type: 'json', attrs: [
@@ -39,12 +45,13 @@ rel posts(created_by) -> users(id)
                             {name: 'city', type: 'string'},
                             {name: 'country', type: 'string'},
                         ]},
-                        {name: 'github', type: 'string'},
+                        {name: 'github', type: 'string', doc: "multiline note\nfor github"},
                         {name: 'twitter', type: 'string'},
                     ]},
                 ],
                 pk: {attrs: [['id']]},
                 indexes: [{name: 'address', attrs: [['settings', 'address', 'city'], ['settings', 'address', 'country']]}],
+                doc: 'list\nall users',
                 extra: {statement: 1}
             }, {
                 name: 'posts',
@@ -58,7 +65,7 @@ rel posts(created_by) -> users(id)
                 indexes: [{attrs: [['title']]}],
                 checks: [{attrs: [['author']], predicate: 'author > 0'}],
                 doc: 'all posts',
-                extra: {statement: 2}
+                extra: {statement: 2, comment: 'an other entity'}
             }],
             relations: [
                 {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {statement: 2}},
@@ -94,8 +101,5 @@ rel posts(created_by) -> users(id)
             message: "Expecting token of type --> NewLine <-- but found --> 'bad' <--",
             position: {offset: [2, 4], line: [1, 1], column: [3, 5]}
         }]})
-    })
-    describe('entities', () => {
-        // TODO
     })
 })

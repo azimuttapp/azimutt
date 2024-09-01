@@ -8,6 +8,7 @@ import {
     Database,
     Entity,
     EntityRef,
+    Extra,
     Index,
     Namespace,
     ParserResult,
@@ -99,7 +100,7 @@ function buildEntity(statement: number, e: parser.EntityAst, namespace: Namespac
             checks: checks,
             doc: e.note?.note,
             stats: undefined,
-            extra: {statement},
+            extra: removeUndefined({statement, comment: e.comment?.comment})
         }),
         relations: attrs.flatMap(a => a.relations)
     }
@@ -113,9 +114,7 @@ function flattenAttributes(attributes: parser.AttributeAstNested[]): parser.Attr
 }
 
 function genEntity(e: Entity, relations: Relation[]): string {
-    const note = e.doc ? ' | ' + e.doc : ''
-    const comment = e.extra && 'comment' in e.extra ? ' # ' + e.extra.comment : ''
-    return `${e.name}${note}${comment}\n` + e.attrs.map(a => genAttribute(a, e, relations.filter(r => r.attrs[0].src[0] === a.name))).join('')
+    return `${e.name}${genNote(e.doc)}${genCommentExtra(e)}\n` + e.attrs.map(a => genAttribute(a, e, relations.filter(r => r.attrs[0].src[0] === a.name))).join('')
 }
 
 function buildIndexes(indexes: {path: AttributePath, index: parser.AttributeConstraintAst | undefined}[]): {value: string | undefined, attrs: AttributePath[]}[] {
@@ -146,15 +145,14 @@ function buildAttribute(statement: number, a: parser.AttributeAstNested, entity:
 
 function genAttribute(a: Attribute, e: Entity, relations: Relation[], parents: AttributePath = []): string {
     const path = [...parents, a.name]
+    const indent = '  '.repeat(path.length)
     const type = a.type && a.type !== defaultType ? ' ' + a.type : ''
     const pk = e.pk && e.pk.attrs.some(attr => attributePathSame(attr, path)) ? ' pk' : ''
     const indexes = (e.indexes || []).filter(i => i.attrs.some(attr => attributePathSame(attr, path))).map(i => ` ${i.unique ? 'unique' : 'index'}${i.name ? `=${i.name}` : ''}`).join('')
     const checks = (e.checks || []).filter(i => i.attrs.some(attr => attributePathSame(attr, path))).map(i => ` check${i.predicate ? `="${i.predicate}"` : ''}`).join('')
     const rel = relations.map(r => ' ' + genRelationTarget(r)).join('')
-    const note = a.doc ? ' | ' + a.doc : ''
-    const comment = a.extra && 'comment' in a.extra ? ' # ' + a.extra.comment : ''
     const nested = a.attrs?.map(aa => genAttribute(aa, e, relations, path)).join('') || ''
-    return `${'  '.repeat(path.length)}${a.name}${type}${pk}${indexes}${checks}${rel}${note}${comment}\n` + nested
+    return `${indent}${a.name}${type}${pk}${indexes}${checks}${rel}${genNote(a.doc, indent)}${genCommentExtra(a)}\n` + nested
 }
 
 function buildRelationStatement(statement: number, r: parser.RelationAst): Relation {
@@ -236,4 +234,18 @@ function buildAttrValue(a: parser.AttributeValueAst): AttributeValue {
     } else {
         return a.expression
     }
+}
+
+function genNote(doc: string | undefined, indent: string = ''): string {
+    if (!doc) return ''
+    if (doc.indexOf('\n') === -1) return ' | ' + doc
+    return ' |||\n' + doc.split('\n').map(l => indent + '  ' + l + '\n').join('') + indent + '|||'
+}
+
+function genCommentExtra(v: {extra?: Extra | undefined}): string {
+    return v.extra && 'comment' in v.extra ? genComment(v.extra.comment) : ''
+}
+
+function genComment(comment: string | undefined): string {
+    return comment ? ' # ' + comment : ''
 }
