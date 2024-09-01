@@ -8,15 +8,15 @@ describe('docs', () => {
     const amlDocs = './docs'
     const amlPaths: string[] = fs.readdirSync(amlDocs, {recursive: true})
         .map(path => pathJoin(amlDocs, path as string))
-        .concat(['./README.md', '../../docs/aml/README.md'])
+        .concat(['./README.md', '../../docs/aml/README.md', '../../demos/ecommerce/source_00_design.md', '../../demos/ecommerce/source_10_additional_relations.md'])
         .filter(path => path.endsWith('.md'))
     const amlFiles: {[path: string]: string} = Object.fromEntries(amlPaths.map(path => [path, fs.readFileSync(path, 'utf8')]))
 
-    test.skip('parse AML snippets', () => {
+    test.skip('parse AML snippets', () => { // TODO: unskip!
         const amlRegex = /```aml\n[^]*?\n```/gm
         const filesWithErrors = Object.entries(amlFiles).map(([path, content]) => {
-            const snippets = (content.match(amlRegex) || [])
-                .map((snippet: string) => snippet.replace(/^```aml\n/, '').replace(/```$/, ''))
+            // for `../demos/` files, get the whole file, not just some snippets inside
+            const snippets = (path.indexOf('../demos/') !== -1 ? [content] : (content.match(amlRegex) || []).map((s: string) => s.replace(/^```aml\n/, '').replace(/```$/, '')))
                 .map((aml, index) => ({index, aml, errors: parseAml(aml).errors || []}))
                 .filter(res => res.errors.length > 0)
             return {path, snippets}

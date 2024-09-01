@@ -80,7 +80,7 @@ rel posts(created_by) -> users(id)
         expect(db).toEqual(parsed)
         expect(generateAml(parsed)).toEqual(input.trim() + '\n')
     })
-    test.skip('complex schema',  () => {
+    test.skip('complex schema',  () => { // TODO: unskip
         const input = fs.readFileSync('./resources/complex.aml', 'utf8')
         const result = fs.readFileSync('./resources/complex.json', 'utf8')
         const parsed: Database = JSON.parse(result)
