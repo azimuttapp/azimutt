@@ -1,10 +1,10 @@
 import {describe, expect, test} from "@jest/globals";
 import {removeFieldsDeep} from "@azimutt/utils";
-import {nestAttributes, parse, parseRule} from "./parser";
+import {nestAttributes, parseAml, parseRule} from "./parser";
 
 describe('aml parser', () => {
     test('empty', () => {
-        expect(parse('')).toEqual({result: []})
+        expect(parseAml('')).toEqual({result: []})
     })
     test('simple entity', () => {
         const input = `
@@ -24,7 +24,7 @@ users
                 type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [27, 33], line: [4, 4], column: [8, 14]}},
             }]
         }]
-        expect(parse(input)).toEqual({result: ast})
+        expect(parseAml(input)).toEqual({result: ast})
     })
     test('multiple entities', () => {
         const input = `
@@ -38,7 +38,7 @@ comments
             {statement: 'Entity', name: {identifier: 'posts', parser: {token: 'Identifier', offset: [7, 11], line: [3, 3], column: [1, 5]}}},
             {statement: 'Entity', name: {identifier: 'comments', parser: {token: 'Identifier', offset: [13, 20], line: [4, 4], column: [1, 8]}}},
         ]
-        expect(parse(input)).toEqual({result: ast})
+        expect(parseAml(input)).toEqual({result: ast})
     })
     describe('namespaceRule', () => {
         test('schema', () => {

@@ -1,8 +1,8 @@
 import {Database, ParserResult, Serde} from "@azimutt/models";
-import {generate, parse} from "./aml";
+import {generateAml, parseAml} from "./aml";
 
 export const aml: Serde = {
     name: 'AML',
-    parse: (content: string): ParserResult<Database> => parse(content),
-    generate: (db: Database): string => generate(db)
+    parse: (content: string): ParserResult<Database> => parseAml(content),
+    generate: (db: Database): string => generateAml(db)
 }

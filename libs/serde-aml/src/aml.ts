@@ -18,12 +18,12 @@ import {
 import * as parser from "./parser";
 import {version} from "./version";
 
-export function parse(content: string): ParserResult<Database> {
+export function parseAml(content: string): ParserResult<Database> {
     const start = Date.now()
-    return parser.parse(content).map(ast => buildDatabase(ast, start, Date.now()))
+    return parser.parseAml(content).map(ast => buildDatabase(ast, start, Date.now()))
 }
 
-export function generate(database: Database): string {
+export function generateAml(database: Database): string {
     return genDatabase(database)
 }
 

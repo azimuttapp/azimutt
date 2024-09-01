@@ -555,7 +555,7 @@ export function parseRule<T>(parse: (p: AmlParser) => T, input: string): ParserR
     return ParserResult.success(res)
 }
 
-export function parse(input: string): ParserResult<AmlAst> {
+export function parseAml(input: string): ParserResult<AmlAst> {
     return parseRule(p => p.amlRule(), input)
 }
 
