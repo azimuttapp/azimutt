@@ -164,8 +164,9 @@ They can be defined inline in the entity attribute definition when not re-used, 
 ```aml
 type name # just a named type for better semantics
 type id_type uuid # here is a type alias
-type bug_status enum(draft, in progress, done) # enums are quite useful and explicit
+type bug_status (draft, "in progress", done) # enums are quite useful and explicit
 type position {x: int, y: int} # even structs can be defined
+type float8_range `RANGE (subtype = float8, subtype_diff = float8mi)` # custom types allows any complex definition
 ```
 
 

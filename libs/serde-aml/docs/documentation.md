@@ -19,7 +19,7 @@ It can be used on: [entities](./entity.md), [attributes](./entity.md#attribute),
 Here are examples:
 
 ```aml
-type post_status enum(draft, published, archived) | post lifecycle
+type post_status (draft, published, archived) | post lifecycle
 
 public.users | storing all users
   id uuid pk
@@ -44,7 +44,7 @@ If you want longer documentation, you can use multiline documentation with `|||`
 Here is the same example as above:
 
 ```aml
-type post_status enum(draft, published, archived) |||
+type post_status (draft, published, archived) |||
   post lifecycle
 |||
 

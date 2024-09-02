@@ -12,7 +12,7 @@ describe('docs', () => {
         .filter(path => path.endsWith('.md'))
     const amlFiles: {[path: string]: string} = Object.fromEntries(amlPaths.map(path => [path, fs.readFileSync(path, 'utf8')]))
 
-    test.skip('parse AML snippets', () => { // TODO: unskip!
+    test.skip('parse AML snippets', () => { // TODO: unskip when the 13 errors are fixed!
         const amlRegex = /```aml\n[^]*?\n```/gm
         const filesWithErrors = Object.entries(amlFiles).map(([path, content]) => {
             // for `../demos/` files, get the whole file, not just some snippets inside

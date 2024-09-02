@@ -179,6 +179,8 @@ comments
                     type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [9, 15], line: [1, 1], column: [10, 16]}},
                     defaultValue: {null: true, parser: {token: 'Null', offset: [17, 20], line: [1, 1], column: [18, 21]}},
                 }})
+                // TODO: handle `[]` default value? Ex: '  tags varchar[]=[]\n' instead of '  tags varchar[]="[]"\n'
+                // TODO: handle `{}` default value? Ex: '  details json={}\n' instead of '  details json="{}"\n'
             })
             test('nullable', () => {
                 expect(parseRule(p => p.attributeRule(), '  id nullable\n')).toEqual({result: {
@@ -204,6 +206,12 @@ comments
                     name: {identifier: 'id', parser: {token: 'Identifier', offset: [2, 3], line: [1, 1], column: [3, 4]}},
                     type: {identifier: 'int', parser: {token: 'Identifier', offset: [5, 7], line: [1, 1], column: [6, 8]}},
                     primaryKey: {parser: {token: 'PrimaryKey', offset: [9, 10], line: [1, 1], column: [10, 11]}},
+                }})
+                expect(parseRule(p => p.attributeRule(), '  id int pk=pk_name\n')).toEqual({result: {
+                    nesting: 0,
+                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [2, 3], line: [1, 1], column: [3, 4]}},
+                    type: {identifier: 'int', parser: {token: 'Identifier', offset: [5, 7], line: [1, 1], column: [6, 8]}},
+                    primaryKey: {parser: {token: 'PrimaryKey', offset: [9, 10], line: [1, 1], column: [10, 11]}, value: {identifier: 'pk_name', parser: {token: 'Identifier', offset: [12, 18], line: [1, 1], column: [13, 19]}}},
                 }})
             })
             test('index', () => {
@@ -236,10 +244,10 @@ comments
                     name: {identifier: 'id', parser: {token: 'Identifier', offset: [2, 3], line: [1, 1], column: [3, 4]}},
                     check: {parser: {token: 'Check', offset: [5, 9], line: [1, 1], column: [6, 10]}},
                 }})
-                expect(parseRule(p => p.attributeRule(), '  id check="id > 0"\n')).toEqual({result: {
+                expect(parseRule(p => p.attributeRule(), '  id check=`id > 0`\n')).toEqual({result: {
                     nesting: 0,
                     name: {identifier: 'id', parser: {token: 'Identifier', offset: [2, 3], line: [1, 1], column: [3, 4]}},
-                    check: {parser: {token: 'Check', offset: [5, 9], line: [1, 1], column: [6, 10]}, value: {identifier: 'id > 0', parser: {token: 'Identifier', offset: [11, 18], line: [1, 1], column: [12, 19]}}},
+                    check: {parser: {token: 'Check', offset: [5, 9], line: [1, 1], column: [6, 10]}, value: {expression: 'id > 0', parser: {token: 'Expression', offset: [11, 18], line: [1, 1], column: [12, 19]}}},
                 }})
             })
             test('relation', () => {
@@ -274,7 +282,7 @@ comments
                 }})
             })
             test('all', () => {
-                expect(parseRule(p => p.attributeRule(), '    id int=0 nullable pk index=idx unique check="id > 0" -kind=users> users(id) { tag : pii , owner:PANDA} | some note # comment\n')).toEqual({result: {
+                expect(parseRule(p => p.attributeRule(), '    id int=0 nullable pk index=idx unique check=`id > 0` -kind=users> users(id) { tag : pii , owner:PANDA} | some note # comment\n')).toEqual({result: {
                     nesting: 1,
                     name: {identifier: 'id', parser: {token: 'Identifier', offset: [4, 5], line: [1, 1], column: [5, 6]}},
                     type: {identifier: 'int', parser: {token: 'Identifier', offset: [7, 9], line: [1, 1], column: [8, 10]}},
@@ -283,7 +291,7 @@ comments
                     primaryKey: {parser: {token: 'PrimaryKey', offset: [22, 23], line: [1, 1], column: [23, 24]}},
                     index: {parser: {token: 'Index', offset: [25, 29], line: [1, 1], column: [26, 30]}, value: {identifier: 'idx', parser: {token: 'Identifier', offset: [31, 33], line: [1, 1], column: [32, 34]}}},
                     unique: {parser: {token: 'Unique', offset: [35, 40], line: [1, 1], column: [36, 41]}},
-                    check: {parser: {token: 'Check', offset: [42, 46], line: [1, 1], column: [43, 47]}, value: {identifier: 'id > 0', parser: {token: 'Identifier', offset: [48, 55], line: [1, 1], column: [49, 56]}}},
+                    check: {parser: {token: 'Check', offset: [42, 46], line: [1, 1], column: [43, 47]}, value: {expression: 'id > 0', parser: {token: 'Expression', offset: [48, 55], line: [1, 1], column: [49, 56]}}},
                     relation: {kind: 'n-1',
                         ref: {entity: {identifier: 'users', parser: {token: 'Identifier', offset: [70, 74], line: [1, 1], column: [71, 75]}}, attrs: [{identifier: 'id', parser: {token: 'Identifier', offset: [76, 77], line: [1, 1], column: [77, 78]}}]},
                         polymorphic: {attr: {identifier: 'kind', parser: {token: 'Identifier', offset: [58, 61], line: [1, 1], column: [59, 62]}}, value: {identifier: 'users', parser: {token: 'Identifier', offset: [63, 67], line: [1, 1], column: [64, 68]}}}
@@ -406,16 +414,86 @@ comments
             expect(parseRule(p => p.relationRule(), 'bad')).toEqual({errors: [{name: 'NoViableAltException', message: "Expecting: one of these possible Token sequences:\n  1. [Relation]\n  2. [ForeignKey]\nbut found: 'bad'", position: {offset: [0, 2], line: [1, 1], column: [1, 3]}}]})
         })
     })
-    describe.skip('typeRule', () => {
+    describe('typeRule', () => {
+        test('empty', () => {
+            expect(parseRule(p => p.typeRule(), 'type bug_status\n')).toEqual({result: {
+                statement: 'Type',
+                name: {identifier: 'bug_status', parser: {token: 'Identifier', offset: [5, 14], line: [1, 1], column: [6, 15]}},
+            }})
+        })
+        test('alias', () => {
+            expect(parseRule(p => p.typeRule(), 'type bug_status varchar\n')).toEqual({result: {
+                statement: 'Type',
+                name: {identifier: 'bug_status', parser: {token: 'Identifier', offset: [5, 14], line: [1, 1], column: [6, 15]}},
+                content: {kind: 'alias', name: {identifier: 'varchar', parser: {token: 'Identifier', offset: [16, 22], line: [1, 1], column: [17, 23]}}},
+            }})
+        })
         test('enum', () => {
-            expect(parseRule(p => p.typeRule(), 'type bug_status enum(new, in progress, done)')).toEqual({result: {}})
+            expect(parseRule(p => p.typeRule(), 'type bug_status (new, "in progress", done)\n')).toEqual({result: {
+                statement: 'Type',
+                name: {identifier: 'bug_status', parser: {token: 'Identifier', offset: [5, 14], line: [1, 1], column: [6, 15]}},
+                content: {kind: 'enum', values: [
+                    {identifier: 'new', parser: {token: 'Identifier', offset: [17, 19], line: [1, 1], column: [18, 20]}},
+                    {identifier: 'in progress', parser: {token: 'Identifier', offset: [22, 34], line: [1, 1], column: [23, 35]}},
+                    {identifier: 'done', parser: {token: 'Identifier', offset: [37, 40], line: [1, 1], column: [38, 41]}},
+                ]}
+            }})
         })
         test('struct', () => {
-            expect(parseRule(p => p.typeRule(), 'type address {number: int, street: varchar}')).toEqual({result: {}})
+            expect(parseRule(p => p.typeRule(), 'type bug_status {internal varchar, public varchar}\n')).toEqual({result: {
+                statement: 'Type',
+                name: {identifier: 'bug_status', parser: {token: 'Identifier', offset: [5, 14], line: [1, 1], column: [6, 15]}},
+                content: {kind: 'struct', attrs: [{
+                    path: [{identifier: 'internal', parser: {token: 'Identifier', offset: [17, 24], line: [1, 1], column: [18, 25]}}],
+                    type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [26, 32], line: [1, 1], column: [27, 33]}},
+                }, {
+                    path: [{identifier: 'public', parser: {token: 'Identifier', offset: [35, 40], line: [1, 1], column: [36, 41]}}],
+                    type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [42, 48], line: [1, 1], column: [43, 49]}},
+                }]}
+            }})
+            // FIXME: would be nice to have this alternative but the $.MANY fails, see `typeRule`
+            /*expect(parseRule(p => p.typeRule(), 'type bug_status\n  internal varchar\n  public varchar\n')).toEqual({result: {
+                statement: 'Type',
+                name: {identifier: 'bug_status', parser: {token: 'Identifier', offset: [5, 14], line: [1, 1], column: [6, 15]}},
+                content: {kind: 'struct', attrs: [{
+                    path: [{identifier: 'internal', parser: {token: 'Identifier', offset: [18, 25], line: [2, 2], column: [3, 10]}}],
+                    type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [27, 33], line: [2, 2], column: [12, 18]}},
+                }, {
+                    path: [{identifier: 'public', parser: {token: 'Identifier', offset: [37, 42], line: [3, 3], column: [3, 8]}}],
+                    type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [44, 50], line: [3, 3], column: [10, 16]}},
+                }]}
+            }})*/
         })
         test('custom', () => {
-            expect(parseRule(p => p.typeRule(), 'type bug_value range(subtype = float8, subtype_diff = float8mi)')).toEqual({result: {}})
+            expect(parseRule(p => p.typeRule(), 'type bug_status `range(subtype = float8, subtype_diff = float8mi)`\n')).toEqual({result: {
+                statement: 'Type',
+                name: {identifier: 'bug_status', parser: {token: 'Identifier', offset: [5, 14], line: [1, 1], column: [6, 15]}},
+                content: {kind: 'custom', definition: {expression: 'range(subtype = float8, subtype_diff = float8mi)', parser: {token: 'Expression', offset: [16, 65], line: [1, 1], column: [17, 66]}}}
+            }})
         })
+        test('namespace', () => {
+            expect(parseRule(p => p.typeRule(), 'type reporting.public.bug_status varchar\n')).toEqual({result: {
+                statement: 'Type',
+                catalog: {identifier: 'reporting', parser: {token: 'Identifier', offset: [5, 13], line: [1, 1], column: [6, 14]}},
+                schema: {identifier: 'public', parser: {token: 'Identifier', offset: [15, 20], line: [1, 1], column: [16, 21]}},
+                name: {identifier: 'bug_status', parser: {token: 'Identifier', offset: [22, 31], line: [1, 1], column: [23, 32]}},
+                content: {kind: 'alias', name: {identifier: 'varchar', parser: {token: 'Identifier', offset: [33, 39], line: [1, 1], column: [34, 40]}}},
+            }})
+        })
+        test('metadata', () => {
+            expect(parseRule(p => p.typeRule(), 'type bug_status varchar {tags: seo} | a note # a comment\n')).toEqual({result: {
+                statement: 'Type',
+                name: {identifier: 'bug_status', parser: {token: 'Identifier', offset: [5, 14], line: [1, 1], column: [6, 15]}},
+                content: {kind: 'alias', name: {identifier: 'varchar', parser: {token: 'Identifier', offset: [16, 22], line: [1, 1], column: [17, 23]}}},
+                properties: [{
+                    key: {identifier: 'tags', parser: {token: 'Identifier', offset: [25, 28], line: [1, 1], column: [26, 29]}},
+                    value: {identifier: 'seo', parser: {token: 'Identifier', offset: [31, 33], line: [1, 1], column: [32, 34]}}
+                }],
+                note: {note: 'a note', parser: {token: 'Note', offset: [36, 44], line: [1, 1], column: [37, 45]}},
+                comment: {comment: 'a comment', parser: {token: 'Comment', offset: [45, 55], line: [1, 1], column: [46, 56]}},
+            }})
+        })
+        // TODO: test bad
     })
     describe('emptyStatementRule', () => {
         test('basic', () => expect(parseRule(p => p.emptyStatementRule(), '\n')).toEqual({result: {statement: 'Empty'}}))

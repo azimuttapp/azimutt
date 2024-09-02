@@ -108,8 +108,8 @@ users
   name varchar(50)=John
   age int=0
   rating decimal(5, 2)=0.0
-  details json={}
-  tags varchar[]=[]
+  details json="{}"
+  tags varchar[]="[]"
   admin boolean=false
   created_at "timestamp with time zone"=`now()`
 ```
@@ -126,7 +126,7 @@ Known types are automatically inferred:
 [Types](./type.md) can be defined in standalone and used for an attribute:
 
 ```aml
-type post_status enum(draft, publiched, archived)
+type post_status (draft, publiched, archived)
 
 posts
   id uuid

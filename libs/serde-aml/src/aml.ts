@@ -84,10 +84,10 @@ function buildEntity(statement: number, e: parser.EntityAst, namespace: Namespac
     const entityNamespace = {...namespace, ...astNamespace}
     const attrs = e.attrs.map(a => buildAttribute(statement, a, {...entityNamespace, entity: e.name.identifier}))
     const flatAttrs = flattenAttributes(e.attrs)
-    const pkAttrs = flatAttrs.filter(a => a.primaryKey).map(a => a.path.map(p => p.identifier))
-    const indexes: Index[] = buildIndexes(flatAttrs.map(a => ({path: a.path.map(p => p.identifier), index: a.index}))).map(i => removeUndefined({name: i.value, attrs: i.attrs}))
-    const uniques: Index[] = buildIndexes(flatAttrs.map(a => ({path: a.path.map(p => p.identifier), index: a.unique}))).map(i => removeUndefined({name: i.value, attrs: i.attrs, unique: true}))
-    const checks: Check[] = buildIndexes(flatAttrs.map(a => ({path: a.path.map(p => p.identifier), index: a.check}))).map(i => removeUndefined({predicate: i.value || '', attrs: i.attrs}))
+    const pkAttrs = flatAttrs.filter(a => a.primaryKey)
+    const indexes: Index[] = buildIndexes(flatAttrs.map(a => ({path: a.path.map(p => p.identifier), index: a.index ? a.index.value?.identifier || '' : undefined}))).map(i => removeUndefined({name: i.value, attrs: i.attrs}))
+    const uniques: Index[] = buildIndexes(flatAttrs.map(a => ({path: a.path.map(p => p.identifier), index: a.unique ? a.unique.value?.identifier || '' : undefined}))).map(i => removeUndefined({name: i.value, attrs: i.attrs, unique: true}))
+    const checks: Check[] = buildIndexes(flatAttrs.map(a => ({path: a.path.map(p => p.identifier), index: a.check ? a.check.value?.expression || '' : undefined}))).map(i => removeUndefined({predicate: i.value || '', attrs: i.attrs}))
     return {
         entity: removeEmpty({
             ...entityNamespace,
@@ -95,7 +95,10 @@ function buildEntity(statement: number, e: parser.EntityAst, namespace: Namespac
             kind: undefined, // TODO: use props?
             def: undefined,
             attrs: attrs.map(a => a.attribute),
-            pk: pkAttrs.length > 0 ? {attrs: pkAttrs} : undefined,
+            pk: pkAttrs.length > 0 ? removeUndefined({
+                name: pkAttrs.map(a => a.primaryKey?.value?.identifier).find(isNotUndefined),
+                attrs: pkAttrs.map(a => a.path.map(p => p.identifier)),
+            }) : undefined,
             indexes: uniques.concat(indexes),
             checks: checks,
             doc: e.note?.note,
@@ -117,8 +120,8 @@ function genEntity(e: Entity, relations: Relation[]): string {
     return `${e.name}${genNote(e.doc)}${genCommentExtra(e)}\n` + e.attrs.map(a => genAttribute(a, e, relations.filter(r => r.attrs[0].src[0] === a.name))).join('')
 }
 
-function buildIndexes(indexes: {path: AttributePath, index: parser.AttributeConstraintAst | undefined}[]): {value: string | undefined, attrs: AttributePath[]}[] {
-    const indexesByName: Record<string, {path: AttributePath, name: string}[]> = groupBy(indexes.map(i => i.index ? {path: i.path, name: i.index.value?.identifier || ''} : undefined).filter(isNotUndefined), i => i.name)
+function buildIndexes(indexes: {path: AttributePath, index: string | undefined}[]): {value: string | undefined, attrs: AttributePath[]}[] {
+    const indexesByName: Record<string, {path: AttributePath, name: string}[]> = groupBy(indexes.map(i => i.index !== undefined ? {path: i.path, name: i.index} : undefined).filter(isNotUndefined), i => i.name)
     const singleIndexes: {value: string | undefined, attrs: AttributePath[]}[] = (indexesByName[''] || []).map(i => ({value: undefined, attrs: [i.path]}))
     const compositeIndexes: {value: string | undefined, attrs: AttributePath[]}[] = Object.entries(indexesByName).filter(([k, _]) => k !== '').map(([value, values]) => ({value, attrs: values.map(v => v.path)}))
     return compositeIndexes.concat(singleIndexes)
@@ -148,7 +151,7 @@ function genAttribute(a: Attribute, e: Entity, relations: Relation[], parents: A
     const indent = '  '.repeat(path.length)
     const pk = e.pk && e.pk.attrs.some(attr => attributePathSame(attr, path)) ? ' pk' : ''
     const indexes = (e.indexes || []).filter(i => i.attrs.some(attr => attributePathSame(attr, path))).map(i => ` ${i.unique ? 'unique' : 'index'}${i.name ? `=${i.name}` : ''}`).join('')
-    const checks = (e.checks || []).filter(i => i.attrs.some(attr => attributePathSame(attr, path))).map(i => ` check${i.predicate ? `="${i.predicate}"` : ''}`).join('')
+    const checks = (e.checks || []).filter(i => i.attrs.some(attr => attributePathSame(attr, path))).map(i => ` check${i.predicate ? `=\`${i.predicate}\`` : ''}`).join('')
     const rel = relations.map(r => ' ' + genRelationTarget(r)).join('')
     const nested = a.attrs?.map(aa => genAttribute(aa, e, relations, path)).join('') || ''
     return `${indent}${a.name}${genAttributeType(a)}${pk}${indexes}${checks}${rel}${genNote(a.doc, indent)}${genCommentExtra(a)}\n` + nested

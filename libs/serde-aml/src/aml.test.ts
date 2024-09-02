@@ -29,7 +29,7 @@ users |||
 posts | all posts # an other entity
   id int pk
   title "varchar(100)" index | Title of the post
-  author int check="author > 0" -> users(id)
+  author int check=\`author > 0\` -> users(id)
   created_by int
 
 rel posts(created_by) -> users(id)

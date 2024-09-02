@@ -10,11 +10,11 @@ Custom types can be helpful for better semantics, consistency, constraints or ev
 Defining and using a type in AML is straightforward:
 
 ```aml
-type post_status
+type bug_status
 
-posts
+bugs
   id uuid pk
-  status post_status
+  status bug_status
 ```
 
 This type has a name but nothing else, so except semantics, the status attribute doesn't have a concrete type defined.
@@ -22,9 +22,9 @@ This type has a name but nothing else, so except semantics, the status attribute
 For such usage, they don't need to be defined standalone as attribute types can handle anything, so this is also perfectly fine:
 
 ```aml
-posts
+bugs
   id uuid pk
-  status post_status
+  status bug_status
 ```
 
 
@@ -33,7 +33,7 @@ posts
 To add some semantics and have a concrete type, a type can map to another one, like a type alias:
 
 ```aml
-type post_status varchar
+type bug_status varchar
 ```
 
 
@@ -50,7 +50,7 @@ bugs
 Or standalone:
 
 ```aml
-type bug_status enum(new, in progress, done)
+type bug_status (new, in progress, done)
 ```
 
 
@@ -59,7 +59,16 @@ type bug_status enum(new, in progress, done)
 Types can also hold a struct, this can be seen a bit similar to nested attributes, but it's a different and reusable perspective. 
 
 ```aml
-type address {no: int, street: varchar, city: varchar, country: varchar}
+type bug_status {internal varchar, public varchar}
+```
+
+
+### Custom
+
+Types can also hold custom definitions like:
+
+```aml
+type bug_status `range(subtype = float8, subtype_diff = float8mi)`
 ```
 
 
@@ -68,7 +77,7 @@ type address {no: int, street: varchar, city: varchar, country: varchar}
 Like [entities](./entity.md), types are defined within a [namespace](./namespace.md) and inherit the defined default namespace:
 
 ```aml
-type core.public.post_status varchar
+type reporting.public.bug_status varchar
 ```
 
 
@@ -77,7 +86,7 @@ type core.public.post_status varchar
 Types can also have [custom properties](./properties.md) and [documentation](./documentation.md):
 
 ```aml
-type post_status varchar {private, tags: [seo]} | defining a post status
+type bug_status varchar {private, tags: [seo]} | defining a post status
 ```
 
 But this works only for standalone definition, when inline, properties and documentation will be assigned to the attribute ^^
