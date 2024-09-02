@@ -54,7 +54,7 @@ book_details
       value float8
 
 # basic relation, with properties
-rel user_roles(user_id) >- users(id) {delete: cascade, update: no action}
+rel user_roles(user_id) >- users(id) {delete: cascade, update: "no action"}
 
 # composite relation
 rel user_roles_ext(user_id, role_id) >- user_roles(user_id, role_id)
@@ -86,7 +86,7 @@ bugs |||
     😔 4 = refunded
   |||
 
-type bug_status enum(new, in progress, done) {...props} | note # comment
+type bug_status(new, "in progress", done) {internal, color: red} | note # comment
 ```
 
 Relationships:

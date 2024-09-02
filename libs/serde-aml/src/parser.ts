@@ -56,7 +56,7 @@ export type TokenInfo = {token: string, offset: ParserPosition, line: ParserPosi
 
 export type AmlAst = StatementAst[]
 export type StatementAst = NamespaceAst | EntityAst | RelationAst | TypeAst | EmptyStatementAst
-export type NamespaceAst = { statement: 'Namespace', schema: IdentifierAst, catalog?: IdentifierAst, database?: IdentifierAst }
+export type NamespaceAst = { statement: 'Namespace', schema: IdentifierAst, catalog?: IdentifierAst, database?: IdentifierAst } & ExtraAst
 export type EntityAst = { statement: 'Entity', name: IdentifierAst, alias?: IdentifierAst, attrs: AttributeAstNested[] } & NamespaceRefAst & ExtraAst
 export type RelationAst = { statement: 'Relation', kind: RelationKindAst, src: AttributeRefCompositeAst, ref: AttributeRefCompositeAst, polymorphic?: RelationPolymorphicAst } & ExtraAst
 export type TypeAst = { statement: 'Type', name: IdentifierAst, content?: TypeContentAst } & NamespaceRefAst & ExtraAst
@@ -327,12 +327,15 @@ class AmlParser extends EmbeddedActionsParser {
         this.namespaceRule = $.RULE<() => NamespaceAst>('namespaceRule', () => {
             $.CONSUME(Namespace)
             $.CONSUME(WhiteSpace)
+            // TODO: retro-compatibility: allow more chars inside identifiers (ex: 'C##INVENTORY')
             const first = $.SUBRULE($.identifierRule)
             const second = $.OPTION(() => $.SUBRULE(nestedRule))
             const third = $.OPTION2(() => $.SUBRULE2(nestedRule))
+            $.OPTION3(() => $.CONSUME2(WhiteSpace))
+            const extra = $.SUBRULE($.extraRule)
             $.CONSUME(NewLine)
             const [schema, catalog, database] = [third, second, first].filter(i => !!i)
-            return removeUndefined({statement: 'Namespace' as const, schema: schema || first, catalog, database})
+            return removeUndefined({statement: 'Namespace' as const, schema: schema || first, catalog, database, ...extra})
         })
 
         // entity rules
@@ -346,7 +349,7 @@ class AmlParser extends EmbeddedActionsParser {
                         SEP: Comma,
                         DEF: () => {
                             $.OPTION3(() => $.CONSUME(WhiteSpace))
-                            values.push($.SUBRULE($.attributeValueRule))
+                            values.push($.SUBRULE($.attributeValueRule)) // TODO: retro-compatibility: allow any char between ',' (ex: '(16:9, 1:1)')
                             $.OPTION4(() => $.CONSUME2(WhiteSpace))
                         }
                     })
@@ -355,7 +358,7 @@ class AmlParser extends EmbeddedActionsParser {
                 })
                 const defaultValue = $.OPTION5(() => {
                     $.CONSUME(Equal)
-                    return $.SUBRULE2($.attributeValueRule)
+                    return $.SUBRULE2($.attributeValueRule) // TODO: retro-compatibility: allow expression without backticks (ex: 'timestamp=now()')
                 })
                 return {type, enumValues, defaultValue}
             })
@@ -389,7 +392,7 @@ class AmlParser extends EmbeddedActionsParser {
             const token = $.CONSUME(Check)
             const value = $.OPTION(() => {
                 $.CONSUME(Equal)
-                return $.SUBRULE($.expressionRule)
+                return $.SUBRULE($.expressionRule) // TODO: retro-compatibility: allow expression with double quotes instead of backticks (ex: 'check="age > 0"')
             })
             return removeUndefined({parser: parserInfo(token), value})
         })

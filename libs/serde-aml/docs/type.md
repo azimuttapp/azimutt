@@ -44,13 +44,13 @@ Defining enums can be really helpful to make the schema clearer. They can be def
 ```aml
 bugs
   id uuid pk
-  status bug_status(new, in progress, done)
+  status bug_status(new, "in progress", done)
 ```
 
 Or standalone:
 
 ```aml
-type bug_status (new, in progress, done)
+type bug_status(new, "in progress", done)
 ```
 
 
@@ -59,7 +59,7 @@ type bug_status (new, in progress, done)
 Types can also hold a struct, this can be seen a bit similar to nested attributes, but it's a different and reusable perspective. 
 
 ```aml
-type bug_status {internal varchar, public varchar}
+type bug_status{internal varchar, public varchar}
 ```
 
 

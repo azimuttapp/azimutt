@@ -62,6 +62,14 @@ comments
                 schema: {identifier: 'public', parser: {token: 'Identifier', offset: [25, 30], line: [1, 1], column: [26, 31]}},
             }})
         })
+        test('extra', () => {
+            expect(parseRule(p => p.namespaceRule(), 'namespace public | a note # and a comment\n')).toEqual({result: {
+                statement: 'Namespace',
+                schema: {identifier: 'public', parser: {token: 'Identifier', offset: [10, 15], line: [1, 1], column: [11, 16]}},
+                note: {note: 'a note', parser: {token: 'Note', offset: [17, 25], line: [1, 1], column: [18, 26]}},
+                comment: {comment: 'and a comment', parser: {token: 'Comment', offset: [26, 40], line: [1, 1], column: [27, 41]}},
+            }})
+        })
     })
     describe('entityRule', () => {
         test('basic', () => {

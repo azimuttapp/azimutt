@@ -179,18 +179,19 @@ users
   profile_id uuid -> profiles(id) # define a relation for the profile_id attribute
 ```
 
-Constraints can be named using the `=` symbol, except for relations, here is how:
+Constraints can be named using the `=` symbol, except for check and relations, here is how:
 
 ```aml
 users
   id uuid pk=users_pk
   email varchar unique=users_email_uniq
   name varchar index=users_name_idx
-  age int check=users_age_chk
+  age int check=`age >= 0`
   profile_id uuid -> profiles(id)
 ```
 
-If you want to define a single constraint on several attributes (like uniqueness of `first_name` and `last_name`), you can apply it to the needed attributes with the same name, they will be put together. The primary key doesn't need this as there is only one for an entity:
+If you want to define a single constraint on several attributes (like uniqueness of `first_name` and `last_name`), you can apply it to the needed attributes with the same name, they will be put together.
+The primary key doesn't need this as there is only one for an entity:
 
 ```aml
 users # unique constraint on first_name AND last_name
@@ -203,7 +204,7 @@ user_roles # composite primary key on user_id and role_id
   role_id uuid pk -> roles(id)
 ```
 
-The `check` constraint predicate can be defined as a function using backticks:
+The `check` predicate can be defined using backticks:
 
 ```aml
 users
@@ -215,7 +216,7 @@ users
 
 > This constraint part is the same as AMLv1 and it "works" but may be improved to support the index kind, condition (for partial indexes) and other properties.
 > We didn't find a nice syntax to do it inline, but if you have ideas, feel free to shoot!
-> Also we are considering creating standalone index & constraint definitions, but not trivial to make them obvious and it could come later easily.
+> Also we are considering creating standalone index & constraint definitions, but not trivial to make them obvious, and it could come later easily.
 
 
 #### Nested attribute
