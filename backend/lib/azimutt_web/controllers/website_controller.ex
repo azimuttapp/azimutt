@@ -26,6 +26,8 @@ defmodule AzimuttWeb.WebsiteController do
     end
   end
 
+  def aml(conn, _params), do: conn |> render("aml.html")
+
   def last(conn, _params) do
     case conn |> last_used_project do
       {:ok, p} -> conn |> redirect(to: Routes.elm_path(conn, :project_show, p.organization_id, p.id))

@@ -1,4 +1,4 @@
 import * as parser from "./parser";
+import {generateAml, parseAml} from "./aml";
 
-export {parseAml, generateAml} from "./aml"
-export {parser}
+export default {parseAml, generateAml, parser}

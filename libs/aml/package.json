@@ -1,6 +1,6 @@
 {
   "name": "@azimutt/aml",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Parse and Generate AML: the easiest language to define database schema.",
   "keywords": ["DSL", "language", "database", "parser"],
   "homepage": "https://azimutt.app/aml",

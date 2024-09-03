@@ -23,13 +23,16 @@ import "phoenix_html"
 import Alpine from "../vendor/alpine"
 import Hljs from "../vendor/highlight.min"
 import topbar from "../vendor/topbar"
+import hljsAml from "./hljs.aml"
 
 // Establish Phoenix Socket and LiveView configuration.
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 
-window.hljs = Hljs;
-hljs.highlightAll();
+Hljs.registerLanguage('aml', hljsAml)
+Hljs.configure({cssSelector: 'code.hljs'});
+Hljs.highlightAll();
+
 window.Alpine = Alpine;
 Alpine.start();
 let hooks = {};
