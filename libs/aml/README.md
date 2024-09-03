@@ -1,4 +1,4 @@
-# @azimutt/serde-aml
+# @azimutt/aml
 
 **Work In Progress**
 
@@ -7,6 +7,7 @@ This is a module to validate, parse and generate AML. And also provide syntax hi
 Read the full [AML documentation](./docs/README.md).
 
 AML syntax ideas:
+
 ```aml
 # define a global namespace for the definitions
 # each top level is optional (valid ones: "schema", "catalog.schema", "database.catalog.schema")
@@ -110,10 +111,10 @@ Other concepts:
 
 - update `package.json` version
 - update lib versions (`pnpm -w run update` + manual)
-- test with `pnpm run dry-publish` and check `azimutt-serde-aml-x.y.z.tgz` content
+- test with `pnpm run dry-publish` and check `azimutt-aml-x.y.z.tgz` content
 - launch `pnpm publish --no-git-checks --access public`
 
-View it on [npm](https://www.npmjs.com/package/@azimutt/serde-aml).
+View it on [npm](https://www.npmjs.com/package/@azimutt/aml).
 
 ## Dev
 

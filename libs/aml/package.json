@@ -1,9 +1,9 @@
 {
-  "name": "@azimutt/serde-aml",
+  "name": "@azimutt/aml",
   "version": "0.1.0",
-  "description": "Parse and Generate AML.",
-  "keywords": [],
-  "homepage": "https://azimutt.app",
+  "description": "Parse and Generate AML: the easiest language to define database schema.",
+  "keywords": ["DSL", "language", "database", "parser"],
+  "homepage": "https://azimutt.app/aml",
   "author": {
     "name": "Loïc Knuchel",
     "email": "loicknuchel@gmail.com",
@@ -13,7 +13,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/azimuttapp/azimutt.git",
-    "directory": "libs/serde-aml"
+    "directory": "libs/aml"
   },
   "main": "./out/index.js",
   "types": "./out/index.d.ts",

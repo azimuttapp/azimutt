@@ -52,8 +52,6 @@ const legacyTokens: TokenType[] = [ForeignKey]
 // token order is important as they are tried in order, so the Identifier must be last
 const allTokens: TokenType[] = [WhiteSpace, NewLine, ...charTokens, ...keywordTokens, ...legacyTokens, ...valueTokens, Expression, Identifier, NoteMultiline, Note, Comment]
 
-export type TokenInfo = {token: string, offset: ParserPosition, line: ParserPosition, column: ParserPosition}
-
 export type AmlAst = StatementAst[]
 export type StatementAst = NamespaceAst | EntityAst | RelationAst | TypeAst | EmptyStatementAst
 export type NamespaceAst = { statement: 'Namespace', schema: IdentifierAst, catalog?: IdentifierAst, database?: IdentifierAst } & ExtraAst
@@ -98,6 +96,8 @@ export type NumberAst = { value: number, parser: TokenInfo }
 export type BooleanAst = { flag: boolean, parser: TokenInfo }
 export type IdentifierAst = { identifier: string, parser: TokenInfo }
 export type ExpressionAst = { expression: string, parser: TokenInfo }
+
+export type TokenInfo = {token: string, offset: ParserPosition, line: ParserPosition, column: ParserPosition}
 
 class AmlParser extends EmbeddedActionsParser {
     // common
@@ -592,7 +592,7 @@ export function parseRule<T>(parse: (p: AmlParser) => T, input: string): ParserR
     return ParserResult.success(res)
 }
 
-export function parseAml(input: string): ParserResult<AmlAst> {
+export function parseAmlAst(input: string): ParserResult<AmlAst> {
     return parseRule(p => p.amlRule(), input)
 }
 

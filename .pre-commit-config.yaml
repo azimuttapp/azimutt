@@ -78,12 +78,12 @@ repos:
       pass_filenames: false
       files: libs/connector-sqlserver/.*\.ts*$
 
-    - id: libs-serde-aml
-      name: 'libs/serde-aml'
+    - id: libs-aml
+      name: 'libs/aml'
       language: system
-      entry: bash -c 'cd libs/serde-aml && exec npm run build && exec npm test'
+      entry: bash -c 'cd libs/aml && exec npm run build && exec npm test'
       pass_filenames: false
-      files: libs/serde-aml/.*\.ts*$
+      files: libs/aml/.*\.ts*$
 
     - id: libs-serde-dbml
       name: 'libs/serde-dbml'

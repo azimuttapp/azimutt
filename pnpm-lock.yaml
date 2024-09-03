@@ -822,7 +822,7 @@ importers:
         specifier: ^5.5.4
         version: 5.5.4
 
-  libs/serde-aml:
+  libs/aml:
     dependencies:
       '@azimutt/models':
         specifier: workspace:^

@@ -1,10 +1,10 @@
 import * as fs from "fs";
 import {describe, test} from "@jest/globals";
 import {pathJoin, pathParent, pluralize, pluralizeL, slugifyGitHub} from "@azimutt/utils";
-import {parseAml} from "./parser";
+import {parseAmlAst} from "./parser";
 
 describe('docs', () => {
-    const project = 'libs/serde-aml'
+    const project = 'libs/aml'
     const amlDocs = './docs'
     const amlPaths: string[] = fs.readdirSync(amlDocs, {recursive: true})
         .map(path => pathJoin(amlDocs, path as string))
@@ -17,7 +17,7 @@ describe('docs', () => {
         const filesWithErrors = Object.entries(amlFiles).map(([path, content]) => {
             // for `../demos/` files, get the whole file, not just some snippets inside
             const snippets = (path.indexOf('../demos/') !== -1 ? [content] : (content.match(amlRegex) || []).map((s: string) => s.replace(/^```aml\n/, '').replace(/```$/, '')))
-                .map((aml, index) => ({index, aml, errors: parseAml(aml).errors || []}))
+                .map((aml, index) => ({index, aml, errors: parseAmlAst(aml).errors || []}))
                 .filter(res => res.errors.length > 0)
             return {path, snippets}
         }).filter(file => file.snippets.length > 0)

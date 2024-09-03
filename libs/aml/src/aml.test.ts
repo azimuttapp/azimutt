@@ -4,6 +4,8 @@ import {Database} from "@azimutt/models";
 import {generateAml, parseAml} from "./aml";
 
 describe('aml', () => {
+    // TODO: add comment only lines
+    // TODO: add enums (`role user_role(guest, member, admin)=guest`)
     test('sample schema', () => {
         const input = `
 users |||
