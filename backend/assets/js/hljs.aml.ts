@@ -1,4 +1,6 @@
-export default function(hljs) {
+import {HLJSApi, Language} from "highlight.js";
+
+export default function(hljs: HLJSApi): Language {
     return {
         name: 'AML',
         case_insensitive: true,

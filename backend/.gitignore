@@ -31,5 +31,7 @@ azimutt-*.tar
 # In case you use Node.js/npm, you want to ignore these.
 npm-debug.log
 /node_modules/
+
 /priv/static/swagger*.json
+/assets/js/*.js
 /uploads
