@@ -28,7 +28,8 @@ import {LiveSocket} from "phoenix_live_view"
 import Alpine from "alpinejs"
 import Hljs from "highlight.js"
 import topbar from "topbar"
-import hljsAml from "./hljs.aml"
+import {amlHljs, amlMonacoCompletion, amlMonarch} from "./lang.aml"
+import {CompletionItemProvider, IMonarchLanguage} from "./monaco"
 
 // import {Database, parseAml, ParserResult} from "@azimutt/aml"
 // const res: ParserResult<Database> = parseAml('users\n  id uuid pk\n')
@@ -36,9 +37,11 @@ import hljsAml from "./hljs.aml"
 // Uncaught TypeError: regexp_to_ast_1.RegExpParser is not a constructor
 
 
-Hljs.registerLanguage('aml', hljsAml)
+Hljs.registerLanguage('aml', amlHljs)
 Hljs.configure({cssSelector: 'code.hljs'})
 Hljs.highlightAll()
+window.amlMonarch = amlMonarch
+window.amlMonacoCompletion = amlMonacoCompletion
 
 
 Alpine.start()
@@ -76,5 +79,7 @@ window.liveSocket = liveSocket
 declare global {
     export interface Window {
         liveSocket: LiveSocket
+        amlMonarch: IMonarchLanguage
+        amlMonacoCompletion: CompletionItemProvider
     }
 }

@@ -27,6 +27,9 @@ defmodule AzimuttWeb.WebsiteController do
   end
 
   def aml(conn, _params), do: conn |> render("aml.html")
+  def converters(conn, _params), do: conn |> render("converters.html")
+  def converter(conn, _params), do: conn |> render("converter.html")
+  def convert(conn, _params), do: conn |> render("convert.html")
 
   def last(conn, _params) do
     case conn |> last_used_project do

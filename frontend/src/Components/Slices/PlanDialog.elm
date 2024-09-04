@@ -38,11 +38,11 @@ projectsNoSaveAlert organization =
     in
     Alert.withDescription { color = color, icon = Icon.Exclamation, title = "Can't save project" }
         [ text ("You " ++ organization.plan.name ++ " plan can't save projects (see ")
-        , a [ href Backend.pricingUrl, target "_blank", rel "noopener", class "link" ] [ text "pricing" ]
+        , extLink Backend.pricingUrl [ class "link" ] [ text "pricing" ]
         , text "). "
         , br [] []
         , text "Please "
-        , a [ href (Backend.organizationBillingUrl (Just organization.id) ("feature_" ++ feature.name)), target "_blank", rel "noopener", class "link" ] [ text "upgrade" ]
+        , extLink (Backend.organizationBillingUrl (Just organization.id) ("feature_" ++ feature.name)) [ class "link" ] [ text "upgrade" ]
         , text " to save."
         ]
 
@@ -57,7 +57,7 @@ projectsTooManyAlert organization savedProjects =
         [ text ("You already saved the " ++ (savedProjects |> pluralize "allowed project") ++ " in your plan.")
         , br [] []
         , text "You need "
-        , a [ href (Backend.organizationBillingUrl (Just organization.id) ("feature_" ++ feature.name)), target "_blank", rel "noopener", class "link" ] [ text "to upgrade" ]
+        , extLink (Backend.organizationBillingUrl (Just organization.id) ("feature_" ++ feature.name)) [ class "link" ] [ text "to upgrade" ]
         , text " for more."
         ]
 
@@ -70,7 +70,7 @@ amlDisabledAlert project =
     in
     warning color
         ("Database design not available in " ++ planName project)
-        [ p [] [ text "Azimutt allows database design with a very simple DSL called AML, here is how it looks:" ]
+        [ p [] [ text "Azimutt allows database design with a ", extLink Backend.amlUrl [ class "link" ] [ text "very simple DSL" ], text " called AML, here is how it looks:" ]
         , p [ class ("whitespace-pre font-mono " ++ Tw.bg_200 color ++ " p-2 my-3 rounded shadow") ]
             [ text "users\n  id uuid pk\n  name varchar\n  email varchar unique\n  created_at timestamp index\n\n"
             , text "posts\n  id uuid pk\n  title varchar index\n  status post_status(draft, published)\n  content text nullable\n  created_at timestamp index\n  created_by uuid fk users.id"
@@ -380,7 +380,7 @@ analysisResults project items render =
             ((items |> List.take feature.limit |> List.map render)
                 ++ [ div [ class "absolute inset-x-0 pt-32 bg-gradient-to-t from-white text-center text-sm text-gray-500 pointer-events-none", style "bottom" "-2px" ]
                         [ text "See more with upgraded plan, "
-                        , a [ href (Backend.organizationBillingUrl (project.organization |> Maybe.map .id) ("feature_" ++ feature.name ++ "_results")), target "_blank", rel "noopener", css [ Tw.text_500 color, "underline pointer-events-auto" ] ] [ text "start trial" ]
+                        , extLink (Backend.organizationBillingUrl (project.organization |> Maybe.map .id) ("feature_" ++ feature.name ++ "_results")) [ css [ Tw.text_500 color, "underline pointer-events-auto" ] ] [ text "start trial" ]
                         , text "."
                         ]
                    ]
@@ -415,7 +415,7 @@ isDraft project =
 
 planName : ProjectRef -> String
 planName project =
-    (project.organization |> Maybe.mapOrElse (.plan >> .name) "your") ++ " plan"
+    (project.organization |> Maybe.mapOrElse (.plan >> .name) "free") ++ " plan"
 
 
 subscribeButtonPrimary : ProjectRef -> Color -> { f | name : String } -> Icon -> String -> Html msg

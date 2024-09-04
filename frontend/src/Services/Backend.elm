@@ -1,4 +1,4 @@
-module Services.Backend exposing (Error, Sample, SampleSchema, TableColorTweet, blogArticleUrl, blogUrl, createProjectToken, embedUrl, errorStatus, errorToString, getCurrentUser, getOrganizationsAndProjects, getProjectTokens, getSamples, getTableColorTweet, homeUrl, internal, loginUrl, logoutUrl, organizationBillingUrl, organizationUrl, pricingUrl, resourceUrl, revokeProjectToken)
+module Services.Backend exposing (Error, Sample, SampleSchema, TableColorTweet, amlUrl, blogArticleUrl, blogUrl, createProjectToken, embedUrl, errorStatus, errorToString, getCurrentUser, getOrganizationsAndProjects, getProjectTokens, getSamples, getTableColorTweet, homeUrl, internal, loginUrl, logoutUrl, organizationBillingUrl, organizationUrl, pricingUrl, resourceUrl, revokeProjectToken)
 
 import Components.Atoms.Icon as Icon exposing (Icon)
 import Either exposing (Either(..))
@@ -77,6 +77,11 @@ dashboardUrl =
 pricingUrl : String
 pricingUrl =
     "/pricing"
+
+
+amlUrl : String
+amlUrl =
+    "/aml"
 
 
 organizationUrl : Maybe OrganizationId -> String

@@ -1,3 +1,9 @@
+<%
+  aml_doc = "https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/README.md"
+  aml_npm = "https://www.npmjs.com/package/@azimutt/aml"
+  aml_converter = Routes.website_path(@conn, :converter, "aml")
+  aml_azimutt = Routes.elm_path(@conn, :create)
+%>
 <div class="relative isolate overflow-hidden bg-gradient-to-b from-indigo-100/20 pt-10 pb-24">
     <div class="mx-auto max-w-7xl lg:grid lg:grid-cols-2 lg:gap-x-8 lg:px-8">
         <div class="px-6 lg:px-0 lg:pt-4">
@@ -7,8 +13,8 @@
                     <h1 class="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">The easiest DSL for database schemas</h1>
                     <p class="mt-6 text-lg leading-8 text-gray-600">If you ever designed your database schema on a whiteboard or a text editor, AML is made for you ❤️. It's fast to learn and write, and can be transformed in any other dialect.</p>
                     <div class="mt-10 flex items-center gap-x-6">
-                        <a href="#" class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Documentation</a>
-                        <a href="https://www.npmjs.com/package/@azimutt/npm" target="_blank" rel="noopener" class="text-sm font-semibold leading-6 text-gray-900">Get on npm <span aria-hidden="true">→</span></a>
+                        <a href={aml_doc} target="_blank" rel="noopener" class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Documentation</a>
+                        <a href={aml_npm} target="_blank" rel="noopener" class="text-sm font-semibold leading-6 text-gray-900">Get on npm <span aria-hidden="true">→</span></a>
                     </div>
                 </div>
             </div>
@@ -23,9 +29,9 @@
                             <div x-data="{lang: 'aml'}" class="w-screen overflow-hidden rounded-tl-xl bg-gray-900">
                                 <div class="flex bg-gray-800/40 ring-1 ring-white/5">
                                     <div class="-mb-px flex text-sm font-medium leading-6 text-gray-400">
-                                        <div @click="lang = 'aml'" :class="{'border-gray-600/10': lang != 'aml', 'border-r-white/10 border-b border-b-white/20 bg-white/5 text-white': lang == 'aml'}" class="px-4 py-2 border-r cursor-pointer">blog.md</div>
-                                        <div @click="lang = 'sql'" :class="{'border-gray-600/10': lang != 'sql', 'border-r-white/10 border-b border-b-white/20 bg-white/5 text-white': lang == 'sql'}" class="px-4 py-2 border-r cursor-pointer">blog.sql</div>
-                                        <div @click="lang = 'json'" :class="{'border-gray-600/10': lang != 'json', 'border-r-white/10 border-b border-b-white/20 bg-white/5 text-white': lang == 'json'}" class="px-4 py-2 border-r cursor-pointer">blog.json</div>
+                                        <div @click="lang = 'aml'" :class="{'border-r-white/10 border-b border-b-white/20 bg-white/5 text-white': lang == 'aml'}" class="px-4 py-2 border-r border-gray-600/10 select-none cursor-pointer">blog.md</div>
+                                        <div @click="lang = 'sql'" :class="{'border-r-white/10 border-b border-b-white/20 bg-white/5 text-white': lang == 'sql'}" class="px-4 py-2 border-r border-gray-600/10 select-none cursor-pointer">blog.sql</div>
+                                        <div @click="lang = 'json'" :class="{'border-r-white/10 border-b border-b-white/20 bg-white/5 text-white': lang == 'json'}" class="px-4 py-2 border-r border-gray-600/10 select-none cursor-pointer">blog.json</div>
                                     </div>
                                 </div>
                                 <div class="px-6 pb-14 pt-6">
@@ -43,7 +49,7 @@ posts
   content text | in markdown
   created_at timestamp=`now()`
   created_by uuid -> users(id) # inline relation</code></pre>
-                                    <pre :class="{'hidden': lang != 'sql'}" class="text-[0.8125rem] leading-6 text-gray-300" style="tab-size: 2"><code class="hljs sql">CREATE TABLE users (
+                                    <pre :class="{'hidden': lang != 'sql'}" class="text-[0.8125rem] leading-6 text-gray-300 hidden" style="tab-size: 2"><code class="hljs sql">CREATE TABLE users (
     id UUID PRIMARY KEY,
     name VARCHAR,
     email VARCHAR UNIQUE,
@@ -58,7 +64,7 @@ CREATE TABLE posts (
    created_by UUID REFERENCES users(id) -- inline relation
 );
 COMMENT ON COLUMN posts.content IS 'in markdown';</code></pre>
-                                    <pre :class="{'hidden': lang != 'json'}" class="text-[0.8125rem] leading-6 text-gray-300" style="tab-size: 2"><code class="hljs js">{
+                                    <pre :class="{'hidden': lang != 'json'}" class="text-[0.8125rem] leading-6 text-gray-300 hidden" style="tab-size: 2"><code class="hljs js">{
   entities: [
     {
       name: 'users',
@@ -117,7 +123,7 @@ COMMENT ON COLUMN posts.content IS 'in markdown';</code></pre>
                     <dd class="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
                         <p class="flex-auto">Azimutt offers free converters from/to many formats: AML, SQL, JSON, DBML, Mermaid and more. Use our converters to quickly get what you need.</p>
                         <p class="mt-6">
-                            <a href="#" class="text-sm font-semibold leading-6 text-indigo-600">Use converters (soon) <span aria-hidden="true">→</span></a>
+                            <a href={aml_converter} class="text-sm font-semibold leading-6 text-indigo-600">Use converters (soon) <span aria-hidden="true">→</span></a>
                         </p>
                     </dd>
                 </div>
@@ -129,7 +135,7 @@ COMMENT ON COLUMN posts.content IS 'in markdown';</code></pre>
                     <dd class="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
                         <p class="flex-auto">If you are designing your database schema, this is the best option to write AML fast and see your schema in a visual way (needs paid plan, use free trial 😉).</p>
                         <p class="mt-6">
-                            <a href={Routes.elm_path(@conn, :create)} target="_blank" rel="noopener" class="text-sm font-semibold leading-6 text-indigo-600">Use Azimutt design <span aria-hidden="true">→</span></a>
+                            <a href={aml_azimutt} target="_blank" rel="noopener" class="text-sm font-semibold leading-6 text-indigo-600">Use Azimutt design <span aria-hidden="true">→</span></a>
                         </p>
                     </dd>
                 </div>
@@ -141,7 +147,7 @@ COMMENT ON COLUMN posts.content IS 'in markdown';</code></pre>
                     <dd class="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
                         <p class="flex-auto">Integrate AML in your own projects, include it as a dependency and start parsing/generating it easily. Feel free to contribute if you like 🙏</p>
                         <p class="mt-6">
-                            <a href="https://www.npmjs.com/package/@azimutt/npm" target="_blank" rel="noopener" class="text-sm font-semibold leading-6 text-indigo-600">Get on npm <span aria-hidden="true">→</span></a>
+                            <a href={aml_npm} target="_blank" rel="noopener" class="text-sm font-semibold leading-6 text-indigo-600">Get on npm <span aria-hidden="true">→</span></a>
                         </p>
                     </dd>
                 </div>
@@ -152,7 +158,10 @@ COMMENT ON COLUMN posts.content IS 'in markdown';</code></pre>
 <div class="py-24">
     <div class="mx-auto max-w-2xl text-center">
         <h2 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">Try it live</h2>
-        <p class="mt-6 text-lg leading-8 text-gray-600">Anim aute id magna aliqua ad ad non deserunt sunt. Qui irure qui lorem cupidatat commodo. Elit sunt amet fugiat veniam occaecat fugiat aliqua.</p>
+        <p class="mt-6 text-lg leading-8 text-gray-600">
+            Here is a playground to try it and see how it's converted in JSON.
+            As a reminder, here is the <a href={aml_doc} target="_blank" rel="noopener" class="underline">AML documentation</a>, but try it on your own first 😉
+        </p>
     </div>
     <div class="mt-10 mx-auto flex flex-col md:flex-row space-y-8 md:space-y-0 md:space-x-8 justify-center w-full max-w-7xl">
         <div id="monaco-editor-left" class="w-full md:w-1/2 h-96 border border-gray-300 rounded-lg overflow-hidden"></div>
@@ -160,9 +169,15 @@ COMMENT ON COLUMN posts.content IS 'in markdown';</code></pre>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.51.0/min/vs/loader.min.js"></script>
     <script>
-        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.51.0/min/vs' }});
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.51.0/min/vs' }})
         require(["vs/editor/editor.main"], function() {
-            const initAml = `# sample AML
+            // define AML language for monaco
+            monaco.languages.register({id: 'aml'})
+            monaco.languages.setMonarchTokensProvider('aml', window.amlMonarch)
+            monaco.languages.registerCompletionItemProvider('aml', window.amlMonacoCompletion)
+
+            // create editors
+            var initAml = `# sample AML
 
 users
   id uuid pk
@@ -177,10 +192,8 @@ posts
   created_at timestamp=\`now()\`
   created_by uuid -> users(id) # inline relation
 `
-            const uri = monaco.Uri.parse("inmemory://aml")
-            const model = monaco.editor.createModel(initAml, "aml", uri)
-
-            // TODO: https://microsoft.github.io/monaco-editor/monarch.html
+            var uri = monaco.Uri.parse("inmemory://aml")
+            var model = monaco.editor.createModel(initAml, 'aml', uri)
             var editorLeft = monaco.editor.create(document.getElementById('monaco-editor-left'), {
                 theme: 'vs-light',
                 language: 'plaintext',
@@ -199,12 +212,13 @@ posts
                 scrollBeyondLastLine: false
             })
 
+            // sync right editor with parsing result
             function syncEditors() {
-                var aml = editorLeft.getValue()
-                // TODO: var parsed = parseAml(aml)
+                var leftContent = editorLeft.getValue()
+                // TODO: var parsed = parseAml(leftContent)
                 var json = {TODO: "Add AML parsing..."} // parsed.result
                 json && editorRight.setValue(JSON.stringify(json, null, 2) + '\n')
-                /* TODO: monaco.editor.setModelMarkers(model, "owner", (parser.errors || []).map(e => ({
+                /* TODO: monaco.editor.setModelMarkers(model, 'owner', (parser.errors || []).map(e => ({
                     message: e.message,
                     severity: monaco.MarkerSeverity.Error,
                     startLineNumber: e.position.line[0],
@@ -225,6 +239,6 @@ posts
             editorLeft.onDidChangeModelContent(function (e) {
                 syncEditors()
             })
-        });
+        })
     </script>
 </div>
