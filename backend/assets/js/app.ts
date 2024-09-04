@@ -30,9 +30,14 @@ import Hljs from "highlight.js"
 import topbar from "topbar"
 import hljsAml from "./hljs.aml"
 
+// import {Database, parseAml, ParserResult} from "@azimutt/aml"
+// const res: ParserResult<Database> = parseAml('users\n  id uuid pk\n')
+// console.log('res', res)
+// Uncaught TypeError: regexp_to_ast_1.RegExpParser is not a constructor
+
 
 Hljs.registerLanguage('aml', hljsAml)
-Hljs.configure({cssSelector: 'code.hljs'});
+Hljs.configure({cssSelector: 'code.hljs'})
 Hljs.highlightAll()
 
 
@@ -45,12 +50,12 @@ const liveSocket = new LiveSocket("/live", Socket, {
     dom: {
         onBeforeElUpdated(from: HTMLElement, to: HTMLElement): boolean {
             if ((from as any)._x_dataStack) {
-                Alpine.cloneNode(from, to);
+                Alpine.cloneNode(from, to)
             }
             return false
         },
     },
-});
+})
 
 
 // Show progress bar on live navigation and form submits

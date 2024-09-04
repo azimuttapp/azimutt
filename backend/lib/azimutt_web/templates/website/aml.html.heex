@@ -177,10 +177,10 @@ posts
   created_at timestamp=\`now()\`
   created_by uuid -> users(id) # inline relation
 `
-            // errors & warnings
             const uri = monaco.Uri.parse("inmemory://aml")
             const model = monaco.editor.createModel(initAml, "aml", uri)
 
+            // TODO: https://microsoft.github.io/monaco-editor/monarch.html
             var editorLeft = monaco.editor.create(document.getElementById('monaco-editor-left'), {
                 theme: 'vs-light',
                 language: 'plaintext',

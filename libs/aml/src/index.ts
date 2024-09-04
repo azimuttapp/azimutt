@@ -1,4 +1,3 @@
-import * as parser from "./parser";
-import {generateAml, parseAml} from "./aml";
-
-export default {parseAml, generateAml, parser}
+export * from "@azimutt/models"
+export * from "./aml"
+export * from "./parser"

@@ -460,7 +460,7 @@ class AmlParser extends EmbeddedActionsParser {
             $.CONSUME(NewLine)
             const attrs: AttributeAstFlat[] = []
             $.MANY(() => attrs.push($.SUBRULE($.attributeRule)))
-            return removeEmpty({statement: 'Entity' as const, name: entity, ...namespace, alias, ...extra, attrs: nestAttributes(attrs)})
+            return removeUndefined({statement: 'Entity' as const, name: entity, ...namespace, alias, ...extra, attrs: nestAttributes(attrs)})
         })
 
         // relation rules
