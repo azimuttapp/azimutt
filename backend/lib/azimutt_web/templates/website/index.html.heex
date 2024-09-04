@@ -83,9 +83,13 @@
                     </div>
                 </div>
                 <div class="relative pt-16 overflow-hidden">
-                    <div class="px-6 mx-auto max-w-7xl lg:px-8">
+                    <div class="mx-auto max-w-7xl px-6 lg:px-8 relative group">
                         <a href="https://azimutt.app/45f571a6-d9b8-4752-8a13-93ac0d2b7984/c00d0c45-8db2-46b7-9b51-eba661640c3c?token=9a59ccbb-7a58-4c88-9dfc-692de6177be9" target="_blank" rel="noopener">
                             <img src={Routes.static_path(@conn, "/images/screenshots/azimutt-ecommerce.png")} alt="App screenshot" width="1600" height="900" class="mb-[-7%] rounded-xl shadow-2xl ring-1 ring-gray-900/10">
+                            <div class="opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div class="absolute inset-0 mx-6 lg:mx-8 bg-gray-700 opacity-30 rounded-xl"></div>
+                                <div class="absolute inset-0 flex items-center justify-center"><h2 class="text-white text-3xl font-bold">Click to open demo</h2></div>
+                            </div>
                         </a>
                         <div class="relative" aria-hidden="true">
                             <div class="absolute -inset-x-20 bottom-0 bg-gradient-to-t from-white pt-[7%]"></div>

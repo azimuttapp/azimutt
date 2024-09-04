@@ -272,10 +272,10 @@ if System.get_env("STRIPE") == "true" do
 
   config :azimutt,
     stripe: true,
-    stripe_price_solo_monthly: System.fetch_env!("STRIPE_PRICE_SOLO_MONTHLY"),
-    stripe_price_solo_yearly: System.fetch_env!("STRIPE_PRICE_SOLO_YEARLY"),
-    stripe_price_team_monthly: System.fetch_env!("STRIPE_PRICE_TEAM_MONTHLY"),
-    stripe_price_team_yearly: System.fetch_env!("STRIPE_PRICE_TEAM_YEARLY"),
+    stripe_price_solo_monthly: System.fetch_env!("STRIPE_PRICE_SOLO_MONTHLY") |> String.split(","),
+    stripe_price_solo_yearly: System.fetch_env!("STRIPE_PRICE_SOLO_YEARLY") |> String.split(","),
+    stripe_price_team_monthly: System.fetch_env!("STRIPE_PRICE_TEAM_MONTHLY") |> String.split(","),
+    stripe_price_team_yearly: System.fetch_env!("STRIPE_PRICE_TEAM_YEARLY") |> String.split(","),
     stripe_product_enterprise: System.fetch_env!("STRIPE_PRODUCT_ENTERPRISE"),
     stripe_price_pro_monthly: System.fetch_env!("STRIPE_PRICE_PRO_MONTHLY")
 
