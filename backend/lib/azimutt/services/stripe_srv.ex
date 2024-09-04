@@ -115,20 +115,20 @@ defmodule Azimutt.Services.StripeSrv do
 
   def get_price(plan, freq) do
     case {plan, freq} do
-      {"solo", "monthly"} -> Azimutt.config(:stripe_price_solo_monthly)
-      {"solo", "yearly"} -> Azimutt.config(:stripe_price_solo_yearly)
-      {"team", "monthly"} -> Azimutt.config(:stripe_price_team_monthly)
-      {"team", "yearly"} -> Azimutt.config(:stripe_price_team_yearly)
+      {"solo", "monthly"} -> Azimutt.config(:stripe_price_solo_monthly) |> hd()
+      {"solo", "yearly"} -> Azimutt.config(:stripe_price_solo_yearly) |> hd()
+      {"team", "monthly"} -> Azimutt.config(:stripe_price_team_monthly) |> hd()
+      {"team", "yearly"} -> Azimutt.config(:stripe_price_team_yearly) |> hd()
       {"pro", "monthly"} -> Azimutt.config(:stripe_price_pro_monthly)
     end
   end
 
   def get_plan(product, price) do
     cond do
-      price == Azimutt.config(:stripe_price_solo_monthly) -> {"solo", "monthly"}
-      price == Azimutt.config(:stripe_price_solo_yearly) -> {"solo", "yearly"}
-      price == Azimutt.config(:stripe_price_team_monthly) -> {"team", "monthly"}
-      price == Azimutt.config(:stripe_price_team_yearly) -> {"team", "yearly"}
+      Azimutt.config(:stripe_price_solo_monthly) |> Enum.member?(price) -> {"solo", "monthly"}
+      Azimutt.config(:stripe_price_solo_yearly) |> Enum.member?(price) -> {"solo", "yearly"}
+      Azimutt.config(:stripe_price_team_monthly) |> Enum.member?(price) -> {"team", "monthly"}
+      Azimutt.config(:stripe_price_team_yearly) |> Enum.member?(price) -> {"team", "yearly"}
       price == Azimutt.config(:stripe_price_pro_monthly) -> {"pro", "monthly"}
       product == Azimutt.config(:stripe_product_enterprise) -> {"enterprise", "yearly"}
     end
