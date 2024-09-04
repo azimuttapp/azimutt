@@ -97,8 +97,8 @@ function buildNamespace(statement: number, n: NamespaceAst, current: Namespace):
 function buildEntity(statement: number, e: EntityAst, namespace: Namespace): { entity: Entity, relations: Relation[] } {
     const astNamespace = removeUndefined({schema: e.schema?.identifier, catalog: e.catalog?.identifier, database: e.database?.identifier})
     const entityNamespace = {...namespace, ...astNamespace}
-    const attrs = e.attrs.map(a => buildAttribute(statement, a, {...entityNamespace, entity: e.name.identifier}))
-    const flatAttrs = flattenAttributes(e.attrs)
+    const attrs = (e.attrs || []).map(a => buildAttribute(statement, a, {...entityNamespace, entity: e.name.identifier}))
+    const flatAttrs = flattenAttributes(e.attrs || [])
     const pkAttrs = flatAttrs.filter(a => a.primaryKey)
     const indexes: Index[] = buildIndexes(flatAttrs.map(a => ({path: a.path.map(p => p.identifier), index: a.index ? a.index.value?.identifier || '' : undefined}))).map(i => removeUndefined({name: i.value, attrs: i.attrs}))
     const uniques: Index[] = buildIndexes(flatAttrs.map(a => ({path: a.path.map(p => p.identifier), index: a.unique ? a.unique.value?.identifier || '' : undefined}))).map(i => removeUndefined({name: i.value, attrs: i.attrs, unique: true}))

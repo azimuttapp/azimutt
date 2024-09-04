@@ -55,7 +55,7 @@ const allTokens: TokenType[] = [WhiteSpace, NewLine, ...charTokens, ...keywordTo
 export type AmlAst = StatementAst[]
 export type StatementAst = NamespaceAst | EntityAst | RelationAst | TypeAst | EmptyStatementAst
 export type NamespaceAst = { statement: 'Namespace', schema: IdentifierAst, catalog?: IdentifierAst, database?: IdentifierAst } & ExtraAst
-export type EntityAst = { statement: 'Entity', name: IdentifierAst, alias?: IdentifierAst, attrs: AttributeAstNested[] } & NamespaceRefAst & ExtraAst
+export type EntityAst = { statement: 'Entity', name: IdentifierAst, alias?: IdentifierAst, attrs?: AttributeAstNested[] } & NamespaceRefAst & ExtraAst
 export type RelationAst = { statement: 'Relation', kind: RelationKindAst, src: AttributeRefCompositeAst, ref: AttributeRefCompositeAst, polymorphic?: RelationPolymorphicAst } & ExtraAst
 export type TypeAst = { statement: 'Type', name: IdentifierAst, content?: TypeContentAst } & NamespaceRefAst & ExtraAst
 export type EmptyStatementAst = { statement: 'Empty', comment?: CommentAst }
@@ -460,7 +460,7 @@ class AmlParser extends EmbeddedActionsParser {
             $.CONSUME(NewLine)
             const attrs: AttributeAstFlat[] = []
             $.MANY(() => attrs.push($.SUBRULE($.attributeRule)))
-            return removeUndefined({statement: 'Entity' as const, name: entity, ...namespace, alias, ...extra, attrs: nestAttributes(attrs)})
+            return removeEmpty({statement: 'Entity' as const, name: entity, ...namespace, alias, ...extra, attrs: nestAttributes(attrs)})
         })
 
         // relation rules
