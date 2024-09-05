@@ -16,6 +16,8 @@ import {
     attributesRefSame,
     attributesRefToId,
     attributeTypeParse,
+    databaseJsonFormat,
+    DatabaseKind,
     EntityId,
     EntityRef,
     entityRefFromId,
@@ -360,5 +362,101 @@ describe('databaseUtils', () => {
             {path: ['details', 'address', 'city'], attr: {name: 'city', type: 'varchar'}},
             {path: ['details', 'created'], attr: {name: 'created', type: 'varchar'}},
         ])
+    })
+    test('databaseJsonFormat', () => {
+        const prettyJson = databaseJsonFormat({
+            entities: [{
+                name: 'users',
+                attrs: [
+                    {name: 'id', type: 'int'},
+                    {name: 'name', type: 'varchar'},
+                    {name: 'role', type: 'user_role', default: 'guest'},
+                    {name: 'settings', type: 'json', attrs: [
+                        {name: 'github', type: 'string'},
+                        {name: 'twitter', type: 'string'},
+                    ]},
+                ],
+                pk: {name: 'users_pk', attrs: [['id']]},
+                indexes: [{name: 'user_name_idx', attrs: [['name']]}],
+                checks: [{name: 'user_role_chk', attrs: [['role']], predicate: 'role in ("admin", "guest")'}]
+            }, {
+                name: 'posts',
+                attrs: [
+                    {name: 'id', type: 'int'},
+                    {name: 'title', type: 'varchar'},
+                    {name: 'created_by', type: 'int'},
+                ],
+                indexes: []
+            }, {
+                name: 'admins',
+                kind: 'view',
+                def: `SELECT *\nFROM users\nWHERE role='admin';`,
+                attrs: [
+                    {name: 'id', type: 'int'},
+                    {name: 'name', type: 'varchar'},
+                    {name: 'role', type: 'varchar'},
+                ]
+            }],
+            relations: [{
+                name: 'posts_created_by_fk',
+                src: {entity: 'posts'},
+                ref: {entity: 'users'},
+                attrs: [{src: ['created_by'], ref: ['id']}]
+            }],
+            types: [{name: 'user_role', values: ['admin', 'guest']}],
+            doc: 'CMS database',
+            stats: {name: 'cms', kind: DatabaseKind.Enum.postgres, version: '1.2.3'},
+            extra: {comment: 'great!'}
+        })
+        expect(prettyJson).toEqual(`{
+  "entities": [{
+    "name": "users",
+    "attrs": [
+      {"name": "id", "type": "int"},
+      {"name": "name", "type": "varchar"},
+      {"name": "role", "type": "user_role", "default": "guest"},
+      {"name": "settings", "type": "json", "attrs": [
+        {"name": "github", "type": "string"},
+        {"name": "twitter", "type": "string"}
+      ]}
+    ],
+    "pk": {"name": "users_pk", "attrs": [["id"]]},
+    "indexes": [
+      {"name": "user_name_idx", "attrs": [["name"]]}
+    ],
+    "checks": [
+      {"name": "user_role_chk", "attrs": [["role"]], "predicate": "role in (\\"admin\\", \\"guest\\")"}
+    ]
+  }, {
+    "name": "posts",
+    "attrs": [
+      {"name": "id", "type": "int"},
+      {"name": "title", "type": "varchar"},
+      {"name": "created_by", "type": "int"}
+    ],
+    "indexes": []
+  }, {
+    "name": "admins",
+    "kind": "view",
+    "def": "SELECT *\\nFROM users\\nWHERE role='admin';",
+    "attrs": [
+      {"name": "id", "type": "int"},
+      {"name": "name", "type": "varchar"},
+      {"name": "role", "type": "varchar"}
+    ]
+  }],
+  "relations": [{
+    "name": "posts_created_by_fk",
+    "src": {"entity": "posts"},
+    "ref": {"entity": "users"},
+    "attrs": [{"src": ["created_by"], "ref": ["id"]}]
+  }],
+  "types": [
+    {"name": "user_role", "values": ["admin", "guest"]}
+  ],
+  "doc": "CMS database",
+  "stats": {"name": "cms", "kind": "postgres", "version": "1.2.3"},
+  "extra": {"comment": "great!"}
+}`)
     })
 })

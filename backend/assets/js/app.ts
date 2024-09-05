@@ -31,12 +31,6 @@ import topbar from "topbar"
 import {amlHljs, amlMonacoCompletion, amlMonarch} from "./lang.aml"
 import {CompletionItemProvider, IMonarchLanguage} from "./monaco"
 
-// import {Database, parseAml, ParserResult} from "@azimutt/aml"
-// const res: ParserResult<Database> = parseAml('users\n  id uuid pk\n')
-// console.log('res', res)
-// Uncaught TypeError: regexp_to_ast_1.RegExpParser is not a constructor
-
-
 Hljs.registerLanguage('aml', amlHljs)
 Hljs.configure({cssSelector: 'code.hljs'})
 Hljs.highlightAll()

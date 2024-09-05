@@ -15,6 +15,7 @@ import {
     Relation,
     RelationKind
 } from "@azimutt/models";
+import {version} from "../package.json"
 import {
     AmlAst,
     AttributeAstNested,
@@ -31,7 +32,6 @@ import {
     RelationKindAst,
     RelationPolymorphicAst
 } from "./parser";
-import {version} from "./version";
 
 export function parseAml(content: string): ParserResult<Database> {
     const start = Date.now()

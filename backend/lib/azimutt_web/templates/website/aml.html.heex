@@ -167,6 +167,7 @@ COMMENT ON COLUMN posts.content IS 'in markdown';</code></pre>
         <div id="monaco-editor-left" class="w-full md:w-1/2 h-96 border border-gray-300 rounded-lg overflow-hidden"></div>
         <div id="monaco-editor-right" class="w-full md:w-1/2 h-96 border border-gray-300 rounded-lg overflow-hidden"></div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/@azimutt/aml@0.1.3/out/bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.51.0/min/vs/loader.min.js"></script>
     <script>
         require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.51.0/min/vs' }})
@@ -215,24 +216,23 @@ posts
             // sync right editor with parsing result
             function syncEditors() {
                 var leftContent = editorLeft.getValue()
-                // TODO: var parsed = parseAml(leftContent)
-                var json = {TODO: "Add AML parsing..."} // parsed.result
-                json && editorRight.setValue(JSON.stringify(json, null, 2) + '\n')
-                /* TODO: monaco.editor.setModelMarkers(model, 'owner', (parser.errors || []).map(e => ({
+                var parsed = aml.parseAml(leftContent.trim() + '\n')
+                parsed.result && editorRight.setValue(aml.formatJson(parsed.result) + '\n')
+                monaco.editor.setModelMarkers(model, 'owner', (parsed.errors || []).map(e => ({
                     message: e.message,
                     severity: monaco.MarkerSeverity.Error,
                     startLineNumber: e.position.line[0],
                     startColumn: e.position.column[0],
                     endLineNumber: e.position.line[1],
                     endColumn: e.position.column[1],
-                })).concat((parser.warnings || []).map(e => ({
+                })).concat((parsed.warnings || []).map(e => ({
                     message: e.message,
                     severity: monaco.MarkerSeverity.Warning,
                     startLineNumber: e.position.line[0],
                     startColumn: e.position.column[0],
                     endLineNumber: e.position.line[1],
                     endColumn: e.position.column[1],
-                })))) */
+                }))))
             }
 
             syncEditors()

@@ -29,6 +29,7 @@ import {
     tableStatsToLegacy,
     textToSql
 } from "@azimutt/models";
+import {parseAml} from "@azimutt/aml";
 import {prisma} from "@azimutt/serde-prisma";
 import {HtmlId, Platform, ToastLevel, ViewPosition} from "./types/basics";
 import * as Uuid from "./types/uuid";
@@ -419,6 +420,13 @@ function runDatabaseQuery(msg: RunDatabaseQuery) {
     ).then(
         (results: LegacyDatabaseQueryResults) => app.gotDatabaseQueryResult(msg.context, msg.source, msg.query, results, start, Date.now()),
         (err: any) => app.gotDatabaseQueryResult(msg.context, msg.source, msg.query, errorToString(err), start, Date.now())
+    )
+}
+
+function getAmlSchema(msg: { kind: 'GetAmlSchema', content: string }) {
+    parseAml(msg.content).map(databaseToLegacy).fold(
+        (schema: LegacyDatabase) => console.log('aml schema', schema), // app.gotPrismaSchema(schema),
+        (errors: ParserError[]) => console.log('aml errors', errors) // app.gotPrismaSchemaError(errors.map(errorToString).join(', '))
     )
 }
 

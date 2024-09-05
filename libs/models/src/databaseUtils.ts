@@ -1,4 +1,4 @@
-import {arraySame, filterValues, groupBy, indexBy, mapValues, removeUndefined} from "@azimutt/utils";
+import {arraySame, filterValues, groupBy, indexBy, mapValues, removeUndefined, stringify} from "@azimutt/utils";
 import {
     Attribute,
     AttributeId,
@@ -11,6 +11,7 @@ import {
     AttributeValue,
     ConstraintId,
     ConstraintRef,
+    Database,
     Entity,
     EntityId,
     EntityRef,
@@ -229,3 +230,19 @@ export const indexRelations = (relations: Relation[]): Record<EntityId, Record<E
     mapValues(groupBy(relations, r => entityRefToId(r.src)), rels => groupBy(rels, r => entityRefToId(r.ref)))
 export const indexTypes = (types: Type[]): Record<TypeId, Type> =>
     indexBy(types, typeToId)
+
+export function databaseJsonFormat(database: Database): string {
+    return stringify(database, (path: (string | number)[], value: any) => {
+        const last = path[path.length - 1]
+        if (last === 'entities' || last === 'relations') return 0
+        if (path.includes('attrs') && last !== 'attrs') return 0
+        if (path.includes('pk')) return 0
+        if (path.includes('indexes') && path.length > 3) return 0
+        if (path.includes('checks') && path.length > 3) return 0
+        if (path.includes('relations') && path.length > 2) return 0
+        if (path.includes('types') && path.length > 1) return 0
+        if (path.includes('stats')) return 0
+        if (path.includes('extra')) return 0
+        return 2
+    })
+}

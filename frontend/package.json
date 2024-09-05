@@ -52,6 +52,7 @@
     "book": "elm-book src/Components/Book.elm --dir=../backend/priv/static/elm --start-page=book.html --port 4002 -- --output=../backend/priv/static/elm/dist/book.js"
   },
   "dependencies": {
+    "@azimutt/aml": "workspace:^",
     "@azimutt/models": "workspace:^",
     "@azimutt/serde-prisma": "workspace:^",
     "@azimutt/utils": "workspace:^",
