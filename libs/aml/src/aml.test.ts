@@ -102,10 +102,9 @@ rel posts(created_by) -> users(id)
         expect(generateAml(parsed)).toEqual(input)
     })
     test('bad schema', () => {
-        expect(parseAml(`a bad schema`)).toEqual({errors: [{
-            name: 'MismatchedTokenException',
-            message: "Expecting token of type --> NewLine <-- but found --> 'bad' <--",
-            position: {offset: [2, 4], line: [1, 1], column: [3, 5]}
-        }]})
+        expect(parseAml(`a bad schema`)).toEqual({errors: [
+            {name: 'MismatchedTokenException', message: "Expecting token of type --> NewLine <-- but found --> 'bad' <--", position: {offset: [2, 4], line: [1, 1], column: [3, 5]}},
+            {name: 'MismatchedTokenException', message: "Expecting token of type --> NewLine <-- but found --> 'schema' <--", position: {offset: [6, 11], line: [1, 1], column: [7, 12]}},
+        ]})
     })
 })
