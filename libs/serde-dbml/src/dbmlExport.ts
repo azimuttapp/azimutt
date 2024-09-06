@@ -50,7 +50,7 @@ function exportEntity(entity: Entity): JsonTable {
         alias: extra.alias || null,
         note: entity.doc || null,
         headerColor: extra.color || undefined,
-        fields: entity.attrs.map(c => exportAttribute(c, entity)),
+        fields: (entity.attrs || []).map(c => exportAttribute(c, entity)),
         indexes: pkComposite.concat((entity.indexes || []).filter(i => i.attrs.length > 1 || !i.unique || i.name).map(exportIndex))
     })
 }
