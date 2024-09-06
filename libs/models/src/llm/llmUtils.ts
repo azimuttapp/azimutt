@@ -15,7 +15,7 @@ export function entityToPrompt(e: Entity, rels: Relation[]): string {
     const [compositeRelations, simpleRelations] = partition(rels, r => r.attrs.length > 1)
     const simpleRelationsByAttr = groupBy(simpleRelations, r => attributePathToId(r.attrs[0].src))
     const polymorphicRelations = Object.values(simpleRelationsByAttr).filter(rs => rs.length > 1).flatMap(rs => rs)
-    const attrs = e.attrs.map(a => attributeToPrompt(a, simpleRelationsByAttr[a.name] || []))
+    const attrs = (e.attrs || []).map(a => attributeToPrompt(a, simpleRelationsByAttr[a.name] || []))
     const otherRels = compositeRelations.concat(polymorphicRelations).map(entityForeignKey)
     return `CREATE TABLE ${entityToId(e)} (${attrs.concat(otherRels).join(', ')});`
 }

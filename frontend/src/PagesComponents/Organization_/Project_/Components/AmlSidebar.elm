@@ -5,9 +5,11 @@ import Components.Atoms.Icon as Icon
 import Components.Molecules.Editor as Editor
 import Components.Slices.PlanDialog as PlanDialog
 import Conf
-import DataSources.AmlMiner.AmlAdapter as AmlAdapter
-import DataSources.AmlMiner.AmlParser as AmlParser
-import Dict
+import DataSources.AmlMiner.AmlAdapter exposing (AmlSchemaError)
+import DataSources.JsonMiner.JsonAdapter as JsonAdapter
+import DataSources.JsonMiner.JsonSchema exposing (JsonSchema)
+import DataSources.JsonMiner.Models.JsonTable as JsonTable
+import Dict exposing (Dict)
 import Html exposing (Html, button, div, h3, label, option, p, select, text)
 import Html.Attributes exposing (class, disabled, for, id, name, selected, value)
 import Html.Events exposing (onClick, onInput)
@@ -24,7 +26,7 @@ import Models.Feature as Feature
 import Models.Organization as Organization
 import Models.Position as Position
 import Models.Project.ColumnId as ColumnId
-import Models.Project.ColumnPath as ColumnPath
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind as SourceKind
@@ -42,6 +44,7 @@ import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import PagesComponents.Organization_.Project_.Updates.Table exposing (hideTable, showColumns, showTable)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyM)
+import Ports
 import Services.Lenses exposing (mapAmlSidebarM, mapAmlSidebarMTM, mapErdM, mapErdMT, mapSelectedMT, setAmlSidebar, setContent, setErrors, setSelected, setUpdatedAt)
 import Set exposing (Set)
 import Time
@@ -101,10 +104,23 @@ update now projectRef msg model =
         AChangeSource sourceId ->
             ( model |> mapAmlSidebarM (setSelected (sourceId |> Maybe.andThen (buildSelected model.erd))) |> setOtherSourcesTableIdsCache sourceId, Extra.none )
 
-        AUpdateSource id value ->
+        AUpdateSource id content ->
+            ( model |> mapErdM (Erd.mapSource id (setContent (contentSplit content) >> setUpdatedAt now)), Ports.getAmlSchema id content |> Extra.cmd )
+
+        AGotSchema id length schema errors ->
             (model.erd |> Maybe.andThen (.sources >> List.findBy .id id))
-                |> Maybe.map (\s -> model |> updateSource now s value |> setDirty)
-                |> Maybe.withDefault ( model |> mapAmlSidebarM (setErrors [ { row = 0, col = 0, problem = "Invalid source" } ]), Extra.none )
+                |> Maybe.map
+                    (\source ->
+                        if source.id /= id then
+                            ( model |> mapAmlSidebarM (setErrors [ { row = 0, col = 0, problem = "Source has changed" } ]), Extra.none )
+
+                        else if String.length (contentStr source) /= length then
+                            ( model |> mapAmlSidebarM (setErrors [ { row = 0, col = 0, problem = "AML has changed" } ]), Extra.none )
+
+                        else
+                            schema |> Maybe.map (\s -> model |> updateSource now source s errors |> setDirty) |> Maybe.withDefault ( model |> mapAmlSidebarM (setErrors errors), Extra.none )
+                    )
+                |> Maybe.withDefault ( model |> mapAmlSidebarM (setErrors [ { row = 0, col = 0, problem = "Source not found" } ]), Extra.none )
 
         ASourceUpdated id ->
             (model.erd |> Maybe.andThen (.sources >> List.findBy .id id))
@@ -112,19 +128,17 @@ update now projectRef msg model =
                 |> Maybe.withDefault ( model, Extra.none )
 
 
-updateSource : Time.Posix -> Source -> String -> Model x -> ( Model x, Extra Msg )
-updateSource now source input model =
+updateSource : Time.Posix -> Source -> JsonSchema -> List AmlSchemaError -> Model x -> ( Model x, Extra Msg )
+updateSource now source schema errors model =
     let
         tableLayouts : List ErdTableLayout
         tableLayouts =
             model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables) []
 
-        content : Array String
-        content =
-            contentSplit input
-
-        ( errors, parsed, amlColumns ) =
-            (String.trim input ++ "\n") |> AmlParser.parse |> AmlAdapter.buildSource (source |> Source.toInfo) content
+        ( parsed, amlColumns ) =
+            ( schema |> JsonAdapter.buildSchema >> (\s -> Source.setSchema s source)
+            , schema.tables |> List.map (\t -> ( ( t.schema, t.table ), JsonTable.orderedColumnPaths t )) |> Dict.fromList
+            )
 
         ( removed, bothPresent, added ) =
             List.diff .id (source.tables |> Dict.values) (parsed.tables |> Dict.values)
@@ -156,20 +170,15 @@ updateSource now source input model =
                             |> Maybe.map PlaceAt
                         )
                     )
-    in
-    if List.nonEmpty errors then
-        ( model |> mapAmlSidebarM (setErrors errors) |> mapErdM (Erd.mapSource source.id (setContent content >> setUpdatedAt now)), Extra.none )
 
-    else
-        let
-            apply : List a -> (a -> Model x -> ( Model x, Extra Msg )) -> ( Model x, Extra Msg ) -> ( Model x, Extra Msg )
-            apply items f m =
-                items |> List.foldl (\a ( curModel, curExtra ) -> curModel |> f a |> Tuple.mapSecond (Extra.combine curExtra >> Extra.dropHistory)) m
-        in
-        ( model |> mapAmlSidebarM (setErrors []) |> mapErdM (Erd.mapSource source.id (Source.updateWith parsed)), Extra.none )
-            |> apply toShow (\( id, hint ) -> mapErdMT (showTable now id hint "aml") >> setDirtyM)
-            |> apply toHide (\id -> mapErdMT (hideTable now id) >> setDirtyM)
-            |> apply updated (\t -> mapErdMT (showColumns now t.id (ShowColumns.List (amlColumns |> Dict.getOrElse t.id []))) >> setDirtyM)
+        apply : List a -> (a -> Model x -> ( Model x, Extra Msg )) -> ( Model x, Extra Msg ) -> ( Model x, Extra Msg )
+        apply items f m =
+            items |> List.foldl (\a ( curModel, curExtra ) -> curModel |> f a |> Tuple.mapSecond (Extra.combine curExtra >> Extra.dropHistory)) m
+    in
+    ( model |> mapAmlSidebarM (setErrors errors) |> mapErdM (Erd.mapSource source.id (Source.updateWith parsed)), Extra.none )
+        |> apply toShow (\( id, hint ) -> mapErdMT (showTable now id hint "aml") >> setDirtyM)
+        |> apply toHide (\id -> mapErdMT (hideTable now id) >> setDirtyM)
+        |> apply updated (\t -> mapErdMT (showColumns now t.id (ShowColumns.List (amlColumns |> Dict.getOrElse t.id []))) >> setDirtyM)
 
 
 associateTables : List Table -> List Table -> List ( Table, Maybe Table )

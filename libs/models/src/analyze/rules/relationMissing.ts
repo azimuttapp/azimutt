@@ -79,7 +79,7 @@ export function getMissingRelations(entities: Entity[], relations: Relation[]): 
     const relationsBySrc: Record<EntityId, Relation[]> = groupBy(relations, r => entityRefToId(r.src))
 
     return tableEntities.flatMap(entity => {
-        return entity.attrs.flatMap(a => flattenAttribute(a)).flatMap(({path, attr}) => {
+        return (entity.attrs || []).flatMap(a => flattenAttribute(a)).flatMap(({path, attr}) => {
             const attrWords = splitWords(attr.name).map(singular)
             const lastWord = attrWords[attrWords.length - 1]
             let results: Relation[] = []
@@ -151,7 +151,7 @@ function guessRelationTargets(entitiesByName: Record<EntityNameNormalized, Entit
         entitiesByName[attrWords.slice(2, -3).join('_')] || [],
     ).sort((a, b) => namespaceScore(a, ref) - namespaceScore(b, ref)).flatMap((entity: Entity) => {
         const attrName: string = attrWords.slice(-1)[0]
-        const attr = entity.attrs.find(a => a.name === attrName) || entity.attrs.find(a => {
+        const attr = entity.attrs?.find(a => a.name === attrName) || entity.attrs?.find(a => {
             const words = a.name.endsWith('id') ? splitWords(a.name.slice(0, -2)).concat(['id']) : splitWords(a.name)
             return words.join('_') === attrWords.slice(words.length * -1).join('_')
         })

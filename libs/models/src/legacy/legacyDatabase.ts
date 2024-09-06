@@ -225,7 +225,7 @@ function tableToLegacy(e: Entity): LegacyTable {
     return removeUndefined({
         schema: e.schema || '',
         table: e.name,
-        columns: e.attrs.map(columnToLegacy),
+        columns: (e.attrs || []).map(columnToLegacy),
         view: e.kind === 'view' || e.kind === 'materialized view' || undefined,
         definition: e.def,
         primaryKey: e.pk ? primaryKeyToLegacy(e.pk) : undefined,

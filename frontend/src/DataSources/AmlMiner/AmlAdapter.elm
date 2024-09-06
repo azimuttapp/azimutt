@@ -1,10 +1,11 @@
-module DataSources.AmlMiner.AmlAdapter exposing (AmlSchema, AmlSchemaError, buildSource, evolve, initSchema)
+module DataSources.AmlMiner.AmlAdapter exposing (AmlSchema, AmlSchemaError, buildSource, decodeAmlSchemaError, evolve, initSchema)
 
 import Array exposing (Array)
 import Conf
 import DataSources.AmlMiner.AmlParser exposing (AmlColumn, AmlColumnName, AmlColumnRef, AmlNotes, AmlStatement(..), AmlTable)
 import DataSources.Helpers exposing (defaultCheckName, defaultIndexName, defaultRelName, defaultUniqueName)
 import Dict exposing (Dict)
+import Json.Decode as Decode
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
@@ -225,3 +226,11 @@ createType schema name values =
     , name = name
     , value = CustomTypeValue.Enum (values |> Nel.toList)
     }
+
+
+decodeAmlSchemaError : Decode.Decoder AmlSchemaError
+decodeAmlSchemaError =
+    Decode.map3 AmlSchemaError
+        (Decode.field "row" Decode.int)
+        (Decode.field "col" Decode.int)
+        (Decode.field "problem" Decode.string)

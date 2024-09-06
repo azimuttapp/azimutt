@@ -66,7 +66,7 @@ export type AttributeTypeAst = { type?: IdentifierAst, enumValues?: AttributeVal
 export type AttributeConstraintsAst = { primaryKey?: AttributeConstraintAst, index?: AttributeConstraintAst, unique?: AttributeConstraintAst, check?: AttributeCheckAst }
 export type AttributeConstraintAst = { parser: TokenInfo, value?: IdentifierAst }
 export type AttributeCheckAst = { parser: TokenInfo, value?: ExpressionAst }
-export type AttributeRelationAst = { kind: RelationKindAst, ref: AttributeRefCompositeAst, polymorphic?: RelationPolymorphicAst }
+export type AttributeRelationAst = { kind: RelationKindAst, ref: AttributeRefCompositeAst, polymorphic?: RelationPolymorphicAst, warning?: TokenInfo }
 
 export type RelationCardinalityAst = '1' | 'n'
 export type RelationKindAst = `${RelationCardinalityAst}-${RelationCardinalityAst}`
@@ -97,7 +97,9 @@ export type BooleanAst = { flag: boolean, parser: TokenInfo }
 export type IdentifierAst = { identifier: string, parser: TokenInfo }
 export type ExpressionAst = { expression: string, parser: TokenInfo }
 
-export type TokenInfo = {token: string, offset: ParserPosition, line: ParserPosition, column: ParserPosition}
+export type TokenInfo = {token: string, offset: ParserPosition, line: ParserPosition, column: ParserPosition, message?: TokenInfoMessage}
+export type TokenInfoMessage = {kind: TokenInfoMessageKind, message: string}
+export type TokenInfoMessageKind = 'error' | 'warning' | 'info' | 'hint'
 
 class AmlParser extends EmbeddedActionsParser {
     // common
@@ -135,7 +137,7 @@ class AmlParser extends EmbeddedActionsParser {
     amlRule: () => AmlAst
 
     constructor(tokens: TokenType[]) {
-        super(tokens)
+        super(tokens, {recoveryEnabled: true})
         const $ = this
 
         // common rules
@@ -407,22 +409,23 @@ class AmlParser extends EmbeddedActionsParser {
             return removeUndefined({primaryKey, index, unique, check})
         })
         const attributeRelationRule = $.RULE<() => AttributeRelationAst>('attributeRelationRule', () => {
-            const {kind, polymorphic} = $.OR([{
+            const {kind, polymorphic, warning} = $.OR([{
                 ALT: () => {
                     const refCardinality = $.SUBRULE(relationCardinalityRule)
                     const polymorphic = $.OPTION(() => $.SUBRULE(relationPolymorphicRule))
                     const srcCardinality = $.SUBRULE2(relationCardinalityRule)
-                    return {kind: `${srcCardinality}-${refCardinality}` as const, polymorphic}
+                    return {kind: `${srcCardinality}-${refCardinality}` as const, polymorphic, warning: undefined}
                 }
             }, {
                 ALT: () => {
-                    $.CONSUME(ForeignKey)
-                    return {kind: 'n-1', polymorphic: undefined} // TODO: add warning in AST
+                    const token = $.CONSUME(ForeignKey)
+                    const warning = parserInfo(token, {kind: 'warning', message: '"fk" is legacy, replace it with "->"'})
+                    return {kind: 'n-1', polymorphic: undefined, warning} // TODO: add warning in AST
                 }
             }])
             $.OPTION2(() => $.CONSUME(WhiteSpace))
             const ref = $.SUBRULE2($.attributeRefCompositeRule)
-            return removeUndefined({kind, ref, polymorphic})
+            return removeUndefined({kind, ref, polymorphic, warning})
         })
         const attributeRuleInner = $.RULE<() => AttributeAstFlat>('attributeRuleInner', () => {
             const name = $.SUBRULE($.identifierRule)
@@ -601,13 +604,14 @@ function formatError(err: IRecognitionException): ParserError {
     return {name: err.name, message: err.message, position: {offset, line, column}}
 }
 
-function parserInfo(token: IToken): TokenInfo {
-    return {
+function parserInfo(token: IToken, message?: TokenInfoMessage): TokenInfo {
+    return removeUndefined({
         token: token.tokenType?.name || 'missing',
-        offset: [token.startOffset, token.endOffset || 0],
-        line: [token.startLine || 0, token.endLine || 0],
-        column: [token.startColumn || 0, token.endColumn || 0]
-    }
+        offset: [token.startOffset, token.endOffset || 0] as ParserPosition,
+        line: [token.startLine || 0, token.endLine || 0] as ParserPosition,
+        column: [token.startColumn || 0, token.endColumn || 0] as ParserPosition,
+        message
+    })
 }
 
 // utils functions

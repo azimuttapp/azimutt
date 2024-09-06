@@ -39,14 +39,14 @@ export const entityTooLargeRule: Rule<CustomRuleConf> = {
                 ruleId,
                 ruleName,
                 ruleLevel: conf.level,
-                message: `Entity ${entityToId(e)} has too many attributes (${e.attrs.length}).`,
+                message: `Entity ${entityToId(e)} has too many attributes (${e.attrs?.length || 0}).`,
                 entity: entityToRef(e),
-                extra: {attributes: e.attrs.length}
+                extra: {attributes: e.attrs?.length || 0}
             }))
     }
 }
 
 // same as frontend/src/PagesComponents/Organization_/Project_/Views/Modals/SchemaAnalysis/TableTooBig.elm
 export function isEntityTooLarge(entity: Entity, max: number): boolean {
-    return entity.attrs.length > max
+    return (entity.attrs?.length || 0) > max
 }

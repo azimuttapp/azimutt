@@ -1,5 +1,6 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, copyToClipboard, createProject, createProjectTmp, deleteProject, deleteSource, downloadFile, fireworks, focus, fullscreen, getColumnStats, getDatabaseSchema, getPrismaSchema, getProject, getTableStats, listenHotkeys, llmGenerateSql, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableRowSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, copyToClipboard, createProject, createProjectTmp, deleteProject, deleteSource, downloadFile, fireworks, focus, fullscreen, getAmlSchema, getColumnStats, getDatabaseSchema, getPrismaSchema, getProject, getTableStats, listenHotkeys, llmGenerateSql, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableRowSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
 
+import DataSources.AmlMiner.AmlAdapter as AmlAdapter exposing (AmlSchemaError)
 import DataSources.JsonMiner.JsonSchema as JsonSchema exposing (JsonSchema)
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -167,6 +168,11 @@ runDatabaseQuery context source database query =
     messageToJs (RunDatabaseQuery context source database query)
 
 
+getAmlSchema : SourceId -> String -> Cmd msg
+getAmlSchema source content =
+    messageToJs (GetAmlSchema source content)
+
+
 getPrismaSchema : String -> Cmd msg
 getPrismaSchema content =
     messageToJs (GetPrismaSchema content)
@@ -280,6 +286,7 @@ type ElmMsg
     | GetTableStats SourceId DatabaseUrl TableId
     | GetColumnStats SourceId DatabaseUrl ColumnRef
     | RunDatabaseQuery String SourceId DatabaseUrl SqlQueryOrigin
+    | GetAmlSchema SourceId String
     | GetPrismaSchema String
     | ObserveSizes (List HtmlId)
     | LlmGenerateSql OpenAIKey OpenAIModel String DatabaseKind Source
@@ -302,6 +309,7 @@ type JsMsg
     | GotColumnStats SourceId ColumnStats
     | GotColumnStatsError SourceId ColumnRef String
     | GotDatabaseQueryResult QueryResult
+    | GotAmlSchema SourceId Int (Maybe JsonSchema) (List AmlSchemaError)
     | GotPrismaSchema JsonSchema
     | GotPrismaSchemaError String
     | GotHotkey String
@@ -426,6 +434,9 @@ elmEncoder elm =
         RunDatabaseQuery context source database query ->
             Encode.object [ ( "kind", "RunDatabaseQuery" |> Encode.string ), ( "context", context |> Encode.string ), ( "source", source |> SourceId.encode ), ( "database", database |> DatabaseUrl.encode ), ( "query", query |> SqlQuery.encodeOrigin ) ]
 
+        GetAmlSchema source content ->
+            Encode.object [ ( "kind", "GetAmlSchema" |> Encode.string ), ( "source", source |> SourceId.encode ), ( "content", content |> Encode.string ) ]
+
         GetPrismaSchema content ->
             Encode.object [ ( "kind", "GetPrismaSchema" |> Encode.string ), ( "content", content |> Encode.string ) ]
 
@@ -500,6 +511,9 @@ jsDecoder =
 
                 "GotDatabaseQueryResult" ->
                     Decode.map GotDatabaseQueryResult QueryResult.decode
+
+                "GotAmlSchema" ->
+                    Decode.map4 GotAmlSchema (Decode.field "source" SourceId.decode) (Decode.field "length" Decode.int) (Decode.maybeField "schema" JsonSchema.decode) (Decode.field "errors" (Decode.list AmlAdapter.decodeAmlSchemaError))
 
                 "GotPrismaSchema" ->
                     Decode.map GotPrismaSchema (Decode.field "schema" JsonSchema.decode)
@@ -603,6 +617,9 @@ unhandledJsMsgError msg =
 
                 GotDatabaseQueryResult _ ->
                     "GotDatabaseQueryResult"
+
+                GotAmlSchema _ _ _ _ ->
+                    "GotAmlSchema"
 
                 GotPrismaSchema _ ->
                     "GotPrismaSchema"

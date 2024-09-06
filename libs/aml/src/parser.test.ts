@@ -510,20 +510,17 @@ comments
     })
     describe('legacy', () => {
         test('attribute relation', () => {
-            const v1 = parseRule(p => p.attributeRule(), '  user_id fk users.id\n')
-            const v2 = parseRule(p => p.attributeRule(), '  user_id -> users(id)\n')
-            expect(v1).toEqual({result: {
-                nesting: 0,
-                name: {identifier: 'user_id', parser: {token: 'Identifier', offset: [2, 8], line: [1, 1], column: [3, 9]}},
-                relation: {
-                    kind: 'n-1',
-                    ref: {
-                        entity: {identifier: 'users', parser: {token: 'Identifier', offset: [13, 17], line: [1, 1], column: [14, 18]}},
-                        attrs: [{identifier: 'id', parser: {token: 'Identifier', offset: [19, 20], line: [1, 1], column: [20, 21]}}]
-                    }
+            const {warning, ...v1} = parseRule(p => p.attributeRule(), '  user_id fk users.id\n').result?.relation || {}
+            const v2 = parseRule(p => p.attributeRule(), '  user_id -> users(id)\n').result?.relation
+            expect(v1).toEqual({
+                kind: 'n-1',
+                ref: {
+                    entity: {identifier: 'users', parser: {token: 'Identifier', offset: [13, 17], line: [1, 1], column: [14, 18]}},
+                    attrs: [{identifier: 'id', parser: {token: 'Identifier', offset: [19, 20], line: [1, 1], column: [20, 21]}}]
                 }
-            }})
-            expect(v1).toEqual(v2)
+            })
+            expect(v2).toEqual(v1)
+            expect(warning).toEqual({message: {kind: 'warning', message: '"fk" is legacy, replace it with "->"'}, token: 'ForeignKey', offset: [10, 11], line: [1, 1], column: [11, 12]})
         })
         test('standalone relation', () => {
             const v1 = parseRule(p => p.relationRule(), 'fk groups.owner -> users.id\n')
@@ -601,7 +598,13 @@ comments
                 key: {identifier: 'size', parser: {token: 'Identifier', offset: [1, 4], line: [1, 1], column: [2, 5]}},
                 value: {value: 12, parser: {token: 'Integer', offset: [7, 8], line: [1, 1], column: [8, 9]}}
             }]})
-            expect(parseRule(p => p.propertiesRule(), 'bad')).toEqual({errors: [{name: 'MismatchedTokenException', message: "Expecting token of type --> LCurly <-- but found --> 'bad' <--", position: {offset: [0, 2], line: [1, 1], column: [1, 3]}}]})
+
+            // bad
+            expect(parseRule(p => p.propertiesRule(), 'bad')).toEqual({errors: [
+                {name: 'MismatchedTokenException', message: "Expecting token of type --> LCurly <-- but found --> 'bad' <--", position: {offset: [0, 2], line: [1, 1], column: [1, 3]}},
+                {name: 'MismatchedTokenException', message: "Expecting token of type --> RCurly <-- but found --> '' <--", position: {offset: [NaN, 0], line: [0, 0], column: [0, 0]}},
+            ]})
+            expect(parseRule(p => p.propertiesRule(), '{')).toEqual({errors: [{name: 'MismatchedTokenException', message: "Expecting token of type --> RCurly <-- but found --> '' <--", position: {offset: [NaN, 0], line: [0, 0], column: [0, 0]}}]})
         })
         test('extraRule', () => {
             expect(parseRule(p => p.extraRule(), '')).toEqual({result: {}})

@@ -29,6 +29,7 @@ describe('json', () => {
                 "some'esca'pe",
                 'some"esca"pe',
                 'new\nline',
+                'sla\\sh',
                 Symbol(''),
                 Symbol('sym'),
                 new Date(),

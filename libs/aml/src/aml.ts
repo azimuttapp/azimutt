@@ -1,4 +1,4 @@
-import {groupBy, isNotUndefined, partition, removeEmpty, removeUndefined, zip} from "@azimutt/utils";
+import {groupBy, isNotUndefined, mapEntriesDeep, partition, removeEmpty, removeUndefined, zip} from "@azimutt/utils";
 import {
     Attribute,
     AttributePath,
@@ -11,6 +11,7 @@ import {
     Extra,
     Index,
     Namespace,
+    ParserError,
     ParserResult,
     Relation,
     RelationKind
@@ -25,17 +26,32 @@ import {
     AttributeValueAst,
     EntityAst,
     EntityRefAst,
+    ExtraAst,
     NamespaceAst,
-    NoteAst,
     parseAmlAst,
     RelationAst,
     RelationKindAst,
-    RelationPolymorphicAst
+    RelationPolymorphicAst,
+    TokenInfo
 } from "./parser";
 
 export function parseAml(content: string): ParserResult<Database> {
     const start = Date.now()
-    return parseAmlAst(content).map(ast => buildDatabase(ast, start, Date.now()))
+    return parseAmlAst(content + '\n').flatMap(ast => {
+        const db = buildDatabase(ast, start, Date.now())
+        const warnings: ParserError[] = []
+        mapEntriesDeep(ast, (path, value) => {
+            const v = value as TokenInfo
+            if (path[path.length - 1] === 'warning' && v.message) {
+                warnings.push({
+                    name: 'warning',
+                    message: v.message.message,
+                    position: {offset: v.offset, line: v.line, column: v.column}
+                })
+            }
+        })
+        return new ParserResult(db, undefined, warnings)
+    })
 }
 
 export function generateAml(database: Database): string {
@@ -118,7 +134,7 @@ function buildEntity(statement: number, e: EntityAst, namespace: Namespace): { e
             checks: checks,
             doc: e.note?.note,
             stats: undefined,
-            extra: removeUndefined({statement, comment: e.comment?.comment})
+            extra: removeEmpty({statement, comment: e.comment?.comment})
         }),
         relations: attrs.flatMap(a => a.relations)
     }
@@ -132,7 +148,7 @@ function flattenAttributes(attributes: AttributeAstNested[]): AttributeAstNested
 }
 
 function genEntity(e: Entity, relations: Relation[]): string {
-    return `${e.name}${genNote(e.doc)}${genCommentExtra(e)}\n` + e.attrs.map(a => genAttribute(a, e, relations.filter(r => r.attrs[0].src[0] === a.name))).join('')
+    return `${e.name}${genNote(e.doc)}${genCommentExtra(e)}\n` + e.attrs?.map(a => genAttribute(a, e, relations.filter(r => r.attrs[0].src[0] === a.name))).join('')
 }
 
 function buildIndexes(indexes: {path: AttributePath, index: string | undefined}[]): {value: string | undefined, attrs: AttributePath[]}[] {
@@ -155,7 +171,7 @@ function buildAttribute(statement: number, a: AttributeAstNested, entity: Entity
             attrs: nested?.map(n => n.attribute),
             doc: a.note?.note,
             stats: undefined,
-            extra: removeUndefined({comment: a.comment?.comment})
+            extra: removeEmpty({comment: a.comment?.comment})
         }),
         relations: relation.concat(nested?.flatMap(n => n.relations) || [])
     }
@@ -181,14 +197,14 @@ function genAttributeType(a: Attribute): string {
 }
 
 function buildRelationStatement(statement: number, r: RelationAst): Relation {
-    return buildRelation(statement, r.kind, buildEntityRef(r.src), r.src.attrs.map(buildAttrPath), r.ref, r.polymorphic, r.note)
+    return buildRelation(statement, r.kind, buildEntityRef(r.src), r.src.attrs.map(buildAttrPath), r.ref, r.polymorphic, r)
 }
 
 function buildRelationAttribute(statement: number, r: AttributeRelationAst, srcEntity: EntityRef, srcAttrs: AttributePath[]): Relation {
     return buildRelation(statement, r.kind, srcEntity, srcAttrs, r.ref, r.polymorphic, undefined)
 }
 
-function buildRelation(statement: number, kind: RelationKindAst | undefined, srcEntity: EntityRef, srcAttrs: AttributePath[], ref: AttributeRefCompositeAst, polymorphic: RelationPolymorphicAst | undefined, note: NoteAst | undefined): Relation {
+function buildRelation(statement: number, kind: RelationKindAst | undefined, srcEntity: EntityRef, srcAttrs: AttributePath[], ref: AttributeRefCompositeAst, polymorphic: RelationPolymorphicAst | undefined, extra: ExtraAst | undefined): Relation {
     const refAttrs: AttributePath[] = ref.attrs.map(buildAttrPath)
     return removeUndefined({
         name: undefined,
@@ -198,8 +214,8 @@ function buildRelation(statement: number, kind: RelationKindAst | undefined, src
         ref: buildEntityRef(ref),
         attrs: zip(srcAttrs, refAttrs).map(([srcAttr, refAttr]) => ({src: srcAttr, ref: refAttr})),
         polymorphic: polymorphic ? {attribute: buildAttrPath(polymorphic.attr), value: buildAttrValue(polymorphic.value)} : undefined,
-        doc: note?.note,
-        extra: {statement},
+        doc: extra?.note?.note,
+        extra: removeEmpty({statement, comment: extra?.comment?.comment}),
     })
 }
 

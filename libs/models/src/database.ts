@@ -187,7 +187,7 @@ export const Entity = Namespace.extend({
     name: EntityName,
     kind: EntityKind.optional(), // 'table' when not specified
     def: z.string().optional(), // the query definition for views
-    attrs: Attribute.array(),
+    attrs: Attribute.array().optional(),
     pk: PrimaryKey.optional(),
     indexes: Index.array().optional(),
     checks: Check.array().optional(),

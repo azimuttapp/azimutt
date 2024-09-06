@@ -234,7 +234,7 @@ export const indexTypes = (types: Type[]): Record<TypeId, Type> =>
 export function databaseJsonFormat(database: Database): string {
     return stringify(database, (path: (string | number)[], value: any) => {
         const last = path[path.length - 1]
-        if (last === 'entities' || last === 'relations') return 0
+        // if (last === 'entities' || last === 'relations') return 0
         if (path.includes('attrs') && last !== 'attrs') return 0
         if (path.includes('pk')) return 0
         if (path.includes('indexes') && path.length > 3) return 0
@@ -242,7 +242,7 @@ export function databaseJsonFormat(database: Database): string {
         if (path.includes('relations') && path.length > 2) return 0
         if (path.includes('types') && path.length > 1) return 0
         if (path.includes('stats')) return 0
-        if (path.includes('extra')) return 0
+        if (path.includes('extra') && path.length > 1) return 0
         return 2
     })
 }

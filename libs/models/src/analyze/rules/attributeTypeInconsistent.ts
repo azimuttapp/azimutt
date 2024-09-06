@@ -54,7 +54,7 @@ export type AttributeWithRef = { ref: AttributeRef, value: Attribute }
 
 // same as frontend/src/PagesComponents/Organization_/Project_/Views/Modals/SchemaAnalysis/InconsistentTypeOnColumns.elm
 export function getInconsistentAttributeTypes(entities: Entity[]): Record<AttributeName, AttributeWithRef[]> {
-    const attributes: AttributeWithRef[] = entities.flatMap(e => e.attrs.flatMap(a => flattenAttribute(a)).map(a => ({
+    const attributes: AttributeWithRef[] = entities.flatMap(e => (e.attrs || []).flatMap(a => flattenAttribute(a)).map(a => ({
         ref: {...entityToRef(e), attribute: a.path},
         value: a.attr
     })))

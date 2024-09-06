@@ -176,9 +176,12 @@ COMMENT ON COLUMN posts.content IS 'in markdown';</code></pre>
             monaco.languages.register({id: 'aml'})
             monaco.languages.setMonarchTokensProvider('aml', window.amlMonarch)
             monaco.languages.registerCompletionItemProvider('aml', window.amlMonacoCompletion)
+            // TODO monaco.languages.registerCodeActionProvider('aml', ...)
 
             // create editors
-            var initAml = `# sample AML
+            var initAml = `#
+# sample AML
+#
 
 users
   id uuid pk
@@ -216,7 +219,7 @@ posts
             // sync right editor with parsing result
             function syncEditors() {
                 var leftContent = editorLeft.getValue()
-                var parsed = aml.parseAml(leftContent.trim() + '\n')
+                var parsed = aml.parseAml(leftContent)
                 parsed.result && editorRight.setValue(aml.formatJson(parsed.result) + '\n')
                 monaco.editor.setModelMarkers(model, 'owner', (parsed.errors || []).map(e => ({
                     message: e.message,

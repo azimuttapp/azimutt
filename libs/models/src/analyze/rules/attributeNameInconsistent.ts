@@ -62,12 +62,12 @@ export type ConsistencyCheck = { convention: StringCase, invalid: AttributeRef[]
 // same as frontend/src/PagesComponents/Organization_/Project_/Views/Modals/SchemaAnalysis/NamingConsistency.elm
 export function checkNamingConsistency(entities: Entity[]): ConsistencyCheck {
     const counts = entities.reduce((acc, entity) =>
-        entity.attrs.flatMap(a => flattenAttribute(a)).reduce((acc, a) => addCases(acc, a.attr.name), acc),
+        (entity.attrs || []).flatMap(a => flattenAttribute(a)).reduce((acc, a) => addCases(acc, a.attr.name), acc),
         {} as Record<StringCase, number>
     )
     const attributeCase = bestCase(counts)
     return {
         convention: attributeCase.name,
-        invalid: entities.flatMap(e => e.attrs.flatMap(a => flattenAttribute(a)).filter(a => !attributeCase.isValid(a.attr.name)).map(a => ({...entityToRef(e), attribute: a.path})))
+        invalid: entities.flatMap(e => (e.attrs || []).flatMap(a => flattenAttribute(a)).filter(a => !attributeCase.isValid(a.attr.name)).map(a => ({...entityToRef(e), attribute: a.path})))
     }
 }

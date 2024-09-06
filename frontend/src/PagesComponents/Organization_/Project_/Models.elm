@@ -7,6 +7,7 @@ import Components.Slices.DataExplorer as DataExplorer
 import Components.Slices.PlanDialog as PlanDialog
 import DataSources.AmlMiner.AmlAdapter exposing (AmlSchemaError)
 import DataSources.DbMiner.DbTypes exposing (RowQuery)
+import DataSources.JsonMiner.JsonSchema exposing (JsonSchema)
 import Dict exposing (Dict)
 import Html exposing (Html, text)
 import Libs.Html.Events exposing (PointerEvent, WheelEvent)
@@ -18,7 +19,6 @@ import Libs.Models.Notes exposing (Notes)
 import Libs.Tailwind as Tw exposing (Color)
 import Libs.Task as T
 import Models.ColumnOrder exposing (ColumnOrder)
-import Models.DbSourceInfo exposing (DbSourceInfo)
 import Models.ErdProps as ErdProps exposing (ErdProps)
 import Models.OpenAIKey exposing (OpenAIKey)
 import Models.OpenAIModel exposing (OpenAIModel)
@@ -374,6 +374,7 @@ type AmlSidebarMsg
     | AToggle
     | AChangeSource (Maybe SourceId)
     | AUpdateSource SourceId String
+    | AGotSchema SourceId Int (Maybe JsonSchema) (List AmlSchemaError)
     | ASourceUpdated SourceId
 
 

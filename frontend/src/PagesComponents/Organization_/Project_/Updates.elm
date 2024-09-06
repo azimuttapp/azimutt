@@ -605,6 +605,9 @@ handleJsMessage now urlLayout msg model =
         GotDatabaseQueryResult result ->
             model |> handleDatabaseQueryResponse result
 
+        GotAmlSchema source length schema errors ->
+            ( model, AGotSchema source length schema errors |> AmlSidebarMsg |> T.send )
+
         GotPrismaSchema schema ->
             if model.embedSourceParsing == Nothing then
                 ( model, Ok schema |> PrismaSource.GotSchema |> SourceUpdateDialog.PrismaSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send )

@@ -39,6 +39,7 @@ import {
     DeleteProject,
     DeleteSource,
     ElmFlags,
+    GetAmlSchema,
     GetColumnStats,
     GetDatabaseSchema,
     GetLocalFile,
@@ -122,6 +123,7 @@ app.on('GetDatabaseSchema', getDatabaseSchema)
 app.on('GetTableStats', getTableStats)
 app.on('GetColumnStats', getColumnStats)
 app.on('RunDatabaseQuery', runDatabaseQuery)
+app.on('GetAmlSchema', getAmlSchema)
 app.on('GetPrismaSchema', getPrismaSchema)
 app.on('ObserveSizes', observeSizes)
 app.on('LlmGenerateSql', llmGenerateSql)
@@ -423,11 +425,13 @@ function runDatabaseQuery(msg: RunDatabaseQuery) {
     )
 }
 
-function getAmlSchema(msg: { kind: 'GetAmlSchema', content: string }) {
-    parseAml(msg.content).map(databaseToLegacy).fold(
-        (schema: LegacyDatabase) => console.log('aml schema', schema), // app.gotPrismaSchema(schema),
-        (errors: ParserError[]) => console.log('aml errors', errors) // app.gotPrismaSchemaError(errors.map(errorToString).join(', '))
-    )
+function getAmlSchema(msg: GetAmlSchema) {
+    const res = parseAml(msg.content).map(databaseToLegacy)
+    app.gotAmlSchema(msg.source, msg.content.length, res.result, (res.errors || []).concat(res.warnings || []).map(e => ({
+        row: e.position?.line[0] || 0,
+        col: e.position?.column[0] || 0,
+        problem: e.message
+    })))
 }
 
 function getPrismaSchema(msg: GetPrismaSchema) {

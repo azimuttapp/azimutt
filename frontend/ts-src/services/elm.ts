@@ -19,7 +19,17 @@ import {
     SqlStatement,
     zodParse
 } from "@azimutt/models";
-import {ElementSize, ElmFlags, ElmMsg, ElmRuntime, GetLocalFile, Hotkey, HotkeyId, JsMsg} from "../types/ports";
+import {
+    AmlSchemaError,
+    ElementSize,
+    ElmFlags,
+    ElmMsg,
+    ElmRuntime,
+    GetLocalFile,
+    Hotkey,
+    HotkeyId,
+    JsMsg
+} from "../types/ports";
 import {ToastLevel} from "../types/basics";
 import {Logger} from "./logger";
 
@@ -54,6 +64,7 @@ export class ElmApp {
         GetTableStats: [],
         GetColumnStats: [],
         RunDatabaseQuery: [],
+        GetAmlSchema: [],
         GetPrismaSchema: [],
         ObserveSizes: [],
         LlmGenerateSql: [],
@@ -111,6 +122,7 @@ export class ElmApp {
     gotColumnStats = (source: LegacySourceId, stats: LegacyColumnStats): void => this.send({kind: 'GotColumnStats', source, stats})
     gotColumnStatsError = (source: LegacySourceId, column: LegacyColumnRef, error: string): void => this.send({kind: 'GotColumnStatsError', source, column, error})
     gotDatabaseQueryResult = (context: string, source: SourceId, query: LegacySqlQueryOrigin, result: string | {columns: LegacyDatabaseQueryResultsColumn[], rows: LegacyJsValue[]}, started: number, finished: number): void => this.send({kind: 'GotDatabaseQueryResult', context, source, query, result, started, finished})
+    gotAmlSchema = (source: SourceId, length: number, schema: LegacyDatabase | undefined, errors: AmlSchemaError[]): void => this.send({kind: 'GotAmlSchema', source, length, schema, errors})
     gotPrismaSchema = (schema: LegacyDatabase): void => this.send({kind: 'GotPrismaSchema', schema})
     gotPrismaSchemaError = (error: string): void => this.send({kind: 'GotPrismaSchemaError', error})
     gotHotkey = (hotkey: Hotkey & { id: HotkeyId }): void => this.send({kind: 'GotHotkey', id: hotkey.id})

@@ -1,11 +1,13 @@
-module DataSources.JsonMiner.Models.JsonTable exposing (JsonCheck, JsonColumn, JsonColumnDbStats, JsonIndex, JsonNestedColumns(..), JsonPrimaryKey, JsonTable, JsonTableDbStats, JsonUnique, decode, decodeJsonColumn, encode)
+module DataSources.JsonMiner.Models.JsonTable exposing (JsonCheck, JsonColumn, JsonColumnDbStats, JsonIndex, JsonNestedColumns(..), JsonPrimaryKey, JsonTable, JsonTableDbStats, JsonUnique, decode, decodeJsonColumn, encode, orderedColumnPaths)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
-import Libs.Nel exposing (Nel)
+import Libs.Maybe as Maybe
+import Libs.Nel as Nel exposing (Nel)
 import Libs.Time as Time
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnValue as ColumnValue exposing (ColumnValue)
 import Time
 
@@ -23,6 +25,16 @@ type alias JsonTable =
     , comment : Maybe String
     , stats : Maybe JsonTableDbStats
     }
+
+
+orderedColumnPaths : JsonTable -> List ColumnPath
+orderedColumnPaths table =
+    table.columns |> List.concatMap (\c -> orderedColumnPathsNested (ColumnPath.root c.name) c)
+
+
+orderedColumnPathsNested : ColumnPath -> JsonColumn -> List ColumnPath
+orderedColumnPathsNested path column =
+    path :: (column.columns |> Maybe.mapOrElse (\(JsonNestedColumns cols) -> cols |> Nel.toList |> List.concatMap (\c -> orderedColumnPathsNested (ColumnPath.child c.name path) c)) [])
 
 
 type alias JsonTableDbStats =
