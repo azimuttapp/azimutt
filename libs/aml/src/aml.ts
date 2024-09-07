@@ -38,12 +38,12 @@ import {
     EntityAst,
     EntityRefAst,
     ExtraAst,
+    isTokenInfo,
     NamespaceAst,
     parseAmlAst,
     RelationAst,
     RelationKindAst,
     RelationPolymorphicAst,
-    TokenInfo,
     TypeAst,
     TypeContentAst
 } from "./parser";
@@ -54,12 +54,11 @@ export function parseAml(content: string): ParserResult<Database> {
         const db = buildDatabase(ast, start, Date.now())
         const warnings: ParserError[] = []
         mapEntriesDeep(ast, (path, value) => {
-            const v = value as TokenInfo
-            if (path[path.length - 1] === 'warning' && v.message) {
+            if (path[path.length - 1] === 'warning' && isTokenInfo(value) && value.message) {
                 warnings.push({
                     name: 'warning',
-                    message: v.message.message,
-                    position: {offset: v.offset, line: v.line, column: v.column}
+                    message: value.message.message,
+                    position: {offset: value.offset, line: value.line, column: value.column}
                 })
             }
         })

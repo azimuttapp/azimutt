@@ -38,7 +38,7 @@ talks
                     {src: {entity: 'talks'}, ref: {entity: 'users'}, attrs: [{src: ['speaker'], ref: ['id']}], extra: {statement: 2}}
                 ],
                 types: [
-                    {name: 'user_role', values: ['admin', 'guest']}
+                    {name: 'user_role', values: ['admin', 'guest'], extra: {statement: 1, line: 5}}
                 ],
                 extra: {}
             }

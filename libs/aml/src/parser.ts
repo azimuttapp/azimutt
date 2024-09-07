@@ -1,5 +1,5 @@
 import {createToken, EmbeddedActionsParser, IRecognitionException, IToken, Lexer, TokenType} from "chevrotain";
-import {removeEmpty, removeUndefined, stripIndent} from "@azimutt/utils";
+import {isObject, removeEmpty, removeUndefined, stripIndent} from "@azimutt/utils";
 import {ParserError, ParserPosition, ParserResult} from "@azimutt/models";
 
 // special
@@ -100,6 +100,14 @@ export type ExpressionAst = { expression: string, parser: TokenInfo }
 export type TokenInfo = {token: string, offset: ParserPosition, line: ParserPosition, column: ParserPosition, message?: TokenInfoMessage}
 export type TokenInfoMessage = {kind: TokenInfoMessageKind, message: string}
 export type TokenInfoMessageKind = 'error' | 'warning' | 'info' | 'hint'
+
+export function isTokenInfo(value: unknown): value is TokenInfo {
+    return isObject(value)
+        && ('token' in value && typeof value.token === 'string')
+        && ('offset' in value && Array.isArray(value.offset))
+        && ('line' in value && Array.isArray(value.line))
+        && ('column' in value && Array.isArray(value.column))
+}
 
 class AmlParser extends EmbeddedActionsParser {
     // common
