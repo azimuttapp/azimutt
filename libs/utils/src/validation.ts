@@ -13,3 +13,8 @@ export const isObject = (value: unknown): value is Record<string, any> => typeof
 export function isNotUndefined<T>(t: T | undefined): t is T {
     return t !== undefined
 }
+
+// this function should never be called, useful for making sure checks are exhaustive
+export function isNever(p: never): any {
+    throw new Error('a never param has been produced 🤯')
+}

@@ -5,7 +5,6 @@ import {generateAml, parseAml} from "./aml";
 
 describe('aml', () => {
     // TODO: add comment only lines
-    // TODO: add enums (`role user_role(guest, member, admin)=guest`)
     test('sample schema', () => {
         const input = `
 users |||
@@ -14,7 +13,7 @@ users |||
 |||
   id int pk # users primary key
   name varchar
-  role user_role=guest
+  role user_role(admin, guest)=guest
   settings json
     github string |||
       multiline note
@@ -29,12 +28,20 @@ users |||
   created_at timestamp=\`now()\`
 
 posts | all posts # an other entity
-  id int pk
+  id post_id pk
   title "varchar(100)" index | Title of the post
   author int check=\`author > 0\` -> users(id)
   created_by int
 
-rel posts(created_by) -> users(id)
+rel posts(created_by) -> users(id) | standalone relation
+
+type post_id int | alias
+
+type status (draft, published, archived)
+
+type position {x int, y int}
+
+type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
 `
         const parsed: Database = {
             entities: [{
@@ -62,7 +69,7 @@ rel posts(created_by) -> users(id)
             }, {
                 name: 'posts',
                 attrs: [
-                    {name: 'id', type: 'int'},
+                    {name: 'id', type: 'post_id'},
                     {name: 'title', type: 'varchar(100)', doc: 'Title of the post'},
                     {name: 'author', type: 'int'},
                     {name: 'created_by', type: 'int'},
@@ -75,7 +82,14 @@ rel posts(created_by) -> users(id)
             }],
             relations: [
                 {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {statement: 2}},
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}], extra: {statement: 3}},
+                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}], doc: 'standalone relation', extra: {statement: 3}},
+            ],
+            types: [
+                {name: 'user_role', values: ['admin', 'guest'], extra: {statement: 1, line: 8}},
+                {name: 'post_id', definition: 'int', doc: 'alias', extra: {statement: 4, line: 30}},
+                {name: 'status', values: ['draft', 'published', 'archived'], extra: {statement: 5, line: 32}},
+                {name: 'position', attrs: [{name: 'x', type: 'int'}, {name: 'y', type: 'int'}], extra: {statement: 6, line: 34}},
+                {name: 'range', definition: '(subtype = float8, subtype_diff = float8mi)', extra: {statement: 7, line: 36, comment: 'custom type'}},
             ]
         }
         const {extra, ...db} = parseAml(input).result || {}

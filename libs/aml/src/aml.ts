@@ -1,8 +1,18 @@
-import {groupBy, isNotUndefined, mapEntriesDeep, partition, removeEmpty, removeUndefined, zip} from "@azimutt/utils";
+import {
+    groupBy,
+    isNever,
+    isNotUndefined,
+    mapEntriesDeep,
+    partition,
+    removeEmpty,
+    removeUndefined,
+    zip
+} from "@azimutt/utils";
 import {
     Attribute,
     AttributePath,
     attributePathSame,
+    AttributeType,
     AttributeValue,
     Check,
     Database,
@@ -14,7 +24,8 @@ import {
     ParserError,
     ParserResult,
     Relation,
-    RelationKind
+    RelationKind,
+    Type
 } from "@azimutt/models";
 import {version} from "../package.json"
 import {
@@ -32,7 +43,9 @@ import {
     RelationAst,
     RelationKindAst,
     RelationPolymorphicAst,
-    TokenInfo
+    TokenInfo,
+    TypeAst,
+    TypeContentAst
 } from "./parser";
 
 export function parseAml(content: string): ParserResult<Database> {
@@ -70,13 +83,14 @@ function buildDatabase(ast: AmlAst, start: number, parsed: number): Database {
         if (stmt.statement === 'Namespace') {
             namespace = buildNamespace(index, stmt, namespace)
         } else if (stmt.statement === 'Entity') {
-            const {entity, relations} = buildEntity(index, stmt, namespace)
+            const {entity, relations, types} = buildEntity(index, stmt, namespace)
             db.entities?.push(entity) // TODO: check if entity already exists
             relations.forEach(r => db.relations?.push(r))
+            types.forEach(t => db.types?.push(t))
         } else if (stmt.statement === 'Relation') {
             db.relations?.push(buildRelationStatement(index, stmt)) // TODO: check if relation already exists
         } else if (stmt.statement === 'Type') {
-            // TODO: type
+            db.types?.push(buildType(index, stmt, namespace)) // TODO: check if relation already exists
         } else {
             // Empty: do nothing
         }
@@ -90,17 +104,27 @@ function genDatabase(database: Database): string {
         const statement = r.extra && 'statement' in r.extra && r.extra.statement
         return statement ? !!database.entities?.find(e => e.extra && 'statement' in e.extra && e.extra.statement === statement) : false
     })
+    const [entityTypes, aloneTypes] = partition(database.types || [], t => {
+        const statement = t.extra && 'statement' in t.extra && t.extra.statement
+        return statement ? !!database.entities?.find(e => e.extra && 'statement' in e.extra && e.extra.statement === statement) : false
+    })
     const entities = (database.entities || []).map((e, i) => {
         const statement = e.extra && 'statement' in e.extra && e.extra.statement
         const rels = statement ? entityRels.filter(r => r.extra && 'statement' in r.extra && r.extra.statement === statement) : []
-        return {index: statement || i, aml: genEntity(e, rels)}
+        const types = statement ? entityTypes.filter(t => t.extra && 'statement' in t.extra && t.extra.statement === statement) : []
+        return {index: statement || i, aml: genEntity(e, rels, types)}
     })
     const entityCount = entities.length
     const relations = aloneRels.map((r, i) => {
         const statement = r.extra && 'statement' in r.extra && r.extra.statement
         return {index: statement || entityCount + i, aml: genRelation(r)}
     })
-    return entities.concat(relations).sort((a, b) => a.index - b.index).map(a => a.aml).join('\n') || ''
+    const relationsCount = relations.length
+    const types = aloneTypes.map((t, i) => {
+        const statement = t.extra && 'statement' in t.extra && t.extra.statement
+        return {index: statement || entityCount + relationsCount + i, aml: genType(t)}
+    })
+    return entities.concat(relations, types).sort((a, b) => a.index - b.index).map(a => a.aml).join('\n') || ''
 }
 
 function buildNamespace(statement: number, n: NamespaceAst, current: Namespace): Namespace {
@@ -110,7 +134,7 @@ function buildNamespace(statement: number, n: NamespaceAst, current: Namespace):
     return {schema, catalog, database}
 }
 
-function buildEntity(statement: number, e: EntityAst, namespace: Namespace): { entity: Entity, relations: Relation[] } {
+function buildEntity(statement: number, e: EntityAst, namespace: Namespace): { entity: Entity, relations: Relation[], types: Type[] } {
     const astNamespace = removeUndefined({schema: e.schema?.identifier, catalog: e.catalog?.identifier, database: e.database?.identifier})
     const entityNamespace = {...namespace, ...astNamespace}
     const attrs = (e.attrs || []).map(a => buildAttribute(statement, a, {...entityNamespace, entity: e.name.identifier}))
@@ -136,7 +160,8 @@ function buildEntity(statement: number, e: EntityAst, namespace: Namespace): { e
             stats: undefined,
             extra: removeEmpty({statement, comment: e.comment?.comment})
         }),
-        relations: attrs.flatMap(a => a.relations)
+        relations: attrs.flatMap(a => a.relations),
+        types: attrs.flatMap(a => a.types),
     }
 }
 
@@ -147,8 +172,8 @@ function flattenAttributes(attributes: AttributeAstNested[]): AttributeAstNested
     })
 }
 
-function genEntity(e: Entity, relations: Relation[]): string {
-    return `${e.name}${genNote(e.doc)}${genCommentExtra(e)}\n` + e.attrs?.map(a => genAttribute(a, e, relations.filter(r => r.attrs[0].src[0] === a.name))).join('')
+function genEntity(e: Entity, relations: Relation[], types: Type[]): string {
+    return `${e.name}${genNote(e.doc)}${genCommentExtra(e)}\n` + e.attrs?.map(a => genAttribute(a, e, relations.filter(r => r.attrs[0].src[0] === a.name), types)).join('')
 }
 
 function buildIndexes(indexes: {path: AttributePath, index: string | undefined}[]): {value: string | undefined, attrs: AttributePath[]}[] {
@@ -158,42 +183,55 @@ function buildIndexes(indexes: {path: AttributePath, index: string | undefined}[
     return compositeIndexes.concat(singleIndexes)
 }
 
-function buildAttribute(statement: number, a: AttributeAstNested, entity: EntityRef): { attribute: Attribute, relations: Relation[] } {
-    const relation = a.relation ? [buildRelationAttribute(statement, a.relation, entity, [a.path.map(p => p.identifier)])] : []
-    const nested = a.attrs?.map(aa => buildAttribute(statement, aa, entity))
+function buildAttribute(statement: number, a: AttributeAstNested, entity: EntityRef): { attribute: Attribute, relations: Relation[], types: Type[] } {
+    const {entity: _, ...namespace} = entity
+    const typeExt = a.enumValues && a.enumValues.length <= 2 && a.enumValues.every(v => v.parser.token === 'Integer') ? '(' + a.enumValues.map(stringifyAttrValue).join(',') + ')' : ''
+    const enumType: Type[] = a.type && a.enumValues && !typeExt ? [{...namespace, name: a.type.identifier, values: a.enumValues.map(stringifyAttrValue), extra: {statement, line: a.enumValues[0].parser.line[0]}}] : []
+    const relation: Relation[] = a.relation ? [buildRelationAttribute(statement, a.relation, entity, [a.path.map(p => p.identifier)])] : []
+    const nested = a.attrs?.map(aa => buildAttribute(statement, aa, entity)) || []
     return {
         attribute: removeEmpty({
             name: a.path[a.path.length - 1].identifier,
-            type: a.type?.identifier || defaultType,
+            type: buildAttributeType(a, typeExt),
             null: a.nullable ? true : undefined,
             gen: undefined,
             default: a.defaultValue ? buildAttrValue(a.defaultValue) : undefined,
-            attrs: nested?.map(n => n.attribute),
+            attrs: nested.map(n => n.attribute),
             doc: a.note?.note,
             stats: undefined,
             extra: removeEmpty({comment: a.comment?.comment})
         }),
-        relations: relation.concat(nested?.flatMap(n => n.relations) || [])
+        relations: relation.concat(nested.flatMap(n => n.relations)),
+        types: enumType.concat(nested.flatMap(n => n.types)),
     }
 }
 
-function genAttribute(a: Attribute, e: Entity, relations: Relation[], parents: AttributePath = []): string {
+function genAttribute(a: Attribute, e: Entity, relations: Relation[], types: Type[], parents: AttributePath = []): string {
     const path = [...parents, a.name]
     const indent = '  '.repeat(path.length)
+    const nested = a.attrs?.map(aa => genAttribute(aa, e, relations, types, path)).join('') || ''
+    return indent + genAttributeInner(a, e, relations, types, path, indent) + '\n' + nested
+}
+
+function genAttributeInner(a: Attribute, e: Entity, relations: Relation[], types: Type[], path: AttributePath, indent: string): string {
     const pk = e.pk && e.pk.attrs.some(attr => attributePathSame(attr, path)) ? ' pk' : ''
     const indexes = (e.indexes || []).filter(i => i.attrs.some(attr => attributePathSame(attr, path))).map(i => ` ${i.unique ? 'unique' : 'index'}${i.name ? `=${i.name}` : ''}`).join('')
     const checks = (e.checks || []).filter(i => i.attrs.some(attr => attributePathSame(attr, path))).map(i => ` check${i.predicate ? `=\`${i.predicate}\`` : ''}`).join('')
     const rel = relations.map(r => ' ' + genRelationTarget(r)).join('')
-    const nested = a.attrs?.map(aa => genAttribute(aa, e, relations, path)).join('') || ''
-    return `${indent}${a.name}${genAttributeType(a)}${pk}${indexes}${checks}${rel}${genNote(a.doc, indent)}${genCommentExtra(a)}\n` + nested
+    return `${a.name}${genAttributeType(a, types)}${pk}${indexes}${checks}${rel}${genNote(a.doc, indent)}${genCommentExtra(a)}`
 }
 
-function genAttributeType(a: Attribute): string {
-    // regex from `Identifier` token: libs/aml/src/parser.ts:7
-    const type = a.type && a.type !== defaultType ? ' ' + (a.type.match(/^[a-zA-Z_]\w*$/) ? a.type : '"' + a.type + '"') : ''
-    // TODO: enum values
+function buildAttributeType(a: AttributeAstNested, ext: string): AttributeType {
+    return a.type ? a.type.identifier + ext : defaultType
+}
+
+function genAttributeType(a: Attribute, types: Type[]): string {
+    // regex from `Identifier` token to know if it should be escaped or not (cf libs/aml/src/parser.ts:7)
+    const typeName = a.type && a.type !== defaultType ? ' ' + (a.type.match(/^[a-zA-Z_]\w*$/) ? a.type : '"' + a.type + '"') : ''
+    const enumType = types.find(t => t.name === a.type && t.values)
+    const enumValues = enumType ? '(' + enumType.values?.join(', ') + ')' : ''
     const defaultValue = a.default !== undefined ? `=${a.default}` : ''
-    return type ? type + defaultValue : ''
+    return typeName ? typeName + enumValues + defaultValue : ''
 }
 
 function buildRelationStatement(statement: number, r: RelationAst): Relation {
@@ -220,7 +258,7 @@ function buildRelation(statement: number, kind: RelationKindAst | undefined, src
 }
 
 function genRelation(r: Relation): string {
-    return `rel ${getAttributeRef(r.src, r.attrs.map(a => a.src))} ${genRelationTarget(r)}\n`
+    return `rel ${getAttributeRef(r.src, r.attrs.map(a => a.src))} ${genRelationTarget(r)}${genNote(r.doc)}${genCommentExtra(r)}\n`
 }
 
 function genRelationTarget(r: Relation): string {
@@ -229,6 +267,33 @@ function genRelationTarget(r: Relation): string {
     const aSecond = qSrc === 'many' ? '>' : '-'
     const aFirst = qRef === 'many' ? '<' : '-'
     return `${aFirst}${poly}${aSecond} ${getAttributeRef(r.ref, r.attrs.map(a => a.ref))}`
+}
+
+function buildType(statement: number, t: TypeAst, namespace: Namespace): Type {
+    const astNamespace = removeUndefined({schema: t.schema?.identifier, catalog: t.catalog?.identifier, database: t.database?.identifier})
+    const typeNamespace = {...namespace, ...astNamespace}
+    const content = t.content ? buildTypeContent(statement, t.content, {...typeNamespace, entity: t.name.identifier}) : {}
+    return removeUndefined({...typeNamespace, name: t.name.identifier, ...content, doc: t.note?.note, extra: removeEmpty({statement, line: t.name.parser.line[0], comment: t.comment?.comment})})
+}
+
+function buildTypeContent(statement: number, t: TypeContentAst, entity: EntityRef): {definition?: string, values?: string[], attrs?: Attribute[]} {
+    if (t.kind === 'alias') return {definition: t.name.identifier}
+    if (t.kind === 'enum') return {values: t.values.map(stringifyAttrValue)}
+    if (t.kind === 'struct') return {attrs: t.attrs.map(a => buildAttribute(statement, a, entity).attribute)}
+    if (t.kind === 'custom') return {definition: t.definition.expression}
+    return isNever(t)
+}
+
+function genType(t: Type): string {
+    return `type ${genEntityRef({...t, entity: t.name})}${genTypeContent(t)}${genNote(t.doc)}${genCommentExtra(t)}\n`
+}
+
+function genTypeContent(t: Type): string {
+    if (t.definition && t.definition.match(/[ (]/)) return ' `' + t.definition + '`'
+    if (t.definition) return ' ' + t.definition
+    if (t.values) return ' (' + t.values.join(', ') + ')'
+    if (t.attrs) return ' {' + t.attrs.map(a => genAttributeInner(a, {name: t.name}, [], [], [a.name], '')).join(', ') + '}'
+    return ''
 }
 
 function getAttributeRef(e: EntityRef, attrs: AttributePath[]) {
@@ -263,18 +328,22 @@ function buildAttrPath(a: AttributePathAst): AttributePath {
     return [a.identifier].concat(a.path?.map(p => p.identifier) || [])
 }
 
-function buildAttrValue(a: AttributeValueAst): AttributeValue {
-    if ('null' in a) {
-        return null
-    } else if ('value' in a) {
-        return a.value
-    } else if ('flag' in a) {
-        return a.flag
-    } else if ('identifier' in a) {
-        return a.identifier
-    } else {
-        return '`' + a.expression + '`'
-    }
+function buildAttrValue(v: AttributeValueAst): AttributeValue {
+    if ('null' in v) return null
+    if ('value' in v) return v.value
+    if ('flag' in v) return v.flag
+    if ('identifier' in v) return v.identifier
+    if ('expression' in v) return '`' + v.expression + '`'
+    return isNever(v)
+}
+
+function stringifyAttrValue(v: AttributeValueAst): string {
+    if ('null' in v) return 'null'
+    if ('value' in v) return v.value.toString()
+    if ('flag' in v) return v.flag.toString()
+    if ('identifier' in v) return v.identifier
+    if ('expression' in v) return v.expression
+    return isNever(v)
 }
 
 function genNote(doc: string | undefined, indent: string = ''): string {

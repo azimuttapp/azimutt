@@ -509,6 +509,15 @@ comments
         test('with comment', () => expect(parseRule(p => p.emptyStatementRule(), ' # hello\n')).toEqual({result: {statement: 'Empty', comment: {comment: 'hello', parser: {token: 'Comment', offset: [1, 7], line: [1, 1], column: [2, 8]}}}}))
     })
     describe('legacy', () => {
+        test('attribute type', () => {
+            // as `varchar(12)` is valid on both v1 & v2 but has different meaning, it's handled when building AML, see aml-legacy.test.ts
+            expect(parseRule(p => p.attributeRule(), '  name varchar(12)\n').result).toEqual({
+                nesting: 0,
+                name: {identifier: 'name', parser: {token: 'Identifier', offset: [2, 5], line: [1, 1], column: [3, 6]}},
+                type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [7, 13], line: [1, 1], column: [8, 14]}},
+                enumValues: [{value: 12, parser: {token: 'Integer', offset: [15, 16], line: [1, 1], column: [16, 17]}}]
+            })
+        })
         test('attribute relation', () => {
             const {warning, ...v1} = parseRule(p => p.attributeRule(), '  user_id fk users.id\n').result?.relation || {}
             const v2 = parseRule(p => p.attributeRule(), '  user_id -> users(id)\n').result?.relation
