@@ -12,7 +12,7 @@ import {ParserError, ParserPosition, ParserResult} from "@azimutt/models";
 
 // special
 const WhiteSpace = createToken({name: 'WhiteSpace', pattern: /[ \t]+/})
-const Identifier = createToken({ name: 'Identifier', pattern: /[a-zA-Z_]\w*|"([^\\"]|\\\\|\\")*"/ })
+const Identifier = createToken({ name: 'Identifier', pattern: /[a-zA-Z_][a-zA-Z0-9_#]*|"([^\\"]|\\\\|\\")*"/ })
 const Expression = createToken({ name: 'Expression', pattern: /`[^`]+`/ })
 const Note = createToken({ name: 'Note', pattern: /\|[^#\n]*/ })
 const NoteMultiline = createToken({ name: 'NoteMultiline', pattern: /\|\|\|[^]*?\|\|\|/, line_breaks: true })
@@ -327,8 +327,10 @@ class AmlParser extends EmbeddedActionsParser {
                     return {...entity, attrs}
                 }
             }, {
+                // legacy fallback
                 ALT: () => {
-                    // legacy fallback
+                    // don't work :/ it try to consume even with schema :/
+                    // if (!entity.schema) { $.CONSUME(Dot) } // make the rule fail as it should have at least a `schema.entity` to be used as `entity.attr`
                     const path = $.SUBRULE(legacyAttributePathRule)
                     return removeUndefined({schema: entity.catalog, entity: entity.schema, attrs: [removeEmpty({...entity.entity, path})]}) // TODO: add warning in AST
                 }
@@ -349,7 +351,6 @@ class AmlParser extends EmbeddedActionsParser {
         this.namespaceRule = $.RULE<() => NamespaceAst>('namespaceRule', () => {
             $.CONSUME(Namespace)
             $.CONSUME(WhiteSpace)
-            // TODO: retro-compatibility: allow more chars inside identifiers (ex: 'C##INVENTORY')
             const first = $.SUBRULE($.identifierRule)
             const second = $.OPTION(() => $.SUBRULE(nestedRule))
             const third = $.OPTION2(() => $.SUBRULE2(nestedRule))
@@ -456,18 +457,18 @@ class AmlParser extends EmbeddedActionsParser {
             const nullable = isNull ? {parser: parserInfo(isNull)} : undefined
             $.OPTION4(() => $.CONSUME4(WhiteSpace))
             const constraints = $.SUBRULE(attributeConstraintsRule)
-            $.OPTION5(() => $.CONSUME5(WhiteSpace))
-            const relation = $.OPTION6(() => $.SUBRULE(attributeRelationRule))
-            return removeUndefined({nesting: 0, name, type, enumValues, defaultValue, nullable, ...constraints, relation})
-        })
+            return removeUndefined({nesting: 0, name, type, enumValues, defaultValue, nullable, ...constraints})
+        }, {resyncEnabled: true})
         this.attributeRule = $.RULE<() => AttributeAstFlat>('attributeRule', () => {
             const spaces = $.CONSUME(WhiteSpace)
             const nesting = Math.round(spaces.image.split('').reduce((i, c) => c === '\t' ? i + 1 : i + 0.5, 0)) - 1
             const attr = $.SUBRULE(attributeRuleInner)
             $.OPTION(() => $.CONSUME2(WhiteSpace))
+            const relation = $.OPTION3(() => $.SUBRULE(attributeRelationRule))
+            $.OPTION4(() => $.CONSUME3(WhiteSpace))
             const extra = $.SUBRULE($.extraRule)
             $.CONSUME(NewLine)
-            return removeUndefined({...attr, nesting, ...extra})
+            return removeUndefined({...attr, nesting, relation, ...extra})
         })
 
         this.entityRule = $.RULE<() => EntityAst>('entityRule', () => {

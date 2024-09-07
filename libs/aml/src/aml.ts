@@ -97,7 +97,8 @@ function buildDatabase(ast: AmlAst, start: number, parsed: number): Database {
             relations.forEach(r => db.relations?.push(r))
             types.forEach(t => db.types?.push(t))
         } else if (stmt.statement === 'Relation') {
-            db.relations?.push(buildRelationStatement(index, stmt)) // TODO: check if relation already exists
+            const rel = buildRelationStatement(index, stmt)
+            rel && db.relations?.push(rel) // TODO: check if relation already exists
         } else if (stmt.statement === 'Type') {
             db.types?.push(buildType(index, stmt, namespace)) // TODO: check if relation already exists
         } else {
@@ -198,7 +199,7 @@ function buildAttribute(statement: number, a: AttributeAstNested, entity: Entity
     const {entity: _, ...namespace} = entity
     const typeExt = a.enumValues && a.enumValues.length <= 2 && a.enumValues.every(v => v.parser.token === 'Integer') ? '(' + a.enumValues.map(stringifyAttrValue).join(',') + ')' : ''
     const enumType: Type[] = a.type && a.enumValues && !typeExt ? [{...namespace, name: a.type.identifier, values: a.enumValues.map(stringifyAttrValue), extra: {statement, line: a.enumValues[0].parser.line[0]}}] : []
-    const relation: Relation[] = a.relation ? [buildRelationAttribute(statement, a.relation, entity, [a.path.map(p => p.identifier)])] : []
+    const relation: Relation[] = a.relation ? [buildRelationAttribute(statement, a.relation, entity, [a.path.map(p => p.identifier)])].filter(isNotUndefined) : []
     const nested = a.attrs?.map(aa => buildAttribute(statement, aa, entity)) || []
     return {
         attribute: removeEmpty({
@@ -245,27 +246,30 @@ function genAttributeType(a: Attribute, types: Type[]): string {
     return typeName ? typeName + enumValues + defaultValue : ''
 }
 
-function buildRelationStatement(statement: number, r: RelationAst): Relation {
-    return buildRelation(statement, r.kind, buildEntityRef(r.src), r.src.attrs.map(buildAttrPath), r.ref, r.polymorphic, r)
+function buildRelationStatement(statement: number, r: RelationAst): Relation | undefined {
+    const entitySrc = buildEntityRef(r.src)
+    return entitySrc ? buildRelation(statement, r.kind, entitySrc, r.src.attrs.map(buildAttrPath), r.ref, r.polymorphic, r) : undefined
 }
 
-function buildRelationAttribute(statement: number, r: AttributeRelationAst, srcEntity: EntityRef, srcAttrs: AttributePath[]): Relation {
+function buildRelationAttribute(statement: number, r: AttributeRelationAst, srcEntity: EntityRef, srcAttrs: AttributePath[]): Relation | undefined {
     return buildRelation(statement, r.kind, srcEntity, srcAttrs, r.ref, r.polymorphic, undefined)
 }
 
-function buildRelation(statement: number, kind: RelationKindAst | undefined, srcEntity: EntityRef, srcAttrs: AttributePath[], ref: AttributeRefCompositeAst, polymorphic: RelationPolymorphicAst | undefined, extra: ExtraAst | undefined): Relation {
+function buildRelation(statement: number, kind: RelationKindAst | undefined, srcEntity: EntityRef, srcAttrs: AttributePath[], ref: AttributeRefCompositeAst, polymorphic: RelationPolymorphicAst | undefined, extra: ExtraAst | undefined): Relation | undefined {
+    if (ref.attrs.map(a => a.identifier).filter(isNotUndefined).length === 0) return undefined // on bad input the parser can build bad ast (undefined identifier) :/ TODO: report an error instead of just ignoring?
     const refAttrs: AttributePath[] = ref.attrs.map(buildAttrPath)
-    return removeUndefined({
+    const entityRef = buildEntityRef(ref)
+    return entityRef ? removeUndefined({
         name: undefined,
         kind: kind ? buildRelationKind(kind) : undefined,
         origin: undefined,
         src: srcEntity,
-        ref: buildEntityRef(ref),
+        ref: entityRef,
         attrs: zip(srcAttrs, refAttrs).map(([srcAttr, refAttr]) => ({src: srcAttr, ref: refAttr})),
         polymorphic: polymorphic ? {attribute: buildAttrPath(polymorphic.attr), value: buildAttrValue(polymorphic.value)} : undefined,
         doc: extra?.note?.note,
         extra: removeEmpty({statement, comment: extra?.comment?.comment}),
-    })
+    }) : undefined
 }
 
 function genRelation(r: Relation): string {
@@ -331,7 +335,8 @@ function buildRelationKind(k: RelationKindAst): RelationKind | undefined {
     }
 }
 
-function buildEntityRef(e: EntityRefAst): EntityRef {
+function buildEntityRef(e: EntityRefAst): EntityRef | undefined {
+    if (!e.entity) return undefined // on bad input the parser can build bad ast (no entity) :/ TODO: report an error instead of just ignoring?
     return removeUndefined({ database: e.database?.identifier, catalog: e.catalog?.identifier, schema: e.schema?.identifier, entity: e.entity.identifier })
 }
 

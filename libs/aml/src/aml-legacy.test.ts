@@ -114,9 +114,24 @@ fk admins.id -> users.id
             ]
         })
     })
+    test.skip('specific', () => {
+        expect(parseLegacyAml(`
+C##INVENTORY.USERS # identifier with '#'
+  ID BIGINT PK # uppercase keyword
+  FORMAT asset_format(1:1, 16:9) # : in enum
+  OWNER cart_owner(identity.Devices, identity.Users) # . in enum
+`)).toEqual({result: {
+            // TODO
+        }})
+    })
 })
 
 function parseLegacyAml(aml: string): ParserResult<Database> {
     // remove db extra fields not relevant
-    return parseAml(aml).map(({extra: {source, parsedAt, parsingMs, formattingMs, ...extra} = {}, ...db}) => ({...db, extra}))
+    try {
+        return parseAml(aml).map(({extra: {source, parsedAt, parsingMs, formattingMs, ...extra} = {}, ...db}) => ({...db, extra}))
+    } catch (e) {
+        console.error(e) // print stack trace
+        throw e
+    }
 }

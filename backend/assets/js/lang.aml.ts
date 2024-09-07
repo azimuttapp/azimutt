@@ -11,8 +11,8 @@ import {
     ProviderResult
 } from "./monaco"
 
-const entityRegex = /^[a-zA-Z_]+/
-const attributeNameRegex = /^ +[a-zA-Z_]+/
+const entityRegex = /^[a-zA-Z_][a-zA-Z0-9_#]*/
+const attributeNameRegex = /^ +[a-zA-Z_][a-zA-Z0-9_#]*/
 const attributeTypeRegex = /\b(uuid|varchar|text|int|boolean|timestamp)\b/
 const keywordRegex = /\b(namespace|nullable|pk|index|unique|check|fk|rel|type)\b/
 const notesRegex = /\|[^#\n]*/
