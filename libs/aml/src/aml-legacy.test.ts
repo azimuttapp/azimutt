@@ -41,10 +41,13 @@ talks
                     {name: 'user_role', values: ['admin', 'guest'], extra: {statement: 1, line: 5}}
                 ],
                 extra: {}
-            }
+            },
+            warnings: [
+                {name: 'warning', message: '"fk" is legacy, replace it with "->"', position: {offset: [117, 118], line: [10, 10], column: [15, 16]}}
+            ]
         })
     })
-    test.skip('complex', () => {
+    test('complex', () => {
         expect(parseLegacyAml(`
 
 emails
@@ -73,36 +76,42 @@ fk admins.id -> users.id
                     attrs: [
                         {name: "email", type: "varchar"},
                         {name: "score", type: "double precision"},
-                    ]
+                    ],
+                    extra: {statement: 1}
                 }, {
                     schema: "public",
                     name: "users",
                     attrs: [
                         {name: 'id', type: 'int'},
                         {name: 'role', type: 'varchar', default: 'guest'},
-                        {name: 'score', type: 'double precision', default: '0.0', doc: 'User progression'},
+                        {name: 'score', type: 'double precision', default: 0, doc: 'User progression', extra: {comment: 'a column with almost all possible attributes'}},
                         {name: 'first_name', type: 'varchar(10)'},
                         {name: 'last_name', type: 'varchar(10)'},
                         {name: 'email', type: 'varchar', null: true},
                     ],
                     pk: {attrs: [['id']]},
-                    indexes: [{attrs: [['score']]}, {name: 'name', attrs: [['first_name'], ['last_name']], unique: true}],
-                    doc: 'Table description'
+                    indexes: [{name: 'name', attrs: [['first_name'], ['last_name']], unique: true}, {attrs: [['score']]}],
+                    doc: 'Table description',
+                    extra: {statement: 2, comment: 'a table with everything!'}
                 }, {
                     name: 'admins',
-                    type: 'view',
+                    kind: 'view',
                     attrs: [
-                        {name: 'id'},
-                        {name: 'name', doc: 'Computed from user first_name and last_name'},
+                        {name: 'id', type: 'unknown'},
+                        {name: 'name', type: 'unknown', doc: 'Computed from user first_name and last_name'},
                     ],
-                    doc: 'View of `users` table with only admins'
+                    doc: 'View of `users` table with only admins',
+                    extra: {statement: 3}
                 }],
                 relations: [
-                    {src: {schema: 'public', entity: 'users'}, ref: {entity: 'emails'}, attrs: [{src: ['email'], ref: ['email']}]},
-                    {src: {entity: 'admins'}, ref: {entity: 'users'}, attrs: [{src: ['id'], ref: ['id']}]},
+                    {src: {schema: 'public', entity: 'users'}, ref: {entity: 'emails'}, attrs: [{src: ['email'], ref: ['email']}], extra: {statement: 2}},
+                    {src: {entity: 'admins'}, ref: {entity: 'users'}, attrs: [{src: ['id'], ref: ['id']}], extra: {statement: 4}},
                 ],
                 extra: {}
-            }
+            },
+            warnings: [
+                {name: 'warning', message: '"fk" is legacy, replace it with "->"', position: {offset: [435, 436], line: [14, 14], column: [26, 27]}}
+            ]
         })
     })
 })

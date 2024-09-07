@@ -1,10 +1,11 @@
 import * as fs from "fs";
 import {describe, expect, test} from "@jest/globals";
-import {Database} from "@azimutt/models";
+import {Database, ParserResult} from "@azimutt/models";
 import {generateAml, parseAml} from "./aml";
 
 describe('aml', () => {
     // TODO: add comment only lines
+    // TODO: add props on entity, attribute, relation & type
     test('sample schema', () => {
         const input = `
 users |||
@@ -27,7 +28,7 @@ users |||
       country string index=address
   created_at timestamp=\`now()\`
 
-posts | all posts # an other entity
+posts* | all posts # an other entity
   id post_id pk
   title "varchar(100)" index | Title of the post
   author int check=\`author > 0\` -> users(id)
@@ -68,6 +69,7 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                 extra: {statement: 1}
             }, {
                 name: 'posts',
+                kind: 'view',
                 attrs: [
                     {name: 'id', type: 'post_id'},
                     {name: 'title', type: 'varchar(100)', doc: 'Title of the post'},
@@ -116,9 +118,24 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
         expect(generateAml(parsed)).toEqual(input)
     })
     test('bad schema', () => {
-        expect(parseAml(`a bad schema`)).toEqual({errors: [
-            {name: 'MismatchedTokenException', message: "Expecting token of type --> NewLine <-- but found --> 'bad' <--", position: {offset: [2, 4], line: [1, 1], column: [3, 5]}},
-            {name: 'MismatchedTokenException', message: "Expecting token of type --> NewLine <-- but found --> 'schema' <--", position: {offset: [6, 11], line: [1, 1], column: [7, 12]}},
-        ]})
+        expect(parseLegacyAml(`a bad schema`)).toEqual({
+            result: {
+                entities: [
+                    {name: 'a', extra: {statement: 1}},
+                    {name: 'bad', extra: {statement: 2}},
+                    {name: 'schema', extra: {statement: 3}},
+                ],
+                extra: {}
+            },
+            errors: [
+                {name: 'MismatchedTokenException', message: "Expecting token of type --> NewLine <-- but found --> 'bad' <--", position: {offset: [2, 4], line: [1, 1], column: [3, 5]}},
+                {name: 'MismatchedTokenException', message: "Expecting token of type --> NewLine <-- but found --> 'schema' <--", position: {offset: [6, 11], line: [1, 1], column: [7, 12]}},
+            ]
+        })
     })
 })
+
+function parseLegacyAml(aml: string): ParserResult<Database> {
+    // remove db extra fields not relevant
+    return parseAml(aml).map(({extra: {source, parsedAt, parsingMs, formattingMs, ...extra} = {}, ...db}) => ({...db, extra}))
+}

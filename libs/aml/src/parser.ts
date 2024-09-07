@@ -1,4 +1,12 @@
-import {createToken, EmbeddedActionsParser, IRecognitionException, IToken, Lexer, TokenType} from "chevrotain";
+import {
+    createToken,
+    EmbeddedActionsParser,
+    ILexingError,
+    IRecognitionException,
+    IToken,
+    Lexer,
+    TokenType
+} from "chevrotain";
 import {isObject, removeEmpty, removeUndefined, stripIndent} from "@azimutt/utils";
 import {ParserError, ParserPosition, ParserResult} from "@azimutt/models";
 
@@ -32,6 +40,7 @@ const keywordTokens: TokenType[] = [Namespace, As, Nullable, PrimaryKey, Index, 
 
 // chars
 const NewLine = createToken({ name: 'NewLine', pattern: /\r?\n/ })
+const Asterisk = createToken({ name: 'Asterisk', pattern: /\*/ })
 const Dot = createToken({ name: 'Dot', pattern: /\./ })
 const Comma = createToken({ name: 'Comma', pattern: /,/ })
 const Colon = createToken({ name: 'Colon', pattern: /:/ })
@@ -43,7 +52,7 @@ const LParen = createToken({ name: 'LParen', pattern: /\(/ })
 const RParen = createToken({ name: 'RParen', pattern: /\)/ })
 const LCurly = createToken({ name: 'LCurly', pattern: /\{/ })
 const RCurly = createToken({ name: 'RCurly', pattern: /}/ })
-const charTokens: TokenType[] = [Dot, Comma, Colon, Equal, Dash, GreaterThan, LowerThan, LParen, RParen, LCurly, RCurly]
+const charTokens: TokenType[] = [Asterisk, Dot, Comma, Colon, Equal, Dash, GreaterThan, LowerThan, LParen, RParen, LCurly, RCurly]
 
 // legacy tokens
 const ForeignKey = createToken({ name: 'ForeignKey', pattern: /fk/ })
@@ -55,7 +64,7 @@ const allTokens: TokenType[] = [WhiteSpace, NewLine, ...charTokens, ...keywordTo
 export type AmlAst = StatementAst[]
 export type StatementAst = NamespaceAst | EntityAst | RelationAst | TypeAst | EmptyStatementAst
 export type NamespaceAst = { statement: 'Namespace', schema: IdentifierAst, catalog?: IdentifierAst, database?: IdentifierAst } & ExtraAst
-export type EntityAst = { statement: 'Entity', name: IdentifierAst, alias?: IdentifierAst, attrs?: AttributeAstNested[] } & NamespaceRefAst & ExtraAst
+export type EntityAst = { statement: 'Entity', name: IdentifierAst, view?: TokenInfo, alias?: IdentifierAst, attrs?: AttributeAstNested[] } & NamespaceRefAst & ExtraAst
 export type RelationAst = { statement: 'Relation', kind: RelationKindAst, src: AttributeRefCompositeAst, ref: AttributeRefCompositeAst, polymorphic?: RelationPolymorphicAst } & ExtraAst
 export type TypeAst = { statement: 'Type', name: IdentifierAst, content?: TypeContentAst } & NamespaceRefAst & ExtraAst
 export type EmptyStatementAst = { statement: 'Empty', comment?: CommentAst }
@@ -219,7 +228,10 @@ class AmlParser extends EmbeddedActionsParser {
             const key = $.SUBRULE($.identifierRule)
             $.OPTION(() => $.CONSUME(WhiteSpace))
             const value = $.OPTION2(() => {
-                $.CONSUME(Colon)
+                $.OR([
+                    {ALT: () => $.CONSUME(Colon) },
+                    {ALT: () => $.CONSUME(Equal) }, // TODO: legacy rule
+                ])
                 $.OPTION3(() => $.CONSUME2(WhiteSpace))
                 return $.SUBRULE(propertyValueRule)
             })
@@ -460,18 +472,19 @@ class AmlParser extends EmbeddedActionsParser {
 
         this.entityRule = $.RULE<() => EntityAst>('entityRule', () => {
             const {entity, ...namespace} = $.SUBRULE($.entityRefRule)
-            $.OPTION(() => $.CONSUME(WhiteSpace))
-            const alias = $.OPTION2(() => {
+            const view = $.OPTION(() => $.CONSUME(Asterisk))
+            $.OPTION2(() => $.CONSUME(WhiteSpace))
+            const alias = $.OPTION3(() => {
                 $.CONSUME(As)
                 $.CONSUME2(WhiteSpace)
                 return $.SUBRULE($.identifierRule)
             })
-            $.OPTION3(() => $.CONSUME3(WhiteSpace))
+            $.OPTION4(() => $.CONSUME3(WhiteSpace))
             const extra = $.SUBRULE($.extraRule)
             $.CONSUME(NewLine)
             const attrs: AttributeAstFlat[] = []
             $.MANY(() => attrs.push($.SUBRULE($.attributeRule)))
-            return removeEmpty({statement: 'Entity' as const, name: entity, ...namespace, alias, ...extra, attrs: nestAttributes(attrs)})
+            return removeEmpty({statement: 'Entity' as const, name: entity, view: view ? parserInfo(view) : undefined, ...namespace, alias, ...extra, attrs: nestAttributes(attrs)})
         })
 
         // relation rules
@@ -597,17 +610,23 @@ export function parseRule<T>(parse: (p: AmlParser) => T, input: string): ParserR
     const lexingResult = lexer.tokenize(input)
     parser.input = lexingResult.tokens // "input" is a setter which will reset the parser's state.
     const res = parse(parser)
-    if (parser.errors.length > 0) {
-        return ParserResult.failure(parser.errors.map(formatError))
-    }
-    return ParserResult.success(res)
+    const errors = lexingResult.errors.map(formatLexerError).concat(parser.errors.map(formatParserError))
+    return new ParserResult(res, errors, undefined)
 }
 
 export function parseAmlAst(input: string): ParserResult<AmlAst> {
     return parseRule(p => p.amlRule(), input)
 }
 
-function formatError(err: IRecognitionException): ParserError {
+function formatLexerError(err: ILexingError): ParserError {
+    return {name: 'LexingError', message: err.message, position: {
+        offset: [err.offset, err.offset + err.length],
+        line: [err.line || 0, err.line || 0],
+        column: [err.column || 0, (err.column || 0) + err.length]
+    }}
+}
+
+function formatParserError(err: IRecognitionException): ParserError {
     const {offset, line, column} = parserInfo(err.token)
     return {name: err.name, message: err.message, position: {offset, line, column}}
 }

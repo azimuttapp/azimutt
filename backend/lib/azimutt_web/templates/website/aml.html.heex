@@ -227,14 +227,14 @@ posts
                     startLineNumber: e.position.line[0],
                     startColumn: e.position.column[0],
                     endLineNumber: e.position.line[1],
-                    endColumn: e.position.column[1],
+                    endColumn: e.position.column[1] + 1,
                 })).concat((parsed.warnings || []).map(e => ({
                     message: e.message,
                     severity: monaco.MarkerSeverity.Warning,
                     startLineNumber: e.position.line[0],
                     startColumn: e.position.column[0],
                     endLineNumber: e.position.line[1],
-                    endColumn: e.position.column[1],
+                    endColumn: e.position.column[1] + 1,
                 }))))
             }
 

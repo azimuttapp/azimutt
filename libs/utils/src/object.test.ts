@@ -71,9 +71,12 @@ describe('object', () => {
         expect(res1).toEqual({id: 1, name: 2, settings: 5, tags: 7})
 
         const names: string[] = []
-        const res2 = mapEntriesDeep(obj, (path, value) => path[path.length - 1] === 'name' && names.push(value as string))
+        const res2 = mapEntriesDeep(obj, (path, value) => {
+            if (path[path.length - 1] === 'name') names.push(value as string)
+            return value
+        })
         expect(names).toEqual(['a', 'aaa'])
-        expect(res2).toEqual({id: false, name: 1, settings: false, tags: false})
+        expect(res2).toEqual(obj)
     })
     test('removeFieldsDeep', () => {
         expect(removeFieldsDeep({

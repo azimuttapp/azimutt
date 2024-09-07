@@ -313,7 +313,7 @@ comments
                 }})
             })
             test('error', () => {
-                expect(parseRule(p => p.attributeRule(), '  12\n')).toEqual({errors: [{name: 'MismatchedTokenException', message: "Expecting token of type --> Identifier <-- but found --> '12' <--", position: {offset: [2, 3], line: [1, 1], column: [3, 4]}}]})
+                expect(parseRule(p => p.attributeRule(), '  12\n')).toEqual({result: {nesting: 0}, errors: [{name: 'MismatchedTokenException', message: "Expecting token of type --> Identifier <-- but found --> '12' <--", position: {offset: [2, 3], line: [1, 1], column: [3, 4]}}]})
             })
         })
     })
@@ -574,6 +574,12 @@ comments
             }})
             expect(v1).toEqual(v2)
         })
+        test('properties', () => {
+            expect(parseRule(p => p.propertiesRule(), '{color=red}')).toEqual({result: [{
+                key: {identifier: 'color', parser: {token: 'Identifier', offset: [1, 5], line: [1, 1], column: [2, 6]}},
+                value: {identifier: 'red', parser: {token: 'Identifier', offset: [7, 9], line: [1, 1], column: [8, 10]}}
+            }]})
+        })
     })
     describe('common', () => {
         test('integerRule', () => {
@@ -585,7 +591,7 @@ comments
             expect(parseRule(p => p.identifierRule(), 'id')).toEqual({result: {identifier: 'id', parser: {token: 'Identifier', offset: [0, 1], line: [1, 1], column: [1, 2]}}})
             expect(parseRule(p => p.identifierRule(), '"my col"')).toEqual({result: {identifier: 'my col', parser: {token: 'Identifier', offset: [0, 7], line: [1, 1], column: [1, 8]}}})
             expect(parseRule(p => p.identifierRule(), '"my \\"new\\" col"')).toEqual({result: {identifier: 'my "new" col', parser: {token: 'Identifier', offset: [0, 15], line: [1, 1], column: [1, 16]}}})
-            expect(parseRule(p => p.identifierRule(), 'bad col')).toEqual({errors: [{name: 'NotAllInputParsedException', message: "Redundant input, expecting EOF but found:  ", position: {offset: [3, 3], line: [1, 1], column: [4, 4]}}]})
+            expect(parseRule(p => p.identifierRule(), 'bad col')).toEqual({result: {identifier: 'bad', parser: {token: 'Identifier', offset: [0, 2], line: [1, 1], column: [1, 3]}}, errors: [{name: 'NotAllInputParsedException', message: "Redundant input, expecting EOF but found:  ", position: {offset: [3, 3], line: [1, 1], column: [4, 4]}}]})
         })
         test('commentRule', () => {
             expect(parseRule(p => p.commentRule(), '# a comment')).toEqual({result: {comment: 'a comment', parser: {token: 'Comment', offset: [0, 10], line: [1, 1], column: [1, 11]}}})

@@ -15,6 +15,8 @@ export type ParserError = {
 }
 export class ParserResult<T> {
     constructor(public result?: T, public errors?: ParserError[], public warnings?: ParserError[]) {
+        if (this.errors?.length === 0) this.errors = undefined
+        if (this.warnings?.length === 0) this.warnings = undefined
         Object.freeze(this)
     }
 

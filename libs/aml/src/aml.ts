@@ -51,9 +51,17 @@ import {
 export function parseAml(content: string): ParserResult<Database> {
     const start = Date.now()
     return parseAmlAst(content + '\n').flatMap(ast => {
-        const db = buildDatabase(ast, start, Date.now())
+        const parsed = Date.now()
+        const errors: ParserError[] = []
         const warnings: ParserError[] = []
         mapEntriesDeep(ast, (path, value) => {
+            if (path[path.length - 1] === 'errors' && isTokenInfo(value) && value.message) {
+                warnings.push({
+                    name: 'errors',
+                    message: value.message.message,
+                    position: {offset: value.offset, line: value.line, column: value.column}
+                })
+            }
             if (path[path.length - 1] === 'warning' && isTokenInfo(value) && value.message) {
                 warnings.push({
                     name: 'warning',
@@ -61,8 +69,10 @@ export function parseAml(content: string): ParserResult<Database> {
                     position: {offset: value.offset, line: value.line, column: value.column}
                 })
             }
+            return value
         })
-        return new ParserResult(db, undefined, warnings)
+        const db = buildDatabase(ast, start, parsed)
+        return new ParserResult(db, errors, warnings)
     })
 }
 
@@ -95,7 +105,8 @@ function buildDatabase(ast: AmlAst, start: number, parsed: number): Database {
         }
     })
     const done = Date.now()
-    return removeEmpty({...db, extra: {source: `AML parser ${version}`, parsedAt: new Date().toISOString(), parsingMs: parsed - start, formattingMs: done - parsed}})
+    const extra = {source: `AML parser ${version}`, parsedAt: new Date().toISOString(), parsingMs: parsed - start, formattingMs: done - parsed}
+    return removeEmpty({...db, extra})
 }
 
 function genDatabase(database: Database): string {
@@ -146,7 +157,7 @@ function buildEntity(statement: number, e: EntityAst, namespace: Namespace): { e
         entity: removeEmpty({
             ...entityNamespace,
             name: e.name.identifier,
-            kind: undefined, // TODO: use props?
+            kind: e.view ? 'view' as const : undefined, // TODO: use props also
             def: undefined,
             attrs: attrs.map(a => a.attribute),
             pk: pkAttrs.length > 0 ? removeUndefined({
@@ -172,7 +183,8 @@ function flattenAttributes(attributes: AttributeAstNested[]): AttributeAstNested
 }
 
 function genEntity(e: Entity, relations: Relation[], types: Type[]): string {
-    return `${e.name}${genNote(e.doc)}${genCommentExtra(e)}\n` + e.attrs?.map(a => genAttribute(a, e, relations.filter(r => r.attrs[0].src[0] === a.name), types)).join('')
+    const entity = `${e.name}${e.kind === 'view' ? '*' : ''}${genNote(e.doc)}${genCommentExtra(e)}\n`
+    return entity + e.attrs?.map(a => genAttribute(a, e, relations.filter(r => r.attrs[0].src[0] === a.name), types)).join('')
 }
 
 function buildIndexes(indexes: {path: AttributePath, index: string | undefined}[]): {value: string | undefined, attrs: AttributePath[]}[] {
