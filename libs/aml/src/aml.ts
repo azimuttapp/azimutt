@@ -53,26 +53,14 @@ export function parseAml(content: string): ParserResult<Database> {
     return parseAmlAst(content + '\n').flatMap(ast => {
         const parsed = Date.now()
         const errors: ParserError[] = []
-        const warnings: ParserError[] = []
         mapEntriesDeep(ast, (path, value) => {
-            if (path[path.length - 1] === 'errors' && isTokenInfo(value) && value.message) {
-                warnings.push({
-                    name: 'errors',
-                    message: value.message.message,
-                    position: {offset: value.offset, line: value.line, column: value.column}
-                })
-            }
-            if (path[path.length - 1] === 'warning' && isTokenInfo(value) && value.message) {
-                warnings.push({
-                    name: 'warning',
-                    message: value.message.message,
-                    position: {offset: value.offset, line: value.line, column: value.column}
-                })
+            if (isTokenInfo(value) && value.issues) {
+                value.issues.forEach(i => errors.push({...i, offset: value.offset, position: value.position}))
             }
             return value
         })
         const db = buildDatabase(ast, start, parsed)
-        return new ParserResult(db, errors, warnings)
+        return new ParserResult(db, errors)
     })
 }
 
@@ -87,7 +75,7 @@ const defaultType = 'unknown'
 function buildDatabase(ast: AmlAst, start: number, parsed: number): Database {
     const db: Database = {entities: [], relations: [], types: []}
     let namespace: Namespace = {}
-    ast.filter(s => s.statement !== 'Empty').forEach((stmt, i) => {
+    ast.filter(s => s !== undefined && s.statement !== 'Empty').forEach((stmt, i) => { // on invalid input statement can be undefined :/
         const index = i + 1
         if (stmt.statement === 'Namespace') {
             namespace = buildNamespace(index, stmt, namespace)
@@ -139,37 +127,37 @@ function genDatabase(database: Database): string {
 }
 
 function buildNamespace(statement: number, n: NamespaceAst, current: Namespace): Namespace {
-    const schema = n.schema.identifier
-    const catalog = n.catalog?.identifier || current.catalog
-    const database = n.database?.identifier || current.database
+    const schema = n.schema.value
+    const catalog = n.catalog?.value || current.catalog
+    const database = n.database?.value || current.database
     return {schema, catalog, database}
 }
 
 function buildEntity(statement: number, e: EntityAst, namespace: Namespace): { entity: Entity, relations: Relation[], types: Type[] } {
-    const astNamespace = removeUndefined({schema: e.schema?.identifier, catalog: e.catalog?.identifier, database: e.database?.identifier})
+    const astNamespace = removeUndefined({schema: e.schema?.value, catalog: e.catalog?.value, database: e.database?.value})
     const entityNamespace = {...namespace, ...astNamespace}
-    const attrs = (e.attrs || []).map(a => buildAttribute(statement, a, {...entityNamespace, entity: e.name.identifier}))
+    const attrs = (e.attrs || []).map(a => buildAttribute(statement, a, {...entityNamespace, entity: e.name.value}))
     const flatAttrs = flattenAttributes(e.attrs || [])
     const pkAttrs = flatAttrs.filter(a => a.primaryKey)
-    const indexes: Index[] = buildIndexes(flatAttrs.map(a => ({path: a.path.map(p => p.identifier), index: a.index ? a.index.value?.identifier || '' : undefined}))).map(i => removeUndefined({name: i.value, attrs: i.attrs}))
-    const uniques: Index[] = buildIndexes(flatAttrs.map(a => ({path: a.path.map(p => p.identifier), index: a.unique ? a.unique.value?.identifier || '' : undefined}))).map(i => removeUndefined({name: i.value, attrs: i.attrs, unique: true}))
-    const checks: Check[] = buildIndexes(flatAttrs.map(a => ({path: a.path.map(p => p.identifier), index: a.check ? a.check.value?.expression || '' : undefined}))).map(i => removeUndefined({predicate: i.value || '', attrs: i.attrs}))
+    const indexes: Index[] = buildIndexes(flatAttrs.map(a => ({path: a.path.map(p => p.value), index: a.index ? a.index.name?.value || '' : undefined}))).map(i => removeUndefined({name: i.value, attrs: i.attrs}))
+    const uniques: Index[] = buildIndexes(flatAttrs.map(a => ({path: a.path.map(p => p.value), index: a.unique ? a.unique.name?.value || '' : undefined}))).map(i => removeUndefined({name: i.value, attrs: i.attrs, unique: true}))
+    const checks: Check[] = buildIndexes(flatAttrs.map(a => ({path: a.path.map(p => p.value), index: a.check ? a.check.definition?.value || '' : undefined}))).map(i => removeUndefined({predicate: i.value || '', attrs: i.attrs}))
     return {
         entity: removeEmpty({
             ...entityNamespace,
-            name: e.name.identifier,
+            name: e.name.value,
             kind: e.view ? 'view' as const : undefined, // TODO: use props also
             def: undefined,
             attrs: attrs.map(a => a.attribute),
             pk: pkAttrs.length > 0 ? removeUndefined({
-                name: pkAttrs.map(a => a.primaryKey?.value?.identifier).find(isNotUndefined),
-                attrs: pkAttrs.map(a => a.path.map(p => p.identifier)),
+                name: pkAttrs.map(a => a.primaryKey?.name?.value).find(isNotUndefined),
+                attrs: pkAttrs.map(a => a.path.map(p => p.value)),
             }) : undefined,
             indexes: uniques.concat(indexes),
             checks: checks,
-            doc: e.note?.note,
+            doc: e.doc?.value,
             stats: undefined,
-            extra: removeEmpty({statement, comment: e.comment?.comment})
+            extra: removeEmpty({statement, comment: e.comment?.value})
         }),
         relations: attrs.flatMap(a => a.relations),
         types: attrs.flatMap(a => a.types),
@@ -197,21 +185,21 @@ function buildIndexes(indexes: {path: AttributePath, index: string | undefined}[
 
 function buildAttribute(statement: number, a: AttributeAstNested, entity: EntityRef): { attribute: Attribute, relations: Relation[], types: Type[] } {
     const {entity: _, ...namespace} = entity
-    const typeExt = a.enumValues && a.enumValues.length <= 2 && a.enumValues.every(v => v.parser.token === 'Integer') ? '(' + a.enumValues.map(stringifyAttrValue).join(',') + ')' : ''
-    const enumType: Type[] = a.type && a.enumValues && !typeExt ? [{...namespace, name: a.type.identifier, values: a.enumValues.map(stringifyAttrValue), extra: {statement, line: a.enumValues[0].parser.line[0]}}] : []
-    const relation: Relation[] = a.relation ? [buildRelationAttribute(statement, a.relation, entity, [a.path.map(p => p.identifier)])].filter(isNotUndefined) : []
+    const typeExt = a.enumValues && a.enumValues.length <= 2 && a.enumValues.every(v => v.token === 'Integer') ? '(' + a.enumValues.map(stringifyAttrValue).join(',') + ')' : ''
+    const enumType: Type[] = a.type && a.enumValues && !typeExt ? [{...namespace, name: a.type.value, values: a.enumValues.map(stringifyAttrValue), extra: {statement, line: a.enumValues[0].position.start.line}}] : []
+    const relation: Relation[] = a.relation ? [buildRelationAttribute(statement, a.relation, entity, [a.path.map(p => p.value)])].filter(isNotUndefined) : []
     const nested = a.attrs?.map(aa => buildAttribute(statement, aa, entity)) || []
     return {
         attribute: removeEmpty({
-            name: a.path[a.path.length - 1].identifier,
+            name: a.path[a.path.length - 1].value,
             type: buildAttributeType(a, typeExt),
             null: a.nullable ? true : undefined,
             gen: undefined,
             default: a.defaultValue ? buildAttrValue(a.defaultValue) : undefined,
             attrs: nested.map(n => n.attribute),
-            doc: a.note?.note,
+            doc: a.doc?.value,
             stats: undefined,
-            extra: removeEmpty({comment: a.comment?.comment})
+            extra: removeEmpty({comment: a.comment?.value})
         }),
         relations: relation.concat(nested.flatMap(n => n.relations)),
         types: enumType.concat(nested.flatMap(n => n.types)),
@@ -234,7 +222,7 @@ function genAttributeInner(a: Attribute, e: Entity, relations: Relation[], types
 }
 
 function buildAttributeType(a: AttributeAstNested, ext: string): AttributeType {
-    return a.type ? a.type.identifier + ext : defaultType
+    return a.type ? a.type.value + ext : defaultType
 }
 
 function genAttributeType(a: Attribute, types: Type[]): string {
@@ -256,7 +244,7 @@ function buildRelationAttribute(statement: number, r: AttributeRelationAst, srcE
 }
 
 function buildRelation(statement: number, kind: RelationKindAst | undefined, srcEntity: EntityRef, srcAttrs: AttributePath[], ref: AttributeRefCompositeAst, polymorphic: RelationPolymorphicAst | undefined, extra: ExtraAst | undefined): Relation | undefined {
-    if (ref.attrs.map(a => a.identifier).filter(isNotUndefined).length === 0) return undefined // on bad input the parser can build bad ast (undefined identifier) :/ TODO: report an error instead of just ignoring?
+    if (ref.attrs.map(a => a.value).filter(isNotUndefined).length === 0) return undefined // on bad input the parser can build bad ast (undefined identifier) :/ TODO: report an error instead of just ignoring?
     const refAttrs: AttributePath[] = ref.attrs.map(buildAttrPath)
     const entityRef = buildEntityRef(ref)
     return entityRef ? removeUndefined({
@@ -267,8 +255,8 @@ function buildRelation(statement: number, kind: RelationKindAst | undefined, src
         ref: entityRef,
         attrs: zip(srcAttrs, refAttrs).map(([srcAttr, refAttr]) => ({src: srcAttr, ref: refAttr})),
         polymorphic: polymorphic ? {attribute: buildAttrPath(polymorphic.attr), value: buildAttrValue(polymorphic.value)} : undefined,
-        doc: extra?.note?.note,
-        extra: removeEmpty({statement, comment: extra?.comment?.comment}),
+        doc: extra?.doc?.value,
+        extra: removeEmpty({statement, comment: extra?.comment?.value}),
     }) : undefined
 }
 
@@ -285,17 +273,17 @@ function genRelationTarget(r: Relation): string {
 }
 
 function buildType(statement: number, t: TypeAst, namespace: Namespace): Type {
-    const astNamespace = removeUndefined({schema: t.schema?.identifier, catalog: t.catalog?.identifier, database: t.database?.identifier})
+    const astNamespace = removeUndefined({schema: t.schema?.value, catalog: t.catalog?.value, database: t.database?.value})
     const typeNamespace = {...namespace, ...astNamespace}
-    const content = t.content ? buildTypeContent(statement, t.content, {...typeNamespace, entity: t.name.identifier}) : {}
-    return removeUndefined({...typeNamespace, name: t.name.identifier, ...content, doc: t.note?.note, extra: removeEmpty({statement, line: t.name.parser.line[0], comment: t.comment?.comment})})
+    const content = t.content ? buildTypeContent(statement, t.content, {...typeNamespace, entity: t.name.value}) : {}
+    return removeUndefined({...typeNamespace, name: t.name.value, ...content, doc: t.doc?.value, extra: removeEmpty({statement, line: t.name.position.start.line, comment: t.comment?.value})})
 }
 
 function buildTypeContent(statement: number, t: TypeContentAst, entity: EntityRef): {definition?: string, values?: string[], attrs?: Attribute[]} {
-    if (t.kind === 'alias') return {definition: t.name.identifier}
+    if (t.kind === 'alias') return {definition: t.name.value}
     if (t.kind === 'enum') return {values: t.values.map(stringifyAttrValue)}
     if (t.kind === 'struct') return {attrs: t.attrs.map(a => buildAttribute(statement, a, entity).attribute)}
-    if (t.kind === 'custom') return {definition: t.definition.expression}
+    if (t.kind === 'custom') return {definition: t.definition.value}
     return isNever(t)
 }
 
@@ -337,28 +325,30 @@ function buildRelationKind(k: RelationKindAst): RelationKind | undefined {
 
 function buildEntityRef(e: EntityRefAst): EntityRef | undefined {
     if (!e.entity) return undefined // on bad input the parser can build bad ast (no entity) :/ TODO: report an error instead of just ignoring?
-    return removeUndefined({ database: e.database?.identifier, catalog: e.catalog?.identifier, schema: e.schema?.identifier, entity: e.entity.identifier })
+    return removeUndefined({ database: e.database?.value, catalog: e.catalog?.value, schema: e.schema?.value, entity: e.entity.value })
 }
 
 function buildAttrPath(a: AttributePathAst): AttributePath {
-    return [a.identifier].concat(a.path?.map(p => p.identifier) || [])
+    return [a.value].concat(a.path?.map(p => p.value) || [])
 }
 
 function buildAttrValue(v: AttributeValueAst): AttributeValue {
-    if ('null' in v) return null
-    if ('value' in v) return v.value
-    if ('flag' in v) return v.flag
-    if ('identifier' in v) return v.identifier
-    if ('expression' in v) return '`' + v.expression + '`'
+    if (v.token === 'Null') return null
+    if (v.token === 'Decimal') return v.value
+    if (v.token === 'Integer') return v.value
+    if (v.token === 'Boolean') return v.value
+    if (v.token === 'Expression') return '`' + v.value + '`'
+    if (v.token === 'Identifier') return v.value
     return isNever(v)
 }
 
 function stringifyAttrValue(v: AttributeValueAst): string {
-    if ('null' in v) return 'null'
-    if ('value' in v) return v.value.toString()
-    if ('flag' in v) return v.flag.toString()
-    if ('identifier' in v) return v.identifier
-    if ('expression' in v) return v.expression
+    if (v.token === 'Null') return 'null'
+    if (v.token === 'Decimal') return v.value.toString()
+    if (v.token === 'Integer') return v.value.toString()
+    if (v.token === 'Boolean') return v.value ? 'true' : 'false'
+    if (v.token === 'Expression') return v.value
+    if (v.token === 'Identifier') return v.value
     return isNever(v)
 }
 

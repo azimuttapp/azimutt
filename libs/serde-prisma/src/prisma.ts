@@ -31,7 +31,7 @@ export function parse(content: string): ParserResult<Database> {
     try {
         return ParserResult.success(buildDatabase(parsePrismaSchema(content)))
     } catch (e) {
-        return ParserResult.failure([{name: 'PrismaParserError', message: errorToString(e)}])
+        return ParserResult.failure([{name: 'PrismaParserError', kind: 'error', message: errorToString(e), offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}])
     }
 }
 

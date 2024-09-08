@@ -248,15 +248,16 @@ export function parse(input: string): ParserResult<SqlScriptAst> {
 }
 
 function formatError(err: IRecognitionException): ParserError {
-    const {offset, line, column} = parserInfo(err.token)
-    return {name: err.name, message: err.message, position: {offset, line, column}}
+    return {name: err.name, kind: 'error', message: err.message, ...parserInfo(err.token)}
 }
 
 function parserInfo(token: IToken): TokenInfo {
     return {
-        token: token.tokenType?.name || 'missing',
-        offset: [token.startOffset, token.endOffset || 0],
-        line: [token.startLine || 0, token.endLine || 0],
-        column: [token.startColumn || 0, token.endColumn || 0]
+        // token: token.tokenType?.name || 'missing',
+        offset: {start: token.startOffset, end: token.endOffset || 0},
+        position: {
+            start: {line: token.startLine || 0, column: token.startColumn || 0},
+            end: {line: token.endLine || 0, column: token.endColumn || 0}
+        }
     }
 }

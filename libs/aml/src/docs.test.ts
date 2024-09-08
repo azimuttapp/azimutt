@@ -30,7 +30,7 @@ describe('docs', () => {
                 const values = file.snippets.map(snippet => {
                     const snippetStart = snippet.aml.slice(0, 70).replace(/\n/g, '\\n').trim() + (snippet.aml.length > 70 ? '...' : '')
                     const snippetMsg = `\n    - snippet ${snippet.index + 1} (${snippetStart}), ${pluralizeL(snippet.errors, 'error')}:`
-                    const errorsMsgs = snippet.errors.map(error => `\n      - line ${error.position?.line[0]}, col ${error.position?.column[0]}: ${error.message}`)
+                    const errorsMsgs = snippet.errors.map(error => `\n      - line ${error.position.start.line}, col ${error.position.start.column}: ${error.message}`)
                     return snippetMsg + errorsMsgs.join('')
                 })
                 return fileMsg + values.join('')

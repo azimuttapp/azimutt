@@ -223,19 +223,15 @@ posts
                 parsed.result && editorRight.setValue(aml.formatJson(parsed.result) + '\n')
                 monaco.editor.setModelMarkers(model, 'owner', (parsed.errors || []).map(e => ({
                     message: e.message,
-                    severity: monaco.MarkerSeverity.Error,
-                    startLineNumber: e.position.line[0],
-                    startColumn: e.position.column[0],
-                    endLineNumber: e.position.line[1],
-                    endColumn: e.position.column[1] + 1,
-                })).concat((parsed.warnings || []).map(e => ({
-                    message: e.message,
-                    severity: monaco.MarkerSeverity.Warning,
-                    startLineNumber: e.position.line[0],
-                    startColumn: e.position.column[0],
-                    endLineNumber: e.position.line[1],
-                    endColumn: e.position.column[1] + 1,
-                }))))
+                    severity: e.kind === 'error' ? monaco.MarkerSeverity.Error :
+                        e.kind === 'warning' ? monaco.MarkerSeverity.Warning :
+                            e.kind === 'info' ? monaco.MarkerSeverity.Info :
+                                monaco.MarkerSeverity.Hint,
+                    startLineNumber: e.position.start.line,
+                    startColumn: e.position.start.column,
+                    endLineNumber: e.position.end.line,
+                    endColumn: e.position.end.column + 1,
+                })))
             }
 
             syncEditors()

@@ -1,5 +1,6 @@
 import {describe, expect, test} from "@jest/globals";
 import {removeFieldsDeep} from "@azimutt/utils";
+import {tokenPosition} from "@azimutt/models";
 import {nestAttributes, parseAmlAst, parseRule} from "./parser";
 
 describe('aml parser', () => {
@@ -14,14 +15,14 @@ users
 `
         const ast = [{statement: 'Empty'}, {
             statement: 'Entity',
-            name: {identifier: 'users', parser: {token: 'Identifier', offset: [1, 5], line: [2, 2], column: [1, 5]}},
+            name: {token: 'Identifier', value: 'users', ...tokenPosition(1, 5, 2, 1, 2, 5)},
             attrs: [{
-                path: [{identifier: 'id', parser: {token: 'Identifier', offset: [9, 10], line: [3, 3], column: [3, 4]}}],
-                type: {identifier: 'uuid', parser: {token: 'Identifier', offset: [12, 15], line: [3, 3], column: [6, 9]}},
-                primaryKey: {parser: {token: 'PrimaryKey', offset: [17, 18], line: [3, 3], column: [11, 12]}},
+                path: [{token: 'Identifier', value: 'id', ...tokenPosition(9, 10, 3, 3, 3, 4)}],
+                type: {token: 'Identifier', value: 'uuid', ...tokenPosition(12, 15, 3, 6, 3, 9)},
+                primaryKey: {keyword: tokenPosition(17, 18, 3, 11, 3, 12)},
             }, {
-                path: [{identifier: 'name', parser: {token: 'Identifier', offset: [22, 25], line: [4, 4], column: [3, 6]}}],
-                type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [27, 33], line: [4, 4], column: [8, 14]}},
+                path: [{token: 'Identifier', value: 'name', ...tokenPosition(22, 25, 4, 3, 4, 6)}],
+                type: {token: 'Identifier', value: 'varchar', ...tokenPosition(27, 33, 4, 8, 4, 14)},
             }]
         }]
         expect(parseAmlAst(input)).toEqual({result: ast})
@@ -34,9 +35,9 @@ comments
 `
         const ast = [
             {statement: 'Empty'},
-            {statement: 'Entity', name: {identifier: 'users', parser: {token: 'Identifier', offset: [1, 5], line: [2, 2], column: [1, 5]}}},
-            {statement: 'Entity', name: {identifier: 'posts', parser: {token: 'Identifier', offset: [7, 11], line: [3, 3], column: [1, 5]}}},
-            {statement: 'Entity', name: {identifier: 'comments', parser: {token: 'Identifier', offset: [13, 20], line: [4, 4], column: [1, 8]}}},
+            {statement: 'Entity', name: {token: 'Identifier', value: 'users', ...tokenPosition(1, 5, 2, 1, 2, 5)}},
+            {statement: 'Entity', name: {token: 'Identifier', value: 'posts', ...tokenPosition(7, 11, 3, 1, 3, 5)}},
+            {statement: 'Entity', name: {token: 'Identifier', value: 'comments', ...tokenPosition(13, 20, 4, 1, 4, 8)}},
         ]
         expect(parseAmlAst(input)).toEqual({result: ast})
     })
@@ -44,148 +45,148 @@ comments
         test('schema', () => {
             expect(parseRule(p => p.namespaceRule(), 'namespace public\n')).toEqual({result: {
                 statement: 'Namespace',
-                schema: {identifier: 'public', parser: {token: 'Identifier', offset: [10, 15], line: [1, 1], column: [11, 16]}},
+                schema: {token: 'Identifier', value: 'public', ...tokenPosition(10, 15, 1, 11, 1, 16)},
             }})
         })
         test('catalog', () => {
             expect(parseRule(p => p.namespaceRule(), 'namespace core.public\n')).toEqual({result: {
                 statement: 'Namespace',
-                catalog: {identifier: 'core', parser: {token: 'Identifier', offset: [10, 13], line: [1, 1], column: [11, 14]}},
-                schema: {identifier: 'public', parser: {token: 'Identifier', offset: [15, 20], line: [1, 1], column: [16, 21]}},
+                catalog: {token: 'Identifier', value: 'core', ...tokenPosition(10, 13, 1, 11, 1, 14)},
+                schema: {token: 'Identifier', value: 'public', ...tokenPosition(15, 20, 1, 16, 1, 21)},
             }})
         })
         test('database', () => {
             expect(parseRule(p => p.namespaceRule(), 'namespace analytics.core.public\n')).toEqual({result: {
                 statement: 'Namespace',
-                database: {identifier: 'analytics', parser: {token: 'Identifier', offset: [10, 18], line: [1, 1], column: [11, 19]}},
-                catalog: {identifier: 'core', parser: {token: 'Identifier', offset: [20, 23], line: [1, 1], column: [21, 24]}},
-                schema: {identifier: 'public', parser: {token: 'Identifier', offset: [25, 30], line: [1, 1], column: [26, 31]}},
+                database: {token: 'Identifier', value: 'analytics', ...tokenPosition(10, 18, 1, 11, 1, 19)},
+                catalog: {token: 'Identifier', value: 'core', ...tokenPosition(20, 23, 1, 21, 1, 24)},
+                schema: {token: 'Identifier', value: 'public', ...tokenPosition(25, 30, 1, 26, 1, 31)},
             }})
         })
         test('extra', () => {
             expect(parseRule(p => p.namespaceRule(), 'namespace public | a note # and a comment\n')).toEqual({result: {
                 statement: 'Namespace',
-                schema: {identifier: 'public', parser: {token: 'Identifier', offset: [10, 15], line: [1, 1], column: [11, 16]}},
-                note: {note: 'a note', parser: {token: 'Note', offset: [17, 25], line: [1, 1], column: [18, 26]}},
-                comment: {comment: 'and a comment', parser: {token: 'Comment', offset: [26, 40], line: [1, 1], column: [27, 41]}},
+                schema: {token: 'Identifier', value: 'public', ...tokenPosition(10, 15, 1, 11, 1, 16)},
+                doc: {token: 'Doc', value: 'a note', ...tokenPosition(17, 25, 1, 18, 1, 26)},
+                comment: {token: 'Comment', value: 'and a comment', ...tokenPosition(26, 40, 1, 27, 1, 41)},
             }})
         })
     })
     describe('entityRule', () => {
         test('basic', () => {
-            expect(parseRule(p => p.entityRule(), 'users\n')).toEqual({result: {statement: 'Entity', name: {identifier: 'users', parser: {token: 'Identifier', offset: [0, 4], line: [1, 1], column: [1, 5]}}}})
+            expect(parseRule(p => p.entityRule(), 'users\n')).toEqual({result: {statement: 'Entity', name: {token: 'Identifier', value: 'users', ...tokenPosition(0, 4, 1, 1, 1, 5)}}})
         })
         test('namespace', () => {
             expect(parseRule(p => p.entityRule(), 'ax.core.public.users\n')).toEqual({result: {
                 statement: 'Entity',
-                database: {identifier: 'ax', parser: {token: 'Identifier', offset: [0, 1], line: [1, 1], column: [1, 2]}},
-                catalog: {identifier: 'core', parser: {token: 'Identifier', offset: [3, 6], line: [1, 1], column: [4, 7]}},
-                schema: {identifier: 'public', parser: {token: 'Identifier', offset: [8, 13], line: [1, 1], column: [9, 14]}},
-                name: {identifier: 'users', parser: {token: 'Identifier', offset: [15, 19], line: [1, 1], column: [16, 20]}},
+                database: {token: 'Identifier', value: 'ax', ...tokenPosition(0, 1, 1, 1, 1, 2)},
+                catalog: {token: 'Identifier', value: 'core', ...tokenPosition(3, 6, 1, 4, 1, 7)},
+                schema: {token: 'Identifier', value: 'public', ...tokenPosition(8, 13, 1, 9, 1, 14)},
+                name: {token: 'Identifier', value: 'users', ...tokenPosition(15, 19, 1, 16, 1, 20)},
             }})
         })
         test('alias', () => {
             expect(parseRule(p => p.entityRule(), 'users as u\n')).toEqual({result: {
                 statement: 'Entity',
-                name: {identifier: 'users', parser: {token: 'Identifier', offset: [0, 4], line: [1, 1], column: [1, 5]}},
-                alias: {identifier: 'u', parser: {token: 'Identifier', offset: [9, 9], line: [1, 1], column: [10, 10]}},
+                name: {token: 'Identifier', value: 'users', ...tokenPosition(0, 4, 1, 1, 1, 5)},
+                alias: {token: 'Identifier', value: 'u', ...tokenPosition(9, 9, 1, 10, 1, 10)},
             }})
         })
         test('extra', () => {
             expect(parseRule(p => p.entityRule(), 'users {domain: auth} | list users # sample comment\n')).toEqual({result: {
                 statement: 'Entity',
-                name: {identifier: 'users', parser: {token: 'Identifier', offset: [0, 4], line: [1, 1], column: [1, 5]}},
+                name: {token: 'Identifier', value: 'users', ...tokenPosition(0, 4, 1, 1, 1, 5)},
                 properties: [{
-                    key: {identifier: 'domain', parser: {token: 'Identifier', offset: [7, 12], line: [1, 1], column: [8, 13]}},
-                    value: {identifier: 'auth', parser: {token: 'Identifier', offset: [15, 18], line: [1, 1], column: [16, 19]}},
+                    key: {token: 'Identifier', value: 'domain', ...tokenPosition(7, 12, 1, 8, 1, 13)},
+                    value: {token: 'Identifier', value: 'auth', ...tokenPosition(15, 18, 1, 16, 1, 19)},
                 }],
-                note: {note: 'list users', parser: {token: 'Note', offset: [21, 33], line: [1, 1], column: [22, 34]}},
-                comment: {comment: 'sample comment', parser: {token: 'Comment', offset: [34, 49], line: [1, 1], column: [35, 50]}},
+                doc: {token: 'Doc', value: 'list users', ...tokenPosition(21, 33, 1, 22, 1, 34)},
+                comment: {token: 'Comment', value: 'sample comment', ...tokenPosition(34, 49, 1, 35, 1, 50)},
             }})
         })
         test('attributes', () => {
             expect(parseRule(p => p.entityRule(), 'users\n  id uuid pk\n  name varchar\n')).toEqual({result: {
                 statement: 'Entity',
-                name: {identifier: 'users', parser: {token: 'Identifier', offset: [0, 4], line: [1, 1], column: [1, 5]}},
+                name: {token: 'Identifier', value: 'users', ...tokenPosition(0, 4, 1, 1, 1, 5)},
                 attrs: [{
-                    path: [{identifier: 'id', parser: {token: 'Identifier', offset: [8, 9], line: [2, 2], column: [3, 4]}}],
-                    type: {identifier: 'uuid', parser: {token: 'Identifier', offset: [11, 14], line: [2, 2], column: [6, 9]}},
-                    primaryKey: {parser: {token: 'PrimaryKey', offset: [16, 17], line: [2, 2], column: [11, 12]}},
+                    path: [{token: 'Identifier', value: 'id', ...tokenPosition(8, 9, 2, 3, 2, 4)}],
+                    type: {token: 'Identifier', value: 'uuid', ...tokenPosition(11, 14, 2, 6, 2, 9)},
+                    primaryKey: {keyword: tokenPosition(16, 17, 2, 11, 2, 12)},
                 }, {
-                    path: [{identifier: 'name', parser: {token: 'Identifier', offset: [21, 24], line: [3, 3], column: [3, 6]}}],
-                    type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [26, 32], line: [3, 3], column: [8, 14]}},
+                    path: [{token: 'Identifier', value: 'name', ...tokenPosition(21, 24, 3, 3, 3, 6)}],
+                    type: {token: 'Identifier', value: 'varchar', ...tokenPosition(26, 32, 3, 8, 3, 14)},
                 }],
             }})
         })
         describe('attributeRule', () => {
             test('name', () => {
-                expect(parseRule(p => p.attributeRule(), '  id\n')).toEqual({result: {nesting: 0, name: {identifier: 'id', parser: {token: 'Identifier', offset: [2, 3], line: [1, 1], column: [3, 4]}}}})
+                expect(parseRule(p => p.attributeRule(), '  id\n')).toEqual({result: {nesting: 0, name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)}}})
             })
             test('type', () => {
                 expect(parseRule(p => p.attributeRule(), '  id uuid\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [2, 3], line: [1, 1], column: [3, 4]}},
-                    type: {identifier: 'uuid', parser: {token: 'Identifier', offset: [5, 8], line: [1, 1], column: [6, 9]}},
+                    name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
+                    type: {token: 'Identifier', value: 'uuid', ...tokenPosition(5, 8, 1, 6, 1, 9)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  name "varchar(12)"\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'name', parser: {token: 'Identifier', offset: [2, 5], line: [1, 1], column: [3, 6]}},
-                    type: {identifier: 'varchar(12)', parser: {token: 'Identifier', offset: [7, 19], line: [1, 1], column: [8, 20]}},
+                    name: {token: 'Identifier', value: 'name', ...tokenPosition(2, 5, 1, 3, 1, 6)},
+                    type: {token: 'Identifier', value: 'varchar(12)', ...tokenPosition(7, 19, 1, 8, 1, 20)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  bio "character varying"\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'bio', parser: {token: 'Identifier', offset: [2, 4], line: [1, 1], column: [3, 5]}},
-                    type: {identifier: 'character varying', parser: {token: 'Identifier', offset: [6, 24], line: [1, 1], column: [7, 25]}},
+                    name: {token: 'Identifier', value: 'bio', ...tokenPosition(2, 4, 1, 3, 1, 5)},
+                    type: {token: 'Identifier', value: 'character varying', ...tokenPosition(6, 24, 1, 7, 1, 25)},
                 }})
             })
             test('enum', () => {
                 expect(parseRule(p => p.attributeRule(), '  status post_status(draft, published, archived)\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'status', parser: {token: 'Identifier', offset: [2, 7], line: [1, 1], column: [3, 8]}},
-                    type: {identifier: 'post_status', parser: {token: 'Identifier', offset: [9, 19], line: [1, 1], column: [10, 20]}},
+                    name: {token: 'Identifier', value: 'status', ...tokenPosition(2, 7, 1, 3, 1, 8)},
+                    type: {token: 'Identifier', value: 'post_status', ...tokenPosition(9, 19, 1, 10, 1, 20)},
                     enumValues: [
-                        {identifier: 'draft', parser: {token: 'Identifier', offset: [21, 25], line: [1, 1], column: [22, 26]}},
-                        {identifier: 'published', parser: {token: 'Identifier', offset: [28, 36], line: [1, 1], column: [29, 37]}},
-                        {identifier: 'archived', parser: {token: 'Identifier', offset: [39, 46], line: [1, 1], column: [40, 47]}},
+                        {token: 'Identifier', value: 'draft', ...tokenPosition(21, 25, 1, 22, 1, 26)},
+                        {token: 'Identifier', value: 'published', ...tokenPosition(28, 36, 1, 29, 1, 37)},
+                        {token: 'Identifier', value: 'archived', ...tokenPosition(39, 46, 1, 40, 1, 47)},
                     ],
                 }})
             })
             test('default', () => {
                 expect(parseRule(p => p.attributeRule(), '  id int=0\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [2, 3], line: [1, 1], column: [3, 4]}},
-                    type: {identifier: 'int', parser: {token: 'Identifier', offset: [5, 7], line: [1, 1], column: [6, 8]}},
-                    defaultValue: {value: 0, parser: {token: 'Integer', offset: [9, 9], line: [1, 1], column: [10, 10]}},
+                    name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
+                    type: {token: 'Identifier', value: 'int', ...tokenPosition(5, 7, 1, 6, 1, 8)},
+                    defaultValue: {token: 'Integer', value: 0, ...tokenPosition(9, 9, 1, 10, 1, 10)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  price decimal=41.9\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'price', parser: {token: 'Identifier', offset: [2, 6], line: [1, 1], column: [3, 7]}},
-                    type: {identifier: 'decimal', parser: {token: 'Identifier', offset: [8, 14], line: [1, 1], column: [9, 15]}},
-                    defaultValue: {value: 41.9, parser: {token: 'Float', offset: [16, 19], line: [1, 1], column: [17, 20]}},
+                    name: {token: 'Identifier', value: 'price', ...tokenPosition(2, 6, 1, 3, 1, 7)},
+                    type: {token: 'Identifier', value: 'decimal', ...tokenPosition(8, 14, 1, 9, 1, 15)},
+                    defaultValue: {token: 'Decimal', value: 41.9, ...tokenPosition(16, 19, 1, 17, 1, 20)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  role varchar=guest\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'role', parser: {token: 'Identifier', offset: [2, 5], line: [1, 1], column: [3, 6]}},
-                    type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [7, 13], line: [1, 1], column: [8, 14]}},
-                    defaultValue: {identifier: 'guest', parser: {token: 'Identifier', offset: [15, 19], line: [1, 1], column: [16, 20]}},
+                    name: {token: 'Identifier', value: 'role', ...tokenPosition(2, 5, 1, 3, 1, 6)},
+                    type: {token: 'Identifier', value: 'varchar', ...tokenPosition(7, 13, 1, 8, 1, 14)},
+                    defaultValue: {token: 'Identifier', value: 'guest', ...tokenPosition(15, 19, 1, 16, 1, 20)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  is_admin boolean=false\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'is_admin', parser: {token: 'Identifier', offset: [2, 9], line: [1, 1], column: [3, 10]}},
-                    type: {identifier: 'boolean', parser: {token: 'Identifier', offset: [11, 17], line: [1, 1], column: [12, 18]}},
-                    defaultValue: {flag: false, parser: {token: 'Boolean', offset: [19, 23], line: [1, 1], column: [20, 24]}},
+                    name: {token: 'Identifier', value: 'is_admin', ...tokenPosition(2, 9, 1, 3, 1, 10)},
+                    type: {token: 'Identifier', value: 'boolean', ...tokenPosition(11, 17, 1, 12, 1, 18)},
+                    defaultValue: {token: 'Boolean', value: false, ...tokenPosition(19, 23, 1, 20, 1, 24)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  created_at timestamp=`now()`\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'created_at', parser: {token: 'Identifier', offset: [2, 11], line: [1, 1], column: [3, 12]}},
-                    type: {identifier: 'timestamp', parser: {token: 'Identifier', offset: [13, 21], line: [1, 1], column: [14, 22]}},
-                    defaultValue: {expression: 'now()', parser: {token: 'Expression', offset: [23, 29], line: [1, 1], column: [24, 30]}},
+                    name: {token: 'Identifier', value: 'created_at', ...tokenPosition(2, 11, 1, 3, 1, 12)},
+                    type: {token: 'Identifier', value: 'timestamp', ...tokenPosition(13, 21, 1, 14, 1, 22)},
+                    defaultValue: {token: 'Expression', value: 'now()', ...tokenPosition(23, 29, 1, 24, 1, 30)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  source varchar=null\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'source', parser: {token: 'Identifier', offset: [2, 7], line: [1, 1], column: [3, 8]}},
-                    type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [9, 15], line: [1, 1], column: [10, 16]}},
-                    defaultValue: {null: true, parser: {token: 'Null', offset: [17, 20], line: [1, 1], column: [18, 21]}},
+                    name: {token: 'Identifier', value: 'source', ...tokenPosition(2, 7, 1, 3, 1, 8)},
+                    type: {token: 'Identifier', value: 'varchar', ...tokenPosition(9, 15, 1, 10, 1, 16)},
+                    defaultValue: {token: 'Null', ...tokenPosition(17, 20, 1, 18, 1, 21)},
                 }})
                 // TODO: handle `[]` default value? Ex: '  tags varchar[]=[]\n' instead of '  tags varchar[]="[]"\n'
                 // TODO: handle `{}` default value? Ex: '  details json={}\n' instead of '  details json="{}"\n'
@@ -193,127 +194,127 @@ comments
             test('nullable', () => {
                 expect(parseRule(p => p.attributeRule(), '  id nullable\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [2, 3], line: [1, 1], column: [3, 4]}},
-                    nullable: {parser: {token: 'Nullable', offset: [5, 12], line: [1, 1], column: [6, 13]}},
+                    name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
+                    nullable: tokenPosition(5, 12, 1, 6, 1, 13),
                 }})
                 expect(parseRule(p => p.attributeRule(), '  id int nullable\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [2, 3], line: [1, 1], column: [3, 4]}},
-                    type: {identifier: 'int', parser: {token: 'Identifier', offset: [5, 7], line: [1, 1], column: [6, 8]}},
-                    nullable: {parser: {token: 'Nullable', offset: [9, 16], line: [1, 1], column: [10, 17]}},
+                    name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
+                    type: {token: 'Identifier', value: 'int', ...tokenPosition(5, 7, 1, 6, 1, 8)},
+                    nullable: tokenPosition(9, 16, 1, 10, 1, 17),
                 }})
             })
             test('pk', () => {
                 expect(parseRule(p => p.attributeRule(), '  id pk\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [2, 3], line: [1, 1], column: [3, 4]}},
-                    primaryKey: {parser: {token: 'PrimaryKey', offset: [5, 6], line: [1, 1], column: [6, 7]}},
+                    name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
+                    primaryKey: {keyword: tokenPosition(5, 6, 1, 6, 1, 7)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  id int pk\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [2, 3], line: [1, 1], column: [3, 4]}},
-                    type: {identifier: 'int', parser: {token: 'Identifier', offset: [5, 7], line: [1, 1], column: [6, 8]}},
-                    primaryKey: {parser: {token: 'PrimaryKey', offset: [9, 10], line: [1, 1], column: [10, 11]}},
+                    name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
+                    type: {token: 'Identifier', value: 'int', ...tokenPosition(5, 7, 1, 6, 1, 8)},
+                    primaryKey: {keyword: tokenPosition(9, 10, 1, 10, 1, 11)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  id int pk=pk_name\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [2, 3], line: [1, 1], column: [3, 4]}},
-                    type: {identifier: 'int', parser: {token: 'Identifier', offset: [5, 7], line: [1, 1], column: [6, 8]}},
-                    primaryKey: {parser: {token: 'PrimaryKey', offset: [9, 10], line: [1, 1], column: [10, 11]}, value: {identifier: 'pk_name', parser: {token: 'Identifier', offset: [12, 18], line: [1, 1], column: [13, 19]}}},
+                    name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
+                    type: {token: 'Identifier', value: 'int', ...tokenPosition(5, 7, 1, 6, 1, 8)},
+                    primaryKey: {keyword: tokenPosition(9, 10, 1, 10, 1, 11), name: {token: 'Identifier', value: 'pk_name', ...tokenPosition(12, 18, 1, 13, 1, 19)}},
                 }})
             })
             test('index', () => {
                 expect(parseRule(p => p.attributeRule(), '  id index\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [2, 3], line: [1, 1], column: [3, 4]}},
-                    index: {parser: {token: 'Index', offset: [5, 9], line: [1, 1], column: [6, 10]}},
+                    name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
+                    index: {keyword: tokenPosition(5, 9, 1, 6, 1, 10)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  id index=id_idx\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [2, 3], line: [1, 1], column: [3, 4]}},
-                    index: {parser: {token: 'Index', offset: [5, 9], line: [1, 1], column: [6, 10]}, value: {identifier: 'id_idx', parser: {token: 'Identifier', offset: [11, 16], line: [1, 1], column: [12, 17]}}},
+                    name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
+                    index: {keyword: tokenPosition(5, 9, 1, 6, 1, 10), name: {token: 'Identifier', value: 'id_idx', ...tokenPosition(11, 16, 1, 12, 1, 17)}},
                 }})
             })
             test('unique', () => {
                 expect(parseRule(p => p.attributeRule(), '  id unique\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [2, 3], line: [1, 1], column: [3, 4]}},
-                    unique: {parser: {token: 'Unique', offset: [5, 10], line: [1, 1], column: [6, 11]}},
+                    name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
+                    unique: {keyword: tokenPosition(5, 10, 1, 6, 1, 11)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  id unique=id_uniq\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [2, 3], line: [1, 1], column: [3, 4]}},
-                    unique: {parser: {token: 'Unique', offset: [5, 10], line: [1, 1], column: [6, 11]}, value: {identifier: 'id_uniq', parser: {token: 'Identifier', offset: [12, 18], line: [1, 1], column: [13, 19]}}},
+                    name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
+                    unique: {keyword: tokenPosition(5, 10, 1, 6, 1, 11), name: {token: 'Identifier', value: 'id_uniq', ...tokenPosition(12, 18, 1, 13, 1, 19)}},
                 }})
             })
             test('check', () => {
                 expect(parseRule(p => p.attributeRule(), '  id check\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [2, 3], line: [1, 1], column: [3, 4]}},
-                    check: {parser: {token: 'Check', offset: [5, 9], line: [1, 1], column: [6, 10]}},
+                    name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
+                    check: {keyword: tokenPosition(5, 9, 1, 6, 1, 10)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  id check=`id > 0`\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [2, 3], line: [1, 1], column: [3, 4]}},
-                    check: {parser: {token: 'Check', offset: [5, 9], line: [1, 1], column: [6, 10]}, value: {expression: 'id > 0', parser: {token: 'Expression', offset: [11, 18], line: [1, 1], column: [12, 19]}}},
+                    name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
+                    check: {keyword: tokenPosition(5, 9, 1, 6, 1, 10), definition: {token: 'Expression', value: 'id > 0', ...tokenPosition(11, 18, 1, 12, 1, 19)}},
                 }})
             })
             test('relation', () => {
                 expect(parseRule(p => p.attributeRule(), '  user_id -> users(id)\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'user_id', parser: {token: 'Identifier', offset: [2, 8], line: [1, 1], column: [3, 9]}},
+                    name: {token: 'Identifier', value: 'user_id', ...tokenPosition(2, 8, 1, 3, 1, 9)},
                     relation: {kind: 'n-1', ref: {
-                        entity: {identifier: 'users', parser: {token: 'Identifier', offset: [13, 17], line: [1, 1], column: [14, 18]}},
-                        attrs: [{identifier: 'id', parser: {token: 'Identifier', offset: [19, 20], line: [1, 1], column: [20, 21]}}],
+                        entity: {token: 'Identifier', value: 'users', ...tokenPosition(13, 17, 1, 14, 1, 18)},
+                        attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(19, 20, 1, 20, 1, 21)}],
                     }}
                 }})
             })
             test('properties', () => {
                 expect(parseRule(p => p.attributeRule(), '  id {tag: pii}\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [2, 3], line: [1, 1], column: [3, 4]}},
-                    properties: [{key: {identifier: 'tag', parser: {token: 'Identifier', offset: [6, 8], line: [1, 1], column: [7, 9]}}, value: {identifier: 'pii', parser: {token: 'Identifier', offset: [11, 13], line: [1, 1], column: [12, 14]}}}],
+                    name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
+                    properties: [{key: {token: 'Identifier', value: 'tag', ...tokenPosition(6, 8, 1, 7, 1, 9)}, value: {token: 'Identifier', value: 'pii', ...tokenPosition(11, 13, 1, 12, 1, 14)}}],
                 }})
             })
             test('note', () => {
                 expect(parseRule(p => p.attributeRule(), '  id | some note\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [2, 3], line: [1, 1], column: [3, 4]}},
-                    note: {note: 'some note', parser: {token: 'Note', offset: [5, 15], line: [1, 1], column: [6, 16]}},
+                    name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
+                    doc: {token: 'Doc', value: 'some note', ...tokenPosition(5, 15, 1, 6, 1, 16)},
                 }})
             })
             test('comment', () => {
                 expect(parseRule(p => p.attributeRule(), '  id # a comment\n')).toEqual({result: {
                     nesting: 0,
-                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [2, 3], line: [1, 1], column: [3, 4]}},
-                    comment: {comment: 'a comment', parser: {token: 'Comment', offset: [5, 15], line: [1, 1], column: [6, 16]}},
+                    name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
+                    comment: {token: 'Comment', value: 'a comment', ...tokenPosition(5, 15, 1, 6, 1, 16)},
                 }})
             })
             test('all', () => {
                 expect(parseRule(p => p.attributeRule(), '    id int=0 nullable pk index=idx unique check=`id > 0` -kind=users> users(id) { tag : pii , owner:PANDA} | some note # comment\n')).toEqual({result: {
                     nesting: 1,
-                    name: {identifier: 'id', parser: {token: 'Identifier', offset: [4, 5], line: [1, 1], column: [5, 6]}},
-                    type: {identifier: 'int', parser: {token: 'Identifier', offset: [7, 9], line: [1, 1], column: [8, 10]}},
-                    defaultValue: {value: 0, parser: {token: 'Integer', offset: [11, 11], line: [1, 1], column: [12, 12]}},
-                    nullable: {parser: {token: 'Nullable', offset: [13, 20], line: [1, 1], column: [14, 21]}},
-                    primaryKey: {parser: {token: 'PrimaryKey', offset: [22, 23], line: [1, 1], column: [23, 24]}},
-                    index: {parser: {token: 'Index', offset: [25, 29], line: [1, 1], column: [26, 30]}, value: {identifier: 'idx', parser: {token: 'Identifier', offset: [31, 33], line: [1, 1], column: [32, 34]}}},
-                    unique: {parser: {token: 'Unique', offset: [35, 40], line: [1, 1], column: [36, 41]}},
-                    check: {parser: {token: 'Check', offset: [42, 46], line: [1, 1], column: [43, 47]}, value: {expression: 'id > 0', parser: {token: 'Expression', offset: [48, 55], line: [1, 1], column: [49, 56]}}},
+                    name: {token: 'Identifier', value: 'id', ...tokenPosition(4, 5, 1, 5, 1, 6)},
+                    type: {token: 'Identifier', value: 'int', ...tokenPosition(7, 9, 1, 8, 1, 10)},
+                    defaultValue: {token: 'Integer', value: 0, ...tokenPosition(11, 11, 1, 12, 1, 12)},
+                    nullable: tokenPosition(13, 20, 1, 14, 1, 21),
+                    primaryKey: {keyword: tokenPosition(22, 23, 1, 23, 1, 24)},
+                    index: {keyword: tokenPosition(25, 29, 1, 26, 1, 30), name: {token: 'Identifier', value: 'idx', ...tokenPosition(31, 33, 1, 32, 1, 34)}},
+                    unique: {keyword: tokenPosition(35, 40, 1, 36, 1, 41)},
+                    check: {keyword: tokenPosition(42, 46, 1, 43, 1, 47), definition: {token: 'Expression', value: 'id > 0', ...tokenPosition(48, 55, 1, 49, 1, 56)}},
                     relation: {kind: 'n-1',
-                        ref: {entity: {identifier: 'users', parser: {token: 'Identifier', offset: [70, 74], line: [1, 1], column: [71, 75]}}, attrs: [{identifier: 'id', parser: {token: 'Identifier', offset: [76, 77], line: [1, 1], column: [77, 78]}}]},
-                        polymorphic: {attr: {identifier: 'kind', parser: {token: 'Identifier', offset: [58, 61], line: [1, 1], column: [59, 62]}}, value: {identifier: 'users', parser: {token: 'Identifier', offset: [63, 67], line: [1, 1], column: [64, 68]}}}
+                        ref: {entity: {token: 'Identifier', value: 'users', ...tokenPosition(70, 74, 1, 71, 1, 75)}, attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(76, 77, 1, 77, 1, 78)}]},
+                        polymorphic: {attr: {token: 'Identifier', value: 'kind', ...tokenPosition(58, 61, 1, 59, 1, 62)}, value: {token: 'Identifier', value: 'users', ...tokenPosition(63, 67, 1, 64, 1, 68)}}
                     },
                     properties: [
-                        {key: {identifier: 'tag', parser: {token: 'Identifier', offset: [82, 84], line: [1, 1], column: [83, 85]}}, value: {identifier: 'pii', parser: {token: 'Identifier', offset: [88, 90], line: [1, 1], column: [89, 91]}}},
-                        {key: {identifier: 'owner', parser: {token: 'Identifier', offset: [94, 98], line: [1, 1], column: [95, 99]}}, value: {identifier: 'PANDA', parser: {token: 'Identifier', offset: [100, 104], line: [1, 1], column: [101, 105]}}},
+                        {key: {token: 'Identifier', value: 'tag', ...tokenPosition(82, 84, 1, 83, 1, 85)}, value: {token: 'Identifier', value: 'pii', ...tokenPosition(88, 90, 1, 89, 1, 91)}},
+                        {key: {token: 'Identifier', value: 'owner', ...tokenPosition(94, 98, 1, 95, 1, 99)}, value: {token: 'Identifier', value: 'PANDA', ...tokenPosition(100, 104, 1, 101, 1, 105)}},
                     ],
-                    note: {note: 'some note', parser: {token: 'Note', offset: [107, 118], line: [1, 1], column: [108, 119]}},
-                    comment: {comment: 'comment', parser: {token: 'Comment', offset: [119, 127], line: [1, 1], column: [120, 128]}},
+                    doc: {token: 'Doc', value: 'some note', ...tokenPosition(107, 118, 1, 108, 1, 119)},
+                    comment: {token: 'Comment', value: 'comment', ...tokenPosition(119, 127, 1, 120, 1, 128)},
                 }})
             })
             test('error', () => {
-                expect(parseRule(p => p.attributeRule(), '  12\n')).toEqual({result: {nesting: 0}, errors: [{name: 'MismatchedTokenException', message: "Expecting token of type --> Identifier <-- but found --> '12' <--", position: {offset: [2, 3], line: [1, 1], column: [3, 4]}}]})
+                expect(parseRule(p => p.attributeRule(), '  12\n')).toEqual({result: {nesting: 0}, errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Identifier <-- but found --> '12' <--", ...tokenPosition(2, 3, 1, 3, 1, 4)}]})
             })
         })
     })
@@ -323,12 +324,12 @@ comments
                 statement: 'Relation',
                 kind: 'n-1',
                 src: {
-                    entity: {identifier: 'groups', parser: {token: 'Identifier', offset: [4, 9], line: [1, 1], column: [5, 10]}},
-                    attrs: [{identifier: 'owner', parser: {token: 'Identifier', offset: [11, 15], line: [1, 1], column: [12, 16]}}],
+                    entity: {token: 'Identifier', value: 'groups', ...tokenPosition(4, 9, 1, 5, 1, 10)},
+                    attrs: [{token: 'Identifier', value: 'owner', ...tokenPosition(11, 15, 1, 12, 1, 16)}],
                 },
                 ref: {
-                    entity: {identifier: 'users', parser: {token: 'Identifier', offset: [21, 25], line: [1, 1], column: [22, 26]}},
-                    attrs: [{identifier: 'id', parser: {token: 'Identifier', offset: [27, 28], line: [1, 1], column: [28, 29]}}],
+                    entity: {token: 'Identifier', value: 'users', ...tokenPosition(21, 25, 1, 22, 1, 26)},
+                    attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(27, 28, 1, 28, 1, 29)}],
                 },
             }})
         })
@@ -337,12 +338,12 @@ comments
                 statement: 'Relation',
                 kind: '1-1',
                 src: {
-                    entity: {identifier: 'profiles', parser: {token: 'Identifier', offset: [4, 11], line: [1, 1], column: [5, 12]}},
-                    attrs: [{identifier: 'id', parser: {token: 'Identifier', offset: [13, 14], line: [1, 1], column: [14, 15]}}],
+                    entity: {token: 'Identifier', value: 'profiles', ...tokenPosition(4, 11, 1, 5, 1, 12)},
+                    attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(13, 14, 1, 14, 1, 15)}],
                 },
                 ref: {
-                    entity: {identifier: 'users', parser: {token: 'Identifier', offset: [20, 24], line: [1, 1], column: [21, 25]}},
-                    attrs: [{identifier: 'id', parser: {token: 'Identifier', offset: [26, 27], line: [1, 1], column: [27, 28]}}],
+                    entity: {token: 'Identifier', value: 'users', ...tokenPosition(20, 24, 1, 21, 1, 25)},
+                    attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(26, 27, 1, 27, 1, 28)}],
                 },
             }})
         })
@@ -351,12 +352,12 @@ comments
                 statement: 'Relation',
                 kind: 'n-n',
                 src: {
-                    entity: {identifier: 'groups', parser: {token: 'Identifier', offset: [4, 9], line: [1, 1], column: [5, 10]}},
-                    attrs: [{identifier: 'id', parser: {token: 'Identifier', offset: [11, 12], line: [1, 1], column: [12, 13]}}],
+                    entity: {token: 'Identifier', value: 'groups', ...tokenPosition(4, 9, 1, 5, 1, 10)},
+                    attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(11, 12, 1, 12, 1, 13)}],
                 },
                 ref: {
-                    entity: {identifier: 'users', parser: {token: 'Identifier', offset: [18, 22], line: [1, 1], column: [19, 23]}},
-                    attrs: [{identifier: 'id', parser: {token: 'Identifier', offset: [24, 25], line: [1, 1], column: [25, 26]}}],
+                    entity: {token: 'Identifier', value: 'users', ...tokenPosition(18, 22, 1, 19, 1, 23)},
+                    attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(24, 25, 1, 25, 1, 26)}],
                 },
             }})
         })
@@ -365,17 +366,17 @@ comments
                 statement: 'Relation',
                 kind: 'n-1',
                 src: {
-                    entity: {identifier: 'audit', parser: {token: 'Identifier', offset: [4, 8], line: [1, 1], column: [5, 9]}},
+                    entity: {token: 'Identifier', value: 'audit', ...tokenPosition(4, 8, 1, 5, 1, 9)},
                     attrs: [
-                        {identifier: 'user_id', parser: {token: 'Identifier', offset: [10, 16], line: [1, 1], column: [11, 17]}},
-                        {identifier: 'role_id', parser: {token: 'Identifier', offset: [19, 25], line: [1, 1], column: [20, 26]}},
+                        {token: 'Identifier', value: 'user_id', ...tokenPosition(10, 16, 1, 11, 1, 17)},
+                        {token: 'Identifier', value: 'role_id', ...tokenPosition(19, 25, 1, 20, 1, 26)},
                     ],
                 },
                 ref: {
-                    entity: {identifier: 'user_roles', parser: {token: 'Identifier', offset: [31, 40], line: [1, 1], column: [32, 41]}},
+                    entity: {token: 'Identifier', value: 'user_roles', ...tokenPosition(31, 40, 1, 32, 1, 41)},
                     attrs: [
-                        {identifier: 'user_id', parser: {token: 'Identifier', offset: [42, 48], line: [1, 1], column: [43, 49]}},
-                        {identifier: 'role_id', parser: {token: 'Identifier', offset: [51, 57], line: [1, 1], column: [52, 58]}},
+                        {token: 'Identifier', value: 'user_id', ...tokenPosition(42, 48, 1, 43, 1, 49)},
+                        {token: 'Identifier', value: 'role_id', ...tokenPosition(51, 57, 1, 52, 1, 58)},
                     ],
                 },
             }})
@@ -385,16 +386,16 @@ comments
                 statement: 'Relation',
                 kind: 'n-1',
                 src: {
-                    entity: {identifier: 'events', parser: {token: 'Identifier', offset: [4, 9], line: [1, 1], column: [5, 10]}},
-                    attrs: [{identifier: 'item_id', parser: {token: 'Identifier', offset: [11, 17], line: [1, 1], column: [12, 18]}}],
+                    entity: {token: 'Identifier', value: 'events', ...tokenPosition(4, 9, 1, 5, 1, 10)},
+                    attrs: [{token: 'Identifier', value: 'item_id', ...tokenPosition(11, 17, 1, 12, 1, 18)}],
                 },
                 ref: {
-                    entity: {identifier: 'users', parser: {token: 'Identifier', offset: [37, 41], line: [1, 1], column: [38, 42]}},
-                    attrs: [{identifier: 'id', parser: {token: 'Identifier', offset: [43, 44], line: [1, 1], column: [44, 45]}}],
+                    entity: {token: 'Identifier', value: 'users', ...tokenPosition(37, 41, 1, 38, 1, 42)},
+                    attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(43, 44, 1, 44, 1, 45)}],
                 },
                 polymorphic: {
-                    attr: {identifier: 'item_kind', parser: {token: 'Identifier', offset: [21, 29], line: [1, 1], column: [22, 30]}},
-                    value: {identifier: 'User', parser: {token: 'Identifier', offset: [31, 34], line: [1, 1], column: [32, 35]}},
+                    attr: {token: 'Identifier', value: 'item_kind', ...tokenPosition(21, 29, 1, 22, 1, 30)},
+                    value: {token: 'Identifier', value: 'User', ...tokenPosition(31, 34, 1, 32, 1, 35)},
                 }
             }})
         })
@@ -403,102 +404,102 @@ comments
                 statement: 'Relation',
                 kind: 'n-1',
                 src: {
-                    entity: {identifier: 'groups', parser: {token: 'Identifier', offset: [4, 9], line: [1, 1], column: [5, 10]}},
-                    attrs: [{identifier: 'owner', parser: {token: 'Identifier', offset: [11, 15], line: [1, 1], column: [12, 16]}}],
+                    entity: {token: 'Identifier', value: 'groups', ...tokenPosition(4, 9, 1, 5, 1, 10)},
+                    attrs: [{token: 'Identifier', value: 'owner', ...tokenPosition(11, 15, 1, 12, 1, 16)}],
                 },
                 ref: {
-                    entity: {identifier: 'users', parser: {token: 'Identifier', offset: [21, 25], line: [1, 1], column: [22, 26]}},
-                    attrs: [{identifier: 'id', parser: {token: 'Identifier', offset: [27, 28], line: [1, 1], column: [28, 29]}}],
+                    entity: {token: 'Identifier', value: 'users', ...tokenPosition(21, 25, 1, 22, 1, 26)},
+                    attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(27, 28, 1, 28, 1, 29)}],
                 },
                 properties: [{
-                    key: {identifier: 'color', parser: {token: 'Identifier', offset: [32, 36], line: [1, 1], column: [33, 37]}},
-                    value: {identifier: 'red', parser: {token: 'Identifier', offset: [39, 41], line: [1, 1], column: [40, 42]}}
+                    key: {token: 'Identifier', value: 'color', ...tokenPosition(32, 36, 1, 33, 1, 37)},
+                    value: {token: 'Identifier', value: 'red', ...tokenPosition(39, 41, 1, 40, 1, 42)}
                 }],
-                note: {note: 'a note', parser: {token: 'Note', offset: [44, 52], line: [1, 1], column: [45, 53]}},
-                comment: {comment: 'a comment', parser: {token: 'Comment', offset: [53, 63], line: [1, 1], column: [54, 64]}},
+                doc: {token: 'Doc', value: 'a note', ...tokenPosition(44, 52, 1, 45, 1, 53)},
+                comment: {token: 'Comment', value: 'a comment', ...tokenPosition(53, 63, 1, 54, 1, 64)},
             }})
         })
         test('bad', () => {
-            expect(parseRule(p => p.relationRule(), 'bad')).toEqual({errors: [{name: 'NoViableAltException', message: "Expecting: one of these possible Token sequences:\n  1. [Relation]\n  2. [ForeignKey]\nbut found: 'bad'", position: {offset: [0, 2], line: [1, 1], column: [1, 3]}}]})
+            expect(parseRule(p => p.relationRule(), 'bad')).toEqual({errors: [{name: 'NoViableAltException', kind: 'error', message: "Expecting: one of these possible Token sequences:\n  1. [Relation]\n  2. [ForeignKey]\nbut found: 'bad'", ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
         })
     })
     describe('typeRule', () => {
         test('empty', () => {
             expect(parseRule(p => p.typeRule(), 'type bug_status\n')).toEqual({result: {
                 statement: 'Type',
-                name: {identifier: 'bug_status', parser: {token: 'Identifier', offset: [5, 14], line: [1, 1], column: [6, 15]}},
+                name: {token: 'Identifier', value: 'bug_status', ...tokenPosition(5, 14, 1, 6, 1, 15)},
             }})
         })
         test('alias', () => {
             expect(parseRule(p => p.typeRule(), 'type bug_status varchar\n')).toEqual({result: {
                 statement: 'Type',
-                name: {identifier: 'bug_status', parser: {token: 'Identifier', offset: [5, 14], line: [1, 1], column: [6, 15]}},
-                content: {kind: 'alias', name: {identifier: 'varchar', parser: {token: 'Identifier', offset: [16, 22], line: [1, 1], column: [17, 23]}}},
+                name: {token: 'Identifier', value: 'bug_status', ...tokenPosition(5, 14, 1, 6, 1, 15)},
+                content: {kind: 'alias', name: {token: 'Identifier', value: 'varchar', ...tokenPosition(16, 22, 1, 17, 1, 23)}},
             }})
         })
         test('enum', () => {
             expect(parseRule(p => p.typeRule(), 'type bug_status (new, "in progress", done)\n')).toEqual({result: {
                 statement: 'Type',
-                name: {identifier: 'bug_status', parser: {token: 'Identifier', offset: [5, 14], line: [1, 1], column: [6, 15]}},
+                name: {token: 'Identifier', value: 'bug_status', ...tokenPosition(5, 14, 1, 6, 1, 15)},
                 content: {kind: 'enum', values: [
-                    {identifier: 'new', parser: {token: 'Identifier', offset: [17, 19], line: [1, 1], column: [18, 20]}},
-                    {identifier: 'in progress', parser: {token: 'Identifier', offset: [22, 34], line: [1, 1], column: [23, 35]}},
-                    {identifier: 'done', parser: {token: 'Identifier', offset: [37, 40], line: [1, 1], column: [38, 41]}},
+                    {token: 'Identifier', value: 'new', ...tokenPosition(17, 19, 1, 18, 1, 20)},
+                    {token: 'Identifier', value: 'in progress', ...tokenPosition(22, 34, 1, 23, 1, 35)},
+                    {token: 'Identifier', value: 'done', ...tokenPosition(37, 40, 1, 38, 1, 41)},
                 ]}
             }})
         })
         test('struct', () => {
             expect(parseRule(p => p.typeRule(), 'type bug_status {internal varchar, public varchar}\n')).toEqual({result: {
                 statement: 'Type',
-                name: {identifier: 'bug_status', parser: {token: 'Identifier', offset: [5, 14], line: [1, 1], column: [6, 15]}},
+                name: {token: 'Identifier', value: 'bug_status', ...tokenPosition(5, 14, 1, 6, 1, 15)},
                 content: {kind: 'struct', attrs: [{
-                    path: [{identifier: 'internal', parser: {token: 'Identifier', offset: [17, 24], line: [1, 1], column: [18, 25]}}],
-                    type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [26, 32], line: [1, 1], column: [27, 33]}},
+                    path: [{token: 'Identifier', value: 'internal', ...tokenPosition(17, 24, 1, 18, 1, 25)}],
+                    type: {token: 'Identifier', value: 'varchar', ...tokenPosition(26, 32, 1, 27, 1, 33)},
                 }, {
-                    path: [{identifier: 'public', parser: {token: 'Identifier', offset: [35, 40], line: [1, 1], column: [36, 41]}}],
-                    type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [42, 48], line: [1, 1], column: [43, 49]}},
+                    path: [{token: 'Identifier', value: 'public', ...tokenPosition(35, 40, 1, 36, 1, 41)}],
+                    type: {token: 'Identifier', value: 'varchar', ...tokenPosition(42, 48, 1, 43, 1, 49)},
                 }]}
             }})
             // FIXME: would be nice to have this alternative but the $.MANY fails, see `typeRule`
             /*expect(parseRule(p => p.typeRule(), 'type bug_status\n  internal varchar\n  public varchar\n')).toEqual({result: {
                 statement: 'Type',
-                name: {identifier: 'bug_status', parser: {token: 'Identifier', offset: [5, 14], line: [1, 1], column: [6, 15]}},
+                name: {token: 'Identifier', value: 'bug_status', ...tokenPosition(5, 14, 1, 6, 1, 15)},
                 content: {kind: 'struct', attrs: [{
-                    path: [{identifier: 'internal', parser: {token: 'Identifier', offset: [18, 25], line: [2, 2], column: [3, 10]}}],
-                    type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [27, 33], line: [2, 2], column: [12, 18]}},
+                    path: [{token: 'Identifier', value: 'internal', ...tokenPosition(18, 25, 2, 3, 2, 10)}],
+                    type: {token: 'Identifier', value: 'varchar', ...tokenPosition(27, 33, 2, 12, 2, 18)},
                 }, {
-                    path: [{identifier: 'public', parser: {token: 'Identifier', offset: [37, 42], line: [3, 3], column: [3, 8]}}],
-                    type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [44, 50], line: [3, 3], column: [10, 16]}},
+                    path: [{token: 'Identifier', value: 'public', ...tokenPosition(37, 42, 3, 3, 3, 8)}],
+                    type: {token: 'Identifier', value: 'varchar', ...tokenPosition(44, 50, 3, 10, 3, 16)},
                 }]}
             }})*/
         })
         test('custom', () => {
             expect(parseRule(p => p.typeRule(), 'type bug_status `range(subtype = float8, subtype_diff = float8mi)`\n')).toEqual({result: {
                 statement: 'Type',
-                name: {identifier: 'bug_status', parser: {token: 'Identifier', offset: [5, 14], line: [1, 1], column: [6, 15]}},
-                content: {kind: 'custom', definition: {expression: 'range(subtype = float8, subtype_diff = float8mi)', parser: {token: 'Expression', offset: [16, 65], line: [1, 1], column: [17, 66]}}}
+                name: {token: 'Identifier', value: 'bug_status', ...tokenPosition(5, 14, 1, 6, 1, 15)},
+                content: {kind: 'custom', definition: {token: 'Expression', value: 'range(subtype = float8, subtype_diff = float8mi)', ...tokenPosition(16, 65, 1, 17, 1, 66)}}
             }})
         })
         test('namespace', () => {
             expect(parseRule(p => p.typeRule(), 'type reporting.public.bug_status varchar\n')).toEqual({result: {
                 statement: 'Type',
-                catalog: {identifier: 'reporting', parser: {token: 'Identifier', offset: [5, 13], line: [1, 1], column: [6, 14]}},
-                schema: {identifier: 'public', parser: {token: 'Identifier', offset: [15, 20], line: [1, 1], column: [16, 21]}},
-                name: {identifier: 'bug_status', parser: {token: 'Identifier', offset: [22, 31], line: [1, 1], column: [23, 32]}},
-                content: {kind: 'alias', name: {identifier: 'varchar', parser: {token: 'Identifier', offset: [33, 39], line: [1, 1], column: [34, 40]}}},
+                catalog: {token: 'Identifier', value: 'reporting', ...tokenPosition(5, 13, 1, 6, 1, 14)},
+                schema: {token: 'Identifier', value: 'public', ...tokenPosition(15, 20, 1, 16, 1, 21)},
+                name: {token: 'Identifier', value: 'bug_status', ...tokenPosition(22, 31, 1, 23, 1, 32)},
+                content: {kind: 'alias', name: {token: 'Identifier', value: 'varchar', ...tokenPosition(33, 39, 1, 34, 1, 40)}},
             }})
         })
         test('metadata', () => {
             expect(parseRule(p => p.typeRule(), 'type bug_status varchar {tags: seo} | a note # a comment\n')).toEqual({result: {
                 statement: 'Type',
-                name: {identifier: 'bug_status', parser: {token: 'Identifier', offset: [5, 14], line: [1, 1], column: [6, 15]}},
-                content: {kind: 'alias', name: {identifier: 'varchar', parser: {token: 'Identifier', offset: [16, 22], line: [1, 1], column: [17, 23]}}},
+                name: {token: 'Identifier', value: 'bug_status', ...tokenPosition(5, 14, 1, 6, 1, 15)},
+                content: {kind: 'alias', name: {token: 'Identifier', value: 'varchar', ...tokenPosition(16, 22, 1, 17, 1, 23)}},
                 properties: [{
-                    key: {identifier: 'tags', parser: {token: 'Identifier', offset: [25, 28], line: [1, 1], column: [26, 29]}},
-                    value: {identifier: 'seo', parser: {token: 'Identifier', offset: [31, 33], line: [1, 1], column: [32, 34]}}
+                    key: {token: 'Identifier', value: 'tags', ...tokenPosition(25, 28, 1, 26, 1, 29)},
+                    value: {token: 'Identifier', value: 'seo', ...tokenPosition(31, 33, 1, 32, 1, 34)}
                 }],
-                note: {note: 'a note', parser: {token: 'Note', offset: [36, 44], line: [1, 1], column: [37, 45]}},
-                comment: {comment: 'a comment', parser: {token: 'Comment', offset: [45, 55], line: [1, 1], column: [46, 56]}},
+                doc: {token: 'Doc', value: 'a note', ...tokenPosition(36, 44, 1, 37, 1, 45)},
+                comment: {token: 'Comment', value: 'a comment', ...tokenPosition(45, 55, 1, 46, 1, 56)},
             }})
         })
         // TODO: test bad
@@ -506,16 +507,16 @@ comments
     describe('emptyStatementRule', () => {
         test('basic', () => expect(parseRule(p => p.emptyStatementRule(), '\n')).toEqual({result: {statement: 'Empty'}}))
         test('with spaces', () => expect(parseRule(p => p.emptyStatementRule(), '  \n')).toEqual({result: {statement: 'Empty'}}))
-        test('with comment', () => expect(parseRule(p => p.emptyStatementRule(), ' # hello\n')).toEqual({result: {statement: 'Empty', comment: {comment: 'hello', parser: {token: 'Comment', offset: [1, 7], line: [1, 1], column: [2, 8]}}}}))
+        test('with comment', () => expect(parseRule(p => p.emptyStatementRule(), ' # hello\n')).toEqual({result: {statement: 'Empty', comment: {token: 'Comment', value: 'hello', ...tokenPosition(1, 7, 1, 2, 1, 8)}}}))
     })
     describe('legacy', () => {
         test('attribute type', () => {
             // as `varchar(12)` is valid on both v1 & v2 but has different meaning, it's handled when building AML, see aml-legacy.test.ts
             expect(parseRule(p => p.attributeRule(), '  name varchar(12)\n').result).toEqual({
                 nesting: 0,
-                name: {identifier: 'name', parser: {token: 'Identifier', offset: [2, 5], line: [1, 1], column: [3, 6]}},
-                type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [7, 13], line: [1, 1], column: [8, 14]}},
-                enumValues: [{value: 12, parser: {token: 'Integer', offset: [15, 16], line: [1, 1], column: [16, 17]}}]
+                name: {token: 'Identifier', value: 'name', ...tokenPosition(2, 5, 1, 3, 1, 6)},
+                type: {token: 'Identifier', value: 'varchar', ...tokenPosition(7, 13, 1, 8, 1, 14)},
+                enumValues: [{token: 'Integer', value: 12, ...tokenPosition(15, 16, 1, 16, 1, 17)}]
             })
         })
         test('attribute relation', () => {
@@ -524,12 +525,12 @@ comments
             expect(v1).toEqual({
                 kind: 'n-1',
                 ref: {
-                    entity: {identifier: 'users', parser: {token: 'Identifier', offset: [13, 17], line: [1, 1], column: [14, 18]}},
-                    attrs: [{identifier: 'id', parser: {token: 'Identifier', offset: [19, 20], line: [1, 1], column: [20, 21]}}]
+                    entity: {token: 'Identifier', value: 'users', ...tokenPosition(13, 17, 1, 14, 1, 18)},
+                    attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(19, 20, 1, 20, 1, 21)}]
                 }
             })
             expect(v2).toEqual(v1)
-            expect(warning).toEqual({message: {kind: 'warning', message: '"fk" is legacy, replace it with "->"'}, token: 'ForeignKey', offset: [10, 11], line: [1, 1], column: [11, 12]})
+            expect(warning).toEqual({...tokenPosition(10, 11, 1, 11, 1, 12), issues: [{name: 'LegacyWarning', kind: 'warning', message: '"fk" is legacy, replace it with "->"'}]})
         })
         test('standalone relation', () => {
             const v1 = parseRule(p => p.relationRule(), 'fk groups.owner -> users.id\n')
@@ -538,26 +539,22 @@ comments
                 statement: 'Relation',
                 kind: 'n-1',
                 src: {
-                    entity: {identifier: 'groups', parser: {token: 'Identifier', offset: [3, 8], line: [1, 1], column: [4, 9]}},
-                    attrs: [{identifier: 'owner', parser: {token: 'Identifier', offset: [10, 14], line: [1, 1], column: [11, 15]}}]
+                    entity: {token: 'Identifier', value: 'groups', ...tokenPosition(3, 8, 1, 4, 1, 9)},
+                    attrs: [{token: 'Identifier', value: 'owner', ...tokenPosition(10, 14, 1, 11, 1, 15)}]
                 },
                 ref: {
-                    entity: {identifier: 'users', parser: {token: 'Identifier', offset: [19, 23], line: [1, 1], column: [20, 24]}},
-                    attrs: [{identifier: 'id', parser: {token: 'Identifier', offset: [25, 26], line: [1, 1], column: [26, 27]}}]
+                    entity: {token: 'Identifier', value: 'users', ...tokenPosition(19, 23, 1, 20, 1, 24)},
+                    attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(25, 26, 1, 26, 1, 27)}]
                 }
             }})
-            expect(removeFieldsDeep(v1, ['parser'])).toEqual(removeFieldsDeep(v2, ['parser']))
+            expect(removeFieldsDeep(v1, ['offset', 'position'])).toEqual(removeFieldsDeep(v2, ['offset', 'position']))
         })
         test('nested attribute', () => {
             const v1 = parseRule(p => p.attributeRefRule(), 'users.settings:github')
             const v2 = parseRule(p => p.attributeRefRule(), 'users(settings.github)')
             expect(v1).toEqual({result: {
-                entity: {identifier: 'users', parser: {token: 'Identifier', offset: [0, 4], line: [1, 1], column: [1, 5]}},
-                attr: {
-                    identifier: 'settings',
-                    parser: {token: 'Identifier', offset: [6, 13], line: [1, 1], column: [7, 14]},
-                    path: [{identifier: 'github', parser: {token: 'Identifier', offset: [15, 20], line: [1, 1], column: [16, 21]}}]
-                }
+                entity: {token: 'Identifier', value: 'users', ...tokenPosition(0, 4, 1, 1, 1, 5)},
+                attr: {token: 'Identifier', value: 'settings', ...tokenPosition(6, 13, 1, 7, 1, 14), path: [{token: 'Identifier', value: 'github', ...tokenPosition(15, 20, 1, 16, 1, 21)}]}
             }})
             expect(v1).toEqual(v2)
         })
@@ -565,131 +562,129 @@ comments
             const v1 = parseRule(p => p.attributeRefCompositeRule(), 'users.settings:github')
             const v2 = parseRule(p => p.attributeRefCompositeRule(), 'users(settings.github)')
             expect(v1).toEqual({result: {
-                entity: {identifier: 'users', parser: {token: 'Identifier', offset: [0, 4], line: [1, 1], column: [1, 5]}},
-                attrs: [{
-                    identifier: 'settings',
-                    parser: {token: 'Identifier', offset: [6, 13], line: [1, 1], column: [7, 14]},
-                    path: [{identifier: 'github', parser: {token: 'Identifier', offset: [15, 20], line: [1, 1], column: [16, 21]}}]
-                }]
+                entity: {token: 'Identifier', value: 'users', ...tokenPosition(0, 4, 1, 1, 1, 5)},
+                attrs: [{token: 'Identifier', value: 'settings', ...tokenPosition(6, 13, 1, 7, 1, 14), path: [{token: 'Identifier', value: 'github', ...tokenPosition(15, 20, 1, 16, 1, 21)}]}]
             }})
             expect(v1).toEqual(v2)
         })
         test('properties', () => {
             expect(parseRule(p => p.propertiesRule(), '{color=red}')).toEqual({result: [{
-                key: {identifier: 'color', parser: {token: 'Identifier', offset: [1, 5], line: [1, 1], column: [2, 6]}},
-                value: {identifier: 'red', parser: {token: 'Identifier', offset: [7, 9], line: [1, 1], column: [8, 10]}}
+                key: {token: 'Identifier', value: 'color', ...tokenPosition(1, 5, 1, 2, 1, 6)},
+                value: {token: 'Identifier', value: 'red', ...tokenPosition(7, 9, 1, 8, 1, 10)}
             }]})
         })
     })
     describe('common', () => {
         test('integerRule', () => {
-            expect(parseRule(p => p.numberRule(), '12')).toEqual({result: {value: 12, parser: {token: 'Integer', offset: [0, 1], line: [1, 1], column: [1, 2]}}})
-            expect(parseRule(p => p.numberRule(), '1.2')).toEqual({result: {value: 1.2, parser: {token: 'Float', offset: [0, 2], line: [1, 1], column: [1, 3]}}})
-            expect(parseRule(p => p.numberRule(), 'bad')).toEqual({errors: [{name: 'NoViableAltException', message: "Expecting: one of these possible Token sequences:\n  1. [Float]\n  2. [Integer]\nbut found: 'bad'", position: {offset: [0, 2], line: [1, 1], column: [1, 3]}}]})
+            expect(parseRule(p => p.integerRule(), '12')).toEqual({result: {token: 'Integer', value: 12, ...tokenPosition(0, 1, 1, 1, 1, 2)}})
+            expect(parseRule(p => p.integerRule(), '1.2')).toEqual({errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Integer <-- but found --> '1.2' <--", ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
+            expect(parseRule(p => p.integerRule(), 'bad')).toEqual({errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Integer <-- but found --> 'bad' <--", ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
+        })
+        test('decimalRule', () => {
+            expect(parseRule(p => p.decimalRule(), '1.2')).toEqual({result: {token: 'Decimal', value: 1.2, ...tokenPosition(0, 2, 1, 1, 1, 3)}})
+            expect(parseRule(p => p.decimalRule(), '12')).toEqual({errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Decimal <-- but found --> '12' <--", ...tokenPosition(0, 1, 1, 1, 1, 2)}]})
+            expect(parseRule(p => p.decimalRule(), 'bad')).toEqual({errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Decimal <-- but found --> 'bad' <--", ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
         })
         test('identifierRule', () => {
-            expect(parseRule(p => p.identifierRule(), 'id')).toEqual({result: {identifier: 'id', parser: {token: 'Identifier', offset: [0, 1], line: [1, 1], column: [1, 2]}}})
-            expect(parseRule(p => p.identifierRule(), '"my col"')).toEqual({result: {identifier: 'my col', parser: {token: 'Identifier', offset: [0, 7], line: [1, 1], column: [1, 8]}}})
-            expect(parseRule(p => p.identifierRule(), '"my \\"new\\" col"')).toEqual({result: {identifier: 'my "new" col', parser: {token: 'Identifier', offset: [0, 15], line: [1, 1], column: [1, 16]}}})
-            expect(parseRule(p => p.identifierRule(), 'bad col')).toEqual({result: {identifier: 'bad', parser: {token: 'Identifier', offset: [0, 2], line: [1, 1], column: [1, 3]}}, errors: [{name: 'NotAllInputParsedException', message: "Redundant input, expecting EOF but found:  ", position: {offset: [3, 3], line: [1, 1], column: [4, 4]}}]})
+            expect(parseRule(p => p.identifierRule(), 'id')).toEqual({result: {token: 'Identifier', value: 'id', ...tokenPosition(0, 1, 1, 1, 1, 2)}})
+            expect(parseRule(p => p.identifierRule(), '"my col"')).toEqual({result: {token: 'Identifier', value: 'my col', ...tokenPosition(0, 7, 1, 1, 1, 8)}})
+            expect(parseRule(p => p.identifierRule(), '"my \\"new\\" col"')).toEqual({result: {token: 'Identifier', value: 'my "new" col', ...tokenPosition(0, 15, 1, 1, 1, 16)}})
+            expect(parseRule(p => p.identifierRule(), 'bad col')).toEqual({result: {token: 'Identifier', value: 'bad', ...tokenPosition(0, 2, 1, 1, 1, 3)}, errors: [{name: 'NotAllInputParsedException', kind: 'error', message: "Redundant input, expecting EOF but found:  ", ...tokenPosition(3, 3, 1, 4, 1, 4)}]})
         })
         test('commentRule', () => {
-            expect(parseRule(p => p.commentRule(), '# a comment')).toEqual({result: {comment: 'a comment', parser: {token: 'Comment', offset: [0, 10], line: [1, 1], column: [1, 11]}}})
-            expect(parseRule(p => p.commentRule(), 'bad')).toEqual({errors: [{name: 'MismatchedTokenException', message: "Expecting token of type --> Comment <-- but found --> 'bad' <--", position: {offset: [0, 2], line: [1, 1], column: [1, 3]}}]})
+            expect(parseRule(p => p.commentRule(), '# a comment')).toEqual({result: {token: 'Comment', value: 'a comment', ...tokenPosition(0, 10, 1, 1, 1, 11)}})
+            expect(parseRule(p => p.commentRule(), 'bad')).toEqual({errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Comment <-- but found --> 'bad' <--", ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
         })
         test('noteRule', () => {
-            expect(parseRule(p => p.noteRule(), '| a note')).toEqual({result: {note: 'a note', parser: {token: 'Note', offset: [0, 7], line: [1, 1], column: [1, 8]}}})
-            expect(parseRule(p => p.noteRule(), '|||\n   a note\n   multiline\n|||')).toEqual({result: {note: 'a note\nmultiline', parser: {token: 'NoteMultiline', offset: [0, 29], line: [1, 4], column: [1, 3]}}})
-            expect(parseRule(p => p.noteRule(), 'bad')).toEqual({errors: [{name: 'NoViableAltException', message: "Expecting: one of these possible Token sequences:\n  1. [NoteMultiline]\n  2. [Note]\nbut found: 'bad'", position: {offset: [0, 2], line: [1, 1], column: [1, 3]}}]})
+            expect(parseRule(p => p.docRule(), '| a note')).toEqual({result: {token: 'Doc', value: 'a note', ...tokenPosition(0, 7, 1, 1, 1, 8)}})
+            expect(parseRule(p => p.docRule(), '|||\n   a note\n   multiline\n|||')).toEqual({result: {token: 'Doc', value: 'a note\nmultiline', ...tokenPosition(0, 29, 1, 1, 4, 3)}})
+            expect(parseRule(p => p.docRule(), 'bad')).toEqual({errors: [{name: 'NoViableAltException', kind: 'error', message: "Expecting: one of these possible Token sequences:\n  1. [DocMultiline]\n  2. [Doc]\nbut found: 'bad'", ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
         })
         test('propertiesRule', () => {
             expect(parseRule(p => p.propertiesRule(), '{}')).toEqual({result: []})
-            expect(parseRule(p => p.propertiesRule(), '{flag}')).toEqual({result: [{key: {identifier: 'flag', parser: {token: 'Identifier', offset: [1, 4], line: [1, 1], column: [2, 5]}}}]})
+            expect(parseRule(p => p.propertiesRule(), '{flag}')).toEqual({result: [{key: {token: 'Identifier', value: 'flag', ...tokenPosition(1, 4, 1, 2, 1, 5)}}]})
             expect(parseRule(p => p.propertiesRule(), '{color: red}')).toEqual({result: [{
-                key: {identifier: 'color', parser: {token: 'Identifier', offset: [1, 5], line: [1, 1], column: [2, 6]}},
-                value: {identifier: 'red', parser: {token: 'Identifier', offset: [8, 10], line: [1, 1], column: [9, 11]}}
+                key: {token: 'Identifier', value: 'color', ...tokenPosition(1, 5, 1, 2, 1, 6)},
+                value: {token: 'Identifier', value: 'red', ...tokenPosition(8, 10, 1, 9, 1, 11)}
             }]})
             expect(parseRule(p => p.propertiesRule(), '{size: 12}')).toEqual({result: [{
-                key: {identifier: 'size', parser: {token: 'Identifier', offset: [1, 4], line: [1, 1], column: [2, 5]}},
-                value: {value: 12, parser: {token: 'Integer', offset: [7, 8], line: [1, 1], column: [8, 9]}}
+                key: {token: 'Identifier', value: 'size', ...tokenPosition(1, 4, 1, 2, 1, 5)},
+                value: {token: 'Integer', value: 12, ...tokenPosition(7, 8, 1, 8, 1, 9)}
             }]})
 
             // bad
             expect(parseRule(p => p.propertiesRule(), 'bad')).toEqual({errors: [
-                {name: 'MismatchedTokenException', message: "Expecting token of type --> LCurly <-- but found --> 'bad' <--", position: {offset: [0, 2], line: [1, 1], column: [1, 3]}},
-                {name: 'MismatchedTokenException', message: "Expecting token of type --> RCurly <-- but found --> '' <--", position: {offset: [NaN, 0], line: [0, 0], column: [0, 0]}},
+                {name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> LCurly <-- but found --> 'bad' <--", ...tokenPosition(0, 2, 1, 1, 1, 3)},
+                {name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> RCurly <-- but found --> '' <--", ...tokenPosition(NaN, 0, 0, 0, 0, 0)},
             ]})
-            expect(parseRule(p => p.propertiesRule(), '{')).toEqual({errors: [{name: 'MismatchedTokenException', message: "Expecting token of type --> RCurly <-- but found --> '' <--", position: {offset: [NaN, 0], line: [0, 0], column: [0, 0]}}]})
+            expect(parseRule(p => p.propertiesRule(), '{')).toEqual({errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> RCurly <-- but found --> '' <--", ...tokenPosition(NaN, 0, 0, 0, 0, 0)}]})
         })
         test('extraRule', () => {
             expect(parseRule(p => p.extraRule(), '')).toEqual({result: {}})
             expect(parseRule(p => p.extraRule(), '{key: value} | some note # a comment')).toEqual({result: {
                 properties: [{
-                    key: {identifier: 'key', parser: {token: 'Identifier', offset: [1, 3], line: [1, 1], column: [2, 4]}},
-                    value: {identifier: 'value', parser: {token: 'Identifier', offset: [6, 10], line: [1, 1], column: [7, 11]}}
+                    key: {token: 'Identifier', value: 'key', ...tokenPosition(1, 3, 1, 2, 1, 4)},
+                    value: {token: 'Identifier', value: 'value', ...tokenPosition(6, 10, 1, 7, 1, 11)}
                 }],
-                note: {note: 'some note', parser: {token: 'Note', offset: [13, 24], line: [1, 1], column: [14, 25]}},
-                comment: {comment: 'a comment', parser: {token: 'Comment', offset: [25, 35], line: [1, 1], column: [26, 36]}},
+                doc: {token: 'Doc', value: 'some note', ...tokenPosition(13, 24, 1, 14, 1, 25)},
+                comment: {token: 'Comment', value: 'a comment', ...tokenPosition(25, 35, 1, 26, 1, 36)},
             }})
         })
         test('entityRefRule', () => {
-            expect(parseRule(p => p.entityRefRule(), 'users')).toEqual({result: {entity: {identifier: 'users', parser: {token: 'Identifier', offset: [0, 4], line: [1, 1], column: [1, 5]}}}})
+            expect(parseRule(p => p.entityRefRule(), 'users')).toEqual({result: {entity: {token: 'Identifier', value: 'users', ...tokenPosition(0, 4, 1, 1, 1, 5)}}})
             expect(parseRule(p => p.entityRefRule(), 'public.users')).toEqual({result: {
-                entity: {identifier: 'users', parser: {token: 'Identifier', offset: [7, 11], line: [1, 1], column: [8, 12]}},
-                schema: {identifier: 'public', parser: {token: 'Identifier', offset: [0, 5], line: [1, 1], column: [1, 6]}},
+                entity: {token: 'Identifier', value: 'users', ...tokenPosition(7, 11, 1, 8, 1, 12)},
+                schema: {token: 'Identifier', value: 'public', ...tokenPosition(0, 5, 1, 1, 1, 6)},
             }})
             expect(parseRule(p => p.entityRefRule(), 'core.public.users')).toEqual({result: {
-                entity: {identifier: 'users', parser: {token: 'Identifier', offset: [12, 16], line: [1, 1], column: [13, 17]}},
-                schema: {identifier: 'public', parser: {token: 'Identifier', offset: [5, 10], line: [1, 1], column: [6, 11]}},
-                catalog: {identifier: 'core', parser: {token: 'Identifier', offset: [0, 3], line: [1, 1], column: [1, 4]}},
+                entity: {token: 'Identifier', value: 'users', ...tokenPosition(12, 16, 1, 13, 1, 17)},
+                schema: {token: 'Identifier', value: 'public', ...tokenPosition(5, 10, 1, 6, 1, 11)},
+                catalog: {token: 'Identifier', value: 'core', ...tokenPosition(0, 3, 1, 1, 1, 4)},
             }})
             expect(parseRule(p => p.entityRefRule(), 'analytics.core.public.users')).toEqual({result: {
-                entity: {identifier: 'users', parser: {token: 'Identifier', offset: [22, 26], line: [1, 1], column: [23, 27]}},
-                schema: {identifier: 'public', parser: {token: 'Identifier', offset: [15, 20], line: [1, 1], column: [16, 21]}},
-                catalog: {identifier: 'core', parser: {token: 'Identifier', offset: [10, 13], line: [1, 1], column: [11, 14]}},
-                database: {identifier: 'analytics', parser: {token: 'Identifier', offset: [0, 8], line: [1, 1], column: [1, 9]}},
+                entity: {token: 'Identifier', value: 'users', ...tokenPosition(22, 26, 1, 23, 1, 27)},
+                schema: {token: 'Identifier', value: 'public', ...tokenPosition(15, 20, 1, 16, 1, 21)},
+                catalog: {token: 'Identifier', value: 'core', ...tokenPosition(10, 13, 1, 11, 1, 14)},
+                database: {token: 'Identifier', value: 'analytics', ...tokenPosition(0, 8, 1, 1, 1, 9)},
             }})
-            expect(parseRule(p => p.entityRefRule(), '42')).toEqual({errors: [{name: 'MismatchedTokenException', message: "Expecting token of type --> Identifier <-- but found --> '42' <--", position: {offset: [0, 1], line: [1, 1], column: [1, 2]}}]})
+            expect(parseRule(p => p.entityRefRule(), '42')).toEqual({errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Identifier <-- but found --> '42' <--", ...tokenPosition(0, 1, 1, 1, 1, 2)}]})
         })
         test('columnPathRule', () => {
-            expect(parseRule(p => p.attributePathRule(), 'details')).toEqual({result: {identifier: 'details', parser: {token: 'Identifier', offset: [0, 6], line: [1, 1], column: [1, 7]}}})
+            expect(parseRule(p => p.attributePathRule(), 'details')).toEqual({result: {token: 'Identifier', value: 'details', ...tokenPosition(0, 6, 1, 1, 1, 7)}})
             expect(parseRule(p => p.attributePathRule(), 'details.address.street')).toEqual({result: {
-                identifier: 'details',
-                parser: {token: 'Identifier', offset: [0, 6], line: [1, 1], column: [1, 7]},
+                token: 'Identifier',
+                value: 'details',
+                ...tokenPosition(0, 6, 1, 1, 1, 7),
                 path: [
-                    {identifier: 'address', parser: {token: 'Identifier', offset: [8, 14], line: [1, 1], column: [9, 15]}},
-                    {identifier: 'street', parser: {token: 'Identifier', offset: [16, 21], line: [1, 1], column: [17, 22]}}
+                    {token: 'Identifier', value: 'address', ...tokenPosition(8, 14, 1, 9, 1, 15)},
+                    {token: 'Identifier', value: 'street', ...tokenPosition(16, 21, 1, 17, 1, 22)}
                 ],
             }})
-            expect(parseRule(p => p.attributePathRule(), '42')).toEqual({errors: [{name: 'MismatchedTokenException', message: "Expecting token of type --> Identifier <-- but found --> '42' <--", position: {offset: [0, 1], line: [1, 1], column: [1, 2]}}]})
+            expect(parseRule(p => p.attributePathRule(), '42')).toEqual({errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Identifier <-- but found --> '42' <--", ...tokenPosition(0, 1, 1, 1, 1, 2)}]})
         })
         test('columnRefRule', () => {
             expect(parseRule(p => p.attributeRefRule(), 'users(id)')).toEqual({result: {
-                entity: {identifier: 'users', parser: {token: 'Identifier', offset: [0, 4], line: [1, 1], column: [1, 5]}},
-                attr: {identifier: 'id', parser: {token: 'Identifier', offset: [6, 7], line: [1, 1], column: [7, 8]}},
+                entity: {token: 'Identifier', value: 'users', ...tokenPosition(0, 4, 1, 1, 1, 5)},
+                attr: {token: 'Identifier', value: 'id', ...tokenPosition(6, 7, 1, 7, 1, 8)},
             }})
             expect(parseRule(p => p.attributeRefRule(), 'public.events(details.item_id)')).toEqual({result: {
-                schema: {identifier: 'public', parser: {token: 'Identifier', offset: [0, 5], line: [1, 1], column: [1, 6]}},
-                entity: {identifier: 'events', parser: {token: 'Identifier', offset: [7, 12], line: [1, 1], column: [8, 13]}},
-                attr: {
-                    identifier: 'details',
-                    parser: {token: 'Identifier', offset: [14, 20], line: [1, 1], column: [15, 21]},
-                    path: [{identifier: 'item_id', parser: {token: 'Identifier', offset: [22, 28], line: [1, 1], column: [23, 29]}}]
-                },
+                schema: {token: 'Identifier', value: 'public', ...tokenPosition(0, 5, 1, 1, 1, 6)},
+                entity: {token: 'Identifier', value: 'events', ...tokenPosition(7, 12, 1, 8, 1, 13)},
+                attr: {token: 'Identifier', value: 'details', ...tokenPosition(14, 20, 1, 15, 1, 21), path: [{token: 'Identifier', value: 'item_id', ...tokenPosition(22, 28, 1, 23, 1, 29)}]},
             }})
         })
         test('columnRefCompositeRule', () => {
             expect(parseRule(p => p.attributeRefCompositeRule(), 'user_roles(user_id, role_id)')).toEqual({result: {
-                entity: {identifier: 'user_roles', parser: {token: 'Identifier', offset: [0, 9], line: [1, 1], column: [1, 10]}},
+                entity: {token: 'Identifier', value: 'user_roles', ...tokenPosition(0, 9, 1, 1, 1, 10)},
                 attrs: [
-                    {identifier: 'user_id', parser: {token: 'Identifier', offset: [11, 17], line: [1, 1], column: [12, 18]}},
-                    {identifier: 'role_id', parser: {token: 'Identifier', offset: [20, 26], line: [1, 1], column: [21, 27]}},
+                    {token: 'Identifier', value: 'user_id', ...tokenPosition(11, 17, 1, 12, 1, 18)},
+                    {token: 'Identifier', value: 'role_id', ...tokenPosition(20, 26, 1, 21, 1, 27)},
                 ],
             }})
         })
         test('columnValueRule', () => {
-            expect(parseRule(p => p.attributeValueRule(), 'User')).toEqual({result: {identifier: 'User', parser: {token: 'Identifier', offset: [0, 3], line: [1, 1], column: [1, 4]}}})
-            expect(parseRule(p => p.attributeValueRule(), '42')).toEqual({result: {value: 42, parser: {token: 'Integer', offset: [0, 1], line: [1, 1], column: [1, 2]}}})
+            expect(parseRule(p => p.attributeValueRule(), 'User')).toEqual({result: {token: 'Identifier', value: 'User', ...tokenPosition(0, 3, 1, 1, 1, 4)}})
+            expect(parseRule(p => p.attributeValueRule(), '42')).toEqual({result: {token: 'Integer', value: 42, ...tokenPosition(0, 1, 1, 1, 1, 2)}})
         })
     })
     describe('utils', () => {
@@ -697,58 +692,61 @@ comments
             expect(nestAttributes([])).toEqual([])
             expect(nestAttributes([{
                 nesting: 0,
-                name: {identifier: 'id', parser: {token: 'Identifier', offset: [8, 9], line: [2, 2], column: [3, 4]}},
-                type: {identifier: 'int', parser: {token: 'Identifier', offset: [11, 13], line: [2, 2], column: [6, 8]}},
-                primaryKey: {parser: {token: 'PrimaryKey', offset: [15, 16], line: [2, 2], column: [10, 11]}}
+                name: {token: 'Identifier', value: 'id', ...tokenPosition(8, 9, 2, 3, 2, 4)},
+                type: {token: 'Identifier', value: 'int', ...tokenPosition(11, 13, 2, 6, 2, 8)},
+                primaryKey: {keyword: tokenPosition(15, 16, 2, 10, 2, 11)}
             }, {
                 nesting: 0,
-                name: {identifier: 'name', parser: {token: 'Identifier', offset: [20, 23], line: [3, 3], column: [3, 6]}},
-                type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [25, 31], line: [3, 3], column: [8, 14]}}
+                name: {token: 'Identifier', value: 'name', ...tokenPosition(20, 23, 3, 3, 3, 6)},
+                type: {token: 'Identifier', value: 'varchar', ...tokenPosition(25, 31, 3, 8, 3, 14)}
             }, {
                 nesting: 0,
-                name: {identifier: 'settings', parser: {token: 'Identifier', offset: [35, 42], line: [4, 4], column: [3, 10]}},
-                type: {identifier: 'json', parser: {token: 'Identifier', offset: [44, 47], line: [4, 4], column: [12, 15]}}
+                name: {token: 'Identifier', value: 'settings', ...tokenPosition(35, 42, 4, 3, 4, 10)},
+                type: {token: 'Identifier', value: 'json', ...tokenPosition(44, 47, 4, 12, 4, 15)}
             }, {
                 nesting: 1,
-                name: {identifier: 'address', parser: {token: 'Identifier', offset: [53, 59], line: [5, 5], column: [5, 11]}},
-                type: {identifier: 'json', parser: {token: 'Identifier', offset: [61, 64], line: [5, 5], column: [13, 16]}}
+                name: {token: 'Identifier', value: 'address', ...tokenPosition(53, 59, 5, 5, 5, 11)},
+                type: {token: 'Identifier', value: 'json', ...tokenPosition(61, 64, 5, 13, 5, 16)}
             }, {
                 nesting: 2,
-                name: {identifier: 'street', parser: {token: 'Identifier', offset: [72, 77], line: [6, 6], column: [7, 12]}},
-                type: {identifier: 'string', parser: {token: 'Identifier', offset: [79, 84], line: [6, 6], column: [14, 19]}}
+                name: {token: 'Identifier', value: 'street', ...tokenPosition(72, 77, 6, 7, 6, 12)},
+                type: {token: 'Identifier', value: 'string', ...tokenPosition(79, 84, 6, 14, 6, 19)}
             }, {
                 nesting: 2,
-                name: {identifier: 'city', parser: {token: 'Identifier', offset: [92, 95], line: [7, 7], column: [7, 10]}},
-                type: {identifier: 'string', parser: {token: 'Identifier', offset: [97, 102], line: [7, 7], column: [12, 17]}}
+                name: {token: 'Identifier', value: 'city', ...tokenPosition(92, 95, 7, 7, 7, 10)},
+                type: {token: 'Identifier', value: 'string', ...tokenPosition(97, 102, 7, 12, 7, 17)}
             }, {
                 nesting: 1,
-                name: {identifier: 'github', parser: {token: 'Identifier', offset: [108, 113], line: [8, 8], column: [5, 10]}},
-                type: {identifier: 'string', parser: {token: 'Identifier', offset: [115, 120], line: [8, 8], column: [12, 17]}}
+                name: {token: 'Identifier', value: 'github', ...tokenPosition(108, 113, 8, 5, 8, 10)},
+                type: {token: 'Identifier', value: 'string', ...tokenPosition(115, 120, 8, 12, 8, 17)}
             }])).toEqual([{
-                path: [{identifier: 'id', parser: {token: 'Identifier', offset: [8, 9], line: [2, 2], column: [3, 4]}}],
-                type: {identifier: 'int', parser: {token: 'Identifier', offset: [11, 13], line: [2, 2], column: [6, 8]}},
-                primaryKey: {parser: {token: 'PrimaryKey', offset: [15, 16], line: [2, 2], column: [10, 11]}},
+                path: [{token: 'Identifier', value: 'id', ...tokenPosition(8, 9, 2, 3, 2, 4)}],
+                type: {token: 'Identifier', value: 'int', ...tokenPosition(11, 13, 2, 6, 2, 8)},
+                primaryKey: {keyword: tokenPosition(15, 16, 2, 10, 2, 11)},
             }, {
-                path: [{identifier: 'name', parser: {token: 'Identifier', offset: [20, 23], line: [3, 3], column: [3, 6]}}],
-                type: {identifier: 'varchar', parser: {token: 'Identifier', offset: [25, 31], line: [3, 3], column: [8, 14]}},
+                path: [{token: 'Identifier', value: 'name', ...tokenPosition(20, 23, 3, 3, 3, 6)}],
+                type: {token: 'Identifier', value: 'varchar', ...tokenPosition(25, 31, 3, 8, 3, 14)},
             }, {
-                path: [{identifier: 'settings', parser: {token: 'Identifier', offset: [35, 42], line: [4, 4], column: [3, 10]}}],
-                type: {identifier: 'json', parser: {token: 'Identifier', offset: [44, 47], line: [4, 4], column: [12, 15]}},
+                path: [{token: 'Identifier', value: 'settings', ...tokenPosition(35, 42, 4, 3, 4, 10)}],
+                type: {token: 'Identifier', value: 'json', ...tokenPosition(44, 47, 4, 12, 4, 15)},
                 attrs: [{
-                    path: [{identifier: 'settings', parser: {token: 'Identifier', offset: [35, 42], line: [4, 4], column: [3, 10]}}, {identifier: 'address', parser: {token: 'Identifier', offset: [53, 59], line: [5, 5], column: [5, 11]}}],
-                    type: {identifier: 'json', parser: {token: 'Identifier', offset: [61, 64], line: [5, 5], column: [13, 16]}},
+                    path: [{token: 'Identifier', value: 'settings', ...tokenPosition(35, 42, 4, 3, 4, 10)}, {token: 'Identifier', value: 'address', ...tokenPosition(53, 59, 5, 5, 5, 11)}],
+                    type: {token: 'Identifier', value: 'json', ...tokenPosition(61, 64, 5, 13, 5, 16)},
                     attrs: [{
-                        path: [{identifier: 'settings', parser: {token: 'Identifier', offset: [35, 42], line: [4, 4], column: [3, 10]}}, {identifier: 'address', parser: {token: 'Identifier', offset: [53, 59], line: [5, 5], column: [5, 11]}}, {identifier: 'street', parser: {token: 'Identifier', offset: [72, 77], line: [6, 6], column: [7, 12]}}],
-                        type: {identifier: 'string', parser: {token: 'Identifier', offset: [79, 84], line: [6, 6], column: [14, 19]}},
+                        path: [{token: 'Identifier', value: 'settings', ...tokenPosition(35, 42, 4, 3, 4, 10)}, {token: 'Identifier', value: 'address', ...tokenPosition(53, 59, 5, 5, 5, 11)}, {token: 'Identifier', value: 'street', ...tokenPosition(72, 77, 6, 7, 6, 12)}],
+                        type: {token: 'Identifier', value: 'string', ...tokenPosition(79, 84, 6, 14, 6, 19)},
                     }, {
-                        path: [{identifier: 'settings', parser: {token: 'Identifier', offset: [35, 42], line: [4, 4], column: [3, 10]}}, {identifier: 'address', parser: {token: 'Identifier', offset: [53, 59], line: [5, 5], column: [5, 11]}}, {identifier: 'city', parser: {token: 'Identifier', offset: [92, 95], line: [7, 7], column: [7, 10]}}],
-                        type: {identifier: 'string', parser: {token: 'Identifier', offset: [97, 102], line: [7, 7], column: [12, 17]}},
+                        path: [{token: 'Identifier', value: 'settings', ...tokenPosition(35, 42, 4, 3, 4, 10)}, {token: 'Identifier', value: 'address', ...tokenPosition(53, 59, 5, 5, 5, 11)}, {token: 'Identifier', value: 'city', ...tokenPosition(92, 95, 7, 7, 7, 10)}],
+                        type: {token: 'Identifier', value: 'string', ...tokenPosition(97, 102, 7, 12, 7, 17)},
                     }]
                 }, {
-                    path: [{identifier: 'settings', parser: {token: 'Identifier', offset: [35, 42], line: [4, 4], column: [3, 10]}}, {identifier: 'github', parser: {token: 'Identifier', offset: [108, 113], line: [8, 8], column: [5, 10]}}],
-                    type: {identifier: 'string', parser: {token: 'Identifier', offset: [115, 120], line: [8, 8], column: [12, 17]}},
+                    path: [{token: 'Identifier', value: 'settings', ...tokenPosition(35, 42, 4, 3, 4, 10)}, {token: 'Identifier', value: 'github', ...tokenPosition(108, 113, 8, 5, 8, 10)}],
+                    type: {token: 'Identifier', value: 'string', ...tokenPosition(115, 120, 8, 12, 8, 17)},
                 }]
             }])
+        })
+        test('tokenPosition has expected structure', () => {
+            expect(tokenPosition(1, 2, 3, 4, 5, 6)).toEqual({offset: {start: 1, end: 2}, position: {start: {line: 3, column: 4}, end: {line: 5, column: 6}}})
         })
     })
 })

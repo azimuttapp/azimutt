@@ -8,23 +8,30 @@ import {
     TokenType
 } from "chevrotain";
 import {isObject, removeEmpty, removeUndefined, stripIndent} from "@azimutt/utils";
-import {ParserError, ParserPosition, ParserResult} from "@azimutt/models";
+import {
+    isParserErrorKind,
+    isTokenPosition,
+    ParserError,
+    ParserErrorKind,
+    ParserResult,
+    TokenPosition
+} from "@azimutt/models";
 
 // special
 const WhiteSpace = createToken({name: 'WhiteSpace', pattern: /[ \t]+/})
 const Identifier = createToken({ name: 'Identifier', pattern: /[a-zA-Z_][a-zA-Z0-9_#]*|"([^\\"]|\\\\|\\")*"/ })
 const Expression = createToken({ name: 'Expression', pattern: /`[^`]+`/ })
-const Note = createToken({ name: 'Note', pattern: /\|[^#\n]*/ })
-const NoteMultiline = createToken({ name: 'NoteMultiline', pattern: /\|\|\|[^]*?\|\|\|/, line_breaks: true })
+const Doc = createToken({ name: 'Doc', pattern: /\|[^#\n]*/ })
+const DocMultiline = createToken({ name: 'DocMultiline', pattern: /\|\|\|[^]*?\|\|\|/, line_breaks: true })
 const Comment = createToken({ name: 'Comment', pattern: /#[^\n]*/ })
 
 // values
 const Null = createToken({ name: 'Null', pattern: /null/ })
-const Float = createToken({ name: 'Float', pattern: /\d+\.\d+/ })
-const Integer = createToken({ name: 'Integer', pattern: /\d+/, longer_alt: Float })
+const Decimal = createToken({ name: 'Decimal', pattern: /\d+\.\d+/ })
+const Integer = createToken({ name: 'Integer', pattern: /\d+/, longer_alt: Decimal })
 const String = createToken({ name: 'String', pattern: /'([^\\']|\\\\|\\')*'/ })
 const Boolean = createToken({ name: 'Boolean', pattern: /true|false/, longer_alt: Identifier })
-const valueTokens: TokenType[] = [Integer, Float, String, Boolean, Null]
+const valueTokens: TokenType[] = [Integer, Decimal, String, Boolean, Null]
 
 // keywords
 const Namespace = createToken({ name: 'Namespace', pattern: /namespace/, longer_alt: Identifier })
@@ -59,22 +66,22 @@ const ForeignKey = createToken({ name: 'ForeignKey', pattern: /fk/ })
 const legacyTokens: TokenType[] = [ForeignKey]
 
 // token order is important as they are tried in order, so the Identifier must be last
-const allTokens: TokenType[] = [WhiteSpace, NewLine, ...charTokens, ...keywordTokens, ...legacyTokens, ...valueTokens, Expression, Identifier, NoteMultiline, Note, Comment]
+const allTokens: TokenType[] = [WhiteSpace, NewLine, ...charTokens, ...keywordTokens, ...legacyTokens, ...valueTokens, Expression, Identifier, DocMultiline, Doc, Comment]
 
 export type AmlAst = StatementAst[]
 export type StatementAst = NamespaceAst | EntityAst | RelationAst | TypeAst | EmptyStatementAst
-export type NamespaceAst = { statement: 'Namespace', schema: IdentifierAst, catalog?: IdentifierAst, database?: IdentifierAst } & ExtraAst
-export type EntityAst = { statement: 'Entity', name: IdentifierAst, view?: TokenInfo, alias?: IdentifierAst, attrs?: AttributeAstNested[] } & NamespaceRefAst & ExtraAst
+export type NamespaceAst = { statement: 'Namespace', schema: IdentifierToken, catalog?: IdentifierToken, database?: IdentifierToken } & ExtraAst
+export type EntityAst = { statement: 'Entity', name: IdentifierToken, view?: TokenInfo, alias?: IdentifierToken, attrs?: AttributeAstNested[] } & NamespaceRefAst & ExtraAst
 export type RelationAst = { statement: 'Relation', kind: RelationKindAst, src: AttributeRefCompositeAst, ref: AttributeRefCompositeAst, polymorphic?: RelationPolymorphicAst } & ExtraAst
-export type TypeAst = { statement: 'Type', name: IdentifierAst, content?: TypeContentAst } & NamespaceRefAst & ExtraAst
-export type EmptyStatementAst = { statement: 'Empty', comment?: CommentAst }
+export type TypeAst = { statement: 'Type', name: IdentifierToken, content?: TypeContentAst } & NamespaceRefAst & ExtraAst
+export type EmptyStatementAst = { statement: 'Empty', comment?: CommentToken }
 
-export type AttributeAstFlat = { nesting: number, name: IdentifierAst, nullable?: {parser: TokenInfo} } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst
-export type AttributeAstNested = { path: IdentifierAst[], nullable?: {parser: TokenInfo} } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst & { attrs?: AttributeAstNested[] }
-export type AttributeTypeAst = { type?: IdentifierAst, enumValues?: AttributeValueAst[], defaultValue?: AttributeValueAst }
+export type AttributeAstFlat = { nesting: number, name: IdentifierToken, nullable?: TokenInfo } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst
+export type AttributeAstNested = { path: IdentifierToken[], nullable?: TokenInfo } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst & { attrs?: AttributeAstNested[] }
+export type AttributeTypeAst = { type?: IdentifierToken, enumValues?: AttributeValueAst[], defaultValue?: AttributeValueAst }
 export type AttributeConstraintsAst = { primaryKey?: AttributeConstraintAst, index?: AttributeConstraintAst, unique?: AttributeConstraintAst, check?: AttributeCheckAst }
-export type AttributeConstraintAst = { parser: TokenInfo, value?: IdentifierAst }
-export type AttributeCheckAst = { parser: TokenInfo, value?: ExpressionAst }
+export type AttributeConstraintAst = { keyword: TokenInfo, name?: IdentifierToken }
+export type AttributeCheckAst = { keyword: TokenInfo, definition?: ExpressionToken }
 export type AttributeRelationAst = { kind: RelationKindAst, ref: AttributeRefCompositeAst, polymorphic?: RelationPolymorphicAst, warning?: TokenInfo }
 
 export type RelationCardinalityAst = '1' | 'n'
@@ -82,51 +89,49 @@ export type RelationKindAst = `${RelationCardinalityAst}-${RelationCardinalityAs
 export type RelationPolymorphicAst = { attr: AttributePathAst, value: AttributeValueAst }
 
 export type TypeContentAst = TypeAliasAst | TypeEnumAst | TypeStructAst | TypeCustomAst
-export type TypeAliasAst = { kind: 'alias', name: IdentifierAst }
+export type TypeAliasAst = { kind: 'alias', name: IdentifierToken }
 export type TypeEnumAst = { kind: 'enum', values: AttributeValueAst[] }
 export type TypeStructAst = { kind: 'struct', attrs: AttributeAstNested[] }
-export type TypeCustomAst = { kind: 'custom', definition: ExpressionAst }
+export type TypeCustomAst = { kind: 'custom', definition: ExpressionToken }
 
-export type NamespaceRefAst = { schema?: IdentifierAst, catalog?: IdentifierAst, database?: IdentifierAst }
-export type EntityRefAst = { entity: IdentifierAst } & NamespaceRefAst
-export type AttributePathAst = IdentifierAst & { path?: IdentifierAst[] }
+export type NamespaceRefAst = { schema?: IdentifierToken, catalog?: IdentifierToken, database?: IdentifierToken }
+export type EntityRefAst = { entity: IdentifierToken } & NamespaceRefAst
+export type AttributePathAst = IdentifierToken & { path?: IdentifierToken[] }
 export type AttributeRefAst = EntityRefAst & { attr: AttributePathAst }
 export type AttributeRefCompositeAst = EntityRefAst & { attrs: AttributePathAst[] }
-export type AttributeValueAst = NullAst | NumberAst | BooleanAst | ExpressionAst | IdentifierAst // TODO: add date
+export type AttributeValueAst = NullToken | DecimalToken | IntegerToken | BooleanToken | ExpressionToken | IdentifierToken // TODO: add date
 
-export type ExtraAst = { properties?: PropertiesAst, note?: NoteAst, comment?: CommentAst }
+export type ExtraAst = { properties?: PropertiesAst, doc?: DocToken, comment?: CommentToken }
 export type PropertiesAst = PropertyAst[]
-export type PropertyAst = { key: IdentifierAst, value?: PropertyValueAst }
-export type PropertyValueAst = NullAst | NumberAst | BooleanAst | ExpressionAst | IdentifierAst
-export type NoteAst = { note: string, parser: TokenInfo }
-export type CommentAst = { comment: string, parser: TokenInfo }
-export type NullAst = { null: true, parser: TokenInfo }
-export type NumberAst = { value: number, parser: TokenInfo }
-export type BooleanAst = { flag: boolean, parser: TokenInfo }
-export type IdentifierAst = { identifier: string, parser: TokenInfo }
-export type ExpressionAst = { expression: string, parser: TokenInfo }
+export type PropertyAst = { key: IdentifierToken, value?: PropertyValueAst }
+export type PropertyValueAst = NullToken | DecimalToken | IntegerToken | BooleanToken | ExpressionToken | IdentifierToken
 
-export type TokenInfo = {token: string, offset: ParserPosition, line: ParserPosition, column: ParserPosition, message?: TokenInfoMessage}
-export type TokenInfoMessage = {kind: TokenInfoMessageKind, message: string}
-export type TokenInfoMessageKind = 'error' | 'warning' | 'info' | 'hint'
+// basic tokens
+export type NullToken = { token: 'Null' } & TokenInfo
+export type DecimalToken = { token: 'Decimal', value: number } & TokenInfo
+export type IntegerToken = { token: 'Integer', value: number } & TokenInfo
+export type BooleanToken = { token: 'Boolean', value: boolean } & TokenInfo
+export type ExpressionToken = { token: 'Expression', value: string } & TokenInfo
+export type IdentifierToken = { token: 'Identifier', value: string } & TokenInfo
+export type DocToken = { token: 'Doc', value: string } & TokenPosition
+export type CommentToken = { token: 'Comment', value: string } & TokenPosition
 
-export function isTokenInfo(value: unknown): value is TokenInfo {
-    return isObject(value)
-        && ('token' in value && typeof value.token === 'string')
-        && ('offset' in value && Array.isArray(value.offset))
-        && ('line' in value && Array.isArray(value.line))
-        && ('column' in value && Array.isArray(value.column))
-}
+export type TokenInfo = TokenPosition & { issues?: TokenIssue[] }
+export type TokenIssue = { name: string, kind: ParserErrorKind, message: string }
+
+export const isTokenInfo = (value: unknown): value is TokenInfo => isTokenPosition(value) && (!('issues' in value) || ('issues' in value && Array.isArray(value.issues) && value.issues.every(isTokenIssue)))
+export const isTokenIssue = (value: unknown): value is TokenIssue => isObject(value) && ('kind' in value && isParserErrorKind(value.kind)) && ('message' in value && typeof value.message === 'string')
 
 class AmlParser extends EmbeddedActionsParser {
     // common
-    nullRule: () => NullAst
-    numberRule: () => NumberAst
-    booleanRule: () => BooleanAst
-    expressionRule: () => ExpressionAst
-    identifierRule: () => IdentifierAst
-    commentRule: () => CommentAst
-    noteRule: () => NoteAst
+    nullRule: () => NullToken
+    decimalRule: () => DecimalToken
+    integerRule: () => IntegerToken
+    booleanRule: () => BooleanToken
+    expressionRule: () => ExpressionToken
+    identifierRule: () => IdentifierToken
+    docRule: () => DocToken
+    commentRule: () => CommentToken
     propertiesRule: () => PropertiesAst
     extraRule: () => ExtraAst
     entityRefRule: () => EntityRefAst
@@ -158,67 +163,65 @@ class AmlParser extends EmbeddedActionsParser {
         const $ = this
 
         // common rules
-        this.nullRule = $.RULE<() => NullAst>('nullRule', () => {
+        this.nullRule = $.RULE<() => NullToken>('nullRule', () => {
             const token = $.CONSUME(Null)
-            return {null: true, parser: parserInfo(token)}
+            return {token: 'Null', ...tokenPosition(token)}
         })
 
-        this.numberRule = $.RULE<() => NumberAst>('numberRule', () => {
-            return $.OR([
-                { ALT: () => {
-                    const token = $.CONSUME(Float)
-                    return {value: parseFloat(token.image), parser: parserInfo(token)}
-                }},
-                { ALT: () => {
-                    const token = $.CONSUME(Integer)
-                    return {value: parseInt(token.image), parser: parserInfo(token)}
-                }},
-            ])
+        this.decimalRule = $.RULE<() => DecimalToken>('decimalRule', () => {
+            const token = $.CONSUME(Decimal)
+            return {token: 'Decimal', value: parseFloat(token.image), ...tokenPosition(token)}
         })
 
-        this.booleanRule = $.RULE<() => BooleanAst>('booleanRule', () => {
+        this.integerRule = $.RULE<() => IntegerToken>('integerRule', () => {
+            const token = $.CONSUME(Integer)
+            return {token: 'Integer', value: parseInt(token.image), ...tokenPosition(token)}
+        })
+
+        this.booleanRule = $.RULE<() => BooleanToken>('booleanRule', () => {
             const token = $.CONSUME(Boolean)
-            return {flag: token.image.toLowerCase() === 'true', parser: parserInfo(token)}
+            return {token: 'Boolean', value: token.image.toLowerCase() === 'true', ...tokenPosition(token)}
         })
 
-        this.expressionRule = $.RULE<() => ExpressionAst>('expressionRule', () => {
+        this.expressionRule = $.RULE<() => ExpressionToken>('expressionRule', () => {
             const token = $.CONSUME(Expression)
-            return {expression: token.image.slice(1, -1), parser: parserInfo(token)}
+            return {token: 'Expression', value: token.image.slice(1, -1), ...tokenPosition(token)}
         })
 
-        this.identifierRule = $.RULE<() => IdentifierAst>('identifierRule', () => {
+        this.identifierRule = $.RULE<() => IdentifierToken>('identifierRule', () => {
             const token = $.CONSUME(Identifier)
             if (token.image.startsWith('"')) {
-                return {identifier: token.image.slice(1, -1).replaceAll(/\\"/g, '"'), parser: parserInfo(token)}
+                return {token: 'Identifier', value: token.image.slice(1, -1).replaceAll(/\\"/g, '"'), ...tokenPosition(token)}
             } else {
-                return {identifier: token.image, parser: parserInfo(token)}
+                return {token: 'Identifier', value: token.image, ...tokenPosition(token)}
             }
         })
 
-        this.commentRule = $.RULE<() => CommentAst>('commentRule', () => {
-            const token = $.CONSUME(Comment)
-            return {comment: token.image.slice(1).trim(), parser: parserInfo(token)}
-        })
-
-        this.noteRule = $.RULE<() => NoteAst>('noteRule', () => {
+        this.docRule = $.RULE<() => DocToken>('docRule', () => {
             return $.OR([{
                 ALT: () => {
-                    const token = $.CONSUME(NoteMultiline)
-                    return {note: stripIndent(token.image.slice(3, -3)), parser: parserInfo(token)}
+                    const token = $.CONSUME(DocMultiline)
+                    return {token: 'Doc', value: stripIndent(token.image.slice(3, -3)), ...tokenPosition(token)}
                 }
             }, {
                 ALT: () => {
-                    const token = $.CONSUME(Note)
-                    return {note: token.image.slice(1).trim(), parser: parserInfo(token)}
+                    const token = $.CONSUME(Doc)
+                    return {token: 'Doc', value: token.image.slice(1).trim(), ...tokenPosition(token)}
                 }
             }])
+        })
+
+        this.commentRule = $.RULE<() => CommentToken>('commentRule', () => {
+            const token = $.CONSUME(Comment)
+            return {token: 'Comment', value: token.image.slice(1).trim(), ...tokenPosition(token)}
         })
 
         const propertyValueRule = $.RULE<() => PropertyValueAst>('propertyValueRule', () => {
             // TODO: be more flexible: string value: anything without ',' + add business rules for tags for example (split values?)
             return $.OR([
                 { ALT: () => $.SUBRULE($.nullRule) },
-                { ALT: () => $.SUBRULE($.numberRule) },
+                { ALT: () => $.SUBRULE($.decimalRule) },
+                { ALT: () => $.SUBRULE($.integerRule) },
                 { ALT: () => $.SUBRULE($.booleanRule) },
                 { ALT: () => $.SUBRULE($.expressionRule) },
                 { ALT: () => $.SUBRULE($.identifierRule) },
@@ -255,13 +258,13 @@ class AmlParser extends EmbeddedActionsParser {
         this.extraRule = $.RULE<() => ExtraAst>('extraRule', () => {
             const properties = $.OPTION(() => $.SUBRULE($.propertiesRule))
             $.OPTION2(() => $.CONSUME(WhiteSpace))
-            const note = $.OPTION3(() => $.SUBRULE2($.noteRule))
+            const doc = $.OPTION3(() => $.SUBRULE2($.docRule))
             $.OPTION4(() => $.CONSUME2(WhiteSpace))
             const comment = $.OPTION5(() => $.SUBRULE3($.commentRule))
-            return removeUndefined({properties, note, comment})
+            return removeUndefined({properties, doc, comment})
         })
 
-        const nestedRule = $.RULE<() => IdentifierAst>('nestedRule', () => {
+        const nestedRule = $.RULE<() => IdentifierToken>('nestedRule', () => {
             $.CONSUME(Dot)
             return $.SUBRULE($.identifierRule)
         })
@@ -277,13 +280,13 @@ class AmlParser extends EmbeddedActionsParser {
 
         this.attributePathRule = $.RULE<() => AttributePathAst>('attributePathRule', () => {
             const attr = $.SUBRULE($.identifierRule)
-            const path: IdentifierAst[] = []
+            const path: IdentifierToken[] = []
             $.MANY(() => path.push($.SUBRULE(nestedRule)))
             return removeEmpty({...attr, path})
         })
 
-        const legacyAttributePathRule = $.RULE<() => IdentifierAst[]>('legacyAttributePathRule', () => {
-            const path: IdentifierAst[] = []
+        const legacyAttributePathRule = $.RULE<() => IdentifierToken[]>('legacyAttributePathRule', () => {
+            const path: IdentifierToken[] = []
             $.MANY(() => {
                 $.CONSUME(Colon)
                 path.push($.SUBRULE($.identifierRule))
@@ -340,7 +343,8 @@ class AmlParser extends EmbeddedActionsParser {
         this.attributeValueRule = $.RULE<() => AttributeValueAst>('attributeValueRule', () => {
             return $.OR([
                 { ALT: () => $.SUBRULE($.nullRule) },
-                { ALT: () => $.SUBRULE($.numberRule) },
+                { ALT: () => $.SUBRULE($.integerRule) },
+                { ALT: () => $.SUBRULE($.decimalRule) },
                 { ALT: () => $.SUBRULE($.booleanRule) },
                 { ALT: () => $.SUBRULE($.expressionRule) },
                 { ALT: () => $.SUBRULE($.identifierRule) },
@@ -389,35 +393,35 @@ class AmlParser extends EmbeddedActionsParser {
         })
         const attributeConstraintPkRule = $.RULE<() => AttributeConstraintAst>('attributeConstraintPkRule', () => {
             const token = $.CONSUME(PrimaryKey)
-            const value = $.OPTION(() => {
+            const name = $.OPTION(() => {
                 $.CONSUME(Equal)
                 return $.SUBRULE($.identifierRule)
             })
-            return removeUndefined({parser: parserInfo(token), value})
+            return removeUndefined({keyword: tokenInfo(token), name})
         })
         const attributeConstraintIndexRule = $.RULE<() => AttributeConstraintAst>('attributeConstraintIndexRule', () => {
             const token = $.CONSUME(Index)
-            const value = $.OPTION(() => {
+            const name = $.OPTION(() => {
                 $.CONSUME(Equal)
                 return $.SUBRULE($.identifierRule)
             })
-            return removeUndefined({parser: parserInfo(token), value})
+            return removeUndefined({keyword: tokenInfo(token), name})
         })
         const attributeConstraintUniqueRule = $.RULE<() => AttributeConstraintAst>('attributeConstraintUniqueRule', () => {
             const token = $.CONSUME(Unique)
-            const value = $.OPTION(() => {
+            const name = $.OPTION(() => {
                 $.CONSUME(Equal)
                 return $.SUBRULE($.identifierRule)
             })
-            return removeUndefined({parser: parserInfo(token), value})
+            return removeUndefined({keyword: tokenInfo(token), name})
         })
         const attributeConstraintCheckRule = $.RULE<() => AttributeCheckAst>('attributeConstraintCheckRule', () => {
             const token = $.CONSUME(Check)
-            const value = $.OPTION(() => {
+            const definition = $.OPTION(() => {
                 $.CONSUME(Equal)
                 return $.SUBRULE($.expressionRule) // TODO: retro-compatibility: allow expression with double quotes instead of backticks (ex: 'check="age > 0"')
             })
-            return removeUndefined({parser: parserInfo(token), value})
+            return removeUndefined({keyword: tokenInfo(token), definition})
         })
         const attributeConstraintsRule = $.RULE<() => AttributeConstraintsAst>('attributeConstraintsRule', () => {
             const primaryKey = $.OPTION(() => $.SUBRULE(attributeConstraintPkRule))
@@ -440,7 +444,7 @@ class AmlParser extends EmbeddedActionsParser {
             }, {
                 ALT: () => {
                     const token = $.CONSUME(ForeignKey)
-                    const warning = parserInfo(token, {kind: 'warning', message: '"fk" is legacy, replace it with "->"'})
+                    const warning = tokenInfo(token, [{name: 'LegacyWarning', kind: 'warning', message: '"fk" is legacy, replace it with "->"'}])
                     return {kind: 'n-1', polymorphic: undefined, warning} // TODO: add warning in AST
                 }
             }])
@@ -453,11 +457,10 @@ class AmlParser extends EmbeddedActionsParser {
             $.OPTION(() => $.CONSUME2(WhiteSpace))
             const {type, enumValues, defaultValue} = $.SUBRULE(attributeTypeRule)
             $.OPTION2(() => $.CONSUME3(WhiteSpace))
-            const isNull = $.OPTION3(() => $.CONSUME(Nullable))
-            const nullable = isNull ? {parser: parserInfo(isNull)} : undefined
+            const nullable = $.OPTION3(() => $.CONSUME(Nullable))
             $.OPTION4(() => $.CONSUME4(WhiteSpace))
             const constraints = $.SUBRULE(attributeConstraintsRule)
-            return removeUndefined({nesting: 0, name, type, enumValues, defaultValue, nullable, ...constraints})
+            return removeUndefined({nesting: 0, name, type, enumValues, defaultValue, nullable: nullable ? tokenInfo(nullable) : undefined, ...constraints})
         }, {resyncEnabled: true})
         this.attributeRule = $.RULE<() => AttributeAstFlat>('attributeRule', () => {
             const spaces = $.CONSUME(WhiteSpace)
@@ -485,7 +488,7 @@ class AmlParser extends EmbeddedActionsParser {
             $.CONSUME(NewLine)
             const attrs: AttributeAstFlat[] = []
             $.MANY(() => attrs.push($.SUBRULE($.attributeRule)))
-            return removeEmpty({statement: 'Entity' as const, name: entity, view: view ? parserInfo(view) : undefined, ...namespace, alias, ...extra, attrs: nestAttributes(attrs)})
+            return removeEmpty({statement: 'Entity' as const, name: entity, view: view ? tokenInfo(view) : undefined, ...namespace, alias, ...extra, attrs: nestAttributes(attrs)})
         })
 
         // relation rules
@@ -510,7 +513,7 @@ class AmlParser extends EmbeddedActionsParser {
             $.CONSUME(WhiteSpace)
             const src = $.SUBRULE($.attributeRefCompositeRule)
             $.OPTION(() => $.CONSUME2(WhiteSpace))
-            const {kind, ref, polymorphic} = $.SUBRULE(attributeRelationRule)
+            const {kind, ref, polymorphic} = $.SUBRULE(attributeRelationRule) || {} // on invalid input it returns undefined :/
             $.OPTION2(() => $.CONSUME3(WhiteSpace))
             const extra = $.SUBRULE($.extraRule)
             $.CONSUME(NewLine)
@@ -556,7 +559,7 @@ class AmlParser extends EmbeddedActionsParser {
         this.typeRule = $.RULE<() => TypeAst>('typeRule', () => {
             $.CONSUME(Type)
             $.CONSUME(WhiteSpace)
-            const {entity, ...namespace} = $.SUBRULE(this.entityRefRule)
+            const {entity, ...namespace} = $.SUBRULE(this.entityRefRule) || {} // on invalid input it returns undefined :/
             $.OPTION(() => $.CONSUME2(WhiteSpace))
             let content = $.OPTION2(() => $.OR([
                 { ALT: () => $.SUBRULE(typeEnumRule) },
@@ -612,7 +615,7 @@ export function parseRule<T>(parse: (p: AmlParser) => T, input: string): ParserR
     parser.input = lexingResult.tokens // "input" is a setter which will reset the parser's state.
     const res = parse(parser)
     const errors = lexingResult.errors.map(formatLexerError).concat(parser.errors.map(formatParserError))
-    return new ParserResult(res, errors, undefined)
+    return new ParserResult(res, errors)
 }
 
 export function parseAmlAst(input: string): ParserResult<AmlAst> {
@@ -620,36 +623,45 @@ export function parseAmlAst(input: string): ParserResult<AmlAst> {
 }
 
 function formatLexerError(err: ILexingError): ParserError {
-    return {name: 'LexingError', message: err.message, position: {
-        offset: [err.offset, err.offset + err.length],
-        line: [err.line || 0, err.line || 0],
-        column: [err.column || 0, (err.column || 0) + err.length]
-    }}
+    return {
+        name: 'LexingError',
+        kind: 'error',
+        message: err.message,
+        offset: {start: err.offset, end: err.offset + err.length},
+        position: {
+            start: {line: err.line || 0, column: err.column || 0},
+            end: {line: err.line || 0, column: (err.column || 0) + err.length}
+        }
+    }
 }
 
 function formatParserError(err: IRecognitionException): ParserError {
-    const {offset, line, column} = parserInfo(err.token)
-    return {name: err.name, message: err.message, position: {offset, line, column}}
+    return {name: err.name, kind: 'error', message: err.message, ...tokenInfo(err.token)}
 }
 
-function parserInfo(token: IToken, message?: TokenInfoMessage): TokenInfo {
-    return removeUndefined({
-        token: token.tokenType?.name || 'missing',
-        offset: [token.startOffset, token.endOffset || 0] as ParserPosition,
-        line: [token.startLine || 0, token.endLine || 0] as ParserPosition,
-        column: [token.startColumn || 0, token.endColumn || 0] as ParserPosition,
-        message
-    })
+function tokenInfo(token: IToken, issues?: TokenIssue[]): TokenInfo {
+    return removeEmpty({...tokenPosition(token), issues})
+}
+
+function tokenPosition(token: IToken): TokenPosition {
+    return {
+        offset: {start: token.startOffset, end: token.endOffset || 0},
+        position: {
+            start: {line: token.startLine || 0, column: token.startColumn || 0},
+            end: {line: token.endLine || 0, column: token.endColumn || 0}
+        }
+    }
 }
 
 // utils functions
 
 export function nestAttributes(attributes: AttributeAstFlat[]): AttributeAstNested[] {
     const results: AttributeAstNested[] = []
-    let path: IdentifierAst[] = []
+    let path: IdentifierToken[] = []
     let parents: AttributeAstNested[] = []
     let curNesting = 0
-    attributes.forEach(attribute => {
+    attributes.forEach(function(attribute) {
+        if (attribute === undefined) return undefined // on invalid input it can be undefined :/
         const {nesting, name, ...values} = attribute
         if (nesting === 0 || parents.length === 0) { // empty parents is when first attr is not at nesting 0
             path = [name]

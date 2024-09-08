@@ -1,4 +1,4 @@
-import {ParserPosition} from "@azimutt/models";
+import {TokenPosition} from "@azimutt/models";
 
 export type SqlScriptAst = StatementAst[]
 export type StatementAst = SelectAst
@@ -28,4 +28,4 @@ export type BinaryExpressionAst = {left: ExpressionAst, operator: BinaryOperator
 export type GroupExpressionAst = {group: ExpressionAst}
 export type ExpressionAst = ConditionAst | BinaryExpressionAst | UnaryExpressionAst | GroupExpressionAst
 
-export type TokenInfo = {token: string, offset: ParserPosition, line: ParserPosition, column: ParserPosition}
+export type TokenInfo = TokenPosition

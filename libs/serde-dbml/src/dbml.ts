@@ -29,8 +29,7 @@ export function generate(database: Database): string {
 export function reformat(content: string): string {
     try {
         const db: DbmlDatabase = (new dbml.Parser(undefined)).parse(content, 'dbmlv2')
-        const res = dbml.ModelExporter.export(db, 'dbml', false)
-        return res
+        return dbml.ModelExporter.export(db, 'dbml', false)
     } catch (e) {
         throw formatError(e)
     }
@@ -51,16 +50,14 @@ function formatError(err: unknown): ParserError[] {
         const errors = err as DbmlParserError[]
         return errors.map(e => ({
             name: `DBMLException-${e.code}`,
+            kind: 'error',
             message: e.message,
-            position: {
-                offset: [0, 0],
-                line: [e.location.start.line, e.location.end.line],
-                column: [e.location.start.column, e.location.end.column]
-            }
+            offset: {start: 0, end: 0},
+            position: e.location
         }))
     } else if (typeof err === 'object' && err !== null && 'diags' in err) {
         return formatError(err.diags)
     } else {
-        return [{name: `UnknownException`, message: errorToString(err)}]
+        return [{name: `UnknownException`, kind: 'error', message: errorToString(err), offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}]
     }
 }
