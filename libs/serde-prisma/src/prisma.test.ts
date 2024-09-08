@@ -1,5 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
-import {Database} from "@azimutt/models";
+import {Database, tokenPosition} from "@azimutt/models";
 import {generate, parse} from "./prisma";
 
 describe('prisma', () => {
@@ -191,6 +191,6 @@ model Post {
         expect(parsed.result).toEqual(expected)
     })
     test('handles errors', () => {
-        expect(parse(`model User`).errors).toEqual([{name: 'PrismaParserError', message: 'Expected "{", [0-9a-z_\\-], or horizontal whitespace but end of input found.'}])
+        expect(parse(`model User`).errors).toEqual([{name: 'PrismaParserError', kind: 'error', message: 'Expected "{", [0-9a-z_\\-], or horizontal whitespace but end of input found.', ...tokenPosition(0, 0, 0, 0, 0, 0)}])
     })
 })
