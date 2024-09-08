@@ -1,4 +1,5 @@
 import {describe, expect, test} from "@jest/globals";
+import {tokenPosition} from "@azimutt/models";
 import {format} from "./formatter";
 
 describe('chevrotain formatter', () => {
@@ -10,9 +11,9 @@ describe('chevrotain formatter', () => {
             expect(format([{
                 command: 'SELECT',
                 result: {columns: [
-                    {column: {wildcard: '*', parser: {token: 'Star', offset: [7, 7], line: [1, 1], column: [8, 8]}}}
+                    {column: {wildcard: '*', parser: tokenPosition(7, 7, 1, 8, 1, 8)}}
                 ]},
-                from: {table: {identifier: 'users', parser: {token: 'Identifier', offset: [14, 18], line: [1, 1], column: [15, 19]}}}
+                from: {table: {identifier: 'users', parser: tokenPosition(14, 18, 1, 15, 1, 19)}}
             }])).toEqual([{
                 command: 'SELECT',
                 language: 'DML',

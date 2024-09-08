@@ -2,7 +2,7 @@ import * as fs from "fs";
 import {describe, expect, test} from "@jest/globals";
 import {ModelExporter, Parser} from "@dbml/core";
 import DbmlDatabase from "@dbml/core/types/model_structure/database";
-import {Database} from "@azimutt/models";
+import {Database, tokenPosition} from "@azimutt/models";
 import {generate, parse, reformat} from "./dbml";
 import {JsonDatabase} from "./jsonDatabase";
 
@@ -85,9 +85,9 @@ Ref:"users"."id" < "posts"."author"
               id uuid
             `
         const error = [
-            {name: 'DBMLException-1005', message: "Expect an opening brace '{' or a colon ':'", position: {offset: [0, 0], line: [3, 3], column: [18, 22]}},
-            {name: 'DBMLException-3057', message: "A custom element can only appear in a Project", position: {offset: [0, 0], line: [2, 3], column: [13, 17]}},
-            {name: 'DBMLException-3001', message: "A Custom element shouldn't have a name", position: {offset: [0, 0], line: [3, 3], column: [15, 17]}}
+            {name: 'DBMLException-1005', kind: 'error', message: "Expect an opening brace '{' or a colon ':'", ...tokenPosition(0, 0, 3, 18, 3, 22)},
+            {name: 'DBMLException-3057', kind: 'error', message: "A custom element can only appear in a Project", ...tokenPosition(0, 0, 2, 13, 3, 17)},
+            {name: 'DBMLException-3001', kind: 'error', message: "A Custom element shouldn't have a name", ...tokenPosition(0, 0, 3, 15, 3, 17)}
         ]
         expect(parse(source).errors).toEqual(error)
     })
