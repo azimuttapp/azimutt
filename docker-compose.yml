@@ -9,6 +9,18 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: azimutt_dev
+
+  gateway:
+    image: node:18-slim
+    container_name: azimutt-gateway
+    command: >
+      bash -c "npm i -g azimutt &&
+        azimutt gateway"
+    depends_on:
+      - database
+    # ports:
+    #   - 4177:4177
+
   backend:
     container_name: azimutt-backend
     platform: linux/amd64
@@ -24,5 +36,10 @@ services:
     environment:
       DATABASE_URL: "ecto://postgres:postgres@database/azimutt_dev" # Template : "ecto://db_user:db_password@ip_or_compose_service_name/db_name"
       SECRET_KEY_BASE: "1wOVZ9rWAqPcbVZdilZzBPLXFKNrUmLUzX0q9Z02LpOy2jVWZwa6ee4fU81tuN+W" # Can literally be anything, but generally generated randomly by tools like mix phx.gen.secret
+      GATEWAY_URL: http://gateway:4177
+      SKIP_EMAIL_CONFIRMATION: true
+      SKIP_ONBOARDING_FUNNEL: true
+      ORGANIZATION_DEFAULT_PLAN: "free"
+
 volumes:
   pg-data:
