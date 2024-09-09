@@ -75,7 +75,7 @@ const defaultType = 'unknown'
 function buildDatabase(ast: AmlAst, start: number, parsed: number): Database {
     const db: Database = {entities: [], relations: [], types: []}
     let namespace: Namespace = {}
-    ast.filter(s => s !== undefined && s.statement !== 'Empty').forEach((stmt, i) => { // on invalid input statement can be undefined :/
+    ast.filter(s => s !== undefined && s.statement !== 'Empty').forEach((stmt, i) => { // `s` can be undefined on invalid input :/
         const index = i + 1
         if (stmt.statement === 'Namespace') {
             namespace = buildNamespace(index, stmt, namespace)
@@ -136,8 +136,9 @@ function buildNamespace(statement: number, n: NamespaceAst, current: Namespace):
 function buildEntity(statement: number, e: EntityAst, namespace: Namespace): { entity: Entity, relations: Relation[], types: Type[] } {
     const astNamespace = removeUndefined({schema: e.schema?.value, catalog: e.catalog?.value, database: e.database?.value})
     const entityNamespace = {...namespace, ...astNamespace}
-    const attrs = (e.attrs || []).map(a => buildAttribute(statement, a, {...entityNamespace, entity: e.name.value}))
-    const flatAttrs = flattenAttributes(e.attrs || [])
+    const validAttrs = (e.attrs || []).filter(a => !a.path.some(p => p === undefined)) // `path` can be `[undefined]` on invalid input :/
+    const attrs = validAttrs.map(a => buildAttribute(statement, a, {...entityNamespace, entity: e.name.value}))
+    const flatAttrs = flattenAttributes(validAttrs).filter(a => !a.path.some(p => p === undefined)) // nested attributes can have `path` be `[undefined]` on invalid input :/
     const pkAttrs = flatAttrs.filter(a => a.primaryKey)
     const indexes: Index[] = buildIndexes(flatAttrs.map(a => ({path: a.path.map(p => p.value), index: a.index ? a.index.name?.value || '' : undefined}))).map(i => removeUndefined({name: i.value, attrs: i.attrs}))
     const uniques: Index[] = buildIndexes(flatAttrs.map(a => ({path: a.path.map(p => p.value), index: a.unique ? a.unique.name?.value || '' : undefined}))).map(i => removeUndefined({name: i.value, attrs: i.attrs, unique: true}))
@@ -188,7 +189,8 @@ function buildAttribute(statement: number, a: AttributeAstNested, entity: Entity
     const typeExt = a.enumValues && a.enumValues.length <= 2 && a.enumValues.every(v => v.token === 'Integer') ? '(' + a.enumValues.map(stringifyAttrValue).join(',') + ')' : ''
     const enumType: Type[] = a.type && a.enumValues && !typeExt ? [{...namespace, name: a.type.value, values: a.enumValues.map(stringifyAttrValue), extra: {statement, line: a.enumValues[0].position.start.line}}] : []
     const relation: Relation[] = a.relation ? [buildRelationAttribute(statement, a.relation, entity, [a.path.map(p => p.value)])].filter(isNotUndefined) : []
-    const nested = a.attrs?.map(aa => buildAttribute(statement, aa, entity)) || []
+    const validAttrs = (a.attrs || []).filter(aa => !aa.path.some(p => p === undefined)) // `path` can be `[undefined]` on invalid input :/
+    const nested = validAttrs.map(aa => buildAttribute(statement, aa, entity))
     return {
         attribute: removeEmpty({
             name: a.path[a.path.length - 1].value,
@@ -244,7 +246,7 @@ function buildRelationAttribute(statement: number, r: AttributeRelationAst, srcE
 }
 
 function buildRelation(statement: number, kind: RelationKindAst | undefined, srcEntity: EntityRef, srcAttrs: AttributePath[], ref: AttributeRefCompositeAst, polymorphic: RelationPolymorphicAst | undefined, extra: ExtraAst | undefined): Relation | undefined {
-    if (ref.attrs.map(a => a.value).filter(isNotUndefined).length === 0) return undefined // on bad input the parser can build bad ast (undefined identifier) :/ TODO: report an error instead of just ignoring?
+    if (!ref || !ref.attrs || ref.attrs.some(a => a.value === undefined)) return undefined // `ref` can be undefined or with undefined attrs on invalid input :/ TODO: report an error instead of just ignoring?
     const refAttrs: AttributePath[] = ref.attrs.map(buildAttrPath)
     const entityRef = buildEntityRef(ref)
     return entityRef ? removeUndefined({
@@ -261,7 +263,7 @@ function buildRelation(statement: number, kind: RelationKindAst | undefined, src
 }
 
 function genRelation(r: Relation): string {
-    return `rel ${getAttributeRef(r.src, r.attrs.map(a => a.src))} ${genRelationTarget(r)}${genNote(r.doc)}${genCommentExtra(r)}\n`
+    return `rel ${genAttributeRef(r.src, r.attrs.map(a => a.src))} ${genRelationTarget(r)}${genNote(r.doc)}${genCommentExtra(r)}\n`
 }
 
 function genRelationTarget(r: Relation): string {
@@ -269,7 +271,7 @@ function genRelationTarget(r: Relation): string {
     const [qSrc, qRef] = (r.kind || 'many-to-one').split('-to-')
     const aSecond = qSrc === 'many' ? '>' : '-'
     const aFirst = qRef === 'many' ? '<' : '-'
-    return `${aFirst}${poly}${aSecond} ${getAttributeRef(r.ref, r.attrs.map(a => a.ref))}`
+    return `${aFirst}${poly}${aSecond} ${genAttributeRef(r.ref, r.attrs.map(a => a.ref))}`
 }
 
 function buildType(statement: number, t: TypeAst, namespace: Namespace): Type {
@@ -299,7 +301,7 @@ function genTypeContent(t: Type): string {
     return ''
 }
 
-function getAttributeRef(e: EntityRef, attrs: AttributePath[]) {
+export function genAttributeRef(e: EntityRef, attrs: AttributePath[]): string {
     return `${genEntityRef(e)}(${attrs.map(genAttributePath).join(', ')})`
 }
 

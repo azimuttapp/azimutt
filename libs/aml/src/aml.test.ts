@@ -210,6 +210,46 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                 errors: [{name: 'LegacyWarning', kind: 'warning', message: "\"fk\" is legacy, replace it with \"->\"", ...tokenPosition(19, 20, 2, 14, 2, 15)}]
             })
         })
+        test('no crash on typing', () => {
+            const input = `
+users
+  id int pk
+  name varchar
+  role user_role=guest
+  settings json
+    github bool=false
+    twitter bool=false
+
+crm.public.posts {color: red} | entity doc # entity comment
+  id uuid pk
+  title varchar(100)="" unique=post_title {tags: indexed} | attr doc # attr comment
+  created_by int -> users(id)
+
+crm.public.comments |||
+  multi-line
+  entity
+  doc
+|||
+  id uuid pk |||
+    multi-line
+    attribute
+    doc
+  |||
+  item_kind comment_item(posts, comments)
+  item_id uuid
+  content text
+  created_by int -> users(id)
+
+rel crm.public.comments(item_id) -item_kind=posts> crm.public.posts(id)
+rel crm.public.comments(item_id) -item_kind=comments> crm.public.comments(id)
+type user_role (admin, guest)
+`
+            const length = input.length
+            for (let i = 0; i < length; i++) {
+                // parse the input at all length to make sure no partial input can break the parser
+                expect(() => parseLegacyAml(input.slice(0, i))).not.toThrow()
+            }
+        })
     })
 
     // make sure AML v1 is still correctly parsed, cf frontend/tests/DataSources/AmlMiner/AmlParserTest.elm
@@ -343,7 +383,7 @@ function parseLegacyAml(aml: string): ParserResult<Database> {
         return parseAml(aml).map(({extra: {source, parsedAt, parsingMs, formattingMs, ...extra} = {}, ...db}) => ({...db, extra}))
     } catch (e) {
         console.error(e) // print stack trace
-        throw e
+        throw new Error(`Can't parse '${aml}'${typeof e === 'object' && e !== null && 'message' in e ? ': ' + e.message : ''}`)
     }
 }
 

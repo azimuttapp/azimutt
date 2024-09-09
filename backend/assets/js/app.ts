@@ -28,14 +28,11 @@ import {LiveSocket} from "phoenix_live_view"
 import Alpine from "alpinejs"
 import Hljs from "highlight.js"
 import topbar from "topbar"
-import {amlHljs, amlMonacoCompletion, amlMonarch} from "./lang.aml"
-import {CompletionItemProvider, IMonarchLanguage} from "./monaco"
+import {language as hljsAml} from "./aml.hljs"
 
-Hljs.registerLanguage('aml', amlHljs)
+Hljs.registerLanguage('aml', hljsAml)
 Hljs.configure({cssSelector: 'code.hljs'})
 Hljs.highlightAll()
-window.amlMonarch = amlMonarch
-window.amlMonacoCompletion = amlMonacoCompletion
 
 
 Alpine.start()
@@ -73,7 +70,5 @@ window.liveSocket = liveSocket
 declare global {
     export interface Window {
         liveSocket: LiveSocket
-        amlMonarch: IMonarchLanguage
-        amlMonacoCompletion: CompletionItemProvider
     }
 }

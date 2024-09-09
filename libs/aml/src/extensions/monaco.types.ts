@@ -1,4 +1,4 @@
-// needed types for Monaco
+// types for Monaco editor used in monaco.ts
 
 // cf https://microsoft.github.io/monaco-editor/typedoc/interfaces/languages.IMonarchLanguage.html
 export interface IMonarchLanguage {
@@ -105,17 +105,31 @@ export interface MarkdownStringTrustedOptions {
     enabledCommands: readonly string[]
 }
 export interface IRange {
-    endColumn: number
-    endLineNumber: number
-    startColumn: number
     startLineNumber: number
+    startColumn: number
+    endLineNumber: number
+    endColumn: number
 }
 // cf https://microsoft.github.io/monaco-editor/typedoc/interfaces/editor.ITextModel.html
 export interface ITextModel {
     id: string
+    createSnapshot(preserveBOM?: boolean): ITextSnapshot // get the text stored
+    getLineContent(lineNumber: number): string
+    getLineCount(): number
+    getOffsetAt(position: Position): number
+    getPositionAt(offset: number): Position
+    getValue(eol?: EndOfLinePreference, preserveBOM?: boolean): string // get the text stored
+    getValueInRange(range: IRange, eol?: EndOfLinePreference): string
+    getValueLength(eol?: EndOfLinePreference, preserveBOM?: boolean): number
+    getValueLengthInRange(range: IRange, eol?: EndOfLinePreference): number
+    getVersionId(): number // get the current version id of the model. Anytime a change happens to the model (even undo/redo), the version id is incremented.
+    getWordAtPosition(position: IPosition): IWordAtPosition
     getWordUntilPosition(position: IPosition): IWordAtPosition
+    modifyPosition(position: IPosition, offset: number): Position
     // others...
 }
+export interface ITextSnapshot { read(): string }
+export enum EndOfLinePreference {CRLF = 2, LF = 1, TextDefined = 0}
 export interface IWordAtPosition {
     endColumn: number
     startColumn: number

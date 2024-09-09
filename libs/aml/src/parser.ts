@@ -513,7 +513,7 @@ class AmlParser extends EmbeddedActionsParser {
             $.CONSUME(WhiteSpace)
             const src = $.SUBRULE($.attributeRefCompositeRule)
             $.OPTION(() => $.CONSUME2(WhiteSpace))
-            const {kind, ref, polymorphic} = $.SUBRULE(attributeRelationRule) || {} // on invalid input it returns undefined :/
+            const {kind, ref, polymorphic} = $.SUBRULE(attributeRelationRule) || {} // returns undefined on invalid input :/
             $.OPTION2(() => $.CONSUME3(WhiteSpace))
             const extra = $.SUBRULE($.extraRule)
             $.CONSUME(NewLine)
@@ -559,7 +559,7 @@ class AmlParser extends EmbeddedActionsParser {
         this.typeRule = $.RULE<() => TypeAst>('typeRule', () => {
             $.CONSUME(Type)
             $.CONSUME(WhiteSpace)
-            const {entity, ...namespace} = $.SUBRULE(this.entityRefRule) || {} // on invalid input it returns undefined :/
+            const {entity, ...namespace} = $.SUBRULE(this.entityRefRule) || {} // returns undefined on invalid input :/
             $.OPTION(() => $.CONSUME2(WhiteSpace))
             let content = $.OPTION2(() => $.OR([
                 { ALT: () => $.SUBRULE(typeEnumRule) },
@@ -661,7 +661,7 @@ export function nestAttributes(attributes: AttributeAstFlat[]): AttributeAstNest
     let parents: AttributeAstNested[] = []
     let curNesting = 0
     attributes.forEach(function(attribute) {
-        if (attribute === undefined) return undefined // on invalid input it can be undefined :/
+        if (attribute === undefined) return undefined // can be undefined on invalid input :/
         const {nesting, name, ...values} = attribute
         if (nesting === 0 || parents.length === 0) { // empty parents is when first attr is not at nesting 0
             path = [name]

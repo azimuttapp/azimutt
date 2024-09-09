@@ -174,8 +174,8 @@ COMMENT ON COLUMN posts.content IS 'in markdown';</code></pre>
         require(["vs/editor/editor.main"], function() {
             // define AML language for monaco
             monaco.languages.register({id: 'aml'})
-            monaco.languages.setMonarchTokensProvider('aml', window.amlMonarch)
-            monaco.languages.registerCompletionItemProvider('aml', window.amlMonacoCompletion)
+            monaco.languages.setMonarchTokensProvider('aml', aml.monaco.language)
+            monaco.languages.registerCompletionItemProvider('aml', aml.monaco.completion)
             // TODO monaco.languages.registerCodeActionProvider('aml', ...)
 
             // create editors
@@ -196,8 +196,7 @@ posts
   created_at timestamp=\`now()\`
   created_by uuid -> users(id) # inline relation
 `
-            var uri = monaco.Uri.parse("inmemory://aml")
-            var model = monaco.editor.createModel(initAml, 'aml', uri)
+            var model = monaco.editor.createModel(initAml, 'aml')
             var editorLeft = monaco.editor.create(document.getElementById('monaco-editor-left'), {
                 theme: 'vs-light',
                 language: 'plaintext',
@@ -235,7 +234,21 @@ posts
             }
 
             syncEditors()
-            editorLeft.onDidChangeModelContent(function (e) {
+            editorLeft.onDidChangeModelContent(function (e /* {
+              changes: [{
+                text: 'posts',
+                range: {startLineNumber: 11, startColumn: 1, endLineNumber: 11, endColumn: 1},
+                rangeLength: 0,
+                rangeOffset: 113,
+                forceMoveMarkers: false
+              }],
+              isUndoing: true,
+              isRedoing: false,
+              isFlush: false,
+              isEolChange: false,
+              versionId: 4,
+              eol: '\\n'
+            } */) {
                 syncEditors()
             })
         })
