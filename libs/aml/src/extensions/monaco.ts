@@ -1,6 +1,13 @@
 import {genAttributeRef, parseAml} from "../aml";
 import {
     CancellationToken,
+    CodeAction,
+    CodeActionContext,
+    CodeActionList,
+    CodeActionProvider,
+    CodeLens,
+    CodeLensList,
+    CodeLensProvider,
     CompletionContext,
     CompletionItem,
     CompletionItemInsertTextRule,
@@ -10,7 +17,8 @@ import {
     IMonarchLanguage,
     ITextModel,
     Position,
-    ProviderResult
+    ProviderResult,
+    Range
 } from "./monaco.types";
 import {entityToRef} from "@azimutt/models";
 
@@ -22,9 +30,9 @@ export const keywordRegex = /\b(namespace|nullable|pk|index|unique|check|fk|rel|
 export const notesRegex = /\|[^#\n]*/
 export const commentRegex = /#.*/
 
-// see https://microsoft.github.io/monaco-editor/playground.html?source=v0.51.0#example-extending-language-services-custom-languages
 // see https://microsoft.github.io/monaco-editor/monarch.html
-export const language: IMonarchLanguage = {
+// see https://microsoft.github.io/monaco-editor/playground.html?source=v0.51.0#example-extending-language-services-custom-languages
+export const language = (opts: {} = {}): IMonarchLanguage => ({ // syntax highlighting
     ignoreCase: true,
     // defaultToken: 'invalid', // comment this when not working on language
     tokenizer: {
@@ -38,9 +46,13 @@ export const language: IMonarchLanguage = {
             [commentRegex, 'comment'],
         ],
     }
-}
-// see https://microsoft.github.io/monaco-editor/typedoc/interfaces/languages.CompletionItemProvider.html
-export const completion: CompletionItemProvider = {
+})
+
+// see https://microsoft.github.io/monaco-editor/playground.html?source=v0.51.0#example-extending-language-services-custom-languages
+// export const theme = (opts: {} = {}): ({})
+
+// see https://microsoft.github.io/monaco-editor/playground.html?source=v0.51.0#example-extending-language-services-completion-provider-example
+export const completion = (opts: {} = {}): CompletionItemProvider => ({ // auto-complete
     triggerCharacters: [' '],
     provideCompletionItems(model: ITextModel, position: Position, context: CompletionContext, token: CancellationToken): ProviderResult<CompletionList> {
         // const autoCompletion = !!context.triggerCharacter // if completion is automatically triggered or manually (cf triggerCharacters)
@@ -85,7 +97,31 @@ export const completion: CompletionItemProvider = {
         console.log('resolveCompletionItem', item)
         return undefined
     }*/
-}
+})
+
+export const codeAction = (opts: {} = {}): CodeActionProvider => ({ // quick-fixes
+    provideCodeActions(model: ITextModel, range: Range, context: CodeActionContext, token: CancellationToken): ProviderResult<CodeActionList> {
+        // console.log('provideCodeActions', model, range, context)
+        const actions: CodeAction[] = []
+        return {actions, dispose() {}}
+    }
+})
+
+// see https://microsoft.github.io/monaco-editor/playground.html?source=v0.51.0#example-extending-language-services-codelens-provider-example
+export const codeLens = (opts: {} = {}): CodeLensProvider => ({ // hints with actions
+    provideCodeLenses(model: ITextModel, token: CancellationToken): ProviderResult<CodeLensList> {
+        // console.log('provideCodeLenses', model)
+        const lenses: CodeLens[] = []
+        return {lenses, dispose() {}}
+    }
+})
+
+// go to definition: `{codeEditorService: {openCodeEditor: () => {}}}` as 3rd attr of `monaco.editor.create`
+// JSON defaults (json-schema validation for json editor: JSON to AML, help with Database json-schema): https://microsoft.github.io/monaco-editor/playground.html?source=v0.51.0#example-extending-language-services-configure-json-defaults
+// folding provider (like markdown, fold between top level comments): https://microsoft.github.io/monaco-editor/playground.html?source=v0.51.0#example-extending-language-services-folding-provider-example
+// hover provider (show definitions of entities/attrs in relations, show incoming relations in entities/attrs definitions): https://microsoft.github.io/monaco-editor/playground.html?source=v0.51.0#example-extending-language-services-hover-provider-example
+
+// private helpers
 
 function suggestText(text: string, kind: CompletionItemKind, position: Position, opts: {documentation?: string} = {}): CompletionItem {
     return {

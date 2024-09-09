@@ -174,9 +174,11 @@ COMMENT ON COLUMN posts.content IS 'in markdown';</code></pre>
         require(["vs/editor/editor.main"], function() {
             // define AML language for monaco
             monaco.languages.register({id: 'aml'})
-            monaco.languages.setMonarchTokensProvider('aml', aml.monaco.language)
-            monaco.languages.registerCompletionItemProvider('aml', aml.monaco.completion)
-            // TODO monaco.languages.registerCodeActionProvider('aml', ...)
+            monaco.languages.setMonarchTokensProvider('aml', aml.monaco.language()) // syntax highlighting
+            monaco.languages.registerCompletionItemProvider('aml', aml.monaco.completion()) // auto-complete
+            monaco.languages.registerCodeActionProvider('aml', aml.monaco.codeAction()) // quick-fixes
+            monaco.languages.registerCodeLensProvider('aml', aml.monaco.codeLens()) // hints with actions
+            // monaco.editor.defineTheme('aml', aml.monaco.theme()) // highlightling theme
 
             // create editors
             var initAml = `#
@@ -197,6 +199,7 @@ posts
   created_by uuid -> users(id) # inline relation
 `
             var model = monaco.editor.createModel(initAml, 'aml')
+            model.context = {database: {}} // store values to be used at several place
             var editorLeft = monaco.editor.create(document.getElementById('monaco-editor-left'), {
                 theme: 'vs-light',
                 language: 'plaintext',
@@ -214,12 +217,19 @@ posts
                 automaticLayout: true,
                 scrollBeyondLastLine: false
             })
+            // get selected text: `model.getValueInRange(editor.getSelection())`
+            // get cursor position: `editor.getPosition()` & `editor.setPosition(new monaco.Position(5, 3))`
+            // move editor: `editor.revealLine(30)` but also: `revealLines`, `revealPosition`, `revealRange`, and also: `revealLineNearTop`, `revealLineInCenter`, `revealLineInCenterIfOutsideViewport`...
 
             // sync right editor with parsing result
             function syncEditors() {
                 var leftContent = editorLeft.getValue()
                 var parsed = aml.parseAml(leftContent)
-                parsed.result && editorRight.setValue(aml.formatJson(parsed.result) + '\n')
+                if (parsed.result) {
+                    model.context.database = parsed.result
+                    editorRight.setValue(aml.formatJson(parsed.result) + '\n')
+                    // preserve the undo stack with: `model.pushEditOperations([], [{range: model.getFullModelRange(), text: value}])`
+                }
                 monaco.editor.setModelMarkers(model, 'owner', (parsed.errors || []).map(e => ({
                     message: e.message,
                     severity: e.kind === 'error' ? monaco.MarkerSeverity.Error :

@@ -87,12 +87,6 @@ export interface ISingleEditOperation {
     range: IRange
     text: string
 }
-export interface Command {
-    arguments?: any[]
-    id: string
-    title: string
-    tooltip?: string
-}
 export interface IMarkdownString {
     baseUri?: UriComponents
     isTrusted?: boolean | MarkdownStringTrustedOptions
@@ -104,11 +98,111 @@ export interface IMarkdownString {
 export interface MarkdownStringTrustedOptions {
     enabledCommands: readonly string[]
 }
-export interface IRange {
-    startLineNumber: number
-    startColumn: number
-    endLineNumber: number
+// cf https://microsoft.github.io/monaco-editor/typedoc/interfaces/languages.CodeActionProvider.html
+export interface CodeActionProvider {
+    provideCodeActions(model: ITextModel, range: Range, context: CodeActionContext, token: CancellationToken): ProviderResult<CodeActionList>
+    resolveCodeAction?(codeAction: CodeAction, token: CancellationToken): ProviderResult<CodeAction>
+}
+export interface CodeActionContext {
+    only?: string
+    trigger: CodeActionTriggerType
+    markers: IMarkerData[]
+}
+export enum CodeActionTriggerType {Auto = 2, Invoke = 1}
+export interface CodeActionList {
+    actions: readonly CodeAction[]
+    dispose(): void
+}
+export interface CodeAction {
+    command?: Command
+    diagnostics?: IMarkerData[]
+    disabled?: string
+    edit?: WorkspaceEdit
+    isAI?: boolean
+    isPreferred?: boolean
+    kind?: string
+    ranges?: IRange[]
+    title: string
+}
+export interface WorkspaceEdit {
+    edits: (IWorkspaceFileEdit | IWorkspaceTextEdit)[]
+}
+export interface IWorkspaceFileEdit {
+    metadata?: WorkspaceEditMetadata
+    newResource?: Uri
+    oldResource?: Uri
+    options?: WorkspaceFileEditOptions
+}
+export interface WorkspaceEditMetadata {
+    description?: string
+    label: string
+    needsConfirmation: boolean
+}
+export interface WorkspaceFileEditOptions {
+    copy?: boolean
+    folder?: boolean
+    ignoreIfExists?: boolean
+    ignoreIfNotExists?: boolean
+    maxSize?: number
+    overwrite?: boolean
+    recursive?: boolean
+    skipTrashBin?: boolean
+}
+export interface IWorkspaceTextEdit {
+    metadata?: WorkspaceEditMetadata
+    resource: Uri
+    textEdit: TextEdit & { insertAsSnippet?: boolean }
+    versionId: number
+}
+export interface TextEdit {
+    eol?: EndOfLineSequence
+    range: IRange
+    text: string
+}
+export enum EndOfLineSequence {CRLF = 1, LF = 0}
+export interface IMarkerData {
+    code?: string | { target: Uri; value: string }
     endColumn: number
+    endLineNumber: number
+    message: string
+    modelVersionId?: number
+    relatedInformation?: IRelatedInformation[]
+    severity: MarkerSeverity
+    source?: string
+    startColumn: number
+    startLineNumber: number
+    tags?: MarkerTag[]
+}
+export enum MarkerSeverity {Error = 8, Hint = 1, Info = 2, Warning = 4}
+export enum MarkerTag {Deprecated = 2, Unnecessary = 1}
+export interface IRelatedInformation {
+    endColumn: number
+    endLineNumber: number
+    message: string
+    resource: Uri
+    startColumn: number
+    startLineNumber: number
+}
+// cf https://microsoft.github.io/monaco-editor/typedoc/interfaces/languages.CodeLensProvider.html
+export interface CodeLensProvider {
+    onDidChange?: IEvent<CodeLensProvider>
+    provideCodeLenses(model: ITextModel, token: CancellationToken): ProviderResult<CodeLensList>
+    resolveCodeLens?(model: ITextModel, codeLens: CodeLens, token: CancellationToken): ProviderResult<CodeLens>
+}
+export interface CodeLensList {
+    lenses: CodeLens[]
+    dispose(): void
+}
+export interface CodeLens {
+    command?: Command
+    id?: string
+    range: IRange
+}
+export interface Command {
+    arguments?: any[]
+    id: string
+    title: string
+    tooltip?: string
 }
 // cf https://microsoft.github.io/monaco-editor/typedoc/interfaces/editor.ITextModel.html
 export interface ITextModel {
@@ -134,6 +228,19 @@ export interface IWordAtPosition {
     endColumn: number
     startColumn: number
     word: string
+}
+export interface IRange {
+    startLineNumber: number
+    startColumn: number
+    endLineNumber: number
+    endColumn: number
+}
+export interface Range extends IRange {
+    positionLineNumber: number
+    positionColumn: number
+    selectionStartLineNumber: number
+    selectionStartColumn: number
+    isEmpty(): boolean
 }
 export interface IPosition {
     column: number
@@ -163,5 +270,7 @@ export interface UriComponents {
     query?: string
     scheme: string
 }
+export interface Uri extends UriComponents {}
+export type IEvent<T> = ((listener: (e: T) => any, thisArg?: any) => IDisposable)
 export type ProviderResult<T> = T | undefined | null | Thenable<T | undefined | null>
 export type Thenable<T> = PromiseLike<T>

@@ -40,13 +40,13 @@ import {
     ExtraAst,
     isTokenInfo,
     NamespaceAst,
-    parseAmlAst,
     RelationAst,
     RelationKindAst,
     RelationPolymorphicAst,
     TypeAst,
     TypeContentAst
-} from "./parser";
+} from "./ast";
+import {parseAmlAst} from "./parser";
 
 export function parseAml(content: string): ParserResult<Database> {
     const start = Date.now()

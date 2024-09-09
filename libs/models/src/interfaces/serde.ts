@@ -27,6 +27,14 @@ export const tokenPosition = (offsetStart: number, offsetEnd: number, positionSt
 export const parserError = (name: string, kind: ParserErrorKind, message: string, offsetStart: number, offsetEnd: number, positionStartLine: number, positionStartColumn: number, positionEndLine: number, positionEndColumn: number): ParserError =>
     ({name, kind, message, ...tokenPosition(offsetStart, offsetEnd, positionStartLine, positionStartColumn, positionEndLine, positionEndColumn)})
 
+export const mergePositions = (positions: TokenPosition[]): TokenPosition => ({
+    offset: {start: Math.min(...positions.map(p => p.offset.start)), end: Math.max(...positions.map(p => p.offset.end))},
+    position: {
+        start: {line: Math.min(...positions.map(p => p.position.start.line)), column: Math.min(...positions.map(p => p.position.start.column))},
+        end: {line: Math.max(...positions.map(p => p.position.end.line)), column: Math.max(...positions.map(p => p.position.end.column))}
+    }
+})
+
 export class ParserResult<T> {
     constructor(public result?: T, public errors?: ParserError[]) {
         if (this.errors?.length === 0) this.errors = undefined

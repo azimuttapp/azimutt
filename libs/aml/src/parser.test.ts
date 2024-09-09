@@ -1,7 +1,8 @@
 import {describe, expect, test} from "@jest/globals";
 import {removeFieldsDeep} from "@azimutt/utils";
 import {tokenPosition} from "@azimutt/models";
-import {nestAttributes, parseAmlAst, parseRule} from "./parser";
+import {AttributeRelationAst} from "./ast";
+import {legacyWarning, nestAttributes, parseAmlAst, parseRule} from "./parser";
 
 describe('aml parser', () => {
     test('empty', () => {
@@ -98,6 +99,7 @@ comments
                 name: {token: 'Identifier', value: 'users', ...tokenPosition(0, 4, 1, 1, 1, 5)},
                 properties: [{
                     key: {token: 'Identifier', value: 'domain', ...tokenPosition(7, 12, 1, 8, 1, 13)},
+                    sep: tokenPosition(13, 13, 1, 14, 1, 14),
                     value: {token: 'Identifier', value: 'auth', ...tokenPosition(15, 18, 1, 16, 1, 19)},
                 }],
                 doc: {token: 'Doc', value: 'list users', ...tokenPosition(21, 33, 1, 22, 1, 34)},
@@ -273,7 +275,7 @@ comments
                 expect(parseRule(p => p.attributeRule(), '  id {tag: pii}\n')).toEqual({result: {
                     nesting: 0,
                     name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
-                    properties: [{key: {token: 'Identifier', value: 'tag', ...tokenPosition(6, 8, 1, 7, 1, 9)}, value: {token: 'Identifier', value: 'pii', ...tokenPosition(11, 13, 1, 12, 1, 14)}}],
+                    properties: [{key: {token: 'Identifier', value: 'tag', ...tokenPosition(6, 8, 1, 7, 1, 9)}, sep: tokenPosition(9, 9, 1, 10, 1, 10), value: {token: 'Identifier', value: 'pii', ...tokenPosition(11, 13, 1, 12, 1, 14)}}],
                 }})
             })
             test('note', () => {
@@ -306,8 +308,8 @@ comments
                         polymorphic: {attr: {token: 'Identifier', value: 'kind', ...tokenPosition(58, 61, 1, 59, 1, 62)}, value: {token: 'Identifier', value: 'users', ...tokenPosition(63, 67, 1, 64, 1, 68)}}
                     },
                     properties: [
-                        {key: {token: 'Identifier', value: 'tag', ...tokenPosition(82, 84, 1, 83, 1, 85)}, value: {token: 'Identifier', value: 'pii', ...tokenPosition(88, 90, 1, 89, 1, 91)}},
-                        {key: {token: 'Identifier', value: 'owner', ...tokenPosition(94, 98, 1, 95, 1, 99)}, value: {token: 'Identifier', value: 'PANDA', ...tokenPosition(100, 104, 1, 101, 1, 105)}},
+                        {key: {token: 'Identifier', value: 'tag', ...tokenPosition(82, 84, 1, 83, 1, 85)}, sep: tokenPosition(86, 86, 1, 87, 1, 87), value: {token: 'Identifier', value: 'pii', ...tokenPosition(88, 90, 1, 89, 1, 91)}},
+                        {key: {token: 'Identifier', value: 'owner', ...tokenPosition(94, 98, 1, 95, 1, 99)}, sep: tokenPosition(99, 99, 1, 100, 1, 100), value: {token: 'Identifier', value: 'PANDA', ...tokenPosition(100, 104, 1, 101, 1, 105)}},
                     ],
                     doc: {token: 'Doc', value: 'some note', ...tokenPosition(107, 118, 1, 108, 1, 119)},
                     comment: {token: 'Comment', value: 'comment', ...tokenPosition(119, 127, 1, 120, 1, 128)},
@@ -413,6 +415,7 @@ comments
                 },
                 properties: [{
                     key: {token: 'Identifier', value: 'color', ...tokenPosition(32, 36, 1, 33, 1, 37)},
+                    sep: tokenPosition(37, 37, 1, 38, 1, 38),
                     value: {token: 'Identifier', value: 'red', ...tokenPosition(39, 41, 1, 40, 1, 42)}
                 }],
                 doc: {token: 'Doc', value: 'a note', ...tokenPosition(44, 52, 1, 45, 1, 53)},
@@ -496,6 +499,7 @@ comments
                 content: {kind: 'alias', name: {token: 'Identifier', value: 'varchar', ...tokenPosition(16, 22, 1, 17, 1, 23)}},
                 properties: [{
                     key: {token: 'Identifier', value: 'tags', ...tokenPosition(25, 28, 1, 26, 1, 29)},
+                    sep: tokenPosition(29, 29, 1, 30, 1, 30),
                     value: {token: 'Identifier', value: 'seo', ...tokenPosition(31, 33, 1, 32, 1, 34)}
                 }],
                 doc: {token: 'Doc', value: 'a note', ...tokenPosition(36, 44, 1, 37, 1, 45)},
@@ -520,17 +524,18 @@ comments
             })
         })
         test('attribute relation', () => {
-            const {warning, ...v1} = parseRule(p => p.attributeRule(), '  user_id fk users.id\n').result?.relation || {}
+            const v1 = parseRule(p => p.attributeRule(), '  user_id fk users.id\n').result?.relation as AttributeRelationAst
             const v2 = parseRule(p => p.attributeRule(), '  user_id -> users(id)\n').result?.relation
             expect(v1).toEqual({
                 kind: 'n-1',
                 ref: {
                     entity: {token: 'Identifier', value: 'users', ...tokenPosition(13, 17, 1, 14, 1, 18)},
-                    attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(19, 20, 1, 20, 1, 21)}]
-                }
+                    attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(19, 20, 1, 20, 1, 21)}],
+                    warning: {...tokenPosition(13, 20, 1, 14, 1, 21), issues: [legacyWarning('"users.id" is the legacy way, use "users(id)" instead')]}
+                },
+                warning: {...tokenPosition(10, 11, 1, 11, 1, 12), issues: [legacyWarning('"fk" is legacy, replace it with "->"')]}
             })
-            expect(v2).toEqual(v1)
-            expect(warning).toEqual({...tokenPosition(10, 11, 1, 11, 1, 12), issues: [{name: 'LegacyWarning', kind: 'warning', message: '"fk" is legacy, replace it with "->"'}]})
+            expect(removeFieldsDeep(v1, ['warning'])).toEqual(v2)
         })
         test('standalone relation', () => {
             const v1 = parseRule(p => p.relationRule(), 'fk groups.owner -> users.id\n')
@@ -540,37 +545,43 @@ comments
                 kind: 'n-1',
                 src: {
                     entity: {token: 'Identifier', value: 'groups', ...tokenPosition(3, 8, 1, 4, 1, 9)},
-                    attrs: [{token: 'Identifier', value: 'owner', ...tokenPosition(10, 14, 1, 11, 1, 15)}]
+                    attrs: [{token: 'Identifier', value: 'owner', ...tokenPosition(10, 14, 1, 11, 1, 15)}],
+                    warning: {...tokenPosition(3, 14, 1, 4, 1, 15), issues: [legacyWarning('"groups.owner" is the legacy way, use "groups(owner)" instead')]}
                 },
                 ref: {
                     entity: {token: 'Identifier', value: 'users', ...tokenPosition(19, 23, 1, 20, 1, 24)},
-                    attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(25, 26, 1, 26, 1, 27)}]
-                }
+                    attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(25, 26, 1, 26, 1, 27)}],
+                    warning: {...tokenPosition(19, 26, 1, 20, 1, 27), issues: [legacyWarning('"users.id" is the legacy way, use "users(id)" instead')]}
+                },
+                warning: {...tokenPosition(0, 1, 1, 1, 1, 2), issues: [legacyWarning('"fk" is legacy, replace it with "rel"')]}
             }})
-            expect(removeFieldsDeep(v1, ['offset', 'position'])).toEqual(removeFieldsDeep(v2, ['offset', 'position']))
+            expect(removeFieldsDeep(v1, ['offset', 'position', 'warning'])).toEqual(removeFieldsDeep(v2, ['offset', 'position']))
         })
         test('nested attribute', () => {
             const v1 = parseRule(p => p.attributeRefRule(), 'users.settings:github')
             const v2 = parseRule(p => p.attributeRefRule(), 'users(settings.github)')
             expect(v1).toEqual({result: {
                 entity: {token: 'Identifier', value: 'users', ...tokenPosition(0, 4, 1, 1, 1, 5)},
-                attr: {token: 'Identifier', value: 'settings', ...tokenPosition(6, 13, 1, 7, 1, 14), path: [{token: 'Identifier', value: 'github', ...tokenPosition(15, 20, 1, 16, 1, 21)}]}
+                attr: {token: 'Identifier', value: 'settings', ...tokenPosition(6, 13, 1, 7, 1, 14), path: [{token: 'Identifier', value: 'github', ...tokenPosition(15, 20, 1, 16, 1, 21)}]},
+                warning: {...tokenPosition(0, 20, 1, 1, 1, 21), issues: [legacyWarning('"users.settings:github" is the legacy way, use "users(settings.github)" instead')]}
             }})
-            expect(v1).toEqual(v2)
+            expect(removeFieldsDeep(v1, ['warning'])).toEqual(v2)
         })
         test('nested attribute composite', () => {
             const v1 = parseRule(p => p.attributeRefCompositeRule(), 'users.settings:github')
             const v2 = parseRule(p => p.attributeRefCompositeRule(), 'users(settings.github)')
             expect(v1).toEqual({result: {
                 entity: {token: 'Identifier', value: 'users', ...tokenPosition(0, 4, 1, 1, 1, 5)},
-                attrs: [{token: 'Identifier', value: 'settings', ...tokenPosition(6, 13, 1, 7, 1, 14), path: [{token: 'Identifier', value: 'github', ...tokenPosition(15, 20, 1, 16, 1, 21)}]}]
+                attrs: [{token: 'Identifier', value: 'settings', ...tokenPosition(6, 13, 1, 7, 1, 14), path: [{token: 'Identifier', value: 'github', ...tokenPosition(15, 20, 1, 16, 1, 21)}]}],
+                warning: {...tokenPosition(0, 20, 1, 1, 1, 21), issues: [legacyWarning('"users.settings:github" is the legacy way, use "users(settings.github)" instead')]},
             }})
-            expect(v1).toEqual(v2)
+            expect(removeFieldsDeep(v1, ['warning'])).toEqual(v2)
         })
         test('properties', () => {
             expect(parseRule(p => p.propertiesRule(), '{color=red}')).toEqual({result: [{
                 key: {token: 'Identifier', value: 'color', ...tokenPosition(1, 5, 1, 2, 1, 6)},
-                value: {token: 'Identifier', value: 'red', ...tokenPosition(7, 9, 1, 8, 1, 10)}
+                sep: {...tokenPosition(6, 6, 1, 7, 1, 7), issues: [legacyWarning('"=" is legacy, replace it with ":"')]},
+                value: {token: 'Identifier', value: 'red', ...tokenPosition(7, 9, 1, 8, 1, 10)},
             }]})
         })
     })
@@ -605,10 +616,12 @@ comments
             expect(parseRule(p => p.propertiesRule(), '{flag}')).toEqual({result: [{key: {token: 'Identifier', value: 'flag', ...tokenPosition(1, 4, 1, 2, 1, 5)}}]})
             expect(parseRule(p => p.propertiesRule(), '{color: red}')).toEqual({result: [{
                 key: {token: 'Identifier', value: 'color', ...tokenPosition(1, 5, 1, 2, 1, 6)},
+                sep: tokenPosition(6, 6, 1, 7, 1, 7),
                 value: {token: 'Identifier', value: 'red', ...tokenPosition(8, 10, 1, 9, 1, 11)}
             }]})
             expect(parseRule(p => p.propertiesRule(), '{size: 12}')).toEqual({result: [{
                 key: {token: 'Identifier', value: 'size', ...tokenPosition(1, 4, 1, 2, 1, 5)},
+                sep: tokenPosition(5, 5, 1, 6, 1, 6),
                 value: {token: 'Integer', value: 12, ...tokenPosition(7, 8, 1, 8, 1, 9)}
             }]})
 
@@ -624,6 +637,7 @@ comments
             expect(parseRule(p => p.extraRule(), '{key: value} | some note # a comment')).toEqual({result: {
                 properties: [{
                     key: {token: 'Identifier', value: 'key', ...tokenPosition(1, 3, 1, 2, 1, 4)},
+                    sep: tokenPosition(4, 4, 1, 5, 1, 5),
                     value: {token: 'Identifier', value: 'value', ...tokenPosition(6, 10, 1, 7, 1, 11)}
                 }],
                 doc: {token: 'Doc', value: 'some note', ...tokenPosition(13, 24, 1, 14, 1, 25)},
@@ -747,6 +761,9 @@ comments
         })
         test('tokenPosition has expected structure', () => {
             expect(tokenPosition(1, 2, 3, 4, 5, 6)).toEqual({offset: {start: 1, end: 2}, position: {start: {line: 3, column: 4}, end: {line: 5, column: 6}}})
+        })
+        test('legacyWarning has expected structure', () => {
+            expect(legacyWarning('error')).toEqual({name: 'LegacyWarning', kind: 'warning', message: 'error'})
         })
     })
 })

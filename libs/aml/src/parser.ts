@@ -7,15 +7,49 @@ import {
     Lexer,
     TokenType
 } from "chevrotain";
-import {isObject, removeEmpty, removeUndefined, stripIndent} from "@azimutt/utils";
+import {isNotUndefined, removeEmpty, removeUndefined, stripIndent} from "@azimutt/utils";
+import {mergePositions, ParserError, ParserResult, TokenPosition} from "@azimutt/models";
 import {
-    isParserErrorKind,
-    isTokenPosition,
-    ParserError,
-    ParserErrorKind,
-    ParserResult,
-    TokenPosition
-} from "@azimutt/models";
+    AmlAst,
+    AttributeAstFlat,
+    AttributeAstNested,
+    AttributeCheckAst,
+    AttributeConstraintAst,
+    AttributeConstraintsAst,
+    AttributePathAst,
+    AttributeRefAst,
+    AttributeRefCompositeAst,
+    AttributeRelationAst,
+    AttributeTypeAst,
+    AttributeValueAst,
+    BooleanToken,
+    CommentToken,
+    DecimalToken,
+    DocToken,
+    EmptyStatementAst,
+    EntityAst,
+    EntityRefAst,
+    ExpressionToken,
+    ExtraAst,
+    IdentifierToken,
+    IntegerToken,
+    NamespaceAst,
+    NullToken,
+    PropertiesAst,
+    PropertyAst,
+    PropertyValueAst,
+    RelationAst,
+    RelationCardinalityAst,
+    RelationPolymorphicAst,
+    StatementAst,
+    TokenInfo,
+    TokenIssue,
+    TypeAliasAst,
+    TypeAst,
+    TypeCustomAst,
+    TypeEnumAst,
+    TypeStructAst
+} from "./ast";
 
 // special
 const WhiteSpace = createToken({name: 'WhiteSpace', pattern: /[ \t]+/})
@@ -67,60 +101,6 @@ const legacyTokens: TokenType[] = [ForeignKey]
 
 // token order is important as they are tried in order, so the Identifier must be last
 const allTokens: TokenType[] = [WhiteSpace, NewLine, ...charTokens, ...keywordTokens, ...legacyTokens, ...valueTokens, Expression, Identifier, DocMultiline, Doc, Comment]
-
-export type AmlAst = StatementAst[]
-export type StatementAst = NamespaceAst | EntityAst | RelationAst | TypeAst | EmptyStatementAst
-export type NamespaceAst = { statement: 'Namespace', schema: IdentifierToken, catalog?: IdentifierToken, database?: IdentifierToken } & ExtraAst
-export type EntityAst = { statement: 'Entity', name: IdentifierToken, view?: TokenInfo, alias?: IdentifierToken, attrs?: AttributeAstNested[] } & NamespaceRefAst & ExtraAst
-export type RelationAst = { statement: 'Relation', kind: RelationKindAst, src: AttributeRefCompositeAst, ref: AttributeRefCompositeAst, polymorphic?: RelationPolymorphicAst } & ExtraAst
-export type TypeAst = { statement: 'Type', name: IdentifierToken, content?: TypeContentAst } & NamespaceRefAst & ExtraAst
-export type EmptyStatementAst = { statement: 'Empty', comment?: CommentToken }
-
-export type AttributeAstFlat = { nesting: number, name: IdentifierToken, nullable?: TokenInfo } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst
-export type AttributeAstNested = { path: IdentifierToken[], nullable?: TokenInfo } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst & { attrs?: AttributeAstNested[] }
-export type AttributeTypeAst = { type?: IdentifierToken, enumValues?: AttributeValueAst[], defaultValue?: AttributeValueAst }
-export type AttributeConstraintsAst = { primaryKey?: AttributeConstraintAst, index?: AttributeConstraintAst, unique?: AttributeConstraintAst, check?: AttributeCheckAst }
-export type AttributeConstraintAst = { keyword: TokenInfo, name?: IdentifierToken }
-export type AttributeCheckAst = { keyword: TokenInfo, definition?: ExpressionToken }
-export type AttributeRelationAst = { kind: RelationKindAst, ref: AttributeRefCompositeAst, polymorphic?: RelationPolymorphicAst, warning?: TokenInfo }
-
-export type RelationCardinalityAst = '1' | 'n'
-export type RelationKindAst = `${RelationCardinalityAst}-${RelationCardinalityAst}`
-export type RelationPolymorphicAst = { attr: AttributePathAst, value: AttributeValueAst }
-
-export type TypeContentAst = TypeAliasAst | TypeEnumAst | TypeStructAst | TypeCustomAst
-export type TypeAliasAst = { kind: 'alias', name: IdentifierToken }
-export type TypeEnumAst = { kind: 'enum', values: AttributeValueAst[] }
-export type TypeStructAst = { kind: 'struct', attrs: AttributeAstNested[] }
-export type TypeCustomAst = { kind: 'custom', definition: ExpressionToken }
-
-export type NamespaceRefAst = { schema?: IdentifierToken, catalog?: IdentifierToken, database?: IdentifierToken }
-export type EntityRefAst = { entity: IdentifierToken } & NamespaceRefAst
-export type AttributePathAst = IdentifierToken & { path?: IdentifierToken[] }
-export type AttributeRefAst = EntityRefAst & { attr: AttributePathAst }
-export type AttributeRefCompositeAst = EntityRefAst & { attrs: AttributePathAst[] }
-export type AttributeValueAst = NullToken | DecimalToken | IntegerToken | BooleanToken | ExpressionToken | IdentifierToken // TODO: add date
-
-export type ExtraAst = { properties?: PropertiesAst, doc?: DocToken, comment?: CommentToken }
-export type PropertiesAst = PropertyAst[]
-export type PropertyAst = { key: IdentifierToken, value?: PropertyValueAst }
-export type PropertyValueAst = NullToken | DecimalToken | IntegerToken | BooleanToken | ExpressionToken | IdentifierToken
-
-// basic tokens
-export type NullToken = { token: 'Null' } & TokenInfo
-export type DecimalToken = { token: 'Decimal', value: number } & TokenInfo
-export type IntegerToken = { token: 'Integer', value: number } & TokenInfo
-export type BooleanToken = { token: 'Boolean', value: boolean } & TokenInfo
-export type ExpressionToken = { token: 'Expression', value: string } & TokenInfo
-export type IdentifierToken = { token: 'Identifier', value: string } & TokenInfo
-export type DocToken = { token: 'Doc', value: string } & TokenPosition
-export type CommentToken = { token: 'Comment', value: string } & TokenPosition
-
-export type TokenInfo = TokenPosition & { issues?: TokenIssue[] }
-export type TokenIssue = { name: string, kind: ParserErrorKind, message: string }
-
-export const isTokenInfo = (value: unknown): value is TokenInfo => isTokenPosition(value) && (!('issues' in value) || ('issues' in value && Array.isArray(value.issues) && value.issues.every(isTokenIssue)))
-export const isTokenIssue = (value: unknown): value is TokenIssue => isObject(value) && ('kind' in value && isParserErrorKind(value.kind)) && ('message' in value && typeof value.message === 'string')
 
 class AmlParser extends EmbeddedActionsParser {
     // common
@@ -231,14 +211,14 @@ class AmlParser extends EmbeddedActionsParser {
             const key = $.SUBRULE($.identifierRule)
             $.OPTION(() => $.CONSUME(WhiteSpace))
             const value = $.OPTION2(() => {
-                $.OR([
-                    {ALT: () => $.CONSUME(Colon) },
-                    {ALT: () => $.CONSUME(Equal) }, // TODO: legacy rule
+                const sep = $.OR([
+                    {ALT: () => tokenInfo($.CONSUME(Colon)) },
+                    {ALT: () => tokenInfoLegacy($.CONSUME(Equal), '"=" is legacy, replace it with ":"') },
                 ])
                 $.OPTION3(() => $.CONSUME2(WhiteSpace))
-                return $.SUBRULE(propertyValueRule)
+                return {sep, value: $.SUBRULE(propertyValueRule)}
             })
-            return {key, value}
+            return {key, ...value}
         })
         this.propertiesRule = $.RULE<() => PropertiesAst>('propertiesRule', () => {
             const props: PropertiesAst = []
@@ -307,7 +287,13 @@ class AmlParser extends EmbeddedActionsParser {
                 ALT: () => {
                     // legacy fallback
                     const path = $.SUBRULE(legacyAttributePathRule)
-                    return removeUndefined({schema: entity.catalog, entity: entity.schema, attr: removeEmpty({...entity.entity, path})}) // TODO: add warning in AST
+                    const v1 = `${entity.catalog ? entity.catalog.value + '.' : ''}${entity.schema?.value || 'entity'}.${entity.entity?.value || 'attribute'}${Array.isArray(path) ? path.map(p => ':' + p.value).join('') : ''}`
+                    const v2 = `${entity.catalog ? entity.catalog.value + '.' : ''}${entity.schema?.value || 'entity'}(${entity.entity?.value || 'attribute'}${Array.isArray(path) ? path.map(p => '.' + p.value).join('') : ''})`
+                    const warning: TokenInfo = {
+                        ...mergePositions([entity.catalog, entity.schema, entity.entity, ...(Array.isArray(path) ? path : [])].filter(isNotUndefined)),
+                        issues: [legacyWarning(`"${v1}" is the legacy way, use "${v2}" instead`)]
+                    }
+                    return removeUndefined({schema: entity.catalog, entity: entity.schema, attr: removeEmpty({...entity.entity, path}), warning})
                 }
             }])
         })
@@ -335,7 +321,13 @@ class AmlParser extends EmbeddedActionsParser {
                     // don't work :/ it try to consume even with schema :/
                     // if (!entity.schema) { $.CONSUME(Dot) } // make the rule fail as it should have at least a `schema.entity` to be used as `entity.attr`
                     const path = $.SUBRULE(legacyAttributePathRule)
-                    return removeUndefined({schema: entity.catalog, entity: entity.schema, attrs: [removeEmpty({...entity.entity, path})]}) // TODO: add warning in AST
+                    const v1 = `${entity.catalog ? entity.catalog.value + '.' : ''}${entity.schema?.value || 'entity'}.${entity.entity?.value || 'attribute'}${Array.isArray(path) ? path.map(p => ':' + p.value).join('') : ''}`
+                    const v2 = `${entity.catalog ? entity.catalog.value + '.' : ''}${entity.schema?.value || 'entity'}(${entity.entity?.value || 'attribute'}${Array.isArray(path) ? path.map(p => '.' + p.value).join('') : ''})`
+                    const warning: TokenInfo = {
+                        ...mergePositions([entity.catalog, entity.schema, entity.entity, ...(Array.isArray(path) ? path : [])].filter(isNotUndefined)),
+                        issues: [legacyWarning(`"${v1}" is the legacy way, use "${v2}" instead`)]
+                    }
+                    return removeUndefined({schema: entity.catalog, entity: entity.schema, attrs: [removeEmpty({...entity.entity, path})], warning})
                 }
             }])
         })
@@ -443,9 +435,8 @@ class AmlParser extends EmbeddedActionsParser {
                 }
             }, {
                 ALT: () => {
-                    const token = $.CONSUME(ForeignKey)
-                    const warning = tokenInfo(token, [{name: 'LegacyWarning', kind: 'warning', message: '"fk" is legacy, replace it with "->"'}])
-                    return {kind: 'n-1', polymorphic: undefined, warning} // TODO: add warning in AST
+                    const warning = tokenInfoLegacy($.CONSUME(ForeignKey), '"fk" is legacy, replace it with "->"')
+                    return {kind: 'n-1', polymorphic: undefined, warning}
                 }
             }])
             $.OPTION2(() => $.CONSUME(WhiteSpace))
@@ -506,9 +497,9 @@ class AmlParser extends EmbeddedActionsParser {
             return {attr, value}
         })
         this.relationRule = $.RULE<() => RelationAst>('relationRule', () => {
-            $.OR([
-                { ALT: () => $.CONSUME(Relation) },
-                { ALT: () => $.CONSUME(ForeignKey) }, // TODO: add warning in AST
+            const warning = $.OR([
+                {ALT: () => {$.CONSUME(Relation); return undefined}},
+                {ALT: () => tokenInfoLegacy($.CONSUME(ForeignKey), '"fk" is legacy, replace it with "rel"')}
             ])
             $.CONSUME(WhiteSpace)
             const src = $.SUBRULE($.attributeRefCompositeRule)
@@ -517,7 +508,7 @@ class AmlParser extends EmbeddedActionsParser {
             $.OPTION2(() => $.CONSUME3(WhiteSpace))
             const extra = $.SUBRULE($.extraRule)
             $.CONSUME(NewLine)
-            return removeUndefined({statement: 'Relation' as const, kind, src, ref, polymorphic, ...extra})
+            return removeUndefined({statement: 'Relation' as const, kind, src, ref, polymorphic, ...extra, warning})
         })
 
         // type rules
@@ -641,6 +632,14 @@ function formatParserError(err: IRecognitionException): ParserError {
 
 function tokenInfo(token: IToken, issues?: TokenIssue[]): TokenInfo {
     return removeEmpty({...tokenPosition(token), issues})
+}
+
+function tokenInfoLegacy(token: IToken, message: string): TokenInfo {
+    return tokenInfo(token, [legacyWarning(message)])
+}
+
+export function legacyWarning(message: string): TokenIssue {
+    return {name: 'LegacyWarning', kind: 'warning', message}
 }
 
 function tokenPosition(token: IToken): TokenPosition {
