@@ -52,7 +52,7 @@
                         <%= plan_badge(@plan.id) %>
                     <% end %>
                     <%= if @organization.clever_cloud_resource do %>
-                        <a href={CleverCloud.app_url()} target="_blank" rel="noopener" class="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-indigo-100 text-indigo-800">Clever Cloud Add-on</a>
+                        <a href={CleverCloud.addon_url(@organization.clever_cloud_resource.owner_id, @organization.clever_cloud_resource.addon_id)} target="_blank" rel="noopener" class="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-indigo-100 text-indigo-800">Clever Cloud Add-on</a>
                     <% end %>
                     <%= if @organization.heroku_resource do %>
                         <%= if @organization.heroku_resource.app do %>

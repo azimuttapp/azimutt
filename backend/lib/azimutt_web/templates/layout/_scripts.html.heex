@@ -1,5 +1,7 @@
 <%= if Azimutt.config(:posthog) && Azimutt.config(:posthog_key) && Azimutt.config(:posthog_host) do %>
     <script>
+        try {
+        window.top.location.href // fail in iframe, avoid tracking errors
         !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags group".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
         posthog.init('<%= Azimutt.config(:posthog_key) %>',{
             api_host:'<%= Azimutt.config(:posthog_host) %>',
@@ -8,6 +10,7 @@
         <%= if assigns[:current_user] do %>posthog.identify('<%= @current_user.id %>')<% end %>
         <%= if @conn.params["organization_id"] do %>posthog.group('organization', '<%= @conn.params["organization_id"] %>'<%= if assigns[:current_user] do %><%= AzimuttWeb.WebsiteView.user_organization(@current_user, @conn.params["organization_id"]) |> Azimutt.Utils.Result.fold(fn _ -> "" end, fn o -> raw ", {name: '#{o.name}', host: window.location.host, organization: `${window.location.origin}/admin/organizations/#{o.id}`}" end) %><% end %>)<% end %>
         <%= if @conn.params["project_id"] do %>posthog.group('project', '<%= @conn.params["project_id"] %>'<%= if assigns[:current_user] do %><%= AzimuttWeb.WebsiteView.user_project(@current_user, @conn.params["project_id"]) |> Azimutt.Utils.Result.fold(fn _ -> "" end, fn {o, p} -> raw ", {name: '#{o.name} / #{p.name}', host: window.location.host, organization: `${window.location.origin}/admin/organizations/#{o.id}`, project: `${window.location.origin}/admin/projects/#{p.id}`}" end) %><% end %>)<% end %>
+        } catch { /* do nothing on iframe */ }
     </script>
 <% end %>
 <%= if Azimutt.config(:hubspot) && Azimutt.config(:hubspot_id) do %>

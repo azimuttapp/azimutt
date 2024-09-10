@@ -51,7 +51,7 @@ defmodule AzimuttWeb.CleverCloudController do
              Accounts.get_user_by_email(email)
              |> Result.flat_map_error(fn _ -> Accounts.register_clever_cloud_user(user_params, UserAuth.get_attribution(conn), now) end),
            {:ok, resource} <- CleverCloud.set_organization_if_needed(resource, user, now),
-           {:ok, _} <- CleverCloud.add_member_if_needed(resource.organization, user) do
+           {:ok, _} <- CleverCloud.add_member_if_needed(resource, user) do
         conn = conn |> UserAuth.clever_cloud_sso(resource, user)
         project = Projects.list_projects(resource.organization, user) |> Enum.sort_by(& &1.updated_at, {:desc, DateTime}) |> List.first()
 
@@ -68,17 +68,17 @@ defmodule AzimuttWeb.CleverCloudController do
         {:error, :deleted} ->
           {:error, :gone}
 
-        {:error, :too_many_members} ->
+        {:error, :too_many_members, resource} ->
           conn
           |> put_layout({AzimuttWeb.LayoutView, "empty.html"})
           |> put_root_layout({AzimuttWeb.LayoutView, "root_hfull.html"})
-          |> render("error_too_many_members.html")
+          |> render("error_too_many_members.html", resource: resource)
 
-        {:error, :member_limit_reached} ->
+        {:error, :member_limit_reached, resource} ->
           conn
           |> put_layout({AzimuttWeb.LayoutView, "empty.html"})
           |> put_root_layout({AzimuttWeb.LayoutView, "root_hfull.html"})
-          |> render("error_member_limit_reached.html")
+          |> render("error_member_limit_reached.html", resource: resource)
 
         {:error, err} ->
           conn |> put_flash(:error, "Authentication failed: #{Stringx.inspect(err)}") |> redirect(to: Routes.website_path(conn, :index))

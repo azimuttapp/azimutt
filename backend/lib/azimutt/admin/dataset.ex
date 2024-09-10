@@ -61,7 +61,7 @@ defmodule Azimutt.Admin.Dataset do
     |> build_chartjs(datasets)
   end
 
-  defp build_interval(datasets, format, from \\ nil, to \\ nil) do
+  defp build_interval(datasets, format, from, to) do
     if from == nil || to == nil do
       now = DateTime.utc_now()
 

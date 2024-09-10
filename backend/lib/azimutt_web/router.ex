@@ -78,7 +78,7 @@ defmodule AzimuttWeb.Router do
 
   # authed dashboard routes
   scope "/", AzimuttWeb do
-    pipe_through([:browser, :require_authed_user, :organization_root_layout])
+    pipe_through([:browser, :require_authed_user, :organization_root_layout, AllowCrossOriginIframe])
     get("/home", UserDashboardController, :index)
     get("/billing", UserDashboardController, :billing)
     get("/login/redirect", UserSessionController, :redirect_to)
@@ -180,7 +180,7 @@ defmodule AzimuttWeb.Router do
   end
 
   scope "/clevercloud", AzimuttWeb do
-    pipe_through([:browser_no_csrf_protection])
+    pipe_through([:browser_no_csrf_protection, AllowCrossOriginIframe])
     if Azimutt.Application.env() == :dev, do: get("/", CleverCloudController, :index)
     post("/login", CleverCloudController, :login)
   end

@@ -10,7 +10,7 @@
                         <div class="flex flex-1 items-center">
                             <div class="flex w-auto items-center justify-between">
                                 <span class="sr-only">Clever Cloud x Azimutt</span>
-                                <a href={CleverCloud.app_url()} target="_blank" rel="noopener noreferrer">
+                                <a href={CleverCloud.addon_url(@resource.owner_id, @resource.addon_id)} target="_blank" rel="noopener noreferrer">
                                     <img class="h-8 sm:h-10" src="/images/clever_cloud_logo_white.webp" alt="Clever Cloud logo">
                                 </a>
                                 <Icon.x_mark class="mx-2 text-white" />
@@ -53,7 +53,7 @@
                                                 </div>
                                             </div>
                                             <p class="mt-3 text-sm text-gray-300 sm:mt-4">
-                                                To get your database url, open <a href={CleverCloud.app_settings_url()} target="_blank" rel="noopener noreferrer" class="font-medium text-white underline">your app settings</a>,
+                                                To get your database url, open <a href={CleverCloud.org_url(@resource.owner_id)} target="_blank" rel="noopener noreferrer" class="font-medium text-white underline">your organization</a> app settings,
                                                 go to "<span class="italic font-bold">Environment variables</span>" and look for the "<span class="italic font-bold">POSTGRESQL_ADDON_URI</span>" one.
                                                 It looks like: <span class="italic whitespace-nowrap">postgres://user:password@host:port/db</span><br>
                                                 <a href={"mailto:#{Azimutt.config(:support_email)}"} rel="noopener noreferrer" class="font-medium text-white underline">Contact us</a> if you have any trouble.
