@@ -5,11 +5,14 @@ defmodule AzimuttWeb.Endpoint do
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
   # Set :encryption_salt if you would also like to encrypt it.
+  # see https://hexdocs.pm/plug/Plug.Session.html#module-options
   @session_options [
     store: :cookie,
     key: "_azimutt_key",
     signing_salt: "9EWvUx5K",
-    domain: Azimutt.config(:host)
+    domain: Azimutt.config(:host),
+    same_site: "None",
+    secure: true
   ]
 
   socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]
