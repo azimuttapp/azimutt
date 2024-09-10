@@ -296,12 +296,12 @@ defmodule AzimuttWeb.Router do
     get("/create", ElmController, :create)
     get("/new", ElmController, :new)
     get("/:organization_id", ElmController, :orga_show)
-    get("/:organization_id/new", ElmController, :orga_new)
   end
 
   # allow cross origin iframe for Clever Cloud
   scope "/", AzimuttWeb do
     pipe_through([:browser, :enforce_user_requirements, :elm_root_layout, AllowCrossOriginIframe])
+    get("/:organization_id/new", ElmController, :orga_new)
     get("/:organization_id/create", ElmController, :orga_create)
     get("/:organization_id/:project_id", ElmController, :project_show)
   end

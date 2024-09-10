@@ -18,7 +18,14 @@
             window.gateway_url = '<%= org_gateway || Azimutt.config(:gateway_url) %>'
             window.role = '<%= member && member.role || :owner %>'
         </script>
-        <%= if Azimutt.config(:sentry_frontend_dsn) do %><script>window.sentry_frontend_dsn = '<%= Azimutt.config(:sentry_frontend_dsn) %>'</script><% end %>
+        <%= if Azimutt.config(:sentry_frontend_dsn) do %>
+            <script>
+                try {
+                    window.top.location.href // fail in iframe, avoid tracking errors
+                    window.sentry_frontend_dsn = '<%= Azimutt.config(:sentry_frontend_dsn) %>'
+                } catch { /* do nothing on iframe */ }
+            </script>
+        <% end %>
         <script type="text/javascript" src={Routes.static_path(@conn, "/elm/script.js")} />
         <%= render "_scripts.html", conn: @conn, current_user: assigns[:current_user] %>
     </body>

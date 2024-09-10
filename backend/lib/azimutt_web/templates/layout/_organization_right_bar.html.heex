@@ -1,4 +1,4 @@
-<div class="min-h-full pr-4 bg-gray-50 sm:pr-6 lg:pr-8 lg:flex-shrink-0 lg:border-l lg:border-gray-200 xl:pr-0 divide-y">
+<div class="hidden min-h-full bg-gray-50 flex-shrink-0 border-l border-gray-200 divide-y lg:block pr-0">
     <%= render AzimuttWeb.PartialsView, "_blackfriday_card.html", conn: @conn, organization: @organization, plan: @plan.id %>
     <%= render AzimuttWeb.PartialsView, "_streak.html", value: @plan.streak %>
     <%= render AzimuttWeb.PartialsView, "_start_checklist.html", conn: @conn, organization: @organization, completed: if(@current_user.data, do: @current_user.data.start_checklist, else: []) %>
