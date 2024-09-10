@@ -7,12 +7,12 @@
         <%= render "_hello_comment.html" %>
         <%= render "_instance_message.html" %>
         <%= render "_email_confirm_banner.html", conn: @conn, current_user: @current_user %>
-        <div class="relative flex flex-col min-h-full">
+        <div class="relative flex flex-col h-full">
             <%= render "_user_navbar.html", conn: @conn, current_user: @current_user %>
 
-            <div class="flex-grow w-full min-h-full mx-auto max-w-7xl xl:px-8 lg:flex">
+            <div class="flex-grow w-full h-full mx-auto max-w-7xl sm:px-2 xl:px-8 lg:flex">
                 <!-- Left sidebar & main wrapper -->
-                <div class="flex-1 w-full min-w-0 bg-white xl:flex">
+                <div class="flex-1 w-full h-full bg-white flex">
                     <!-- Left panel -->
                     <%= render "_organization_left_bar.html", conn: @conn, current_user: @current_user, organization: @organization, plan: @plan %>
                     <!-- Main content -->

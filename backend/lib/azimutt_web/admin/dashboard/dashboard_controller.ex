@@ -21,8 +21,8 @@ defmodule AzimuttWeb.Admin.DashboardController do
         Dataset.chartjs_daily_data(
           [
             Admin.daily_connected_users() |> Dataset.from_values("Daily users"),
-            Admin.daily_used_projects() |> Dataset.from_values("Daily projects"),
             Admin.daily_connected_users_returning() |> Dataset.from_values("Daily returning users")
+            # Admin.daily_used_projects() |> Dataset.from_values("Daily projects"),
           ],
           three_months_ago,
           now
@@ -31,8 +31,8 @@ defmodule AzimuttWeb.Admin.DashboardController do
         Dataset.chartjs_weekly_data(
           [
             Admin.weekly_connected_users() |> Dataset.from_values("Weekly users"),
-            Admin.weekly_used_projects() |> Dataset.from_values("Weekly projects"),
             Admin.weekly_connected_users_returning() |> Dataset.from_values("Weekly returning users")
+            # Admin.weekly_used_projects() |> Dataset.from_values("Weekly projects"),
           ],
           one_year_ago,
           now
@@ -40,15 +40,15 @@ defmodule AzimuttWeb.Admin.DashboardController do
       monthly_connected_chart:
         Dataset.chartjs_monthly_data([
           Admin.monthly_connected_users() |> Dataset.from_values("Monthly users"),
-          Admin.monthly_used_projects() |> Dataset.from_values("Monthly projects"),
           Admin.monthly_connected_users_returning() |> Dataset.from_values("Monthly returning users")
+          # Admin.monthly_used_projects() |> Dataset.from_values("Monthly projects"),
         ]),
       created_chart:
         Dataset.chartjs_daily_data(
           [
-            Admin.daily_created_users() |> Dataset.from_values("Created users"),
-            Admin.daily_created_projects() |> Dataset.from_values("Created projects"),
-            Admin.daily_created_non_personal_organizations() |> Dataset.from_values("Created organizations")
+            Admin.daily_created_users() |> Dataset.from_values("Created users")
+            # Admin.daily_created_projects() |> Dataset.from_values("Created projects"),
+            # Admin.daily_created_non_personal_organizations() |> Dataset.from_values("Created organizations")
           ],
           three_months_ago,
           now
@@ -66,9 +66,9 @@ defmodule AzimuttWeb.Admin.DashboardController do
       feature_events:
         Dataset.chartjs_daily_data(
           [
-            Admin.daily_event("user_login") |> Dataset.from_values("login")
+            # Admin.daily_event("user_login") |> Dataset.from_values("login")
             # Admin.daily_event("editor_project_draft_created") |> Dataset.from_values("project_draft_created"),
-            # Admin.daily_event("project_created") |> Dataset.from_values("project_created"),
+            Admin.daily_event("project_created") |> Dataset.from_values("project_created")
             # Admin.daily_event("editor_layout_created") |> Dataset.from_values("layout_created"),
             # Admin.daily_event("editor_notes_created") |> Dataset.from_values("notes_created"),
             # Admin.daily_event("editor_memo_created") |> Dataset.from_values("memo_created"),

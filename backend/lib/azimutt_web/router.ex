@@ -94,7 +94,7 @@ defmodule AzimuttWeb.Router do
 
   # authed dashboard routes
   scope "/", AzimuttWeb do
-    pipe_through([:browser, :require_authed_user, :organization_root_layout])
+    pipe_through([:browser, :require_authed_user, :organization_root_layout, AllowCrossOriginIframe])
     get("/home", UserDashboardController, :index)
     get("/billing", UserDashboardController, :billing)
     get("/login/redirect", UserSessionController, :redirect_to)
@@ -196,7 +196,7 @@ defmodule AzimuttWeb.Router do
   end
 
   scope "/clevercloud", AzimuttWeb do
-    pipe_through([:browser_no_csrf_protection])
+    pipe_through([:browser_no_csrf_protection, AllowCrossOriginIframe])
     if Azimutt.Application.env() == :dev, do: get("/", CleverCloudController, :index)
     post("/login", CleverCloudController, :login)
   end
@@ -312,12 +312,12 @@ defmodule AzimuttWeb.Router do
     get("/create", ElmController, :create)
     get("/new", ElmController, :new)
     get("/:organization_id", ElmController, :orga_show)
-    get("/:organization_id/new", ElmController, :orga_new)
   end
 
   # allow cross origin iframe for Clever Cloud
   scope "/", AzimuttWeb do
     pipe_through([:browser, :enforce_user_requirements, :elm_root_layout, AllowCrossOriginIframe])
+    get("/:organization_id/new", ElmController, :orga_new)
     get("/:organization_id/create", ElmController, :orga_create)
     get("/:organization_id/:project_id", ElmController, :project_show)
   end

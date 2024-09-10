@@ -120,6 +120,7 @@ defmodule Azimutt.Admin do
   defp daily_creations(query) do
     query
     |> select([t], {fragment("to_char(?, 'yyyy-mm-dd')", t.created_at), count(t.id, :distinct)})
+    |> where([t], t.created_at > fragment("now() - interval '90 days'"))
     |> group_by([t], fragment("to_char(?, 'yyyy-mm-dd')", t.created_at))
     |> order_by([t], fragment("to_char(?, 'yyyy-mm-dd')", t.created_at))
     |> Repo.all()
@@ -147,6 +148,7 @@ defmodule Azimutt.Admin do
 
   defp daily_events(query) do
     query
+    |> where([e], e.created_at > fragment("now() - interval '90 days'"))
     |> group_by([e], fragment("to_char(?, 'yyyy-mm-dd')", e.created_at))
     |> order_by([e], fragment("to_char(?, 'yyyy-mm-dd')", e.created_at))
     |> Repo.all()
@@ -167,21 +169,23 @@ defmodule Azimutt.Admin do
 
   defp weekly_events(query) do
     query
+    |> where([e], e.created_at > fragment("now() - interval '180 days'"))
     |> group_by([e], fragment("to_char(date_trunc('week', ?), 'yyyy-mm-dd')", e.created_at))
     |> order_by([e], fragment("to_char(date_trunc('week', ?), 'yyyy-mm-dd')", e.created_at))
     |> Repo.all()
   end
 
-  def daily_connected_users_returning, do: connected_users_returning("to_char(e.created_at, 'yyyy-mm-dd')", "1 day")
-  def weekly_connected_users_returning, do: connected_users_returning("to_char(date_trunc('week', e.created_at), 'yyyy-mm-dd')", "1 week")
-  def monthly_connected_users_returning, do: connected_users_returning("to_char(e.created_at, 'yyyy-mm')", "1 month")
+  def daily_connected_users_returning, do: connected_users_returning("to_char(e.created_at, 'yyyy-mm-dd')", "1 day", "90 days")
+  def weekly_connected_users_returning, do: connected_users_returning("to_char(date_trunc('week', e.created_at), 'yyyy-mm-dd')", "1 week", "180 days")
+  def monthly_connected_users_returning, do: connected_users_returning("to_char(e.created_at, 'yyyy-mm')", "1 month", "360 days")
 
-  defp connected_users_returning(field, period) do
+  defp connected_users_returning(field, period, duration) do
     res = SQL.query!(Repo, "
       SELECT #{field}                                                                                       as period,
              count(distinct e.created_by)                                                                   as all_users,
              count(distinct e.created_by) FILTER (WHERE u.created_at + interval '#{period}' < e.created_at) as not_new_users
       FROM events e LEFT OUTER JOIN users u on u.id = e.created_by
+      WHERE e.created_at > NOW() - INTERVAL '#{duration}'
       GROUP BY #{field}
       ORDER BY #{field} DESC")
     res.rows |> Enum.map(fn row -> {row |> Enum.at(0), row |> Enum.at(2)} end)
@@ -202,6 +206,7 @@ defmodule Azimutt.Admin do
 
   defp monthly_events(query) do
     query
+    |> where([e], e.created_at > fragment("now() - interval '360 days'"))
     |> group_by([e], fragment("to_char(?, 'yyyy-mm')", e.created_at))
     |> order_by([e], fragment("to_char(?, 'yyyy-mm')", e.created_at))
     |> Repo.all()
@@ -223,6 +228,7 @@ defmodule Azimutt.Admin do
     """
     SELECT u.id, u.name, u.avatar, u.email, count(distinct to_char(e.created_at, 'yyyy-mm-dd')) as active_days, count(*) as nb_events, max(e.created_at) as last_activity
     FROM events e JOIN users u on u.id = e.created_by
+    WHERE e.created_at > NOW() - INTERVAL '90 days'
     GROUP BY u.id
     ORDER BY last_activity DESC
     LIMIT $1;
@@ -234,6 +240,7 @@ defmodule Azimutt.Admin do
     """
     SELECT u.id, u.name, u.avatar, u.email, count(distinct to_char(e.created_at, 'yyyy-mm-dd')) as active_days, count(*) as nb_events, max(e.created_at) as last_activity
     FROM events e JOIN users u on u.id = e.created_by
+    WHERE e.created_at > NOW() - INTERVAL '90 days'
     GROUP BY u.id
     ORDER BY active_days DESC, nb_events DESC
     LIMIT $1;
@@ -245,6 +252,7 @@ defmodule Azimutt.Admin do
     """
     SELECT u.id, u.name, u.avatar, u.email, count(distinct to_char(e.created_at, 'yyyy-mm-dd')) as active_days, count(*) as nb_events, max(e.created_at) as last_activity
     FROM events e JOIN users u on u.id = e.created_by
+    WHERE e.created_at > NOW() - INTERVAL '90 days'
     GROUP BY u.id
     HAVING count(distinct to_char(e.created_at, 'yyyy-mm-dd')) >= 5 AND max(e.created_at) < NOW() - INTERVAL '30 days'
     ORDER BY last_activity DESC
@@ -257,6 +265,7 @@ defmodule Azimutt.Admin do
     """
     SELECT u.id, u.name, u.avatar, u.email, count(distinct to_char(e.created_at, 'yyyy-mm-dd')) as active_days, count(*) as nb_events, max(e.created_at) as last_activity
     FROM events e JOIN users u on u.id = e.created_by
+    WHERE e.created_at > NOW() - INTERVAL '90 days'
     GROUP BY u.id
     HAVING max(e.created_at) < NOW() - INTERVAL '30 days'
     ORDER BY last_activity DESC
@@ -269,7 +278,7 @@ defmodule Azimutt.Admin do
     """
     SELECT u.id, u.name, u.avatar, u.email, count(*) as nb_plan_limit, max(e.created_at) as last_plan_limit
     FROM events e JOIN users u on u.id = e.created_by
-    WHERE e.name='plan_limit'
+    WHERE e.name='plan_limit' AND e.created_at > NOW() - INTERVAL '90 days'
     GROUP BY u.id
     ORDER BY last_plan_limit DESC
     LIMIT $1;
@@ -281,7 +290,7 @@ defmodule Azimutt.Admin do
     """
     SELECT u.id, u.name, u.avatar, u.email, count(*) as nb_billing_loaded, max(e.created_at) as last_billing_loaded
     FROM events e JOIN users u on u.id = e.created_by
-    WHERE e.name='billing_loaded'
+    WHERE e.name='billing_loaded' AND e.created_at > NOW() - INTERVAL '90 days'
     GROUP BY u.id
     ORDER BY last_billing_loaded DESC
     LIMIT $1;

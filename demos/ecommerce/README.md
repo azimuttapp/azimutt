@@ -114,3 +114,13 @@ docker run --name mongo_sample -p 27017:27017 mongo:latest
 ```
 
 Then connect to it using `mongodb://localhost:27017/analytics` and run the [source_09_analytics_mongo.sql](./source_09_analytics_mongo.sql) loading script.
+
+
+## Improvements
+
+Add more tables, data and database kind. Would be nice to move from 77 table to ~150-200 to show a large scale usage.
+
+New areas:
+
+- Devices: embedded devices for inventory employees => Couchbase
+- Marketplace: what others have to sell (Merchant, ...) => Snowflake

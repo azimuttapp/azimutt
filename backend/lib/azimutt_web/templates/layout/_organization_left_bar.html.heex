@@ -1,8 +1,8 @@
-<div class="xl:flex-shrink-0 xl:w-64 xl:border-r xl:border-gray-200 bg-white">
-    <div class="pl-4 pr-6 py-6 sm:pl-6 lg:pl-8 xl:pl-0">
+<div class="flex-shrink-0 w-48 xl:w-64 border-r border-gray-200 bg-white">
+    <div class="pl-4 pr-6 py-6 pl-0">
         <div class="flex items-center justify-between">
             <div class="flex-1 space-y-4">
-                <div class="sm:space-y-0 sm:flex sm:justify-between sm:items-center xl:block">
+                <div>
                     <!-- Profile -->
                     <%= if Azimutt.config(:global_organization) && Azimutt.config(:global_organization_alone) do %>
                         <div class="bg-white relative w-full border border-white rounded-md pl-3 pr-10 py-2 text-left sm:text-sm">
@@ -52,7 +52,7 @@
                         <%= plan_badge(@plan.id) %>
                     <% end %>
                     <%= if @organization.clever_cloud_resource do %>
-                        <a href={CleverCloud.app_url()} target="_blank" rel="noopener" class="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-indigo-100 text-indigo-800">Clever Cloud Add-on</a>
+                        <a href={CleverCloud.addon_url(@organization.clever_cloud_resource.owner_id, @organization.clever_cloud_resource.addon_id)} target="_blank" rel="noopener" class="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-indigo-100 text-indigo-800">Clever Cloud Add-on</a>
                     <% end %>
                     <%= if @organization.heroku_resource do %>
                         <%= if @organization.heroku_resource.app do %>
@@ -65,7 +65,7 @@
                         <p class="text-sm text-gray-500 py-4"><%= @organization.description %></p>
                     <% end %>
                     <%= if Azimutt.Organizations.writer?(@organization, @current_user) do %>
-                    <div class="flex flex-col sm:flex-row xl:flex-col py-2">
+                    <div class="flex flex-col py-2">
                         <%= link "New Project", to: Routes.elm_path(@conn, :orga_new, @organization), class: "inline-flex items-center justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 xl:w-full" %>
                     </div>
                     <% end %>
@@ -73,13 +73,13 @@
                 <nav class="space-y-1">
                     <% is_owner = Azimutt.Organizations.owner?(@organization, @current_user) %>
                     <% links = [
-                        %{label: "Projects", icon: "home", path: Routes.organization_path(@conn, :show, @organization)},
-                        if(!@organization.is_personal, do: %{label: "Members", icon: "user-group", path: Routes.organization_member_path(@conn, :index, @organization)}, else: nil),
-                        if(is_owner && StripeSrv.stripe_configured?(), do: %{label: "Billing", icon: "credit-card", path: Routes.organization_billing_path(@conn, :index, @organization, source: "left-menu")}, else: nil),
-                        if(is_owner, do: %{label: "Settings", icon: "adjustments-horizontal", path: Routes.organization_path(@conn, :edit, @organization)}, else: nil)
+                        %{label: "Projects", icon: "home", path: Routes.organization_path(@conn, :show, @organization), new_tab: false},
+                        if(!@organization.is_personal, do: %{label: "Members", icon: "user-group", path: Routes.organization_member_path(@conn, :index, @organization), new_tab: false}, else: nil),
+                        if(is_owner && StripeSrv.stripe_configured?(), do: %{label: "Billing", icon: "credit-card", path: Routes.organization_billing_path(@conn, :index, @organization, source: "left-menu"), new_tab: !!@organization.clever_cloud_resource}, else: nil),
+                        if(is_owner, do: %{label: "Settings", icon: "adjustments-horizontal", path: Routes.organization_path(@conn, :edit, @organization), new_tab: false}, else: nil)
                     ] |> Enum.filter(fn l -> l != nil end) %>
                     <%= for link <- links do %>
-                        <a href={link.path} class={active(@conn.request_path, link.path)} data-phx-link="redirect" data-phx-link-state="push">
+                        <a href={link.path} class={active(@conn.request_path, link.path)} {if link.new_tab, do: [target: "_blank"], else: []}>
                             <Icon.draw name={link.icon} kind="outline" class="-ml-1 mr-3 text-gray-400 flex-shrink-0 pointer-events-none" />
                             <span class="truncate"><%= link.label %></span>
                         </a>

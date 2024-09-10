@@ -1,10 +1,10 @@
-<div class="mt-12 max-w-lg mx-auto">
+<div class="mt-12 ml-6 max-w-lg">
     <h3 class="text-xl leading-6 font-medium text-gray-900">Projects</h3>
 </div>
 <div class="mt-12 w-full mx-auto">
     <ul role="list" class="relative z-0 divide-y divide-gray-200 border-b border-t border-gray-200">
         <%= for project <- @projects |> Enum.sort_by(& &1.updated_at, {:desc, DateTime}) do %>
-            <li class="relative py-5 pl-4 pr-6 hover:bg-gray-50 sm:py-6 sm:pl-6 lg:pl-8 xl:pl-6">
+            <li class="relative py-5 pl-4 pr-6 hover:bg-gray-50 sm:py-6 sm:pl-6 lg:px-2 xl:pl-6">
                 <div class="flex items-center justify-between space-x-4">
                     <div class="min-w-0 space-y-3">
                         <div class="flex items-center space-x-3">

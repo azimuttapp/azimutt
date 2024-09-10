@@ -29,10 +29,17 @@ defmodule AzimuttWeb.OrganizationBillingController do
         Tracking.billing_loaded(current_user, organization, source)
 
         cond do
-          organization.clever_cloud_resource -> conn |> redirect(external: CleverCloud.app_addons_url())
-          organization.heroku_resource -> conn |> redirect(external: Heroku.app_addons_url(organization.heroku_resource.app))
-          organization.stripe_customer_id && StripeSrv.stripe_configured?() -> conn |> stripe_subscription_view(organization, current_user)
-          true -> conn |> put_flash(:error, "Billing not available.") |> redirect(to: Routes.organization_path(conn, :show, organization))
+          organization.clever_cloud_resource ->
+            conn |> redirect(external: CleverCloud.addon_settings_url(organization.clever_cloud_resource.owner_id, organization.clever_cloud_resource.addon_id))
+
+          organization.heroku_resource ->
+            conn |> redirect(external: Heroku.app_addons_url(organization.heroku_resource.app))
+
+          organization.stripe_customer_id && StripeSrv.stripe_configured?() ->
+            conn |> stripe_subscription_view(organization, current_user)
+
+          true ->
+            conn |> put_flash(:error, "Billing not available.") |> redirect(to: Routes.organization_path(conn, :show, organization))
         end
       end)
     end

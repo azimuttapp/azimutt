@@ -4,14 +4,13 @@ defmodule Azimutt.CleverCloud do
   alias Azimutt.Accounts.User
   alias Azimutt.CleverCloud.Resource
   alias Azimutt.Organizations
-  alias Azimutt.Organizations.Organization
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Repo
   alias Azimutt.Utils.Result
 
-  def app_url, do: "#TODO"
-  def app_addons_url, do: "#TODO"
-  def app_settings_url, do: "#TODO"
+  def org_url(org), do: "https://console.clever-cloud.com/organisations/#{org}"
+  def addon_url(org, addon), do: "https://console.clever-cloud.com/organisations/#{org}/addons/#{addon}"
+  def addon_settings_url(org, addon), do: "https://console.clever-cloud.com/organisations/#{org}/addons/#{addon}/informations"
 
   # use only for CleverCloudController.index local helper
   def all_resources do
@@ -52,23 +51,23 @@ defmodule Azimutt.CleverCloud do
     end
   end
 
-  def add_member_if_needed(%Organization{} = organization, %User{} = current_user) do
-    existing_members = Organizations.count_member(organization)
+  def add_member_if_needed(%Resource{} = resource, %User{} = current_user) do
+    existing_members = Organizations.count_member(resource.organization)
 
     cond do
-      Organizations.has_member?(organization, current_user) ->
+      Organizations.has_member?(resource.organization, current_user) ->
         {:ok, :already_member}
 
-      existing_members < organization.plan_seats ->
-        OrganizationMember.new_member_changeset(organization.id, current_user, nil)
+      existing_members < resource.organization.plan_seats ->
+        OrganizationMember.new_member_changeset(resource.organization.id, current_user, nil)
         |> Repo.insert()
         |> Result.map(fn _ -> :member_added end)
 
-      existing_members > organization.plan_seats ->
-        {:error, :too_many_members}
+      existing_members > resource.organization.plan_seats ->
+        {:error, :too_many_members, resource}
 
       true ->
-        {:error, :member_limit_reached}
+        {:error, :member_limit_reached, resource}
     end
   end
 
