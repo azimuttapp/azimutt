@@ -53,3 +53,4 @@
     <%= render "_interesting_users.html", conn: @conn, users: @plan_limit_users, fields: [{"Count", :nb_plan_limit}, {"Last", :last_plan_limit}], title: "plan_limit users", description: "Last users with a plan_limit event" %>
     <%= render "_interesting_users.html", conn: @conn, users: @billing_loaded_users, fields: [{"Count", :nb_billing_loaded}, {"Last", :last_billing_loaded}], title: "billing users", description: "Last users with a billing_loaded event" %>
 </div>
+<p class="mt-1 text-xs font-medium text-slate-500">*only looking at the 90 last days</p>
