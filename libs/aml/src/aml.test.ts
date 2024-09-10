@@ -190,24 +190,28 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1}}], extra: {}},
                 errors: [
                     {name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Identifier <-- but found --> '\n' <--", ...tokenPosition(21, 21, 2, 16, 2, 16)},
-                    {name: 'LegacyWarning', kind: 'warning', message: "\"fk\" is legacy, replace it with \"->\"", ...tokenPosition(19, 20, 2, 14, 2, 15)}
+                    {name: 'LegacyWarning', kind: 'warning', message: '"fk" is legacy, replace it with "->"', ...tokenPosition(19, 20, 2, 14, 2, 15)}
                 ]
             })
             expect(parseLegacyAml('posts\n  author int fk users\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1}}], extra: {}},
                 // TODO: an error should be reported here
-                errors: [{name: 'LegacyWarning', kind: 'warning', message: "\"fk\" is legacy, replace it with \"->\"", ...tokenPosition(19, 20, 2, 14, 2, 15)}]
+                errors: [{name: 'LegacyWarning', kind: 'warning', message: '"fk" is legacy, replace it with "->"', ...tokenPosition(19, 20, 2, 14, 2, 15)}]
             })
             expect(parseLegacyAml('posts\n  author int fk users.\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1}}], extra: {}},
                 errors: [
                     {name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Identifier <-- but found --> '\n' <--", ...tokenPosition(28, 28, 2, 23, 2, 23)},
-                    {name: 'LegacyWarning', kind: 'warning', message: "\"fk\" is legacy, replace it with \"->\"", ...tokenPosition(19, 20, 2, 14, 2, 15)}
+                    {name: 'LegacyWarning', kind: 'warning', message: '"fk" is legacy, replace it with "->"', ...tokenPosition(19, 20, 2, 14, 2, 15)},
+                    {name: 'LegacyWarning', kind: 'warning', message: '"users." is the legacy way, use "users()" instead', ...tokenPosition(22, 26, 2, 17, 2, 21)},
                 ]
             })
             expect(parseLegacyAml('posts\n  author int fk users.id\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {statement: 1}}], extra: {}},
-                errors: [{name: 'LegacyWarning', kind: 'warning', message: "\"fk\" is legacy, replace it with \"->\"", ...tokenPosition(19, 20, 2, 14, 2, 15)}]
+                errors: [
+                    {name: 'LegacyWarning', kind: 'warning', message: '"fk" is legacy, replace it with "->"', ...tokenPosition(19, 20, 2, 14, 2, 15)},
+                    {name: 'LegacyWarning', kind: 'warning', message: '"users.id" is the legacy way, use "users(id)" instead', ...tokenPosition(22, 29, 2, 17, 2, 24)},
+                ]
             })
         })
         test('no crash on typing', () => {
@@ -293,7 +297,8 @@ talks
                     extra: {}
                 },
                 errors: [
-                    {name: 'LegacyWarning', kind: 'warning', message: '"fk" is legacy, replace it with "->"', ...tokenPosition(117, 118, 10, 15, 10, 16)}
+                    {name: 'LegacyWarning', kind: 'warning', message: '"fk" is legacy, replace it with "->"', ...tokenPosition(117, 118, 10, 15, 10, 16)},
+                    {name: 'LegacyWarning', kind: 'warning', message: '"users.id" is the legacy way, use "users(id)" instead', ...tokenPosition(120, 127, 10, 18, 10, 25)},
                 ]
             })
         })
@@ -360,7 +365,14 @@ fk admins.id -> users.id
                     extra: {}
                 },
                 errors: [
-                    {name: 'LegacyWarning', kind: 'warning', message: '"fk" is legacy, replace it with "->"', ...tokenPosition(435, 436, 14, 26, 14, 27)}
+                    {name: 'LegacyWarning', kind: 'warning', message: '"=" is legacy, replace it with ":"', ...tokenPosition(113, 113, 8, 20, 8, 20)},
+                    {name: 'LegacyWarning', kind: 'warning', message: '"=" is legacy, replace it with ":"', ...tokenPosition(122, 122, 8, 29, 8, 29)},
+                    {name: 'LegacyWarning', kind: 'warning', message: '"=" is legacy, replace it with ":"', ...tokenPosition(131, 131, 8, 38, 8, 38)},
+                    {name: 'LegacyWarning', kind: 'warning', message: '"fk" is legacy, replace it with "->"', ...tokenPosition(435, 436, 14, 26, 14, 27)},
+                    {name: 'LegacyWarning', kind: 'warning', message: '"emails.email" is the legacy way, use "emails(email)" instead', ...tokenPosition(438, 449, 14, 29, 14, 40)},
+                    {name: 'LegacyWarning', kind: 'warning', message: '"fk" is legacy, replace it with "rel"', ...tokenPosition(560, 561, 20, 1, 20, 2)},
+                    {name: 'LegacyWarning', kind: 'warning', message: '"admins.id" is the legacy way, use "admins(id)" instead', ...tokenPosition(563, 571, 20, 4, 20, 12)},
+                    {name: 'LegacyWarning', kind: 'warning', message: '"users.id" is the legacy way, use "users(id)" instead', ...tokenPosition(576, 583, 20, 17, 20, 24)},
                 ]
             })
         })

@@ -60,7 +60,7 @@ export function parseAml(content: string): ParserResult<Database> {
             return value
         })
         const db = buildDatabase(ast, start, parsed)
-        return new ParserResult(db, errors)
+        return new ParserResult(db, errors.sort((a, b) => a.offset.start - b.offset.start))
     })
 }
 

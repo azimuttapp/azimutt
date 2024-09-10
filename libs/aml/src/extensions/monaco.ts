@@ -1,3 +1,5 @@
+import {isNotUndefined} from "@azimutt/utils";
+import {entityToRef, ParserError} from "@azimutt/models";
 import {genAttributeRef, parseAml} from "../aml";
 import {
     CancellationToken,
@@ -5,6 +7,7 @@ import {
     CodeActionContext,
     CodeActionList,
     CodeActionProvider,
+    CodeActionTriggerType,
     CodeLens,
     CodeLensList,
     CodeLensProvider,
@@ -14,13 +17,14 @@ import {
     CompletionItemKind,
     CompletionItemProvider,
     CompletionList,
+    IMarkerData,
     IMonarchLanguage,
     ITextModel,
+    MarkerSeverity,
     Position,
     ProviderResult,
     Range
 } from "./monaco.types";
-import {entityToRef} from "@azimutt/models";
 
 // keep Regex in sync with backend/assets/js/lang.aml.ts
 export const entityRegex = /^[a-zA-Z_][a-zA-Z0-9_#]*/
@@ -29,6 +33,8 @@ export const attributeTypeRegex = /\b(uuid|varchar|text|int|boolean|timestamp)\b
 export const keywordRegex = /\b(namespace|nullable|pk|index|unique|check|fk|rel|type)\b/
 export const notesRegex = /\|[^#\n]*/
 export const commentRegex = /#.*/
+
+// other lang inspiration: https://github.com/microsoft/monaco-editor/tree/main/src
 
 // see https://microsoft.github.io/monaco-editor/monarch.html
 // see https://microsoft.github.io/monaco-editor/playground.html?source=v0.51.0#example-extending-language-services-custom-languages
@@ -101,22 +107,52 @@ export const completion = (opts: {} = {}): CompletionItemProvider => ({ // auto-
 
 export const codeAction = (opts: {} = {}): CodeActionProvider => ({ // quick-fixes
     provideCodeActions(model: ITextModel, range: Range, context: CodeActionContext, token: CancellationToken): ProviderResult<CodeActionList> {
-        // console.log('provideCodeActions', model, range, context)
-        const actions: CodeAction[] = []
-        return {actions, dispose() {}}
+        if (context.trigger === CodeActionTriggerType.Invoke && context.only === 'quickfix') { // hover a marker
+            const actions: CodeAction[] = context.markers.map(m => {
+                const [, prev, next] = m.message.match(/"([^"]+)".+legacy.+"([^"]+)"/) || []
+                if (next) {
+                    return {
+                        title: `Replace by '${next}'`,
+                        diagnostics: [m],
+                        kind: 'quickfix',
+                        edit: {edits: [{
+                            resource: model.uri,
+                            versionId: model.getVersionId(),
+                            textEdit: {text: next, range}
+                        }]}
+                    }
+                }
+            }).filter(isNotUndefined)
+            return {actions, dispose() {}}
+        }
+        /*if (context.trigger === CodeActionTriggerType.Auto && context.only === undefined) { // change cursor position
+            const actions: CodeAction[] = []
+            return {actions, dispose() {}}
+        }*/
     }
 })
 
 // see https://microsoft.github.io/monaco-editor/playground.html?source=v0.51.0#example-extending-language-services-codelens-provider-example
+// ex: https://code.visualstudio.com/docs/editor/editingevolved#_reference-information
 export const codeLens = (opts: {} = {}): CodeLensProvider => ({ // hints with actions
     provideCodeLenses(model: ITextModel, token: CancellationToken): ProviderResult<CodeLensList> {
-        // console.log('provideCodeLenses', model)
+        // console.log('provideCodeLenses')
         const lenses: CodeLens[] = []
         return {lenses, dispose() {}}
     }
 })
 
-// go to definition: `{codeEditorService: {openCodeEditor: () => {}}}` as 3rd attr of `monaco.editor.create`
+export const createMarker = (e: ParserError): IMarkerData => ({
+    message: e.message,
+    severity: e.kind === 'error' ? MarkerSeverity.Error : e.kind === 'warning' ? MarkerSeverity.Warning : e.kind === 'info' ? MarkerSeverity.Info : MarkerSeverity.Hint,
+    startLineNumber: e.position.start.line,
+    startColumn: e.position.start.column,
+    endLineNumber: e.position.end.line,
+    endColumn: e.position.end.column + 1,
+})
+
+// entity/attribute rename: ??? (https://code.visualstudio.com/docs/editor/editingevolved#_rename-symbol)
+// go to definition: `{codeEditorService: {openCodeEditor: () => {}}}` as 3rd attr of `monaco.editor.create` (https://code.visualstudio.com/docs/editor/editingevolved#_go-to-definition & https://code.visualstudio.com/docs/editor/editingevolved#_peek)
 // JSON defaults (json-schema validation for json editor: JSON to AML, help with Database json-schema): https://microsoft.github.io/monaco-editor/playground.html?source=v0.51.0#example-extending-language-services-configure-json-defaults
 // folding provider (like markdown, fold between top level comments): https://microsoft.github.io/monaco-editor/playground.html?source=v0.51.0#example-extending-language-services-folding-provider-example
 // hover provider (show definitions of entities/attrs in relations, show incoming relations in entities/attrs definitions): https://microsoft.github.io/monaco-editor/playground.html?source=v0.51.0#example-extending-language-services-hover-provider-example

@@ -168,6 +168,7 @@ COMMENT ON COLUMN posts.content IS 'in markdown';</code></pre>
         <div id="monaco-editor-right" class="w-full md:w-1/2 h-96 border border-gray-300 rounded-lg overflow-hidden"></div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@azimutt/aml@0.1.3/out/bundle.min.js"></script>
+    <!-- <script src="/elm/bundle.min.js"></script> -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.51.0/min/vs/loader.min.js"></script>
     <script>
         require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.51.0/min/vs' }})
@@ -196,7 +197,7 @@ posts
   title varchar
   content text | in markdown
   created_at timestamp=\`now()\`
-  created_by uuid -> users(id) # inline relation
+  created_by uuid fk users.id # inline relation
 `
             var model = monaco.editor.createModel(initAml, 'aml')
             model.context = {database: {}} // store values to be used at several place
@@ -220,27 +221,18 @@ posts
             // get selected text: `model.getValueInRange(editor.getSelection())`
             // get cursor position: `editor.getPosition()` & `editor.setPosition(new monaco.Position(5, 3))`
             // move editor: `editor.revealLine(30)` but also: `revealLines`, `revealPosition`, `revealRange`, and also: `revealLineNearTop`, `revealLineInCenter`, `revealLineInCenterIfOutsideViewport`...
+            window.model = model
+            window.editor = editorLeft
 
             // sync right editor with parsing result
             function syncEditors() {
-                var leftContent = editorLeft.getValue()
-                var parsed = aml.parseAml(leftContent)
+                var parsed = aml.parseAml(editorLeft.getValue())
                 if (parsed.result) {
                     model.context.database = parsed.result
                     editorRight.setValue(aml.formatJson(parsed.result) + '\n')
                     // preserve the undo stack with: `model.pushEditOperations([], [{range: model.getFullModelRange(), text: value}])`
                 }
-                monaco.editor.setModelMarkers(model, 'owner', (parsed.errors || []).map(e => ({
-                    message: e.message,
-                    severity: e.kind === 'error' ? monaco.MarkerSeverity.Error :
-                        e.kind === 'warning' ? monaco.MarkerSeverity.Warning :
-                            e.kind === 'info' ? monaco.MarkerSeverity.Info :
-                                monaco.MarkerSeverity.Hint,
-                    startLineNumber: e.position.start.line,
-                    startColumn: e.position.start.column,
-                    endLineNumber: e.position.end.line,
-                    endColumn: e.position.end.column + 1,
-                })))
+                monaco.editor.setModelMarkers(model, 'owner', (parsed.errors || []).map(aml.monaco.createMarker))
             }
 
             syncEditors()

@@ -628,9 +628,9 @@ comments
             // bad
             expect(parseRule(p => p.propertiesRule(), 'bad')).toEqual({errors: [
                 {name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> LCurly <-- but found --> 'bad' <--", ...tokenPosition(0, 2, 1, 1, 1, 3)},
-                {name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> RCurly <-- but found --> '' <--", ...tokenPosition(NaN, 0, 0, 0, 0, 0)},
+                {name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> RCurly <-- but found --> '' <--", ...tokenPosition(NaN, -1, -1, -1, -1, -1)},
             ]})
-            expect(parseRule(p => p.propertiesRule(), '{')).toEqual({errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> RCurly <-- but found --> '' <--", ...tokenPosition(NaN, 0, 0, 0, 0, 0)}]})
+            expect(parseRule(p => p.propertiesRule(), '{')).toEqual({errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> RCurly <-- but found --> '' <--", ...tokenPosition(NaN, -1, -1, -1, -1, -1)}]})
         })
         test('extraRule', () => {
             expect(parseRule(p => p.extraRule(), '')).toEqual({result: {}})

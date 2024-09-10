@@ -113,16 +113,17 @@ export interface CodeActionList {
     actions: readonly CodeAction[]
     dispose(): void
 }
+// cf https://microsoft.github.io/monaco-editor/typedoc/interfaces/languages.CodeAction.html
 export interface CodeAction {
-    command?: Command
+    title: string
+    kind?: 'quickfix' | string
     diagnostics?: IMarkerData[]
-    disabled?: string
     edit?: WorkspaceEdit
+    command?: Command
+    disabled?: string
     isAI?: boolean
     isPreferred?: boolean
-    kind?: string
     ranges?: IRange[]
-    title: string
 }
 export interface WorkspaceEdit {
     edits: (IWorkspaceFileEdit | IWorkspaceTextEdit)[]
@@ -149,10 +150,10 @@ export interface WorkspaceFileEditOptions {
     skipTrashBin?: boolean
 }
 export interface IWorkspaceTextEdit {
-    metadata?: WorkspaceEditMetadata
     resource: Uri
-    textEdit: TextEdit & { insertAsSnippet?: boolean }
     versionId: number
+    textEdit: TextEdit & { insertAsSnippet?: boolean }
+    metadata?: WorkspaceEditMetadata
 }
 export interface TextEdit {
     eol?: EndOfLineSequence
@@ -161,27 +162,27 @@ export interface TextEdit {
 }
 export enum EndOfLineSequence {CRLF = 1, LF = 0}
 export interface IMarkerData {
-    code?: string | { target: Uri; value: string }
-    endColumn: number
-    endLineNumber: number
     message: string
-    modelVersionId?: number
-    relatedInformation?: IRelatedInformation[]
     severity: MarkerSeverity
-    source?: string
-    startColumn: number
     startLineNumber: number
+    startColumn: number
+    endLineNumber: number
+    endColumn: number
+    modelVersionId?: number
+    code?: string | { target: Uri; value: string }
+    relatedInformation?: IRelatedInformation[]
+    source?: string
     tags?: MarkerTag[]
 }
 export enum MarkerSeverity {Error = 8, Hint = 1, Info = 2, Warning = 4}
 export enum MarkerTag {Deprecated = 2, Unnecessary = 1}
 export interface IRelatedInformation {
-    endColumn: number
-    endLineNumber: number
-    message: string
     resource: Uri
-    startColumn: number
+    message: string
     startLineNumber: number
+    startColumn: number
+    endLineNumber: number
+    endColumn: number
 }
 // cf https://microsoft.github.io/monaco-editor/typedoc/interfaces/languages.CodeLensProvider.html
 export interface CodeLensProvider {
@@ -207,6 +208,7 @@ export interface Command {
 // cf https://microsoft.github.io/monaco-editor/typedoc/interfaces/editor.ITextModel.html
 export interface ITextModel {
     id: string
+    uri: Uri
     createSnapshot(preserveBOM?: boolean): ITextSnapshot // get the text stored
     getLineContent(lineNumber: number): string
     getLineCount(): number

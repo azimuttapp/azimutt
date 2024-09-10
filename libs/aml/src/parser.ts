@@ -102,6 +102,8 @@ const legacyTokens: TokenType[] = [ForeignKey]
 // token order is important as they are tried in order, so the Identifier must be last
 const allTokens: TokenType[] = [WhiteSpace, NewLine, ...charTokens, ...keywordTokens, ...legacyTokens, ...valueTokens, Expression, Identifier, DocMultiline, Doc, Comment]
 
+const defaultPos: number = -1 // used when error position is undefined
+
 class AmlParser extends EmbeddedActionsParser {
     // common
     nullRule: () => NullToken
@@ -286,11 +288,12 @@ class AmlParser extends EmbeddedActionsParser {
             }, {
                 ALT: () => {
                     // legacy fallback
+                    if (!entity.schema) return removeUndefined({schema: entity.catalog, entity: entity.schema, attr: entity.entity}) // not finished, so no warning
                     const path = $.SUBRULE(legacyAttributePathRule)
-                    const v1 = `${entity.catalog ? entity.catalog.value + '.' : ''}${entity.schema?.value || 'entity'}.${entity.entity?.value || 'attribute'}${Array.isArray(path) ? path.map(p => ':' + p.value).join('') : ''}`
-                    const v2 = `${entity.catalog ? entity.catalog.value + '.' : ''}${entity.schema?.value || 'entity'}(${entity.entity?.value || 'attribute'}${Array.isArray(path) ? path.map(p => '.' + p.value).join('') : ''})`
+                    const v1 = `${entity.catalog ? entity.catalog.value + '.' : ''}${entity.schema.value}.${entity.entity.value}${path.map(p => ':' + p.value).join('')}`
+                    const v2 = `${entity.catalog ? entity.catalog.value + '.' : ''}${entity.schema.value}(${entity.entity.value}${path.map(p => '.' + p.value).join('')})`
                     const warning: TokenInfo = {
-                        ...mergePositions([entity.catalog, entity.schema, entity.entity, ...(Array.isArray(path) ? path : [])].filter(isNotUndefined)),
+                        ...mergePositions([entity.catalog, entity.schema, entity.entity, ...path].filter(isNotUndefined)),
                         issues: [legacyWarning(`"${v1}" is the legacy way, use "${v2}" instead`)]
                     }
                     return removeUndefined({schema: entity.catalog, entity: entity.schema, attr: removeEmpty({...entity.entity, path}), warning})
@@ -318,13 +321,12 @@ class AmlParser extends EmbeddedActionsParser {
             }, {
                 // legacy fallback
                 ALT: () => {
-                    // don't work :/ it try to consume even with schema :/
-                    // if (!entity.schema) { $.CONSUME(Dot) } // make the rule fail as it should have at least a `schema.entity` to be used as `entity.attr`
+                    if (!entity.schema) return removeUndefined({schema: entity.catalog, entity: entity.schema, attrs: [entity.entity]}) // not finished, so no warning
                     const path = $.SUBRULE(legacyAttributePathRule)
-                    const v1 = `${entity.catalog ? entity.catalog.value + '.' : ''}${entity.schema?.value || 'entity'}.${entity.entity?.value || 'attribute'}${Array.isArray(path) ? path.map(p => ':' + p.value).join('') : ''}`
-                    const v2 = `${entity.catalog ? entity.catalog.value + '.' : ''}${entity.schema?.value || 'entity'}(${entity.entity?.value || 'attribute'}${Array.isArray(path) ? path.map(p => '.' + p.value).join('') : ''})`
+                    const v1 = `${entity.catalog ? entity.catalog.value + '.' : ''}${entity.schema.value}.${entity.entity.value}${path.map(p => ':' + p.value).join('')}`
+                    const v2 = `${entity.catalog ? entity.catalog.value + '.' : ''}${entity.schema.value}(${entity.entity.value}${path.map(p => '.' + p.value).join('')})`
                     const warning: TokenInfo = {
-                        ...mergePositions([entity.catalog, entity.schema, entity.entity, ...(Array.isArray(path) ? path : [])].filter(isNotUndefined)),
+                        ...mergePositions([entity.catalog, entity.schema, entity.entity, ...path].filter(isNotUndefined)),
                         issues: [legacyWarning(`"${v1}" is the legacy way, use "${v2}" instead`)]
                     }
                     return removeUndefined({schema: entity.catalog, entity: entity.schema, attrs: [removeEmpty({...entity.entity, path})], warning})
@@ -620,8 +622,8 @@ function formatLexerError(err: ILexingError): ParserError {
         message: err.message,
         offset: {start: err.offset, end: err.offset + err.length},
         position: {
-            start: {line: err.line || 0, column: err.column || 0},
-            end: {line: err.line || 0, column: (err.column || 0) + err.length}
+            start: {line: err.line || defaultPos, column: err.column || defaultPos},
+            end: {line: err.line || defaultPos, column: (err.column || defaultPos) + err.length}
         }
     }
 }
@@ -644,10 +646,10 @@ export function legacyWarning(message: string): TokenIssue {
 
 function tokenPosition(token: IToken): TokenPosition {
     return {
-        offset: {start: token.startOffset, end: token.endOffset || 0},
+        offset: {start: token.startOffset, end: token.endOffset || defaultPos},
         position: {
-            start: {line: token.startLine || 0, column: token.startColumn || 0},
-            end: {line: token.endLine || 0, column: token.endColumn || 0}
+            start: {line: token.startLine || defaultPos, column: token.startColumn || defaultPos},
+            end: {line: token.endLine || defaultPos, column: token.endColumn || defaultPos}
         }
     }
 }

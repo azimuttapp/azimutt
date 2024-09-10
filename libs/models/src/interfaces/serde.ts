@@ -28,12 +28,22 @@ export const parserError = (name: string, kind: ParserErrorKind, message: string
     ({name, kind, message, ...tokenPosition(offsetStart, offsetEnd, positionStartLine, positionStartColumn, positionEndLine, positionEndColumn)})
 
 export const mergePositions = (positions: TokenPosition[]): TokenPosition => ({
-    offset: {start: Math.min(...positions.map(p => p.offset.start)), end: Math.max(...positions.map(p => p.offset.end))},
+    offset: {start: posStart(positions.map(p => p.offset.start)), end: posEnd(positions.map(p => p.offset.end))},
     position: {
-        start: {line: Math.min(...positions.map(p => p.position.start.line)), column: Math.min(...positions.map(p => p.position.start.column))},
-        end: {line: Math.max(...positions.map(p => p.position.end.line)), column: Math.max(...positions.map(p => p.position.end.column))}
+        start: {line: posStart(positions.map(p => p.position.start.line)), column: posStart(positions.map(p => p.position.start.column))},
+        end: {line: posEnd(positions.map(p => p.position.end.line)), column: posEnd(positions.map(p => p.position.end.column))}
     }
 })
+
+const posStart = (values: number[]): number => {
+    const valid = values.filter(n => n >= 0 && !isNaN(n) && isFinite(n))
+    return valid.length > 0 ? Math.min(...valid) : 0
+}
+
+const posEnd = (values: number[]): number => {
+    const valid = values.filter(n => n >= 0 && !isNaN(n) && isFinite(n))
+    return valid.length > 0 ? Math.max(...valid) : 0
+}
 
 export class ParserResult<T> {
     constructor(public result?: T, public errors?: ParserError[]) {
