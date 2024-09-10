@@ -109,7 +109,7 @@ export const codeAction = (opts: {} = {}): CodeActionProvider => ({ // quick-fix
     provideCodeActions(model: ITextModel, range: Range, context: CodeActionContext, token: CancellationToken): ProviderResult<CodeActionList> {
         if (context.trigger === CodeActionTriggerType.Invoke && context.only === 'quickfix') { // hover a marker
             const actions: CodeAction[] = context.markers.map(m => {
-                const [, prev, next] = m.message.match(/"([^"]+)".+legacy.+"([^"]+)"/) || []
+                const [, prev, next] = m.message.match(/"([^"]{1,100})".{1,100}legacy.{1,100}"([^"]{1,100})"/) || []
                 if (next) {
                     return {
                         title: `Replace by '${next}'`,
