@@ -3,7 +3,6 @@ defmodule AzimuttWeb.UserAuth do
   @moduledoc "base auth module generate by `mix phx.gen.auth`"
   import Plug.Conn
   import Phoenix.Controller
-  require Logger
   alias Azimutt.Accounts
   alias Azimutt.Accounts.UserAuthToken
   alias Azimutt.CleverCloud
@@ -253,11 +252,10 @@ defmodule AzimuttWeb.UserAuth do
   def fetch_clever_cloud_resource(conn, _opts) do
     conn = fetch_cookies(conn, signed: [@clever_cloud_cookie])
 
-    with(
-      {:ok, cookie} <- Result.from_nillable(conn.cookies[@clever_cloud_cookie]),
-      {:ok, %CleverCloud.Resource{} = resource} <- CleverCloud.get_resource(cookie.resource_id),
-      do: {:ok, conn |> assign(:clever_cloud, resource)}
-    )
+    with {:ok, cookie} <- Result.from_nillable(conn.cookies[@clever_cloud_cookie]),
+         {:ok, %CleverCloud.Resource{} = resource} <- CleverCloud.get_resource(cookie.resource_id) do
+      {:ok, conn |> assign(:clever_cloud, resource)}
+    end
     |> Result.or_else(conn)
   end
 

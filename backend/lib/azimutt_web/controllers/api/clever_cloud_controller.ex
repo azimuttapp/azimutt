@@ -1,7 +1,6 @@
 # Clever Cloud addon: https://www.clever-cloud.com/doc/extend/add-ons-api
 defmodule AzimuttWeb.Api.CleverCloudController do
   use AzimuttWeb, :controller
-  require Logger
   alias Azimutt.CleverCloud
   action_fallback AzimuttWeb.Api.FallbackController
 

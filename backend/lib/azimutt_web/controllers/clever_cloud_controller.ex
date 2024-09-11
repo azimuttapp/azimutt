@@ -1,7 +1,6 @@
 # Clever Cloud addon: https://www.clever-cloud.com/doc/extend/add-ons-api/#sso
 defmodule AzimuttWeb.CleverCloudController do
   use AzimuttWeb, :controller
-  require Logger
   alias Azimutt.Accounts
   alias Azimutt.CleverCloud
   alias Azimutt.Projects
