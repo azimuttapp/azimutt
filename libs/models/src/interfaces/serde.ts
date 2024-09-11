@@ -1,4 +1,4 @@
-import {isObject} from "@azimutt/utils";
+import {isNotUndefined, isObject} from "@azimutt/utils";
 import {Database} from "../database";
 
 // every serde should implement this interface
@@ -27,13 +27,16 @@ export const tokenPosition = (offsetStart: number, offsetEnd: number, positionSt
 export const parserError = (name: string, kind: ParserErrorKind, message: string, offsetStart: number, offsetEnd: number, positionStartLine: number, positionStartColumn: number, positionEndLine: number, positionEndColumn: number): ParserError =>
     ({name, kind, message, ...tokenPosition(offsetStart, offsetEnd, positionStartLine, positionStartColumn, positionEndLine, positionEndColumn)})
 
-export const mergePositions = (positions: TokenPosition[]): TokenPosition => ({
-    offset: {start: posStart(positions.map(p => p.offset.start)), end: posEnd(positions.map(p => p.offset.end))},
-    position: {
-        start: {line: posStart(positions.map(p => p.position.start.line)), column: posStart(positions.map(p => p.position.start.column))},
-        end: {line: posEnd(positions.map(p => p.position.end.line)), column: posEnd(positions.map(p => p.position.end.column))}
-    }
-})
+export const mergePositions = (positions: (TokenPosition | undefined)[]): TokenPosition => {
+    const pos: TokenPosition[] = positions.filter(isNotUndefined)
+    return ({
+        offset: {start: posStart(pos.map(p => p.offset.start)), end: posEnd(pos.map(p => p.offset.end))},
+        position: {
+            start: {line: posStart(pos.map(p => p.position.start.line)), column: posStart(pos.map(p => p.position.start.column))},
+            end: {line: posEnd(pos.map(p => p.position.end.line)), column: posEnd(pos.map(p => p.position.end.column))}
+        }
+    })
+}
 
 const posStart = (values: number[]): number => {
     const valid = values.filter(n => n >= 0 && !isNaN(n) && isFinite(n))

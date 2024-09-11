@@ -18,14 +18,24 @@ import {
     Database,
     Entity,
     EntityRef,
+    entityRefSame,
+    entityToId,
+    entityToRef,
     Extra,
     Index,
+    mergePositions,
     Namespace,
     ParserError,
     ParserResult,
     Relation,
     RelationKind,
-    Type
+    relationRefSame,
+    relationToId,
+    relationToRef,
+    Type,
+    typeRefSame,
+    typeToId,
+    typeToRef
 } from "@azimutt/models";
 import {version} from "../package.json"
 import {
@@ -35,32 +45,33 @@ import {
     AttributeRefCompositeAst,
     AttributeRelationAst,
     AttributeValueAst,
-    EntityAst,
     EntityRefAst,
+    EntityStatement,
     ExtraAst,
     isTokenInfo,
-    NamespaceAst,
-    RelationAst,
+    NamespaceStatement,
     RelationKindAst,
     RelationPolymorphicAst,
-    TypeAst,
-    TypeContentAst
+    RelationStatement,
+    TypeContentAst,
+    TypeStatement
 } from "./ast";
 import {parseAmlAst} from "./parser";
+import {duplicated} from "./errors";
 
 export function parseAml(content: string): ParserResult<Database> {
     const start = Date.now()
-    return parseAmlAst(content + '\n').flatMap(ast => {
+    return parseAmlAst(content.trimEnd() + '\n'/* TODO , {strict: false}*/).flatMap(ast => {
         const parsed = Date.now()
-        const errors: ParserError[] = []
+        const astErrors: ParserError[] = []
         mapEntriesDeep(ast, (path, value) => {
             if (isTokenInfo(value) && value.issues) {
-                value.issues.forEach(i => errors.push({...i, offset: value.offset, position: value.position}))
+                value.issues.forEach(i => astErrors.push({...i, offset: value.offset, position: value.position}))
             }
             return value
         })
-        const db = buildDatabase(ast, start, parsed)
-        return new ParserResult(db, errors.sort((a, b) => a.offset.start - b.offset.start))
+        const {db, errors: dbErrors} = buildDatabase(ast, start, parsed)
+        return new ParserResult(db, astErrors.concat(dbErrors).sort((a, b) => a.offset.start - b.offset.start))
     })
 }
 
@@ -72,8 +83,9 @@ export function generateAml(database: Database): string {
 
 const defaultType = 'unknown'
 
-function buildDatabase(ast: AmlAst, start: number, parsed: number): Database {
+function buildDatabase(ast: AmlAst, start: number, parsed: number): {db: Database, errors: ParserError[]} {
     const db: Database = {entities: [], relations: [], types: []}
+    const errors: ParserError[] = []
     let namespace: Namespace = {}
     ast.filter(s => s !== undefined && s.statement !== 'Empty').forEach((stmt, i) => { // `s` can be undefined on invalid input :/
         const index = i + 1
@@ -81,21 +93,56 @@ function buildDatabase(ast: AmlAst, start: number, parsed: number): Database {
             namespace = buildNamespace(index, stmt, namespace)
         } else if (stmt.statement === 'Entity') {
             const {entity, relations, types} = buildEntity(index, stmt, namespace)
-            db.entities?.push(entity) // TODO: check if entity already exists
+            const prev = db.entities?.find(e => entityRefSame(entityToRef(e), entityToRef(entity))) // TODO: filter: get all the previous ones
+            if (prev) {
+                errors.push(duplicated(
+                    `Entity ${entityToId(entity)}`,
+                    typeof prev.extra === 'object' && 'line' in prev.extra && typeof prev.extra.line === 'number' ? prev.extra.line : undefined,
+                    mergePositions([stmt.database, stmt.catalog, stmt.schema, stmt.name])
+                ))
+                // TODO: merge entities
+            } else {
+                db.entities?.push(entity)
+            }
             relations.forEach(r => db.relations?.push(r))
             types.forEach(t => db.types?.push(t))
         } else if (stmt.statement === 'Relation') {
             const rel = buildRelationStatement(index, stmt)
-            rel && db.relations?.push(rel) // TODO: check if relation already exists
+            if (rel) {
+                const prev = db.relations?.find(r => relationRefSame(relationToRef(r), relationToRef(rel))) // TODO: filter: get all the previous ones
+                if (prev && !prev.polymorphic) {
+                    errors.push(duplicated(
+                        `Relation ${relationToId(rel)}`,
+                        typeof prev.extra === 'object' && 'line' in prev.extra && typeof prev.extra.line === 'number' ? prev.extra.line : undefined,
+                        mergePositions([stmt.src.database, stmt.src.catalog, stmt.src.schema, stmt.src.entity, ...stmt.ref.attrs])
+                    ))
+                    // TODO: merge relations (extra)? add duplicates?
+                } else {
+                    db.relations?.push(rel) // TODO: check if relation already exists
+                }
+            } else {
+                // TODO: warning: ignored relation (should return the cause)
+            }
         } else if (stmt.statement === 'Type') {
-            db.types?.push(buildType(index, stmt, namespace)) // TODO: check if relation already exists
+            const type = buildType(index, stmt, namespace)
+            const prev = db.types?.find(t => typeRefSame(typeToRef(t), typeToRef(type))) // TODO: filter: get all the previous ones
+            if (prev) {
+                errors.push(duplicated(
+                    `Type ${typeToId(type)}`,
+                    typeof prev.extra === 'object' && 'line' in prev.extra && typeof prev.extra.line === 'number' ? prev.extra.line : undefined,
+                    mergePositions([stmt.database, stmt.catalog, stmt.schema, stmt.name])
+                ))
+                // TODO: merge types? add duplicates?
+            } else {
+                db.types?.push(type)
+            }
         } else {
             // Empty: do nothing
         }
     })
     const done = Date.now()
     const extra = {source: `AML parser ${version}`, parsedAt: new Date().toISOString(), parsingMs: parsed - start, formattingMs: done - parsed}
-    return removeEmpty({...db, extra})
+    return {db: removeEmpty({...db, extra}), errors}
 }
 
 function genDatabase(database: Database): string {
@@ -126,14 +173,14 @@ function genDatabase(database: Database): string {
     return entities.concat(relations, types).sort((a, b) => a.index - b.index).map(a => a.aml).join('\n') || ''
 }
 
-function buildNamespace(statement: number, n: NamespaceAst, current: Namespace): Namespace {
+function buildNamespace(statement: number, n: NamespaceStatement, current: Namespace): Namespace {
     const schema = n.schema.value
     const catalog = n.catalog?.value || current.catalog
     const database = n.database?.value || current.database
     return {schema, catalog, database}
 }
 
-function buildEntity(statement: number, e: EntityAst, namespace: Namespace): { entity: Entity, relations: Relation[], types: Type[] } {
+function buildEntity(statement: number, e: EntityStatement, namespace: Namespace): { entity: Entity, relations: Relation[], types: Type[] } {
     const astNamespace = removeUndefined({schema: e.schema?.value, catalog: e.catalog?.value, database: e.database?.value})
     const entityNamespace = {...namespace, ...astNamespace}
     const validAttrs = (e.attrs || []).filter(a => !a.path.some(p => p === undefined)) // `path` can be `[undefined]` on invalid input :/
@@ -158,7 +205,7 @@ function buildEntity(statement: number, e: EntityAst, namespace: Namespace): { e
             checks: checks,
             doc: e.doc?.value,
             stats: undefined,
-            extra: removeEmpty({statement, comment: e.comment?.value})
+            extra: removeEmpty({statement, line: e.name.position.start.line, comment: e.comment?.value})
         }),
         relations: attrs.flatMap(a => a.relations),
         types: attrs.flatMap(a => a.types),
@@ -236,16 +283,16 @@ function genAttributeType(a: Attribute, types: Type[]): string {
     return typeName ? typeName + enumValues + defaultValue : ''
 }
 
-function buildRelationStatement(statement: number, r: RelationAst): Relation | undefined {
+function buildRelationStatement(statement: number, r: RelationStatement): Relation | undefined {
     const entitySrc = buildEntityRef(r.src)
-    return entitySrc ? buildRelation(statement, r.kind, entitySrc, r.src.attrs.map(buildAttrPath), r.ref, r.polymorphic, r) : undefined
+    return entitySrc ? buildRelation(statement, r.src.entity.position.start.line, r.kind, entitySrc, r.src.attrs.map(buildAttrPath), r.ref, r.polymorphic, r) : undefined
 }
 
 function buildRelationAttribute(statement: number, r: AttributeRelationAst, srcEntity: EntityRef, srcAttrs: AttributePath[]): Relation | undefined {
-    return buildRelation(statement, r.kind, srcEntity, srcAttrs, r.ref, r.polymorphic, undefined)
+    return buildRelation(statement, r.ref.entity?.position.start.line, r.kind, srcEntity, srcAttrs, r.ref, r.polymorphic, undefined)
 }
 
-function buildRelation(statement: number, kind: RelationKindAst | undefined, srcEntity: EntityRef, srcAttrs: AttributePath[], ref: AttributeRefCompositeAst, polymorphic: RelationPolymorphicAst | undefined, extra: ExtraAst | undefined): Relation | undefined {
+function buildRelation(statement: number, line: number, kind: RelationKindAst | undefined, srcEntity: EntityRef, srcAttrs: AttributePath[], ref: AttributeRefCompositeAst, polymorphic: RelationPolymorphicAst | undefined, extra: ExtraAst | undefined): Relation | undefined {
     if (!ref || !ref.attrs || ref.attrs.some(a => a.value === undefined)) return undefined // `ref` can be undefined or with undefined attrs on invalid input :/ TODO: report an error instead of just ignoring?
     const refAttrs: AttributePath[] = ref.attrs.map(buildAttrPath)
     const entityRef = buildEntityRef(ref)
@@ -258,7 +305,7 @@ function buildRelation(statement: number, kind: RelationKindAst | undefined, src
         attrs: zip(srcAttrs, refAttrs).map(([srcAttr, refAttr]) => ({src: srcAttr, ref: refAttr})),
         polymorphic: polymorphic ? {attribute: buildAttrPath(polymorphic.attr), value: buildAttrValue(polymorphic.value)} : undefined,
         doc: extra?.doc?.value,
-        extra: removeEmpty({statement, comment: extra?.comment?.value}),
+        extra: removeEmpty({statement, line, comment: extra?.comment?.value}),
     }) : undefined
 }
 
@@ -274,7 +321,7 @@ function genRelationTarget(r: Relation): string {
     return `${aFirst}${poly}${aSecond} ${genAttributeRef(r.ref, r.attrs.map(a => a.ref))}`
 }
 
-function buildType(statement: number, t: TypeAst, namespace: Namespace): Type {
+function buildType(statement: number, t: TypeStatement, namespace: Namespace): Type {
     const astNamespace = removeUndefined({schema: t.schema?.value, catalog: t.catalog?.value, database: t.database?.value})
     const typeNamespace = {...namespace, ...astNamespace}
     const content = t.content ? buildTypeContent(statement, t.content, {...typeNamespace, entity: t.name.value}) : {}

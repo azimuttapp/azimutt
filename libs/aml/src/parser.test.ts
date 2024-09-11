@@ -2,7 +2,8 @@ import {describe, expect, test} from "@jest/globals";
 import {removeFieldsDeep} from "@azimutt/utils";
 import {tokenPosition} from "@azimutt/models";
 import {AttributeRelationAst} from "./ast";
-import {legacyWarning, nestAttributes, parseAmlAst, parseRule} from "./parser";
+import {nestAttributes, parseAmlAst, parseRule} from "./parser";
+import {legacy} from "./errors";
 
 describe('aml parser', () => {
     test('empty', () => {
@@ -531,9 +532,9 @@ comments
                 ref: {
                     entity: {token: 'Identifier', value: 'users', ...tokenPosition(13, 17, 1, 14, 1, 18)},
                     attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(19, 20, 1, 20, 1, 21)}],
-                    warning: {...tokenPosition(13, 20, 1, 14, 1, 21), issues: [legacyWarning('"users.id" is the legacy way, use "users(id)" instead')]}
+                    warning: {...tokenPosition(13, 20, 1, 14, 1, 21), issues: [legacy('"users.id" is the legacy way, use "users(id)" instead')]}
                 },
-                warning: {...tokenPosition(10, 11, 1, 11, 1, 12), issues: [legacyWarning('"fk" is legacy, replace it with "->"')]}
+                warning: {...tokenPosition(10, 11, 1, 11, 1, 12), issues: [legacy('"fk" is legacy, replace it with "->"')]}
             })
             expect(removeFieldsDeep(v1, ['warning'])).toEqual(v2)
         })
@@ -546,14 +547,14 @@ comments
                 src: {
                     entity: {token: 'Identifier', value: 'groups', ...tokenPosition(3, 8, 1, 4, 1, 9)},
                     attrs: [{token: 'Identifier', value: 'owner', ...tokenPosition(10, 14, 1, 11, 1, 15)}],
-                    warning: {...tokenPosition(3, 14, 1, 4, 1, 15), issues: [legacyWarning('"groups.owner" is the legacy way, use "groups(owner)" instead')]}
+                    warning: {...tokenPosition(3, 14, 1, 4, 1, 15), issues: [legacy('"groups.owner" is the legacy way, use "groups(owner)" instead')]}
                 },
                 ref: {
                     entity: {token: 'Identifier', value: 'users', ...tokenPosition(19, 23, 1, 20, 1, 24)},
                     attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(25, 26, 1, 26, 1, 27)}],
-                    warning: {...tokenPosition(19, 26, 1, 20, 1, 27), issues: [legacyWarning('"users.id" is the legacy way, use "users(id)" instead')]}
+                    warning: {...tokenPosition(19, 26, 1, 20, 1, 27), issues: [legacy('"users.id" is the legacy way, use "users(id)" instead')]}
                 },
-                warning: {...tokenPosition(0, 1, 1, 1, 1, 2), issues: [legacyWarning('"fk" is legacy, replace it with "rel"')]}
+                warning: {...tokenPosition(0, 1, 1, 1, 1, 2), issues: [legacy('"fk" is legacy, replace it with "rel"')]}
             }})
             expect(removeFieldsDeep(v1, ['offset', 'position', 'warning'])).toEqual(removeFieldsDeep(v2, ['offset', 'position']))
         })
@@ -563,7 +564,7 @@ comments
             expect(v1).toEqual({result: {
                 entity: {token: 'Identifier', value: 'users', ...tokenPosition(0, 4, 1, 1, 1, 5)},
                 attr: {token: 'Identifier', value: 'settings', ...tokenPosition(6, 13, 1, 7, 1, 14), path: [{token: 'Identifier', value: 'github', ...tokenPosition(15, 20, 1, 16, 1, 21)}]},
-                warning: {...tokenPosition(0, 20, 1, 1, 1, 21), issues: [legacyWarning('"users.settings:github" is the legacy way, use "users(settings.github)" instead')]}
+                warning: {...tokenPosition(0, 20, 1, 1, 1, 21), issues: [legacy('"users.settings:github" is the legacy way, use "users(settings.github)" instead')]}
             }})
             expect(removeFieldsDeep(v1, ['warning'])).toEqual(v2)
         })
@@ -573,16 +574,30 @@ comments
             expect(v1).toEqual({result: {
                 entity: {token: 'Identifier', value: 'users', ...tokenPosition(0, 4, 1, 1, 1, 5)},
                 attrs: [{token: 'Identifier', value: 'settings', ...tokenPosition(6, 13, 1, 7, 1, 14), path: [{token: 'Identifier', value: 'github', ...tokenPosition(15, 20, 1, 16, 1, 21)}]}],
-                warning: {...tokenPosition(0, 20, 1, 1, 1, 21), issues: [legacyWarning('"users.settings:github" is the legacy way, use "users(settings.github)" instead')]},
+                warning: {...tokenPosition(0, 20, 1, 1, 1, 21), issues: [legacy('"users.settings:github" is the legacy way, use "users(settings.github)" instead')]},
             }})
             expect(removeFieldsDeep(v1, ['warning'])).toEqual(v2)
         })
         test('properties', () => {
             expect(parseRule(p => p.propertiesRule(), '{color=red}')).toEqual({result: [{
                 key: {token: 'Identifier', value: 'color', ...tokenPosition(1, 5, 1, 2, 1, 6)},
-                sep: {...tokenPosition(6, 6, 1, 7, 1, 7), issues: [legacyWarning('"=" is legacy, replace it with ":"')]},
+                sep: {...tokenPosition(6, 6, 1, 7, 1, 7), issues: [legacy('"=" is legacy, replace it with ":"')]},
                 value: {token: 'Identifier', value: 'red', ...tokenPosition(7, 9, 1, 8, 1, 10)},
             }]})
+        })
+        test('check identifier', () => {
+            const v1 = parseRule(p => p.attributeRule(), '  age int check="age > 0"\n').result
+            const v2 = parseRule(p => p.attributeRule(), '  age int check=`age > 0`\n').result
+            expect(v1).toEqual({
+                nesting: 0,
+                name: {value: 'age', token: 'Identifier', ...tokenPosition(2, 4, 1, 3, 1, 5)},
+                type: {value: 'int', token: 'Identifier', ...tokenPosition(6, 8, 1, 7, 1, 9)},
+                check: {
+                    keyword: tokenPosition(10, 14, 1, 11, 1, 15),
+                    definition: {value: 'age > 0', token: 'Expression', ...tokenPosition(16, 24, 1, 17, 1, 25), issues: [legacy('"age > 0" is the legacy way, use expression "`age > 0`" instead')]},
+                },
+            })
+            expect(removeFieldsDeep(v1, ['issues'])).toEqual(v2)
         })
     })
     describe('common', () => {
@@ -761,9 +776,6 @@ comments
         })
         test('tokenPosition has expected structure', () => {
             expect(tokenPosition(1, 2, 3, 4, 5, 6)).toEqual({offset: {start: 1, end: 2}, position: {start: {line: 3, column: 4}, end: {line: 5, column: 6}}})
-        })
-        test('legacyWarning has expected structure', () => {
-            expect(legacyWarning('error')).toEqual({name: 'LegacyWarning', kind: 'warning', message: 'error'})
         })
     })
 })

@@ -2,6 +2,7 @@ import * as fs from "fs";
 import {describe, expect, test} from "@jest/globals";
 import {Database, ParserResult, tokenPosition} from "@azimutt/models";
 import {generateAml, parseAml} from "./aml";
+import {duplicated, legacy} from "./errors";
 
 describe('aml', () => {
     // TODO: add comment only lines
@@ -66,7 +67,7 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                 pk: {attrs: [['id']]},
                 indexes: [{name: 'address', attrs: [['settings', 'address', 'city'], ['settings', 'address', 'country']]}],
                 doc: 'list\nall users',
-                extra: {statement: 1}
+                extra: {statement: 1, line: 2}
             }, {
                 name: 'posts',
                 kind: 'view',
@@ -80,11 +81,11 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                 indexes: [{attrs: [['title']]}],
                 checks: [{attrs: [['author']], predicate: 'author > 0'}],
                 doc: 'all posts',
-                extra: {statement: 2, comment: 'an other entity'}
+                extra: {statement: 2, line: 22, comment: 'an other entity'}
             }],
             relations: [
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {statement: 2}},
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}], doc: 'standalone relation', extra: {statement: 3}},
+                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {statement: 2, line: 25}},
+                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}], doc: 'standalone relation', extra: {statement: 3, line: 28}},
             ],
             types: [
                 {name: 'user_role', values: ['admin', 'guest'], extra: {statement: 1, line: 8}},
@@ -121,9 +122,9 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
         expect(parseLegacyAml(`a bad schema`)).toEqual({
             result: {
                 entities: [
-                    {name: 'a', extra: {statement: 1}},
-                    {name: 'bad', extra: {statement: 2}},
-                    {name: 'schema', extra: {statement: 3}},
+                    {name: 'a', extra: {statement: 1, line: 1}},
+                    {name: 'bad', extra: {statement: 2, line: 1}},
+                    {name: 'schema', extra: {statement: 3, line: 1}},
                 ],
                 extra: {}
             },
@@ -134,42 +135,85 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
         })
     })
 
+    // check issues are reported
+    describe('warnings', () => {
+        test('duplicate entity', () => {
+            expect(parseAml(`
+public.users
+  id uuid pk
+  name varchar
+
+public.users
+  id uuid pk
+  name varchar`).errors).toEqual([duplicated('Entity public.users', 2, tokenPosition(43, 54, 6, 1, 6, 12))])
+
+            expect(parseAml(`
+public.users
+  id uuid pk
+  name varchar
+
+namespace public
+
+users
+  id uuid pk
+  name varchar`).errors).toEqual([duplicated('Entity public.users', 2, tokenPosition(61, 65, 8, 1, 8, 5))])
+        })
+        test('duplicate relation', () => {
+            expect(parseAml(`
+posts
+  id uuid pk
+  author uuid -> users(id)
+
+rel posts(author) -> users(id)
+`).errors).toEqual([duplicated('Relation posts(author)->users(id)', 4, tokenPosition(52, 76, 6, 5, 6, 29))])
+        })
+        test('duplicate type', () => {
+            expect(parseAml(`
+public.posts
+  id uuid pk
+  status status(draft, published)
+
+type public.status (pending, wip, done)
+`).errors).toEqual([duplicated('Type public.status', 4, tokenPosition(67, 79, 6, 6, 6, 18))])
+        })
+    })
+
     // make sure the parser don't fail on invalid input
     describe('errors', () => {
         test('attribute relation', () => {
             expect(parseLegacyAml('posts\n  author int\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1}}], extra: {}}
+                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], extra: {}}
             })
             expect(parseLegacyAml('posts\n  author int -\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1}}], extra: {}},
+                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], extra: {}},
                 errors: [{name: 'NoViableAltException', kind: 'error', message: "Expecting: one of these possible Token sequences:\n  1. [Dash]\n  2. [LowerThan]\n  3. [GreaterThan]\nbut found: '\n'", ...tokenPosition(20, 20, 2, 15, 2, 15)}]
             })
             expect(parseLegacyAml('posts\n  author int ->\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1}}], extra: {}},
+                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], extra: {}},
                 errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Identifier <-- but found --> '\n' <--", ...tokenPosition(21, 21, 2, 16, 2, 16)}]
             })
             expect(parseLegacyAml('posts\n  author int -> users\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1}}], extra: {}},
+                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], extra: {}},
                 // TODO: an error should be reported here
             })
             expect(parseLegacyAml('posts\n  author int -> users(\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1}}], extra: {}},
+                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], extra: {}},
                 errors: [{name: 'EarlyExitException', kind: 'error', message: "Expecting: expecting at least one iteration which starts with one of these possible Token sequences::\n  <[WhiteSpace] ,[Identifier]>\nbut found: '\n'", ...tokenPosition(28, 28, 2, 23, 2, 23)}]
             })
             expect(parseLegacyAml('posts\n  author int -> users(id\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ["author"], ref: ["id"]}], extra: {statement: 1}}], extra: {}},
+                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ["author"], ref: ["id"]}], extra: {statement: 1, line: 2}}], extra: {}},
                 errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> RParen <-- but found --> '\n' <--", ...tokenPosition(30, 30, 2, 25, 2, 25)}]
             })
             expect(parseLegacyAml('posts\n  author int -> users(id)\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ["author"], ref: ["id"]}], extra: {statement: 1}}], extra: {}},
+                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ["author"], ref: ["id"]}], extra: {statement: 1, line: 2}}], extra: {}},
             })
 
             expect(parseLegacyAml('posts\n  author int - users(id)\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ["author"], ref: ["id"]}], extra: {statement: 1}}], extra: {}},
+                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ["author"], ref: ["id"]}], extra: {statement: 1, line: 2}}], extra: {}},
                 errors: [{name: 'NoViableAltException', kind: 'error', message: "Expecting: one of these possible Token sequences:\n  1. [Dash]\n  2. [LowerThan]\n  3. [GreaterThan]\nbut found: ' '", ...tokenPosition(20, 20, 2, 15, 2, 15)}]
             })
             expect(parseLegacyAml('posts\n  author int  users(id)\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1}}, {name: 'id', extra: {statement: 2}}], extra: {}},
+                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}, {name: 'id', extra: {statement: 2, line: 2}}], extra: {}},
                 // TODO handle error better to not generate a fake entity (id)
                 errors: [
                     {name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> NewLine <-- but found --> 'users' <--", ...tokenPosition(20, 24, 2, 15, 2, 19)},
@@ -180,37 +224,37 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
         })
         test('attribute relation legacy', () => {
             expect(parseLegacyAml('posts\n  author int\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1}}], extra: {}}
+                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], extra: {}}
             })
             expect(parseLegacyAml('posts\n  author int f\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1}}, {name: 'f', extra: {statement: 2}}], extra: {}},
+                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}, {name: 'f', extra: {statement: 2, line: 2}}], extra: {}},
                 errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> NewLine <-- but found --> 'f' <--", ...tokenPosition(19, 19, 2, 14, 2, 14)}]
             })
             expect(parseLegacyAml('posts\n  author int fk\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1}}], extra: {}},
+                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], extra: {}},
                 errors: [
                     {name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Identifier <-- but found --> '\n' <--", ...tokenPosition(21, 21, 2, 16, 2, 16)},
-                    {name: 'LegacyWarning', kind: 'warning', message: '"fk" is legacy, replace it with "->"', ...tokenPosition(19, 20, 2, 14, 2, 15)}
+                    {...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(19, 20, 2, 14, 2, 15)},
                 ]
             })
             expect(parseLegacyAml('posts\n  author int fk users\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1}}], extra: {}},
+                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], extra: {}},
                 // TODO: an error should be reported here
-                errors: [{name: 'LegacyWarning', kind: 'warning', message: '"fk" is legacy, replace it with "->"', ...tokenPosition(19, 20, 2, 14, 2, 15)}]
+                errors: [{...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(19, 20, 2, 14, 2, 15)}]
             })
             expect(parseLegacyAml('posts\n  author int fk users.\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1}}], extra: {}},
+                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], extra: {}},
                 errors: [
                     {name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Identifier <-- but found --> '\n' <--", ...tokenPosition(28, 28, 2, 23, 2, 23)},
-                    {name: 'LegacyWarning', kind: 'warning', message: '"fk" is legacy, replace it with "->"', ...tokenPosition(19, 20, 2, 14, 2, 15)},
-                    {name: 'LegacyWarning', kind: 'warning', message: '"users." is the legacy way, use "users()" instead', ...tokenPosition(22, 26, 2, 17, 2, 21)},
+                    {...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(19, 20, 2, 14, 2, 15)},
+                    {...legacy('"users." is the legacy way, use "users()" instead'), ...tokenPosition(22, 26, 2, 17, 2, 21)},
                 ]
             })
             expect(parseLegacyAml('posts\n  author int fk users.id\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {statement: 1}}], extra: {}},
+                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {statement: 1, line: 2}}], extra: {}},
                 errors: [
-                    {name: 'LegacyWarning', kind: 'warning', message: '"fk" is legacy, replace it with "->"', ...tokenPosition(19, 20, 2, 14, 2, 15)},
-                    {name: 'LegacyWarning', kind: 'warning', message: '"users.id" is the legacy way, use "users(id)" instead', ...tokenPosition(22, 29, 2, 17, 2, 24)},
+                    {...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(19, 20, 2, 14, 2, 15)},
+                    {...legacy('"users.id" is the legacy way, use "users(id)" instead'), ...tokenPosition(22, 29, 2, 17, 2, 24)},
                 ]
             })
         })
@@ -278,7 +322,7 @@ talks
                             {name: 'name', type: 'varchar(12)'},
                             {name: 'role', type: 'user_role'},
                         ],
-                        extra: {statement: 1}
+                        extra: {statement: 1, line: 2}
                     }, {
                         name: 'talks',
                         attrs: [
@@ -286,10 +330,10 @@ talks
                             {name: 'title', type: 'varchar(140)'},
                             {name: 'speaker', type: 'int'},
                         ],
-                        extra: {statement: 2}
+                        extra: {statement: 2, line: 7}
                     }],
                     relations: [
-                        {src: {entity: 'talks'}, ref: {entity: 'users'}, attrs: [{src: ['speaker'], ref: ['id']}], extra: {statement: 2}}
+                        {src: {entity: 'talks'}, ref: {entity: 'users'}, attrs: [{src: ['speaker'], ref: ['id']}], extra: {statement: 2, line: 10}}
                     ],
                     types: [
                         {name: 'user_role', values: ['admin', 'guest'], extra: {statement: 1, line: 5}}
@@ -297,8 +341,8 @@ talks
                     extra: {}
                 },
                 errors: [
-                    {name: 'LegacyWarning', kind: 'warning', message: '"fk" is legacy, replace it with "->"', ...tokenPosition(117, 118, 10, 15, 10, 16)},
-                    {name: 'LegacyWarning', kind: 'warning', message: '"users.id" is the legacy way, use "users(id)" instead', ...tokenPosition(120, 127, 10, 18, 10, 25)},
+                    {...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(117, 118, 10, 15, 10, 16)},
+                    {...legacy('"users.id" is the legacy way, use "users(id)" instead'), ...tokenPosition(120, 127, 10, 18, 10, 25)},
                 ]
             })
         })
@@ -316,7 +360,7 @@ public.users {color=red, top=10, left=20} | Table description # a table with eve
   score "double precision"=0.0 index {hidden} | User progression # a column with almost all possible attributes
   first_name varchar(10) unique=name
   last_name varchar(10) unique=name
-  email varchar nullable fk emails.email
+  email varchar nullable check="email LIKE '%@%'" fk emails.email
 
 admins* | View of \`users\` table with only admins
   id
@@ -332,7 +376,7 @@ fk admins.id -> users.id
                             {name: "email", type: "varchar"},
                             {name: "score", type: "double precision"},
                         ],
-                        extra: {statement: 1}
+                        extra: {statement: 1, line: 3}
                     }, {
                         schema: "public",
                         name: "users",
@@ -346,8 +390,9 @@ fk admins.id -> users.id
                         ],
                         pk: {attrs: [['id']]},
                         indexes: [{name: 'name', attrs: [['first_name'], ['last_name']], unique: true}, {attrs: [['score']]}],
+                        checks: [{attrs: [['email']], predicate: "email LIKE '%@%'"}],
                         doc: 'Table description',
-                        extra: {statement: 2, comment: 'a table with everything!'}
+                        extra: {statement: 2, line: 8, comment: 'a table with everything!'}
                     }, {
                         name: 'admins',
                         kind: 'view',
@@ -356,35 +401,81 @@ fk admins.id -> users.id
                             {name: 'name', type: 'unknown', doc: 'Computed from user first_name and last_name'},
                         ],
                         doc: 'View of `users` table with only admins',
-                        extra: {statement: 3}
+                        extra: {statement: 3, line: 16}
                     }],
                     relations: [
-                        {src: {schema: 'public', entity: 'users'}, ref: {entity: 'emails'}, attrs: [{src: ['email'], ref: ['email']}], extra: {statement: 2}},
-                        {src: {entity: 'admins'}, ref: {entity: 'users'}, attrs: [{src: ['id'], ref: ['id']}], extra: {statement: 4}},
+                        {src: {schema: 'public', entity: 'users'}, ref: {entity: 'emails'}, attrs: [{src: ['email'], ref: ['email']}], extra: {statement: 2, line: 14}},
+                        {src: {entity: 'admins'}, ref: {entity: 'users'}, attrs: [{src: ['id'], ref: ['id']}], extra: {statement: 4, line: 20}},
                     ],
                     extra: {}
                 },
                 errors: [
-                    {name: 'LegacyWarning', kind: 'warning', message: '"=" is legacy, replace it with ":"', ...tokenPosition(113, 113, 8, 20, 8, 20)},
-                    {name: 'LegacyWarning', kind: 'warning', message: '"=" is legacy, replace it with ":"', ...tokenPosition(122, 122, 8, 29, 8, 29)},
-                    {name: 'LegacyWarning', kind: 'warning', message: '"=" is legacy, replace it with ":"', ...tokenPosition(131, 131, 8, 38, 8, 38)},
-                    {name: 'LegacyWarning', kind: 'warning', message: '"fk" is legacy, replace it with "->"', ...tokenPosition(435, 436, 14, 26, 14, 27)},
-                    {name: 'LegacyWarning', kind: 'warning', message: '"emails.email" is the legacy way, use "emails(email)" instead', ...tokenPosition(438, 449, 14, 29, 14, 40)},
-                    {name: 'LegacyWarning', kind: 'warning', message: '"fk" is legacy, replace it with "rel"', ...tokenPosition(560, 561, 20, 1, 20, 2)},
-                    {name: 'LegacyWarning', kind: 'warning', message: '"admins.id" is the legacy way, use "admins(id)" instead', ...tokenPosition(563, 571, 20, 4, 20, 12)},
-                    {name: 'LegacyWarning', kind: 'warning', message: '"users.id" is the legacy way, use "users(id)" instead', ...tokenPosition(576, 583, 20, 17, 20, 24)},
+                    {...legacy('"=" is legacy, replace it with ":"'), ...tokenPosition(113, 113, 8, 20, 8, 20)},
+                    {...legacy('"=" is legacy, replace it with ":"'), ...tokenPosition(122, 122, 8, 29, 8, 29)},
+                    {...legacy('"=" is legacy, replace it with ":"'), ...tokenPosition(131, 131, 8, 38, 8, 38)},
+                    {...legacy('"email LIKE \'%@%\'" is the legacy way, use expression "`email LIKE \'%@%\'`" instead'), ...tokenPosition(441, 458, 14, 32, 14, 49)},
+                    {...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(460, 461, 14, 51, 14, 52)},
+                    {...legacy('"emails.email" is the legacy way, use "emails(email)" instead'), ...tokenPosition(463, 474, 14, 54, 14, 65)},
+                    {...legacy('"fk" is legacy, replace it with "rel"'), ...tokenPosition(585, 586, 20, 1, 20, 2)},
+                    {...legacy('"admins.id" is the legacy way, use "admins(id)" instead'), ...tokenPosition(588, 596, 20, 4, 20, 12)},
+                    {...legacy('"users.id" is the legacy way, use "users(id)" instead'), ...tokenPosition(601, 608, 20, 17, 20, 24)},
                 ]
             })
         })
-        test.skip('specific', () => {
+        test('flexible identifiers', () => {
+            // in v1, identifiers have no space and ends with the stop char of their context ('.' in entities, ',' in props...), more chars allowed...
             expect(parseLegacyAml(`
-C##INVENTORY.USERS # identifier with '#'
-  ID BIGINT PK # uppercase keyword
-  FORMAT asset_format(1:1, 16:9) # : in enum
-  OWNER cart_owner(identity.Devices, identity.Users) # . in enum
+C##INVENTORY.USERS
+  ID BIGINT
+  NAME VARCHAR
+`)).toEqual({result: {entities: [{
+                schema: 'C##INVENTORY',
+                name: 'USERS',
+                attrs: [
+                    {name: 'ID', type: 'BIGINT'},
+                    {name: 'NAME', type: 'VARCHAR'}
+                ],
+                extra: {statement: 1, line: 2}
+            }], extra: {}}})
+        })
+        test('uppercase keywords', () => {
+            expect(parseLegacyAml(`
+USERS
+  ID BIGINT PK
+  NAME VARCHAR
+`)).toEqual({result: {entities: [{
+                name: 'USERS',
+                attrs: [
+                    {name: 'ID', type: 'BIGINT'},
+                    {name: 'NAME', type: 'VARCHAR'}
+                ],
+                pk: {attrs: [['ID']]},
+                extra: {statement: 1, line: 2}
+            }], extra: {}}})
+        })
+        test.skip('flexible enum values', () => { // too hard to make it pass, leave it for now
+            // in v1, identifiers have no space and ends with the stop char of their context ('.' in entities, ',' in props...), more chars allowed...
+            expect(parseLegacyAml(`
+users
+  id bigint
+  format asset_format(  1:1  ,  16:9  ,  4:3  )
+  owner cart_owner(identity.Devices,identity.Users)
 `)).toEqual({result: {
-                    // TODO
-                }})
+                entities: [{
+                    name: 'users',
+                    attrs: [
+                        {name: 'id', type: 'bigint'},
+                        {name: 'format', type: 'asset_format'},
+                        {name: 'owner', type: 'cart_owner'},
+                    ],
+                    extra: {statement: 1, line: 2}
+                }],
+                types: [
+                    {name: 'asset_format', values: ['1:1', '16:9', '4:3'], extra: {statement: 1, line: 4}},
+                    {name: 'cart_owner', values: ['identity.Devices', 'identity.Users'], extra: {statement: 1, line: 5}},
+                ],
+                extra: {}
+            }})
         })
     })
 })

@@ -26,30 +26,31 @@ import {
     CommentToken,
     DecimalToken,
     DocToken,
-    EmptyStatementAst,
-    EntityAst,
+    EmptyStatement,
+    EntityStatement,
     EntityRefAst,
     ExpressionToken,
     ExtraAst,
     IdentifierToken,
     IntegerToken,
-    NamespaceAst,
+    NamespaceStatement,
     NullToken,
     PropertiesAst,
     PropertyAst,
     PropertyValueAst,
-    RelationAst,
+    RelationStatement,
     RelationCardinalityAst,
     RelationPolymorphicAst,
     StatementAst,
     TokenInfo,
     TokenIssue,
     TypeAliasAst,
-    TypeAst,
+    TypeStatement,
     TypeCustomAst,
     TypeEnumAst,
     TypeStructAst
 } from "./ast";
+import {legacy} from "./errors";
 
 // special
 const WhiteSpace = createToken({name: 'WhiteSpace', pattern: /[ \t]+/})
@@ -60,23 +61,23 @@ const DocMultiline = createToken({ name: 'DocMultiline', pattern: /\|\|\|[^]*?\|
 const Comment = createToken({ name: 'Comment', pattern: /#[^\n]*/ })
 
 // values
-const Null = createToken({ name: 'Null', pattern: /null/ })
+const Null = createToken({ name: 'Null', pattern: /null/i })
 const Decimal = createToken({ name: 'Decimal', pattern: /\d+\.\d+/ })
 const Integer = createToken({ name: 'Integer', pattern: /\d+/, longer_alt: Decimal })
 const String = createToken({ name: 'String', pattern: /'([^\\']|\\\\|\\')*'/ })
-const Boolean = createToken({ name: 'Boolean', pattern: /true|false/, longer_alt: Identifier })
+const Boolean = createToken({ name: 'Boolean', pattern: /true|false/i, longer_alt: Identifier })
 const valueTokens: TokenType[] = [Integer, Decimal, String, Boolean, Null]
 
 // keywords
-const Namespace = createToken({ name: 'Namespace', pattern: /namespace/, longer_alt: Identifier })
-const As = createToken({ name: 'As', pattern: /as/, longer_alt: Identifier })
-const Nullable = createToken({ name: 'Nullable', pattern: /nullable/, longer_alt: Identifier })
-const PrimaryKey = createToken({ name: 'PrimaryKey', pattern: /pk/, longer_alt: Identifier })
-const Index = createToken({ name: 'Index', pattern: /index/, longer_alt: Identifier })
-const Unique = createToken({ name: 'Unique', pattern: /unique/, longer_alt: Identifier })
-const Check = createToken({ name: 'Check', pattern: /check/, longer_alt: Identifier })
-const Relation = createToken({ name: 'Relation', pattern: /rel/, longer_alt: Identifier })
-const Type = createToken({ name: 'Type', pattern: /type/, longer_alt: Identifier })
+const Namespace = createToken({ name: 'Namespace', pattern: /namespace/i, longer_alt: Identifier })
+const As = createToken({ name: 'As', pattern: /as/i, longer_alt: Identifier })
+const Nullable = createToken({ name: 'Nullable', pattern: /nullable/i, longer_alt: Identifier })
+const PrimaryKey = createToken({ name: 'PrimaryKey', pattern: /pk/i, longer_alt: Identifier })
+const Index = createToken({ name: 'Index', pattern: /index/i, longer_alt: Identifier })
+const Unique = createToken({ name: 'Unique', pattern: /unique/i, longer_alt: Identifier })
+const Check = createToken({ name: 'Check', pattern: /check/i, longer_alt: Identifier })
+const Relation = createToken({ name: 'Relation', pattern: /rel/i, longer_alt: Identifier })
+const Type = createToken({ name: 'Type', pattern: /type/i, longer_alt: Identifier })
 const keywordTokens: TokenType[] = [Namespace, As, Nullable, PrimaryKey, Index, Unique, Check, Relation, Type]
 
 // chars
@@ -96,7 +97,7 @@ const RCurly = createToken({ name: 'RCurly', pattern: /}/ })
 const charTokens: TokenType[] = [Asterisk, Dot, Comma, Colon, Equal, Dash, GreaterThan, LowerThan, LParen, RParen, LCurly, RCurly]
 
 // legacy tokens
-const ForeignKey = createToken({ name: 'ForeignKey', pattern: /fk/ })
+const ForeignKey = createToken({ name: 'ForeignKey', pattern: /fk/i })
 const legacyTokens: TokenType[] = [ForeignKey]
 
 // token order is important as they are tried in order, so the Identifier must be last
@@ -123,20 +124,20 @@ class AmlParser extends EmbeddedActionsParser {
     attributeValueRule: () => AttributeValueAst
 
     // namespace
-    namespaceRule: () => NamespaceAst
+    namespaceRule: () => NamespaceStatement
 
     // entity
     attributeRule: () => AttributeAstFlat
-    entityRule: () => EntityAst
+    entityRule: () => EntityStatement
 
     // relation
-    relationRule: () => RelationAst
+    relationRule: () => RelationStatement
 
     // type
-    typeRule: () => TypeAst
+    typeRule: () => TypeStatement
 
     // general
-    emptyStatementRule: () => EmptyStatementAst
+    emptyStatementRule: () => EmptyStatement
     statementRule: () => StatementAst
     amlRule: () => AmlAst
 
@@ -294,7 +295,7 @@ class AmlParser extends EmbeddedActionsParser {
                     const v2 = `${entity.catalog ? entity.catalog.value + '.' : ''}${entity.schema.value}(${entity.entity.value}${path.map(p => '.' + p.value).join('')})`
                     const warning: TokenInfo = {
                         ...mergePositions([entity.catalog, entity.schema, entity.entity, ...path].filter(isNotUndefined)),
-                        issues: [legacyWarning(`"${v1}" is the legacy way, use "${v2}" instead`)]
+                        issues: [legacy(`"${v1}" is the legacy way, use "${v2}" instead`)]
                     }
                     return removeUndefined({schema: entity.catalog, entity: entity.schema, attr: removeEmpty({...entity.entity, path}), warning})
                 }
@@ -327,7 +328,7 @@ class AmlParser extends EmbeddedActionsParser {
                     const v2 = `${entity.catalog ? entity.catalog.value + '.' : ''}${entity.schema.value}(${entity.entity.value}${path.map(p => '.' + p.value).join('')})`
                     const warning: TokenInfo = {
                         ...mergePositions([entity.catalog, entity.schema, entity.entity, ...path].filter(isNotUndefined)),
-                        issues: [legacyWarning(`"${v1}" is the legacy way, use "${v2}" instead`)]
+                        issues: [legacy(`"${v1}" is the legacy way, use "${v2}" instead`)]
                     }
                     return removeUndefined({schema: entity.catalog, entity: entity.schema, attrs: [removeEmpty({...entity.entity, path})], warning})
                 }
@@ -346,7 +347,7 @@ class AmlParser extends EmbeddedActionsParser {
         })
 
         // namespace rules
-        this.namespaceRule = $.RULE<() => NamespaceAst>('namespaceRule', () => {
+        this.namespaceRule = $.RULE<() => NamespaceStatement>('namespaceRule', () => {
             $.CONSUME(Namespace)
             $.CONSUME(WhiteSpace)
             const first = $.SUBRULE($.identifierRule)
@@ -413,7 +414,13 @@ class AmlParser extends EmbeddedActionsParser {
             const token = $.CONSUME(Check)
             const definition = $.OPTION(() => {
                 $.CONSUME(Equal)
-                return $.SUBRULE($.expressionRule) // TODO: retro-compatibility: allow expression with double quotes instead of backticks (ex: 'check="age > 0"')
+                return $.OR([
+                    {ALT: () => $.SUBRULE($.expressionRule)},
+                    {ALT: () => {
+                        const identifier = $.SUBRULE($.identifierRule)
+                        return {...identifier, token: 'Expression', issues: [legacy(`"${identifier.value}" is the legacy way, use expression "\`${identifier.value}\`" instead`)]}
+                    }},
+                ])
             })
             return removeUndefined({keyword: tokenInfo(token), definition})
         })
@@ -448,7 +455,7 @@ class AmlParser extends EmbeddedActionsParser {
         const attributeRuleInner = $.RULE<() => AttributeAstFlat>('attributeRuleInner', () => {
             const name = $.SUBRULE($.identifierRule)
             $.OPTION(() => $.CONSUME2(WhiteSpace))
-            const {type, enumValues, defaultValue} = $.SUBRULE(attributeTypeRule)
+            const {type, enumValues, defaultValue} = $.SUBRULE(attributeTypeRule) || {} // returns undefined on invalid input :/
             $.OPTION2(() => $.CONSUME3(WhiteSpace))
             const nullable = $.OPTION3(() => $.CONSUME(Nullable))
             $.OPTION4(() => $.CONSUME4(WhiteSpace))
@@ -467,7 +474,7 @@ class AmlParser extends EmbeddedActionsParser {
             return removeUndefined({...attr, nesting, relation, ...extra})
         })
 
-        this.entityRule = $.RULE<() => EntityAst>('entityRule', () => {
+        this.entityRule = $.RULE<() => EntityStatement>('entityRule', () => {
             const {entity, ...namespace} = $.SUBRULE($.entityRefRule)
             const view = $.OPTION(() => $.CONSUME(Asterisk))
             $.OPTION2(() => $.CONSUME(WhiteSpace))
@@ -498,7 +505,7 @@ class AmlParser extends EmbeddedActionsParser {
             const value = $.SUBRULE($.attributeValueRule)
             return {attr, value}
         })
-        this.relationRule = $.RULE<() => RelationAst>('relationRule', () => {
+        this.relationRule = $.RULE<() => RelationStatement>('relationRule', () => {
             const warning = $.OR([
                 {ALT: () => {$.CONSUME(Relation); return undefined}},
                 {ALT: () => tokenInfoLegacy($.CONSUME(ForeignKey), '"fk" is legacy, replace it with "rel"')}
@@ -549,7 +556,7 @@ class AmlParser extends EmbeddedActionsParser {
             const definition = $.SUBRULE($.expressionRule)
             return { kind: 'custom', definition }
         })
-        this.typeRule = $.RULE<() => TypeAst>('typeRule', () => {
+        this.typeRule = $.RULE<() => TypeStatement>('typeRule', () => {
             $.CONSUME(Type)
             $.CONSUME(WhiteSpace)
             const {entity, ...namespace} = $.SUBRULE(this.entityRefRule) || {} // returns undefined on invalid input :/
@@ -571,7 +578,7 @@ class AmlParser extends EmbeddedActionsParser {
             } */
             return {statement: 'Type', ...namespace, name: entity, content, ...extra}
         })
-        this.emptyStatementRule = $.RULE<() => EmptyStatementAst>('emptyStatementRule', () => {
+        this.emptyStatementRule = $.RULE<() => EmptyStatement>('emptyStatementRule', () => {
             $.OPTION(() => $.CONSUME(WhiteSpace))
             const comment = $.OPTION2(() => $.SUBRULE($.commentRule))
             $.CONSUME(NewLine)
@@ -637,11 +644,7 @@ function tokenInfo(token: IToken, issues?: TokenIssue[]): TokenInfo {
 }
 
 function tokenInfoLegacy(token: IToken, message: string): TokenInfo {
-    return tokenInfo(token, [legacyWarning(message)])
-}
-
-export function legacyWarning(message: string): TokenIssue {
-    return {name: 'LegacyWarning', kind: 'warning', message}
+    return tokenInfo(token, [legacy(message)])
 }
 
 function tokenPosition(token: IToken): TokenPosition {

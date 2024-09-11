@@ -151,6 +151,12 @@ export const typeRefFromId = (id: TypeId): TypeRef => {
     return {...namespace, type}
 }
 
+export const typeRefSame = (a: TypeRef, b: TypeRef): boolean =>
+    (a.type === b.type || a.type === '*' || b.type === '*') &&
+    (a.schema === b.schema || a.schema === '*' || b.schema === '*') &&
+    (a.catalog === b.catalog || a.catalog === '*' || b.catalog === '*') &&
+    (a.database === b.database || a.database === '*' || b.database === '*')
+
 export const typeToRef = (t: Type): TypeRef => removeUndefined({database: t.database, catalog: t.catalog, schema: t.schema, type: t.name})
 export const typeToId = (t: Type): TypeId => typeRefToId(typeToRef(t))
 

@@ -2,12 +2,12 @@ import {isObject} from "@azimutt/utils";
 import {isParserErrorKind, isTokenPosition, ParserErrorKind, TokenPosition} from "@azimutt/models";
 
 export type AmlAst = StatementAst[]
-export type StatementAst = NamespaceAst | EntityAst | RelationAst | TypeAst | EmptyStatementAst
-export type NamespaceAst = { statement: 'Namespace', schema: IdentifierToken, catalog?: IdentifierToken, database?: IdentifierToken } & ExtraAst
-export type EntityAst = { statement: 'Entity', name: IdentifierToken, view?: TokenInfo, alias?: IdentifierToken, attrs?: AttributeAstNested[] } & NamespaceRefAst & ExtraAst
-export type RelationAst = { statement: 'Relation', kind: RelationKindAst, src: AttributeRefCompositeAst, ref: AttributeRefCompositeAst, polymorphic?: RelationPolymorphicAst } & ExtraAst & { warning?: TokenInfo }
-export type TypeAst = { statement: 'Type', name: IdentifierToken, content?: TypeContentAst } & NamespaceRefAst & ExtraAst
-export type EmptyStatementAst = { statement: 'Empty', comment?: CommentToken }
+export type StatementAst = NamespaceStatement | EntityStatement | RelationStatement | TypeStatement | EmptyStatement
+export type NamespaceStatement = { statement: 'Namespace', schema: IdentifierToken, catalog?: IdentifierToken, database?: IdentifierToken } & ExtraAst
+export type EntityStatement = { statement: 'Entity', name: IdentifierToken, view?: TokenInfo, alias?: IdentifierToken, attrs?: AttributeAstNested[] } & NamespaceRefAst & ExtraAst
+export type RelationStatement = { statement: 'Relation', kind: RelationKindAst, src: AttributeRefCompositeAst, ref: AttributeRefCompositeAst, polymorphic?: RelationPolymorphicAst } & ExtraAst & { warning?: TokenInfo }
+export type TypeStatement = { statement: 'Type', name: IdentifierToken, content?: TypeContentAst } & NamespaceRefAst & ExtraAst
+export type EmptyStatement = { statement: 'Empty', comment?: CommentToken }
 
 export type AttributeAstFlat = { nesting: number, name: IdentifierToken, nullable?: TokenInfo } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst
 export type AttributeAstNested = { path: IdentifierToken[], nullable?: TokenInfo } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst & { attrs?: AttributeAstNested[] }
