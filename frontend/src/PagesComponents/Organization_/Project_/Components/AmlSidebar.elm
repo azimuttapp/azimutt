@@ -321,7 +321,9 @@ viewChooseSource selectedSource userSources =
 viewSourceEditor : AmlSidebar -> List String -> Source -> Html Msg
 viewSourceEditor model warnings source =
     div [ class "mt-3" ]
-        [ Editor.basic "source-editor" (contentStr source) (AUpdateSource source.id >> AmlSidebarMsg) (ASourceUpdated source.id |> AmlSidebarMsg) """Write your schema using AML syntax
+        [ -- , node "intl-date" [ attribute "lang" "fr-FR", attribute "year" (String.fromInt 2024), attribute "month" (String.fromInt 9) ] []
+          -- , node "aml-editor" [ value (contentStr source), onInput (AUpdateSource source.id >> AmlSidebarMsg), onBlur (ASourceUpdated source.id |> AmlSidebarMsg) ] []
+          Editor.basic "source-editor" (contentStr source) (AUpdateSource source.id >> AmlSidebarMsg) (ASourceUpdated source.id |> AmlSidebarMsg) """Write your schema using AML syntax
 
 Ex:
 
