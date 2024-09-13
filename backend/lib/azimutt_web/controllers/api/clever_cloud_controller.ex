@@ -37,6 +37,11 @@ defmodule AzimuttWeb.Api.CleverCloudController do
     end
   end
 
+  def migrations(conn, params) do
+    Logger.info("Api.CleverCloudController.migrations: #{inspect(params)}")
+    :ok
+  end
+
   # https://www.clever-cloud.com/doc/extend/add-ons-api/#deprovisioning
   def delete(conn, params) do
     Logger.info("Api.CleverCloudController.delete: #{inspect(params)}")

@@ -176,6 +176,7 @@ defmodule AzimuttWeb.Router do
     pipe_through([:api, :require_clever_cloud_basic_auth])
     post("/resources", Api.CleverCloudController, :create)
     post("/resources/:resource_id", Api.CleverCloudController, :update)
+    post("/resources/:resource_id/migrations", Api.CleverCloudController, :migrations)
     delete("/resources/:resource_id", Api.CleverCloudController, :delete)
   end
 
