@@ -16,8 +16,10 @@ defmodule AzimuttWeb.Api.CleverCloudController do
   end
 
   # https://www.clever-cloud.com/doc/extend/add-ons-api/#plan-change
-  def update(conn, %{"resource_id" => resource_id, "plan" => plan} = params) do
+  def update(conn, params) do
     Logger.info("Api.CleverCloudController.update: #{inspect(params)}")
+    resource_id = params["resource_id"]
+    plan = params["plan"]
     now = DateTime.utc_now()
 
     case CleverCloud.get_resource(resource_id) do
@@ -36,8 +38,9 @@ defmodule AzimuttWeb.Api.CleverCloudController do
   end
 
   # https://www.clever-cloud.com/doc/extend/add-ons-api/#deprovisioning
-  def delete(conn, %{"resource_id" => resource_id} = params) do
+  def delete(conn, params) do
     Logger.info("Api.CleverCloudController.delete: #{inspect(params)}")
+    resource_id = params["resource_id"]
     now = DateTime.utc_now()
 
     case CleverCloud.get_resource(resource_id) do
