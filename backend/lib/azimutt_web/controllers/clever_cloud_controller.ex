@@ -1,6 +1,7 @@
 # Clever Cloud addon: https://www.clever-cloud.com/doc/extend/add-ons-api/#sso
 defmodule AzimuttWeb.CleverCloudController do
   use AzimuttWeb, :controller
+  require Logger
   alias Azimutt.Accounts
   alias Azimutt.CleverCloud
   alias Azimutt.Projects
@@ -26,6 +27,7 @@ defmodule AzimuttWeb.CleverCloudController do
   # https://www.clever-cloud.com/doc/extend/add-ons-api/#sso
   # TODO: how to get user_id in SSO? Get it from the resource? What happen if several users from Clever Cloud???
   def login(conn, %{"id" => resource_id, "token" => token, "timestamp" => timestamp, "email" => email} = params) do
+    Logger.info("CleverCloudController.login: #{inspect(params)}")
     now = DateTime.utc_now()
     now_ts = System.os_time(:second)
     salt = Azimutt.config(:clever_cloud_sso_salt)

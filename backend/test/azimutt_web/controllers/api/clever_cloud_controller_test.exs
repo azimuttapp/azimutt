@@ -33,7 +33,7 @@ defmodule AzimuttWeb.Api.CleverCloudControllerTest do
     id = json_response(conn, 200)["id"]
     assert json_response(conn, 200) == %{"id" => id, "config" => %{}, "message" => "Your Azimutt add-on is now provisioned."}
 
-    conn = conn |> recycle() |> authed() |> put(Routes.clever_cloud_path(conn, :update, id, %{plan: "pro"}))
+    conn = conn |> recycle() |> authed() |> post(Routes.clever_cloud_path(conn, :update, id, %{plan: "pro"}))
     assert json_response(conn, 200) == %{"id" => id, "config" => %{}, "message" => "Azimutt plan changed from basic to pro."}
 
     conn = conn |> recycle() |> authed() |> delete(Routes.clever_cloud_path(conn, :delete, id))
