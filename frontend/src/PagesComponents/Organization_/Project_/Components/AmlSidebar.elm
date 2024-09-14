@@ -5,7 +5,6 @@ import Components.Atoms.Icon as Icon
 import Components.Molecules.Editor as Editor
 import Components.Slices.PlanDialog as PlanDialog
 import Conf
-import DataSources.AmlMiner.AmlAdapter exposing (AmlSchemaError)
 import DataSources.JsonMiner.JsonAdapter as JsonAdapter
 import DataSources.JsonMiner.JsonSchema exposing (JsonSchema)
 import DataSources.JsonMiner.Models.JsonTable as JsonTable
@@ -24,20 +23,18 @@ import Libs.Tailwind as Tw exposing (focus)
 import Libs.Tuple as Tuple
 import Models.Feature as Feature
 import Models.Organization as Organization
+import Models.ParserError as ParserError exposing (ParserError)
 import Models.Position as Position
-import Models.Project.ColumnId as ColumnId
-import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind as SourceKind
 import Models.Project.Table exposing (Table)
-import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableId exposing (TableId)
 import Models.ProjectRef exposing (ProjectRef)
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), Msg(..), simplePrompt)
 import PagesComponents.Organization_.Project_.Models.CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
-import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint(..))
 import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns
@@ -112,15 +109,15 @@ update now projectRef msg model =
                 |> Maybe.map
                     (\source ->
                         if source.id /= id then
-                            ( model |> mapAmlSidebarM (setErrors [ { row = 0, col = 0, problem = "Source has changed" } ]), Extra.none )
+                            ( model |> mapAmlSidebarM (setErrors [ { name = "EditorError", kind = ParserError.Error, message = "Source has changed", offset = { start = 0, end = 0 }, position = { start = { line = 1, column = 1 }, end = { line = 1, column = 1 } } } ]), Extra.none )
 
                         else if String.length (contentStr source) /= length then
-                            ( model |> mapAmlSidebarM (setErrors [ { row = 0, col = 0, problem = "AML has changed" } ]), Extra.none )
+                            ( model |> mapAmlSidebarM (setErrors [ { name = "EditorError", kind = ParserError.Error, message = "AML has changed", offset = { start = 0, end = 0 }, position = { start = { line = 1, column = 1 }, end = { line = 1, column = 1 } } } ]), Extra.none )
 
                         else
                             schema |> Maybe.map (\s -> model |> updateSource now source s errors |> setDirty) |> Maybe.withDefault ( model |> mapAmlSidebarM (setErrors errors), Extra.none )
                     )
-                |> Maybe.withDefault ( model |> mapAmlSidebarM (setErrors [ { row = 0, col = 0, problem = "Source not found" } ]), Extra.none )
+                |> Maybe.withDefault ( model |> mapAmlSidebarM (setErrors [ { name = "EditorError", kind = ParserError.Error, message = "Source not found", offset = { start = 0, end = 0 }, position = { start = { line = 1, column = 1 }, end = { line = 1, column = 1 } } } ]), Extra.none )
 
         ASourceUpdated id ->
             (model.erd |> Maybe.andThen (.sources >> List.findBy .id id))
@@ -128,7 +125,7 @@ update now projectRef msg model =
                 |> Maybe.withDefault ( model, Extra.none )
 
 
-updateSource : Time.Posix -> Source -> JsonSchema -> List AmlSchemaError -> Model x -> ( Model x, Extra Msg )
+updateSource : Time.Posix -> Source -> JsonSchema -> List ParserError -> Model x -> ( Model x, Extra Msg )
 updateSource now source schema errors model =
     let
         tableLayouts : List ErdTableLayout
@@ -243,32 +240,13 @@ view projectRef erd model =
         selectedSource : Maybe Source
         selectedSource =
             model.selected |> Maybe.andThen (\( id, _ ) -> userSources |> List.findBy .id id)
-
-        warnings : List String
-        warnings =
-            selectedSource
-                |> Maybe.mapOrElse .relations []
-                |> List.concatMap (\r -> [ ColumnId.fromRef r.src, ColumnId.fromRef r.ref ])
-                |> List.unique
-                |> List.filterMap
-                    (\( table, column ) ->
-                        case erd |> Erd.getTableI table |> Maybe.map (ErdTable.getColumnI (ColumnPath.fromString column)) of
-                            Just (Just _) ->
-                                Nothing
-
-                            Just Nothing ->
-                                Just ("Column '" ++ column ++ "' not found in table '" ++ TableId.show Conf.schema.empty table ++ "'")
-
-                            Nothing ->
-                                Just ("Table '" ++ TableId.show Conf.schema.empty table ++ "' not found")
-                    )
     in
     div []
         [ viewHeading
         , if projectRef |> Organization.canUseAml then
             div [ class "px-3 py-2" ]
                 [ viewChooseSource selectedSource userSources
-                , selectedSource |> Maybe.mapOrElse (viewSourceEditor model warnings) (div [] [])
+                , selectedSource |> Maybe.mapOrElse (viewSourceEditor model) (div [] [])
                 ]
 
           else
@@ -318,8 +296,12 @@ viewChooseSource selectedSource userSources =
         ]
 
 
-viewSourceEditor : AmlSidebar -> List String -> Source -> Html Msg
-viewSourceEditor model warnings source =
+viewSourceEditor : AmlSidebar -> Source -> Html Msg
+viewSourceEditor model source =
+    let
+        ( errors, warnings ) =
+            ( model.errors |> List.filterBy .kind ParserError.Error, model.errors |> List.filterBy .kind ParserError.Warning )
+    in
     div [ class "mt-3" ]
         [ -- , node "intl-date" [ attribute "lang" "fr-FR", attribute "year" (String.fromInt 2024), attribute "month" (String.fromInt 9) ] []
           -- , node "aml-editor" [ value (contentStr source), onInput (AUpdateSource source.id >> AmlSidebarMsg), onBlur (ASourceUpdated source.id |> AmlSidebarMsg) ] []
@@ -344,9 +326,9 @@ roles
   slug varchar(10)
 
 # define a standalone relation
-fk credentials.role -> roles.slug""" 30 (List.nonEmpty model.errors)
-        , viewErrors (model.errors |> List.map (\err -> err.problem ++ " at line " ++ String.fromInt err.row ++ ", column " ++ String.fromInt err.col) |> List.unique)
-        , viewWarnings (warnings |> List.unique)
+fk credentials.role -> roles.slug""" 30 (List.nonEmpty errors)
+        , viewErrors (errors |> List.map (\err -> err.message ++ " at line " ++ String.fromInt err.position.start.line ++ ", column " ++ String.fromInt err.position.start.column))
+        , viewWarnings (warnings |> List.map (\err -> err.message ++ " at line " ++ String.fromInt err.position.start.line ++ ", column " ++ String.fromInt err.position.start.column))
         , viewHelp
         ]
 

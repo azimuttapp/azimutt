@@ -1,14 +1,11 @@
 module Components.Organisms.Details exposing (DocState, Heading, NotesModel, SharedDocState, TagsModel, buildColumnHeading, buildSchemaHeading, buildTableHeading, doc, docInit, viewColumn, viewColumn2, viewList, viewSchema, viewTable)
 
-import Array
 import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon as Icon exposing (Icon)
 import Components.Atoms.Icons as Icons
 import Components.Atoms.Markdown as Markdown
 import Components.Molecules.Tooltip as Tooltip
 import Conf
-import DataSources.AmlMiner.AmlAdapter as AmlAdapter
-import DataSources.AmlMiner.AmlParser as AmlParser
 import DataSources.DbMiner.DbQuery as DbQuery
 import Dict exposing (Dict)
 import ElmBook
@@ -32,10 +29,9 @@ import Libs.Result as Result
 import Libs.String as String exposing (pluralize)
 import Libs.Tailwind as Tw exposing (TwClass)
 import Libs.Time as Time
-import Libs.Tuple3 as Tuple3
-import Models.Position as Position
 import Models.Project as Project
 import Models.Project.CheckName exposing (CheckName)
+import Models.Project.Column exposing (docColumn)
 import Models.Project.ColumnDbStats exposing (ColumnDbStats)
 import Models.Project.ColumnId as ColumnId exposing (ColumnId)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
@@ -44,20 +40,23 @@ import Models.Project.ColumnStats exposing (ColumnStats, ColumnValueCount)
 import Models.Project.ColumnValue exposing (ColumnValue)
 import Models.Project.Comment as Comment
 import Models.Project.IndexName exposing (IndexName)
+import Models.Project.Layout as Layout
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Metadata as Metadata exposing (Metadata)
+import Models.Project.PrimaryKey as PrimaryKey
+import Models.Project.Relation as Relation
 import Models.Project.SchemaName as SchemaName exposing (SchemaName)
-import Models.Project.Source exposing (Source)
+import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId, SourceIdStr)
 import Models.Project.SourceKind as SourceKind
 import Models.Project.SourceName exposing (SourceName)
+import Models.Project.Table as Table exposing (docTable)
 import Models.Project.TableDbStats exposing (TableDbStats)
 import Models.Project.TableId as TableId exposing (TableId, TableIdStr)
 import Models.Project.TableMeta exposing (TableMeta)
 import Models.Project.TableStats exposing (TableStats)
+import Models.Project.Unique as Unique
 import Models.Project.UniqueName exposing (UniqueName)
-import Models.Size as Size
-import Models.SourceInfo as SourceInfo
 import Models.SqlQuery exposing (SqlQuery, SqlQueryOrigin)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdCheck exposing (ErdCheck)
@@ -65,14 +64,13 @@ import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColu
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat)
 import PagesComponents.Organization_.Project_.Models.ErdColumnRef as ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Organization_.Project_.Models.ErdIndex exposing (ErdIndex)
-import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
+import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdOrigin exposing (ErdOrigin)
 import PagesComponents.Organization_.Project_.Models.ErdPrimaryKey exposing (ErdPrimaryKey)
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
-import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Organization_.Project_.Models.ErdUnique exposing (ErdUnique)
-import Services.Lenses exposing (setLayouts, setTables)
+import Services.Lenses exposing (setLayouts, setPrimaryKey, setUniques)
 import Simple.Fuzzy
 import Time exposing (Posix)
 
@@ -1224,39 +1222,36 @@ docNow =
 
 docErd : Erd
 docErd =
-    docAmlSource "test" """"
-groups
-  id uuid pk
-
-users | List **all** users
-  id uuid=uuid() pk | User **identifier**
-  name varchar unique | The name of the user
-  group_id uuid nullable fk groups.id
-
-credentials
-  provider_id
-  provider_key
-  user_id uuid fk users.id
-
-demo.test
-  key varchar
-"""
-        |> Project.create Nothing [] "Project name"
-        |> Erd.create
+    Project.doc "Project name"
+        (Source.doc "test"
+            [ Table.doc ( "", "groups" ) [ "id" ] [ ( "id", "uuid" ) ]
+            , { docTable
+                | id = ( "", "users" )
+                , name = "users"
+                , columns =
+                    Dict.fromListBy .name
+                        [ { docColumn | index = 1, name = "id", kind = "uuid", default = Just "uuid()", comment = Just { text = "User **identifier**" } }
+                        , { docColumn | index = 2, name = "name", kind = "varchar", comment = Just { text = "The name of the user" } }
+                        , { docColumn | index = 3, name = "group_id", kind = "uuid", nullable = True }
+                        ]
+                , comment = Just { text = "List **all** users" }
+              }
+                |> setPrimaryKey (PrimaryKey.doc [ "id" ])
+                |> setUniques [ Unique.doc [ "name" ] "users_name_uniq" ]
+            , Table.doc ( "", "credentials" ) [] [ ( "provider_id", "" ), ( "provider_key", "" ), ( "user_id", "uuid" ) ]
+            , Table.doc ( "demo", "test" ) [] [ ( "key", "varchar" ) ]
+            ]
+            [ Relation.doc "users.group_id" "groups.id"
+            , Relation.doc "credentials.user_id" "users.id"
+            ]
+        )
         |> setLayouts
             (Dict.fromList
-                [ ( "init layout", docBuildLayout [ ( "users", [ "id", "name" ] ) ] )
-                , ( "overview", docBuildLayout [ ( "users", [ "id", "name", "group_id" ] ), ( "groups", [ "id" ] ), ( "credentials", [ "provider_id", "provider_key", "user_id" ] ) ] )
+                [ ( "init layout", Layout.doc [ ( "users", [ "id", "name" ] ) ] )
+                , ( "overview", Layout.doc [ ( "users", [ "id", "name", "group_id" ] ), ( "groups", [ "id" ] ), ( "credentials", [ "provider_id", "provider_key", "user_id" ] ) ] )
                 ]
             )
-
-
-docAmlSource : String -> String -> Source
-docAmlSource name aml =
-    aml
-        |> AmlParser.parse
-        |> AmlAdapter.buildSource (SourceInfo.aml Time.zero SourceId.zero name) Array.empty
-        |> Tuple3.second
+        |> Erd.create
 
 
 docSourceId : SourceIdStr
@@ -1284,22 +1279,6 @@ docColumnStats =
 docTableStats : Dict TableId (Dict SourceIdStr (Result String TableStats))
 docTableStats =
     docTableStatsSrc |> Dict.map (\_ -> Dict.map (\_ -> Ok))
-
-
-docBuildLayout : List ( TableIdStr, List ColumnPathStr ) -> ErdLayout
-docBuildLayout tables =
-    ErdLayout.empty docNow
-        |> setTables
-            (tables
-                |> List.map
-                    (\( table, columns ) ->
-                        { id = TableId.parse table
-                        , props = ErdTableProps Nothing Position.zeroGrid Size.zeroCanvas Tw.red True True True
-                        , columns = columns |> List.map ColumnPath.fromString |> ErdColumnProps.createAll
-                        , relatedTables = Dict.empty
-                        }
-                    )
-            )
 
 
 docComponent : String -> (DocState -> Html msg) -> ( String, SharedDocState x -> Html msg )

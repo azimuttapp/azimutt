@@ -1,14 +1,11 @@
 module Components.Slices.ExportDialogBody exposing (DocState, ExportFormat, ExportInput, Model, Msg, SharedDocState, doc, docInit, init, update, view)
 
-import Array
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Radio as Radio
 import Components.Slices.PlanDialog as PlanDialog
 import Conf exposing (constants)
-import DataSources.AmlMiner.AmlAdapter as AmlAdapter
 import DataSources.AmlMiner.AmlGenerator as AmlGenerator
-import DataSources.AmlMiner.AmlParser as AmlParser
 import DataSources.JsonMiner.JsonGenerator as JsonGenerator
 import DataSources.SqlMiner.MysqlGenerator as MysqlGenerator
 import DataSources.SqlMiner.PostgreSqlGenerator as PostgreSqlGenerator
@@ -19,6 +16,7 @@ import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, code, div, h3, p, pre, text)
 import Html.Attributes exposing (class, id)
 import Html.Events exposing (onClick)
+import Libs.Dict as Dict
 import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (css)
 import Libs.Maybe as Maybe
@@ -27,27 +25,25 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Remote as Remote exposing (Remote(..))
 import Libs.Tailwind as Tw exposing (sm)
 import Libs.Task as T
-import Libs.Time as Time
-import Libs.Tuple3 as Tuple3
 import Models.Feature as Feature
 import Models.Organization as Organization
-import Models.Position as Position
 import Models.Project as Project exposing (Project)
-import Models.Project.ColumnPath as ColumnPath exposing (ColumnPathStr)
+import Models.Project.Check as Check
+import Models.Project.Column as Column exposing (docColumn)
+import Models.Project.Layout as Layout
+import Models.Project.PrimaryKey as PrimaryKey
+import Models.Project.Relation as Relation
 import Models.Project.Schema as Schema exposing (Schema)
-import Models.Project.SourceId as SourceId
-import Models.Project.TableId as TableId exposing (TableIdStr)
+import Models.Project.Source as Source
+import Models.Project.Table as Table exposing (docTable)
+import Models.Project.Unique as Unique
 import Models.ProjectRef as ProjectRef exposing (ProjectRef)
-import Models.Size as Size
-import Models.SourceInfo as SourceInfo
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
-import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps
-import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
+import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
-import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Ports
-import Services.Lenses exposing (mapProject, setCurrentLayout, setLayouts, setOrganization, setTables)
+import Services.Lenses exposing (mapProject, setChecks, setCurrentLayout, setLayouts, setOrganization, setPrimaryKey, setUniques)
 import Track
 
 
@@ -315,28 +311,31 @@ sampleTitleId =
 
 sampleErd : Erd
 sampleErd =
-    """users
-  id uuid pk
-  name varchar
-  age int check="age > 0"
-  created_at datetime
-
-organizations
-  id uuid pk
-  slug varchar nullable unique
-  name varchar
-  created_at datetime
-
-organization_members
-  organization_id uuid pk fk organizations.id
-  user_id uuid pk fk users.id
-"""
-        |> AmlParser.parse
-        |> AmlAdapter.buildSource (SourceInfo.aml Time.zero SourceId.zero "test") Array.empty
-        |> Tuple3.second
-        |> Project.create Nothing [] "Project name"
+    Project.doc "Project name"
+        (Source.doc "test"
+            [ Table.doc ( "", "users" ) [ "id" ] [ ( "id", "uuid" ), ( "name", "varchar" ), ( "age", "int" ), ( "created_at", "datetime" ) ]
+                |> setChecks [ Check.doc [ "age" ] (Just "age > 0") "users_age_chk" ]
+            , { docTable
+                | id = ( "", "organizations" )
+                , name = "organizations"
+                , columns =
+                    Dict.fromListBy .name
+                        [ Column.doc 1 "id" "uuid"
+                        , { docColumn | index = 2, name = "slug", kind = "varchar", nullable = True }
+                        , Column.doc 3 "name" "varchar"
+                        , Column.doc 4 "created_at" "datetime"
+                        ]
+              }
+                |> setPrimaryKey (PrimaryKey.doc [ "id" ])
+                |> setUniques [ Unique.doc [ "slug" ] "organizations_slug_uniq" ]
+            , Table.doc ( "", "organization_members" ) [ "organization_id", "user_id" ] [ ( "organization_id", "uuid" ), ( "user_id", "uuid" ) ]
+            ]
+            [ Relation.doc "organization_members.organization_id" "organizations.id"
+            , Relation.doc "organization_members.user_id" "users.id"
+            ]
+        )
+        |> setLayouts (Dict.fromList [ ( "init layout", Layout.doc [ ( "users", [ "id", "name" ] ) ] ) ])
         |> Erd.create
-        |> setLayouts (Dict.fromList [ ( "init layout", docBuildLayout [ ( "users", [ "id", "name" ] ) ] ) ])
         |> setCurrentLayout "init layout"
 
 
@@ -356,19 +355,3 @@ doc =
         |> Chapter.renderStatefulComponentList
             [ component "exportDialog" (\model -> view updateDocFreeState (\_ -> logAction "Download file") sampleOnClose sampleTitleId samplePlanFree model.free)
             ]
-
-
-docBuildLayout : List ( TableIdStr, List ColumnPathStr ) -> ErdLayout
-docBuildLayout tables =
-    ErdLayout.empty Time.zero
-        |> setTables
-            (tables
-                |> List.map
-                    (\( table, columns ) ->
-                        { id = TableId.parse table
-                        , props = ErdTableProps Nothing Position.zeroGrid Size.zeroCanvas Tw.red True True True
-                        , columns = columns |> List.map ColumnPath.fromString |> ErdColumnProps.createAll
-                        , relatedTables = Dict.empty
-                        }
-                    )
-            )

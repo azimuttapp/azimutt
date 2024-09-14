@@ -23,6 +23,7 @@ import {
     LegacyTableStats,
     OpenAIKey,
     OpenAIModel,
+    ParserError,
     Position,
     Size,
     SourceId,
@@ -178,9 +179,6 @@ export const Track = z.object({kind: z.literal('Track'), event: TrackEvent}).str
 export type ElmMsg = Click | MouseDown | Focus | Blur | ScrollTo | Fullscreen | SetMeta | AutofocusWithin | Toast | GetProject | CreateProjectTmp | UpdateProjectTmp | CreateProject | UpdateProject | MoveProjectTo | DeleteProject | DeleteSource | ProjectDirty | DownloadFile | CopyToClipboard | GetLocalFile | GetDatabaseSchema | GetTableStats | GetColumnStats | RunDatabaseQuery | GetAmlSchema | GetPrismaSchema | ObserveSizes | ListenKeys | LlmGenerateSql | Confetti | ConfettiPride | Fireworks | Track
 export const ElmMsg = z.discriminatedUnion('kind', [Click, MouseDown, Focus, Blur, ScrollTo, Fullscreen, SetMeta, AutofocusWithin, Toast, GetProject, CreateProjectTmp, UpdateProjectTmp, CreateProject, UpdateProject, MoveProjectTo, DeleteProject, DeleteSource, ProjectDirty, DownloadFile, CopyToClipboard, GetLocalFile, GetDatabaseSchema, GetTableStats, GetColumnStats, RunDatabaseQuery, GetAmlSchema, GetPrismaSchema, ObserveSizes, ListenKeys, LlmGenerateSql, Confetti, ConfettiPride, Fireworks, Track]).describe('ElmMsg')
 
-export type AmlSchemaError = {row: number, col: number, problem: string}
-export const AmlSchemaError = z.object({row: z.number(), col: z.number(), problem: z.string()}).strict()
-
 export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }
 export const GotSizes = z.object({kind: z.literal('GotSizes'), sizes: ElementSize.array()}).strict()
 export type GotProject = { kind: 'GotProject', context: string, project?: LegacyProject }
@@ -203,8 +201,8 @@ export type GotColumnStatsError = { kind: 'GotColumnStatsError', source: LegacyS
 export const GotColumnStatsError = z.object({kind: z.literal('GotColumnStatsError'), source: LegacySourceId, column: LegacyColumnRef, error: z.string()}).strict()
 export type GotDatabaseQueryResult = { kind: 'GotDatabaseQueryResult', context: string, source: SourceId, query: LegacySqlQueryOrigin, result: string | {columns: LegacyDatabaseQueryResultsColumn[], rows: LegacyJsValue[]}, started: number, finished: number }
 export const GotDatabaseQueryResult = z.object({kind: z.literal('GotDatabaseQueryResult'), context: z.string(), source: SourceId, query: LegacySqlQueryOrigin, result: z.union([z.string(), z.object({columns: LegacyDatabaseQueryResultsColumn.array(), rows: LegacyJsValue.array() })]), started: z.number(), finished: z.number()}).strict()
-export type GotAmlSchema = { kind: 'GotAmlSchema', source: SourceId, length: number, schema?: LegacyDatabase | undefined, errors: AmlSchemaError[] }
-export const GotAmlSchema = z.object({kind: z.literal('GotAmlSchema'), source: SourceId, length: z.number(), schema: LegacyDatabase.optional(), errors: AmlSchemaError.array()}).strict()
+export type GotAmlSchema = { kind: 'GotAmlSchema', source: SourceId, length: number, schema?: LegacyDatabase | undefined, errors: ParserError[] }
+export const GotAmlSchema = z.object({kind: z.literal('GotAmlSchema'), source: SourceId, length: z.number(), schema: LegacyDatabase.optional(), errors: ParserError.array()}).strict()
 export type GotPrismaSchema = { kind: 'GotPrismaSchema', schema: LegacyDatabase }
 export const GotPrismaSchema = z.object({kind: z.literal('GotPrismaSchema'), schema: LegacyDatabase}).strict()
 export type GotPrismaSchemaError = { kind: 'GotPrismaSchemaError', error: string }

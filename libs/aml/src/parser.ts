@@ -8,7 +8,7 @@ import {
     TokenType
 } from "chevrotain";
 import {isNotUndefined, removeEmpty, removeUndefined, stripIndent} from "@azimutt/utils";
-import {mergePositions, ParserError, ParserResult, TokenPosition} from "@azimutt/models";
+import {mergePositions, ParserError, ParserResult, removeQuotes, TokenPosition} from "@azimutt/models";
 import {
     AmlAst,
     AttributeAstFlat,
@@ -56,7 +56,7 @@ import {legacy} from "./errors";
 const WhiteSpace = createToken({name: 'WhiteSpace', pattern: /[ \t]+/})
 const Identifier = createToken({ name: 'Identifier', pattern: /[a-zA-Z_][a-zA-Z0-9_#]*|"([^\\"]|\\\\|\\")*"/ })
 const Expression = createToken({ name: 'Expression', pattern: /`[^`]+`/ })
-const Doc = createToken({ name: 'Doc', pattern: /\|[^#\n]*/ })
+const Doc = createToken({ name: 'Doc', pattern: /\|(\s+"([^\\"]|\\\\|\\")*"|[^#\n]*)/ })
 const DocMultiline = createToken({ name: 'DocMultiline', pattern: /\|\|\|[^]*?\|\|\|/, line_breaks: true })
 const Comment = createToken({ name: 'Comment', pattern: /#[^\n]*/ })
 
@@ -189,7 +189,7 @@ class AmlParser extends EmbeddedActionsParser {
             }, {
                 ALT: () => {
                     const token = $.CONSUME(Doc)
-                    return {token: 'Doc', value: token.image.slice(1).trim(), ...tokenPosition(token)}
+                    return {token: 'Doc', value: removeQuotes(token.image.slice(1).trim()), ...tokenPosition(token)}
                 }
             }])
         })
@@ -388,32 +388,40 @@ class AmlParser extends EmbeddedActionsParser {
         })
         const attributeConstraintPkRule = $.RULE<() => AttributeConstraintAst>('attributeConstraintPkRule', () => {
             const token = $.CONSUME(PrimaryKey)
-            const name = $.OPTION(() => {
+            $.OPTION(() => $.CONSUME(WhiteSpace))
+            const name = $.OPTION2(() => {
                 $.CONSUME(Equal)
+                $.OPTION3(() => $.CONSUME2(WhiteSpace))
                 return $.SUBRULE($.identifierRule)
             })
             return removeUndefined({keyword: tokenInfo(token), name})
         })
         const attributeConstraintIndexRule = $.RULE<() => AttributeConstraintAst>('attributeConstraintIndexRule', () => {
             const token = $.CONSUME(Index)
-            const name = $.OPTION(() => {
+            $.OPTION(() => $.CONSUME(WhiteSpace))
+            const name = $.OPTION2(() => {
                 $.CONSUME(Equal)
+                $.OPTION3(() => $.CONSUME2(WhiteSpace))
                 return $.SUBRULE($.identifierRule)
             })
             return removeUndefined({keyword: tokenInfo(token), name})
         })
         const attributeConstraintUniqueRule = $.RULE<() => AttributeConstraintAst>('attributeConstraintUniqueRule', () => {
             const token = $.CONSUME(Unique)
-            const name = $.OPTION(() => {
+            $.OPTION(() => $.CONSUME(WhiteSpace))
+            const name = $.OPTION2(() => {
                 $.CONSUME(Equal)
+                $.OPTION3(() => $.CONSUME2(WhiteSpace))
                 return $.SUBRULE($.identifierRule)
             })
             return removeUndefined({keyword: tokenInfo(token), name})
         })
         const attributeConstraintCheckRule = $.RULE<() => AttributeCheckAst>('attributeConstraintCheckRule', () => {
             const token = $.CONSUME(Check)
-            const definition = $.OPTION(() => {
+            $.OPTION(() => $.CONSUME(WhiteSpace))
+            const definition = $.OPTION2(() => {
                 $.CONSUME(Equal)
+                $.OPTION3(() => $.CONSUME2(WhiteSpace))
                 return $.OR([
                     {ALT: () => $.SUBRULE($.expressionRule)},
                     {ALT: () => {

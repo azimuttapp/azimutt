@@ -75,8 +75,8 @@ export function parseAml(content: string): ParserResult<Database> {
     })
 }
 
-export function generateAml(database: Database): string {
-    return genDatabase(database)
+export function generateAml(database: Database, legacy: boolean = false): string {
+    return genDatabase(database, legacy)
 }
 
 // private functions 👇️ (some may be exported for tests)
@@ -108,6 +108,7 @@ function buildDatabase(ast: AmlAst, start: number, parsed: number): {db: Databas
             types.forEach(t => db.types?.push(t))
         } else if (stmt.statement === 'Relation') {
             const rel = buildRelationStatement(index, stmt)
+            // TODO: relation src & ref should have exist, otherwise warning
             if (rel) {
                 const prev = db.relations?.find(r => relationRefSame(relationToRef(r), relationToRef(rel))) // TODO: filter: get all the previous ones
                 if (prev && !prev.polymorphic) {
@@ -145,7 +146,7 @@ function buildDatabase(ast: AmlAst, start: number, parsed: number): {db: Databas
     return {db: removeEmpty({...db, extra}), errors}
 }
 
-function genDatabase(database: Database): string {
+function genDatabase(database: Database, legacy: boolean): string {
     const [entityRels, aloneRels] = partition(database.relations || [], r => {
         const statement = r.extra && 'statement' in r.extra && r.extra.statement
         return statement ? !!database.entities?.find(e => e.extra && 'statement' in e.extra && e.extra.statement === statement) : false
@@ -158,17 +159,17 @@ function genDatabase(database: Database): string {
         const statement = e.extra && 'statement' in e.extra && e.extra.statement
         const rels = statement ? entityRels.filter(r => r.extra && 'statement' in r.extra && r.extra.statement === statement) : []
         const types = statement ? entityTypes.filter(t => t.extra && 'statement' in t.extra && t.extra.statement === statement) : []
-        return {index: statement || i, aml: genEntity(e, rels, types)}
+        return {index: statement || i, aml: genEntity(e, rels, types, legacy)}
     })
     const entityCount = entities.length
     const relations = aloneRels.map((r, i) => {
         const statement = r.extra && 'statement' in r.extra && r.extra.statement
-        return {index: statement || entityCount + i, aml: genRelation(r)}
+        return {index: statement || entityCount + i, aml: genRelation(r, legacy)}
     })
     const relationsCount = relations.length
     const types = aloneTypes.map((t, i) => {
         const statement = t.extra && 'statement' in t.extra && t.extra.statement
-        return {index: statement || entityCount + relationsCount + i, aml: genType(t)}
+        return {index: statement || entityCount + relationsCount + i, aml: genType(t, legacy)}
     })
     return entities.concat(relations, types).sort((a, b) => a.index - b.index).map(a => a.aml).join('\n') || ''
 }
@@ -219,9 +220,9 @@ function flattenAttributes(attributes: AttributeAstNested[]): AttributeAstNested
     })
 }
 
-function genEntity(e: Entity, relations: Relation[], types: Type[]): string {
+function genEntity(e: Entity, relations: Relation[], types: Type[], legacy: boolean): string {
     const entity = `${e.name}${e.kind === 'view' ? '*' : ''}${genNote(e.doc)}${genCommentExtra(e)}\n`
-    return entity + e.attrs?.map(a => genAttribute(a, e, relations.filter(r => r.attrs[0].src[0] === a.name), types)).join('')
+    return entity + e.attrs?.map(a => genAttribute(a, e, relations.filter(r => r.attrs[0].src[0] === a.name), types, legacy)).join('')
 }
 
 function buildIndexes(indexes: {path: AttributePath, index: string | undefined}[]): {value: string | undefined, attrs: AttributePath[]}[] {
@@ -255,19 +256,19 @@ function buildAttribute(statement: number, a: AttributeAstNested, entity: Entity
     }
 }
 
-function genAttribute(a: Attribute, e: Entity, relations: Relation[], types: Type[], parents: AttributePath = []): string {
+function genAttribute(a: Attribute, e: Entity, relations: Relation[], types: Type[], legacy: boolean, parents: AttributePath = []): string {
     const path = [...parents, a.name]
     const indent = '  '.repeat(path.length)
-    const nested = a.attrs?.map(aa => genAttribute(aa, e, relations, types, path)).join('') || ''
-    return indent + genAttributeInner(a, e, relations, types, path, indent) + '\n' + nested
+    const nested = a.attrs?.map(aa => genAttribute(aa, e, relations, types, legacy, path)).join('') || ''
+    return indent + genAttributeInner(a, e, relations, types, path, indent, legacy) + '\n' + nested
 }
 
-function genAttributeInner(a: Attribute, e: Entity, relations: Relation[], types: Type[], path: AttributePath, indent: string): string {
+function genAttributeInner(a: Attribute, e: Entity, relations: Relation[], types: Type[], path: AttributePath, indent: string, legacy: boolean): string {
     const pk = e.pk && e.pk.attrs.some(attr => attributePathSame(attr, path)) ? ' pk' : ''
     const indexes = (e.indexes || []).filter(i => i.attrs.some(attr => attributePathSame(attr, path))).map(i => ` ${i.unique ? 'unique' : 'index'}${i.name ? `=${i.name}` : ''}`).join('')
     const checks = (e.checks || []).filter(i => i.attrs.some(attr => attributePathSame(attr, path))).map(i => ` check${i.predicate ? `=\`${i.predicate}\`` : ''}`).join('')
-    const rel = relations.map(r => ' ' + genRelationTarget(r)).join('')
-    return `${a.name}${genAttributeType(a, types)}${pk}${indexes}${checks}${rel}${genNote(a.doc, indent)}${genCommentExtra(a)}`
+    const rel = relations.map(r => ' ' + genRelationTarget(r, legacy)).join('')
+    return `${a.name}${genAttributeType(a, types)}${a.null ? ' nullable' : ''}${pk}${indexes}${checks}${rel}${genNote(a.doc, indent)}${genCommentExtra(a)}`
 }
 
 function buildAttributeType(a: AttributeAstNested, ext: string): AttributeType {
@@ -309,16 +310,16 @@ function buildRelation(statement: number, line: number, kind: RelationKindAst | 
     }) : undefined
 }
 
-function genRelation(r: Relation): string {
-    return `rel ${genAttributeRef(r.src, r.attrs.map(a => a.src))} ${genRelationTarget(r)}${genNote(r.doc)}${genCommentExtra(r)}\n`
+function genRelation(r: Relation, legacy: boolean): string {
+    return `${legacy ? 'fk' : 'rel'} ${genAttributeRef(r.src, r.attrs.map(a => a.src), legacy)} ${genRelationTarget(r, legacy)}${genNote(r.doc)}${genCommentExtra(r)}\n`
 }
 
-function genRelationTarget(r: Relation): string {
+function genRelationTarget(r: Relation, legacy: boolean): string {
     const poly = r.polymorphic ? `${r.polymorphic.attribute}=${r.polymorphic.value}` : ''
     const [qSrc, qRef] = (r.kind || 'many-to-one').split('-to-')
     const aSecond = qSrc === 'many' ? '>' : '-'
     const aFirst = qRef === 'many' ? '<' : '-'
-    return `${aFirst}${poly}${aSecond} ${genAttributeRef(r.ref, r.attrs.map(a => a.ref))}`
+    return `${legacy ? 'fk' : aFirst + poly + aSecond} ${genAttributeRef(r.ref, r.attrs.map(a => a.ref), legacy)}`
 }
 
 function buildType(statement: number, t: TypeStatement, namespace: Namespace): Type {
@@ -336,19 +337,20 @@ function buildTypeContent(statement: number, t: TypeContentAst, entity: EntityRe
     return isNever(t)
 }
 
-function genType(t: Type): string {
-    return `type ${genEntityRef({...t, entity: t.name})}${genTypeContent(t)}${genNote(t.doc)}${genCommentExtra(t)}\n`
+function genType(t: Type, legacy: boolean): string {
+    return `type ${genEntityRef({...t, entity: t.name})}${genTypeContent(t, legacy)}${genNote(t.doc)}${genCommentExtra(t)}\n`
 }
 
-function genTypeContent(t: Type): string {
+function genTypeContent(t: Type, legacy: boolean): string {
     if (t.definition && t.definition.match(/[ (]/)) return ' `' + t.definition + '`'
     if (t.definition) return ' ' + t.definition
     if (t.values) return ' (' + t.values.join(', ') + ')'
-    if (t.attrs) return ' {' + t.attrs.map(a => genAttributeInner(a, {name: t.name}, [], [], [a.name], '')).join(', ') + '}'
+    if (t.attrs) return ' {' + t.attrs.map(a => genAttributeInner(a, {name: t.name}, [], [], [a.name], '', legacy)).join(', ') + '}'
     return ''
 }
 
-export function genAttributeRef(e: EntityRef, attrs: AttributePath[]): string {
+export function genAttributeRef(e: EntityRef, attrs: AttributePath[], legacy: boolean): string {
+    if (legacy) return `${genEntityRef(e)}.${attrs.map(genAttributePath).join(':')}`
     return `${genEntityRef(e)}(${attrs.map(genAttributePath).join(', ')})`
 }
 

@@ -433,11 +433,7 @@ function runDatabaseQuery(msg: RunDatabaseQuery) {
 
 function getAmlSchema(msg: GetAmlSchema) {
     const res = parseAml(msg.content).map(databaseToLegacy)
-    app.gotAmlSchema(msg.source, msg.content.length, res.result, (res.errors || []).map(e => ({
-        row: e.position.start.line,
-        col: e.position.start.column,
-        problem: e.message
-    })))
+    app.gotAmlSchema(msg.source, msg.content.length, res.result, res.errors || [])
 }
 
 function getPrismaSchema(msg: GetPrismaSchema) {

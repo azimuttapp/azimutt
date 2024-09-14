@@ -122,6 +122,7 @@ module Services.Lenses exposing
     , setArea
     , setBody
     , setCanvas
+    , setChecks
     , setCollapseTableColumns
     , setCollapsed
     , setColor
@@ -200,6 +201,7 @@ module Services.Lenses exposing
     , setPlan
     , setPosition
     , setPrevious
+    , setPrimaryKey
     , setPrismaSource
     , setProject
     , setProjectSource
@@ -241,6 +243,7 @@ module Services.Lenses exposing
     , setToken
     , setTokenForm
     , setTokens
+    , setUniques
     , setUpdatedAt
     , setValue
     , setView
@@ -338,6 +341,11 @@ mapCanvas =
 mapCanvasT : (v -> ( v, a )) -> { item | canvas : v } -> ( { item | canvas : v }, a )
 mapCanvasT =
     mapT_ .canvas setCanvas
+
+
+setChecks : v -> { item | checks : v } -> { item | checks : v }
+setChecks =
+    set_ .checks (\value item -> { item | checks = value })
 
 
 setCollapsed : v -> { item | collapsed : v } -> { item | collapsed : v }
@@ -1052,6 +1060,11 @@ setPrevious =
     set_ .previous (\value item -> { item | previous = value })
 
 
+setPrimaryKey : v -> { item | primaryKey : v } -> { item | primaryKey : v }
+setPrimaryKey =
+    set_ .primaryKey (\value item -> { item | primaryKey = value })
+
+
 setPrismaSource : v -> { item | prismaSource : v } -> { item | prismaSource : v }
 setPrismaSource =
     set_ .prismaSource (\value item -> { item | prismaSource = value })
@@ -1467,6 +1480,11 @@ mapTokenFormM =
     mapM_ .tokenForm setTokenForm
 
 
+setUniques : v -> { item | uniques : v } -> { item | uniques : v }
+setUniques =
+    set_ .uniques (\value item -> { item | uniques = value })
+
+
 setUpdatedAt : v -> { item | updatedAt : v } -> { item | updatedAt : v }
 setUpdatedAt =
     set_ .updatedAt (\value item -> { item | updatedAt = value })
@@ -1479,7 +1497,7 @@ setValue =
 
 setView : v -> { item | view : v } -> { item | view : v }
 setView =
-    set_ .view (\view item -> { item | view = view })
+    set_ .view (\value item -> { item | view = value })
 
 
 setVirtualRelation : v -> { item | virtualRelation : v } -> { item | virtualRelation : v }

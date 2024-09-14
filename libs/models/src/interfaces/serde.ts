@@ -1,3 +1,4 @@
+import {z} from "zod";
 import {isNotUndefined, isObject} from "@azimutt/utils";
 import {Database} from "../database";
 
@@ -8,12 +9,18 @@ export interface Serde {
     generate(db: Database): string
 }
 
-export type ParserError = { name: string, kind: ParserErrorKind, message: string } & TokenPosition
-export type ParserErrorKind = 'error' | 'warning' | 'info' | 'hint'
-export type TokenPosition = {offset: TokenOffset, position: TokenEditor}
-export type TokenOffset = {start: number, end: number}
-export type TokenEditor = {start: EditorPosition, end: EditorPosition}
-export type EditorPosition = {line: number, column: number}
+export const EditorPosition = z.object({line: z.number(), column: z.number()}).strict()
+export type EditorPosition = z.infer<typeof EditorPosition>
+export const TokenEditor = z.object({start: EditorPosition, end: EditorPosition}).strict()
+export type TokenEditor = z.infer<typeof TokenEditor>
+export const TokenOffset = z.object({start: z.number(), end: z.number()}).strict()
+export type TokenOffset = z.infer<typeof TokenOffset>
+export const TokenPosition = z.object({offset: TokenOffset, position: TokenEditor}).strict()
+export type TokenPosition = z.infer<typeof TokenPosition>
+export const ParserErrorKind = z.enum(['error', 'warning', 'info', 'hint'])
+export type ParserErrorKind = z.infer<typeof ParserErrorKind>
+export const ParserError = TokenPosition.extend({name: z.string(), kind: ParserErrorKind, message: z.string()}).strict()
+export type ParserError = z.infer<typeof ParserError>
 
 export const isParserErrorKind = (value: unknown): value is ParserErrorKind => typeof value === 'string' && ['error', 'warning', 'info', 'hint'].includes(value)
 export const isTokenPosition = (value: unknown): value is TokenPosition => isObject(value) && ('offset' in value && isTokenOffset(value.offset)) && ('position' in value && isTokenEditor(value.position))

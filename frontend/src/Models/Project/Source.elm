@@ -1,4 +1,4 @@
-module Models.Project.Source exposing (Source, addRelations, aml, database, databaseKind, databaseUrl, databaseUrlStorage, decode, encode, getColumnI, getTableI, removeRelations, setSchema, toInfo, updateWith)
+module Models.Project.Source exposing (Source, addRelations, aml, database, databaseKind, databaseUrl, databaseUrlStorage, decode, doc, docSource, encode, getColumnI, getTableI, removeRelations, setSchema, toInfo, updateWith)
 
 import Array exposing (Array)
 import Conf
@@ -215,3 +215,24 @@ decodeSource id name kind content tables relations types enabled fromSample crea
     , createdAt = createdAt
     , updatedAt = updatedAt
     }
+
+
+docSource : Source
+docSource =
+    { id = SourceId.zero
+    , name = "Doc source"
+    , kind = AmlEditor
+    , content = Array.empty
+    , tables = Dict.empty
+    , relations = []
+    , types = Dict.empty
+    , enabled = True
+    , fromSample = Nothing
+    , createdAt = Time.zero
+    , updatedAt = Time.zero
+    }
+
+
+doc : SourceName -> List Table -> List Relation -> Source
+doc name tables relations =
+    { docSource | name = name, tables = Dict.fromListBy .id tables, relations = relations }

@@ -1,9 +1,9 @@
-module Models.Project.Relation exposing (Relation, RelationLike, decode, empty, encode, linkedToTable, new, outRelation, virtual)
+module Models.Project.Relation exposing (Relation, RelationLike, decode, doc, empty, encode, linkedToTable, new, outRelation, virtual)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Encode as Encode
-import Libs.Nel exposing (Nel)
+import Libs.Nel as Nel exposing (Nel)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef, ColumnRefLike)
 import Models.Project.RelationId as RelationId exposing (RelationId)
@@ -68,3 +68,12 @@ decode =
         (Decode.field "name" RelationName.decode)
         (Decode.field "src" ColumnRef.decode)
         (Decode.field "ref" ColumnRef.decode)
+
+
+doc : String -> String -> Relation
+doc srcStr refStr =
+    let
+        ( src, ref ) =
+            ( ColumnRef.fromString srcStr, ColumnRef.fromString refStr )
+    in
+    Relation (RelationId.new src ref) (Tuple.second src.table ++ "_" ++ Nel.join "_" src.column ++ "_fk") src ref

@@ -1,4 +1,4 @@
-module Models.Project.Column exposing (Column, ColumnLike, NestedColumns(..), cleanStats, decode, empty, encode, findColumn, flatten, getColumn, nestedColumns)
+module Models.Project.Column exposing (Column, ColumnLike, NestedColumns(..), cleanStats, decode, doc, docColumn, empty, encode, findColumn, flatten, getColumn, nestedColumns)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
@@ -141,3 +141,22 @@ decodeNestedColumns : Decoder NestedColumns
 decodeNestedColumns =
     Decode.map NestedColumns
         (Decode.nel (Decode.lazy (\_ -> decode)) |> Decode.map (Nel.indexedMap (\i c -> c i) >> Ned.fromNelMap .name))
+
+
+docColumn : Column
+docColumn =
+    { index = 0
+    , name = "Doc column"
+    , kind = "varchar"
+    , nullable = False
+    , default = Nothing
+    , comment = Nothing
+    , values = Nothing
+    , columns = Nothing
+    , stats = Nothing
+    }
+
+
+doc : Int -> ColumnName -> ColumnType -> Column
+doc index name kind =
+    { docColumn | index = index, name = name, kind = kind }

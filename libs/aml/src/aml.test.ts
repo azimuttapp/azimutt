@@ -45,7 +45,7 @@ type position {x int, y int}
 
 type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
 `
-        const parsed: Database = {
+        const db: Database = {
             entities: [{
                 name: 'users',
                 attrs: [
@@ -95,8 +95,8 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                 {name: 'range', definition: '(subtype = float8, subtype_diff = float8mi)', extra: {statement: 7, line: 36, comment: 'custom type'}},
             ]
         }
-        const {extra, ...db} = parseAml(input).result || {}
-        expect(db).toEqual(parsed)
+        const {extra, ...parsed} = parseAml(input).result || {}
+        expect(parsed).toEqual(db)
         expect(generateAml(parsed)).toEqual(input.trim() + '\n')
     })
     test.skip('complex schema',  () => { // TODO: unskip
@@ -119,7 +119,7 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
         expect(generateAml(parsed)).toEqual(input)
     })
     test('bad schema', () => {
-        expect(parseLegacyAml(`a bad schema`)).toEqual({
+        expect(parseAmlTest(`a bad schema`)).toEqual({
             result: {
                 entities: [
                     {name: 'a', extra: {statement: 1, line: 1}},
@@ -181,38 +181,38 @@ type public.status (pending, wip, done)
     // make sure the parser don't fail on invalid input
     describe('errors', () => {
         test('attribute relation', () => {
-            expect(parseLegacyAml('posts\n  author int\n')).toEqual({
+            expect(parseAmlTest('posts\n  author int\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], extra: {}}
             })
-            expect(parseLegacyAml('posts\n  author int -\n')).toEqual({
+            expect(parseAmlTest('posts\n  author int -\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], extra: {}},
                 errors: [{name: 'NoViableAltException', kind: 'error', message: "Expecting: one of these possible Token sequences:\n  1. [Dash]\n  2. [LowerThan]\n  3. [GreaterThan]\nbut found: '\n'", ...tokenPosition(20, 20, 2, 15, 2, 15)}]
             })
-            expect(parseLegacyAml('posts\n  author int ->\n')).toEqual({
+            expect(parseAmlTest('posts\n  author int ->\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], extra: {}},
                 errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Identifier <-- but found --> '\n' <--", ...tokenPosition(21, 21, 2, 16, 2, 16)}]
             })
-            expect(parseLegacyAml('posts\n  author int -> users\n')).toEqual({
+            expect(parseAmlTest('posts\n  author int -> users\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], extra: {}},
                 // TODO: an error should be reported here
             })
-            expect(parseLegacyAml('posts\n  author int -> users(\n')).toEqual({
+            expect(parseAmlTest('posts\n  author int -> users(\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], extra: {}},
                 errors: [{name: 'EarlyExitException', kind: 'error', message: "Expecting: expecting at least one iteration which starts with one of these possible Token sequences::\n  <[WhiteSpace] ,[Identifier]>\nbut found: '\n'", ...tokenPosition(28, 28, 2, 23, 2, 23)}]
             })
-            expect(parseLegacyAml('posts\n  author int -> users(id\n')).toEqual({
+            expect(parseAmlTest('posts\n  author int -> users(id\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ["author"], ref: ["id"]}], extra: {statement: 1, line: 2}}], extra: {}},
                 errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> RParen <-- but found --> '\n' <--", ...tokenPosition(30, 30, 2, 25, 2, 25)}]
             })
-            expect(parseLegacyAml('posts\n  author int -> users(id)\n')).toEqual({
+            expect(parseAmlTest('posts\n  author int -> users(id)\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ["author"], ref: ["id"]}], extra: {statement: 1, line: 2}}], extra: {}},
             })
 
-            expect(parseLegacyAml('posts\n  author int - users(id)\n')).toEqual({
+            expect(parseAmlTest('posts\n  author int - users(id)\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ["author"], ref: ["id"]}], extra: {statement: 1, line: 2}}], extra: {}},
                 errors: [{name: 'NoViableAltException', kind: 'error', message: "Expecting: one of these possible Token sequences:\n  1. [Dash]\n  2. [LowerThan]\n  3. [GreaterThan]\nbut found: ' '", ...tokenPosition(20, 20, 2, 15, 2, 15)}]
             })
-            expect(parseLegacyAml('posts\n  author int  users(id)\n')).toEqual({
+            expect(parseAmlTest('posts\n  author int  users(id)\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}, {name: 'id', extra: {statement: 2, line: 2}}], extra: {}},
                 // TODO handle error better to not generate a fake entity (id)
                 errors: [
@@ -223,26 +223,26 @@ type public.status (pending, wip, done)
             })
         })
         test('attribute relation legacy', () => {
-            expect(parseLegacyAml('posts\n  author int\n')).toEqual({
+            expect(parseAmlTest('posts\n  author int\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], extra: {}}
             })
-            expect(parseLegacyAml('posts\n  author int f\n')).toEqual({
+            expect(parseAmlTest('posts\n  author int f\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}, {name: 'f', extra: {statement: 2, line: 2}}], extra: {}},
                 errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> NewLine <-- but found --> 'f' <--", ...tokenPosition(19, 19, 2, 14, 2, 14)}]
             })
-            expect(parseLegacyAml('posts\n  author int fk\n')).toEqual({
+            expect(parseAmlTest('posts\n  author int fk\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], extra: {}},
                 errors: [
                     {name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Identifier <-- but found --> '\n' <--", ...tokenPosition(21, 21, 2, 16, 2, 16)},
                     {...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(19, 20, 2, 14, 2, 15)},
                 ]
             })
-            expect(parseLegacyAml('posts\n  author int fk users\n')).toEqual({
+            expect(parseAmlTest('posts\n  author int fk users\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], extra: {}},
                 // TODO: an error should be reported here
                 errors: [{...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(19, 20, 2, 14, 2, 15)}]
             })
-            expect(parseLegacyAml('posts\n  author int fk users.\n')).toEqual({
+            expect(parseAmlTest('posts\n  author int fk users.\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], extra: {}},
                 errors: [
                     {name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Identifier <-- but found --> '\n' <--", ...tokenPosition(28, 28, 2, 23, 2, 23)},
@@ -250,7 +250,7 @@ type public.status (pending, wip, done)
                     {...legacy('"users." is the legacy way, use "users()" instead'), ...tokenPosition(22, 26, 2, 17, 2, 21)},
                 ]
             })
-            expect(parseLegacyAml('posts\n  author int fk users.id\n')).toEqual({
+            expect(parseAmlTest('posts\n  author int fk users.id\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {statement: 1, line: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {statement: 1, line: 2}}], extra: {}},
                 errors: [
                     {...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(19, 20, 2, 14, 2, 15)},
@@ -295,15 +295,15 @@ type user_role (admin, guest)
             const length = input.length
             for (let i = 0; i < length; i++) {
                 // parse the input at all length to make sure no partial input can break the parser
-                expect(() => parseLegacyAml(input.slice(0, i))).not.toThrow()
+                expect(() => parseAmlTest(input.slice(0, i))).not.toThrow()
             }
         })
     })
 
-    // make sure AML v1 is still correctly parsed, cf frontend/tests/DataSources/AmlMiner/AmlParserTest.elm
+    // make sure AML v1 is still correctly parsed
     describe('legacy', () => {
         test('basic', () => {
-            expect(parseLegacyAml(`
+            expect(parseAmlTest(`
 users
   id int
   name varchar(12)
@@ -347,7 +347,7 @@ talks
             })
         })
         test('complex', () => {
-            expect(parseLegacyAml(`
+            expect(parseAmlTest(`
 
 emails
   email varchar
@@ -422,9 +422,86 @@ fk admins.id -> users.id
                 ]
             })
         })
+        test('crm conversion', () => {
+            const input = `contact_roles
+  contact_id uuid pk fk contacts.id
+  role_id uuid pk fk roles.id
+
+contacts
+  id uuid pk
+  name varchar
+  email varchar
+
+events
+  id uuid pk
+  contact_id uuid nullable fk contacts.id
+  instance_name varchar | hostname
+  instance_id uuid
+
+roles
+  id uuid pk
+  name varchar`
+            const db: Database = {
+                entities: [{
+                    name: 'contact_roles',
+                    attrs: [
+                        {name: 'contact_id', type: 'uuid'},
+                        {name: 'role_id', type: 'uuid'},
+                    ],
+                    pk: {attrs: [['contact_id'], ['role_id']]},
+                    extra: {statement: 1, line: 1}
+                }, {
+                    name: 'contacts',
+                    attrs: [
+                        {name: 'id', type: 'uuid'},
+                        {name: 'name', type: 'varchar'},
+                        {name: 'email', type: 'varchar'},
+                    ],
+                    pk: {attrs: [['id']]},
+                    extra: {statement: 2, line: 5}
+                }, {
+                    name: 'events',
+                    attrs: [
+                        {name: 'id', type: 'uuid'},
+                        {name: 'contact_id', type: 'uuid', null: true},
+                        {name: 'instance_name', type: 'varchar', doc: 'hostname'},
+                        {name: 'instance_id', type: 'uuid'},
+                    ],
+                    pk: {attrs: [['id']]},
+                    extra: {statement: 3, line: 10}
+                }, {
+                    name: 'roles',
+                    attrs: [
+                        {name: 'id', type: 'uuid'},
+                        {name: 'name', type: 'varchar'},
+                    ],
+                    pk: {attrs: [['id']]},
+                    extra: {statement: 4, line: 16}
+                }],
+                relations: [
+                    {src: {entity: 'contact_roles'}, ref: {entity: 'contacts'}, attrs: [{src: ['contact_id'], ref: ['id']}], extra: {statement: 1, line: 2}},
+                    {src: {entity: 'contact_roles'}, ref: {entity: 'roles'}, attrs: [{src: ['role_id'], ref: ['id']}], extra: {statement: 1, line: 3}},
+                    {src: {entity: 'events'}, ref: {entity: 'contacts'}, attrs: [{src: ['contact_id'], ref: ['id']}], extra: {statement: 3, line: 12}},
+                ],
+                extra: {}
+            }
+            const parsed = parseAmlTest(input)
+            expect(parsed).toEqual({
+                result: db,
+                errors: [
+                    {...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(35, 36, 2, 22, 2, 23)},
+                    {...legacy('"contacts.id" is the legacy way, use "contacts(id)" instead'), ...tokenPosition(38, 48, 2, 25, 2, 35)},
+                    {...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(68, 69, 3, 19, 3, 20)},
+                    {...legacy('"roles.id" is the legacy way, use "roles(id)" instead'), ...tokenPosition(71, 78, 3, 22, 3, 29)},
+                    {...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(182, 183, 12, 28, 12, 29)},
+                    {...legacy('"contacts.id" is the legacy way, use "contacts(id)" instead'), ...tokenPosition(185, 195, 12, 31, 12, 41)},
+                ]
+            })
+            expect(generateAml(parsed.result || {}, true)).toEqual(input.trim() + '\n')
+        })
         test('flexible identifiers', () => {
             // in v1, identifiers have no space and ends with the stop char of their context ('.' in entities, ',' in props...), more chars allowed...
-            expect(parseLegacyAml(`
+            expect(parseAmlTest(`
 C##INVENTORY.USERS
   ID BIGINT
   NAME VARCHAR
@@ -439,7 +516,7 @@ C##INVENTORY.USERS
             }], extra: {}}})
         })
         test('uppercase keywords', () => {
-            expect(parseLegacyAml(`
+            expect(parseAmlTest(`
 USERS
   ID BIGINT PK
   NAME VARCHAR
@@ -453,9 +530,10 @@ USERS
                 extra: {statement: 1, line: 2}
             }], extra: {}}})
         })
-        test.skip('flexible enum values', () => { // too hard to make it pass, leave it for now
+        test.skip('flexible enum values', () => {
+            // too hard to make it pass, leave it for now
             // in v1, identifiers have no space and ends with the stop char of their context ('.' in entities, ',' in props...), more chars allowed...
-            expect(parseLegacyAml(`
+            expect(parseAmlTest(`
 users
   id bigint
   format asset_format(  1:1  ,  16:9  ,  4:3  )
@@ -480,8 +558,8 @@ users
     })
 })
 
-function parseLegacyAml(aml: string): ParserResult<Database> {
-    // remove db extra fields not relevant
+function parseAmlTest(aml: string): ParserResult<Database> {
+    // remove not relevant db extra fields & print exception
     try {
         return parseAml(aml).map(({extra: {source, parsedAt, parsingMs, formattingMs, ...extra} = {}, ...db}) => ({...db, extra}))
     } catch (e) {

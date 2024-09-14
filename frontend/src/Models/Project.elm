@@ -1,4 +1,4 @@
-module Models.Project exposing (Project, create, decode, downloadContent, downloadFilename, duplicate, encode, relations, tables, types)
+module Models.Project exposing (Project, create, decode, doc, docProject, downloadContent, downloadFilename, duplicate, encode, relations, tables, types)
 
 import Conf
 import Dict exposing (Dict)
@@ -237,3 +237,29 @@ parseKey key =
 
         _ ->
             Nothing
+
+
+docProject : Project
+docProject =
+    { organization = Nothing
+    , id = ProjectId.zero
+    , slug = "doc-project"
+    , name = "Doc project"
+    , description = Nothing
+    , sources = []
+    , ignoredRelations = Dict.empty
+    , metadata = Dict.empty
+    , layouts = Dict.empty
+    , tableRowsSeq = 0
+    , settings = ProjectSettings.docProjectSettings
+    , storage = ProjectStorage.Remote
+    , visibility = ProjectVisibility.None
+    , version = ProjectEncodingVersion.current
+    , createdAt = Time.zero
+    , updatedAt = Time.zero
+    }
+
+
+doc : ProjectName -> Source -> Project
+doc name source =
+    { docProject | name = name, sources = [ source ] }

@@ -1,4 +1,4 @@
-module Models.Project.TableProps exposing (TableProps, decode, encode)
+module Models.Project.TableProps exposing (TableProps, decode, doc, docTableProps, encode)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -6,8 +6,9 @@ import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.Tailwind as Tw exposing (Color)
 import Models.Position as Position
-import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableName exposing (TableName)
 import Models.Size as Size
 
 
@@ -48,3 +49,21 @@ decode =
         (Decode.defaultField "selected" Decode.bool False)
         (Decode.defaultField "collapsed" Decode.bool False)
         (Decode.defaultField "hiddenColumns" Decode.bool False)
+
+
+docTableProps : TableProps
+docTableProps =
+    { id = ( "", "" )
+    , position = Position.zeroGrid
+    , size = Size.zeroCanvas
+    , color = Tw.blue
+    , columns = []
+    , selected = False
+    , collapsed = False
+    , hiddenColumns = False
+    }
+
+
+doc : TableName -> List ColumnPathStr -> TableProps
+doc table columns =
+    { docTableProps | id = ( "", table ), columns = columns |> List.map ColumnPath.fromString }

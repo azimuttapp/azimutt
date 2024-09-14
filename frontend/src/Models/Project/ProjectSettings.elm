@@ -1,4 +1,4 @@
-module Models.Project.ProjectSettings exposing (HiddenColumns, LlmSettings, ProjectSettings, RemovedTables, decode, encode, fillFindPath, hideColumn, init, removeColumn, removeTable)
+module Models.Project.ProjectSettings exposing (HiddenColumns, LlmSettings, ProjectSettings, RemovedTables, decode, docProjectSettings, encode, fillFindPath, hideColumn, init, removeColumn, removeTable)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -178,3 +178,19 @@ decodeLlmSettings =
     Decode.map2 LlmSettings
         (Decode.field "key" OpenAIKey.decode)
         (Decode.field "model" OpenAIModel.decode)
+
+
+docProjectSettings : ProjectSettings
+docProjectSettings =
+    { findPath = FindPathSettings.init
+    , defaultSchema = "public"
+    , removedSchemas = []
+    , removeViews = False
+    , removedTables = ""
+    , hiddenColumns = { list = "created.+, updated.+, deleted.+", max = 15, props = False, relations = False }
+    , columnOrder = ColumnOrder.OrderByProperty
+    , relationStyle = RelationStyle.Bezier
+    , columnBasicTypes = True
+    , collapseTableColumns = False
+    , llm = Nothing
+    }
