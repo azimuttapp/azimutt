@@ -5,6 +5,7 @@ import {
     attributePathFromId,
     AttributeRef,
     columnStatsToLegacy,
+    databaseFromLegacy,
     databaseToLegacy,
     DatabaseUrl,
     entityRefFromId,
@@ -15,6 +16,7 @@ import {
     LegacyColumnStats,
     LegacyDatabase,
     LegacyDatabaseConnection,
+    legacyDatabaseJsonFormat,
     LegacyDatabaseQueryResults,
     LegacyProject,
     LegacyProjectStorage,
@@ -29,9 +31,9 @@ import {
     tableStatsToLegacy,
     textToSql
 } from "@azimutt/models";
-import {parseAml} from "@azimutt/aml";
+import {generateAml, parseAml} from "@azimutt/aml";
 import {prisma} from "@azimutt/serde-prisma";
-import {HtmlId, Platform, ToastLevel, ViewPosition} from "./types/basics";
+import {Dialect, HtmlId, Platform, ToastLevel, ViewPosition} from "./types/basics";
 import * as Uuid from "./types/uuid";
 import {
     CreateProject,
@@ -40,6 +42,7 @@ import {
     DeleteSource,
     ElmFlags,
     GetAmlSchema,
+    GetCode,
     GetColumnStats,
     GetDatabaseSchema,
     GetLocalFile,
@@ -131,6 +134,7 @@ app.on('GetColumnStats', getColumnStats)
 app.on('RunDatabaseQuery', runDatabaseQuery)
 app.on('GetAmlSchema', getAmlSchema)
 app.on('GetPrismaSchema', getPrismaSchema)
+app.on('GetCode', getCode)
 app.on('ObserveSizes', observeSizes)
 app.on('LlmGenerateSql', llmGenerateSql)
 app.on('ListenKeys', listenHotkeys)
@@ -441,6 +445,16 @@ function getPrismaSchema(msg: GetPrismaSchema) {
         (schema: LegacyDatabase) => app.gotPrismaSchema(schema),
         (errors: ParserError[]) => app.gotPrismaSchemaError(errors.map(errorToString).join(', '))
     )
+}
+
+function getCode(msg: GetCode) {
+    let content = `Unsupported dialect ${msg.dialect}`
+    if (msg.dialect === Dialect.enum.AML) {
+        content = generateAml(databaseFromLegacy(msg.schema))
+    } else if (msg.dialect === Dialect.enum.JSON) {
+        content = legacyDatabaseJsonFormat(msg.schema)
+    }
+    app.gotCode(msg.dialect, content)
 }
 
 const resizeObserver = new ResizeObserver(entries => {

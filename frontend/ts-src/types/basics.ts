@@ -2,27 +2,32 @@ import {z} from "zod";
 
 export type Brand<K, T> = K & { __brand: T } // cf https://michalzalecki.com/nominal-typing-in-typescript
 
-export type Slug = string
 export const Slug = z.string()
-export type Email = string
-export type Username = string
-export type HtmlId = string
+export type Slug = z.infer<typeof Slug>
+export const Email = z.string()
+export type Email = z.infer<typeof Email>
+export const Username = z.string()
+export type Username = z.infer<typeof Username>
 export const HtmlId = z.string()
-export type FileUrl = string
-export type FileName = string
+export type HtmlId = z.infer<typeof HtmlId>
+export const FileUrl = z.string()
+export type FileUrl = z.infer<typeof FileUrl>
 export const FileName = z.string()
-export type FileContent = string
+export type FileName = z.infer<typeof FileName>
 export const FileContent = z.string()
-export type FileObject = File
+export type FileContent = z.infer<typeof FileContent>
 export const FileObject = z.instanceof(window.File)
-export type ViewPosition = 'start' | 'end'
+export type FileObject = z.infer<typeof FileObject> // export type FileObject = File
 export const ViewPosition = z.enum(['start', 'end'])
-export type ToastLevel = 'info' | 'success' | 'warning' | 'error'
+export type ViewPosition = z.infer<typeof ViewPosition>
 export const ToastLevel = z.enum(['info', 'success', 'warning', 'error'])
-export type Platform = 'mac' | 'pc'
+export type ToastLevel = z.infer<typeof ToastLevel>
 export const Platform = z.enum(['mac', 'pc'])
-export type UserRole = 'owner' | 'writer' | 'reader'
+export type Platform = z.infer<typeof Platform>
 export const UserRole = z.enum(['owner', 'writer', 'reader'])
+export type UserRole = z.infer<typeof UserRole>
+export const Dialect = z.enum(['AML', 'PostgreSQL', 'MySQL', 'JSON'])
+export type Dialect = z.infer<typeof Dialect>
 
 export interface PositionViewport {
     clientX: number

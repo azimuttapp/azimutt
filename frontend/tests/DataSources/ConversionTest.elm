@@ -1,7 +1,6 @@
 module DataSources.ConversionTest exposing (..)
 
 import DataSources.JsonMiner.JsonAdapter as JsonAdapter
-import DataSources.JsonMiner.JsonGenerator as JsonGenerator
 import DataSources.JsonMiner.JsonSchema as JsonSchema
 import DataSources.SqlMiner.MysqlGenerator as MysqlGenerator
 import DataSources.SqlMiner.PostgreSqlGenerator as PostgreSqlGenerator
@@ -30,7 +29,6 @@ suite =
         , test "parse MySQL" (\_ -> crmMysql |> parseSql |> Expect.equal crmSchema)
         , test "generate MySQL" (\_ -> crmSchema |> MysqlGenerator.generate |> Expect.equal crmMysql)
         , test "parse JSON" (\_ -> crmJson |> parseJson |> Expect.equal crmSchema)
-        , test "generate JSON" (\_ -> crmSchema |> JsonGenerator.generate |> Expect.equal crmJson)
         ]
 
 

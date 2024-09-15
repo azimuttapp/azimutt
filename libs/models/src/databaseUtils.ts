@@ -240,7 +240,7 @@ export const indexTypes = (types: Type[]): Record<TypeId, Type> =>
 export function databaseJsonFormat(database: Database): string {
     return stringify(database, (path: (string | number)[], value: any) => {
         const last = path[path.length - 1]
-        // if (last === 'entities' || last === 'relations') return 0
+        // if (last === 'entities' || last === 'relations' || last === 'types') return 0
         if (path.includes('attrs') && last !== 'attrs') return 0
         if (path.includes('pk')) return 0
         if (path.includes('indexes') && path.length > 3) return 0

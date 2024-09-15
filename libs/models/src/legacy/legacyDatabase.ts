@@ -1,5 +1,5 @@
 import {z} from "zod";
-import {removeEmpty, removeUndefined} from "@azimutt/utils";
+import {removeEmpty, removeUndefined, stringify} from "@azimutt/utils";
 import {
     Attribute,
     AttributePath,
@@ -442,4 +442,20 @@ function typeToLegacy(t: Type): LegacyType {
     } else {
         return {schema: t.schema || '', name: t.name, definition: t.definition || ''}
     }
+}
+
+
+export function legacyDatabaseJsonFormat(database: LegacyDatabase): string {
+    return stringify(database, (path: (string | number)[], value: any) => {
+        const last = path[path.length - 1]
+        // if (last === 'tables' || last === 'relations' || last === 'types') return 0
+        if (path.includes('columns') && last !== 'columns') return 0
+        if (path.includes('primaryKey')) return 0
+        if (path.includes('uniques') && path.length > 3) return 0
+        if (path.includes('indexes') && path.length > 3) return 0
+        if (path.includes('checks') && path.length > 3) return 0
+        if (path.includes('relations') && path.length > 2) return 0
+        if (path.includes('types') && path.length > 1) return 0
+        return 2
+    })
 }

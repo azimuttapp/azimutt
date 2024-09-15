@@ -127,7 +127,7 @@ addRelations now rels source =
         |> mapContent
             (\content ->
                 rels
-                    |> List.map (\r -> AmlGenerator.relation r.src r.ref)
+                    |> List.map (\r -> AmlGenerator.relationStandalone r.src r.ref)
                     |> List.insert ""
                     |> Array.fromList
                     |> Array.append
@@ -150,7 +150,7 @@ removeRelations rels source =
                 let
                     amlRels : Set String
                     amlRels =
-                        rels |> List.map (\r -> AmlGenerator.relation r.src r.ref) |> Set.fromList
+                        rels |> List.map (\r -> AmlGenerator.relationStandalone r.src r.ref) |> Set.fromList
                 in
                 content |> Array.filterNot (\line -> amlRels |> Set.member line)
             )
@@ -197,7 +197,7 @@ decodeSource id name kind content tables relations types enabled fromSample crea
             if kind == AmlEditor && Array.isEmpty content && Dict.isEmpty tables && List.nonEmpty relations then
                 -- migration from previous: no content, only relations and bad name for virtual relations
                 ( Conf.constants.virtualRelationSourceName
-                , Array.fromList (relations |> List.map (\r -> AmlGenerator.relation r.src r.ref))
+                , Array.fromList (relations |> List.map (\r -> AmlGenerator.relationStandalone r.src r.ref))
                 )
 
             else

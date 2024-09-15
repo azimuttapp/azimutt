@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, copyToClipboard, createProject, createProjectTmp, deleteProject, deleteSource, downloadFile, fireworks, focus, fullscreen, getAmlSchema, getColumnStats, getDatabaseSchema, getPrismaSchema, getProject, getTableStats, listenHotkeys, llmGenerateSql, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableRowSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, copyToClipboard, createProject, createProjectTmp, deleteProject, deleteSource, downloadFile, fireworks, focus, fullscreen, getAmlSchema, getCode, getColumnStats, getDatabaseSchema, getPrismaSchema, getProject, getTableStats, listenHotkeys, llmGenerateSql, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableRowSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
 
 import DataSources.JsonMiner.JsonSchema as JsonSchema exposing (JsonSchema)
 import Dict exposing (Dict)
@@ -15,6 +15,7 @@ import Libs.Models.FileName exposing (FileName)
 import Libs.Models.Hotkey as Hotkey exposing (Hotkey)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Color exposing (Color)
+import Models.Dialect as Dialect exposing (Dialect)
 import Models.OpenAIKey as OpenAIKey exposing (OpenAIKey)
 import Models.OpenAIModel as OpenAIModel exposing (OpenAIModel)
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
@@ -178,6 +179,11 @@ getPrismaSchema content =
     messageToJs (GetPrismaSchema content)
 
 
+getCode : Dialect -> JsonSchema -> Cmd msg
+getCode dialect schema =
+    messageToJs (GetCode dialect schema)
+
+
 observeSize : HtmlId -> Cmd msg
 observeSize id =
     observeSizes [ id ]
@@ -288,6 +294,7 @@ type ElmMsg
     | RunDatabaseQuery String SourceId DatabaseUrl SqlQueryOrigin
     | GetAmlSchema SourceId String
     | GetPrismaSchema String
+    | GetCode Dialect JsonSchema
     | ObserveSizes (List HtmlId)
     | LlmGenerateSql OpenAIKey OpenAIModel String DatabaseKind Source
     | ListenKeys (Dict String (List Hotkey))
@@ -312,6 +319,7 @@ type JsMsg
     | GotAmlSchema SourceId Int (Maybe JsonSchema) (List ParserError)
     | GotPrismaSchema JsonSchema
     | GotPrismaSchemaError String
+    | GotCode Dialect String
     | GotHotkey String
     | GotKeyHold String Bool
     | GotToast String String
@@ -440,6 +448,9 @@ elmEncoder elm =
         GetPrismaSchema content ->
             Encode.object [ ( "kind", "GetPrismaSchema" |> Encode.string ), ( "content", content |> Encode.string ) ]
 
+        GetCode dialect schema ->
+            Encode.object [ ( "kind", "GetCode" |> Encode.string ), ( "dialect", dialect |> Dialect.encode ), ( "schema", schema |> JsonSchema.encode ) ]
+
         ObserveSizes ids ->
             Encode.object [ ( "kind", "ObserveSizes" |> Encode.string ), ( "ids", ids |> Encode.list Encode.string ) ]
 
@@ -520,6 +531,9 @@ jsDecoder =
 
                 "GotPrismaSchemaError" ->
                     Decode.map GotPrismaSchemaError (Decode.field "error" Decode.string)
+
+                "GotCode" ->
+                    Decode.map2 GotCode (Decode.field "dialect" Dialect.decode) (Decode.field "content" Decode.string)
 
                 "GotHotkey" ->
                     Decode.map GotHotkey (Decode.field "id" Decode.string)
@@ -626,6 +640,9 @@ unhandledJsMsgError msg =
 
                 GotPrismaSchemaError _ ->
                     "GotPrismaSchemaError"
+
+                GotCode _ _ ->
+                    "GotCode"
 
                 GotHotkey _ ->
                     "GotHotkey"

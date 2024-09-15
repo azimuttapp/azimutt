@@ -1,12 +1,11 @@
-module Components.Slices.ExportDialogBody exposing (DocState, ExportFormat, ExportInput, Model, Msg, SharedDocState, doc, docInit, init, update, view)
+module Components.Slices.ExportDialogBody exposing (DocState, ExportInput, Model, Msg(..), SharedDocState, doc, docInit, init, update, view)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Radio as Radio
 import Components.Slices.PlanDialog as PlanDialog
 import Conf exposing (constants)
-import DataSources.AmlMiner.AmlGenerator as AmlGenerator
-import DataSources.JsonMiner.JsonGenerator as JsonGenerator
+import DataSources.JsonMiner.JsonAdapter as JsonAdapter
 import DataSources.SqlMiner.MysqlGenerator as MysqlGenerator
 import DataSources.SqlMiner.PostgreSqlGenerator as PostgreSqlGenerator
 import Dict
@@ -25,13 +24,16 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Remote as Remote exposing (Remote(..))
 import Libs.Tailwind as Tw exposing (sm)
 import Libs.Task as T
+import Models.Dialect as Dialect exposing (Dialect)
 import Models.Feature as Feature
 import Models.Organization as Organization
 import Models.Project as Project exposing (Project)
 import Models.Project.Check as Check
 import Models.Project.Column as Column exposing (docColumn)
 import Models.Project.Layout as Layout
+import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.PrimaryKey as PrimaryKey
+import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.Relation as Relation
 import Models.Project.Schema as Schema exposing (Schema)
 import Models.Project.Source as Source
@@ -49,17 +51,19 @@ import Track
 
 type alias Model =
     { id : HtmlId
+    , project : ProjectName
+    , layout : LayoutName
     , input : Maybe ExportInput
-    , format : Maybe ExportFormat
-    , output : Remote String ( FileName, String )
+    , format : Maybe Dialect
+    , output : Remote String String
     }
 
 
 type Msg
     = SetInput ExportInput
-    | SetFormat ExportFormat
-    | GetOutput ExportInput ExportFormat
-    | GotOutput FileName String
+    | SetFormat Dialect
+    | GetOutput ExportInput Dialect
+    | GotOutput Dialect String
 
 
 type ExportInput
@@ -68,16 +72,9 @@ type ExportInput
     | CurrentLayout
 
 
-type ExportFormat
-    = AML
-    | PostgreSQL
-    | MySQL
-    | JSON
-
-
-init : HtmlId -> Model
-init id =
-    { id = id, input = Nothing, format = Nothing, output = Pending }
+init : HtmlId -> ProjectName -> LayoutName -> Model
+init id project layout =
+    { id = id, project = project, layout = layout, input = Nothing, format = Nothing, output = Pending }
 
 
 update : (Msg -> msg) -> ProjectRef -> Erd -> Msg -> Model -> ( Model, Extra msg )
@@ -92,8 +89,12 @@ update wrap projectRef erd msg model =
         GetOutput source format ->
             ( { model | output = Fetching }, getOutput wrap projectRef erd source format )
 
-        GotOutput file content ->
-            ( { model | output = Fetched ( file, content ) }, Extra.none )
+        GotOutput format content ->
+            if model.format == Just format || model.input == Just Project then
+                ( { model | output = Fetched content }, Extra.none )
+
+            else
+                ( model, Extra.none )
 
 
 shouldGetOutput : (Msg -> msg) -> Model -> ( Model, Extra msg )
@@ -101,7 +102,7 @@ shouldGetOutput wrap model =
     if model.output /= Fetching then
         ( { model | output = Pending }
         , if model.input == Just Project then
-            GetOutput Project JSON |> wrap |> Extra.msg
+            GetOutput Project Dialect.JSON |> wrap |> Extra.msg
 
           else
             Maybe.map2 GetOutput model.input model.format |> Maybe.map wrap |> Extra.msgM
@@ -111,49 +112,60 @@ shouldGetOutput wrap model =
         ( model, Extra.none )
 
 
-getOutput : (Msg -> msg) -> ProjectRef -> Erd -> ExportInput -> ExportFormat -> Extra msg
+getOutput : (Msg -> msg) -> ProjectRef -> Erd -> ExportInput -> Dialect -> Extra msg
 getOutput wrap projectRef erd input format =
     case input of
         Project ->
             if not (Organization.canExportProject projectRef) then
-                Extra.cmdL [ GotOutput "" "plan_limit" |> wrap |> T.send, Track.planLimit Feature.projectExport (Just erd) ]
+                Extra.cmdL [ GotOutput format "plan_limit" |> wrap |> T.send, Track.planLimit Feature.projectExport (Just erd) ]
 
             else
-                erd |> Erd.unpack |> Project.downloadContent |> (GotOutput (erd.project.name ++ ".azimutt.json") >> wrap >> Extra.msg)
+                erd |> Erd.unpack |> Project.downloadContent |> (GotOutput format >> wrap >> Extra.msg)
 
         AllTables ->
-            if format /= AML && format /= JSON && not (Organization.canExportSchema projectRef) then
-                Extra.cmdL [ GotOutput "" "plan_limit" |> wrap |> T.send, Track.planLimit Feature.schemaExport (Just erd) ]
+            if format /= Dialect.AML && format /= Dialect.JSON && not (Organization.canExportSchema projectRef) then
+                Extra.cmdL [ GotOutput format "plan_limit" |> wrap |> T.send, Track.planLimit Feature.schemaExport (Just erd) ]
+
+            else if format == Dialect.AML || format == Dialect.JSON then
+                -- generate from JS, not Elm
+                erd |> Erd.toSchema |> (JsonAdapter.unpackSchema >> Ports.getCode format >> Extra.cmd)
 
             else
-                erd |> Erd.toSchema |> generateTables format |> (\( output, ext ) -> output |> GotOutput (erd.project.name ++ "." ++ ext) |> wrap |> Extra.msg)
+                erd |> Erd.toSchema |> generateTables format |> (GotOutput format >> wrap >> Extra.msg)
 
         CurrentLayout ->
-            if format /= AML && format /= JSON && not (Organization.canExportSchema projectRef) then
-                Extra.cmdL [ GotOutput "" "plan_limit" |> wrap |> T.send, Track.planLimit Feature.schemaExport (Just erd) ]
+            if format /= Dialect.AML && format /= Dialect.JSON && not (Organization.canExportSchema projectRef) then
+                Extra.cmdL [ GotOutput format "plan_limit" |> wrap |> T.send, Track.planLimit Feature.schemaExport (Just erd) ]
+
+            else if format == Dialect.AML || format == Dialect.JSON then
+                -- generate from JS, not Elm
+                (erd |> Erd.toSchema)
+                    |> Schema.filter (erd.layouts |> Dict.get erd.currentLayout |> Maybe.mapOrElse (.tables >> List.map .id) [])
+                    |> (JsonAdapter.unpackSchema >> Ports.getCode format >> Extra.cmd)
 
             else
-                erd
-                    |> Erd.toSchema
+                (erd |> Erd.toSchema)
                     |> Schema.filter (erd.layouts |> Dict.get erd.currentLayout |> Maybe.mapOrElse (.tables >> List.map .id) [])
                     |> generateTables format
-                    |> (\( output, ext ) -> output |> GotOutput (erd.project.name ++ "-" ++ erd.currentLayout ++ "." ++ ext) |> wrap |> Extra.msg)
+                    |> (GotOutput format >> wrap >> Extra.msg)
 
 
-generateTables : ExportFormat -> Schema -> ( String, String )
+generateTables : Dialect -> Schema -> String
 generateTables format schema =
     case format of
-        AML ->
-            ( AmlGenerator.generate schema, "aml" )
+        Dialect.AML ->
+            -- see frontend/ts-src/index.ts:448 (getCode)
+            "Can't generate AML from Elm"
 
-        PostgreSQL ->
-            ( PostgreSqlGenerator.generate schema, "sql" )
+        Dialect.PostgreSQL ->
+            PostgreSqlGenerator.generate schema
 
-        MySQL ->
-            ( MysqlGenerator.generate schema, "sql" )
+        Dialect.MySQL ->
+            MysqlGenerator.generate schema
 
-        JSON ->
-            ( JsonGenerator.generate schema, "json" )
+        Dialect.JSON ->
+            -- see frontend/ts-src/index.ts:448 (getCode)
+            "Can't generate JSON from Elm"
 
 
 view : (Msg -> msg) -> (Cmd msg -> msg) -> msg -> HtmlId -> ProjectRef -> Model -> Html msg
@@ -190,9 +202,7 @@ view wrap send onClose titleId project model =
                                     { name = inputId ++ "-output"
                                     , label = "Output format"
                                     , legend = "Choose an output format"
-                                    , options =
-                                        [ ( AML, "AML" ), ( PostgreSQL, "PostgreSQL" ), ( MySQL, "MySQL" ), ( JSON, "JSON" ) ]
-                                            |> List.map (\( v, t ) -> { value = v, text = t, disabled = False })
+                                    , options = Dialect.export |> List.map (\d -> { value = d, text = Dialect.toString d, disabled = False })
                                     , value = model.format
                                     , link = Nothing
                                     }
@@ -208,7 +218,7 @@ view wrap send onClose titleId project model =
                             (\_ -> viewCode "Choose what you want to export and the format...")
                             (\_ -> viewCode "fetching...")
                             (\e -> viewCode ("Error: " ++ e))
-                            (\( _, content ) ->
+                            (\content ->
                                 if content == "plan_limit" then
                                     if model.input == Just Project then
                                         div [ class "mt-3" ] [ PlanDialog.projectExportWarning project ]
@@ -216,10 +226,10 @@ view wrap send onClose titleId project model =
                                     else
                                         div [ class "mt-3" ] [ PlanDialog.schemaExportWarning project ]
 
-                                else if model.format == Just PostgreSQL then
+                                else if model.format == Just Dialect.PostgreSQL then
                                     div [] [ viewCode content, viewSuggestPR "https://github.com/azimuttapp/azimutt/blob/main/frontend/src/DataSources/SqlMiner/PostgreSqlGenerator.elm#L26" ]
 
-                                else if model.format == Just MySQL then
+                                else if model.format == Just Dialect.MySQL then
                                     div [] [ viewCode content, viewSuggestPR "https://github.com/azimuttapp/azimutt/blob/main/frontend/src/DataSources/SqlMiner/MysqlGenerator.elm#L26" ]
 
                                 else
@@ -228,19 +238,19 @@ view wrap send onClose titleId project model =
                 ]
             ]
         , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50 rounded-b-lg" ]
-            ((model.output
-                |> Remote.toMaybe
-                |> Maybe.filter (\( _, content ) -> content /= "plan_limit")
-                |> Maybe.map
-                    (\( file, content ) ->
-                        [ Button.primary3 Tw.primary
-                            [ onClick (content ++ "\n" |> Ports.downloadFile file |> send), css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ]
-                            [ Icon.solid Icon.Download "mr-1", text "Download file" ]
-                        , Button.primary3 Tw.primary
-                            [ onClick (content ++ "\n" |> Ports.copyToClipboard |> send), css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ]
-                            [ Icon.solid Icon.Duplicate "mr-1", text "Copy to clipboard" ]
-                        ]
-                    )
+            ((Maybe.map3
+                (\input format content ->
+                    [ Button.primary3 Tw.primary
+                        [ onClick (content ++ "\n" |> Ports.downloadFile (buildFilename input format model.project model.layout) |> send), css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ]
+                        [ Icon.solid Icon.Download "mr-1", text "Download file" ]
+                    , Button.primary3 Tw.primary
+                        [ onClick (content ++ "\n" |> Ports.copyToClipboard |> send), css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ]
+                        [ Icon.solid Icon.Duplicate "mr-1", text "Copy to clipboard" ]
+                    ]
+                )
+                model.input
+                model.format
+                (model.output |> Remote.toMaybe |> Maybe.filter (\content -> content /= "plan_limit"))
                 |> Maybe.withDefault []
              )
                 ++ [ Button.white3 Tw.gray [ onClick onClose, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Close" ] ]
@@ -265,6 +275,36 @@ viewSuggestPR generatorUrl =
         ]
 
 
+buildFilename : ExportInput -> Dialect -> ProjectName -> LayoutName -> FileName
+buildFilename input format project layout =
+    let
+        ( suffix, ext ) =
+            ( case input of
+                Project ->
+                    ".azimutt"
+
+                AllTables ->
+                    ""
+
+                CurrentLayout ->
+                    "-" ++ layout
+            , case format of
+                Dialect.AML ->
+                    ".md"
+
+                Dialect.PostgreSQL ->
+                    ".sql"
+
+                Dialect.MySQL ->
+                    ".sql"
+
+                Dialect.JSON ->
+                    ".json"
+            )
+    in
+    project ++ suffix ++ ext
+
+
 
 -- DOCUMENTATION
 
@@ -279,7 +319,7 @@ type alias DocState =
 
 docInit : DocState
 docInit =
-    { free = { id = "free-modal-id", input = Nothing, format = Nothing, output = Pending }
+    { free = { id = "free-modal-id", project = "Doc project", layout = "initial layout", input = Nothing, format = Nothing, output = Pending }
     }
 
 

@@ -5,6 +5,7 @@ import Components.Organisms.TableRow as TableRow
 import Components.Slices.DataExplorer as DataExplorer
 import Components.Slices.DataExplorerDetails as DataExplorerDetails
 import Components.Slices.DataExplorerQuery as DataExplorerQuery
+import Components.Slices.ExportDialogBody as ExportDialogBody
 import Components.Slices.LlmGenerateSqlBody as LlmGenerateSqlBody
 import Components.Slices.PlanDialog as PlanDialog
 import Conf
@@ -621,6 +622,9 @@ handleJsMessage now urlLayout msg model =
 
             else
                 ( model, Err error |> PrismaSource.GotSchema |> EmbedSourceParsingDialog.EmbedPrismaSource |> EmbedSourceParsingMsg |> T.send )
+
+        GotCode dialect content ->
+            ( model, ExportDialogBody.GotOutput dialect content |> ExportDialog.BodyMsg |> ExportDialogMsg |> T.send )
 
         GotHotkey hotkey ->
             if model.saving then

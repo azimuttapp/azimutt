@@ -14,7 +14,7 @@ users |||
   all users
 |||
   id int pk # users primary key
-  name varchar
+  name varchar unique
   role user_role(admin, guest)=guest
   settings json
     github string |||
@@ -31,11 +31,15 @@ users |||
 
 posts* | all posts # an other entity
   id post_id pk
-  title "varchar(100)" index | Title of the post
+  title "character varying(100)"=draft nullable index | Title of the post
   author int check=\`author > 0\` -> users(id)
   created_by int
 
 rel posts(created_by) -> users(id) | standalone relation
+
+emails
+  user_id int pk
+  email varchar pk
 
 type post_id int | alias
 
@@ -65,7 +69,7 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                     {name: 'created_at', type: 'timestamp', default: '`now()`'},
                 ],
                 pk: {attrs: [['id']]},
-                indexes: [{name: 'address', attrs: [['settings', 'address', 'city'], ['settings', 'address', 'country']]}],
+                indexes: [{attrs: [['name']], unique: true}, {name: 'address', attrs: [['settings', 'address', 'city'], ['settings', 'address', 'country']]}],
                 doc: 'list\nall users',
                 extra: {statement: 1, line: 2}
             }, {
@@ -73,7 +77,7 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                 kind: 'view',
                 attrs: [
                     {name: 'id', type: 'post_id'},
-                    {name: 'title', type: 'varchar(100)', doc: 'Title of the post'},
+                    {name: 'title', type: 'character varying(100)', default: 'draft', null: true, doc: 'Title of the post'},
                     {name: 'author', type: 'int'},
                     {name: 'created_by', type: 'int'},
                 ],
@@ -82,6 +86,14 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                 checks: [{attrs: [['author']], predicate: 'author > 0'}],
                 doc: 'all posts',
                 extra: {statement: 2, line: 22, comment: 'an other entity'}
+            }, {
+                name: 'emails',
+                attrs: [
+                    {name: 'user_id', type: 'int'},
+                    {name: 'email', type: 'varchar'},
+                ],
+                pk: {attrs: [['user_id'], ['email']]},
+                extra: {statement: 4, line: 30}
             }],
             relations: [
                 {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {statement: 2, line: 25}},
@@ -89,10 +101,10 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
             ],
             types: [
                 {name: 'user_role', values: ['admin', 'guest'], extra: {statement: 1, line: 8}},
-                {name: 'post_id', definition: 'int', doc: 'alias', extra: {statement: 4, line: 30}},
-                {name: 'status', values: ['draft', 'published', 'archived'], extra: {statement: 5, line: 32}},
-                {name: 'position', attrs: [{name: 'x', type: 'int'}, {name: 'y', type: 'int'}], extra: {statement: 6, line: 34}},
-                {name: 'range', definition: '(subtype = float8, subtype_diff = float8mi)', extra: {statement: 7, line: 36, comment: 'custom type'}},
+                {name: 'post_id', definition: 'int', doc: 'alias', extra: {statement: 5, line: 34}},
+                {name: 'status', values: ['draft', 'published', 'archived'], extra: {statement: 6, line: 36}},
+                {name: 'position', attrs: [{name: 'x', type: 'int'}, {name: 'y', type: 'int'}], extra: {statement: 7, line: 38}},
+                {name: 'range', definition: '(subtype = float8, subtype_diff = float8mi)', extra: {statement: 8, line: 40, comment: 'custom type'}},
             ]
         }
         const {extra, ...parsed} = parseAml(input).result || {}
