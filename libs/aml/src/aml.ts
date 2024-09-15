@@ -141,8 +141,12 @@ function buildDatabase(ast: AmlAst, start: number, parsed: number): {db: Databas
             // Empty: do nothing
         }
     })
+    const comments: {line: number, comment: string}[] = []
+    ast.filter(s => s !== undefined && s.statement === 'Empty').forEach(stmt => {
+        if (stmt.comment) comments.push({line: stmt.comment.position.start.line, comment: stmt.comment.value})
+    })
     const done = Date.now()
-    const extra = {source: `AML parser ${version}`, parsedAt: new Date().toISOString(), parsingMs: parsed - start, formattingMs: done - parsed}
+    const extra = removeEmpty({source: `AML parser ${version}`, parsedAt: new Date().toISOString(), parsingMs: parsed - start, formattingMs: done - parsed, comments})
     return {db: removeEmpty({...db, extra}), errors}
 }
 
@@ -156,22 +160,34 @@ function genDatabase(database: Database, legacy: boolean): string {
         return statement ? !!database.entities?.find(e => e.extra && 'statement' in e.extra && e.extra.statement === statement) : false
     })
     const entities = (database.entities || []).map((e, i) => {
+        const line = e.extra && 'line' in e.extra && e.extra.line
         const statement = e.extra && 'statement' in e.extra && e.extra.statement
         const rels = statement ? entityRels.filter(r => r.extra && 'statement' in r.extra && r.extra.statement === statement) : []
         const types = statement ? entityTypes.filter(t => t.extra && 'statement' in t.extra && t.extra.statement === statement) : []
-        return {index: statement || i, aml: genEntity(e, rels, types, legacy)}
+        return {index: line || i, kind: 'entity', aml: genEntity(e, rels, types, legacy)}
     })
     const entityCount = entities.length
     const relations = aloneRels.map((r, i) => {
-        const statement = r.extra && 'statement' in r.extra && r.extra.statement
-        return {index: statement || entityCount + i, aml: genRelation(r, legacy)}
+        const line = r.extra && 'line' in r.extra && r.extra.line
+        return {index: line || entityCount + i, kind: 'relation', aml: genRelation(r, legacy)}
     })
     const relationsCount = relations.length
     const types = aloneTypes.map((t, i) => {
-        const statement = t.extra && 'statement' in t.extra && t.extra.statement
-        return {index: statement || entityCount + relationsCount + i, aml: genType(t, legacy)}
+        const line = t.extra && 'line' in t.extra && t.extra.line
+        return {index: line || entityCount + relationsCount + i, kind: 'type', aml: genType(t, legacy)}
     })
-    return entities.concat(relations, types).sort((a, b) => a.index - b.index).map(a => a.aml).join('\n') || ''
+    const typesCount = types.length
+    const comments = database.extra && 'comments' in database.extra && Array.isArray(database.extra.comments) ? database.extra.comments.map((c, i) => {
+        const line = 'line' in c && c.line
+        return {index: line || entityCount + relationsCount + typesCount + i, kind: 'comment', aml: genComment(c.comment).trim() + '\n'}
+    }) : []
+    const statements = entities.concat(relations, types, comments).sort((a, b) => a.index - b.index)
+    return statements.map((statement, i) => {
+        if (i === 0) return statement.aml
+        const prev = statements[i - 1]
+        const newLine = statement.kind === 'entity' || statement.kind !== prev.kind ? '\n' : ''
+        return newLine + statement.aml
+    }).join('') || ''
 }
 
 function buildNamespace(statement: number, n: NamespaceStatement, current: Namespace): Namespace {
@@ -414,5 +430,5 @@ function genCommentExtra(v: {extra?: Extra | undefined}): string {
 }
 
 function genComment(comment: string | undefined): string {
-    return comment ? ' # ' + comment : ''
+    return comment !== undefined ? ' # ' + comment : ''
 }

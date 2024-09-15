@@ -5,10 +5,14 @@ import {generateAml, parseAml} from "./aml";
 import {duplicated, legacy} from "./errors";
 
 describe('aml', () => {
-    // TODO: add comment only lines
     // TODO: add props on entity, attribute, relation & type
+    // TODO: namespace
     test('sample schema', () => {
         const input = `
+#
+# AML
+#
+
 users |||
   list
   all users
@@ -41,12 +45,11 @@ emails
   user_id int pk
   email varchar pk
 
+# types
+
 type post_id int | alias
-
 type status (draft, published, archived)
-
 type position {x int, y int}
-
 type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
 `
         const db: Database = {
@@ -71,7 +74,7 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                 pk: {attrs: [['id']]},
                 indexes: [{attrs: [['name']], unique: true}, {name: 'address', attrs: [['settings', 'address', 'city'], ['settings', 'address', 'country']]}],
                 doc: 'list\nall users',
-                extra: {statement: 1, line: 2}
+                extra: {statement: 1, line: 6}
             }, {
                 name: 'posts',
                 kind: 'view',
@@ -85,7 +88,7 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                 indexes: [{attrs: [['title']]}],
                 checks: [{attrs: [['author']], predicate: 'author > 0'}],
                 doc: 'all posts',
-                extra: {statement: 2, line: 22, comment: 'an other entity'}
+                extra: {statement: 2, line: 26, comment: 'an other entity'}
             }, {
                 name: 'emails',
                 attrs: [
@@ -93,42 +96,44 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                     {name: 'email', type: 'varchar'},
                 ],
                 pk: {attrs: [['user_id'], ['email']]},
-                extra: {statement: 4, line: 30}
+                extra: {statement: 4, line: 34}
             }],
             relations: [
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {statement: 2, line: 25}},
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}], doc: 'standalone relation', extra: {statement: 3, line: 28}},
+                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {statement: 2, line: 29}},
+                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}], doc: 'standalone relation', extra: {statement: 3, line: 32}},
             ],
             types: [
-                {name: 'user_role', values: ['admin', 'guest'], extra: {statement: 1, line: 8}},
-                {name: 'post_id', definition: 'int', doc: 'alias', extra: {statement: 5, line: 34}},
-                {name: 'status', values: ['draft', 'published', 'archived'], extra: {statement: 6, line: 36}},
-                {name: 'position', attrs: [{name: 'x', type: 'int'}, {name: 'y', type: 'int'}], extra: {statement: 7, line: 38}},
-                {name: 'range', definition: '(subtype = float8, subtype_diff = float8mi)', extra: {statement: 8, line: 40, comment: 'custom type'}},
-            ]
+                {name: 'user_role', values: ['admin', 'guest'], extra: {statement: 1, line: 12}},
+                {name: 'post_id', definition: 'int', doc: 'alias', extra: {statement: 5, line: 40}},
+                {name: 'status', values: ['draft', 'published', 'archived'], extra: {statement: 6, line: 41}},
+                {name: 'position', attrs: [{name: 'x', type: 'int'}, {name: 'y', type: 'int'}], extra: {statement: 7, line: 42}},
+                {name: 'range', definition: '(subtype = float8, subtype_diff = float8mi)', extra: {statement: 8, line: 43, comment: 'custom type'}},
+            ],
+            extra: {comments: [
+                {line: 2, comment: ''},
+                {line: 3, comment: 'AML'},
+                {line: 4, comment: ''},
+                {line: 38, comment: 'types'},
+            ]}
         }
-        const {extra, ...parsed} = parseAml(input).result || {}
-        expect(parsed).toEqual(db)
-        expect(generateAml(parsed)).toEqual(input.trim() + '\n')
+        const parsed = parseAmlTest(input)
+        expect(parsed).toEqual({result: db})
+        expect(generateAml(parsed.result || {})).toEqual(input.trim() + '\n')
     })
     test.skip('complex schema',  () => { // TODO: unskip
         const input = fs.readFileSync('./resources/complex.aml', 'utf8')
-        const result = fs.readFileSync('./resources/complex.json', 'utf8')
-        const parsed: Database = JSON.parse(result)
-        const res = parseAml(input)
-        // console.log('input', input)
-        // console.log('result', result)
-        console.log('res', JSON.stringify(res, null, 2))
-        const {extra, ...db} = res.result || {}
-        expect(db).toEqual(parsed)
-        expect(generateAml(parsed)).toEqual(input.trim() + '\n')
+        const json = fs.readFileSync('./resources/complex.json', 'utf8')
+        const db: Database = JSON.parse(json)
+        const parsed = parseAmlTest(input)
+        expect(parsed).toEqual({result: db})
+        expect(generateAml(parsed.result || {})).toEqual(input.trim() + '\n')
     })
     test('empty schema',  () => {
         const input = ``
-        const parsed: Database = {}
-        const {extra, ...db} = parseAml(input).result || {}
-        expect(db).toEqual(parsed)
-        expect(generateAml(parsed)).toEqual(input)
+        const db: Database = {extra: {}}
+        const parsed = parseAmlTest(input)
+        expect(parsed).toEqual({result: db})
+        expect(generateAml(parsed.result || {})).toEqual(input)
     })
     test('bad schema', () => {
         expect(parseAmlTest(`a bad schema`)).toEqual({
@@ -419,7 +424,7 @@ fk admins.id -> users.id
                         {src: {schema: 'public', entity: 'users'}, ref: {entity: 'emails'}, attrs: [{src: ['email'], ref: ['email']}], extra: {statement: 2, line: 14}},
                         {src: {entity: 'admins'}, ref: {entity: 'users'}, attrs: [{src: ['id'], ref: ['id']}], extra: {statement: 4, line: 20}},
                     ],
-                    extra: {}
+                    extra: {comments: [{line: 7, comment: 'How to define a table and it\'s columns'}]}
                 },
                 errors: [
                     {...legacy('"=" is legacy, replace it with ":"'), ...tokenPosition(113, 113, 8, 20, 8, 20)},
