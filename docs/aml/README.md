@@ -13,7 +13,7 @@ users | store every user # AML comment
   role user_role(guest, member, admin)=guest
   email varchar nullable
   group_id fk groups.id
-  created timestamp=now()
+  created timestamp=`now()`
 ```
 
 As you can see, almost all characters are your own content, no ceremony.
@@ -71,7 +71,7 @@ Of course, you may want to provide additional details on columns, here is its fu
 
 ```aml
 users
-  name type nullable pk index unique check fk table.column | notes # comment
+  name kind nullable pk index unique check fk table.column | notes # comment
 ```
 
 Every part being optional except the name. Some parts may have additional options.
@@ -188,7 +188,7 @@ Let's see an example:
 users | store ALL users
   id | unique identifier # not sure if I should put `uuid` or `int`
   name varchar # which size?
-  created_at timestamp=now() | never update this column
+  created_at timestamp=`now()` | never update this column
 ```
 
 ## 🔖 Philosophy & Conventions
@@ -254,7 +254,7 @@ categories
   slug varchar unique | category identifier in urls
   name varchar
   description text
-  tags varchar[]
+  tags "varchar[]"
   parent_category uuid fk categories.id
   created_at timestamp
   updated_at timestamp
@@ -269,7 +269,7 @@ products
   price number | in Euro
   discount_type discount_type(none, percent, amount)
   discount_value number
-  tags varchar[]
+  tags "varchar[]"
   created_at timestamp
   updated_at timestamp
 

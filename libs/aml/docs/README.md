@@ -20,7 +20,7 @@ posts # AML comment
   id uuid pk
   title varchar(100)
   content text
-  tags varchar[] nullable
+  tags "varchar[]" nullable
   author -> users(id)
   created_at timestamp=`now()`
 ```
@@ -51,7 +51,7 @@ posts
   title varchar index
   status post_status(draft, published, archived)=draft index
   content text nullable
-  tags varchar[]
+  tags "varchar[]"
   props json
     needs_review bool
     reviewed_by -> users(id)
@@ -233,7 +233,7 @@ categories
   slug varchar unique | category identifier in urls
   name varchar
   description text
-  tags varchar[]
+  tags "varchar[]"
   parent_category uuid -> categories(id)
   created_at timestamp
   updated_at timestamp
@@ -248,7 +248,7 @@ products
   price number | in Euro
   discount_type discount_type(none, percent, amount)
   discount_value number
-  tags varchar[]
+  tags "varchar[]"
   created_at timestamp
   updated_at timestamp
 

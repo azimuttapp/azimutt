@@ -92,9 +92,11 @@ const GreaterThan = createToken({ name: 'GreaterThan', pattern: />/ })
 const LowerThan = createToken({ name: 'LowerThan', pattern: /</ })
 const LParen = createToken({ name: 'LParen', pattern: /\(/ })
 const RParen = createToken({ name: 'RParen', pattern: /\)/ })
+const LBracket = createToken({ name: 'LBracket', pattern: /\[/ })
+const RBracket = createToken({ name: 'RBracket', pattern: /]/ })
 const LCurly = createToken({ name: 'LCurly', pattern: /\{/ })
 const RCurly = createToken({ name: 'RCurly', pattern: /}/ })
-const charTokens: TokenType[] = [Asterisk, Dot, Comma, Colon, Equal, Dash, GreaterThan, LowerThan, LParen, RParen, LCurly, RCurly]
+const charTokens: TokenType[] = [Asterisk, Dot, Comma, Colon, Equal, Dash, GreaterThan, LowerThan, LParen, RParen, LBracket, RBracket, LCurly, RCurly]
 
 // legacy tokens
 const ForeignKey = createToken({ name: 'ForeignKey', pattern: /fk/i })
@@ -207,6 +209,20 @@ class AmlParser extends EmbeddedActionsParser {
                 { ALT: () => $.SUBRULE($.booleanRule) },
                 { ALT: () => $.SUBRULE($.expressionRule) },
                 { ALT: () => $.SUBRULE($.identifierRule) },
+                { ALT: () => {
+                        $.CONSUME(LBracket)
+                        const values: PropertyValueAst[] = []
+                        $.MANY_SEP({
+                            SEP: Comma,
+                            DEF: () => {
+                                $.OPTION(() => $.CONSUME(WhiteSpace))
+                                values.push($.SUBRULE(propertyValueRule))
+                                $.OPTION2(() => $.CONSUME2(WhiteSpace))
+                            }
+                        })
+                        $.CONSUME(RBracket)
+                        return values
+                }},
             ])
         })
         const propertyRule = $.RULE<() => PropertyAst>('propertyRule', () => {

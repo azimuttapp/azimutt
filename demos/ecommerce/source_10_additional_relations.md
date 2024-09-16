@@ -89,7 +89,7 @@ fk shipping.Shipments.loadedBy -> identity.Users.id
 fk shipping.Shipments.deliveredBy -> identity.Users.id
 fk shipping.ShipmentItems.physicalProductId -> C##INVENTORY.PHYSICAL_PRODUCTS.ID
 fk shipping.ShipmentItems.invoiceId -> billing.InvoiceLines.InvoiceId
-fk shipping.ShipmentItems.invoiceLine -> billing.InvoiceLines.Index
+fk shipping.ShipmentItems.invoiceLine -> billing.InvoiceLines."Index"
 fk shipping.ShipmentItems.deliveredTo -> identity.Users.id
 fk crm.People.created_by -> identity.Users.id
 fk crm.People.updated_by -> identity.Users.id

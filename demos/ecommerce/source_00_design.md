@@ -418,7 +418,7 @@ catalog.product_alternatives
 catalog.assets
   id bigint pk
   kind asset_kind(picture, video, embed)
-  format asset_format(1:1, 16:9)
+  format asset_format("1:1", "16:9")
   size asset_size(low, medium, high, retina)
   path varchar
   alt varchar
@@ -488,7 +488,7 @@ catalog.product_review_feedbacks
 
 shopping.carts
   id bigint pk
-  owner_kind cart_owner(identity.Devices, identity.Users) | Devices are used for anonymous carts, otherwise it's Users
+  owner_kind cart_owner("identity.Devices", "identity.Users") | Devices are used for anonymous carts, otherwise it's Users
   owner_id bigint
   expire_at timestamp
   created_at timestamp
@@ -611,7 +611,7 @@ billing.Invoices
 
 billing.InvoiceLines
   InvoiceId bigint pk fk billing.Invoices.InvoiceId
-  Index int pk
+  "Index" int pk
   ProductVersionId bigint nullable fk catalog.product_versions.id
   Description text nullable
   Price double
@@ -628,7 +628,7 @@ billing.Payments
 # Shipping
 
 shipping.Carriers
-  id bigint unique=pk
+  id bigint unique="pk"
   registration varchar index
   licensePlate varchar
   cargoWidth float | inner cargo width in millimeters
@@ -643,7 +643,7 @@ shipping.Carriers
   deletedBy bigint nullable fk identity.Users.id
 
 shipping.Shipments
-  id bigint unique=pk
+  id bigint unique="pk"
   carrierId bigint nullable fk shipping.Carriers.id
   createdAt timestamp
   collectedAt timestamp nullable
@@ -656,10 +656,10 @@ shipping.Shipments
   deliveredBy bigint nullable fk identity.Users.id
 
 shipping.ShipmentItems
-  shipmentId bigint unique=pk fk shipping.Shipments.id
-  physicalProductId bigint unique=pk fk C##INVENTORY.PHYSICAL_PRODUCTS.ID
+  shipmentId bigint unique="pk" fk shipping.Shipments.id
+  physicalProductId bigint unique="pk" fk C##INVENTORY.PHYSICAL_PRODUCTS.ID
   invoiceId bigint index fk billing.InvoiceLines.InvoiceId
-  invoiceLine int fk billing.InvoiceLines.Index
+  invoiceLine int fk billing.InvoiceLines."Index"
   deliveredAt timestamp nullable
   deliveredTo bigint nullable fk identity.Users.id | the User who got the delivered package
 
@@ -800,7 +800,7 @@ crm.LoyaltyCards
 # Analytics
 
 analytics.Events
-  id uuid unique=pk | UUIDv7 to be time ordered
+  id uuid unique="pk" | UUIDv7 to be time ordered
   name string index | in form of `$context__$object__$action`
   source event_source(website, app, admin, job) | the name of the system which emitted this event
   details json nullable | any additional info for the event
@@ -811,8 +811,8 @@ fk analytics.Events.entities:cart:id -> shopping.carts.id
 fk analytics.Events.entities:invoice:id -> billing.Invoices.InvoiceId
 
 analytics.Entities
-  kind string unique=pk
-  id string unique=pk
+  kind string unique="pk"
+  id string unique="pk"
   name string index
   properties json
   createdAt timestamp

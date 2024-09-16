@@ -37,7 +37,7 @@ export type AttributeValueAst = NullToken | DecimalToken | IntegerToken | Boolea
 export type ExtraAst = { properties?: PropertiesAst, doc?: DocToken, comment?: CommentToken }
 export type PropertiesAst = PropertyAst[]
 export type PropertyAst = { key: IdentifierToken, sep?: TokenInfo, value?: PropertyValueAst }
-export type PropertyValueAst = NullToken | DecimalToken | IntegerToken | BooleanToken | ExpressionToken | IdentifierToken
+export type PropertyValueAst = NullToken | DecimalToken | IntegerToken | BooleanToken | ExpressionToken | IdentifierToken | PropertyValueAst[]
 
 // basic tokens
 export type NullToken = { token: 'Null' } & TokenInfo

@@ -96,7 +96,7 @@ events
   age int
   rating decimal(5, 2)
   details json
-  tags varchar[]
+  tags "varchar[]"
   created_at "timestamp with time zone"
 ```
 
@@ -109,7 +109,7 @@ users
   age int=0
   rating decimal(5, 2)=0.0
   details json="{}"
-  tags varchar[]="[]"
+  tags "varchar[]"="[]"
   admin boolean=false
   created_at "timestamp with time zone"=`now()`
 ```

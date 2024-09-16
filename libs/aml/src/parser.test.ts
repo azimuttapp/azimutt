@@ -159,6 +159,7 @@ comments
         describe('attributeRule', () => {
             test('name', () => {
                 expect(parseRule(p => p.attributeRule(), '  id\n')).toEqual({result: {nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)}, name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)}}})
+                expect(parseRule(p => p.attributeRule(), '  "index"\n')).toEqual({result: {nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)}, name: {token: 'Identifier', value: 'index', ...tokenPosition(2, 8, 1, 3, 1, 9)}}})
             })
             test('type', () => {
                 expect(parseRule(p => p.attributeRule(), '  id uuid\n')).toEqual({result: {
@@ -175,6 +176,11 @@ comments
                     nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'bio', ...tokenPosition(2, 4, 1, 3, 1, 5)},
                     type: {token: 'Identifier', value: 'character varying', ...tokenPosition(6, 24, 1, 7, 1, 25)},
+                }})
+                expect(parseRule(p => p.attributeRule(), '  id "type"\n')).toEqual({result: {
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
+                    name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
+                    type: {token: 'Identifier', value: 'type', ...tokenPosition(5, 10, 1, 6, 1, 11)},
                 }})
             })
             test('enum', () => {
@@ -656,7 +662,10 @@ comments
         })
         test('identifierRule', () => {
             expect(parseRule(p => p.identifierRule(), 'id')).toEqual({result: {token: 'Identifier', value: 'id', ...tokenPosition(0, 1, 1, 1, 1, 2)}})
+            expect(parseRule(p => p.identifierRule(), 'user_id')).toEqual({result: {token: 'Identifier', value: 'user_id', ...tokenPosition(0, 6, 1, 1, 1, 7)}})
+            expect(parseRule(p => p.identifierRule(), 'C##INVENTORY')).toEqual({result: {token: 'Identifier', value: 'C##INVENTORY', ...tokenPosition(0, 11, 1, 1, 1, 12)}})
             expect(parseRule(p => p.identifierRule(), '"my col"')).toEqual({result: {token: 'Identifier', value: 'my col', ...tokenPosition(0, 7, 1, 1, 1, 8)}})
+            expect(parseRule(p => p.identifierRule(), '"varchar[]"')).toEqual({result: {token: 'Identifier', value: 'varchar[]', ...tokenPosition(0, 10, 1, 1, 1, 11)}})
             expect(parseRule(p => p.identifierRule(), '"my \\"new\\" col"')).toEqual({result: {token: 'Identifier', value: 'my "new" col', ...tokenPosition(0, 15, 1, 1, 1, 16)}})
             expect(parseRule(p => p.identifierRule(), 'bad col')).toEqual({result: {token: 'Identifier', value: 'bad', ...tokenPosition(0, 2, 1, 1, 1, 3)}, errors: [{name: 'NotAllInputParsedException', kind: 'error', message: "Redundant input, expecting EOF but found:  ", ...tokenPosition(3, 3, 1, 4, 1, 4)}]})
         })
@@ -682,6 +691,16 @@ comments
                 key: {token: 'Identifier', value: 'size', ...tokenPosition(1, 4, 1, 2, 1, 5)},
                 sep: tokenPosition(5, 5, 1, 6, 1, 6),
                 value: {token: 'Integer', value: 12, ...tokenPosition(7, 8, 1, 8, 1, 9)}
+            }]})
+            expect(parseRule(p => p.propertiesRule(), '{tags: []}')).toEqual({result: [{
+                key: {token: 'Identifier', value: 'tags', ...tokenPosition(1, 4, 1, 2, 1, 5)},
+                sep: tokenPosition(5, 5, 1, 6, 1, 6),
+                value: []
+            }]})
+            expect(parseRule(p => p.propertiesRule(), '{tags: [pii, deprecated]}')).toEqual({result: [{
+                key: {token: 'Identifier', value: 'tags', ...tokenPosition(1, 4, 1, 2, 1, 5)},
+                sep: tokenPosition(5, 5, 1, 6, 1, 6),
+                value: [{token: 'Identifier', value: 'pii', ...tokenPosition(8, 10, 1, 9, 1, 11)}, {token: 'Identifier', value: 'deprecated', ...tokenPosition(13, 22, 1, 14, 1, 23)}]
             }]})
             expect(parseRule(p => p.propertiesRule(), '{color:red, size : 12 , deprecated}')).toEqual({result: [{
                 key: {token: 'Identifier', value: 'color', ...tokenPosition(1, 5, 1, 2, 1, 6)},
