@@ -9,8 +9,8 @@ export type RelationStatement = { statement: 'Relation', kind: RelationKindAst, 
 export type TypeStatement = { statement: 'Type', name: IdentifierToken, content?: TypeContentAst } & NamespaceRefAst & ExtraAst
 export type EmptyStatement = { statement: 'Empty', comment?: CommentToken }
 
-export type AttributeAstFlat = { nesting: number, name: IdentifierToken, nullable?: TokenInfo } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst
-export type AttributeAstNested = { path: IdentifierToken[], nullable?: TokenInfo } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst & { attrs?: AttributeAstNested[] }
+export type AttributeAstFlat = { nesting: TokenInfo & {depth: number}, name: IdentifierToken, nullable?: TokenInfo } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst
+export type AttributeAstNested = { path: IdentifierToken[], nullable?: TokenInfo } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst & { attrs?: AttributeAstNested[], warning?: TokenInfo }
 export type AttributeTypeAst = { type?: IdentifierToken, enumValues?: AttributeValueAst[], defaultValue?: AttributeValueAst }
 export type AttributeConstraintsAst = { primaryKey?: AttributeConstraintAst, index?: AttributeConstraintAst, unique?: AttributeConstraintAst, check?: AttributeCheckAst }
 export type AttributeConstraintAst = { keyword: TokenInfo, name?: IdentifierToken }

@@ -50,7 +50,7 @@ import {
     TypeEnumAst,
     TypeStructAst
 } from "./ast";
-import {legacy} from "./errors";
+import {badIndent, legacy} from "./errors";
 
 // special
 const WhiteSpace = createToken({name: 'WhiteSpace', pattern: /[ \t]+/})
@@ -141,8 +141,8 @@ class AmlParser extends EmbeddedActionsParser {
     statementRule: () => StatementAst
     amlRule: () => AmlAst
 
-    constructor(tokens: TokenType[]) {
-        super(tokens, {recoveryEnabled: true})
+    constructor(tokens: TokenType[], recovery: boolean) {
+        super(tokens, {recoveryEnabled: recovery})
         const $ = this
 
         // common rules
@@ -200,7 +200,6 @@ class AmlParser extends EmbeddedActionsParser {
         })
 
         const propertyValueRule = $.RULE<() => PropertyValueAst>('propertyValueRule', () => {
-            // TODO: be more flexible: string value: anything without ',' + add business rules for tags for example (split values?)
             return $.OR([
                 { ALT: () => $.SUBRULE($.nullRule) },
                 { ALT: () => $.SUBRULE($.decimalRule) },
@@ -371,7 +370,7 @@ class AmlParser extends EmbeddedActionsParser {
                         SEP: Comma,
                         DEF: () => {
                             $.OPTION3(() => $.CONSUME(WhiteSpace))
-                            values.push($.SUBRULE($.attributeValueRule)) // TODO: retro-compatibility: allow any char between ',' (ex: '(16:9, 1:1)')
+                            values.push($.SUBRULE($.attributeValueRule))
                             $.OPTION4(() => $.CONSUME2(WhiteSpace))
                         }
                     })
@@ -380,7 +379,7 @@ class AmlParser extends EmbeddedActionsParser {
                 })
                 const defaultValue = $.OPTION5(() => {
                     $.CONSUME(Equal)
-                    return $.SUBRULE2($.attributeValueRule) // TODO: retro-compatibility: allow expression without backticks (ex: 'timestamp=now()')
+                    return $.SUBRULE2($.attributeValueRule)
                 })
                 return {type, enumValues, defaultValue}
             })
@@ -468,11 +467,13 @@ class AmlParser extends EmbeddedActionsParser {
             const nullable = $.OPTION3(() => $.CONSUME(Nullable))
             $.OPTION4(() => $.CONSUME4(WhiteSpace))
             const constraints = $.SUBRULE(attributeConstraintsRule)
-            return removeUndefined({nesting: 0, name, type, enumValues, defaultValue, nullable: nullable ? tokenInfo(nullable) : undefined, ...constraints})
+            const nesting = {depth: 0, offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}} // unused placeholder
+            return removeUndefined({nesting, name, type, enumValues, defaultValue, nullable: nullable ? tokenInfo(nullable) : undefined, ...constraints})
         }, {resyncEnabled: true})
         this.attributeRule = $.RULE<() => AttributeAstFlat>('attributeRule', () => {
             const spaces = $.CONSUME(WhiteSpace)
-            const nesting = Math.round(spaces.image.split('').reduce((i, c) => c === '\t' ? i + 1 : i + 0.5, 0)) - 1
+            const depth = Math.round(spaces.image.split('').reduce((i, c) => c === '\t' ? i + 1 : i + 0.5, 0)) - 1
+            const nesting = {...tokenInfo(spaces), depth}
             const attr = $.SUBRULE(attributeRuleInner)
             $.OPTION(() => $.CONSUME2(WhiteSpace))
             const relation = $.OPTION3(() => $.SUBRULE(attributeRelationRule))
@@ -615,19 +616,21 @@ class AmlParser extends EmbeddedActionsParser {
 }
 
 const lexer = new Lexer(allTokens)
-const parser = new AmlParser(allTokens)
+const parserStrict = new AmlParser(allTokens, false)
+const parserWithRecovery = new AmlParser(allTokens, true)
 
 // exported only for tests, use the `parse` function instead
-export function parseRule<T>(parse: (p: AmlParser) => T, input: string): ParserResult<T> {
+export function parseRule<T>(parse: (p: AmlParser) => T, input: string, strict: boolean = false): ParserResult<T> {
     const lexingResult = lexer.tokenize(input)
+    const parser = strict ? parserStrict : parserWithRecovery
     parser.input = lexingResult.tokens // "input" is a setter which will reset the parser's state.
     const res = parse(parser)
     const errors = lexingResult.errors.map(formatLexerError).concat(parser.errors.map(formatParserError))
     return new ParserResult(res, errors)
 }
 
-export function parseAmlAst(input: string): ParserResult<AmlAst> {
-    return parseRule(p => p.amlRule(), input)
+export function parseAmlAst(input: string, opts: { strict: boolean }): ParserResult<AmlAst> {
+    return parseRule(p => p.amlRule(), input, opts.strict)
 }
 
 function formatLexerError(err: ILexingError): ParserError {
@@ -674,23 +677,24 @@ export function nestAttributes(attributes: AttributeAstFlat[]): AttributeAstNest
     let curNesting = 0
     attributes.forEach(function(attribute) {
         if (attribute === undefined) return undefined // can be undefined on invalid input :/
+        if (!attribute.nesting) return undefined // empty during recording phase... :/
         const {nesting, name, ...values} = attribute
-        if (nesting === 0 || parents.length === 0) { // empty parents is when first attr is not at nesting 0
+        if (nesting.depth === 0 || parents.length === 0) { // empty parents is when first attr is not at nesting 0
+            curNesting = 0
             path = [name]
             parents = [{path, ...values}]
-            curNesting = 0
             results.push(parents[0]) // add top level attrs to results
-        } else if (nesting > curNesting) { // deeper: append to `path` & `parents`
-            path = [...path, name]
-            parents = [...parents, {path, ...values}]
+        } else if (nesting.depth > curNesting) { // deeper: append to `path` & `parents`
             curNesting = curNesting + 1 // go only one level deeper at the time (even if nesting is higher)
-            // if (nesting > curNesting + 1) console.log(`bad nesting (+${nesting - curNesting}) on attr ${JSON.stringify(attribute)}`) // TODO: add warning in ast
+            const warning = nesting.depth > curNesting ? {offset: nesting.offset, position: nesting.position, issues: [...nesting.issues || [], badIndent(curNesting, nesting.depth)]} : undefined
+            path = [...path, name]
+            parents = [...parents, removeUndefined({path, ...values, warning})]
             parents[parents.length - 2].attrs = [...(parents[parents.length - 2].attrs || []), parents[parents.length - 1]] // add to parent
-        } else if (nesting <= curNesting) { // same level or up: replace n+1 last values in `path` & `parents`
-            const n = curNesting - nesting
+        } else if (nesting.depth <= curNesting) { // same level or up: replace n+1 last values in `path` & `parents`
+            const n = curNesting - nesting.depth
+            curNesting = nesting.depth
             path = [...path.slice(0, -(n + 1)), name]
             parents = [...parents.slice(0, -(n + 1)), {path, ...values}]
-            curNesting = nesting
             parents[parents.length - 2].attrs = [...(parents[parents.length - 2].attrs || []), parents[parents.length - 1]] // add to parent
         } else { // should never happen, `nesting` is always > or <= to `curNesting`
             throw new Error(`Should never happen (nesting: ${nesting}, curNesting: ${curNesting})`)

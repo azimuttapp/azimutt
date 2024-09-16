@@ -3,11 +3,11 @@ import {removeFieldsDeep} from "@azimutt/utils";
 import {tokenPosition} from "@azimutt/models";
 import {AttributeRelationAst} from "./ast";
 import {nestAttributes, parseAmlAst, parseRule} from "./parser";
-import {legacy} from "./errors";
+import {badIndent, legacy} from "./errors";
 
 describe('aml parser', () => {
     test('empty', () => {
-        expect(parseAmlAst('')).toEqual({result: []})
+        expect(parseAmlAst('', {strict: false})).toEqual({result: []})
     })
     test('simple entity', () => {
         const input = `
@@ -27,7 +27,7 @@ users
                 type: {token: 'Identifier', value: 'varchar', ...tokenPosition(27, 33, 4, 8, 4, 14)},
             }]
         }]
-        expect(parseAmlAst(input)).toEqual({result: ast})
+        expect(parseAmlAst(input, {strict: false})).toEqual({result: ast})
     })
     test('multiple entities', () => {
         const input = `
@@ -41,7 +41,7 @@ comments
             {statement: 'Entity', name: {token: 'Identifier', value: 'posts', ...tokenPosition(7, 11, 3, 1, 3, 5)}},
             {statement: 'Entity', name: {token: 'Identifier', value: 'comments', ...tokenPosition(13, 20, 4, 1, 4, 8)}},
         ]
-        expect(parseAmlAst(input)).toEqual({result: ast})
+        expect(parseAmlAst(input, {strict: false})).toEqual({result: ast})
     })
     describe('namespaceRule', () => {
         test('schema', () => {
@@ -138,31 +138,48 @@ comments
                     type: {token: 'Identifier', value: 'varchar', ...tokenPosition(26, 32, 3, 8, 3, 14)},
                 }],
             }})
+            expect(parseRule(p => p.entityRule(), 'users\n  id uuid pk\n  name json\n      first string\n')).toEqual({result: {
+                statement: 'Entity',
+                name: {token: 'Identifier', value: 'users', ...tokenPosition(0, 4, 1, 1, 1, 5)},
+                attrs: [{
+                    path: [{token: 'Identifier', value: 'id', ...tokenPosition(8, 9, 2, 3, 2, 4)}],
+                    type: {token: 'Identifier', value: 'uuid', ...tokenPosition(11, 14, 2, 6, 2, 9)},
+                    primaryKey: {keyword: tokenPosition(16, 17, 2, 11, 2, 12)},
+                }, {
+                    path: [{token: 'Identifier', value: 'name', ...tokenPosition(21, 24, 3, 3, 3, 6)}],
+                    type: {token: 'Identifier', value: 'json', ...tokenPosition(26, 29, 3, 8, 3, 11)},
+                    attrs: [{
+                        path: [{token: 'Identifier', value: 'name', ...tokenPosition(21, 24, 3, 3, 3, 6)}, {token: 'Identifier', value: 'first', ...tokenPosition(37, 41, 4, 7, 4, 11)}],
+                        type: {token: 'Identifier', value: 'string', ...tokenPosition(43, 48, 4, 13, 4, 18)},
+                        warning: {issues: [badIndent(1, 2)], ...tokenPosition(31, 36, 4, 1, 4, 6)}
+                    }]
+                }],
+            }})
         })
         describe('attributeRule', () => {
             test('name', () => {
-                expect(parseRule(p => p.attributeRule(), '  id\n')).toEqual({result: {nesting: 0, name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)}}})
+                expect(parseRule(p => p.attributeRule(), '  id\n')).toEqual({result: {nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)}, name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)}}})
             })
             test('type', () => {
                 expect(parseRule(p => p.attributeRule(), '  id uuid\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
                     type: {token: 'Identifier', value: 'uuid', ...tokenPosition(5, 8, 1, 6, 1, 9)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  name "varchar(12)"\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'name', ...tokenPosition(2, 5, 1, 3, 1, 6)},
                     type: {token: 'Identifier', value: 'varchar(12)', ...tokenPosition(7, 19, 1, 8, 1, 20)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  bio "character varying"\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'bio', ...tokenPosition(2, 4, 1, 3, 1, 5)},
                     type: {token: 'Identifier', value: 'character varying', ...tokenPosition(6, 24, 1, 7, 1, 25)},
                 }})
             })
             test('enum', () => {
                 expect(parseRule(p => p.attributeRule(), '  status post_status(draft, published, archived)\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'status', ...tokenPosition(2, 7, 1, 3, 1, 8)},
                     type: {token: 'Identifier', value: 'post_status', ...tokenPosition(9, 19, 1, 10, 1, 20)},
                     enumValues: [
@@ -174,37 +191,37 @@ comments
             })
             test('default', () => {
                 expect(parseRule(p => p.attributeRule(), '  id int=0\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
                     type: {token: 'Identifier', value: 'int', ...tokenPosition(5, 7, 1, 6, 1, 8)},
                     defaultValue: {token: 'Integer', value: 0, ...tokenPosition(9, 9, 1, 10, 1, 10)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  price decimal=41.9\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'price', ...tokenPosition(2, 6, 1, 3, 1, 7)},
                     type: {token: 'Identifier', value: 'decimal', ...tokenPosition(8, 14, 1, 9, 1, 15)},
                     defaultValue: {token: 'Decimal', value: 41.9, ...tokenPosition(16, 19, 1, 17, 1, 20)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  role varchar=guest\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'role', ...tokenPosition(2, 5, 1, 3, 1, 6)},
                     type: {token: 'Identifier', value: 'varchar', ...tokenPosition(7, 13, 1, 8, 1, 14)},
                     defaultValue: {token: 'Identifier', value: 'guest', ...tokenPosition(15, 19, 1, 16, 1, 20)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  is_admin boolean=false\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'is_admin', ...tokenPosition(2, 9, 1, 3, 1, 10)},
                     type: {token: 'Identifier', value: 'boolean', ...tokenPosition(11, 17, 1, 12, 1, 18)},
                     defaultValue: {token: 'Boolean', value: false, ...tokenPosition(19, 23, 1, 20, 1, 24)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  created_at timestamp=`now()`\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'created_at', ...tokenPosition(2, 11, 1, 3, 1, 12)},
                     type: {token: 'Identifier', value: 'timestamp', ...tokenPosition(13, 21, 1, 14, 1, 22)},
                     defaultValue: {token: 'Expression', value: 'now()', ...tokenPosition(23, 29, 1, 24, 1, 30)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  source varchar=null\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'source', ...tokenPosition(2, 7, 1, 3, 1, 8)},
                     type: {token: 'Identifier', value: 'varchar', ...tokenPosition(9, 15, 1, 10, 1, 16)},
                     defaultValue: {token: 'Null', ...tokenPosition(17, 20, 1, 18, 1, 21)},
@@ -214,12 +231,12 @@ comments
             })
             test('nullable', () => {
                 expect(parseRule(p => p.attributeRule(), '  id nullable\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
                     nullable: tokenPosition(5, 12, 1, 6, 1, 13),
                 }})
                 expect(parseRule(p => p.attributeRule(), '  id int nullable\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
                     type: {token: 'Identifier', value: 'int', ...tokenPosition(5, 7, 1, 6, 1, 8)},
                     nullable: tokenPosition(9, 16, 1, 10, 1, 17),
@@ -227,18 +244,18 @@ comments
             })
             test('pk', () => {
                 expect(parseRule(p => p.attributeRule(), '  id pk\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
                     primaryKey: {keyword: tokenPosition(5, 6, 1, 6, 1, 7)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  id int pk\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
                     type: {token: 'Identifier', value: 'int', ...tokenPosition(5, 7, 1, 6, 1, 8)},
                     primaryKey: {keyword: tokenPosition(9, 10, 1, 10, 1, 11)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  id int pk=pk_name\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
                     type: {token: 'Identifier', value: 'int', ...tokenPosition(5, 7, 1, 6, 1, 8)},
                     primaryKey: {keyword: tokenPosition(9, 10, 1, 10, 1, 11), name: {token: 'Identifier', value: 'pk_name', ...tokenPosition(12, 18, 1, 13, 1, 19)}},
@@ -246,48 +263,48 @@ comments
             })
             test('index', () => {
                 expect(parseRule(p => p.attributeRule(), '  id index\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
                     index: {keyword: tokenPosition(5, 9, 1, 6, 1, 10)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  id index=id_idx\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
                     index: {keyword: tokenPosition(5, 9, 1, 6, 1, 10), name: {token: 'Identifier', value: 'id_idx', ...tokenPosition(11, 16, 1, 12, 1, 17)}},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  id index = "idx \\" id"\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
                     index: {keyword: tokenPosition(5, 9, 1, 6, 1, 10), name: {token: 'Identifier', value: 'idx " id', ...tokenPosition(13, 23, 1, 14, 1, 24)}},
                 }})
             })
             test('unique', () => {
                 expect(parseRule(p => p.attributeRule(), '  id unique\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
                     unique: {keyword: tokenPosition(5, 10, 1, 6, 1, 11)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  id unique=id_uniq\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
                     unique: {keyword: tokenPosition(5, 10, 1, 6, 1, 11), name: {token: 'Identifier', value: 'id_uniq', ...tokenPosition(12, 18, 1, 13, 1, 19)}},
                 }})
             })
             test('check', () => {
                 expect(parseRule(p => p.attributeRule(), '  id check\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
                     check: {keyword: tokenPosition(5, 9, 1, 6, 1, 10)},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  id check=`id > 0`\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
                     check: {keyword: tokenPosition(5, 9, 1, 6, 1, 10), definition: {token: 'Expression', value: 'id > 0', ...tokenPosition(11, 18, 1, 12, 1, 19)}},
                 }})
             })
             test('relation', () => {
                 expect(parseRule(p => p.attributeRule(), '  user_id -> users(id)\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'user_id', ...tokenPosition(2, 8, 1, 3, 1, 9)},
                     relation: {kind: 'n-1', ref: {
                         entity: {token: 'Identifier', value: 'users', ...tokenPosition(13, 17, 1, 14, 1, 18)},
@@ -297,28 +314,28 @@ comments
             })
             test('properties', () => {
                 expect(parseRule(p => p.attributeRule(), '  id {tag: pii}\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
                     properties: [{key: {token: 'Identifier', value: 'tag', ...tokenPosition(6, 8, 1, 7, 1, 9)}, sep: tokenPosition(9, 9, 1, 10, 1, 10), value: {token: 'Identifier', value: 'pii', ...tokenPosition(11, 13, 1, 12, 1, 14)}}],
                 }})
             })
             test('note', () => {
                 expect(parseRule(p => p.attributeRule(), '  id | some note\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
                     doc: {token: 'Doc', value: 'some note', ...tokenPosition(5, 15, 1, 6, 1, 16)},
                 }})
             })
             test('comment', () => {
                 expect(parseRule(p => p.attributeRule(), '  id # a comment\n')).toEqual({result: {
-                    nesting: 0,
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
                     comment: {token: 'Comment', value: 'a comment', ...tokenPosition(5, 15, 1, 6, 1, 16)},
                 }})
             })
             test('all', () => {
                 expect(parseRule(p => p.attributeRule(), '    id int(8, 9, 10)=8 nullable pk index=idx unique check=`id > 0` -kind=users> public.users(id) { tag : pii , owner:PANDA} | some note # comment\n')).toEqual({result: {
-                    nesting: 1,
+                    nesting: {depth: 1, ...tokenPosition(0, 3, 1, 1, 1, 4)},
                     name: {token: 'Identifier', value: 'id', ...tokenPosition(4, 5, 1, 5, 1, 6)},
                     type: {token: 'Identifier', value: 'int', ...tokenPosition(7, 9, 1, 8, 1, 10)},
                     enumValues: [{value: 8, token: 'Integer', ...tokenPosition(11, 11, 1, 12, 1, 12)}, {value: 9, token: 'Integer', ...tokenPosition(14, 14, 1, 15, 1, 15)}, {value: 10, token: 'Integer', ...tokenPosition(17, 18, 1, 18, 1, 19)}],
@@ -341,7 +358,7 @@ comments
                 }})
             })
             test('error', () => {
-                expect(parseRule(p => p.attributeRule(), '  12\n')).toEqual({result: {nesting: 0}, errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Identifier <-- but found --> '12' <--", ...tokenPosition(2, 3, 1, 3, 1, 4)}]})
+                expect(parseRule(p => p.attributeRule(), '  12\n')).toEqual({result: {nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)}}, errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Identifier <-- but found --> '12' <--", ...tokenPosition(2, 3, 1, 3, 1, 4)}]})
             })
         })
     })
@@ -542,7 +559,7 @@ comments
         test('attribute type', () => {
             // as `varchar(12)` is valid on both v1 & v2 but has different meaning, it's handled when building AML, see aml-legacy.test.ts
             expect(parseRule(p => p.attributeRule(), '  name varchar(12)\n').result).toEqual({
-                nesting: 0,
+                nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                 name: {token: 'Identifier', value: 'name', ...tokenPosition(2, 5, 1, 3, 1, 6)},
                 type: {token: 'Identifier', value: 'varchar', ...tokenPosition(7, 13, 1, 8, 1, 14)},
                 enumValues: [{token: 'Integer', value: 12, ...tokenPosition(15, 16, 1, 16, 1, 17)}]
@@ -615,7 +632,7 @@ comments
             const v1 = parseRule(p => p.attributeRule(), '  age int check="age > 0"\n').result
             const v2 = parseRule(p => p.attributeRule(), '  age int check=`age > 0`\n').result
             expect(v1).toEqual({
-                nesting: 0,
+                nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                 name: {value: 'age', token: 'Identifier', ...tokenPosition(2, 4, 1, 3, 1, 5)},
                 type: {value: 'int', token: 'Identifier', ...tokenPosition(6, 8, 1, 7, 1, 9)},
                 check: {
@@ -761,32 +778,32 @@ comments
         test('nestAttributes', () => {
             expect(nestAttributes([])).toEqual([])
             expect(nestAttributes([{
-                nesting: 0,
+                nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                 name: {token: 'Identifier', value: 'id', ...tokenPosition(8, 9, 2, 3, 2, 4)},
                 type: {token: 'Identifier', value: 'int', ...tokenPosition(11, 13, 2, 6, 2, 8)},
                 primaryKey: {keyword: tokenPosition(15, 16, 2, 10, 2, 11)}
             }, {
-                nesting: 0,
+                nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                 name: {token: 'Identifier', value: 'name', ...tokenPosition(20, 23, 3, 3, 3, 6)},
                 type: {token: 'Identifier', value: 'varchar', ...tokenPosition(25, 31, 3, 8, 3, 14)}
             }, {
-                nesting: 0,
+                nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                 name: {token: 'Identifier', value: 'settings', ...tokenPosition(35, 42, 4, 3, 4, 10)},
                 type: {token: 'Identifier', value: 'json', ...tokenPosition(44, 47, 4, 12, 4, 15)}
             }, {
-                nesting: 1,
+                nesting: {depth: 1, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                 name: {token: 'Identifier', value: 'address', ...tokenPosition(53, 59, 5, 5, 5, 11)},
                 type: {token: 'Identifier', value: 'json', ...tokenPosition(61, 64, 5, 13, 5, 16)}
             }, {
-                nesting: 2,
+                nesting: {depth: 2, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                 name: {token: 'Identifier', value: 'street', ...tokenPosition(72, 77, 6, 7, 6, 12)},
                 type: {token: 'Identifier', value: 'string', ...tokenPosition(79, 84, 6, 14, 6, 19)}
             }, {
-                nesting: 2,
+                nesting: {depth: 2, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                 name: {token: 'Identifier', value: 'city', ...tokenPosition(92, 95, 7, 7, 7, 10)},
                 type: {token: 'Identifier', value: 'string', ...tokenPosition(97, 102, 7, 12, 7, 17)}
             }, {
-                nesting: 1,
+                nesting: {depth: 1, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                 name: {token: 'Identifier', value: 'github', ...tokenPosition(108, 113, 8, 5, 8, 10)},
                 type: {token: 'Identifier', value: 'string', ...tokenPosition(115, 120, 8, 12, 8, 17)}
             }])).toEqual([{

@@ -59,9 +59,9 @@ import {
 import {parseAmlAst} from "./parser";
 import {duplicated} from "./errors";
 
-export function parseAml(content: string): ParserResult<Database> {
+export function parseAml(content: string, opts: { strict: boolean } = {strict: false}): ParserResult<Database> {
     const start = Date.now()
-    return parseAmlAst(content.trimEnd() + '\n'/* TODO , {strict: false}*/).flatMap(ast => {
+    return parseAmlAst(content.trimEnd() + '\n', opts).flatMap(ast => {
         const parsed = Date.now()
         const astErrors: ParserError[] = []
         mapEntriesDeep(ast, (path, value) => {
@@ -93,7 +93,7 @@ function buildDatabase(ast: AmlAst, start: number, parsed: number): {db: Databas
             namespace = buildNamespace(index, stmt, namespace)
         } else if (stmt.statement === 'Entity') {
             const {entity, relations, types} = buildEntity(index, stmt, namespace)
-            const prev = db.entities?.find(e => entityRefSame(entityToRef(e), entityToRef(entity))) // TODO: filter: get all the previous ones
+            const prev = db.entities?.find(e => entityRefSame(entityToRef(e), entityToRef(entity)))
             if (prev) {
                 errors.push(duplicated(
                     `Entity ${entityToId(entity)}`,
@@ -110,7 +110,7 @@ function buildDatabase(ast: AmlAst, start: number, parsed: number): {db: Databas
             const rel = buildRelationStatement(index, stmt)
             // TODO: relation src & ref should have exist, otherwise warning
             if (rel) {
-                const prev = db.relations?.find(r => relationRefSame(relationToRef(r), relationToRef(rel))) // TODO: filter: get all the previous ones
+                const prev = db.relations?.find(r => relationRefSame(relationToRef(r), relationToRef(rel)))
                 if (prev && !prev.polymorphic) {
                     errors.push(duplicated(
                         `Relation ${relationToId(rel)}`,
@@ -119,14 +119,14 @@ function buildDatabase(ast: AmlAst, start: number, parsed: number): {db: Databas
                     ))
                     // TODO: merge relations (extra)? add duplicates?
                 } else {
-                    db.relations?.push(rel) // TODO: check if relation already exists
+                    db.relations?.push(rel)
                 }
             } else {
                 // TODO: warning: ignored relation (should return the cause)
             }
         } else if (stmt.statement === 'Type') {
             const type = buildType(index, stmt, namespace)
-            const prev = db.types?.find(t => typeRefSame(typeToRef(t), typeToRef(type))) // TODO: filter: get all the previous ones
+            const prev = db.types?.find(t => typeRefSame(typeToRef(t), typeToRef(type)))
             if (prev) {
                 errors.push(duplicated(
                     `Type ${typeToId(type)}`,
@@ -211,7 +211,7 @@ function buildEntity(statement: number, e: EntityStatement, namespace: Namespace
         entity: removeEmpty({
             ...entityNamespace,
             name: e.name.value,
-            kind: e.view ? 'view' as const : undefined, // TODO: use props also
+            kind: e.view || e.properties?.find(p => p.key.value === 'view') ? 'view' as const : undefined,
             def: undefined,
             attrs: attrs.map(a => a.attribute),
             pk: pkAttrs.length > 0 ? removeUndefined({
