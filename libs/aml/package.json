@@ -15,6 +15,7 @@
     "url": "git+https://github.com/azimuttapp/azimutt.git",
     "directory": "libs/aml"
   },
+  "type": "module",
   "main": "./out/index.js",
   "types": "./out/index.d.ts",
   "scripts": {

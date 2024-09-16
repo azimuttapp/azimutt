@@ -15,6 +15,7 @@ import {launchExplore} from "./explore.js";
 import {launchAnalyze} from "./analyze.js";
 import {launchDiff} from "./diff.js";
 import {launchClustering} from "./clustering.js";
+import {convertFile} from "./convert.js";
 
 clear()
 logger.log(chalk.hex('#4F46E5').bold(figlet.textSync('Azimutt.app', {horizontalLayout: 'full'})))
@@ -74,6 +75,14 @@ program.command('export')
     .option('-o, --output <output>', "Path to write the schema, ex: ~/azimutt.json")
     .option('--debug', 'Add debug logs and show the full stacktrace instead of a shorter error')
     .action((url, args) => exec(exportDbSchema(url, args), args))
+
+program.command('convert')
+    .description('A dialect to an other')
+    .argument('<path>', 'The file to convert')
+    .requiredOption('-f, --from <from>', 'The dialect of the file to convert from')
+    .requiredOption('-t, --to <to>', 'The dialect to convert to')
+    .option('-o, --out <out>', 'The file to write')
+    .action((path, args) => exec(convertFile(path, args), args))
 
 program.command('diff')
     .description('Compare the schema of two databases')

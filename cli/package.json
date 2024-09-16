@@ -41,6 +41,7 @@
     "dry-publish": "pnpm run build && pnpm test && pnpm pack"
   },
   "dependencies": {
+    "@azimutt/aml": "workspace:^",
     "@azimutt/gateway": "workspace:^",
     "@azimutt/models": "workspace:^",
     "@azimutt/utils": "workspace:^",

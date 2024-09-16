@@ -37,7 +37,7 @@ import {
     typeToId,
     typeToRef
 } from "@azimutt/models";
-import {version} from "../package.json"
+import packageJson from "../package.json";
 import {
     AmlAst,
     AttributeAstNested,
@@ -146,7 +146,7 @@ function buildDatabase(ast: AmlAst, start: number, parsed: number): {db: Databas
         if (stmt.comment) comments.push({line: stmt.comment.position.start.line, comment: stmt.comment.value})
     })
     const done = Date.now()
-    const extra = removeEmpty({source: `AML parser ${version}`, parsedAt: new Date().toISOString(), parsingMs: parsed - start, formattingMs: done - parsed, comments})
+    const extra = removeEmpty({source: `AML parser ${packageJson.version}`, parsedAt: new Date().toISOString(), parsingMs: parsed - start, formattingMs: done - parsed, comments})
     return {db: removeEmpty({...db, extra}), errors}
 }
 
