@@ -32,14 +32,14 @@ As AML doesn't have a lot of syntax and keywords, it almost changes nothing in i
 
 In AMLv1, you could define standalone relations like this:
 
-```aml
+```amlv1
 fk events.created_by -> users.id
 ```
 
 In AMLv2, you will define this with the `rel` keyword:
 
 ```aml
-rel events.created_by -> users.id
+rel events(created_by) -> users(id)
 ```
 
 **Why**:
@@ -51,7 +51,7 @@ rel events.created_by -> users.id
 
 In AMLv1, you could define relations inline with the attribute such as:
 
-```aml
+```amlv1
 posts
   id uuid pk
   author uuid fk users.id
@@ -62,7 +62,7 @@ For AMLv2, it needs to be changed to:
 ```aml
 posts
   id uuid pk
-  author uuid -> users.id
+  author uuid -> users(id)
 ```
 
 **Why**:
@@ -77,7 +77,7 @@ posts
 
 In AMLv1, column references are defined with a `.` between the table and the column:
 
-```aml
+```amlv1
 fk events.created_by -> users.id
 ```
 
@@ -98,7 +98,7 @@ rel events(created_by) -> users(id)
 
 In AMLv1, nested columns could be referenced like this:
 
-```aml
+```amlv1
 fk events.details:user_id -> users.id
 ```
 

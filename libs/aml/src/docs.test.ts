@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import {describe, test} from "@jest/globals";
 import {pathJoin, pathParent, pluralize, pluralizeL, slugifyGitHub} from "@azimutt/utils";
-import {parseAmlAst} from "./parser";
+import {parseAml} from "./aml";
 
 describe('docs', () => {
     const project = 'libs/aml'
@@ -17,8 +17,8 @@ describe('docs', () => {
         const filesWithErrors = Object.entries(amlFiles).map(([path, content]) => {
             // for `../demos/` files, get the whole file, not just some snippets inside
             const snippets = (path.indexOf('../demos/') !== -1 ? [content] : (content.match(amlRegex) || []).map((s: string) => s.replace(/^```aml\n/, '').replace(/```$/, '')))
-                .map((aml, index) => ({index, aml, errors: parseAmlAst(aml, {strict: false}).errors || []}))
-                .filter(res => res.errors.length > 0)
+                .map((aml, index) => ({index, aml, errors: parseAml(aml, {strict: false}).errors || []}))
+                .filter(res => res.errors.filter(e => e.kind === 'error').length > 0)
             return {path, snippets}
         }).filter(file => file.snippets.length > 0)
 

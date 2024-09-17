@@ -44,7 +44,7 @@ events
 books
   id uuid pk
   title varchar
-  authors "uuid[]" >- users.id
+  authors "uuid[]" <> users(id)
 
 book_details
   book_id uuid pk
