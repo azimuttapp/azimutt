@@ -45,8 +45,6 @@ defmodule AzimuttWeb.WebsiteController do
     |> Result.map(fn {from, to} -> conn |> render("convert.html", from: from, to: to) end)
   end
 
-  def convert(conn, _params), do: conn |> render("convert.html")
-
   def last(conn, _params) do
     case conn |> last_used_project do
       {:ok, p} -> conn |> redirect(to: Routes.elm_path(conn, :project_show, p.organization_id, p.id))

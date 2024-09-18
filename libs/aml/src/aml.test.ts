@@ -590,7 +590,7 @@ users
 function parseAmlTest(aml: string): ParserResult<Database> {
     // remove not relevant db extra fields & print exception
     try {
-        return parseAml(aml).map(({extra: {source, parsedAt, parsingMs, formattingMs, ...extra} = {}, ...db}) => ({...db, extra}))
+        return parseAml(aml).map(({extra: {source, createdAt, creationTimeMs, parsingTimeMs, formattingTimeMs, ...extra} = {}, ...db}) => ({...db, extra}))
     } catch (e) {
         console.error(e) // print stack trace
         throw new Error(`Can't parse '${aml}'${typeof e === 'object' && e !== null && 'message' in e ? ': ' + e.message : ''}`)
