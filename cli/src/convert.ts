@@ -1,8 +1,8 @@
 import {Result} from "@azimutt/utils";
 import {
     Database,
-    databaseJsonFormat,
-    databaseJsonParse,
+    generateJsonDatabase,
+    parseJsonDatabase,
     ParserError,
     ParserResult,
     TokenEditor,
@@ -40,13 +40,13 @@ export async function convertFile(path: string, opts: Opts): Promise<void> {
 
 function parseDialect(dialect: string, content: string): ParserResult<Database> {
     if (dialect === 'aml') return parseAml(content)
-    if (dialect === 'json') return databaseJsonParse(content)
+    if (dialect === 'json') return parseJsonDatabase(content)
     return ParserResult.failure([parserError('BadArgument', `Can't parse ${dialect} dialect`)])
 }
 
 function generateDialect(dialect: string, db: Database): Result<string, string> {
     if (dialect === 'aml') return Result.success(generateAml(db))
-    if (dialect === 'json') return Result.success(databaseJsonFormat(db) + '\n')
+    if (dialect === 'json') return Result.success(generateJsonDatabase(db))
     return Result.failure(`Can't generate ${dialect} dialect`)
 }
 

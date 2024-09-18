@@ -85,12 +85,13 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
             name: conn.url.db,
             kind: DatabaseKind.Enum.mariadb,
             version: undefined,
-            doc: undefined,
-            extractedAt: new Date().toISOString(),
-            extractionDuration: Date.now() - start,
             size: undefined,
         }),
-        extra: undefined,
+        extra: removeUndefined({
+            source: `MariaDB connector`,
+            createdAt: new Date().toISOString(),
+            creationTimeMs: Date.now() - start,
+        }),
     })
 }
 

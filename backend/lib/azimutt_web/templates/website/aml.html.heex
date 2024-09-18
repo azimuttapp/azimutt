@@ -231,7 +231,7 @@ posts
                 var parsed = aml.parseAml(editorLeft.getValue())
                 if (parsed.result) {
                     model.context.database = parsed.result
-                    editorRight.setValue(aml.formatJson(parsed.result))
+                    editorRight.setValue(aml.generateJsonDatabase(parsed.result))
                     // preserve the undo stack with: `model.pushEditOperations([], [{range: model.getFullModelRange(), text: value}])`
                 }
                 monaco.editor.setModelMarkers(model, 'owner', (parsed.errors || []).map(e => aml.monaco.createMarker(e, model, editorLeft)))

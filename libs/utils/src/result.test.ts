@@ -10,6 +10,10 @@ describe('result', () => {
         expect(Result.success(1).getOrNull()).toEqual(1)
         expect(Result.failure('err').getOrNull()).toEqual(null)
     })
+    test('getOrUndefined', () => {
+        expect(Result.success(1).getOrUndefined()).toEqual(1)
+        expect(Result.failure('err').getOrUndefined()).toEqual(undefined)
+    })
     test('errOrNull', () => {
         expect(Result.success(1).errOrNull()).toEqual(null)
         expect(Result.failure('err').errOrNull()).toEqual('err')

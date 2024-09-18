@@ -52,7 +52,10 @@ function buildDatabase(schema: PrismaSchema): Database {
     return removeEmpty({
         entities: entities.map(t => t.entity),
         relations: entities.flatMap(t => t.relations),
-        types: enums.concat(types)
+        types: enums.concat(types),
+        extra: {
+            source: 'Prisma parser'
+        }
     })
 }
 

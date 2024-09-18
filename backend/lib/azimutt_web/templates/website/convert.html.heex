@@ -74,7 +74,7 @@
         monaco.languages.registerCodeLensProvider('aml', aml.monaco.codeLens()) // hints with actions
 
         // define schema for JSON
-        monaco.languages.json.jsonDefaults.setDiagnosticsOptions({validate: true, schemas: [{fileMatch: ['*'], schema: aml.schemaJson}]})
+        monaco.languages.json.jsonDefaults.setDiagnosticsOptions({validate: true, schemas: [{fileMatch: ['*'], schema: aml.schemaJsonDatabase}]})
 
         var leftLang = '<%= @from.id %>'
         var rightLang = '<%= @to.id %>'
@@ -113,12 +113,12 @@
 
         function parse(lang, content) {
             if (lang === 'aml') return aml.parseAml(content)
-            if (lang === 'json') return aml.parseJson(content)
-            return aml.ParserResult.failure([{name: 'UnsupportedDialect', kind: 'error', message: 'Unsupported source dialect: ' + lang}])
+            if (lang === 'json') return aml.parseJsonDatabase(content)
+            return {errors: [{name: 'UnsupportedDialect', kind: 'error', message: 'Unsupported source dialect: ' + lang}]}
         }
         function format(lang, content) {
             if (lang === 'aml') return aml.generateAml(content)
-            if (lang === 'json') return aml.formatJson(content)
+            if (lang === 'json') return aml.generateJsonDatabase(content)
             return 'Unsupported destination dialect: ' + lang
         }
         function defaultValue(lang) {

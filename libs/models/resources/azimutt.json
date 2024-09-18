@@ -6266,8 +6266,11 @@
     "name": "azimutt_dev",
     "kind": "postgres",
     "version": "PostgreSQL 16.2 (Ubuntu 16.2-1.pgdg22.04+1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0, 64-bit",
-    "extractedAt": "2024-04-29T21:34:14.745Z",
-    "extractionDuration": 236,
     "size": 17530880
+  },
+  "extra": {
+    "source": "PostgreSQL connector",
+    "createdAt": "2024-04-29T21:34:14.745Z",
+    "creationTimeMs": 236
   }
 }

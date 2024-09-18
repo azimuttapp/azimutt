@@ -95,12 +95,13 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
             name: conn.url.db || database.DATABASE,
             kind: DatabaseKind.Enum.oracle,
             version: database.VERSION,
-            doc: undefined,
-            extractedAt: new Date().toISOString(),
-            extractionDuration: Date.now() - start,
             size: database.BYTES,
         }),
-        extra: undefined,
+        extra: removeUndefined({
+            source: `Oracle connector`,
+            createdAt: new Date().toISOString(),
+            creationTimeMs: Date.now() - start,
+        }),
     })
 }
 

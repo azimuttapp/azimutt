@@ -9,6 +9,7 @@ export abstract class Result<A, E> {
 
     abstract getOrThrow(): A
     abstract getOrNull(): A | null
+    abstract getOrUndefined(): A | undefined
     abstract errOrNull(): E | null
     abstract swap(): Result<E, A>
     abstract map<B>(f: (a: A) => B): Result<B, E>
@@ -30,6 +31,10 @@ class ResultSuccess<A, E> extends Result<A, E> {
     }
 
     public getOrNull(): A | null {
+        return this.value
+    }
+
+    public getOrUndefined(): A | undefined {
         return this.value
     }
 
@@ -78,6 +83,10 @@ class ResultFailure<A, E> extends Result<A, E> {
 
     public getOrNull(): A | null {
         return null
+    }
+
+    public getOrUndefined(): A | undefined {
+        return undefined
     }
 
     public errOrNull(): E | null {

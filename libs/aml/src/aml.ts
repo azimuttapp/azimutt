@@ -50,6 +50,8 @@ import {
     ExtraAst,
     isTokenInfo,
     NamespaceStatement,
+    PropertiesAst,
+    PropertyValueAst,
     RelationKindAst,
     RelationPolymorphicAst,
     RelationStatement,
@@ -146,7 +148,7 @@ function buildDatabase(ast: AmlAst, start: number, parsed: number): {db: Databas
         if (stmt.comment) comments.push({line: stmt.comment.position.start.line, comment: stmt.comment.value})
     })
     const done = Date.now()
-    const extra = removeEmpty({source: `AML parser ${packageJson.version}`, parsedAt: new Date().toISOString(), parsingMs: parsed - start, formattingMs: done - parsed, comments})
+    const extra = removeEmpty({source: `AML parser <${packageJson.version}>`, parsedAt: new Date().toISOString(), parsingMs: parsed - start, formattingMs: done - parsed, comments})
     return {db: removeEmpty({...db, extra}), errors}
 }
 
@@ -222,7 +224,7 @@ function buildEntity(statement: number, e: EntityStatement, namespace: Namespace
             checks: checks,
             doc: e.doc?.value,
             stats: undefined,
-            extra: removeEmpty({statement, line: e.name.position.start.line, comment: e.comment?.value})
+            extra: buildExtraWithProperties({line: e.name.position.start.line, statement, comment: e.comment?.value}, e)
         }),
         relations: attrs.flatMap(a => a.relations),
         types: attrs.flatMap(a => a.types),
@@ -237,7 +239,7 @@ function flattenAttributes(attributes: AttributeAstNested[]): AttributeAstNested
 }
 
 export function genEntity(e: Entity, relations: Relation[], types: Type[], legacy: boolean): string {
-    const entity = `${e.name}${e.kind === 'view' ? '*' : ''}${genNote(e.doc)}${genCommentExtra(e)}\n`
+    const entity = `${e.name}${e.kind === 'view' ? '*' : ''}${genPropertiesExtra(e, ['line', 'statement', 'comment'])}${genNote(e.doc)}${genCommentExtra(e)}\n`
     return entity + (e.attrs ? e.attrs.map(a => genAttribute(a, e, relations.filter(r => r.attrs[0].src[0] === a.name), types, legacy)).join('') : '')
 }
 
@@ -251,7 +253,7 @@ function buildIndexes(indexes: {path: AttributePath, index: string | undefined}[
 function buildAttribute(statement: number, a: AttributeAstNested, entity: EntityRef): { attribute: Attribute, relations: Relation[], types: Type[] } {
     const {entity: _, ...namespace} = entity
     const typeExt = a.enumValues && a.enumValues.length <= 2 && a.enumValues.every(v => v.token === 'Integer') ? '(' + a.enumValues.map(stringifyAttrValue).join(',') + ')' : ''
-    const enumType: Type[] = a.type && a.enumValues && !typeExt ? [{...namespace, name: a.type.value, values: a.enumValues.map(stringifyAttrValue), extra: {statement, line: a.enumValues[0].position.start.line}}] : []
+    const enumType: Type[] = a.type && a.enumValues && !typeExt ? [{...namespace, name: a.type.value, values: a.enumValues.map(stringifyAttrValue), extra: {line: a.enumValues[0].position.start.line, statement}}] : []
     const relation: Relation[] = a.relation ? [buildRelationAttribute(statement, a.relation, entity, [a.path.map(p => p.value)])].filter(isNotUndefined) : []
     const validAttrs = (a.attrs || []).filter(aa => !aa.path.some(p => p === undefined)) // `path` can be `[undefined]` on invalid input :/
     const nested = validAttrs.map(aa => buildAttribute(statement, aa, entity))
@@ -265,7 +267,7 @@ function buildAttribute(statement: number, a: AttributeAstNested, entity: Entity
             attrs: nested.map(n => n.attribute),
             doc: a.doc?.value,
             stats: undefined,
-            extra: removeEmpty({comment: a.comment?.value})
+            extra: buildExtraWithProperties({comment: a.comment?.value}, a)
         }),
         relations: relation.concat(nested.flatMap(n => n.relations)),
         types: enumType.concat(nested.flatMap(n => n.types)),
@@ -281,10 +283,14 @@ function genAttribute(a: Attribute, e: Entity, relations: Relation[], types: Typ
 
 function genAttributeInner(a: Attribute, e: Entity, relations: Relation[], types: Type[], path: AttributePath, indent: string, legacy: boolean): string {
     const pk = e.pk && e.pk.attrs.some(attr => attributePathSame(attr, path)) ? ' pk' : ''
-    const indexes = (e.indexes || []).filter(i => i.attrs.some(attr => attributePathSame(attr, path))).map(i => ` ${i.unique ? 'unique' : 'index'}${i.name ? `=${i.name}` : ''}`).join('')
+    const indexes = (e.indexes || [])
+        .map((idx, i) => ({...idx, name: idx.name || (idx.attrs.length > 1 ? `${e.name}_idx_${i + 1}` : undefined)}))
+        .filter(i => i.attrs.some(attr => attributePathSame(attr, path)))
+        .map(i => ` ${i.unique ? 'unique' : 'index'}${i.name ? `=${i.name}` : ''}`)
+        .join('')
     const checks = (e.checks || []).filter(i => i.attrs.some(attr => attributePathSame(attr, path))).map(i => ` check${i.predicate ? `=\`${i.predicate}\`` : ''}`).join('')
     const rel = relations.map(r => ' ' + genRelationTarget(r, legacy)).join('')
-    return `${a.name}${genAttributeType(a, types)}${a.null ? ' nullable' : ''}${pk}${indexes}${checks}${rel}${genNote(a.doc, indent)}${genCommentExtra(a)}`
+    return `${a.name}${genAttributeType(a, types)}${a.null ? ' nullable' : ''}${pk}${indexes}${checks}${rel}${genPropertiesExtra(a, ['comment'])}${genNote(a.doc, indent)}${genCommentExtra(a)}`
 }
 
 function buildAttributeType(a: AttributeAstNested, ext: string): AttributeType {
@@ -322,12 +328,12 @@ function buildRelation(statement: number, line: number, kind: RelationKindAst | 
         attrs: zip(srcAttrs, refAttrs).map(([srcAttr, refAttr]) => ({src: srcAttr, ref: refAttr})),
         polymorphic: polymorphic ? {attribute: buildAttrPath(polymorphic.attr), value: buildAttrValue(polymorphic.value)} : undefined,
         doc: extra?.doc?.value,
-        extra: removeEmpty({statement, line, comment: extra?.comment?.value}),
+        extra: buildExtraWithProperties({line, statement, comment: extra?.comment?.value}, extra || {}),
     }) : undefined
 }
 
 function genRelation(r: Relation, legacy: boolean): string {
-    return `${legacy ? 'fk' : 'rel'} ${genAttributeRef(r.src, r.attrs.map(a => a.src), legacy)} ${genRelationTarget(r, legacy)}${genNote(r.doc)}${genCommentExtra(r)}\n`
+    return `${legacy ? 'fk' : 'rel'} ${genAttributeRef(r.src, r.attrs.map(a => a.src), legacy)} ${genRelationTarget(r, legacy)}${genPropertiesExtra(r, ['line', 'statement', 'comment'])}${genNote(r.doc)}${genCommentExtra(r)}\n`
 }
 
 function genRelationTarget(r: Relation, legacy: boolean): string {
@@ -342,7 +348,7 @@ function buildType(statement: number, t: TypeStatement, namespace: Namespace): T
     const astNamespace = removeUndefined({schema: t.schema?.value, catalog: t.catalog?.value, database: t.database?.value})
     const typeNamespace = {...namespace, ...astNamespace}
     const content = t.content ? buildTypeContent(statement, t.content, {...typeNamespace, entity: t.name.value}) : {}
-    return removeUndefined({...typeNamespace, name: t.name.value, ...content, doc: t.doc?.value, extra: removeEmpty({statement, line: t.name.position.start.line, comment: t.comment?.value})})
+    return removeUndefined({...typeNamespace, name: t.name.value, ...content, doc: t.doc?.value, extra: buildExtraWithProperties({line: t.name.position.start.line, statement, comment: t.comment?.value}, t)})
 }
 
 function buildTypeContent(statement: number, t: TypeContentAst, entity: EntityRef): {definition?: string, values?: string[], attrs?: Attribute[]} {
@@ -354,7 +360,7 @@ function buildTypeContent(statement: number, t: TypeContentAst, entity: EntityRe
 }
 
 function genType(t: Type, legacy: boolean): string {
-    return `type ${genEntityRef({...t, entity: t.name})}${genTypeContent(t, legacy)}${genNote(t.doc)}${genCommentExtra(t)}\n`
+    return `type ${genEntityRef({...t, entity: t.name})}${genTypeContent(t, legacy)}${genPropertiesExtra(t, ['line', 'statement', 'comment'])}${genNote(t.doc)}${genCommentExtra(t)}\n`
 }
 
 function genTypeContent(t: Type, legacy: boolean): string {
@@ -417,6 +423,42 @@ function stringifyAttrValue(v: AttributeValueAst): string {
     if (v.token === 'Expression') return v.value
     if (v.token === 'Identifier') return v.value
     return isNever(v)
+}
+
+type PropertyValueBasic = null | number | boolean | string
+type PropertyValue = PropertyValueBasic | PropertyValueBasic[]
+
+function buildPropValue(v: PropertyValueAst): PropertyValue {
+    if (Array.isArray(v)) return v.map(buildPropValue) as PropertyValueBasic[] // ignore nested arrays
+    if (v.token === 'Null') return null
+    if (v.token === 'Decimal') return v.value
+    if (v.token === 'Integer') return v.value
+    if (v.token === 'Boolean') return v.value
+    if (v.token === 'Expression') return '`' + v.value + '`'
+    if (v.token === 'Identifier') return v.value
+    return isNever(v)
+}
+
+function stringifyPropValue(v: PropertyValue): string {
+    if (Array.isArray(v)) return '[' + v.map(stringifyPropValue).join(', ') + ']'
+    if (v === null) return 'null'
+    if (typeof v === 'string') return v
+    if (typeof v === 'number') return v.toString()
+    if (typeof v === 'boolean') return v.toString()
+    return isNever(v)
+}
+
+function buildExtraWithProperties(extra: Extra, v: {properties?: PropertiesAst}): Extra {
+    const properties = v?.properties?.reduce((acc, prop) => prop ? {...acc, [prop.key.value]: prop.value ? buildPropValue(prop.value) : undefined} : acc, {} as Record<string, PropertyValue | undefined>) || {}
+    return {...properties, ...removeEmpty(extra)}
+}
+
+function genPropertiesExtra(v: {extra?: Extra | undefined}, ignore: string[] = []): string {
+    return v.extra ? genProperties(Object.fromEntries(Object.entries(v.extra).filter(([k, ]) => !ignore.includes(k)))) : ''
+}
+
+function genProperties(properties: Record<string, PropertyValue>): string {
+    return Object.keys(properties).length > 0 ? ' {' + Object.entries(properties).map(([key, value]) => value !== undefined ? `${key}: ${stringifyPropValue(value)}` : key).join(', ') + '}' : ''
 }
 
 function genNote(doc: string | undefined, indent: string = ''): string {

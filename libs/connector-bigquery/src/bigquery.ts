@@ -74,12 +74,13 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
             name: projectId,
             kind: DatabaseKind.Enum.bigquery,
             version: undefined,
-            doc: undefined,
-            extractedAt: new Date().toISOString(),
-            extractionDuration: Date.now() - start,
             size: undefined,
         }),
-        extra: undefined,
+        extra: removeUndefined({
+            source: `BigQuery connector`,
+            createdAt: new Date().toISOString(),
+            creationTimeMs: Date.now() - start,
+        }),
     })
 }
 

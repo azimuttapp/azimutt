@@ -28,7 +28,7 @@ export const defaultSchema = 'public'
 
 export function importDatabase(db: DbmlDatabase): Database {
     const extra: DatabaseExtra = removeEmpty({
-        source: 'serde-DBML',
+        source: 'DBML parser',
         groups: db.schemas.flatMap(s => s.tableGroups.map(importGroup))
     })
     return removeEmpty({

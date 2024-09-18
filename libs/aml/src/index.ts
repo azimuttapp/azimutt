@@ -1,7 +1,7 @@
 import {
-    databaseJsonFormat as formatJson,
-    databaseJsonParse as parseJson,
-    DatabaseSchema as schemaJson
+    generateJsonDatabase,
+    parseJsonDatabase,
+    DatabaseSchema as schemaJsonDatabase
 } from "@azimutt/models";
 import packageJson from "../package.json";
 import {codeAction, codeLens, completion, createMarker, language} from "./extensions/monaco";
@@ -13,4 +13,4 @@ const version = packageJson.version
 export * from "@azimutt/models"
 export * from "./aml"
 export {monaco}
-export {formatJson, parseJson, schemaJson, version}
+export {generateJsonDatabase, parseJsonDatabase, schemaJsonDatabase, version}

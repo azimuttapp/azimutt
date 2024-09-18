@@ -18,7 +18,7 @@ export type Millis = z.infer<typeof Millis>
 export const Timestamp = z.number() // timestamp in millis (ex: 1663007946750)
 export type Timestamp = z.infer<typeof Timestamp>
 
-export const DateTime = z.string() // date in iso format ("2022-09-12T11:13:02.611616Z")
+export const DateTime = z.string().datetime() // date in iso format ("2022-09-12T11:13:02.611616Z")
 export type DateTime = z.infer<typeof DateTime>
 
 export const Color = z.enum(['gray', 'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose'])

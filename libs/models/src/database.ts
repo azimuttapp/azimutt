@@ -80,13 +80,19 @@ export const IndexStats = z.object({
 }).strict()
 export type IndexStats = z.infer<typeof IndexStats>
 
+export const IndexExtra = Extra.and(z.object({
+    line: z.number().optional(),
+    statement: z.number().optional(),
+}))
+export type IndexExtra = z.infer<typeof IndexExtra>
+
 export const Check = z.object({
     name: ConstraintName.optional(),
     attrs: AttributePath.array(),
     predicate: z.string(),
     doc: z.string().optional(),
     stats: IndexStats.optional(),
-    extra: Extra.optional()
+    extra: IndexExtra.optional(),
 }).strict()
 export type Check = z.infer<typeof Check>
 
@@ -98,7 +104,7 @@ export const Index = z.object({
     definition: z.string().optional(),
     doc: z.string().optional(),
     stats: IndexStats.optional(),
-    extra: Extra.optional()
+    extra: IndexExtra.optional(),
 }).strict()
 export type Index = z.infer<typeof Index>
 
@@ -107,7 +113,7 @@ export const PrimaryKey = z.object({
     attrs: AttributePath.array(),
     doc: z.string().optional(),
     stats: IndexStats.optional(),
-    extra: Extra.optional()
+    extra: IndexExtra.optional(),
 }).strict()
 export type PrimaryKey = z.infer<typeof PrimaryKey>
 
@@ -139,6 +145,14 @@ export const AttributeStats = z.object({
 }).strict()
 export type AttributeStats = z.infer<typeof AttributeStats>
 
+export const AttributeExtra = Extra.and(z.object({
+    line: z.number().optional(),
+    statement: z.number().optional(),
+    autoIncrement: z.boolean().optional(),
+    tags: z.string().array().optional(),
+}))
+export type AttributeExtra = z.infer<typeof AttributeExtra>
+
 export const Attribute: z.ZodType<Attribute> = z.object({
     name: AttributeName,
     type: AttributeType,
@@ -148,7 +162,7 @@ export const Attribute: z.ZodType<Attribute> = z.object({
     attrs: z.lazy(() => Attribute.array().optional()),
     doc: z.string().optional(),
     stats: AttributeStats.optional(),
-    extra: Extra.optional()
+    extra: AttributeExtra.optional(),
 }).strict()
 export type Attribute = { // define type explicitly because it's lazy (https://zod.dev/?id=recursive-types)
     name: AttributeName
@@ -183,6 +197,16 @@ export const EntityStats = z.object({
 }).strict()
 export type EntityStats = z.infer<typeof EntityStats>
 
+export const EntityExtra = Extra.and(z.object({
+    line: z.number().optional(),
+    statement: z.number().optional(),
+    alias: z.string().optional(),
+    color: z.string().optional(),
+    tags: z.string().array().optional(),
+    dependsOn: z.union([EntityRef, AttributeRef]).array().optional(), // for views, to know used entities/attributes
+}))
+export type EntityExtra = z.infer<typeof EntityExtra>
+
 export const Entity = Namespace.extend({
     name: EntityName,
     kind: EntityKind.optional(), // 'table' when not specified
@@ -193,12 +217,23 @@ export const Entity = Namespace.extend({
     checks: Check.array().optional(),
     doc: z.string().optional(),
     stats: EntityStats.optional(),
-    extra: Extra.optional()
+    extra: EntityExtra.optional(),
 }).strict()
 export type Entity = z.infer<typeof Entity>
 
 export const RelationKind = z.enum(['many-to-one', 'one-to-many', 'one-to-one', 'many-to-many'])
 export type RelationKind = z.infer<typeof RelationKind>
+
+export const RelationAction = z.enum(['no_action', 'set_null', 'set_default', 'cascade', 'restrict'])
+export type RelationAction = z.infer<typeof RelationAction>
+
+export const RelationExtra = Extra.and(z.object({
+    line: z.number().optional(),
+    statement: z.number().optional(),
+    onUpdate: z.union([RelationAction, z.string()]).optional(),
+    onDelete: z.union([RelationAction, z.string()]).optional(),
+}))
+export type RelationExtra = z.infer<typeof RelationExtra>
 
 export const Relation = z.object({
     name: ConstraintName.optional(),
@@ -209,9 +244,15 @@ export const Relation = z.object({
     attrs: z.object({src: AttributePath, ref: AttributePath}).array(),
     polymorphic: z.object({attribute: AttributePath, value: AttributeValue}).optional(),
     doc: z.string().optional(),
-    extra: Extra.optional()
+    extra: RelationExtra.optional(),
 }).strict()
 export type Relation = z.infer<typeof Relation>
+
+export const TypeExtra = Extra.and(z.object({
+    line: z.number().optional(),
+    statement: z.number().optional(),
+}))
+export type TypeExtra = z.infer<typeof TypeExtra>
 
 export const Type = Namespace.extend({
     name: TypeName,
@@ -219,7 +260,7 @@ export const Type = Namespace.extend({
     attrs: Attribute.array().optional(),
     definition: z.string().optional(),
     doc: z.string().optional(),
-    extra: Extra.optional()
+    extra: TypeExtra.optional(),
 }).strict()
 export type Type = z.infer<typeof Type>
 
@@ -230,22 +271,29 @@ export const DatabaseStats = z.object({
     name: DatabaseName,
     kind: DatabaseKind,
     version: z.string(),
-    extractedAt: DateTime, // when the database was extracted
-    extractionDuration: Millis,
     size: z.number(), // used bytes
+    extractedAt: DateTime, // legacy, see extra.createdAt instead
+    extractionDuration: Millis, // legacy, see extra.creationTimeMs instead
 }).partial().strict()
 export type DatabaseStats = z.infer<typeof DatabaseStats>
+
+export const DatabaseExtra = Extra.and(z.object({
+    source: z.string().optional(), // what/who created this database, format: `${name} <${version}>` (version is optional, inspired by package.json author)
+    createdAt: DateTime.optional(), // when it was created
+    creationTimeMs: Millis.optional(), // how long it took to create it
+}))
+export type DatabaseExtra = z.infer<typeof DatabaseExtra>
 
 export const Database = z.object({
     entities: Entity.array().optional(),
     relations: Relation.array().optional(),
     types: Type.array().optional(),
     // functions: z.record(FunctionId, Function.array()).optional(),
-    // procedures: z.record(ProcedureId, Procedure.array()).optional(),
-    // triggers: z.record(TriggerId, Trigger.array()).optional(),
+    // procedures: z.record(ProcedureId, Procedure.array()).optional(), // parse procedures and list them on tables they use
+    // triggers: z.record(TriggerId, Trigger.array()).optional(), // list triggers on tables they belong
     doc: z.string().optional(),
     stats: DatabaseStats.optional(),
-    extra: Extra.optional(),
+    extra: DatabaseExtra.optional(),
 }).strict().describe('Database')
 export type Database = z.infer<typeof Database>
 
@@ -258,6 +306,6 @@ export const DatabaseSchema = zodToJsonSchema(Database, {
         PrimaryKey, Index, Check,
         Relation, ConstraintName, RelationKind,
         Type, TypeName,
-        Extra
+        Extra, DatabaseExtra, EntityExtra, AttributeExtra, IndexExtra, RelationExtra, TypeExtra
     }
 })

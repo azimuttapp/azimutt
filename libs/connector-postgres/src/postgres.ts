@@ -92,12 +92,13 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
             name: conn.url.db || database.database,
             kind: DatabaseKind.Enum.postgres,
             version: database.version,
-            doc: undefined,
-            extractedAt: new Date().toISOString(),
-            extractionDuration: Date.now() - start,
             size: database.blks_read * blockSize,
         }),
-        extra: undefined,
+        extra: removeUndefined({
+            source: `PostgreSQL connector`,
+            createdAt: new Date().toISOString(),
+            creationTimeMs: Date.now() - start,
+        }),
     })
 }
 

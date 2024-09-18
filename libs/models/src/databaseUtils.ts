@@ -248,7 +248,7 @@ export const indexRelations = (relations: Relation[]): Record<EntityId, Record<E
 export const indexTypes = (types: Type[]): Record<TypeId, Type> =>
     indexBy(types, typeToId)
 
-export function databaseJsonParse(content: string): ParserResult<Database> {
+export function parseJsonDatabase(content: string): ParserResult<Database> {
     let json: any = undefined
     try {
         json = JSON.parse(content)
@@ -261,7 +261,7 @@ export function databaseJsonParse(content: string): ParserResult<Database> {
     )
 }
 
-export function databaseJsonFormat(database: Database): string {
+export function generateJsonDatabase(database: Database): string {
     return stringify(database, (path: (string | number)[], value: any) => {
         const last = path[path.length - 1]
         // if (last === 'entities' || last === 'relations' || last === 'types') return 0
@@ -274,5 +274,5 @@ export function databaseJsonFormat(database: Database): string {
         if (path.includes('stats')) return 0
         if (path.includes('extra') && path.length > 1) return 0
         return 2
-    })
+    }) + '\n'
 }

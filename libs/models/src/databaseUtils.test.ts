@@ -16,8 +16,8 @@ import {
     attributesRefSame,
     attributesRefToId,
     attributeTypeParse,
-    databaseJsonFormat,
-    databaseJsonParse,
+    generateJsonDatabase,
+    parseJsonDatabase,
     DatabaseKind,
     EntityId,
     EntityRef,
@@ -364,16 +364,16 @@ describe('databaseUtils', () => {
             {path: ['details', 'created'], attr: {name: 'created', type: 'varchar'}},
         ])
     })
-    test('databaseJsonParse', () => {
-        expect(databaseJsonParse(`{}`)).toEqual({result: {}})
-        expect(databaseJsonParse(`{"entities": [{"name": "users"}, {"name": "posts"}]}`)).toEqual({result: {entities: [{name: 'users'}, {name: 'posts'}]}})
-        expect(databaseJsonParse(`{"bad": 1}`)).toEqual({errors: [{name: 'InvalidJson', kind: 'error', message: "Invalid Database, at _root_: invalid additional key 'bad' (1)", offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}]})
-        expect(databaseJsonParse(`{"entities": [{"name": true}]}`)).toEqual({errors: [{name: 'InvalidJson', kind: 'error', message: "Invalid Database, at .entities.0.name: expect 'string' but got 'boolean' (true)", offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}]})
+    test('parseJsonDatabase', () => {
+        expect(parseJsonDatabase(`{}`)).toEqual({result: {}})
+        expect(parseJsonDatabase(`{"entities": [{"name": "users"}, {"name": "posts"}]}`)).toEqual({result: {entities: [{name: 'users'}, {name: 'posts'}]}})
+        expect(parseJsonDatabase(`{"bad": 1}`)).toEqual({errors: [{name: 'InvalidJson', kind: 'error', message: "Invalid Database, at _root_: invalid additional key 'bad' (1)", offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}]})
+        expect(parseJsonDatabase(`{"entities": [{"name": true}]}`)).toEqual({errors: [{name: 'InvalidJson', kind: 'error', message: "Invalid Database, at .entities.0.name: expect 'string' but got 'boolean' (true)", offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}]})
         // expect(databaseJsonParse(`bad`)).toEqual({errors: [{name: 'MalformedJson', kind: 'error', message: "Unexpected token 'b', \"bad\" is not valid JSON", offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}]})
         // expect(databaseJsonParse(`bad`)).toEqual({errors: [{name: 'MalformedJson', kind: 'error', message: "Unexpected token b in JSON at position 0", offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}]})
     })
-    test('databaseJsonFormat', () => {
-        const prettyJson = databaseJsonFormat({
+    test('generateJsonDatabase', () => {
+        const prettyJson = generateJsonDatabase({
             entities: [{
                 name: 'users',
                 attrs: [
