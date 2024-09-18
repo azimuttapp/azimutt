@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import {describe, expect, test} from "@jest/globals";
 import {Database, ParserResult, tokenPosition} from "@azimutt/models";
-import {generateAml, parseAml} from "./aml";
+import {genEntity, generateAml, parseAml} from "./aml";
 import {duplicated, legacy} from "./errors";
 
 describe('aml', () => {
@@ -149,6 +149,11 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                 {name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> NewLine <-- but found --> 'bad' <--", ...tokenPosition(2, 4, 1, 3, 1, 5)},
                 {name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> NewLine <-- but found --> 'schema' <--", ...tokenPosition(6, 11, 1, 7, 1, 12)},
             ]
+        })
+    })
+    describe('genEntity', () => {
+        test('should work without attributes', () => {
+            expect(genEntity({name: 'users'}, [], [], false)).toEqual('users\n')
         })
     })
 

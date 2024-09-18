@@ -645,8 +645,8 @@ export function parseRule<T>(parse: (p: AmlParser) => T, input: string, strict: 
     return new ParserResult(res, errors)
 }
 
-export function parseAmlAst(input: string, opts: { strict: boolean }): ParserResult<AmlAst> {
-    return parseRule(p => p.amlRule(), input, opts.strict)
+export function parseAmlAst(input: string, opts: { strict?: boolean }): ParserResult<AmlAst> {
+    return parseRule(p => p.amlRule(), input, opts.strict || false)
 }
 
 function formatLexerError(err: ILexingError): ParserError {

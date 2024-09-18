@@ -19,6 +19,7 @@ import {
     CompletionList,
     IMarkerData,
     IMonarchLanguage,
+    IStandaloneCodeEditor,
     ITextModel,
     MarkerSeverity,
     Position,
@@ -142,14 +143,29 @@ export const codeLens = (opts: {} = {}): CodeLensProvider => ({ // hints with ac
     }
 })
 
-export const createMarker = (e: ParserError): IMarkerData => ({
-    message: e.message,
-    severity: e.kind === 'error' ? MarkerSeverity.Error : e.kind === 'warning' ? MarkerSeverity.Warning : e.kind === 'info' ? MarkerSeverity.Info : MarkerSeverity.Hint,
-    startLineNumber: e.position.start.line,
-    startColumn: e.position.start.column,
-    endLineNumber: e.position.end.line,
-    endColumn: e.position.end.column + 1,
-})
+export const createMarker = (e: ParserError, model: ITextModel, editor: IStandaloneCodeEditor): IMarkerData => {
+    const severity = e.kind === 'error' ? MarkerSeverity.Error : e.kind === 'warning' ? MarkerSeverity.Warning : e.kind === 'info' ? MarkerSeverity.Info : MarkerSeverity.Hint
+    if (e.position.start.line === 0 || e.position.start.column === 0) { // unknown position :/
+        const cursor = editor.getPosition()
+        return {
+            message: e.message,
+            severity,
+            startLineNumber: cursor.lineNumber,
+            startColumn: 1,
+            endLineNumber: cursor.lineNumber,
+            endColumn: cursor.column,
+        }
+    } else {
+        return {
+            message: e.message,
+            severity,
+            startLineNumber: e.position.start.line,
+            startColumn: e.position.start.column,
+            endLineNumber: e.position.end.line,
+            endColumn: e.position.end.column + 1,
+        }
+    }
+}
 
 // entity/attribute rename: ??? (https://code.visualstudio.com/docs/editor/editingevolved#_rename-symbol)
 // go to definition: `{codeEditorService: {openCodeEditor: () => {}}}` as 3rd attr of `monaco.editor.create` (https://code.visualstudio.com/docs/editor/editingevolved#_go-to-definition & https://code.visualstudio.com/docs/editor/editingevolved#_peek)

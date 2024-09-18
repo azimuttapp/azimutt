@@ -1,5 +1,13 @@
 import {Result} from "@azimutt/utils";
-import {Database, databaseJsonFormat, ParserError, ParserResult, TokenEditor, zodParse} from "@azimutt/models";
+import {
+    Database,
+    databaseJsonFormat,
+    databaseJsonParse,
+    ParserError,
+    ParserResult,
+    TokenEditor,
+    zodParse
+} from "@azimutt/models";
 import {parseAml, generateAml} from "@azimutt/aml";
 import {fileRead, fileWrite} from "./utils/file.js";
 import {logger} from "./utils/logger.js";
@@ -32,7 +40,7 @@ export async function convertFile(path: string, opts: Opts): Promise<void> {
 
 function parseDialect(dialect: string, content: string): ParserResult<Database> {
     if (dialect === 'aml') return parseAml(content)
-    if (dialect === 'json') return parseJson(content)
+    if (dialect === 'json') return databaseJsonParse(content)
     return ParserResult.failure([parserError('BadArgument', `Can't parse ${dialect} dialect`)])
 }
 
@@ -54,14 +62,6 @@ function dialectToExtension(dialect: string): string {
     if (dialect === 'aml') return 'md'
     if (dialect === 'json') return 'json'
     return 'txt'
-}
-
-function parseJson(content: string): ParserResult<Database> {
-    // TODO: better errors
-    return zodParse(Database, 'Database')(JSON.parse(content)).fold(
-        db => ParserResult.success(db),
-        err => ParserResult.failure([parserError('InvalidJson', err)])
-    )
 }
 
 function parserError(name: string, message: string): ParserError {

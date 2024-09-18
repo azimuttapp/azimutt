@@ -1,4 +1,14 @@
-import {arraySame, filterValues, groupBy, indexBy, mapValues, removeUndefined, stringify} from "@azimutt/utils";
+import {
+    arraySame,
+    errorToString,
+    filterValues,
+    groupBy,
+    indexBy,
+    mapValues,
+    removeUndefined,
+    stringify
+} from "@azimutt/utils";
+import {zodParse} from "./zod";
 import {
     Attribute,
     AttributeId,
@@ -24,6 +34,7 @@ import {
     TypeId,
     TypeRef
 } from "./database";
+import {ParserResult} from "./interfaces/serde";
 
 export const namespaceToId = (n: Namespace): NamespaceId => [
     n.database || '',
@@ -236,6 +247,19 @@ export const indexRelations = (relations: Relation[]): Record<EntityId, Record<E
     mapValues(groupBy(relations, r => entityRefToId(r.src)), rels => groupBy(rels, r => entityRefToId(r.ref)))
 export const indexTypes = (types: Type[]): Record<TypeId, Type> =>
     indexBy(types, typeToId)
+
+export function databaseJsonParse(content: string): ParserResult<Database> {
+    let json: any = undefined
+    try {
+        json = JSON.parse(content)
+    } catch (e) {
+        return ParserResult.failure([{name: 'MalformedJson', kind: 'error', message: errorToString(e), offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}])
+    }
+    return zodParse(Database)(json).fold(
+        db => ParserResult.success(db),
+        err => ParserResult.failure([{name: 'InvalidJson', kind: 'error', message: err, offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}])
+    )
+}
 
 export function databaseJsonFormat(database: Database): string {
     return stringify(database, (path: (string | number)[], value: any) => {

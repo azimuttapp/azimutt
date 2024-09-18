@@ -59,7 +59,7 @@ import {
 import {parseAmlAst} from "./parser";
 import {duplicated} from "./errors";
 
-export function parseAml(content: string, opts: { strict: boolean } = {strict: false}): ParserResult<Database> {
+export function parseAml(content: string, opts: { strict?: boolean, context?: Database } = {}): ParserResult<Database> {
     const start = Date.now()
     return parseAmlAst(content.trimEnd() + '\n', opts).flatMap(ast => {
         const parsed = Date.now()
@@ -236,9 +236,9 @@ function flattenAttributes(attributes: AttributeAstNested[]): AttributeAstNested
     })
 }
 
-function genEntity(e: Entity, relations: Relation[], types: Type[], legacy: boolean): string {
+export function genEntity(e: Entity, relations: Relation[], types: Type[], legacy: boolean): string {
     const entity = `${e.name}${e.kind === 'view' ? '*' : ''}${genNote(e.doc)}${genCommentExtra(e)}\n`
-    return entity + e.attrs?.map(a => genAttribute(a, e, relations.filter(r => r.attrs[0].src[0] === a.name), types, legacy)).join('')
+    return entity + (e.attrs ? e.attrs.map(a => genAttribute(a, e, relations.filter(r => r.attrs[0].src[0] === a.name), types, legacy)).join('') : '')
 }
 
 function buildIndexes(indexes: {path: AttributePath, index: string | undefined}[]): {value: string | undefined, attrs: AttributePath[]}[] {

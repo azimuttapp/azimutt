@@ -1,0 +1,39 @@
+<%= cond do %>
+    <% @converter == "aml" -> %>
+        A very simple language made by Azimutt to ease and speed database design.
+        In addition, you can use <a href={Routes.website_path(@conn, :aml)} class="underline">AML</a> inside Azimutt or as a <a href="https://www.npmjs.com/package/@azimutt/aml" target="_blank" rel="noopener" class="underline">standalone library</a> for your own projects.
+    <% @converter == "dbml" -> %>
+        <a href="https://github.com/holistics/dbml" target="_blank" rel="noopener" class="underline">DBML</a> is a DSL made by <a href="https://www.holistics.io" target="_blank" rel="noopener" class="underline">Holistics</a> to define and document database schemas and structures.
+        It's used on <a href="https://dbdiagram.io" target="_blank" rel="noopener" class="underline">dbdiagram.io</a>, an Entity-Relationship Diagram tool.
+    <% @converter == "json" -> %>
+        Not properly a database schema dialect but using the <span class="italic">Azimutt JSON Schema structure</span>, you will be able to define your database structure in JSON and convert it to other dialects.
+    <% @converter == "postgresql" -> %>
+        The world's most advanced open source relational database.
+        Use the <a href="https://www.postgresql.org/docs/current/sql-commands.html" target="_blank" rel="noopener" class="underline">DDL SQL dialect</a> of <a href="https://www.postgresql.org" target="_blank" rel="noopener" class="underline">PostgreSQL</a> to design your database schema and convert it to the other ones.
+    <% @converter == "mysql" -> %>
+        The world's most popular open source relational database.
+        It uses the <a href="https://dev.mysql.com/doc/refman/9.0/en/sql-data-definition-statements.html" target="_blank" rel="noopener" class="underline">DDL SQL dialect</a> of <a href="https://www.mysql.com" target="_blank" rel="noopener" class="underline">MySQL</a> to design your database schema and convert it to the other ones.
+    <% @converter == "oracle" -> %>
+        It's a <a href="https://www.oracle.com/database" target="_blank" rel="noopener" class="underline">commercial database</a> made by the Oracle company. It's used a lot in the corporate world.
+        The Oracle converter transforms <a href="https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/CREATE-TABLE.html" target="_blank" rel="noopener" class="underline">Oracle SQL DDL</a> to other dialects.
+    <% @converter == "sqlserver" -> %>
+        The <a href="https://learn.microsoft.com/en-us/sql/relational-databases/databases/databases" target="_blank" rel="noopener" class="underline">Microsoft relational database</a> used a lot in their ecosystem (.Net, Azure).
+        The converter uses <a href="https://learn.microsoft.com/en-us/sql/t-sql/statements/create-table-transact-sql" target="_blank" rel="noopener" class="underline">Transact-SQL DDL</a> to define your database schema and convert it other dialects.
+    <% @converter == "mongodb" -> %>
+        The <a href="https://www.mongodb.com" target="_blank" rel="noopener" class="underline">document and analytics database</a>, storing JSON collections.
+        It's schemaless, but you can define <a href="https://www.mongodb.com/docs/manual/core/schema-validation" target="_blank" rel="noopener" class="underline">JSON Schema validation</a> for each collection to make it more strict.
+    <% @converter == "mariadb" -> %>
+        The <a href="https://mariadb.org" target="_blank" rel="noopener" class="underline">MySQL fork</a> made to keep it open source when it was bought by Oracle.
+        This converter use <a href="https://mariadb.com/kb/en/create" target="_blank" rel="noopener" class="underline">MariaDB SQL DDL</a> to define the database schema to convert to other dialects.
+    <% @converter == "prisma" -> %>
+        A <a href="https://www.prisma.io" target="_blank" rel="noopener" class="underline">Node.jS and TypeScript ORM</a> that use a <a href="https://www.prisma.io/docs/orm/prisma-schema" target="_blank" rel="noopener" class="underline">dedicated schema syntax</a> to define its data model.
+        It can convert this schema to several databases and pull or push it to them.
+    <% @converter == "mermaid" -> %>
+        It's a <a href="https://mermaid.js.org" target="_blank" rel="noopener" class="underline">Markdown-inspired text definitions</a> that generate flowcharts diagrams.
+        It can be used to generate Entity-Relationship diagrams, and even has a <a href="https://mermaid.live" target="_blank" rel="noopener" class="underline">Live Editor</a>.
+    <% @converter == "quicksql" -> %>
+        A <a href="https://github.com/oracle/quicksql" target="_blank" rel="noopener" class="underline">markdown-like syntax</a> made by Oracle to rapidly design and prototype data models.
+        It's made to generate Oracle SQL code, but now, with Azimutt, you can convert it to anything.
+    <% true -> %>
+        Missing converter description for <%= @converter %> 😱
+<% end %>

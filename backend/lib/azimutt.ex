@@ -164,6 +164,13 @@ defmodule Azimutt do
         description: "The all-in-one tool to understand and design your database following your thought process."
       },
       %{
+        id: "document",
+        # tag / archive-box / bars-3-center-left
+        icon: "book-open",
+        name: "Document",
+        description: "Nice and contextual documentation for databases is now finally a reality."
+      },
+      %{
         id: "analyze",
         # check-badge / beaker / clipboard-document-check / finger-print / funnel
         icon: "shield-check",
@@ -171,11 +178,11 @@ defmodule Azimutt do
         description: "Identify database design warts and automate any check to keep it consistent."
       },
       %{
-        id: "document",
-        # tag / archive-box / bars-3-center-left
-        icon: "book-open",
-        name: "Document",
-        description: "Nice and contextual documentation for databases is now finally a reality."
+        id: "design",
+        # adjustments-horizontal / sparkles
+        icon: "academic-cap",
+        name: "Design",
+        description: "Make beautiful diagrams at your typing speed using our minimal DSL."
       }
     ]
   end
@@ -294,6 +301,23 @@ defmodule Azimutt do
       #   description: "Ideal for micro-services, CQRS, or drafting new features.",
       #   image: "/images/screenshots/sources.png"
       # },
+    ]
+  end
+
+  def converters do
+    [
+      %{id: "aml", name: "AML", parse: true, generate: true},
+      %{id: "dbml", name: "DBML", parse: false, generate: false},
+      %{id: "json", name: "JSON", parse: true, generate: true},
+      %{id: "postgresql", name: "PostgreSQL", parse: false, generate: false},
+      %{id: "mysql", name: "MySQL", parse: false, generate: false},
+      %{id: "oracle", name: "Oracle", parse: false, generate: false},
+      %{id: "sqlserver", name: "SQL Server", parse: false, generate: false},
+      %{id: "mongodb", name: "MongoDB", parse: false, generate: false},
+      %{id: "mariadb", name: "MariaDB", parse: false, generate: false},
+      %{id: "prisma", name: "Prisma", parse: false, generate: false},
+      %{id: "mermaid", name: "Mermaid", parse: false, generate: false},
+      %{id: "quicksql", name: "Quick SQL", parse: false, generate: false}
     ]
   end
 end

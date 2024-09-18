@@ -231,6 +231,16 @@ export interface IWordAtPosition {
     startColumn: number
     word: string
 }
+// cf https://microsoft.github.io/monaco-editor/typedoc/interfaces/editor.IStandaloneCodeEditor.html
+export interface IStandaloneCodeEditor {
+    focus(): void
+    getModel(): ITextModel
+    getPosition(): Position
+    getSelection(): Selection
+    getSelections(): Selection[]
+    dispose(): void
+    // others...
+}
 export interface IRange {
     startLineNumber: number
     startColumn: number
@@ -252,6 +262,17 @@ export interface IPosition {
 export interface Position {
     column: number
     lineNumber: number
+}
+// cf https://microsoft.github.io/monaco-editor/typedoc/classes/Selection.html
+export interface Selection {
+    startLineNumber: number
+    startColumn: number
+    endLineNumber: number
+    endColumn: number
+    positionLineNumber: number
+    positionColumn: number
+    selectionStartColumn: number
+    selectionStartLineNumber: number
 }
 export interface CompletionContext {
     triggerCharacter?: string
