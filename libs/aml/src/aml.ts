@@ -148,7 +148,14 @@ function buildDatabase(ast: AmlAst, start: number, parsed: number): {db: Databas
         if (stmt.comment) comments.push({line: stmt.comment.position.start.line, comment: stmt.comment.value})
     })
     const done = Date.now()
-    const extra = removeEmpty({source: `AML parser <${packageJson.version}>`, parsedAt: new Date().toISOString(), parsingMs: parsed - start, formattingMs: done - parsed, comments})
+    const extra = removeEmpty({
+        source: `AML parser <${packageJson.version}>`,
+        createdAt: new Date().toISOString(),
+        creationTimeMs: done - start,
+        parsingTimeMs: parsed - start,
+        formattingTimeMs: done - parsed,
+        comments
+    })
     return {db: removeEmpty({...db, extra}), errors}
 }
 

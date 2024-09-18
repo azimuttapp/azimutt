@@ -474,6 +474,7 @@ describe('databaseUtils', () => {
   "extra": {
     "comment": "great!"
   }
-}`)
+}
+`)
     })
 })
