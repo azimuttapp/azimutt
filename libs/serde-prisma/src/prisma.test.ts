@@ -4,7 +4,7 @@ import {generate, parse} from "./prisma";
 
 describe('prisma', () => {
     test('empty schema',  () => {
-        expect(parse('').result).toEqual({})
+        expect(parse('').result).toEqual({extra: {source: 'Prisma parser'}})
         expect(generate({})).toEqual('Not implemented')
     })
     test('basic schema', () => {
@@ -71,6 +71,7 @@ model Post {
                 ref: {entity: 'User'},
                 attrs: [{src: ['authorId'], ref: ['id']}]
             }],
+            extra: {source: 'Prisma parser'},
         }
         expect(parsed.result).toEqual(expected)
     })
@@ -149,7 +150,8 @@ type Photo {
                     {name: 'width', type: 'Int'},
                     {name: 'url', type: 'String'},
                 ]}
-            ]
+            ],
+            extra: {source: 'Prisma parser'}
         }
         expect(parsed.result).toEqual(expected)
     })
@@ -187,6 +189,7 @@ model Post {
                 ref: {schema: 'public', entity: 'users'},
                 attrs: [{src: ['author_id'], ref: ['_id']}]
             }],
+            extra: {source: 'Prisma parser'}
         }
         expect(parsed.result).toEqual(expected)
     })
