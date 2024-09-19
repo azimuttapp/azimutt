@@ -1,4 +1,4 @@
-# AMLv2: Azimutt Markup Language
+# AML - Azimutt Markup Language
 
 [back to home](./README.md)
 
@@ -33,6 +33,7 @@ Here are the standardized properties for [entities](./entity.md):
 - `notes`, to define default notes for the entity
 - `tags`, to define default tags for the entity
 - `deprecated`, will be added to tags in Azimutt but can be better defined here
+- `hidden`, will be added to tags in Azimutt but can be better defined here
 
 An example with all the properties:
 

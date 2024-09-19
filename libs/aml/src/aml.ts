@@ -89,10 +89,10 @@ function buildDatabase(ast: AmlAst, start: number, parsed: number): {db: Databas
     const db: Database = {entities: [], relations: [], types: []}
     const errors: ParserError[] = []
     let namespace: Namespace = {}
-    ast.filter(s => s !== undefined && s.statement !== 'Empty').forEach((stmt, i) => { // `s` can be undefined on invalid input :/
+    ast.filter(s => s.statement !== 'Empty').forEach((stmt, i) => {
         const index = i + 1
         if (stmt.statement === 'Namespace') {
-            namespace = buildNamespace(index, stmt, namespace)
+            namespace = buildNamespace(index, stmt)
         } else if (stmt.statement === 'Entity') {
             const {entity, relations, types} = buildEntity(index, stmt, namespace)
             const prev = db.entities?.find(e => entityRefSame(entityToRef(e), entityToRef(entity)))
@@ -199,11 +199,8 @@ function genDatabase(database: Database, legacy: boolean): string {
     }).join('') || ''
 }
 
-function buildNamespace(statement: number, n: NamespaceStatement, current: Namespace): Namespace {
-    const schema = n.schema.value
-    const catalog = n.catalog?.value || current.catalog
-    const database = n.database?.value || current.database
-    return {schema, catalog, database}
+function buildNamespace(statement: number, n: NamespaceStatement): Namespace {
+    return removeUndefined({schema: n.schema.value, catalog: n.catalog?.value, database: n.database?.value})
 }
 
 function buildEntity(statement: number, e: EntityStatement, namespace: Namespace): { entity: Entity, relations: Relation[], types: Type[] } {
@@ -456,7 +453,7 @@ function stringifyPropValue(v: PropertyValue): string {
 }
 
 function buildExtraWithProperties(extra: Extra, v: {properties?: PropertiesAst}): Extra {
-    const properties = v?.properties?.reduce((acc, prop) => prop ? {...acc, [prop.key.value]: prop.value ? buildPropValue(prop.value) : undefined} : acc, {} as Record<string, PropertyValue | undefined>) || {}
+    const properties = v?.properties?.reduce((acc, prop) => ({...acc, [prop.key.value]: prop.value ? buildPropValue(prop.value) : true}), {} as Record<string, PropertyValue | undefined>) || {}
     return {...properties, ...removeEmpty(extra)}
 }
 
@@ -465,7 +462,7 @@ function genPropertiesExtra(v: {extra?: Extra | undefined}, ignore: string[] = [
 }
 
 function genProperties(properties: Record<string, PropertyValue>): string {
-    return Object.keys(properties).length > 0 ? ' {' + Object.entries(properties).map(([key, value]) => value !== undefined ? `${key}: ${stringifyPropValue(value)}` : key).join(', ') + '}' : ''
+    return Object.keys(properties).length > 0 ? ' {' + Object.entries(properties).map(([key, value]) => value !== undefined && value !== true ? `${key}: ${stringifyPropValue(value)}` : key).join(', ') + '}' : ''
 }
 
 function genNote(doc: string | undefined, indent: string = ''): string {

@@ -1,4 +1,4 @@
-# AMLv2: Azimutt Markup Language
+# AML - Azimutt Markup Language
 
 [back to home](./README.md)
 

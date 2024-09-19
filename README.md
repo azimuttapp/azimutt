@@ -3,7 +3,7 @@
         <picture>
           <source media="(prefers-color-scheme: dark)" srcset="assets/azimutt-logo-light.png">
           <source media="(prefers-color-scheme: light)" srcset="assets/azimutt-logo-dark.png">
-          <img alt="Azimutt logo" src="assets/azimutt-logo-dark.png">
+          <img alt="Azimutt logo" src="assets/azimutt-logo-dark.png" width="500">
         </picture>
     </a>
 </p>
@@ -38,7 +38,7 @@ Azimutt started as a schema exploration tool for databases with hundreds of tabl
 
 [![Azimutt roadmap](docs/_assets/roadmap.png)](https://mm.tt/map/2434161843?t=N2yWZj1pc1)
 
-- Design your schema using [AML](docs/aml/README.md) for a fast diagramming
+- Design your schema using [AML](libs/aml/README.md) for a fast diagramming
 - Explore your database schema using search everywhere, display only useful tables/columns and follow relations
 - Query your data like never before, follow foreign keys and display entities in diagram
 - Document using table/column notes and tags and layouts and memos for use cases, features or team scopes

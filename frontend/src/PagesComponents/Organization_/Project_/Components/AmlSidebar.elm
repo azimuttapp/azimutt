@@ -267,7 +267,7 @@ viewHeading =
             ]
         , p [ class "mt-1 text-sm text-gray-500" ]
             [ text "In Azimutt your schema is the union of all active sources. Create or update one with "
-            , extLink "https://github.com/azimuttapp/azimutt/blob/main/docs/aml/README.md" [ class "link" ] [ text "AML syntax" ]
+            , extLink "https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/README.md" [ class "link" ] [ text "AML syntax" ]
             , text " to extend it."
             ]
         ]
@@ -348,6 +348,6 @@ viewHelp : Html msg
 viewHelp =
     p [ class "mt-2 text-sm text-gray-500" ]
         [ text "Write your schema using "
-        , extLink "https://github.com/azimuttapp/azimutt/blob/main/docs/aml/README.md" [ class "link" ] [ text "AML syntax" ]
+        , extLink "https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/README.md" [ class "link" ] [ text "AML syntax" ]
         , text "."
         ]

@@ -6,4 +6,4 @@ This is a *work in progress* but don't hesitate to ask for more ;)
 
 Here are the written parts:
 
-- [AML: Azimutt Markup Language](aml/README.md)
+- [AML: Azimutt Markup Language](../libs/aml/docs/README.md)

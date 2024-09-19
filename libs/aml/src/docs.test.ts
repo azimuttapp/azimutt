@@ -8,7 +8,7 @@ describe('docs', () => {
     const amlDocs = './docs'
     const amlPaths: string[] = fs.readdirSync(amlDocs, {recursive: true})
         .map(path => pathJoin(amlDocs, path as string))
-        .concat(['./README.md', '../../docs/aml/README.md', '../../demos/ecommerce/source_00_design.md', '../../demos/ecommerce/source_10_additional_relations.md'])
+        .concat(['./README.md', '../../demos/ecommerce/source_00_design.md', '../../demos/ecommerce/source_10_additional_relations.md'])
         .filter(path => path.endsWith('.md'))
     const amlFiles: {[path: string]: string} = Object.fromEntries(amlPaths.map(path => [path, fs.readFileSync(path, 'utf8')]))
 

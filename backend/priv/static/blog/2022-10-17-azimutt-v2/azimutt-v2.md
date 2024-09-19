@@ -25,7 +25,7 @@ Since then, it has grown a lot. In terms of features but also in adoption. At th
 In this first year Azimutt has grown from pure exploration into a more capable tool to help you understand better your database. From **exploration** to **design**, **documentation** and even **analysis**. Here are the big milestones we achieved in terms of capabilities:
 
 - find relevant path from a table to another
-- extend or design from scratch your database with our own [AML language](https://github.com/azimuttapp/azimutt/blob/main/docs/aml/README.md)
+- extend or design from scratch your database with our own [AML language](https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/README.md)
 - attach documentation to any table or column
 - identify common design smells in your database schema
 

@@ -250,7 +250,7 @@ class AmlParser extends EmbeddedActionsParser {
                 }
             })
             $.CONSUME(RCurly)
-            return props
+            return props.filter(p => p !== undefined) // can be undefined on invalid input :/
         })
 
         this.extraRule = $.RULE<() => ExtraAst>('extraRule', () => {
@@ -647,6 +647,7 @@ export function parseRule<T>(parse: (p: AmlParser) => T, input: string, strict: 
 
 export function parseAmlAst(input: string, opts: { strict?: boolean }): ParserResult<AmlAst> {
     return parseRule(p => p.amlRule(), input, opts.strict || false)
+        .map(statements => statements.filter(s => s !== undefined)) // can be undefined on invalid input :/
 }
 
 function formatLexerError(err: ILexingError): ParserError {

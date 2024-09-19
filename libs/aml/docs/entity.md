@@ -1,4 +1,4 @@
-# AMLv2: Azimutt Markup Language
+# AML - Azimutt Markup Language
 
 [back to home](./README.md)
 
@@ -19,7 +19,7 @@ The name is an [identifier](./identifier.md) and can be prefixed with a [namespa
 core.public."user list"
 ```
 
-Entities can contain [attributes](#attribute) (corresponding to **columns** or **fields** in most databases). They are defined one per line and indented with two spaces:
+Entities can contain [attributes](#attribute) (corresponding to **columns** or **fields** in most databases). They are defined one per line with two spaces indentation:
 
 ```aml
 users
@@ -27,7 +27,7 @@ users
   name
 ```
 
-[Attributes may hold several options](#attribute) such as [type](#attribute-type), [nullability](#not-null), [indexes, constraints](#index-and-constraint) and more. Here are some examples:
+[Attributes may have options](#attribute) such as [type](#attribute-type), [nullability](#not-null), [indexes, constraints](#index-and-constraint) and more. Here are some examples:
 
 ```aml
 users
@@ -45,7 +45,7 @@ Entities can also have [custom properties](./properties.md) and [documentation](
 
 ```aml
 users {color: red, tags: [pii, sensitive], deprecated} | storing all users
-  id int pk {auto_increment} | the user id
+  id int pk {autoIncrement} | the user id
   name
 ```
 
@@ -69,7 +69,7 @@ posts
 
 Attributes define possible values inside an entity, such as **columns** in relational databases and **fields** in document ones.
 
-They are defined nested (2 space indentation) under the entity they belong to, but they can also have [several nesting levels](#nested-attribute).
+They are defined with 2 space indentation under the entity they belong to, but they can also have [several nesting levels](#nested-attribute).
 
 The only required thing is their name, which is an [identifier](./identifier.md). After they have several options for the [type](#attribute-type), [nullable](#not-null), [indexes and constraints](#index-and-constraint).
 
@@ -80,14 +80,14 @@ users
   id # only the name
   name varchar # the name and the type
   email varchar unique # the name, type and unique constraint
-  bio nullable # the name, type and allowing null (by default not null constraint is applied)
-  profile_id uuid -> profiles(id) # the name and relation
+  bio nullable # the name and allowing null (by default not null constraint is applied)
+  profile_id -> profiles(id) # the name and relation
 ```
 
 
 #### Attribute type
 
-The attribute type should come just after the attribute name, if there is space inside the type, surround it with `"`, here are some examples:
+The attribute type should come just after the attribute name, if there is space or special character inside the type, surround it with `"`, here are some examples:
 
 ```aml
 events
@@ -120,10 +120,10 @@ Known types are automatically inferred:
 - number when only numbers and one dot (at most)
 - object when starting with `{`
 - array when starting with `[`
-- function when starting by backticks
+- function when starting by backticks (`)
 - string otherwise, use `"` for multi-word string
 
-[Types](./type.md) can be defined in standalone and used for an attribute:
+[Custom types](./type.md) can be defined in standalone and used for an attribute:
 
 ```aml
 type post_status (draft, publiched, archived)
@@ -149,7 +149,7 @@ In this case, they inherit the [namespace](./namespace.md) of the entity, and of
 
 Contrary to SQL, in AML the attributes come with the NOT NULL constraint **by default**.
 
-To remove it, you can mark the attribute as `nullable`. This "not constraint" should come after the attribute type (if present).
+To remove it, you can mark the attribute as `nullable`. This "not constraint" should come after the attribute name and type (if present).
 
 Here are some examples:
 
@@ -191,7 +191,7 @@ users
 ```
 
 If you want to define a single constraint on several attributes (like uniqueness of `first_name` and `last_name`), you can apply it to the needed attributes with the same name, they will be put together.
-The primary key doesn't need this as there is only one for an entity:
+The primary key doesn't need this as there is only one per an entity:
 
 ```aml
 users # unique constraint on first_name AND last_name
@@ -223,7 +223,7 @@ users
 
 Attributes may have nested attributes, this is especially useful to define the schema of complex objects like `json`.
 
-Nested attributes are just like other attributes, just with an indentation level more under the attribute they belong to. Here is how they look:
+Nested attributes are just like other attributes, just with an additional indentation level under the attribute they belong to. Here is how they look:
 
 ```aml
 users

@@ -6,6 +6,7 @@ import {duplicated, legacy} from "./errors";
 
 describe('aml', () => {
     // TODO: namespace
+    // TODO: entity alias
     test('sample schema', () => {
         const input = `
 #
@@ -32,7 +33,7 @@ users |||
       country string index=address
   created_at timestamp=\`now()\`
 
-posts* {pii: true, tags: [cms]} | all posts # an other entity
+posts* {pii, tags: [cms]} | all posts # an other entity
   id post_id pk
   title "character varying(100)"=draft nullable index | Title of the post
   author int check=\`author > 0\` -> users(id)
@@ -105,7 +106,7 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                 {name: 'user_role', values: ['admin', 'guest'], extra: {line: 12, statement: 1}},
                 {name: 'post_id', definition: 'int', doc: 'alias', extra: {line: 40, statement: 5, table: 'posts'}},
                 {name: 'status', values: ['draft', 'published', 'archived'], extra: {line: 41, statement: 6}},
-                {name: 'position', attrs: [{name: 'x', type: 'int'}, {name: 'y', type: 'int'}], extra: {line: 42, statement: 7, generic: undefined}},
+                {name: 'position', attrs: [{name: 'x', type: 'int'}, {name: 'y', type: 'int'}], extra: {line: 42, statement: 7, generic: true}},
                 {name: 'range', definition: '(subtype = float8, subtype_diff = float8mi)', extra: {line: 43, statement: 8, comment: 'custom type'}},
             ],
             extra: {comments: [
@@ -287,6 +288,10 @@ type public.status (pending, wip, done)
                 ]
             })
         })
+        test('incorrect properties', () => {
+            expect(() => parseAmlTest('users {pii:}\n')).not.toThrow()
+            expect(() => parseAmlTest('users\n  name varchar {pii:}\n')).not.toThrow()
+        })
         test('no crash on typing', () => {
             const input = `
 users
@@ -411,8 +416,8 @@ fk admins.id -> users.id
                         name: "users",
                         attrs: [
                             {name: 'id', type: 'int'},
-                            {name: 'role', type: 'varchar', default: 'guest', extra: {hidden: undefined}},
-                            {name: 'score', type: 'double precision', default: 0, doc: 'User progression', extra: {comment: 'a column with almost all possible attributes', hidden: undefined}},
+                            {name: 'role', type: 'varchar', default: 'guest', extra: {hidden: true}},
+                            {name: 'score', type: 'double precision', default: 0, doc: 'User progression', extra: {comment: 'a column with almost all possible attributes', hidden: true}},
                             {name: 'first_name', type: 'varchar(10)'},
                             {name: 'last_name', type: 'varchar(10)'},
                             {name: 'email', type: 'varchar', null: true},

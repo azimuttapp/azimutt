@@ -415,7 +415,7 @@ viewEmptyState defaultSchema tables =
                 , if tables |> Dict.isEmpty then
                     p [ class "mt-3 text-sm text-gray-500" ]
                         [ text "Azimutt allows you to create and explore your database schema. Start writing your schema using "
-                        , extLink "https://github.com/azimuttapp/azimutt/blob/main/docs/aml/README.md" [ class "link" ] [ text "AML syntax" ]
+                        , extLink "https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/README.md" [ class "link" ] [ text "AML syntax" ]
                         , text " or import and explore your schema. Add any source (database url, SQL or JSON) in project settings (top right "
                         , Icon.outline Icon.Cog "h-5 w-5 inline"
                         , text ")."

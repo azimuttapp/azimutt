@@ -149,6 +149,7 @@ export const AttributeExtra = Extra.and(z.object({
     line: z.number().optional(),
     statement: z.number().optional(),
     autoIncrement: z.boolean().optional(),
+    hidden: z.boolean().optional(),
     tags: z.string().array().optional(),
 }))
 export type AttributeExtra = z.infer<typeof AttributeExtra>

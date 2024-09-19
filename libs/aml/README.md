@@ -1,111 +1,63 @@
-# @azimutt/aml
+<p align="center">
+    <a href="https://azimutt.app/aml" target="_blank" rel="noopener">
+        <picture>
+          <source media="(prefers-color-scheme: dark)" srcset="docs/logo-white.png">
+          <source media="(prefers-color-scheme: light)" srcset="docs/logo.png">
+          <img alt="Azimutt logo" src="docs/logo.png" width="500">
+        </picture>
+    </a>
+</p>
 
-**Work In Progress**
+<p align="center">
+  <a href="https://azimutt.app/aml" target="_blank" rel="noopener">Home page</a> •
+  <a href="./docs/README.md" target="_blank" rel="noopener">Documentation</a> •
+  <a href="https://www.npmjs.com/package/@azimutt/aml" target="_blank" rel="noopener">npm package</a>
+</p>
 
-This is a module to validate, parse and generate AML. And also provide syntax highlighter for it.
+**AML** (Azimutt Markup Language) is the **easiest language to design databases**.  
+It's made to be fast to learn and write, with very few keywords or special characters.
 
-Read the full [AML documentation](./docs/README.md).
 
-AML syntax ideas:
+## Why AML?
+
+- **Structured text** is WAY better than GUI: portable, copy/paste, find/replace, versioning, column edition...
+- It's **simpler, faster to write and less error-prone than SQL** or other database schema DSLs
+- **Made for humans**: readable, flexible, can hold [custom properties](./docs/properties.md)
+- **Database agnostic**: hold concepts, not specific syntax, can be [converted to other dialects](https://azimutt.app/converters/aml)
+- **Free** as 🕊️ but also 🍺
+
+In short, it's perfect for fast prototyping and brainstorming. To know more, have a look at the [AML documentation](./docs/README.md).
+
+
+## Example
 
 ```aml
-# define a global namespace for the definitions
-# each top level is optional (valid ones: "schema", "catalog.schema", "database.catalog.schema")
-# it can be overriden by each declaration if specified, ex: pg.sales.public.usrers table will not be in database.catalog.schema namespace
-namespace database.catalog.schema
-
-# properties are the default ones but can be changed in each layout
-users {color: red, tags: [auth, common]}
-  id uuid pk {autoincrement: true}
+users
+  id uuid pk
   name varchar
-  email varchar unique
-  description text nullable
-  created_at timestamp=`now()`
+  email varchar index
+  role user_role(admin, guest)=guest
 
-roles
-  id uuid pk
-  name varchar unique
-  priority int=0
-
-user_roles
-  user_id uuid pk
-  role_id uuid pk
-
-user_roles_ext
-  user_id uuid pk
-  role_id uuid pk
-  details json
-
-events
-  id uuid pk
-  item_kind varchar
-  item_id uuid
-
-books
+posts
   id uuid pk
   title varchar
-  authors "uuid[]" <> users(id)
-
-book_details
-  book_id uuid pk
-  details json
-    isbn varchar
-    price json
-      currency varchar
-      value float8
-
-# basic relation, with properties
-rel user_roles(user_id) >- users(id) {delete: cascade, update: "no action"}
-
-# composite relation
-rel user_roles_ext(user_id, role_id) >- user_roles(user_id, role_id)
-
-# polymorphic relation
-rel events(item_id) >item_kind=User- users(id)
-rel events(item_id) -item_kind=Role> roles(id)
-
-# many-to-many relation
-rel books(id) <> users(id)
-
-# one-to-one relation
-rel book_details(book_id) -- books(id)
-
-bugs |||
-  This is a multiline note fot the table
-  It can be used to describe the table or the relation
-|||
-  id uuid |||
-    a multiline note for a column
-  |||
-  name varchar |||
-    a multiline note for a column
-  |||
-  status bug_status |||
-    💸 1 = processing, 
-    ✔️ 2 = shipped, 
-    ❌ 3 = cancelled,
-    😔 4 = refunded
-  |||
-
-type bug_status(new, "in progress", done) {internal, color: red} | note # comment
+  content text | formatted in markdown
+  created_at timestamp=`now()`
+  created_by uuid -> users(id) # inline relation
 ```
 
-Relationships:
-- one-to-many: normal foreign keys: `rel user_roles.user_id >- users.id` or inline in column: `  user_id >- users.id`
-- many-to-one: reverse foreign keys: `rel users.id -< user_roles.user_id` but not inline in column => useless, not implemented
-- many-to-many: native in db, junction table or array column: `rel books.id >< users.id`, `  authors uuid[] >< users.id` or with junction table
-- one-to-one: foreign key with unique constraint `fk book_details.book_id -- books.id` or inline in column: `  book_id unique -- books.id`
-- zero-to-many: foreign key from nullable column
-one-to-one and many-to-many relations can be "manually" specified without the schema constraints to be present (unique or junction table)
-Interesting discussion: https://community.dbdiagram.io/t/tutorial-many-to-many-relationships/412
 
-Other concepts:
-- multiline notes: `|||`, remove the leading spaces of the first line, for all the lines
-- custom types: `type $name $definition`, definition is optional and can be parsed more...
-  - `type bug_status enum(new, in progress, done)`
-  - `type bug_value range(subtype = float8, subtype_diff = float8mi)`
-  - `type address {number: int, street: varchar}`
-- if a fk column doesn't have a type, it takes the type of the referenced column
+## Why AML?
+
+- It is database agnostic, focusing on the essential database structure definition without worrying about the <= line length
+- Structured text is WAY better than GUI: portable, copy/paste, find/replace, versioning, column edition...
+- It's simpler, faster to write and less error-prone than SQL or other database schema DSLs
+- Made for humans: readable, flexible, can hold [custom properties](./docs/properties.md)
+- Database agnostic: hold concepts, not specific syntax, can be [converted to other dialects](https://azimutt.app/converters/aml)
+- Free 🕊️ 🍺
+
+In short, it's perfect for fast prototyping and brainstorming. To know more, have a look at the [AML documentation](./docs/README.md).
+
 
 ## Publish
 
@@ -115,6 +67,7 @@ Other concepts:
 - launch `pnpm publish --no-git-checks --access public`
 
 View it on [npm](https://www.npmjs.com/package/@azimutt/aml).
+
 
 ## Dev
 
