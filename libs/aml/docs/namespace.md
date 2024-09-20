@@ -5,7 +5,7 @@
 
 ## Namespace
 
-Objects of the database, such as [entities](./entity.md), [relations](./relation.md) or [types](./type.md), can be grouped into hierarchical layers to organize them.
+Objects of the database, such as [entities](./entity.md), [relations](./relation.md) or [types](./type.md), can be grouped under hierarchical layers to organize them.
 
 In AML there are 3 hierarchical levels defined with [identifiers](./identifier.md), from top to bottom:
 
@@ -23,6 +23,7 @@ Here are some examples:
 - `public.users` defines the users entity inside the public schema
 - `core.public.users` defines the users entity inside the public schema and core catalog
 - `analytics.core.public.users` defines the users entity inside the public schema, core catalog and analytics database
+- `analytics...users` defines the users entity inside the analytics database
 
 This can be done anywhere, for example in relations:
 
@@ -46,7 +47,7 @@ Even with a default namespace defined, you can override it by specifying it expl
 ```aml
 namespace core.public
 
-dto.users # defines the `users` entity inside the `core` catalog but in the `dto` schema, not the `public` one
+dto.users # defines the `users` entity inside the `core` catalog but in the `dto` schema instead of the `public` one
 ```
 
 Finally, you can override the default namespace with a new one, for example:
@@ -67,4 +68,16 @@ The new defined namespace fully overrides the previous one, for all levels:
 namespace core.public
 namespace seo
 posts # defines the `posts` entity inside the `seo` schema (not inside the `core` catalog)
+```
+
+Having and empty namespace removes the current namespace:
+
+```aml
+namespace public
+
+users # the users entity in inside the public schema
+
+namespace
+
+posts # the posts entity has no hierarchical level (not in the public schema)
 ```

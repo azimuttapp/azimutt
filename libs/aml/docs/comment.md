@@ -9,7 +9,7 @@ AML comments are used to note things in the AML source without taking them into 
 
 There are only line comments starting with the `#` character, everything after will be ignored.
 
-They can be helpful to visually identify sections, add beloved TODOs or explain why you did some things.
+They can be helpful to visually identify sections, add beloved TODOs or explain why you did some things without impacting your database schema.
 
 Here is an example:
 
@@ -37,4 +37,4 @@ posts
 # TODO: add social media entities
 ```
 
-The only place they are not supported is in [multiline documentation](./documentation.md#multiline-documentation).
+The only place they are not supported is, of course, inside [multiline documentation](./documentation.md#multiline-documentation).

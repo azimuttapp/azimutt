@@ -34,7 +34,7 @@ import {
     TypeId,
     TypeRef
 } from "./database";
-import {ParserResult} from "./interfaces/serde";
+import {ParserResult} from "./parserResult";
 
 export const namespaceToId = (n: Namespace): NamespaceId => [
     n.database || '',

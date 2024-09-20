@@ -220,7 +220,7 @@ type float8_range `RANGE (subtype = float8, subtype_diff = float8mi)` # custom t
 
 ## Migration from v1
 
-AMLv2 is coming 2 years after AMLv1 ([post](https://azimutt.app/blog/aml-a-language-to-define-your-database-schema) & [PR](https://github.com/azimuttapp/azimutt/pull/98) ^^).
+This new version of AML is coming 2 years after the first one ([post](https://azimutt.app/blog/aml-a-language-to-define-your-database-schema) & [PR](https://github.com/azimuttapp/azimutt/pull/98) ^^).
 During this time we discovered a lot of new use cases and some shortcomings (such as composite foreign keys).
 
 This new iteration fixes the issues, improve consistency and add nice features such as [namespace](./namespace.md), [properties](./properties.md), [nested attributes](./entity.md#nested-attribute), [polymorphic relations](./relation.md#polymorphic-relation) and more.
