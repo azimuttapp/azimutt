@@ -1,4 +1,4 @@
-# @azimutt/serde-prisma
+# @azimutt/parser-prisma
 
 This lib is able to parse and generate [Prisma Schema](https://www.prisma.io/docs/orm/prisma-schema) from/to an [Azimutt database model](../models).
 
@@ -10,10 +10,10 @@ This lib is able to parse and generate [Prisma Schema](https://www.prisma.io/doc
 
 - update `package.json` version
 - update lib versions (`pnpm -w run update` + manual)
-- test with `pnpm run dry-publish` and check `azimutt-serde-prisma-x.y.z.tgz` content
+- test with `pnpm run dry-publish` and check `azimutt-parser-prisma-x.y.z.tgz` content
 - launch `pnpm publish --no-git-checks --access public`
 
-View it on [npm](https://www.npmjs.com/package/@azimutt/serde-prisma).
+View it on [npm](https://www.npmjs.com/package/@azimutt/parser-prisma).
 
 ## Dev
 

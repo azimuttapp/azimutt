@@ -1,7 +1,7 @@
 {
-  "name": "@azimutt/serde-sql",
+  "name": "@azimutt/parser-dbml",
   "version": "0.1.1",
-  "description": "Parse and Generate SQL.",
+  "description": "Parse and Generate DBML.",
   "keywords": [],
   "homepage": "https://azimutt.app",
   "author": {
@@ -13,7 +13,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/azimuttapp/azimutt.git",
-    "directory": "libs/serde-sql"
+    "directory": "libs/parser-dbml"
   },
   "main": "./out/index.js",
   "types": "./out/index.d.ts",
@@ -26,11 +26,11 @@
   "dependencies": {
     "@azimutt/models": "workspace:^",
     "@azimutt/utils": "workspace:^",
-    "chevrotain": "10.5.0",
+    "@dbml/core": "3.4.3",
+    "@dbml/parse": "3.4.3",
     "zod": "3.23.8"
   },
   "devDependencies": {
-    "@chevrotain/types": "^10.5.0",
     "@jest/globals": "^29.7.0",
     "@types/jest": "^29.5.12",
     "@types/node": "^22.1.0",

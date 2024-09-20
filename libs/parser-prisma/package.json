@@ -1,5 +1,5 @@
 {
-  "name": "@azimutt/serde-prisma",
+  "name": "@azimutt/parser-prisma",
   "version": "0.1.1",
   "description": "Parse and Generate a Prisma schema.",
   "keywords": [],
@@ -13,7 +13,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/azimuttapp/azimutt.git",
-    "directory": "libs/serde-prisma"
+    "directory": "libs/parser-prisma"
   },
   "main": "./out/index.js",
   "types": "./out/index.d.ts",

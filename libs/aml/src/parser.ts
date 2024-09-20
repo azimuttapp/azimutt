@@ -364,15 +364,18 @@ class AmlParser extends EmbeddedActionsParser {
         // namespace rules
         this.namespaceRule = $.RULE<() => NamespaceStatement>('namespaceRule', () => {
             $.CONSUME(Namespace)
-            $.CONSUME(WhiteSpace)
-            const first = $.SUBRULE($.identifierRule)
-            const second = $.OPTION(() => $.SUBRULE(nestedRule))
-            const third = $.OPTION2(() => $.SUBRULE2(nestedRule))
-            $.OPTION3(() => $.CONSUME2(WhiteSpace))
-            const extra = $.SUBRULE($.extraRule)
+            $.OPTION(() => $.CONSUME(WhiteSpace))
+            const namespace = $.OPTION2(() => {
+                const first = $.SUBRULE($.identifierRule)
+                const second = $.OPTION3(() => $.SUBRULE(nestedRule))
+                const third = $.OPTION4(() => $.SUBRULE2(nestedRule))
+                $.OPTION5(() => $.CONSUME2(WhiteSpace))
+                const extra = $.SUBRULE($.extraRule)
+                const [schema, catalog, database] = [third, second, first].filter(i => !!i)
+                return removeUndefined({statement: 'Namespace' as const, schema: schema || first, catalog, database, ...extra})
+            })
             $.CONSUME(NewLine)
-            const [schema, catalog, database] = [third, second, first].filter(i => !!i)
-            return removeUndefined({statement: 'Namespace' as const, schema: schema || first, catalog, database, ...extra})
+            return namespace ? namespace : {statement: 'Namespace'}
         })
 
         // entity rules

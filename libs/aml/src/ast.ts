@@ -3,7 +3,7 @@ import {isParserErrorKind, isTokenPosition, ParserErrorKind, TokenPosition} from
 
 export type AmlAst = StatementAst[]
 export type StatementAst = NamespaceStatement | EntityStatement | RelationStatement | TypeStatement | EmptyStatement
-export type NamespaceStatement = { statement: 'Namespace', schema: IdentifierToken, catalog?: IdentifierToken, database?: IdentifierToken } & ExtraAst
+export type NamespaceStatement = { statement: 'Namespace', schema?: IdentifierToken, catalog?: IdentifierToken, database?: IdentifierToken } & ExtraAst
 export type EntityStatement = { statement: 'Entity', name: IdentifierToken, view?: TokenInfo, alias?: IdentifierToken, attrs?: AttributeAstNested[] } & NamespaceRefAst & ExtraAst
 export type RelationStatement = { statement: 'Relation', kind: RelationKindAst, src: AttributeRefCompositeAst, ref: AttributeRefCompositeAst, polymorphic?: RelationPolymorphicAst } & ExtraAst & { warning?: TokenInfo }
 export type TypeStatement = { statement: 'Type', name: IdentifierToken, content?: TypeContentAst } & NamespaceRefAst & ExtraAst

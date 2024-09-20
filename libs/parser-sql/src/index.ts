@@ -1,4 +1,4 @@
-import {Database, ParserResult, Serde} from "@azimutt/models";
+import {Database, ParserResult} from "@azimutt/models";
 import {generateDatabase, parseDatabase} from "./sql";
 
 /*
@@ -12,11 +12,10 @@ import {generateDatabase, parseDatabase} from "./sql";
   - https://github.com/sql-formatter-org/sql-formatter
  */
 
-export const sql: Serde = {
-    name: 'SQL',
-    parse: (content: string): ParserResult<Database> => parseDatabase(content),
-    generate: (db: Database): string => generateDatabase(db)
+export function parseSql(dialect: string, content: string, opts: { strict?: boolean, context?: Database } = {}): ParserResult<Database> {
+    return parseDatabase(content)
 }
 
-export {SqlScript, SqlStatement, Select} from "./statements";
-export {generateSql, parseSql} from "./sql";
+export function generateSql(dialect: string, database: Database, legacy: boolean = false): string {
+    return generateDatabase(database)
+}

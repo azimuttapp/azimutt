@@ -32,7 +32,7 @@ import {
     textToSql
 } from "@azimutt/models";
 import {generateAml, parseAml} from "@azimutt/aml";
-import {prisma} from "@azimutt/serde-prisma";
+import {parsePrisma} from "@azimutt/parser-prisma";
 import {Dialect, HtmlId, Platform, ToastLevel, ViewPosition} from "./types/basics";
 import * as Uuid from "./types/uuid";
 import {
@@ -441,7 +441,7 @@ function getAmlSchema(msg: GetAmlSchema) {
 }
 
 function getPrismaSchema(msg: GetPrismaSchema) {
-    prisma.parse(msg.content).map(databaseToLegacy).fold(
+    parsePrisma(msg.content).map(databaseToLegacy).fold(
         (schema: LegacyDatabase) => app.gotPrismaSchema(schema),
         (errors: ParserError[]) => app.gotPrismaSchemaError(errors.map(errorToString).join(', '))
     )

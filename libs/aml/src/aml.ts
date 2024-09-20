@@ -200,7 +200,7 @@ function genDatabase(database: Database, legacy: boolean): string {
 }
 
 function buildNamespace(statement: number, n: NamespaceStatement): Namespace {
-    return removeUndefined({schema: n.schema.value, catalog: n.catalog?.value, database: n.database?.value})
+    return removeUndefined({schema: n.schema?.value, catalog: n.catalog?.value, database: n.database?.value})
 }
 
 function buildEntity(statement: number, e: EntityStatement, namespace: Namespace): { entity: Entity, relations: Relation[], types: Type[] } {

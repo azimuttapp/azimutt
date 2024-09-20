@@ -311,9 +311,9 @@ importers:
       '@azimutt/models':
         specifier: workspace:^
         version: link:../libs/models
-      '@azimutt/serde-prisma':
+      '@azimutt/parser-prisma':
         specifier: workspace:^
-        version: link:../libs/serde-prisma
+        version: link:../libs/parser-prisma
       '@azimutt/utils':
         specifier: workspace:^
         version: link:../libs/utils
@@ -880,7 +880,7 @@ importers:
         specifier: ^5.5.4
         version: 5.5.4
 
-  libs/serde-dbml:
+  libs/parser-dbml:
     dependencies:
       '@azimutt/models':
         specifier: workspace:^
@@ -917,7 +917,7 @@ importers:
         specifier: ^5.5.4
         version: 5.5.4
 
-  libs/serde-prisma:
+  libs/parser-prisma:
     dependencies:
       '@azimutt/models':
         specifier: workspace:^
@@ -948,7 +948,7 @@ importers:
         specifier: ^5.5.4
         version: 5.5.4
 
-  libs/serde-sql:
+  libs/parser-sql:
     dependencies:
       '@azimutt/models':
         specifier: workspace:^
@@ -12868,7 +12868,7 @@ snapshots:
 
   '@types/yauzl@2.10.3':
     dependencies:
-      '@types/node': 20.14.14
+      '@types/node': 22.1.0
     optional: true
 
   '@typescript-eslint/eslint-plugin@8.0.0(@typescript-eslint/parser@8.0.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)':
