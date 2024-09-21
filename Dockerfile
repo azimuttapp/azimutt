@@ -87,6 +87,7 @@ RUN npm run build:docker
 COPY backend/lib lib
 
 # compile assets
+RUN cd assets && npm install
 RUN mix assets.deploy
 
 RUN mix compile
