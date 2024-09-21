@@ -317,6 +317,14 @@ comments
                         attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(19, 20, 1, 20, 1, 21)}],
                     }}
                 }})
+                expect(parseRule(p => p.attributeRule(), '  user_id -> users\n')).toEqual({result: {
+                    nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
+                    name: {token: 'Identifier', value: 'user_id', ...tokenPosition(2, 8, 1, 3, 1, 9)},
+                    relation: {kind: 'n-1', ref: {
+                        entity: {token: 'Identifier', value: 'users', ...tokenPosition(13, 17, 1, 14, 1, 18)},
+                        attrs: [],
+                    }}
+                }})
             })
             test('properties', () => {
                 expect(parseRule(p => p.attributeRule(), '  id {tag: pii}\n')).toEqual({result: {

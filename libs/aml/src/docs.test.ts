@@ -1,7 +1,7 @@
 import * as fs from "fs";
-import {describe, test} from "@jest/globals";
+import {describe, expect, test} from "@jest/globals";
 import {pathJoin, pathParent, pluralize, pluralizeL, slugifyGitHub} from "@azimutt/utils";
-import {parseAml} from "./aml";
+import {generateAml, parseAml} from "./aml";
 
 describe('docs', () => {
     const project = 'libs/aml'
@@ -11,13 +11,13 @@ describe('docs', () => {
         .concat(['./README.md', '../../demos/ecommerce/source_00_design.md', '../../demos/ecommerce/source_10_additional_relations.md'])
         .filter(path => path.endsWith('.md'))
     const amlFiles: {[path: string]: string} = Object.fromEntries(amlPaths.map(path => [path, fs.readFileSync(path, 'utf8')]))
+    const amlRegex = /```aml\n[^]*?\n```/gm
 
     test('parse AML snippets', () => {
-        const amlRegex = /```aml\n[^]*?\n```/gm
         const filesWithErrors = Object.entries(amlFiles).map(([path, content]) => {
             // for `../demos/` files, get the whole file, not just some snippets inside
             const snippets = (path.indexOf('../demos/') !== -1 ? [content] : (content.match(amlRegex) || []).map((s: string) => s.replace(/^```aml\n/, '').replace(/```$/, '')))
-                .map((aml, index) => ({index, aml, errors: parseAml(aml, {strict: false}).errors || []}))
+                .map((aml, index) => ({index, aml, errors: parseAml(aml).errors || []}))
                 .filter(res => res.errors.filter(e => e.kind === 'error').length > 0)
             return {path, snippets}
         }).filter(file => file.snippets.length > 0)
@@ -37,6 +37,19 @@ describe('docs', () => {
             })
             throw allMsg + values.join('') + '\n'
         }
+    })
+    test.skip('re-generate AML snippets', () => {
+        Object.entries(amlFiles).map(([path, content]) => {
+            const snippets = path.indexOf('../demos/') !== -1 ? [content] : (content.match(amlRegex) || []).map((s: string) => s.replace(/^```aml\n/, '').replace(/```$/, ''))
+            snippets.forEach((aml, index) => {
+                const res = parseAml(aml)
+                const gen = generateAml(res.result || {})
+                if (gen !== aml) {
+                    console.log(`File ${path}, snippet ${index + 1}`)
+                    expect(gen).toEqual(aml)
+                }
+            })
+        })
     })
     test('check relative links', () => {
         const filesWithErrors = Object.entries(amlFiles).map(([path, content]) => {

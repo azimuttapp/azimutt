@@ -337,7 +337,7 @@ class AmlParser extends EmbeddedActionsParser {
             }, {
                 // legacy fallback
                 ALT: () => {
-                    if (!entity.schema) return removeUndefined({schema: entity.catalog, entity: entity.schema, attrs: [entity.entity]}) // not finished, so no warning
+                    if (!entity.schema) return removeUndefined({entity: entity.entity, attrs: []}) // relation without attributes
                     const path = $.SUBRULE(legacyAttributePathRule)
                     const v1 = `${entity.catalog ? entity.catalog.value + '.' : ''}${entity.schema.value}.${entity.entity.value}${path.map(p => ':' + p.value).join('')}`
                     const v2 = `${entity.catalog ? entity.catalog.value + '.' : ''}${entity.schema.value}(${entity.entity.value}${path.map(p => '.' + p.value).join('')})`

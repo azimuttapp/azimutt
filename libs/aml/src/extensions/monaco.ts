@@ -95,7 +95,7 @@ export const completion = (opts: {} = {}): CompletionItemProvider => ({ // auto-
             suggestions.push(suggestSnippet('# ...', space + '# ${1:your doc}', CompletionItemKind.File, position, {documentation: 'add comment'}))
         } else if (line.match(/[-<>]{2} ?$/)) { // wrote relation
             const {result: db} = parseAml(model.getValue())
-            const refs = db?.entities?.map(e => e.pk ? genAttributeRef(entityToRef(e), e.pk.attrs, false) : '') || []
+            const refs = db?.entities?.map(e => e.pk ? genAttributeRef(entityToRef(e), e.pk.attrs, false, false) : '') || []
             refs.forEach(ref => suggestions.push(suggestText(space + ref, CompletionItemKind.Interface, position)))
         }
         return {suggestions}

@@ -13,12 +13,16 @@ describe('aml', () => {
 # AML
 #
 
-users |||
+countries
+  id int pk
+  name varchar
+
+identity.users as users |||
   list
   all users
 |||
   id int pk # users primary key
-  name varchar unique
+  name varchar(12) unique
   role user_role(admin, guest)=guest
   settings json {owner: team1}
     github string |||
@@ -30,7 +34,7 @@ users |||
       number number
       street string
       city string index=address
-      country string index=address
+      country int index=address -> countries
   created_at timestamp=\`now()\`
 
 posts* {pii, tags: [cms]} | all posts # an other entity
@@ -54,10 +58,19 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
 `
         const db: Database = {
             entities: [{
+                name: 'countries',
+                attrs: [
+                    {name: 'id', type: 'int'},
+                    {name: 'name', type: 'varchar'},
+                ],
+                pk: {attrs: [['id']]},
+                extra: {line: 6, statement: 1}
+            }, {
+                schema: 'identity',
                 name: 'users',
                 attrs: [
                     {name: 'id', type: 'int', extra: {comment: 'users primary key'}},
-                    {name: 'name', type: 'varchar'},
+                    {name: 'name', type: 'varchar(12)'},
                     {name: 'role', type: 'user_role', default: 'guest'},
                     {name: 'settings', type: 'json', attrs: [
                         {name: 'github', type: 'string', doc: "multiline note\nfor github"},
@@ -66,7 +79,7 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                             {name: 'number', type: 'number'},
                             {name: 'street', type: 'string'},
                             {name: 'city', type: 'string'},
-                            {name: 'country', type: 'string'},
+                            {name: 'country', type: 'int'},
                         ]},
                     ], extra: {owner: 'team1'}},
                     {name: 'created_at', type: 'timestamp', default: '`now()`'},
@@ -74,7 +87,7 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                 pk: {attrs: [['id']]},
                 indexes: [{attrs: [['name']], unique: true}, {name: 'address', attrs: [['settings', 'address', 'city'], ['settings', 'address', 'country']]}],
                 doc: 'list\nall users',
-                extra: {line: 6, statement: 1}
+                extra: {line: 10, statement: 2, alias: "users"}
             }, {
                 name: 'posts',
                 kind: 'view',
@@ -88,7 +101,7 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                 indexes: [{attrs: [['title']]}],
                 checks: [{attrs: [['author']], predicate: 'author > 0'}],
                 doc: 'all posts',
-                extra: {line: 26, statement: 2, comment: 'an other entity', pii: true, tags: ['cms']}
+                extra: {line: 30, statement: 3, comment: 'an other entity', pii: true, tags: ['cms']}
             }, {
                 name: 'emails',
                 attrs: [
@@ -96,24 +109,25 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                     {name: 'email', type: 'varchar'},
                 ],
                 pk: {attrs: [['user_id'], ['email']]},
-                extra: {line: 34, statement: 4}
+                extra: {line: 38, statement: 5}
             }],
             relations: [
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {line: 29, statement: 2}},
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}], doc: 'standalone relation', extra: {line: 32, statement: 3, onUpdate: 'no_action', onDelete: 'cascade'}},
+                {src: {schema: 'identity', entity: 'users'}, ref: {entity: 'countries'}, attrs: [{src: ['settings', 'address', 'country'], ref: ['id']}], extra: {line: 27, statement: 2, natural: true}},
+                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {line: 33, statement: 3}},
+                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}], doc: 'standalone relation', extra: {line: 36, statement: 4, onUpdate: 'no_action', onDelete: 'cascade'}},
             ],
             types: [
-                {name: 'user_role', values: ['admin', 'guest'], extra: {line: 12, statement: 1}},
-                {name: 'post_id', definition: 'int', doc: 'alias', extra: {line: 40, statement: 5, table: 'posts'}},
-                {name: 'status', values: ['draft', 'published', 'archived'], extra: {line: 41, statement: 6}},
-                {name: 'position', attrs: [{name: 'x', type: 'int'}, {name: 'y', type: 'int'}], extra: {line: 42, statement: 7, generic: true}},
-                {name: 'range', definition: '(subtype = float8, subtype_diff = float8mi)', extra: {line: 43, statement: 8, comment: 'custom type'}},
+                {schema: 'identity', name: 'user_role', values: ['admin', 'guest'], extra: {line: 16, statement: 2}},
+                {name: 'post_id', definition: 'int', doc: 'alias', extra: {line: 44, statement: 6, table: 'posts'}},
+                {name: 'status', values: ['draft', 'published', 'archived'], extra: {line: 45, statement: 7}},
+                {name: 'position', attrs: [{name: 'x', type: 'int'}, {name: 'y', type: 'int'}], extra: {line: 46, statement: 8, generic: true}},
+                {name: 'range', definition: '(subtype = float8, subtype_diff = float8mi)', extra: {line: 47, statement: 9, comment: 'custom type'}},
             ],
             extra: {comments: [
                 {line: 2, comment: ''},
                 {line: 3, comment: 'AML'},
                 {line: 4, comment: ''},
-                {line: 38, comment: 'types'},
+                {line: 42, comment: 'types'},
             ]}
         }
         const parsed = parseAmlTest(input)
@@ -223,8 +237,7 @@ type public.status (pending, wip, done)
                 errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Identifier <-- but found --> '\n' <--", ...tokenPosition(21, 21, 2, 16, 2, 16)}]
             })
             expect(parseAmlTest('posts\n  author int -> users\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], extra: {}},
-                // TODO: an error should be reported here
+                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [], extra: {line: 2, statement: 1, natural: true}}], extra: {}},
             })
             expect(parseAmlTest('posts\n  author int -> users(\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], extra: {}},
@@ -268,7 +281,7 @@ type public.status (pending, wip, done)
                 ]
             })
             expect(parseAmlTest('posts\n  author int fk users\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], extra: {}},
+                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [], extra: {line: 2, statement: 1, natural: true}}], extra: {}},
                 // TODO: an error should be reported here
                 errors: [{...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(19, 20, 2, 14, 2, 15)}]
             })
