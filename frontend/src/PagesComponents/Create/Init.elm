@@ -18,6 +18,7 @@ init urlOrganization =
       , sqlSource = Nothing
       , prismaSource = Nothing
       , jsonSource = Nothing
+      , amlSource = Nothing
       , toasts = Toasts.init
       }
     , Cmd.batch

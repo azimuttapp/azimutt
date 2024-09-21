@@ -362,7 +362,7 @@ docModel =
 
 docErd : Erd
 docErd =
-    Project.create Nothing [] "Azimutt" (Source.aml "aml" Time.zero SourceId.zero) |> Erd.create
+    Project.create Nothing [] "Azimutt" (Source.empty "aml" Time.zero SourceId.zero) |> Erd.create
 
 
 docSourceInfo : DbSourceInfoWithUrl

@@ -1,5 +1,5 @@
-<!--<script src="https://cdn.jsdelivr.net/npm/@azimutt/aml@0.1.3/out/bundle.min.js"></script>-->
-<script src="/elm/bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@azimutt/aml@0.1.3/out/bundle.min.js"></script>
+<!--<script src="/elm/bundle.min.js"></script>-->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.51.0/min/vs/loader.min.js"></script>
 <script>
     require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.51.0/min/vs' }})
@@ -16,43 +16,37 @@
 
         var leftLang = '<%= @left.lang %>'
         var rightLang = '<%= @right.lang %>'
+        var editorLeftContainer = document.getElementById('<%= @left.id %>')
+        var editorRightContainer = document.getElementById('<%= @right.id %>')
+
         var model = monaco.editor.createModel(defaultValue(leftLang), leftLang)
         model.context = {database: {}} // store values to be used at several place
-        var editorLeft = monaco.editor.create(document.getElementById('<%= @left.id %>'), {
-            theme: 'vs-light',
-            model,
-            minimap: {enabled: false},
-            automaticLayout: true,
-            scrollBeyondLastLine: false,
-        })
-        var editorRight = monaco.editor.create(document.getElementById('<%= @right.id %>'), {
-            theme: 'vs-light',
-            language: rightLang,
-            readOnly: true,
-            value: '',
-            minimap: {enabled: false},
-            automaticLayout: true,
-            scrollBeyondLastLine: false,
-        })
+
+        var leftEditor = createEditor(editorLeftContainer, {model})
+        var rightEditor = createEditor(editorRightContainer, {language: rightLang, value: '', readOnly: true})
+        var leftAmlButton = leftLang === 'aml' ? createAmlButton(editorLeftContainer) : undefined
+        var rightAmlButton = rightLang === 'aml' ? createAmlButton(editorRightContainer) : undefined
         // get selected text: `model.getValueInRange(editor.getSelection())`
         // get cursor position: `editor.getPosition()` & `editor.setPosition(new monaco.Position(5, 3))`
         // move editor: `editor.revealLine(30)` but also: `revealLines`, `revealPosition`, `revealRange`, and also: `revealLineNearTop`, `revealLineInCenter`, `revealLineInCenterIfOutsideViewport`...
         // window.model = model
-        // window.editor = editorLeft
+        // window.editor = leftEditor
 
         // sync right editor with parsing result
         function syncEditors() {
-            var parsed = parse(leftLang, editorLeft.getValue())
+            var parsed = parse(leftLang, leftEditor.getValue())
             if (parsed.result) {
                 model.context.database = parsed.result
-                editorRight.setValue(format(rightLang, parsed.result))
+                rightEditor.setValue(format(rightLang, parsed.result))
                 // preserve the undo stack with: `model.pushEditOperations([], [{range: model.getFullModelRange(), text: value}])`
+                if (leftAmlButton) { amlButtonUpdateUrl(leftAmlButton, leftEditor.getValue()) }
+                if (rightAmlButton) { amlButtonUpdateUrl(rightAmlButton, rightEditor.getValue()) }
             }
-            monaco.editor.setModelMarkers(model, 'owner', (parsed.errors || []).map(e => aml.monaco.createMarker(e, model, editorLeft)))
+            monaco.editor.setModelMarkers(model, 'owner', (parsed.errors || []).map(e => aml.monaco.createMarker(e, model, leftEditor)))
         }
 
         syncEditors()
-        editorLeft.onDidChangeModelContent(function (e /* {
+        leftEditor.onDidChangeModelContent(function (e /* {
           changes: [{
             text: 'posts',
             range: {startLineNumber: 11, startColumn: 1, endLineNumber: 11, endColumn: 1},
@@ -70,6 +64,24 @@
             syncEditors()
         })
 
+        function createEditor(container, settings) {
+            var element = document.createElement('div')
+            element.className = 'editor h-full'
+            container.appendChild(element)
+            return monaco.editor.create(element, Object.assign({theme: 'vs-light', minimap: {enabled: false}, automaticLayout: true, scrollBeyondLastLine: false}, settings))
+        }
+        function createAmlButton(container) {
+            var buttonEl = document.createElement('a')
+            buttonEl.innerText = 'Open in Azimutt'
+            buttonEl.className = 'absolute bottom-2 right-2 rounded bg-white px-2 py-1 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50'
+            buttonEl.href = '#'
+            buttonEl.setAttribute('target', '_blank')
+            container.appendChild(buttonEl)
+            return buttonEl
+        }
+        function amlButtonUpdateUrl(button, aml) {
+            button.href = '/create?aml=' + encodeURIComponent(aml).slice(0, 2000) // URI length limit, should send it with POST at some point...
+        }
         function parse(lang, content) {
             if (lang === 'aml') return aml.parseAml(content)
             if (lang === 'json') return aml.parseJsonDatabase(content)
@@ -95,6 +107,7 @@ posts {color: red}
   id uuid pk
   title varchar
   content text | in markdown
+  author uuid -> users(id)
   created_at timestamp=\`now()\`
   created_by uuid -> users(id) {hidden} # inline relation
 `
@@ -120,6 +133,7 @@ posts {color: red}
         {"name": "id", "type": "uuid"},
         {"name": "title", "type": "varchar"},
         {"name": "content", "type": "text", "doc": "in markdown"},
+        {"name": "author", "type": "uuid"},
         {"name": "created_at", "type": "timestamp", "default": "\`now()\`"},
         {"name": "created_by", "type": "uuid"}
       ],
@@ -131,6 +145,11 @@ posts {color: red}
       "src": {"entity": "posts"},
       "ref": {"entity": "users"},
       "attrs": [{"src": ["created_by"], "ref": ["id"]}]
+    },
+    {
+      "src": {"entity": "posts"},
+      "ref": {"entity": "users"},
+      "attrs": [{"src": ["author"], "ref": ["id"]}]
     }
   ],
   "types": [

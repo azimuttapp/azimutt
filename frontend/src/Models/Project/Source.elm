@@ -1,4 +1,4 @@
-module Models.Project.Source exposing (Source, addRelations, aml, database, databaseKind, databaseUrl, databaseUrlStorage, decode, doc, docSource, encode, getColumnI, getTableI, removeRelations, setSchema, toInfo, updateWith)
+module Models.Project.Source exposing (Source, addRelations, aml, buildContent, contentStr, database, databaseKind, databaseUrl, databaseUrlStorage, decode, doc, docSource, empty, encode, getColumnI, getTableI, removeRelations, setSchema, toInfo, updateWith)
 
 import Array exposing (Array)
 import Conf
@@ -49,8 +49,8 @@ type alias Source =
     }
 
 
-aml : SourceName -> Time.Posix -> SourceId -> Source
-aml name now id =
+empty : SourceName -> Time.Posix -> SourceId -> Source
+empty name now id =
     { id = id
     , name = name
     , kind = AmlEditor
@@ -58,6 +58,22 @@ aml name now id =
     , tables = Dict.empty
     , relations = []
     , types = Dict.empty
+    , enabled = True
+    , fromSample = Nothing
+    , createdAt = now
+    , updatedAt = now
+    }
+
+
+aml : SourceId -> SourceName -> String -> Schema -> Time.Posix -> Source
+aml id name content schema now =
+    { id = id
+    , name = name
+    , kind = AmlEditor
+    , content = buildContent content
+    , tables = schema.tables
+    , relations = schema.relations
+    , types = schema.types
     , enabled = True
     , fromSample = Nothing
     , createdAt = now
@@ -75,6 +91,16 @@ toInfo source =
     , createdAt = source.createdAt
     , updatedAt = source.updatedAt
     }
+
+
+buildContent : String -> Array SourceLine
+buildContent input =
+    input |> String.split "\n" |> Array.fromList
+
+
+contentStr : Source -> String
+contentStr source =
+    source.content |> Array.toList |> String.join "\n"
 
 
 setSchema : Schema -> Source -> Source
@@ -196,7 +222,7 @@ decodeSource id name kind content tables relations types enabled fromSample crea
         ( n, c ) =
             if kind == AmlEditor && Array.isEmpty content && Dict.isEmpty tables && List.nonEmpty relations then
                 -- migration from previous: no content, only relations and bad name for virtual relations
-                ( Conf.constants.virtualRelationSourceName
+                ( Conf.constants.defaultSourceName
                 , Array.fromList (relations |> List.map (\r -> AmlGenerator.relationStandalone r.src r.ref))
                 )
 

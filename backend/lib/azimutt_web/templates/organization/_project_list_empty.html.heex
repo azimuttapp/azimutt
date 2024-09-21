@@ -8,7 +8,7 @@
                     <span class="inline-flex items-center justify-center h-10 w-10 rounded-lg bg-pink-500"><Icon.circle_stack kind="outline" class="text-white" /></span>
                 </div>
                 <div class="min-w-0 flex-1">
-                    <div class="text-sm font-medium text-gray-900"><%= link "From database connection", to: Routes.elm_path(@conn, :orga_new, @organization, database: "") %></div>
+                    <div class="text-sm font-medium text-gray-900"><%= link "From database connection", to: Routes.elm_path(@conn, :org_new, @organization, database: "") %></div>
                     <p class="text-sm text-gray-500">Extract your schema directly from your database connection.</p>
                 </div>
                 <div class="flex-shrink-0 self-center"><Icon.chevron_right class="text-gray-400 group-hover:text-gray-500" /></div>
@@ -20,7 +20,7 @@
                     <span class="inline-flex items-center justify-center h-10 w-10 rounded-lg bg-purple-500"><Icon.document_text kind="outline" class="text-white" /></span>
                 </div>
                 <div class="min-w-0 flex-1">
-                    <div class="text-sm font-medium text-gray-900"><%= link "From SQL structure", to: Routes.elm_path(@conn, :orga_new, @organization, sql: "") %></div>
+                    <div class="text-sm font-medium text-gray-900"><%= link "From SQL structure", to: Routes.elm_path(@conn, :org_new, @organization, sql: "") %></div>
                     <p class="text-sm text-gray-500">Upload your structure.sql file and let azimutt parse your schema.</p>
                 </div>
                 <div class="flex-shrink-0 self-center"><Icon.chevron_right class="text-gray-400 group-hover:text-gray-500" /></div>
@@ -32,7 +32,7 @@
                     <span class="inline-flex items-center justify-center h-10 w-10 rounded-lg bg-yellow-500"><Icon.code_bracket kind="outline" class="text-white" /></span>
                 </div>
                 <div class="min-w-0 flex-1">
-                    <div class="text-sm font-medium text-gray-900"><%= link "From JSON", to: Routes.elm_path(@conn, :orga_new, @organization, json: "") %></div>
+                    <div class="text-sm font-medium text-gray-900"><%= link "From JSON", to: Routes.elm_path(@conn, :org_new, @organization, json: "") %></div>
                     <p class="text-sm text-gray-500">Import your custom source from JSON.</p>
                 </div>
                 <div class="flex-shrink-0 self-center"><Icon.chevron_right class="text-gray-400 group-hover:text-gray-500" /></div>
@@ -44,7 +44,7 @@
                     <span class="inline-flex items-center justify-center h-10 w-10 rounded-lg bg-green-500"><Icon.document kind="outline" class="text-white" /></span>
                 </div>
                 <div class="min-w-0 flex-1">
-                    <div class="text-sm font-medium text-gray-900"><%= link "Empty", to: Routes.elm_path(@conn, :orga_create, @organization, empty: "") %></div>
+                    <div class="text-sm font-medium text-gray-900"><%= link "Empty", to: Routes.elm_path(@conn, :org_create, @organization, empty: "") %></div>
                     <p class="text-sm text-gray-500">Perfect to design your database from scratch!</p>
                 </div>
                 <div class="flex-shrink-0 self-center"><Icon.chevron_right class="text-gray-400 group-hover:text-gray-500" /></div>
@@ -56,7 +56,7 @@
                     <span class="inline-flex items-center justify-center h-10 w-10 rounded-lg bg-blue-500"><Icon.squares_plus kind="outline" class="text-white" /></span>
                 </div>
                 <div class="min-w-0 flex-1">
-                    <div class="text-sm font-medium text-gray-900"><%= link "Explore samples", to: Routes.elm_path(@conn, :orga_new, @organization, sample: "") %></div>
+                    <div class="text-sm font-medium text-gray-900"><%= link "Explore samples", to: Routes.elm_path(@conn, :org_new, @organization, sample: "") %></div>
                     <p class="text-sm text-gray-500">Experiment Azimutt with suggested diagrams, for all tastes.</p>
                 </div>
                 <div class="flex-shrink-0 self-center"><Icon.chevron_right class="text-gray-400 group-hover:text-gray-500" /></div>

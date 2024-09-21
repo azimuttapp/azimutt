@@ -61,7 +61,7 @@ update wrap now project msg model =
                 ( model, Extra.none )
 
             else
-                Source.aml model.name now id |> (\source -> ( { model | parsedSource = source |> Ok |> Just }, Track.amlSourceCreated project source |> Extra.cmd ))
+                Source.empty model.name now id |> (\source -> ( { model | parsedSource = source |> Ok |> Just }, Track.amlSourceCreated project source |> Extra.cmd ))
 
 
 

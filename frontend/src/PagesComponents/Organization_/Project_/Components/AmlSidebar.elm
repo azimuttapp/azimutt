@@ -1,6 +1,5 @@
 module PagesComponents.Organization_.Project_.Components.AmlSidebar exposing (Model, init, setOtherSourcesTableIdsCache, setSource, update, view)
 
-import Array exposing (Array)
 import Components.Atoms.Icon as Icon
 import Components.Molecules.Editor as Editor
 import Components.Slices.PlanDialog as PlanDialog
@@ -102,7 +101,7 @@ update now projectRef msg model =
             ( model |> mapAmlSidebarM (setSelected (sourceId |> Maybe.andThen (buildSelected model.erd))) |> setOtherSourcesTableIdsCache sourceId, Extra.none )
 
         AUpdateSource id content ->
-            ( model |> mapErdM (Erd.mapSource id (setContent (contentSplit content) >> setUpdatedAt now)), Ports.getAmlSchema id content |> Extra.cmd )
+            ( model |> mapErdM (Erd.mapSource id (setContent (Source.buildContent content) >> setUpdatedAt now)), Ports.getAmlSchema id content |> Extra.cmd )
 
         AGotSchema id length schema errors ->
             (model.erd |> Maybe.andThen (.sources >> List.findBy .id id))
@@ -111,7 +110,7 @@ update now projectRef msg model =
                         if source.id /= id then
                             ( model |> mapAmlSidebarM (setErrors [ { name = "EditorError", kind = ParserError.Error, message = "Source has changed", offset = { start = 0, end = 0 }, position = { start = { line = 1, column = 1 }, end = { line = 1, column = 1 } } } ]), Extra.none )
 
-                        else if String.length (contentStr source) /= length then
+                        else if String.length (Source.contentStr source) /= length then
                             ( model |> mapAmlSidebarM (setErrors [ { name = "EditorError", kind = ParserError.Error, message = "AML has changed", offset = { start = 0, end = 0 }, position = { start = { line = 1, column = 1 }, end = { line = 1, column = 1 } } } ]), Extra.none )
 
                         else
@@ -121,7 +120,7 @@ update now projectRef msg model =
 
         ASourceUpdated id ->
             (model.erd |> Maybe.andThen (.sources >> List.findBy .id id))
-                |> Maybe.map (\source -> model |> mapAmlSidebarMTM (mapSelectedMT (Tuple.mapSecondT (\old -> source |> contentStr |> (\new -> ( new, Extra.new (Track.sourceRefreshed model.erd source) (( AUpdateSource source.id old, AUpdateSource source.id new ) |> Tuple.map AmlSidebarMsg) ))))) |> Extra.defaultT)
+                |> Maybe.map (\source -> model |> mapAmlSidebarMTM (mapSelectedMT (Tuple.mapSecondT (\old -> source |> Source.contentStr |> (\new -> ( new, Extra.new (Track.sourceRefreshed model.erd source) (( AUpdateSource source.id old, AUpdateSource source.id new ) |> Tuple.map AmlSidebarMsg) ))))) |> Extra.defaultT)
                 |> Maybe.withDefault ( model, Extra.none )
 
 
@@ -189,7 +188,7 @@ associateTables removed added =
 
 setSource : Maybe Source -> AmlSidebar -> AmlSidebar
 setSource source model =
-    model |> setSelected (source |> Maybe.map (\s -> ( s.id, s |> contentStr )))
+    model |> setSelected (source |> Maybe.map (\s -> ( s.id, s |> Source.contentStr )))
 
 
 setOtherSourcesTableIdsCache : Maybe SourceId -> Model x -> Model x
@@ -199,17 +198,7 @@ setOtherSourcesTableIdsCache sourceId model =
 
 buildSelected : Maybe Erd -> SourceId -> Maybe ( SourceId, String )
 buildSelected erd sourceId =
-    erd |> Maybe.andThen (.sources >> List.findBy .id sourceId) |> Maybe.map (\s -> ( s.id, s |> contentStr ))
-
-
-contentSplit : String -> Array String
-contentSplit input =
-    input |> String.split "\n" |> Array.fromList
-
-
-contentStr : Source -> String
-contentStr source =
-    source.content |> Array.toList |> String.join "\n"
+    erd |> Maybe.andThen (.sources >> List.findBy .id sourceId) |> Maybe.map (\s -> ( s.id, s |> Source.contentStr ))
 
 
 getOtherSourcesTableIds : Maybe SourceId -> Maybe Erd -> Set TableId
@@ -305,7 +294,7 @@ viewSourceEditor model source =
     div [ class "mt-3" ]
         [ -- , node "intl-date" [ attribute "lang" "fr-FR", attribute "year" (String.fromInt 2024), attribute "month" (String.fromInt 9) ] []
           -- , node "aml-editor" [ value (contentStr source), onInput (AUpdateSource source.id >> AmlSidebarMsg), onBlur (ASourceUpdated source.id |> AmlSidebarMsg) ] []
-          Editor.basic "source-editor" (contentStr source) (AUpdateSource source.id >> AmlSidebarMsg) (ASourceUpdated source.id |> AmlSidebarMsg) """Write your schema using AML syntax
+          Editor.basic "source-editor" (Source.contentStr source) (AUpdateSource source.id >> AmlSidebarMsg) (ASourceUpdated source.id |> AmlSidebarMsg) """Write your schema using AML syntax
 
 Ex:
 

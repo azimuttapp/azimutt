@@ -167,8 +167,8 @@ COMMENT ON COLUMN posts.content IS 'in markdown';</code></pre>
         </p>
     </div>
     <div class="mt-10 mx-auto flex flex-col md:flex-row space-y-8 md:space-y-0 md:space-x-8 justify-center w-full max-w-7xl">
-        <div id="monaco-editor-left" class="w-full md:w-1/2 h-96 border border-gray-300 rounded-lg overflow-hidden"></div>
-        <div id="monaco-editor-right" class="w-full md:w-1/2 h-96 border border-gray-300 rounded-lg overflow-hidden"></div>
+        <div id="monaco-editor-left" class="relative w-full md:w-1/2 h-96 border border-gray-300 rounded-lg overflow-hidden"></div>
+        <div id="monaco-editor-right" class="relative w-full md:w-1/2 h-96 border border-gray-300 rounded-lg overflow-hidden"></div>
     </div>
     <%= render "_converter-editors-script.html", left: %{id: "monaco-editor-left", lang: "aml"}, right: %{id: "monaco-editor-right", lang: "json"} %>
 </div>

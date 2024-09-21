@@ -40,7 +40,8 @@ defmodule Azimutt do
           "Unlimited tables",
           "Schema exploration",
           "Data exploration"
-        ]
+        ],
+        order: 1
       },
       solo: %{
         id: :solo,
@@ -54,7 +55,8 @@ defmodule Azimutt do
           "Long term usage",
           "Database design",
           "Schema export"
-        ]
+        ],
+        order: 3
       },
       team: %{
         id: :team,
@@ -70,7 +72,8 @@ defmodule Azimutt do
           "Documentation",
           "AI capabilities",
           "Export project"
-        ]
+        ],
+        order: 4
       },
       enterprise: %{
         id: :enterprise,
@@ -83,14 +86,16 @@ defmodule Azimutt do
           "Unlimited usage",
           "User management",
           "Custom integrations"
-        ]
+        ],
+        order: 5
       },
       pro: %{
         id: :pro,
         name: "Pro",
         monthly: 13,
         yearly: 13,
-        features: []
+        features: [],
+        order: 2
       }
     }
   end
