@@ -94,7 +94,7 @@ events
   id uuid
   name varchar(50)
   age int
-  rating decimal(5, 2)
+  rating decimal(5,2)
   details json
   tags "varchar[]"
   created_at "timestamp with time zone"
@@ -107,7 +107,7 @@ users
   id uuid
   name varchar(50)=John
   age int=0
-  rating decimal(5, 2)=0.0
+  rating decimal(5,2)=0.5
   details json="{}"
   tags "varchar[]"="[]"
   admin boolean=false

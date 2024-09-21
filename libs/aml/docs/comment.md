@@ -15,7 +15,6 @@ Here is an example:
 
 ```aml
 # this is a comment
-
 #
 # Auth schema
 #
@@ -28,8 +27,8 @@ users
 #
 # Social schema
 #
-
 # posts are blog posts, for SEO ^^
+
 posts
   id uuid pk
   author -> users(id) # don't define relation types, they will be inherited from their linked column

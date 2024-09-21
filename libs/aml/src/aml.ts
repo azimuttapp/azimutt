@@ -275,17 +275,17 @@ function flattenAttributes(attributes: AttributeAstNested[]): AttributeAstNested
 }
 
 function genNamespace(n: Namespace): string {
-    const database = n.database ? n.database + '.' : ''
-    const catalog = n.catalog ? n.catalog + '.' : ''
-    const schema = n.schema ? n.schema + '.' : ''
+    const database = n.database ? genIdentifier(n.database) + '.' : ''
+    const catalog = n.catalog ? genIdentifier(n.catalog) + '.' : ''
+    const schema = n.schema ? genIdentifier(n.schema) + '.' : ''
     return database + catalog + schema
 }
 
 export function genEntity(e: Entity, relations: Relation[], types: Type[], legacy: boolean): string {
     const namespace = genNamespace(e)
     const view = e.kind === 'view' ? '*' : ''
-    const alias = e.extra?.alias ? ' as ' + e.extra.alias : ''
-    const entity = `${namespace}${e.name}${view}${alias}${genPropertiesExtra(e, ['line', 'statement', 'alias', 'comment'])}${genNote(e.doc)}${genCommentExtra(e)}\n`
+    const alias = e.extra?.alias ? ' as ' + genIdentifier(e.extra.alias) : ''
+    const entity = `${namespace}${genIdentifier(e.name)}${view}${alias}${genPropertiesExtra(e, ['line', 'statement', 'alias', 'comment'])}${genNote(e.doc)}${genCommentExtra(e)}\n`
     return entity + (e.attrs ? e.attrs.map(a => genAttribute(a, e, relations.filter(r => r.attrs[0].src[0] === a.name), types, legacy)).join('') : '')
 }
 
@@ -335,11 +335,11 @@ function genAttribute(a: Attribute, e: Entity, relations: Relation[], types: Typ
 }
 
 function genAttributeInner(a: Attribute, e: Entity, relations: Relation[], types: Type[], path: AttributePath, indent: string, legacy: boolean): string {
-    const pk = e.pk && e.pk.attrs.some(attr => attributePathSame(attr, path)) ? ' pk' : ''
+    const pk = e.pk && e.pk.attrs.some(attr => attributePathSame(attr, path)) ? ` pk${e.pk.name ? `=${genIdentifier(e.pk.name)}` : ''}` : ''
     const indexes = (e.indexes || [])
         .map((idx, i) => ({...idx, name: idx.name || (idx.attrs.length > 1 ? `${e.name}_idx_${i + 1}` : undefined)}))
         .filter(i => i.attrs.some(attr => attributePathSame(attr, path)))
-        .map(i => ` ${i.unique ? 'unique' : 'index'}${i.name ? `=${i.name}` : ''}`)
+        .map(i => ` ${i.unique ? 'unique' : 'index'}${i.name ? `=${genIdentifier(i.name)}` : ''}`)
         .join('')
     const checks = (e.checks || []).filter(i => i.attrs.some(attr => attributePathSame(attr, path))).map(i => ` check${i.predicate ? `=\`${i.predicate}\`` : ''}`).join('')
     const rel = relations.map(r => ' ' + genRelationTarget(r, legacy)).join('')
@@ -352,27 +352,27 @@ function buildAttributeType(a: AttributeAstNested, ext: string): AttributeType {
 
 function genAttributeType(a: Attribute, types: Type[]): string {
     // regex from `Identifier` token to know if it should be escaped or not (cf libs/aml/src/parser.ts:7)
-    const typeName = a.type && a.type !== defaultType ? ' ' + (a.type.match(/^[a-zA-Z_][a-zA-Z0-9_#()]*$/) ? a.type : '"' + a.type + '"') : ''
+    const typeName = a.type && a.type !== defaultType ? ' ' + genIdentifier(a.type) : ''
     const enumType = types.find(t => t.name === a.type && t.values)
-    const enumValues = enumType ? '(' + enumType.values?.join(', ') + ')' : ''
-    const defaultValue = a.default !== undefined ? `=${a.default}` : ''
+    const enumValues = enumType ? '(' + enumType.values?.map(genAttributeValueStr).join(', ') + ')' : ''
+    const defaultValue = a.default !== undefined ? `=${genAttributeValue(a.default)}` : ''
     return typeName ? typeName + enumValues + defaultValue : ''
 }
 
 function buildRelationStatement(entities: Entity[], namespace: Namespace, statement: number, r: RelationStatement): Relation | undefined {
     const entitySrc = buildEntityRef(r.src, namespace)
-    return buildRelation(entities, namespace, statement, r.src.entity.position.start.line, r.kind, entitySrc, r.src.attrs.map(buildAttrPath), r.ref, r.polymorphic, r)
+    return buildRelation(entities, namespace, statement, r.src.entity.position.start.line, r.kind, entitySrc, r.src.attrs.map(buildAttrPath), r.ref, r.polymorphic, r, false)
 }
 
 function buildRelationAttribute(entities: Entity[], namespace: Namespace, statement: number, srcEntity: EntityRef, srcAttrs: AttributePath[], r: AttributeRelationAst): Relation | undefined {
-    return buildRelation(entities, namespace, statement, r.ref.entity?.position.start.line, r.kind, srcEntity, srcAttrs, r.ref, r.polymorphic, undefined)
+    return buildRelation(entities, namespace, statement, r.ref.entity?.position.start.line, r.kind, srcEntity, srcAttrs, r.ref, r.polymorphic, undefined, true)
 }
 
-function buildRelation(entities: Entity[], namespace: Namespace, statement: number, line: number, kind: RelationKindAst | undefined, srcEntity: EntityRef, srcAttrs: AttributePath[], ref: AttributeRefCompositeAst, polymorphic: RelationPolymorphicAst | undefined, extra: ExtraAst | undefined): Relation | undefined {
+function buildRelation(entities: Entity[], namespace: Namespace, statement: number, line: number, kind: RelationKindAst | undefined, srcEntity: EntityRef, srcAttrs: AttributePath[], ref: AttributeRefCompositeAst, polymorphic: RelationPolymorphicAst | undefined, extra: ExtraAst | undefined, inline: boolean): Relation | undefined {
     if (!ref || !ref.entity.value || !ref.attrs || ref.attrs.some(a => a.value === undefined)) return undefined // `ref` can be undefined or with empty entity or undefined attrs on invalid input :/ TODO: report an error instead of just ignoring?
     const refEntity = buildEntityRef(ref, namespace)
-    const refAttrs: AttributePath[] = ref.attrs.length > 0 ? ref.attrs.map(buildAttrPath) : entities.find(e => entityRefSame(entityToRef(e), refEntity))?.pk?.attrs || []
-    const natural = ref.attrs.length > 0 ? undefined : true
+    const refAttrs: AttributePath[] = ref.attrs.length > 0 ? ref.attrs.map(buildAttrPath) : entities.find(e => entityRefSame(entityToRef(e), refEntity))?.pk?.attrs || [['unknown']]
+    const natural = ref.attrs.length === 0 ? (srcAttrs.length === 0 ? 'both' : 'ref') : (srcAttrs.length === 0 ? 'src' : undefined)
     return removeUndefined({
         name: undefined,
         kind: kind ? buildRelationKind(kind) : undefined,
@@ -382,12 +382,13 @@ function buildRelation(entities: Entity[], namespace: Namespace, statement: numb
         attrs: zip(srcAttrs, refAttrs).map(([srcAttr, refAttr]) => ({src: srcAttr, ref: refAttr})),
         polymorphic: polymorphic ? {attribute: buildAttrPath(polymorphic.attr), value: buildAttrValue(polymorphic.value)} : undefined,
         doc: extra?.doc?.value,
-        extra: buildExtraWithProperties({line, statement, natural, comment: extra?.comment?.value}, extra || {}),
+        extra: buildExtraWithProperties({line, statement, inline: inline ? true : undefined, natural, comment: extra?.comment?.value}, extra || {}),
     })
 }
 
 function genRelation(r: Relation, legacy: boolean): string {
-    return `${legacy ? 'fk' : 'rel'} ${genAttributeRef(r.src, r.attrs.map(a => a.src), false, legacy)} ${genRelationTarget(r, legacy)}${genPropertiesExtra(r, ['line', 'statement', 'natural', 'comment'])}${genNote(r.doc)}${genCommentExtra(r)}\n`
+    const srcNatural: boolean = !r.extra?.inline && (r.extra?.natural === 'src' || r.extra?.natural === 'both')
+    return `${legacy ? 'fk' : 'rel'} ${genAttributeRef(r.src, r.attrs.map(a => a.src), srcNatural, legacy)} ${genRelationTarget(r, legacy)}${genPropertiesExtra(r, ['line', 'statement', 'inline', 'natural', 'comment'])}${genNote(r.doc)}${genCommentExtra(r)}\n`
 }
 
 function genRelationTarget(r: Relation, legacy: boolean): string {
@@ -395,7 +396,8 @@ function genRelationTarget(r: Relation, legacy: boolean): string {
     const [qSrc, qRef] = (r.kind || 'many-to-one').split('-to-')
     const aSecond = qSrc === 'many' ? '>' : '-'
     const aFirst = qRef === 'many' ? '<' : '-'
-    return `${legacy ? 'fk' : aFirst + poly + aSecond} ${genAttributeRef(r.ref, r.attrs.map(a => a.ref), r.extra?.natural || false, legacy)}`
+    const refNatural = r.extra?.natural === 'ref' || r.extra?.natural === 'both'
+    return `${legacy ? 'fk' : aFirst + poly + aSecond} ${genAttributeRef(r.ref, r.attrs.map(a => a.ref), refNatural, legacy)}`
 }
 
 function buildType(namespace: Namespace, statement: number, t: TypeStatement): Type {
@@ -420,14 +422,14 @@ function genType(t: Type, legacy: boolean): string {
 function genTypeContent(t: Type, legacy: boolean): string {
     if (t.definition && t.definition.match(/[ (]/)) return ' `' + t.definition + '`'
     if (t.definition) return ' ' + t.definition
-    if (t.values) return ' (' + t.values.join(', ') + ')'
+    if (t.values) return ' (' + t.values.map(genIdentifier).join(', ') + ')'
     if (t.attrs) return ' {' + t.attrs.map(a => genAttributeInner(a, {name: t.name}, [], [], [a.name], '', legacy)).join(', ') + '}'
     return ''
 }
 
 export function genAttributeRef(e: EntityRef, attrs: AttributePath[], natural: boolean, legacy: boolean): string {
     if (legacy) return `${genEntityRef(e)}.${attrs.map(genAttributePath).join(':')}`
-    return `${genEntityRef(e)}${attrs.length === 1 && natural ? '' : `(${attrs.map(genAttributePath).join(', ')})`}`
+    return `${genEntityRef(e)}${natural || attrs.length === 0 ? '' : `(${attrs.map(genAttributePath).join(', ')})`}`
 }
 
 function genEntityRef(e: EntityRef): string {
@@ -439,6 +441,10 @@ function genEntityRef(e: EntityRef): string {
 
 function genAttributePath(p: AttributePath): string {
     return p.join('.')
+}
+
+function genIdentifier(identifier: string): string {
+    return identifier.match(/^[a-zA-Z_][a-zA-Z0-9_#(),]*$/) ? identifier : '"' + identifier + '"'
 }
 
 function buildRelationKind(k: RelationKindAst): RelationKind | undefined {
@@ -482,6 +488,21 @@ function stringifyAttrValue(v: AttributeValueAst): string {
     return isNever(v)
 }
 
+function genAttributeValue(v: AttributeValue): string {
+    if (v === undefined) return ''
+    if (v === null) return 'null'
+    if (typeof v === 'string') return v.startsWith('`') ? v : genIdentifier(v)
+    if (typeof v === 'number') return v.toString()
+    if (typeof v === 'boolean') return v.toString()
+    return `${v}`
+}
+
+function genAttributeValueStr(value: string): string {
+    if (value.match(/^\d+(\.\d+)?$/)) return value
+    if (value.match(/^true|false$/i)) return value
+    return genIdentifier(value)
+}
+
 type PropertyValueBasic = null | number | boolean | string
 type PropertyValue = PropertyValueBasic | PropertyValueBasic[]
 
@@ -496,10 +517,10 @@ function buildPropValue(v: PropertyValueAst): PropertyValue {
     return isNever(v)
 }
 
-function stringifyPropValue(v: PropertyValue): string {
-    if (Array.isArray(v)) return '[' + v.map(stringifyPropValue).join(', ') + ']'
+function genPropertyValue(v: PropertyValue): string {
+    if (Array.isArray(v)) return '[' + v.map(genPropertyValue).join(', ') + ']'
     if (v === null) return 'null'
-    if (typeof v === 'string') return v
+    if (typeof v === 'string') return genIdentifier(v)
     if (typeof v === 'number') return v.toString()
     if (typeof v === 'boolean') return v.toString()
     return isNever(v)
@@ -515,7 +536,7 @@ function genPropertiesExtra(v: {extra?: Extra | undefined}, ignore: string[] = [
 }
 
 function genProperties(properties: Record<string, PropertyValue>): string {
-    return Object.keys(properties).length > 0 ? ' {' + Object.entries(properties).map(([key, value]) => value !== undefined && value !== true ? `${key}: ${stringifyPropValue(value)}` : key).join(', ') + '}' : ''
+    return Object.keys(properties).length > 0 ? ' {' + Object.entries(properties).map(([key, value]) => value !== undefined && value !== true ? `${key}: ${genPropertyValue(value)}` : key).join(', ') + '}' : ''
 }
 
 function genNote(doc: string | undefined, indent: string = ''): string {

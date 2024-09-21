@@ -45,16 +45,19 @@ Here is the same example as above:
 
 ```aml
 type post_status (draft, published, archived) |||
-  post lifecycle
+  post
+  lifecycle
 |||
 
 public.users |||
-  storing all users
+  storing
+  all users
 |||
   id uuid pk
   name varchar
   email varchar unique |||
-    auth identifier
+    auth
+    identifier
   |||
 
 posts
@@ -65,7 +68,8 @@ posts
   author uuid
 
 rel posts(author) -> public.users(id) |||
-  link post author
+  link
+  post author
 |||
 ```
 

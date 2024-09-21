@@ -231,7 +231,8 @@ export type RelationAction = z.infer<typeof RelationAction>
 export const RelationExtra = Extra.and(z.object({
     line: z.number().optional(),
     statement: z.number().optional(),
-    natural: z.boolean().optional(), // natural join: attributes are not specified
+    inline: z.boolean().optional(), // when defined within the parent entity
+    natural: z.enum(['src', 'ref', 'both']).optional(), // natural join: attributes are not specified
     onUpdate: z.union([RelationAction, z.string()]).optional(),
     onDelete: z.union([RelationAction, z.string()]).optional(),
 }))
