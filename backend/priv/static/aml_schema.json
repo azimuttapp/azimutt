@@ -1,0 +1,797 @@
+{
+  "$ref": "#/definitions/Database",
+  "definitions": {
+    "DatabaseName": {
+      "type": "string"
+    },
+    "CatalogName": {
+      "type": "string"
+    },
+    "SchemaName": {
+      "type": "string"
+    },
+    "Namespace": {
+      "type": "object",
+      "properties": {
+        "database": {
+          "$ref": "#/definitions/DatabaseName"
+        },
+        "catalog": {
+          "$ref": "#/definitions/CatalogName"
+        },
+        "schema": {
+          "$ref": "#/definitions/SchemaName"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Entity": {
+      "type": "object",
+      "properties": {
+        "database": {
+          "$ref": "#/definitions/Namespace/properties/database"
+        },
+        "catalog": {
+          "$ref": "#/definitions/Namespace/properties/catalog"
+        },
+        "schema": {
+          "$ref": "#/definitions/Namespace/properties/schema"
+        },
+        "name": {
+          "$ref": "#/definitions/EntityName"
+        },
+        "kind": {
+          "$ref": "#/definitions/EntityKind"
+        },
+        "def": {
+          "type": "string"
+        },
+        "attrs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Attribute"
+          }
+        },
+        "pk": {
+          "$ref": "#/definitions/PrimaryKey"
+        },
+        "indexes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Index"
+          }
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Check"
+          }
+        },
+        "doc": {
+          "type": "string"
+        },
+        "stats": {
+          "type": "object",
+          "properties": {
+            "rows": {
+              "type": "number"
+            },
+            "rowsDead": {
+              "type": "number"
+            },
+            "size": {
+              "type": "number"
+            },
+            "sizeIdx": {
+              "type": "number"
+            },
+            "sizeToast": {
+              "type": "number"
+            },
+            "sizeToastIdx": {
+              "type": "number"
+            },
+            "scanSeq": {
+              "type": "number"
+            },
+            "scanSeqLast": {
+              "type": "string"
+            },
+            "scanIdx": {
+              "type": "number"
+            },
+            "scanIdxLast": {
+              "$ref": "#/definitions/Entity/properties/stats/properties/scanSeqLast"
+            },
+            "analyzeLast": {
+              "$ref": "#/definitions/Entity/properties/stats/properties/scanSeqLast"
+            },
+            "analyzeLag": {
+              "type": "number"
+            },
+            "vacuumLast": {
+              "$ref": "#/definitions/Entity/properties/stats/properties/scanSeqLast"
+            },
+            "vacuumLag": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "extra": {
+          "$ref": "#/definitions/EntityExtra"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "EntityRef": {
+      "type": "object",
+      "properties": {
+        "database": {
+          "$ref": "#/definitions/Namespace/properties/database"
+        },
+        "catalog": {
+          "$ref": "#/definitions/Namespace/properties/catalog"
+        },
+        "schema": {
+          "$ref": "#/definitions/Namespace/properties/schema"
+        },
+        "entity": {
+          "$ref": "#/definitions/EntityName"
+        }
+      },
+      "required": [
+        "entity"
+      ],
+      "additionalProperties": false
+    },
+    "EntityName": {
+      "type": "string"
+    },
+    "EntityKind": {
+      "type": "string",
+      "enum": [
+        "table",
+        "view",
+        "materialized view",
+        "foreign table"
+      ]
+    },
+    "Attribute": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/AttributeName"
+        },
+        "type": {
+          "$ref": "#/definitions/AttributeType"
+        },
+        "null": {
+          "type": "boolean"
+        },
+        "gen": {
+          "type": "boolean"
+        },
+        "default": {
+          "$ref": "#/definitions/AttributeValue"
+        },
+        "attrs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Attribute"
+          }
+        },
+        "doc": {
+          "type": "string"
+        },
+        "stats": {
+          "type": "object",
+          "properties": {
+            "nulls": {
+              "type": "number"
+            },
+            "bytesAvg": {
+              "type": "number"
+            },
+            "cardinality": {
+              "type": "number"
+            },
+            "commonValues": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "$ref": "#/definitions/AttributeValue"
+                  },
+                  "freq": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "freq"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "distinctValues": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/AttributeValue"
+              }
+            },
+            "histogram": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/AttributeValue"
+              }
+            },
+            "min": {
+              "$ref": "#/definitions/AttributeValue"
+            },
+            "max": {
+              "$ref": "#/definitions/AttributeValue"
+            }
+          },
+          "additionalProperties": false
+        },
+        "extra": {
+          "$ref": "#/definitions/AttributeExtra"
+        }
+      },
+      "required": [
+        "name",
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "AttributeRef": {
+      "type": "object",
+      "properties": {
+        "database": {
+          "$ref": "#/definitions/Namespace/properties/database"
+        },
+        "catalog": {
+          "$ref": "#/definitions/Namespace/properties/catalog"
+        },
+        "schema": {
+          "$ref": "#/definitions/Namespace/properties/schema"
+        },
+        "entity": {
+          "$ref": "#/definitions/EntityName"
+        },
+        "attribute": {
+          "$ref": "#/definitions/AttributePath"
+        }
+      },
+      "required": [
+        "entity",
+        "attribute"
+      ],
+      "additionalProperties": false
+    },
+    "AttributeName": {
+      "type": "string"
+    },
+    "AttributePath": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/AttributeName"
+      }
+    },
+    "AttributeType": {
+      "type": "string"
+    },
+    "AttributeValue": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        {
+          "type": "null"
+        },
+        {}
+      ]
+    },
+    "PrimaryKey": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/ConstraintName"
+        },
+        "attrs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AttributePath"
+          }
+        },
+        "doc": {
+          "type": "string"
+        },
+        "stats": {
+          "type": "object",
+          "properties": {
+            "size": {
+              "type": "number"
+            },
+            "scans": {
+              "type": "number"
+            },
+            "scansLast": {
+              "$ref": "#/definitions/Entity/properties/stats/properties/scanSeqLast"
+            }
+          },
+          "additionalProperties": false
+        },
+        "extra": {
+          "$ref": "#/definitions/IndexExtra"
+        }
+      },
+      "required": [
+        "attrs"
+      ],
+      "additionalProperties": false
+    },
+    "Index": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/ConstraintName"
+        },
+        "attrs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AttributePath"
+          }
+        },
+        "unique": {
+          "type": "boolean"
+        },
+        "partial": {
+          "type": "string"
+        },
+        "definition": {
+          "type": "string"
+        },
+        "doc": {
+          "type": "string"
+        },
+        "stats": {
+          "$ref": "#/definitions/PrimaryKey/properties/stats"
+        },
+        "extra": {
+          "$ref": "#/definitions/IndexExtra"
+        }
+      },
+      "required": [
+        "attrs"
+      ],
+      "additionalProperties": false
+    },
+    "Check": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/ConstraintName"
+        },
+        "attrs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AttributePath"
+          }
+        },
+        "predicate": {
+          "type": "string"
+        },
+        "doc": {
+          "type": "string"
+        },
+        "stats": {
+          "$ref": "#/definitions/PrimaryKey/properties/stats"
+        },
+        "extra": {
+          "$ref": "#/definitions/IndexExtra"
+        }
+      },
+      "required": [
+        "attrs",
+        "predicate"
+      ],
+      "additionalProperties": false
+    },
+    "Relation": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/ConstraintName"
+        },
+        "kind": {
+          "$ref": "#/definitions/RelationKind"
+        },
+        "origin": {
+          "type": "string",
+          "enum": [
+            "fk",
+            "infer-name",
+            "infer-similar",
+            "infer-query",
+            "user"
+          ]
+        },
+        "src": {
+          "$ref": "#/definitions/EntityRef"
+        },
+        "ref": {
+          "$ref": "#/definitions/EntityRef"
+        },
+        "attrs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "src": {
+                "$ref": "#/definitions/AttributePath"
+              },
+              "ref": {
+                "$ref": "#/definitions/AttributePath"
+              }
+            },
+            "required": [
+              "src",
+              "ref"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "polymorphic": {
+          "type": "object",
+          "properties": {
+            "attribute": {
+              "$ref": "#/definitions/AttributePath"
+            },
+            "value": {
+              "$ref": "#/definitions/AttributeValue"
+            }
+          },
+          "required": [
+            "attribute"
+          ],
+          "additionalProperties": false
+        },
+        "doc": {
+          "type": "string"
+        },
+        "extra": {
+          "$ref": "#/definitions/RelationExtra"
+        }
+      },
+      "required": [
+        "src",
+        "ref",
+        "attrs"
+      ],
+      "additionalProperties": false
+    },
+    "ConstraintName": {
+      "type": "string"
+    },
+    "RelationKind": {
+      "type": "string",
+      "enum": [
+        "many-to-one",
+        "one-to-many",
+        "one-to-one",
+        "many-to-many"
+      ]
+    },
+    "Type": {
+      "type": "object",
+      "properties": {
+        "database": {
+          "$ref": "#/definitions/Namespace/properties/database"
+        },
+        "catalog": {
+          "$ref": "#/definitions/Namespace/properties/catalog"
+        },
+        "schema": {
+          "$ref": "#/definitions/Namespace/properties/schema"
+        },
+        "name": {
+          "$ref": "#/definitions/TypeName"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "attrs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Attribute"
+          }
+        },
+        "definition": {
+          "type": "string"
+        },
+        "doc": {
+          "type": "string"
+        },
+        "extra": {
+          "$ref": "#/definitions/TypeExtra"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "TypeName": {
+      "type": "string"
+    },
+    "Extra": {
+      "type": "object",
+      "additionalProperties": {}
+    },
+    "DatabaseExtra": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Extra"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "source": {
+              "type": "string"
+            },
+            "createdAt": {
+              "$ref": "#/definitions/Entity/properties/stats/properties/scanSeqLast"
+            },
+            "creationTimeMs": {
+              "type": "number"
+            }
+          }
+        }
+      ]
+    },
+    "EntityExtra": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Extra"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "line": {
+              "type": "number"
+            },
+            "statement": {
+              "type": "number"
+            },
+            "alias": {
+              "type": "string"
+            },
+            "color": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "dependsOn": {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/EntityRef"
+                  },
+                  {
+                    "$ref": "#/definitions/AttributeRef"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "AttributeExtra": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Extra"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "line": {
+              "type": "number"
+            },
+            "statement": {
+              "type": "number"
+            },
+            "autoIncrement": {
+              "type": "boolean"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "IndexExtra": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Extra"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "line": {
+              "type": "number"
+            },
+            "statement": {
+              "type": "number"
+            }
+          }
+        }
+      ]
+    },
+    "RelationExtra": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Extra"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "line": {
+              "type": "number"
+            },
+            "statement": {
+              "type": "number"
+            },
+            "onUpdate": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "no_action",
+                    "set_null",
+                    "set_default",
+                    "cascade",
+                    "restrict"
+                  ]
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "onDelete": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/RelationExtra/allOf/1/properties/onUpdate/anyOf/0"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "TypeExtra": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Extra"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "line": {
+              "type": "number"
+            },
+            "statement": {
+              "type": "number"
+            }
+          }
+        }
+      ]
+    },
+    "Database": {
+      "type": "object",
+      "properties": {
+        "entities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Entity"
+          }
+        },
+        "relations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Relation"
+          }
+        },
+        "types": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Type"
+          }
+        },
+        "doc": {
+          "type": "string"
+        },
+        "stats": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/DatabaseName"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "bigquery",
+                "cassandra",
+                "couchbase",
+                "db2",
+                "elasticsearch",
+                "mariadb",
+                "mongodb",
+                "mysql",
+                "oracle",
+                "postgres",
+                "redis",
+                "snowflake",
+                "sqlite",
+                "sqlserver"
+              ]
+            },
+            "version": {
+              "type": "string"
+            },
+            "size": {
+              "type": "number"
+            },
+            "extractedAt": {
+              "$ref": "#/definitions/Entity/properties/stats/properties/scanSeqLast"
+            },
+            "extractionDuration": {
+              "$ref": "#/definitions/DatabaseExtra/allOf/1/properties/creationTimeMs"
+            }
+          },
+          "additionalProperties": false
+        },
+        "extra": {
+          "$ref": "#/definitions/DatabaseExtra"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Database"
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

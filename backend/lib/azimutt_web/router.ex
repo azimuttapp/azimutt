@@ -221,18 +221,27 @@ defmodule AzimuttWeb.Router do
   end
 
   # public APIs
-  scope "/api/v1", AzimuttWeb do
+  scope "/", AzimuttWeb do
     pipe_through([:api])
-    get("/gallery", Api.GalleryController, :index)
-    get("/organizations/:organization_id/projects/:project_id", Api.ProjectController, :show)
-    resources("/organizations/:organization_id/projects/:project_id/sources", Api.SourceController, param: "source_id", only: [:index, :show, :create, :update, :delete])
-    get("/organizations/:organization_id/projects/:project_id/metadata", Api.MetadataController, :index)
-    put("/organizations/:organization_id/projects/:project_id/metadata", Api.MetadataController, :update)
-    get("/organizations/:organization_id/projects/:project_id/tables/:table_id/metadata", Api.MetadataController, :table)
-    put("/organizations/:organization_id/projects/:project_id/tables/:table_id/metadata", Api.MetadataController, :table_update)
-    get("/organizations/:organization_id/projects/:project_id/tables/:table_id/columns/:column_path/metadata", Api.MetadataController, :column)
-    put("/organizations/:organization_id/projects/:project_id/tables/:table_id/columns/:column_path/metadata", Api.MetadataController, :column_update)
-    post("/events", Api.TrackingController, :create)
+    get("/aml/schema", Api.MainController, :aml_schema)
+
+    scope "/api" do
+      get("/", Api.MainController, :index)
+
+      scope "/v1" do
+        get("/", Api.MainController, :index)
+        get("/gallery", Api.GalleryController, :index)
+        get("/organizations/:organization_id/projects/:project_id", Api.ProjectController, :show)
+        resources("/organizations/:organization_id/projects/:project_id/sources", Api.SourceController, param: "source_id", only: [:index, :show, :create, :update, :delete])
+        get("/organizations/:organization_id/projects/:project_id/metadata", Api.MetadataController, :index)
+        put("/organizations/:organization_id/projects/:project_id/metadata", Api.MetadataController, :update)
+        get("/organizations/:organization_id/projects/:project_id/tables/:table_id/metadata", Api.MetadataController, :table)
+        put("/organizations/:organization_id/projects/:project_id/tables/:table_id/metadata", Api.MetadataController, :table_update)
+        get("/organizations/:organization_id/projects/:project_id/tables/:table_id/columns/:column_path/metadata", Api.MetadataController, :column)
+        put("/organizations/:organization_id/projects/:project_id/tables/:table_id/columns/:column_path/metadata", Api.MetadataController, :column_update)
+        post("/events", Api.TrackingController, :create)
+      end
+    end
   end
 
   # authed APIs

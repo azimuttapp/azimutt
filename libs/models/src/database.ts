@@ -298,6 +298,7 @@ export const Database = z.object({
 }).strict().describe('Database')
 export type Database = z.infer<typeof Database>
 
+// keep it sync with backend/priv/static/aml_schema.json (see test)
 export const DatabaseSchema = zodToJsonSchema(Database, {
     name: 'Database',
     definitions: {
