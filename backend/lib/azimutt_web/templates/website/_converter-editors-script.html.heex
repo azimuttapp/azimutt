@@ -1,5 +1,10 @@
+<!-- FIXME: publish & update lib -->
 <script src="https://cdn.jsdelivr.net/npm/@azimutt/aml@0.1.3/out/bundle.min.js"></script>
-<!--<script src="/elm/bundle.min.js"></script>-->
+<script src="https://cdn.jsdelivr.net/npm/@azimutt/parser-sql@0.1.0/out/bundle.min.js"></script>
+<!--<script src="/elm/aml.min.js"></script>-->
+<!--<script src="/elm/sql.min.js"></script>-->
+<!--<script src="/elm/prisma.min.js"></script>-->
+<!--<script src="/elm/dbml.min.js"></script>-->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.51.0/min/vs/loader.min.js"></script>
 <script>
     require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.51.0/min/vs' }})
@@ -161,6 +166,26 @@ posts {color: red}
     {"name": "user_role", "values": ["admin", "guest"]}
   ]
 }
+`
+            if (lang === 'postgres') return `CREATE TYPE user_role AS ENUM ('admin', 'guest');
+
+CREATE TABLE users (
+  id uuid PRIMARY KEY,
+  name varchar NOT NULL,
+  email varchar NOT NULL UNIQUE,
+  role user_role NOT NULL DEFAULT 'guest'
+);
+CREATE INDEX users_name_idx ON users(name);
+
+CREATE TABLE posts (
+  id uuid PRIMARY KEY,
+  title varchar NOT NULL,
+  content text NOT NULL,
+  author uuid NOT NULL REFERENCES users(id),
+  created_at timestamp NOT NULL DEFAULT now(),
+  created_by uuid NOT NULL REFERENCES users(id)
+);
+COMMENT ON COLUMN posts.content IS 'in markdown';
 `
             return ''
         }

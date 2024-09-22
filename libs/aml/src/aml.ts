@@ -342,7 +342,7 @@ function genAttributeInner(a: Attribute, e: Entity, relations: Relation[], types
         .map(i => ` ${i.unique ? 'unique' : 'index'}${i.name ? `=${genIdentifier(i.name)}` : ''}`)
         .join('')
     const checks = (e.checks || []).filter(i => i.attrs.some(attr => attributePathSame(attr, path))).map(i => ` check${i.predicate ? `=\`${i.predicate}\`` : ''}`).join('')
-    const rel = relations.map(r => ' ' + genRelationTarget(r, legacy)).join('')
+    const rel = relations.map(r => ' ' + genRelationTarget(r, false, legacy)).join('')
     return `${genIdentifier(a.name)}${genAttributeType(a, types)}${a.null ? ' nullable' : ''}${pk}${indexes}${checks}${rel}${genPropertiesExtra(a, ['comment'])}${genDoc(a.doc, indent)}${genCommentExtra(a)}`
 }
 
@@ -388,16 +388,16 @@ function buildRelation(entities: Entity[], namespace: Namespace, statement: numb
 
 function genRelation(r: Relation, legacy: boolean): string {
     const srcNatural: boolean = !r.extra?.inline && (r.extra?.natural === 'src' || r.extra?.natural === 'both')
-    return `${legacy ? 'fk' : 'rel'} ${genAttributeRef(r.src, r.attrs.map(a => a.src), srcNatural, legacy)} ${genRelationTarget(r, legacy)}${genPropertiesExtra(r, ['line', 'statement', 'inline', 'natural', 'comment'])}${genDoc(r.doc)}${genCommentExtra(r)}\n`
+    return `${legacy ? 'fk' : 'rel'} ${genAttributeRef(r.src, r.attrs.map(a => a.src), srcNatural, legacy)} ${genRelationTarget(r, true, legacy)}${genPropertiesExtra(r, ['line', 'statement', 'inline', 'natural', 'comment'])}${genDoc(r.doc)}${genCommentExtra(r)}\n`
 }
 
-function genRelationTarget(r: Relation, legacy: boolean): string {
+function genRelationTarget(r: Relation, standalone: boolean, legacy: boolean): string {
     const poly = r.polymorphic ? `${r.polymorphic.attribute}=${r.polymorphic.value}` : ''
     const [qSrc, qRef] = (r.kind || 'many-to-one').split('-to-')
     const aSecond = qSrc === 'many' ? '>' : '-'
     const aFirst = qRef === 'many' ? '<' : '-'
     const refNatural = r.extra?.natural === 'ref' || r.extra?.natural === 'both'
-    return `${legacy ? 'fk' : aFirst + poly + aSecond} ${genAttributeRef(r.ref, r.attrs.map(a => a.ref), refNatural, legacy)}`
+    return `${legacy && !standalone ? 'fk' : aFirst + poly + aSecond} ${genAttributeRef(r.ref, r.attrs.map(a => a.ref), refNatural, legacy)}`
 }
 
 function buildType(namespace: Namespace, statement: number, t: TypeStatement): Type {
@@ -428,8 +428,8 @@ function genTypeContent(t: Type, legacy: boolean): string {
 }
 
 export function genAttributeRef(e: EntityRef, attrs: AttributePath[], natural: boolean, legacy: boolean): string {
-    if (legacy) return `${genEntityRef(e)}.${attrs.map(genAttributePath).join(':')}`
-    return `${genEntityRef(e)}${natural || attrs.length === 0 ? '' : `(${attrs.map(genAttributePath).join(', ')})`}`
+    if (legacy) return `${genEntityRef(e)}.${attrs.map(a => genAttributePath(a, legacy)).join(':')}`
+    return `${genEntityRef(e)}${natural || attrs.length === 0 ? '' : `(${attrs.map(a => genAttributePath(a, legacy)).join(', ')})`}`
 }
 
 function genEntityRef(e: EntityRef): string {
@@ -439,8 +439,8 @@ function genEntityRef(e: EntityRef): string {
     return e.entity
 }
 
-function genAttributePath(p: AttributePath): string {
-    return p.map(genIdentifier).join('.')
+function genAttributePath(p: AttributePath, legacy: boolean): string {
+    return p.map(genIdentifier).join(legacy ? ':' : '.')
 }
 
 export const keywords = ['namespace', 'as', 'nullable', 'pk', 'fk', 'index', 'unique', 'check', 'rel', 'type']

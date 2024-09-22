@@ -12,6 +12,7 @@ describe('docs', () => {
         .filter(path => path.endsWith('.md'))
     const amlFiles: {[path: string]: string} = Object.fromEntries(amlPaths.map(path => [path, fs.readFileSync(path, 'utf8')]))
     const amlRegex = /```aml\n[^]*?\n```/gm
+    const amlv1Regex = /```amlv1\n[^]*?\n```/gm
 
     test('parse AML snippets', () => {
         const filesWithErrors = Object.entries(amlFiles).map(([path, content]) => {
@@ -45,6 +46,24 @@ describe('docs', () => {
                 const res = parseAml(aml)
                 const gen = generateAml(res.result || {})
                 if (gen !== aml && !aml.includes('namespace')) { // can't generate `namespace` directive for now :/
+                    console.log(`File ${path}, snippet ${index + 1}`)
+                    expect(gen).toEqual(aml)
+                }
+            })
+        })
+    })
+    test.skip('parse AMLv1 snippets', () => {
+        Object.entries(amlFiles).map(([path, content]) => {
+            const snippets = path.indexOf('../demos/') !== -1 ? [] : (content.match(amlv1Regex) || []).map((s: string) => s.replace(/^```amlv1\n/, '').replace(/```$/, ''))
+            snippets.forEach((aml, index) => {
+                const res = parseAml(aml)
+                const errors = (res.errors || []).filter(e => e.name !== 'LegacySyntax')
+                if (errors.length > 0) {
+                    console.log(`File ${path}, snippet ${index + 1}:\n${aml}`)
+                    expect(errors).toEqual([])
+                }
+                const gen = generateAml(res.result || {}, true)
+                if (gen !== aml) {
                     console.log(`File ${path}, snippet ${index + 1}`)
                     expect(gen).toEqual(aml)
                 }

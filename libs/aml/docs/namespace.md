@@ -70,7 +70,7 @@ namespace seo
 posts # defines the `posts` entity inside the `seo` schema (not inside the `core` catalog)
 ```
 
-Having and empty namespace removes the current namespace:
+Having an empty namespace removes the current namespace:
 
 ```aml
 namespace public

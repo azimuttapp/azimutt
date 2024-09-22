@@ -50,7 +50,7 @@ export type DocToken = { token: 'Doc', value: string } & TokenPosition
 export type CommentToken = { token: 'Comment', value: string } & TokenPosition
 
 export type TokenInfo = TokenPosition & { issues?: TokenIssue[] }
-export type TokenIssue = { name: string, kind: ParserErrorKind, message: string }
+export type TokenIssue = { name: string, kind: ParserErrorKind, message: string } // TODO: migrate to: { message: string, kind: string, level: ParserErrorLevel }
 
 export const isTokenInfo = (value: unknown): value is TokenInfo => isTokenPosition(value) && (!('issues' in value) || ('issues' in value && Array.isArray(value.issues) && value.issues.every(isTokenIssue)))
 export const isTokenIssue = (value: unknown): value is TokenIssue => isObject(value) && ('kind' in value && isParserErrorKind(value.kind)) && ('message' in value && typeof value.message === 'string')
