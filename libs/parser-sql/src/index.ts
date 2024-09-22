@@ -1,5 +1,13 @@
-import {Database, ParserResult} from "@azimutt/models";
-import {generateDatabase, parseDatabase} from "./sql";
+import {DatabaseSchema as schemaJsonDatabase, generateJsonDatabase, parseJsonDatabase} from "@azimutt/models";
+import packageJson from "../package.json";
+import {generateSql, parseSql} from "./sql";
+
+const monaco = {}
+const version = packageJson.version
+
+// make it available locally: `npm run build:browser && cp out/bundle.min.js ../../backend/priv/static/elm/sql.min.js && cp out/bundle.min.js.map ../../backend/priv/static/elm/sql.min.js.map`
+export * from "@azimutt/models"
+export {parseSql, generateSql, parseJsonDatabase, generateJsonDatabase, schemaJsonDatabase, monaco, version}
 
 /*
   Parser:
@@ -11,11 +19,3 @@ import {generateDatabase, parseDatabase} from "./sql";
   - https://github.com/nene/prettier-plugin-sql-cst: made from sql-formatter below but not available as a lib :/
   - https://github.com/sql-formatter-org/sql-formatter
  */
-
-export function parseSql(dialect: string, content: string, opts: { strict?: boolean, context?: Database } = {}): ParserResult<Database> {
-    return parseDatabase(content)
-}
-
-export function generateSql(dialect: string, database: Database, legacy: boolean = false): string {
-    return generateDatabase(database)
-}

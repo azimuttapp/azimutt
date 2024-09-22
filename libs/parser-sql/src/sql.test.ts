@@ -1,11 +1,11 @@
 import {describe, test} from "@jest/globals";
-import {parseDatabase} from "./sql";
+import {parseSql} from "./sql";
 
 describe('sql', () => {
     describe('select', () => {
         test.skip('basic', async () => {
             const sql = 'SELECT column1 FROM table2'
-            const res = await parseDatabase(sql)
+            const res = await parseSql(sql)
             console.log('res', res)
         })
     })

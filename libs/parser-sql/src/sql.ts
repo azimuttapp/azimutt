@@ -5,16 +5,25 @@ import {SqlScript} from "./statements";
 import {importDatabase} from "./sqlImport";
 import {exportDatabase} from "./sqlExport";
 
-export function parseDatabase(input: string): ParserResult<Database> {
-    return parseSql(input).map(importDatabase)
+export function parseSql(content: string, dialect: string, opts: { strict?: boolean, context?: Database } = {}): ParserResult<Database> {
+    return parseSqlScript(content).map(importDatabase)
 }
 
-export function parseSql(input: string): ParserResult<SqlScript> {
-    return parseSqlAst(input).map(chevrotain.format)
+export function generateSql(database: Database, dialect: string): string {
+    const script: SqlScript = exportDatabase(database)
+    return generateSqlScript(script)
 }
 
-export function parseSqlAst(input: string): ParserResult<chevrotain.SqlScriptAst> {
-    const {result, errors} = chevrotain.parse(input)
+function parseSqlScript(content: string): ParserResult<SqlScript> {
+    return parseSqlAst(content).map(chevrotain.format)
+}
+
+function generateSqlScript(script: SqlScript): string {
+    return generator.generate(script)
+}
+
+function parseSqlAst(content: string): ParserResult<chevrotain.SqlScriptAst> {
+    const {result, errors} = chevrotain.parse(content)
     if (result) {
         return ParserResult.success(result)
     } else {
@@ -22,17 +31,7 @@ export function parseSqlAst(input: string): ParserResult<chevrotain.SqlScriptAst
     }
 }
 
-// TODO: specify SQL engine?
-export function generateDatabase(database: Database): string {
-    const script: SqlScript = exportDatabase(database)
-    return generateSql(script)
-}
-
-export function generateSql(script: SqlScript): string {
-    return generator.generate(script)
-}
-
-export function generateSqlAst(script: chevrotain.SqlScriptAst): Promise<string> {
+function generateSqlAst(script: chevrotain.SqlScriptAst): Promise<string> {
     // TODO: create a generator for the AST
     return Promise.reject(new Error('Not implemented'))
 }
