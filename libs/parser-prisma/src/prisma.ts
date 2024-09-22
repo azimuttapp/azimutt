@@ -26,8 +26,9 @@ import {
     SchemaName,
     Type
 } from "@azimutt/models";
+import packageJson from "../package.json";
 
-export function parse(content: string): ParserResult<Database> {
+export function parsePrisma(content: string, opts: { context?: Database } = {}): ParserResult<Database> {
     try {
         return ParserResult.success(buildDatabase(parsePrismaSchema(content)))
     } catch (e) {
@@ -35,8 +36,8 @@ export function parse(content: string): ParserResult<Database> {
     }
 }
 
-export function generate(database: Database): string {
-    return 'Not implemented'
+export function generatePrisma(database: Database): string {
+    return 'Prisma generator not implemented'
 }
 
 // 👇️ Private functions, some are exported only for tests
@@ -54,7 +55,7 @@ function buildDatabase(schema: PrismaSchema): Database {
         relations: entities.flatMap(t => t.relations),
         types: enums.concat(types),
         extra: {
-            source: 'Prisma parser'
+            source: `Prisma parser <${packageJson.version}>`
         }
     })
 }

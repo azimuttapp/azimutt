@@ -1,14 +1,14 @@
 import {describe, expect, test} from "@jest/globals";
 import {Database, tokenPosition} from "@azimutt/models";
-import {generate, parse} from "./prisma";
+import {generatePrisma, parsePrisma} from "./prisma";
 
 describe('prisma', () => {
     test('empty schema',  () => {
-        expect(parse('').result).toEqual({extra: {source: 'Prisma parser'}})
-        expect(generate({})).toEqual('Not implemented')
+        expect(parsePrisma('').result).toEqual({extra: {source: 'Prisma parser <0.1.1>'}})
+        expect(generatePrisma({})).toEqual('Prisma generator not implemented')
     })
     test('basic schema', () => {
-        const parsed = parse(`
+        const parsed = parsePrisma(`
 // This is your Prisma schema file from https://github.com/prisma/prisma-examples/blob/latest/typescript/remix/prisma/schema.prisma
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
@@ -71,12 +71,12 @@ model Post {
                 ref: {entity: 'User'},
                 attrs: [{src: ['authorId'], ref: ['id']}]
             }],
-            extra: {source: 'Prisma parser'},
+            extra: {source: 'Prisma parser <0.1.1>'},
         }
         expect(parsed.result).toEqual(expected)
     })
     test('complex schema', () => {
-        const parsed = parse(`
+        const parsed = parsePrisma(`
 /// User 1
 /// User 2
 model User {
@@ -151,12 +151,12 @@ type Photo {
                     {name: 'url', type: 'String'},
                 ]}
             ],
-            extra: {source: 'Prisma parser'}
+            extra: {source: 'Prisma parser <0.1.1>'}
         }
         expect(parsed.result).toEqual(expected)
     })
     test('keep relations with @map', () => {
-        const parsed = parse(`
+        const parsed = parsePrisma(`
 model User {
   id    Int    @id @map("_id")
   posts Post[]
@@ -189,11 +189,11 @@ model Post {
                 ref: {schema: 'public', entity: 'users'},
                 attrs: [{src: ['author_id'], ref: ['_id']}]
             }],
-            extra: {source: 'Prisma parser'}
+            extra: {source: 'Prisma parser <0.1.1>'}
         }
         expect(parsed.result).toEqual(expected)
     })
     test('handles errors', () => {
-        expect(parse(`model User`).errors).toEqual([{name: 'PrismaParserError', kind: 'error', message: 'Expected "{", [0-9a-z_\\-], or horizontal whitespace but end of input found.', ...tokenPosition(0, 0, 0, 0, 0, 0)}])
+        expect(parsePrisma(`model User`).errors).toEqual([{name: 'PrismaParserError', kind: 'error', message: 'Expected "{", [0-9a-z_\\-], or horizontal whitespace but end of input found.', ...tokenPosition(0, 0, 0, 0, 0, 0)}])
     })
 })

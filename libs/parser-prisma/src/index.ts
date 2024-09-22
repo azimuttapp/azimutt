@@ -1,10 +1,11 @@
-import {Database, ParserResult} from "@azimutt/models";
-import {generate, parse} from "./prisma";
+import {DatabaseSchema as schemaJsonDatabase, generateJsonDatabase, parseJsonDatabase} from "@azimutt/models";
+import packageJson from "../package.json";
+import {generatePrisma, parsePrisma} from "./prisma";
 
-export function parsePrisma(content: string, opts: { strict?: boolean, context?: Database } = {}): ParserResult<Database> {
-    return parse(content)
-}
+const monaco = {}
+const version = packageJson.version
 
-export function generatePrisma(database: Database, legacy: boolean = false): string {
-    return generate(database)
-}
+// make it available locally: `npm run build:browser && cp out/bundle.min.js ../../backend/priv/static/elm/prisma.min.js && cp out/bundle.min.js.map ../../backend/priv/static/elm/prisma.min.js.map`
+// FIXME: errors in the rollup build :/
+export * from "@azimutt/models"
+export {parsePrisma, generatePrisma, parseJsonDatabase, generateJsonDatabase, schemaJsonDatabase, monaco, version}

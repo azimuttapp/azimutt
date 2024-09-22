@@ -3,3 +3,4 @@ out
 local
 src/**/*.js
 *.tgz
+rollup.config.js

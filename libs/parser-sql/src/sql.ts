@@ -1,15 +1,15 @@
-import {Database, ParserResult} from "@azimutt/models";
+import {Database, DatabaseKind, ParserResult} from "@azimutt/models";
 import * as chevrotain from "./chevrotain";
 import * as generator from "./generator";
 import {SqlScript} from "./statements";
 import {importDatabase} from "./sqlImport";
 import {exportDatabase} from "./sqlExport";
 
-export function parseSql(content: string, dialect: string, opts: { strict?: boolean, context?: Database } = {}): ParserResult<Database> {
+export function parseSql(content: string, dialect: DatabaseKind, opts: { strict?: boolean, context?: Database } = {}): ParserResult<Database> {
     return parseSqlScript(content).map(importDatabase)
 }
 
-export function generateSql(database: Database, dialect: string): string {
+export function generateSql(database: Database, dialect: DatabaseKind): string {
     const script: SqlScript = exportDatabase(database)
     return generateSqlScript(script)
 }
