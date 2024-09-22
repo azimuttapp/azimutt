@@ -125,7 +125,7 @@ function genDatabase(database: Database, legacy: boolean): string {
     const entities = (database.entities || []).map((e, i) => {
         const statement = e.extra?.statement
         const rels = statement ? entityRels.filter(r => r.extra?.statement === statement) : []
-        const types = statement ? entityTypes.filter(t => t.extra?.statement === statement) : []
+        const types = statement ? entityTypes : []
         return {index: e.extra?.line || i, kind: 'entity', aml: genEntity(e, rels, types, legacy)}
     })
     const entityCount = entities.length
@@ -285,7 +285,7 @@ export function genEntity(e: Entity, relations: Relation[], types: Type[], legac
     const namespace = genNamespace(e)
     const view = e.kind === 'view' ? '*' : ''
     const alias = e.extra?.alias ? ' as ' + genIdentifier(e.extra.alias) : ''
-    const entity = `${namespace}${genIdentifier(e.name)}${view}${alias}${genPropertiesExtra(e, ['line', 'statement', 'alias', 'comment'])}${genNote(e.doc)}${genCommentExtra(e)}\n`
+    const entity = `${namespace}${genIdentifier(e.name)}${view}${alias}${genPropertiesExtra(e, ['line', 'statement', 'alias', 'comment'])}${genDoc(e.doc)}${genCommentExtra(e)}\n`
     return entity + (e.attrs ? e.attrs.map(a => genAttribute(a, e, relations.filter(r => r.attrs[0].src[0] === a.name), types, legacy)).join('') : '')
 }
 
@@ -343,7 +343,7 @@ function genAttributeInner(a: Attribute, e: Entity, relations: Relation[], types
         .join('')
     const checks = (e.checks || []).filter(i => i.attrs.some(attr => attributePathSame(attr, path))).map(i => ` check${i.predicate ? `=\`${i.predicate}\`` : ''}`).join('')
     const rel = relations.map(r => ' ' + genRelationTarget(r, legacy)).join('')
-    return `${a.name}${genAttributeType(a, types)}${a.null ? ' nullable' : ''}${pk}${indexes}${checks}${rel}${genPropertiesExtra(a, ['comment'])}${genNote(a.doc, indent)}${genCommentExtra(a)}`
+    return `${genIdentifier(a.name)}${genAttributeType(a, types)}${a.null ? ' nullable' : ''}${pk}${indexes}${checks}${rel}${genPropertiesExtra(a, ['comment'])}${genDoc(a.doc, indent)}${genCommentExtra(a)}`
 }
 
 function buildAttributeType(a: AttributeAstNested, ext: string): AttributeType {
@@ -388,7 +388,7 @@ function buildRelation(entities: Entity[], namespace: Namespace, statement: numb
 
 function genRelation(r: Relation, legacy: boolean): string {
     const srcNatural: boolean = !r.extra?.inline && (r.extra?.natural === 'src' || r.extra?.natural === 'both')
-    return `${legacy ? 'fk' : 'rel'} ${genAttributeRef(r.src, r.attrs.map(a => a.src), srcNatural, legacy)} ${genRelationTarget(r, legacy)}${genPropertiesExtra(r, ['line', 'statement', 'inline', 'natural', 'comment'])}${genNote(r.doc)}${genCommentExtra(r)}\n`
+    return `${legacy ? 'fk' : 'rel'} ${genAttributeRef(r.src, r.attrs.map(a => a.src), srcNatural, legacy)} ${genRelationTarget(r, legacy)}${genPropertiesExtra(r, ['line', 'statement', 'inline', 'natural', 'comment'])}${genDoc(r.doc)}${genCommentExtra(r)}\n`
 }
 
 function genRelationTarget(r: Relation, legacy: boolean): string {
@@ -416,7 +416,7 @@ function buildTypeContent(namespace: Namespace, statement: number, t: TypeConten
 }
 
 function genType(t: Type, legacy: boolean): string {
-    return `type ${genEntityRef({...t, entity: t.name})}${genTypeContent(t, legacy)}${genPropertiesExtra(t, ['line', 'statement', 'comment'])}${genNote(t.doc)}${genCommentExtra(t)}\n`
+    return `type ${genEntityRef({...t, entity: t.name})}${genTypeContent(t, legacy)}${genPropertiesExtra(t, ['line', 'statement', 'comment'])}${genDoc(t.doc)}${genCommentExtra(t)}\n`
 }
 
 function genTypeContent(t: Type, legacy: boolean): string {
@@ -440,11 +440,15 @@ function genEntityRef(e: EntityRef): string {
 }
 
 function genAttributePath(p: AttributePath): string {
-    return p.join('.')
+    return p.map(genIdentifier).join('.')
 }
 
+export const keywords = ['namespace', 'as', 'nullable', 'pk', 'fk', 'index', 'unique', 'check', 'rel', 'type']
+
 function genIdentifier(identifier: string): string {
-    return identifier.match(/^[a-zA-Z_][a-zA-Z0-9_#(),]*$/) ? identifier : '"' + identifier + '"'
+    if (keywords.includes(identifier.trim().toLowerCase())) return '"' + identifier + '"'
+    if (identifier.match(/^[a-zA-Z_][a-zA-Z0-9_#(),]*$/)) return identifier
+    return '"' + identifier + '"'
 }
 
 function buildRelationKind(k: RelationKindAst): RelationKind | undefined {
@@ -539,9 +543,9 @@ function genProperties(properties: Record<string, PropertyValue>): string {
     return Object.keys(properties).length > 0 ? ' {' + Object.entries(properties).map(([key, value]) => value !== undefined && value !== true ? `${key}: ${genPropertyValue(value)}` : key).join(', ') + '}' : ''
 }
 
-function genNote(doc: string | undefined, indent: string = ''): string {
+function genDoc(doc: string | undefined, indent: string = ''): string {
     if (!doc) return ''
-    if (doc.indexOf('\n') === -1) return ' | ' + doc
+    if (doc.indexOf('\n') === -1) return ' | ' + doc.replaceAll(/#/g, '\\#')
     return ' |||\n' + doc.split('\n').map(l => indent + '  ' + l + '\n').join('') + indent + '|||'
 }
 

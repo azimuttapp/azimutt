@@ -38,7 +38,7 @@ describe('docs', () => {
             throw allMsg + values.join('') + '\n'
         }
     })
-    test.skip('re-generate AML snippets', () => {
+    test('re-generate AML snippets', () => {
         Object.entries(amlFiles).map(([path, content]) => {
             const snippets = path.indexOf('../demos/') !== -1 ? [content] : (content.match(amlRegex) || []).map((s: string) => s.replace(/^```aml\n/, '').replace(/```$/, ''))
             snippets.forEach((aml, index) => {

@@ -56,7 +56,7 @@ import {badIndent, legacy} from "./errors";
 const WhiteSpace = createToken({name: 'WhiteSpace', pattern: /[ \t]+/})
 const Identifier = createToken({ name: 'Identifier', pattern: /\b[a-zA-Z_][a-zA-Z0-9_#]*\b|"([^\\"]|\\\\|\\")*"/ })
 const Expression = createToken({ name: 'Expression', pattern: /`[^`]+`/ })
-const Doc = createToken({ name: 'Doc', pattern: /\|(\s+"([^\\"]|\\\\|\\")*"|[^#\n]*)/ })
+const Doc = createToken({ name: 'Doc', pattern: /\|(\s+"([^\\"]|\\\\|\\")*"|(\\#|[^#\n])*)/ })
 const DocMultiline = createToken({ name: 'DocMultiline', pattern: /\|\|\|[^]*?\|\|\|/, line_breaks: true })
 const Comment = createToken({ name: 'Comment', pattern: /#[^\n]*/ })
 
@@ -191,7 +191,7 @@ class AmlParser extends EmbeddedActionsParser {
             }, {
                 ALT: () => {
                     const token = $.CONSUME(Doc)
-                    return {token: 'Doc', value: removeQuotes(token.image.slice(1).trim()), ...tokenPosition(token)}
+                    return {token: 'Doc', value: removeQuotes(token.image.slice(1).trim().replaceAll(/\\#/g, '#')), ...tokenPosition(token)}
                 }
             }])
         })

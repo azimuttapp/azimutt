@@ -7,6 +7,13 @@ import {duplicated, legacy} from "./errors";
 describe('aml', () => {
     // TODO: namespace
     // TODO: entity alias
+    test('empty schema',  () => {
+        const input = ``
+        const db: Database = {extra: {}}
+        const parsed = parseAmlTest(input)
+        expect(parsed).toEqual({result: db})
+        expect(generateAml(parsed.result || {})).toEqual(input)
+    })
     test('sample schema', () => {
         const input = `
 #
@@ -142,11 +149,25 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
         expect(parsed).toEqual({result: db})
         expect(generateAml(parsed.result || {})).toEqual(input.trim() + '\n')
     })
-    test('empty schema',  () => {
-        const input = ``
-        const db: Database = {extra: {}}
+    test('escape doc',  () => {
+        const input = `users\n  settings json | ex: {color: \\#000} # you can escape # in doc using \\#\n`
+        const db: Database = {entities: [{name: 'users', attrs: [{name: 'settings', type: 'json', doc: 'ex: {color: #000}', extra: {comment: 'you can escape # in doc using \\#'}}], extra: {line: 1, statement: 1}}], extra: {}}
         const parsed = parseAmlTest(input)
         expect(parsed).toEqual({result: db})
+        expect(generateAml(parsed.result || {})).toEqual(input)
+    })
+    test('duplicate inline type',  () => {
+        const input = `posts\n  status status(draft, published)\n\ncomments\n  status status(draft, published)\n`
+        const db: Database = {
+            entities: [
+                {name: 'posts', attrs: [{name: 'status', type: 'status'}], extra: {line: 1, statement: 1}},
+                {name: 'comments', attrs: [{name: 'status', type: 'status'}], extra: {line: 4, statement: 2}},
+            ],
+            types: [{name: 'status', values: ['draft', 'published'], extra: {line: 2, statement: 1}}],
+            extra: {}
+        }
+        const parsed = parseAmlTest(input)
+        expect(parsed).toEqual({result: db, errors: [{name: 'Duplicated', kind: 'warning', message: 'Type status already defined at line 2', ...tokenPosition(66, 81, 5, 17, 5, 32)}]})
         expect(generateAml(parsed.result || {})).toEqual(input)
     })
     test('bad schema', () => {

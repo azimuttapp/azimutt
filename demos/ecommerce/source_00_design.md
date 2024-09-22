@@ -382,7 +382,7 @@ catalog.products
   category_id bigint -> catalog.categories(id)
   description text nullable | TODO: handle i18n
   description_html text nullable
-  versions json | ex: `[{key: "color", label: "Couleur", values: [{name: "Bleu Azur", value: "#95bbe2"}]}, {key: "storage", name: "Taille", values: [{name: "128GB", value: 128}]}]`
+  versions json | ex: `[{key: "color", label: "Couleur", values: [{name: "Bleu Azur", value: "\#95bbe2"}]}, {key: "storage", name: "Taille", values: [{name: "128GB", value: 128}]}]`
   attributes json | ex: `[{key: "Marque", value: "Google"}]`
   stock int | informative stock, may not be accurate
   created_at timestamp
@@ -494,6 +494,7 @@ shopping.carts
   created_at timestamp
   updated_at timestamp
   deleted_at timestamp nullable index
+
 rel shopping.carts(owner_id) -> identity.Devices(id)
 rel shopping.carts(owner_id) -> identity.Users(id)
 
@@ -710,6 +711,7 @@ crm.SocialAccounts
   updated_by bigint nullable -> identity.Users(id)
   deleted_at timestamp nullable index
   deleted_by bigint nullable -> identity.Users(id)
+
 rel crm.SocialAccounts(owner_id) -> crm.People(id)
 rel crm.SocialAccounts(owner_id) -> crm.Organizations(id)
 
@@ -795,6 +797,7 @@ crm.Coupons
   deleted_by bigint -> identity.Users(id)
 
 crm.ProductPicks
+
 crm.LoyaltyCards
 
 # Analytics
@@ -806,6 +809,7 @@ analytics.Events
   details json nullable | any additional info for the event
   entities json nullable | {[kind: string]: {id: string, name: string}[]}
   createdAt timestamp index
+
 rel analytics.Events(entities.user.id) -> identity.Users(id)
 rel analytics.Events(entities.cart.id) -> shopping.carts(id)
 rel analytics.Events(entities.invoice.id) -> billing.Invoices(InvoiceId)
@@ -817,6 +821,7 @@ analytics.Entities
   properties json
   createdAt timestamp
   updatedAt timestamp
+
 rel analytics.Entities(id) -> identity.Users(id) # when kind=user
 rel analytics.Entities(id) -> shopping.carts(id) # when kind=cart
 rel analytics.Entities(id) -> billing.Invoices(InvoiceId) # when kind=invoice
