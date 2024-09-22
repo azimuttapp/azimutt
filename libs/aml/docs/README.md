@@ -235,7 +235,7 @@ This example won't use every available feature on AML but give you a good idea o
 
 Let's define a theoretical e-commerce shop:
 
-![e-commerce schema defined using AML](../../../docs/aml/e-commerce-using-aml.png)
+![e-commerce schema defined using AML](./assets/e-commerce-using-aml.png)
 
 ```aml
 #

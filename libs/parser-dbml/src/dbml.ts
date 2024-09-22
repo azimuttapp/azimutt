@@ -6,7 +6,7 @@ import {importDatabase} from "./dbmlImport";
 import {exportDatabase} from "./dbmlExport";
 import {JsonDatabase} from "./jsonDatabase";
 
-export function parse(content: string): ParserResult<Database> {
+export function parseDbml(content: string, opts: { context?: Database } = {}): ParserResult<Database> {
     try {
         const db: DbmlDatabase = (new dbml.Parser(undefined)).parse(content, 'dbmlv2')
         return ParserResult.success(importDatabase(db))
@@ -15,7 +15,7 @@ export function parse(content: string): ParserResult<Database> {
     }
 }
 
-export function generate(database: Database): string {
+export function generateDbml(database: Database): string {
     try {
         const json: JsonDatabase = exportDatabase(database)
         const db: DbmlDatabase = (new dbml.Parser(undefined)).parse(JSON.stringify(json), 'json')
@@ -26,7 +26,7 @@ export function generate(database: Database): string {
 }
 
 // used to make sure the generated DBML contains everything possible (comparing with `generate` function)
-export function reformat(content: string): string {
+export function formatDbml(content: string): string {
     try {
         const db: DbmlDatabase = (new dbml.Parser(undefined)).parse(content, 'dbmlv2')
         return dbml.ModelExporter.export(db, 'dbml', false)

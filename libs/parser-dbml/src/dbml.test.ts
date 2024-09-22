@@ -3,7 +3,7 @@ import {describe, expect, test} from "@jest/globals";
 import {ModelExporter, Parser} from "@dbml/core";
 import DbmlDatabase from "@dbml/core/types/model_structure/database";
 import {Database, tokenPosition} from "@azimutt/models";
-import {generate, parse, reformat} from "./dbml";
+import {generateDbml, parseDbml, formatDbml} from "./dbml";
 import {JsonDatabase} from "./jsonDatabase";
 
 describe('dbml', () => {
@@ -56,28 +56,28 @@ Ref:"users"."id" < "posts"."author"
             ],
             extra: {source: 'DBML parser'}
         }
-        expect(parse(source).result).toEqual(parsed)
-        expect(parse(generated).result).toEqual(parsed)
-        expect(generate(parsed)).toEqual(generated)
-        expect(reformat(source)).toEqual(generated)
+        expect(parseDbml(source).result).toEqual(parsed)
+        expect(parseDbml(generated).result).toEqual(parsed)
+        expect(generateDbml(parsed)).toEqual(generated)
+        expect(formatDbml(source)).toEqual(generated)
     })
     test('complex schema',  () => {
         const source = fs.readFileSync('./resources/complex.dbml', 'utf8')
         const generated = fs.readFileSync('./resources/complex.generated.dbml', 'utf8')
         const parsed: Database = JSON.parse(fs.readFileSync('./resources/complex.json', 'utf8'))
-        expect(parse(source).result).toEqual(parsed)
+        expect(parseDbml(source).result).toEqual(parsed)
         // expect(parse(generated).result).toEqual(parsed) // `alias` and index `notes` are not preserved by DBML lib :/
         // expect(generate(parsed)).toEqual(generated) // `tableGroups` make JSON parser fail :/
-        expect(reformat(source)).toEqual(generated)
+        expect(formatDbml(source)).toEqual(generated)
     })
     test('empty schema',  () => {
         const source = ``
         const generated = ``
         const parsed: Database = {extra: {source: 'DBML parser'}}
-        expect(parse(source).result).toEqual(parsed)
-        expect(parse(generated).result).toEqual(parsed)
-        expect(generate(parsed)).toEqual(generated)
-        expect(reformat(source)).toEqual(generated)
+        expect(parseDbml(source).result).toEqual(parsed)
+        expect(parseDbml(generated).result).toEqual(parsed)
+        expect(generateDbml(parsed)).toEqual(generated)
+        expect(formatDbml(source)).toEqual(generated)
     })
     test('bad schema',  () => {
         const source = `
@@ -89,7 +89,7 @@ Ref:"users"."id" < "posts"."author"
             {name: 'DBMLException-3057', kind: 'error', message: "A custom element can only appear in a Project", ...tokenPosition(0, 0, 2, 13, 3, 17)},
             {name: 'DBMLException-3001', kind: 'error', message: "A Custom element shouldn't have a name", ...tokenPosition(0, 0, 3, 15, 3, 17)}
         ]
-        expect(parse(source).errors).toEqual(error)
+        expect(parseDbml(source).errors).toEqual(error)
     })
     test.skip('test',   () => {
         const source = `Table users {

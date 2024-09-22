@@ -15,7 +15,7 @@ export default {
         file: 'out/bundle.min.js',
         format: 'iife',
         sourcemap: true,
-        name: 'aml',
+        name: 'dbml',
         plugins: [terser()],
     }],
     plugins: [

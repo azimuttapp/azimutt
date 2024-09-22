@@ -22,13 +22,14 @@ import {
     SchemaName,
     Type
 } from "@azimutt/models";
+import packageJson from "../package.json";
 import {AttributeExtra, DatabaseExtra, EntityExtra, Group, IndexExtra, RelationExtra, TypeExtra} from "./extra";
 
 export const defaultSchema = 'public'
 
 export function importDatabase(db: DbmlDatabase): Database {
     const extra: DatabaseExtra = removeEmpty({
-        source: 'DBML parser',
+        source: `DBML parser <${packageJson.version}>`,
         groups: db.schemas.flatMap(s => s.tableGroups.map(importGroup))
     })
     return removeEmpty({
