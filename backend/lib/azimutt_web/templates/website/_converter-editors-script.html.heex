@@ -19,11 +19,11 @@
         var editorLeftContainer = document.getElementById('<%= @left.id %>')
         var editorRightContainer = document.getElementById('<%= @right.id %>')
 
-        var model = monaco.editor.createModel(defaultValue(leftLang), leftLang)
+        var model = monaco.editor.createModel(defaultValue(leftLang), editorLang(leftLang))
         model.context = {database: {}} // store values to be used at several place
 
         var leftEditor = createEditor(editorLeftContainer, {model})
-        var rightEditor = createEditor(editorRightContainer, {language: rightLang, value: '', readOnly: true})
+        var rightEditor = createEditor(editorRightContainer, {language: editorLang(rightLang), value: '', readOnly: true})
         var leftAmlButton = leftLang === 'aml' ? createAmlButton(editorLeftContainer) : undefined
         var rightAmlButton = rightLang === 'aml' ? createAmlButton(editorRightContainer) : undefined
         // get selected text: `model.getValueInRange(editor.getSelection())`
@@ -82,6 +82,10 @@
         function amlButtonUpdateUrl(button, aml) {
             button.href = '/create?aml=' + encodeURIComponent(aml).slice(0, 2000) // URI length limit, should send it with POST at some point...
         }
+        function editorLang(lang) {
+            if (lang === 'postgres') return 'pgsql'
+            return lang
+        }
         function parse(lang, content) {
             if (lang === 'aml') return aml.parseAml(content)
             if (lang === 'json') return aml.parseJsonDatabase(content)
@@ -90,6 +94,7 @@
         function format(lang, content) {
             if (lang === 'aml') return aml.generateAml(content)
             if (lang === 'json') return aml.generateJsonDatabase(content)
+            if (lang === 'postgres') return sql.generateSql(content, 'postgres')
             return 'Unsupported destination dialect: ' + lang
         }
         function defaultValue(lang) {

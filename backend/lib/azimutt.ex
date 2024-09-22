@@ -314,7 +314,7 @@ defmodule Azimutt do
       %{id: "aml", name: "AML", parse: true, generate: true},
       %{id: "dbml", name: "DBML", parse: false, generate: false},
       %{id: "json", name: "JSON", parse: true, generate: true},
-      %{id: "postgresql", name: "PostgreSQL", parse: false, generate: false},
+      %{id: "postgres", name: "PostgreSQL", parse: false, generate: true},
       %{id: "mysql", name: "MySQL", parse: false, generate: false},
       %{id: "oracle", name: "Oracle", parse: false, generate: false},
       %{id: "sqlserver", name: "SQL Server", parse: false, generate: false},

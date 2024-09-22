@@ -4,12 +4,14 @@ import * as generator from "./generator";
 import {SqlScript} from "./statements";
 import {importDatabase} from "./sqlImport";
 import {exportDatabase} from "./sqlExport";
+import {generatePostgres} from "./postgresGenerator";
 
 export function parseSql(content: string, dialect: DatabaseKind, opts: { strict?: boolean, context?: Database } = {}): ParserResult<Database> {
     return parseSqlScript(content).map(importDatabase)
 }
 
 export function generateSql(database: Database, dialect: DatabaseKind): string {
+    if (dialect === DatabaseKind.enum.postgres) return generatePostgres(database)
     const script: SqlScript = exportDatabase(database)
     return generateSqlScript(script)
 }
