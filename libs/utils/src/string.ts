@@ -143,7 +143,7 @@ export function slugify(text: string): string {
 
 export function slugifyGitHub(text: string): string {
     return cleanText(text)
-        .replace(/[^a-z0-9 -]/g, '') // remove non-alphanumeric characters
+        .replace(/[^a-z0-9 _-]/g, '') // remove non-alphanumeric characters
         .replace(/\s/g, '-') // replace spaces with hyphens
 }
 

@@ -72,7 +72,7 @@ erDiagram
   - [posts](#posts)
   - [admins](#admins)
 - [Types](#types)
-  - [user_role](#userrole)
+  - [user_role](#user_role)
 - [Diagram](#diagram)
 
 ## Entities

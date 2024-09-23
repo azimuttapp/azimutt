@@ -8,9 +8,9 @@
   - [profiles](#profiles)
   - [projects](#projects)
   - [roles](#roles)
-  - [user_roles](#userroles)
+  - [user_roles](#user_roles)
 - [Types](#types)
-  - [blog.post_status](#blogpoststatus)
+  - [blog.post_status](#blogpost_status)
 - [Diagram](#diagram)
 
 ## Entities
