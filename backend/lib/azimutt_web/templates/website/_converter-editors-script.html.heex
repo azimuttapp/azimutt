@@ -102,6 +102,7 @@
             if (lang === 'json') return aml.generateJsonDatabase(content)
             if (lang === 'postgres') return sql.generateSql(content, 'postgres')
             if (lang === 'mermaid') return aml.generateMermaid(content)
+            if (lang === 'markdown') return aml.generateMarkdown(content)
             return 'Unsupported destination dialect: ' + lang
         }
         function defaultValue(lang) {

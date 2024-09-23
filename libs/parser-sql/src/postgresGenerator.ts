@@ -76,7 +76,7 @@ function genAttribute(a: Attribute, e: Entity, relations: Relation[]): TableInne
     const check = attrChecks.length === 1 ? genCheckInline(attrChecks[0]) : ''
     const attrRelations = relations.filter(r => r.attrs.length === 1 && attributePathSame(r.attrs[0].src, [a.name]))
     const relation = attrRelations.length === 1 ? genRelationInline(attrRelations[0]) : ''
-    const commentRel = attrRelations.length > 1 ? `references: ${joinLast(attrRelations.map(r => `${genEntityRef(r.ref)}.${showAttributePath(r.attrs[0].ref)}${r.polymorphic ? ` (${showAttributePath(r.polymorphic.attribute)}=${genAttributeValue(r.polymorphic.value)})` : ''}`), ', ', ' or ')}` :''
+    const commentRel = attrRelations.length > 1 ? `references: ${joinLast(attrRelations.map(r => `${genEntityRef(r.ref)}.${showAttributePath(r.attrs[0].ref)}${r.polymorphic ? ` (${showAttributePath(r.polymorphic.attribute)}=${genAttributeValue(r.polymorphic.value)})` : ''}`), ', ', ' or ')}` : ''
     const comment = [commentRel, a.extra?.comment || ''].filter(c => !!c).join(', ')
     return {value: `${genIdentifier(a.name)} ${a.type}${notNull}${df}${pk}${unique}${check}${relation}`, comment}
 }

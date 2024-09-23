@@ -322,7 +322,8 @@ defmodule Azimutt do
       %{id: "mariadb", name: "MariaDB", parse: false, generate: false},
       %{id: "prisma", name: "Prisma", parse: false, generate: false},
       %{id: "mermaid", name: "Mermaid", parse: false, generate: true},
-      %{id: "quicksql", name: "Quick SQL", parse: false, generate: false}
+      %{id: "quicksql", name: "Quick SQL", parse: false, generate: false},
+      %{id: "markdown", name: "Markdown", parse: false, generate: true}
     ]
   end
 end

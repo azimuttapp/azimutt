@@ -34,6 +34,9 @@
     <% @converter == "quicksql" -> %>
         A <a href="https://github.com/oracle/quicksql" target="_blank" rel="noopener" class="underline">markdown-like syntax</a> made by Oracle to rapidly design and prototype data models.
         It's made to generate Oracle SQL code, but now, with Azimutt, you can convert it to anything.
+    <% @converter == "markdown" -> %>
+        A very popular, well-supported and easy to use <a href="https://www.markdownguide.org" target="_blank" rel="noopener" class="underline">lightweight syntax</a> for formatting text.
+        Perfect for versioned technical documentation like database schema reference.
     <% true -> %>
         Missing converter description for <%= @converter %> 😱
 <% end %>

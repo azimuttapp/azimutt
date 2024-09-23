@@ -1,0 +1,40 @@
+erDiagram
+    "blog.posts" {
+        bigint_unsigned id PK
+        post_status status
+        varchar title
+        integer author FK
+    }
+    "blog.posts" }o--|| users : author
+
+    users {
+        integer id PK
+        varchar name UK
+    }
+
+    profiles {
+        integer id PK
+        integer user_id FK
+        text bio
+        boolean active
+    }
+    profiles ||--|| users : user_id
+
+    projects {
+        integer id PK
+        varchar name
+    }
+
+    roles {
+        integer id PK
+        varchar name
+        int level
+    }
+
+    user_roles {
+        integer user_id FK
+        integer role_id FK
+        timestamp created_at
+    }
+    user_roles }o--|| users : user_id
+    user_roles }o--|| roles : role_id

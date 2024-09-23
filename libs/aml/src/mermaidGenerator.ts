@@ -71,11 +71,11 @@ function genAttributePath(p: AttributePath): string {
 }
 
 function genIdentifier(str: string): string {
-    if (str.match(/[a-zA-Z_][a-zA-Z0-9_-]*/)) return str
+    if (str.match(/^[a-zA-Z_][a-zA-Z0-9_-]*$/)) return str
     return '"' + str + '"'
 }
 
 function genType(str: string): string {
-    if (str.match(/[a-zA-Z][a-zA-Z0-9()\[\]_-]*/)) return str
-    return '"' + str + '"'
+    if (str.match(/^[a-zA-Z][a-zA-Z0-9()\[\]_-]*$/)) return str
+    return str.replaceAll(/[^a-zA-Z0-9_-]/g, '_')
 }
