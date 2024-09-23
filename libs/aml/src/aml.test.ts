@@ -7,7 +7,7 @@ import {duplicated, legacy} from "./errors";
 describe('aml', () => {
     // TODO: namespace
     // TODO: entity alias
-    test('empty schema',  () => {
+    test('empty schema', () => {
         const input = ``
         const db: Database = {extra: {}}
         const parsed = parseAmlTest(input)
@@ -141,22 +141,22 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
         expect(parsed).toEqual({result: db})
         expect(generateAml(parsed.result || {})).toEqual(input.trim() + '\n')
     })
-    test.skip('complex schema',  () => {
-        const input = fs.readFileSync('./resources/complex.aml', 'utf8')
+    test.skip('complex schema', () => {
         const json = fs.readFileSync('./resources/complex.json', 'utf8')
+        const aml = fs.readFileSync('./resources/complex.aml', 'utf8')
         const db: Database = JSON.parse(json)
-        const parsed = parseAmlTest(input)
+        const parsed = parseAmlTest(aml)
         expect(parsed).toEqual({result: db})
-        expect(generateAml(parsed.result || {})).toEqual(input.trim() + '\n')
+        expect(generateAml(parsed.result || {})).toEqual(aml)
     })
-    test('escape doc',  () => {
+    test('escape doc', () => {
         const input = `users\n  settings json | ex: {color: \\#000} # you can escape # in doc using \\#\n`
         const db: Database = {entities: [{name: 'users', attrs: [{name: 'settings', type: 'json', doc: 'ex: {color: #000}', extra: {comment: 'you can escape # in doc using \\#'}}], extra: {line: 1, statement: 1}}], extra: {}}
         const parsed = parseAmlTest(input)
         expect(parsed).toEqual({result: db})
         expect(generateAml(parsed.result || {})).toEqual(input)
     })
-    test('duplicate inline type',  () => {
+    test('duplicate inline type', () => {
         const input = `posts\n  status status(draft, published)\n\ncomments\n  status status(draft, published)\n`
         const db: Database = {
             entities: [

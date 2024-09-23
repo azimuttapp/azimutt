@@ -1,74 +1,83 @@
 {
-  "entities": [{
-    "schema": "blog",
-    "name": "posts",
-    "attrs": [
-      {"name": "id", "type": "bigint unsigned", "extensions": {"increment": true}},
-      {"name": "status", "type": "post_status", "default": "draft"},
-      {"name": "title", "type": "varchar", "comment": "Title of the post"},
-      {"name": "author", "type": "integer"}
-    ],
-    "pk": {"attrs": [["id"]]},
-    "doc": "Stores all posts",
-    "extensions": {
-      "alias": "P",
-      "color": "#ccc"
+  "entities": [
+    {
+      "schema": "auth",
+      "name": "users",
+      "attrs": [
+        {"name": "id", "type": "uuid"},
+        {"name": "name", "type": "varchar"},
+        {"name": "role", "type": "user_role", "default": "guest"},
+        {"name": "settings", "type": "jsonb", "null": true, "attrs": [
+          {"name": "address", "type": "object", "attrs": [
+            {"name": "street", "type": "string"},
+            {"name": "city", "type": "string"},
+            {"name": "country", "type": "string"}
+          ]}
+        ]}
+      ],
+      "pk": {"attrs": [["id"]]},
+      "indexes": [
+        {"attrs": [["name"]], "unique": true},
+        {"attrs": [["settings", "address", "country"], ["settings", "address", "city"], ["settings", "address", "street"]], "name": "users_address_index"}
+      ],
+      "checks": [
+        {"attrs": [["name"]], "predicate": "name <> ''"},
+        {"attrs": [["role"], ["name"]], "predicate": "role = 'admin' AND name LIKE 'a_%'", "name": "users_admin_name_chk"}
+      ]
+    },
+    {
+      "name": "posts",
+      "attrs": [
+        {"name": "id", "type": "uuid"},
+        {"name": "title", "type": "varchar", "doc": "Post title"},
+        {"name": "content", "type": "text"},
+        {"name": "created_by", "type": "uuid"}
+      ],
+      "pk": {"attrs": [["id"]]},
+      "doc": "All posts"
+    },
+    {
+      "name": "comments",
+      "attrs": [
+        {"name": "id", "type": "uuid"},
+        {"name": "content", "type": "text"},
+        {"name": "item_kind", "type": "varchar"},
+        {"name": "item_id", "type": "uuid"}
+      ],
+      "pk": {"attrs": [["id"]]}
+    },
+    {
+      "name": "post_members",
+      "attrs": [
+        {"name": "post_id", "type": "uuid"},
+        {"name": "user_id", "type": "int"},
+        {"name": "role", "type": "varchar(10)"}
+      ],
+      "pk": {"attrs": [["post_id"], ["user_id"]], "name": "post_members_pk"}
+    },
+    {
+      "name": "post_member_details",
+      "attrs": [
+        {"name": "post_id", "type": "uuid"},
+        {"name": "user_id", "type": "int"},
+        {"name": "added_by", "type": "int"}
+      ],
+      "pk": {"attrs": [["post_id"], ["user_id"]]}
+    },
+    {
+      "name": "admins",
+      "kind": "view",
+      "def": "SELECT * FROM users WHERE role = 'admin'"
     }
-  }, {
-    "name": "users",
-    "attrs": [
-      {"name": "id", "type": "integer"},
-      {"name": "name", "type": "varchar", "nullable":  false}
-    ],
-    "pk": {"attrs": [["id"]]},
-    "indexes": [{"attrs": [["name"]], "unique": true}]
-  }, {
-    "name": "profiles",
-    "attrs": [
-      {"name": "id", "type": "integer"},
-      {"name": "user_id", "type": "integer"},
-      {"name": "bio", "type": "text"},
-      {"name": "active", "type": "boolean", "default": "true"}
-    ],
-    "pk": {"attrs": [["id"]]}
-  }, {
-    "name": "projects",
-    "attrs": [
-      {"name": "id", "type": "integer"},
-      {"name": "name", "type": "varchar"}
-    ],
-    "pk": {"attrs": [["id"]]}
-  }, {
-    "name": "roles",
-    "attrs": [
-      {"name": "id", "type": "integer"},
-      {"name": "name", "type": "varchar"},
-      {"name": "level", "type": "int", "default": 0, "comment": "used to order roles"}
-    ],
-    "pk": {"attrs": [["id"]]}
-  }, {
-    "name": "user_roles",
-    "attrs": [
-      {"name": "user_id", "type": "integer"},
-      {"name": "role_id", "type": "integer"},
-      {"name": "created_at", "type": "timestamp", "default": "now()", "extensions": {"defaultType": "expression"}}
-    ],
-    "pk": {"attrs": [["user_id"], ["role_id"]]},
-    "indexes": [{"name": "created_at_index", "attrs": [["created_at"]], "comment": "Date"}]
-  }],
+  ],
   "relations": [
-    {"src": {"entity": "profiles"}, "ref": {"entity": "users"}, "attrs": [{"src": ["user_id"], "ref": ["id"]}], "kind":  "one-to-one"},
-    {"src": {"entity": "user_roles"}, "ref": {"entity": "users"}, "attrs": [{"src": ["user_id"], "ref": ["id"]}]},
-    {"src": {"entity": "user_roles"}, "ref": {"entity": "roles"}, "attrs": [{"src": ["role_id"], "ref": ["id"]}]},
-    {"src": {"schema": "blog", "entity": "posts"}, "ref": {"entity": "users"}, "attrs": [{"src": ["author"], "ref": ["id"]}]}
+    {"src": {"entity": "posts"}, "ref": {"schema": "auth", "entity": "users"}, "attrs": [{"src": ["created_by"], "ref": ["id"]}]},
+    {"src": {"entity": "comments"}, "ref": {"schema": "auth", "entity": "users"}, "attrs": [{"src": ["item_id"], "ref": ["id"]}], "polymorphic":  {"attribute":  ["item_kind"], "value": "User"}},
+    {"src": {"entity": "comments"}, "ref": {"entity": "posts"}, "attrs": [{"src": ["item_id"], "ref": ["id"]}], "polymorphic":  {"attribute":  ["item_kind"], "value": "Post"}},
+    {"src": {"entity": "post_member_details"}, "ref": {"schema": "auth", "entity": "users"}, "attrs": [{"src": ["added_by"], "ref": ["id"]}]},
+    {"src": {"entity": "post_member_details"}, "ref": {"entity": "post_members"}, "attrs": [{"src": ["post_id"], "ref": ["post_id"]}, {"src": ["user_id"], "ref": ["user_id"]}]}
   ],
   "types": [
-    {"schema": "blog", "name": "post_status", "values": ["draft", "published", "archived"], "extensions": {"notes": {"draft": "Waiting to be processed"}}}
-  ],
-  "extensions": {
-    "source": "AML parser <0.1.3>",
-    "groups": [
-      {"schema": "blog", "name": "publication", "entities": [{"entity":  "users"}, {"schema":  "blog", "entity":  "posts"}]}
-    ]
-  }
+    {"name": "user_role", "values": ["admin", "guest"], "doc": "user roles"}
+  ]
 }

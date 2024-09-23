@@ -1,44 +1,36 @@
-namespace public
+auth.users
+  id uuid pk
+  name varchar unique check=`name <> ''`
+  role user_role(admin, guest)=guest check=`role = 'admin' AND name LIKE 'a_%'`
+  settings jsonb nullable
+    address object
+      street string index=users_address_index
+      city string index=users_address_index
+      country string index=users_address_index
 
-users
-  id integer pk
-  name varchar unique
+posts | All posts # Create posts
+  id uuid pk
+  title varchar | Post title # defining doc
+  content text
+  created_by uuid -> auth.users(id)
 
-profiles
-  id integer pk
-  user_id integer -> users(id)
-  active boolean=true
-  bio text
-  details json
-    address json
-      no int
-      street varchar
-      city varchar
-    avatar varchar
+comments
+  id uuid pk
+  content text
+  item_kind varchar
+  item_id uuid
+rel comments(item_id) -item_kind=User> auth.users(id)
+rel comments(item_id) -item_kind=Post> posts(id)
 
-projects
-  id integer pk
-  name varchar
+post_members
+  post_id uuid pk=post_members_pk
+  user_id int pk=post_members_pk
+  role varchar(10)
 
-rel projects(id) <> users(id)
+post_member_details
+  post_id uuid pk
+  user_id int pk
+  added_by int -> auth.users(id)
+rel post_member_details(post_id, user_id) -> post_members(post_id, user_id)
 
-roles
-  id integer pk
-  name varchar
-  level int=0 | used to order roles
-
-user_roles
-  user_id integer pk -> users(id)
-  role_id integer pk -> roles(id)
-  created_at timestamp=`now()` index=created_at_index
-
-blog.posts as P {color: #ccc, tags: demo srv:cms:seo, x: 120, y: 50, deprecated} | Stores all posts
-  id "bigint unsigned" pk {increment}
-  status post_status=draft
-  title varchar | Title of the post
-  author integer -> users(id) |||
-    a multi-line comment
-    Yeah!
-  |||
-
-type blog.post_status enum(draft, published, archived)
+admins*

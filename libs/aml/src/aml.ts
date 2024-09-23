@@ -62,6 +62,12 @@ import {
 import {parseAmlAst} from "./parser";
 import {duplicated} from "./errors";
 
+// TODO: check predicate in parenthesis? (`  age int check(age > 0)=user_age_chk`)
+// TODO: check predicate in backticks? (`  age int check`age > 0`=user_age_chk`)
+// TODO: several checks on a single column & check on several columns
+// TODO: add index order in AML
+// TODO: add view definition in AML
+
 export function parseAml(content: string, opts: { strict?: boolean, context?: Database } = {}): ParserResult<Database> {
     const start = Date.now()
     return parseAmlAst(content.trimEnd() + '\n', opts).flatMap(ast => {

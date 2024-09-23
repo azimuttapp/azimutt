@@ -7,7 +7,7 @@ import {generateDbml, parseDbml, formatDbml} from "./dbml";
 import {JsonDatabase} from "./jsonDatabase";
 
 describe('dbml', () => {
-    test('basic schema',  () => {
+    test('basic schema', () => {
         const source = `
             Table users {
               id integer [primary key]
@@ -61,7 +61,7 @@ Ref:"users"."id" < "posts"."author"
         expect(generateDbml(parsed)).toEqual(generated)
         expect(formatDbml(source)).toEqual(generated)
     })
-    test('complex schema',  () => {
+    test('complex schema', () => {
         const source = fs.readFileSync('./resources/complex.dbml', 'utf8')
         const generated = fs.readFileSync('./resources/complex.generated.dbml', 'utf8')
         const parsed: Database = JSON.parse(fs.readFileSync('./resources/complex.json', 'utf8'))
@@ -70,7 +70,7 @@ Ref:"users"."id" < "posts"."author"
         // expect(generate(parsed)).toEqual(generated) // `tableGroups` make JSON parser fail :/
         expect(formatDbml(source)).toEqual(generated)
     })
-    test('empty schema',  () => {
+    test('empty schema', () => {
         const source = ``
         const generated = ``
         const parsed: Database = {extra: {source: 'DBML parser <0.1.1>'}}
@@ -79,7 +79,7 @@ Ref:"users"."id" < "posts"."author"
         expect(generateDbml(parsed)).toEqual(generated)
         expect(formatDbml(source)).toEqual(generated)
     })
-    test('bad schema',  () => {
+    test('bad schema', () => {
         const source = `
             users
               id uuid
@@ -114,7 +114,7 @@ enum demo.job_status {
         const res = ModelExporter.export(db2, 'dbml', false)
         console.log('res', res)
     })
-    test.skip('https://github.com/holistics/dbml/issues/514',  () => {
+    test.skip('https://github.com/holistics/dbml/issues/514', () => {
         const content = `Table users {
                 id integer
                 username varchar

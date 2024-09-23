@@ -49,7 +49,7 @@ posts
 
 ## API
 
-This package has a quite simple API, in fact, just two functions you will (mostly) care about:
+This package has a very simple API, you will mainly care about:
 
 ```typescript
 function parseAml(content: string): ParserResult<Database> {}
@@ -60,15 +60,30 @@ You can look at the [Database](../models/src/database.ts) definition, it's how A
 
 The [ParserResult](../models/src/parserResult.ts) is just a class with a `result` and `errors` fields.
 
-You will also have access to other useful functions, for example to work with JSON:
+Here is a usage example:
 
 ```typescript
-function parseJsonDatabase(content: string): ParserResult<Database> {} // it's just a zod.safeParse() adapted to Azimutt APIs
-function generateJsonDatabase(database: Database): string {} // it's just a JSON.stringify with "nice" formatting
-const schemaJsonDatabase: JSONSchema = {...} // the JSON Schema for the Database type
+const aml = 'users\  id int pk\n  name varchar\n'
+const parsed = parseAml(aml)
+if (parsed.errors) {
+    parsed.errors.forEach(e => console.log('error', e))
+}
+if (parsed.result) {
+    console.log('database', parsed.result)
+    const generated: string = generateAml(parsed.result)
+    console.log('generated', generated)
+}
 ```
 
-They will allow you to parse/serialize [Database](../models/src/database.ts) from/to JSON (using [zod](https://zod.dev) types), and provides you the JSON schema object for the Database.
+There are some more functions you could like:
+
+```typescript
+function generateMermaid(database: Database) {} // generate a Mermaid erDiagram
+function generateMarkdown(database: Database) {} // generate markdown documentation
+function generateJsonDatabase(database: Database): string {} // generate nicly formatted JSON (similar to `JSON.stringify(db, null, 2) è but more compact)
+function parseJsonDatabase(content: string): ParserResult<Database> {} // parse and validate JSON, ie, zod.safeParse() adapted to Azimutt APIs
+const schemaJsonDatabase: JSONSchema = {...} // the JSON Schema object for the Database type
+```
 
 The last useful thing is the [Monaco Editor helpers](src/extensions/monaco.ts):
 

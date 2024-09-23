@@ -4,11 +4,11 @@ import {Database, DatabaseSchema} from "./index";
 
 describe('database', () => {
     const validate = new Ajv().compile(DatabaseSchema)
-    test.skip('print schema',  () => {
+    test.skip('print schema', () => {
         // useful to sync `DatabaseSchema` to backend/priv/static/aml_schema.json
         console.log(JSON.stringify(DatabaseSchema))
     })
-    test('basic db',  () => {
+    test('basic db', () => {
         // TypeScript validation (type specified explicitly)
         const db: Database = {
             entities: [{

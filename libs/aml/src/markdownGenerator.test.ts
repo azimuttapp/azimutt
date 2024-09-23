@@ -139,7 +139,7 @@ erDiagram
         const json = fs.readFileSync('./resources/complex.json', 'utf8')
         const markdown = fs.readFileSync('./resources/complex.md', 'utf8')
         const db: Database = JSON.parse(json)
-        // const parsed = parsePostgres(sql)
+        // const parsed = parseMarkdown(markdown)
         // expect(parsed).toEqual({result: db})
         expect(generateMarkdown(db)).toEqual(markdown)
     })

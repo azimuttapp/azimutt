@@ -3,115 +3,128 @@
 ## Summary
 
 - [Entities](#entities)
-  - [blog.posts](#blogposts)
-  - [users](#users)
-  - [profiles](#profiles)
-  - [projects](#projects)
-  - [roles](#roles)
-  - [user_roles](#user_roles)
+  - [auth.users](#authusers)
+  - [posts](#posts)
+  - [comments](#comments)
+  - [post_members](#post_members)
+  - [post_member_details](#post_member_details)
+  - [admins](#admins)
 - [Types](#types)
-  - [blog.post_status](#blogpost_status)
+  - [user_role](#user_role)
 - [Diagram](#diagram)
 
 ## Entities
 
-### blog.posts
+### auth.users
 
-Stores all posts
+| Attribute    | Type      | Properties                | Reference | Documentation |
+|--------------|-----------|---------------------------|-----------|---------------|
+| **id**       | uuid      | PK                        |           |               |
+| **name**     | varchar   | unique, check(name <> '') |           |               |
+| **role**     | user_role |                           |           |               |
+| **settings** | jsonb     | nullable                  |           |               |
 
-| Attribute  | Type            | Properties | Reference | Documentation |
-|------------|-----------------|------------|-----------|---------------|
-| **id**     | bigint unsigned | PK         |           |               |
-| **status** | post_status     |            |           |               |
-| **title**  | varchar         |            |           |               |
-| **author** | integer         |            | users.id  |               |
+Constraints:
 
-### users
+- index on (settings.address.country, settings.address.city, settings.address.street): users_address_index
+- check(role = 'admin' AND name LIKE 'a_%'): users_admin_name_chk
 
-| Attribute | Type    | Properties | Reference | Documentation |
-|-----------|---------|------------|-----------|---------------|
-| **id**    | integer | PK         |           |               |
-| **name**  | varchar | unique     |           |               |
+### posts
 
-### profiles
+All posts
 
-| Attribute   | Type    | Properties | Reference | Documentation |
-|-------------|---------|------------|-----------|---------------|
-| **id**      | integer | PK         |           |               |
-| **user_id** | integer |            | users.id  |               |
-| **bio**     | text    |            |           |               |
-| **active**  | boolean |            |           |               |
+| Attribute      | Type    | Properties | Reference     | Documentation |
+|----------------|---------|------------|---------------|---------------|
+| **id**         | uuid    | PK         |               |               |
+| **title**      | varchar |            |               | Post title    |
+| **content**    | text    |            |               |               |
+| **created_by** | uuid    |            | auth.users.id |               |
 
-### projects
+### comments
 
-| Attribute | Type    | Properties | Reference | Documentation |
-|-----------|---------|------------|-----------|---------------|
-| **id**    | integer | PK         |           |               |
-| **name**  | varchar |            |           |               |
+| Attribute     | Type    | Properties | Reference                                                   | Documentation |
+|---------------|---------|------------|-------------------------------------------------------------|---------------|
+| **id**        | uuid    | PK         |                                                             |               |
+| **content**   | text    |            |                                                             |               |
+| **item_kind** | varchar |            |                                                             |               |
+| **item_id**   | uuid    |            | auth.users.id (item_kind=User) or posts.id (item_kind=Post) |               |
 
-### roles
+### post_members
 
-| Attribute | Type    | Properties | Reference | Documentation |
-|-----------|---------|------------|-----------|---------------|
-| **id**    | integer | PK         |           |               |
-| **name**  | varchar |            |           |               |
-| **level** | int     |            |           |               |
+| Attribute   | Type        | Properties | Reference | Documentation |
+|-------------|-------------|------------|-----------|---------------|
+| **post_id** | uuid        |            |           |               |
+| **user_id** | int         |            |           |               |
+| **role**    | varchar(10) |            |           |               |
 
-### user_roles
+### post_member_details
 
-| Attribute      | Type      | Properties | Reference | Documentation |
-|----------------|-----------|------------|-----------|---------------|
-| **user_id**    | integer   |            | users.id  |               |
-| **role_id**    | integer   |            | roles.id  |               |
-| **created_at** | timestamp | index      |           |               |
+| Attribute    | Type | Properties | Reference     | Documentation |
+|--------------|------|------------|---------------|---------------|
+| **post_id**  | uuid |            |               |               |
+| **user_id**  | int  |            |               |               |
+| **added_by** | int  |            | auth.users.id |               |
+
+Constraints:
+
+- relation: post_member_details(post_id, user_id) -> post_members(post_id, user_id)
+
+### admins
+
+View definition:
+```sql
+SELECT * FROM users WHERE role = 'admin'
+```
 
 ## Types
 
-### blog.post_status
+### user_role
 
-ENUM: draft, published, archived
+user roles
+
+ENUM: admin, guest
 
 ## Diagram
 
 ```mermaid
 erDiagram
-    "blog.posts" {
-        bigint_unsigned id PK
-        post_status status
-        varchar title
-        integer author FK
-    }
-    "blog.posts" }o--|| users : author
-
-    users {
-        integer id PK
+    "auth.users" {
+        uuid id PK
         varchar name UK
+        user_role role
+        jsonb settings
     }
 
-    profiles {
-        integer id PK
-        integer user_id FK
-        text bio
-        boolean active
+    posts {
+        uuid id PK
+        varchar title "Post title"
+        text content
+        uuid created_by FK
     }
-    profiles ||--|| users : user_id
+    posts }o--|| "auth.users" : created_by
 
-    projects {
-        integer id PK
-        varchar name
+    comments {
+        uuid id PK
+        text content
+        varchar item_kind
+        uuid item_id FK
+    }
+    comments }o--|| "auth.users" : item_id
+    comments }o--|| posts : item_id
+
+    post_members {
+        uuid post_id
+        int user_id
+        varchar(10) role
     }
 
-    roles {
-        integer id PK
-        varchar name
-        int level
+    post_member_details {
+        uuid post_id
+        int user_id
+        int added_by FK
     }
+    post_member_details }o--|| "auth.users" : added_by
+    post_member_details }o--|| post_members : post_id
 
-    user_roles {
-        integer user_id FK
-        integer role_id FK
-        timestamp created_at
-    }
-    user_roles }o--|| users : user_id
-    user_roles }o--|| roles : role_id
+    admins
 ```

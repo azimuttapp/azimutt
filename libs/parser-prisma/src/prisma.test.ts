@@ -3,7 +3,7 @@ import {Database, tokenPosition} from "@azimutt/models";
 import {generatePrisma, parsePrisma} from "./prisma";
 
 describe('prisma', () => {
-    test('empty schema',  () => {
+    test('empty schema', () => {
         expect(parsePrisma('').result).toEqual({extra: {source: 'Prisma parser <0.1.1>'}})
         expect(generatePrisma({})).toEqual('Prisma generator not implemented')
     })

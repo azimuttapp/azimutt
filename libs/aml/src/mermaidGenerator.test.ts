@@ -56,7 +56,7 @@ erDiagram
         const json = fs.readFileSync('./resources/complex.json', 'utf8')
         const mermaid = fs.readFileSync('./resources/complex.mmd', 'utf8')
         const db: Database = JSON.parse(json)
-        // const parsed = parsePostgres(sql)
+        // const parsed = parseMermaid(mermaid)
         // expect(parsed).toEqual({result: db})
         expect(generateMermaid(db)).toEqual(mermaid)
     })
