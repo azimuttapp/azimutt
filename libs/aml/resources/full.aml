@@ -51,7 +51,7 @@ comments as c {color: "#ccc", tags: [utils, "owner:infra"]} |||
   content | doc with \# escaped # no type
   created_by -> users # attribute type should default to target column is not set
 
-rel comments(item_id) -item_kind=User> user(id)
+rel comments(item_id) -item_kind=User> users(id)
 rel comments(item_id) -item_kind=Post> cms.posts(id) {onDelete: cascade}
 
 web.public.legacy_slug

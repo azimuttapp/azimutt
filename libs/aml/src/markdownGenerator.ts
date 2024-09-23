@@ -66,7 +66,7 @@ function genAttribute(a: Attribute, e: Entity, relations: Relation[]): Attribute
     const unique = attrUniques.length === 1 ? 'unique' : ''
     const attrIndexes = (e.indexes || []).filter(u => !u.unique && u.attrs.length === 1 && attributePathSame(u.attrs[0], [a.name]))
     const index = attrIndexes.length === 1 ? 'index' : ''
-    const checks = (e.checks || []).filter(c => c.attrs.length === 1 && attributePathSame(c.attrs[0], [a.name])).map(c => `check(${c.predicate})`)
+    const checks = (e.checks || []).filter(c => c.attrs.length === 1 && attributePathSame(c.attrs[0], [a.name])).map(c => c.predicate ? `check(${c.predicate})` : 'check')
     const notNull = a.null ? 'nullable' : ''
     const props = [pk, unique, index, ...checks, notNull].filter(k => !!k).join(', ')
     const attrRelations = relations.filter(r => r.attrs.length === 1 && attributePathSame(r.attrs[0].src, [a.name]))

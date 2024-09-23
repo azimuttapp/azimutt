@@ -63,7 +63,7 @@ COMMENT ON COLUMN "legacy schema"."post member details"."added by" IS 'special a
 CREATE TABLE comments (
   id uuid CONSTRAINT comment_pk PRIMARY KEY,
   item_kind comment_item NOT NULL,
-  item_id int NOT NULL, -- references: user.id (item_kind='User') or cms.posts.id (item_kind='Post')
+  item_id int NOT NULL, -- references: users.id (item_kind='User') or cms.posts.id (item_kind='Post')
   content unknown NOT NULL, -- no type
   created_by unknown NOT NULL REFERENCES users(id) -- attribute type should default to target column is not set
 );

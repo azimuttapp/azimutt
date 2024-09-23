@@ -189,7 +189,7 @@
     },
     {
       "src": {"entity": "comments"},
-      "ref": {"entity": "user"},
+      "ref": {"entity": "users"},
       "attrs": [{"src": ["item_id"], "ref": ["id"]}],
       "polymorphic": {"attribute": ["item_kind"], "value": "User"},
       "extra": {"line": 54, "statement": 7}

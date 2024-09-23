@@ -27,13 +27,13 @@
 
 ### users
 
-| Attribute      | Type    | Properties      | Reference | Documentation |
-|----------------|---------|-----------------|-----------|---------------|
-| **id**         | uid     | PK              |           |               |
-| **first_name** | varchar |                 |           |               |
-| **last_name**  | varchar |                 |           |               |
-| **email**      | varchar | unique, check() |           |               |
-| **is_admin**   | bool    |                 |           |               |
+| Attribute      | Type    | Properties    | Reference | Documentation |
+|----------------|---------|---------------|-----------|---------------|
+| **id**         | uid     | PK            |           |               |
+| **first_name** | varchar |               |           |               |
+| **last_name**  | varchar |               |           |               |
+| **email**      | varchar | unique, check |           |               |
+| **is_admin**   | bool    |               |           |               |
 
 Constraints:
 
@@ -77,13 +77,13 @@ Constraints:
 a table with most options
 looks quite complex but not intended to be used all together ^^
 
-| Attribute      | Type         | Properties | Reference                                                 | Documentation                                                                     |
-|----------------|--------------|------------|-----------------------------------------------------------|-----------------------------------------------------------------------------------|
-| **id**         | uuid         | PK         |                                                           |                                                                                   |
-| **item_kind**  | comment_item |            |                                                           | polymorphic column for polymorphic relation\nused with both item_kind and item_id |
-| **item_id**    | int          |            | user.id (item_kind=User) or cms.posts.id (item_kind=Post) |                                                                                   |
-| **content**    | unknown      |            |                                                           | doc with # escaped                                                                |
-| **created_by** | unknown      |            | users.id                                                  |                                                                                   |
+| Attribute      | Type         | Properties | Reference                                                  | Documentation                                                                     |
+|----------------|--------------|------------|------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| **id**         | uuid         | PK         |                                                            |                                                                                   |
+| **item_kind**  | comment_item |            |                                                            | polymorphic column for polymorphic relation\nused with both item_kind and item_id |
+| **item_id**    | int          |            | users.id (item_kind=User) or cms.posts.id (item_kind=Post) |                                                                                   |
+| **content**    | unknown      |            |                                                            | doc with # escaped                                                                |
+| **created_by** | unknown      |            | users.id                                                   |                                                                                   |
 
 Constraints:
 
@@ -210,7 +210,7 @@ erDiagram
         unknown created_by FK
     }
     comments }o--|| users : created_by
-    comments }o--|| user : item_id
+    comments }o--|| users : item_id
     comments }o--|| "cms.posts" : item_id
 
     "web.public.legacy_slug" {

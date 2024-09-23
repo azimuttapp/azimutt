@@ -125,7 +125,7 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
             ],
             types: [
                 {schema: 'identity', name: 'user_role', values: ['admin', 'guest'], extra: {line: 16, statement: 2}},
-                {name: 'post_id', definition: 'int', doc: 'alias', extra: {line: 44, statement: 6, table: 'posts'}},
+                {name: 'post_id', alias: 'int', doc: 'alias', extra: {line: 44, statement: 6, table: 'posts'}},
                 {name: 'status', values: ['draft', 'published', 'archived'], extra: {line: 45, statement: 7}},
                 {name: 'position', attrs: [{name: 'x', type: 'int'}, {name: 'y', type: 'int'}], extra: {line: 46, statement: 8, generic: true}},
                 {name: 'range', definition: '(subtype = float8, subtype_diff = float8mi)', extra: {line: 47, statement: 9, comment: 'custom type'}},
