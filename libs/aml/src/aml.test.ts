@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import {describe, expect, test} from "@jest/globals";
-import {Database, ParserResult, tokenPosition} from "@azimutt/models";
+import {Database, parseJsonDatabase, ParserResult, tokenPosition} from "@azimutt/models";
 import {genEntity, generateAml, parseAml} from "./aml";
 import {duplicated, legacy} from "./errors";
 
@@ -141,10 +141,9 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
         expect(parsed).toEqual({result: db})
         expect(generateAml(parsed.result || {})).toEqual(input.trim() + '\n')
     })
-    test.skip('complex schema', () => {
-        const json = fs.readFileSync('./resources/complex.json', 'utf8')
-        const aml = fs.readFileSync('./resources/complex.aml', 'utf8')
-        const db: Database = JSON.parse(json)
+    test('full', () => {
+        const db: Database = parseJsonDatabase(fs.readFileSync('./resources/full.json', 'utf8')).result || {}
+        const aml = fs.readFileSync('./resources/full.aml', 'utf8')
         const parsed = parseAmlTest(aml)
         expect(parsed).toEqual({result: db})
         expect(generateAml(parsed.result || {})).toEqual(aml)

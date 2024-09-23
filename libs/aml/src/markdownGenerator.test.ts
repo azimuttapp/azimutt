@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import {describe, expect, test} from "@jest/globals";
-import {Database} from "@azimutt/models";
+import {Database, parseJsonDatabase} from "@azimutt/models";
 import {generateMarkdown} from "./markdownGenerator";
 
 describe('markdownGenerator', () => {
@@ -135,10 +135,9 @@ erDiagram
 `
         expect(generateMarkdown(db)).toEqual(sql)
     })
-    test('complex', () => {
-        const json = fs.readFileSync('./resources/complex.json', 'utf8')
-        const markdown = fs.readFileSync('./resources/complex.md', 'utf8')
-        const db: Database = JSON.parse(json)
+    test('full', () => {
+        const db: Database = parseJsonDatabase(fs.readFileSync('./resources/full.json', 'utf8')).result || {}
+        const markdown = fs.readFileSync('./resources/full.md', 'utf8')
         // const parsed = parseMarkdown(markdown)
         // expect(parsed).toEqual({result: db})
         expect(generateMarkdown(db)).toEqual(markdown)

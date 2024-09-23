@@ -1,0 +1,24 @@
+# Resources
+
+## Full
+
+A database schema in several format with all the schema specificities:
+
+- tables, with schema, special name, alias
+- attributes with name only, with special/keyword name/type, nullable, default, enum, nested
+- primary key, simple/composite, name
+- indexes, with/without name, simple/composite, unique
+- checks, with/without predicate
+- relations, inline/standalone, natural, from/to nested, composite, polymorphic, different cardinality
+- doc, single/multi line, with #
+- properties, with #, array, special, on entities/attributes/relations/types
+- types, anonymous/alias/enum/strict/custom
+- comments
+- views, with definition
+
+Still missing:
+
+- namespace: can't generate it as is
+- composite checks: needs to evolve AML, only predicate can be defined now
+- relation natural just on one side
+- entity alias in relation

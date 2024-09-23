@@ -71,7 +71,7 @@ function genAttribute(a: Attribute, e: Entity, relations: Relation[]): Attribute
     const props = [pk, unique, index, ...checks, notNull].filter(k => !!k).join(', ')
     const attrRelations = relations.filter(r => r.attrs.length === 1 && attributePathSame(r.attrs[0].src, [a.name]))
     const ref = attrRelations.length > 0 ? joinLast(attrRelations.map(r => `${genEntityRef(r.ref)}.${genAttributePath(r.attrs[0].ref)}${r.polymorphic ? ` (${genAttributePath(r.polymorphic.attribute)}=${genAttributeValue(r.polymorphic.value)})` : ''}`), ', ', ' or ') : ''
-    return {attr: a.name, type: a.type, props, ref, doc: a.doc || ''}
+    return {attr: a.name, type: a.type, props, ref, doc: a.doc?.replaceAll(/\n/g, '\\n') || ''}
 }
 
 function genTypes(db: Database): string {
@@ -85,10 +85,10 @@ function genType(t: Type): string {
 }
 
 function genTypeContent(t: Type): string {
-    if (t.definition && t.definition.match(/[ (]/)) return 'EXPRESSION: ' + t.definition
-    if (t.definition) return 'ALIAS: ' + t.definition
+    if (t.alias) return 'ALIAS: ' + t.alias
     if (t.values) return 'ENUM: ' + t.values.join(', ')
     if (t.attrs) return 'STRUCT:' + t.attrs.map(a => `\n  ${a.name} ${a.type}`).join('')
+    if (t.definition) return 'EXPRESSION: ' + t.definition
     return 'UNKNOWN'
 }
 

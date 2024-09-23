@@ -203,9 +203,10 @@ export const EntityExtra = Extra.and(z.object({
     line: z.number().optional(),
     statement: z.number().optional(),
     alias: z.string().optional(),
+    view: z.string().optional(), // query definition of the view
     color: z.string().optional(),
     tags: z.string().array().optional(),
-    dependsOn: z.union([EntityRef, AttributeRef]).array().optional(), // for views, to know used entities/attributes
+    dependsOn: z.union([EntityId, AttributeId]).array().optional(), // for views, to know used entities/attributes
     comment: z.string().optional(), // if there is a comment in the entity line
 }))
 export type EntityExtra = z.infer<typeof EntityExtra>
@@ -237,6 +238,7 @@ export const RelationExtra = Extra.and(z.object({
     natural: z.enum(['src', 'ref', 'both']).optional(), // natural join: attributes are not specified
     onUpdate: z.union([RelationAction, z.string()]).optional(),
     onDelete: z.union([RelationAction, z.string()]).optional(),
+    tags: z.string().array().optional(),
     comment: z.string().optional(), // if there is a comment in the relation line
 }))
 export type RelationExtra = z.infer<typeof RelationExtra>
@@ -257,12 +259,14 @@ export type Relation = z.infer<typeof Relation>
 export const TypeExtra = Extra.and(z.object({
     line: z.number().optional(),
     statement: z.number().optional(),
+    tags: z.string().array().optional(),
     comment: z.string().optional(), // if there is a comment in the type line
 }))
 export type TypeExtra = z.infer<typeof TypeExtra>
 
 export const Type = Namespace.extend({
     name: TypeName,
+    alias: z.string().optional(),
     values: z.string().array().optional(),
     attrs: Attribute.array().optional(),
     definition: z.string().optional(),

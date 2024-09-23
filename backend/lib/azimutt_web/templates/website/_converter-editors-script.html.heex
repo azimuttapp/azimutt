@@ -95,7 +95,7 @@
         function parse(lang, content) {
             if (lang === 'aml') return aml.parseAml(content)
             if (lang === 'json') return aml.parseJsonDatabase(content)
-            return {errors: [{name: 'UnsupportedDialect', kind: 'error', message: 'Unsupported source dialect: ' + lang}]}
+            return {errors: [{name: 'UnsupportedDialect', kind: 'error', message: 'Unsupported source dialect: ' + lang, offset: {start: 0, end: 100}, position: {start: {line: 1, column: 1}, end: {line: 10, column: 10}}}]}
         }
         function format(lang, content) {
             if (lang === 'aml') return aml.generateAml(content)

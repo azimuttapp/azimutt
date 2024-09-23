@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import {describe, expect, test} from "@jest/globals";
-import {Database} from "@azimutt/models";
+import {Database, parseJsonDatabase} from "@azimutt/models";
 import {generateMermaid} from "./mermaidGenerator";
 
 describe('mermaidGenerator', () => {
@@ -52,10 +52,9 @@ erDiagram
 `
         expect(generateMermaid(db)).toEqual(sql)
     })
-    test('complex', () => {
-        const json = fs.readFileSync('./resources/complex.json', 'utf8')
-        const mermaid = fs.readFileSync('./resources/complex.mmd', 'utf8')
-        const db: Database = JSON.parse(json)
+    test('full', () => {
+        const db: Database = parseJsonDatabase(fs.readFileSync('./resources/full.json', 'utf8')).result || {}
+        const mermaid = fs.readFileSync('./resources/full.mmd', 'utf8')
         // const parsed = parseMermaid(mermaid)
         // expect(parsed).toEqual({result: db})
         expect(generateMermaid(db)).toEqual(mermaid)

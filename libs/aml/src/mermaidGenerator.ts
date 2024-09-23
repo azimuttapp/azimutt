@@ -42,7 +42,7 @@ function genAttribute(a: Attribute, e: Entity, relations: Relation[]): string {
     const attrUniques = (e.indexes || []).filter(u => u.unique && u.attrs.length === 1 && attributePathSame(u.attrs[0], [a.name]))
     const uk = attrUniques.length === 1 ? 'UK' : ''
     const keys = [pk, fk, uk].filter(k => !!k).join(', ')
-    return `${indent}${indent}${genType(a.type)} ${genType(a.name)}${keys ? ' ' + keys : ''}${a.doc ? ` "${a.doc.replaceAll(/"/g, '')}"` : ''}\n`
+    return `${indent}${indent}${genType(a.type)} ${genType(a.name)}${keys ? ' ' + keys : ''}${a.doc ? ` "${a.doc.replaceAll(/"/g, '').replaceAll(/\n/g, '\\n')}"` : ''}\n`
 }
 
 function genRelation(r: Relation, a: Attribute | undefined): string {
@@ -60,9 +60,9 @@ function genRelationKind(k: RelationKind | undefined, a: Attribute | undefined):
 }
 
 function genEntityName(e: EntityRef): string {
-    const database = e.database ? genIdentifier(e.database) + '.' : ''
-    const catalog = e.catalog ? genIdentifier(e.catalog) + '.' : ''
-    const schema = e.schema ? genIdentifier(e.schema) + '.' : ''
+    const database = e.database ? e.database + '.' : ''
+    const catalog = e.catalog ? e.catalog + '.' : ''
+    const schema = e.schema ? e.schema + '.' : ''
     return genIdentifier(database + catalog + schema + e.entity)
 }
 

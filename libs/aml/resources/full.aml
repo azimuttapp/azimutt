@@ -1,0 +1,86 @@
+#
+# Full Schema AML
+#
+
+users # simplest entity
+  id uid pk
+  first_name varchar unique=name
+  last_name varchar unique=name
+  email varchar unique check
+  is_admin bool=false
+
+cms.posts # entity in schema
+  id int pk {autoIncrement, tags: [id]}
+  title varchar(100) unique check=`title <> ''`
+  status post_status
+  content varchar nullable
+  settings json nullable
+    slug string unique
+    publish_at date
+    publish_by -> users(id)
+    tags "string[]"
+    category json
+      id number index
+      name string
+  created_at "timestamp with time zone"
+  created_by int -> users(id)
+
+post_members
+  post_id uuid pk=post_members_pk -> cms.posts(id)
+  user_id int pk=post_members_pk -> users(id)
+  role varchar(10)=author check=`role IN ('author', 'editor')`
+
+"legacy schema"."post member details" # special entity name
+  post_id uuid pk
+  user_id int pk
+  "index" int=0 | keyword attribute name
+  "added by" int nullable -> users(id) | special attribute name
+
+rel "legacy schema"."post member details"(post_id, user_id) -> post_members(post_id, user_id)
+
+comments as c {color: "#ccc", tags: [utils, "owner:infra"]} |||
+  a table with most options
+  looks quite complex but not intended to be used all together ^^
+||| # several additional props
+  id uuid pk=comment_pk
+  item_kind comment_item(User, Post) index=item |||
+    polymorphic column for polymorphic relation
+    used with both item_kind and item_id
+  |||
+  item_id int index=item
+  content | doc with \# escaped # no type
+  created_by -> users # attribute type should default to target column is not set
+
+rel comments(item_id) -item_kind=User> user(id)
+rel comments(item_id) -item_kind=Post> cms.posts(id) {onDelete: cascade}
+
+web.public.legacy_slug
+  old_slug slug
+  new_slug slug
+  cur_slug varchar nullable -> cms.posts(settings.slug)
+
+organizations
+  id int pk <> users | many-to-many relation
+  name varchar(50)
+  content box nullable
+
+profiles
+  id int pk -- users(id) | one-to-one relation
+
+admins* {dependsOn: [users]}
+  id
+  first_name
+  last_name
+  email
+
+guests {view: "SELECT * FROM users WHERE is_admin = false"} # a view without attributes but with definition
+
+type slug | anonymous type
+type uid int {tags: [generic]} # alias type
+type cms.post_status (draft, published, archived) # enum type
+type position {x int, y int} # struct type
+type box `(INTERNALLENGTH = 16, INPUT = lower, OUTPUT = lower)` # custom type
+
+social_accounts | entity with no attribute
+
+rel social_accounts <> users | natural many-to-many relation

@@ -49,6 +49,14 @@ users {color: red, tags: [pii, sensitive], deprecated} | storing all users
   name
 ```
 
+You can use properties to define a view:
+
+```aml
+admins {view: "SELECT * FROM users WHERE role = 'admin'"}
+  id
+  name
+```
+
 
 ### Alias
 

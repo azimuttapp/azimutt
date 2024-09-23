@@ -1,0 +1,244 @@
+{
+  "entities": [
+    {
+      "name": "users",
+      "attrs": [
+        {"name": "id", "type": "uid"},
+        {"name": "first_name", "type": "varchar"},
+        {"name": "last_name", "type": "varchar"},
+        {"name": "email", "type": "varchar"},
+        {"name": "is_admin", "type": "bool", "default": false}
+      ],
+      "pk": {"attrs": [["id"]]},
+      "indexes": [
+        {"name": "name", "attrs": [["first_name"], ["last_name"]], "unique": true},
+        {"attrs": [["email"]], "unique": true}
+      ],
+      "checks": [
+        {"predicate": "", "attrs": [["email"]]}
+      ],
+      "extra": {"line": 5, "statement": 1, "comment": "simplest entity"}
+    },
+    {
+      "schema": "cms",
+      "name": "posts",
+      "attrs": [
+        {"name": "id", "type": "int", "extra": {"autoIncrement": true, "tags": ["id"]}},
+        {"name": "title", "type": "varchar(100)"},
+        {"name": "status", "type": "post_status"},
+        {"name": "content", "type": "varchar", "null": true},
+        {"name": "settings", "type": "json", "null": true, "attrs": [
+          {"name": "slug", "type": "string"},
+          {"name": "publish_at", "type": "date"},
+          {"name": "publish_by", "type": "unknown"},
+          {"name": "tags", "type": "string[]"},
+          {"name": "category", "type": "json", "attrs": [
+            {"name": "id", "type": "number"},
+            {"name": "name", "type": "string"}
+          ]}
+        ]},
+        {"name": "created_at", "type": "timestamp with time zone"},
+        {"name": "created_by", "type": "int"}
+      ],
+      "pk": {"attrs": [["id"]]},
+      "indexes": [
+        {"attrs": [["title"]], "unique": true},
+        {"attrs": [["settings", "slug"]], "unique": true},
+        {"attrs": [["settings", "category", "id"]]}
+      ],
+      "checks": [
+        {"predicate": "title <> ''", "attrs": [["title"]]}
+      ],
+      "extra": {"line": 12, "statement": 2, "comment": "entity in schema"}
+    },
+    {
+      "name": "post_members",
+      "attrs": [
+        {"name": "post_id", "type": "uuid"},
+        {"name": "user_id", "type": "int"},
+        {"name": "role", "type": "varchar(10)", "default": "author"}
+      ],
+      "pk": {"name": "post_members_pk", "attrs": [["post_id"], ["user_id"]]},
+      "checks": [
+        {"predicate": "role IN ('author', 'editor')", "attrs": [["role"]]}
+      ],
+      "extra": {"line": 28, "statement": 3}
+    },
+    {
+      "schema": "legacy schema",
+      "name": "post member details",
+      "attrs": [
+        {"name": "post_id", "type": "uuid"},
+        {"name": "user_id", "type": "int"},
+        {"name": "index", "type": "int", "default": 0, "doc": "keyword attribute name"},
+        {"name": "added by", "type": "int", "null": true, "doc": "special attribute name"}
+      ],
+      "pk": {"attrs": [["post_id"], ["user_id"]]},
+      "extra": {"line": 33, "statement": 4, "comment": "special entity name"}
+    },
+    {
+      "name": "comments",
+      "attrs": [
+        {"name": "id", "type": "uuid"},
+        {"name": "item_kind", "type": "comment_item", "doc": "polymorphic column for polymorphic relation\nused with both item_kind and item_id"},
+        {"name": "item_id", "type": "int"},
+        {"name": "content", "type": "unknown", "doc": "doc with # escaped", "extra": {"comment": "no type"}},
+        {"name": "created_by", "type": "unknown", "extra": {"comment": "attribute type should default to target column is not set"}}
+      ],
+      "pk": {"name": "comment_pk", "attrs": [["id"]]},
+      "indexes": [
+        {"name": "item", "attrs": [["item_kind"], ["item_id"]]}
+      ],
+      "doc": "a table with most options\nlooks quite complex but not intended to be used all together ^^",
+      "extra": {"color": "#ccc", "tags": ["utils", "owner:infra"], "line": 41, "statement": 6, "alias": "c", "comment": "several additional props"}
+    },
+    {
+      "schema": "public",
+      "catalog": "web",
+      "name": "legacy_slug",
+      "attrs": [
+        {"name": "old_slug", "type": "slug"},
+        {"name": "new_slug", "type": "slug"},
+        {"name": "cur_slug", "type": "varchar", "null": true}
+      ],
+      "extra": {"line": 57, "statement": 9}
+    },
+    {
+      "name": "organizations",
+      "attrs": [
+        {"name": "id", "type": "int", "doc": "many-to-many relation"},
+        {"name": "name", "type": "varchar(50)"},
+        {"name": "content", "type": "box", "null": true}
+      ],
+      "pk": {"attrs": [["id"]]},
+      "extra": {"line": 62, "statement": 10}
+    },
+    {
+      "name": "profiles",
+      "attrs": [
+        {"name": "id", "type": "int", "doc": "one-to-one relation"}
+      ],
+      "pk": {"attrs": [["id"]]},
+      "extra": {"line": 67, "statement": 11}
+    },
+    {
+      "name": "admins",
+      "kind": "view",
+      "attrs": [
+        {"name": "id", "type": "unknown"},
+        {"name": "first_name", "type": "unknown"},
+        {"name": "last_name", "type": "unknown"},
+        {"name": "email", "type": "unknown"}
+      ],
+      "extra": {"dependsOn": ["users"], "line": 70, "statement": 12}
+    },
+    {
+      "name": "guests",
+      "kind": "view",
+      "def": "SELECT * FROM users WHERE is_admin = false",
+      "extra": {"view": "SELECT * FROM users WHERE is_admin = false", "line": 76, "statement": 13, "comment": "a view without attributes but with definition"}
+    },
+    {
+      "name": "social_accounts",
+      "doc": "entity with no attribute",
+      "extra": {"line": 84, "statement": 19}
+    }
+  ],
+  "relations": [
+    {
+      "src": {"schema": "cms", "entity": "posts"},
+      "ref": {"entity": "users"},
+      "attrs": [{"src": ["settings", "publish_by"], "ref": ["id"]}],
+      "extra": {"line": 20, "statement": 2, "inline": true}
+    },
+    {
+      "src": {"schema": "cms", "entity": "posts"},
+      "ref": {"entity": "users"},
+      "attrs": [{"src": ["created_by"], "ref": ["id"]}],
+      "extra": {"line": 26, "statement": 2, "inline": true}
+    },
+    {
+      "src": {"entity": "post_members"},
+      "ref": {"schema": "cms", "entity": "posts"},
+      "attrs": [{"src": ["post_id"], "ref": ["id"]}],
+      "extra": {"line": 29, "statement": 3, "inline": true}
+    },
+    {
+      "src": {"entity": "post_members"},
+      "ref": {"entity": "users"},
+      "attrs": [{"src": ["user_id"], "ref": ["id"]}],
+      "extra": {"line": 30, "statement": 3, "inline": true}
+    },
+    {
+      "src": {"schema": "legacy schema", "entity": "post member details"},
+      "ref": {"entity": "users"},
+      "attrs": [{"src": ["added by"], "ref": ["id"]}],
+      "extra": {"line": 37, "statement": 4, "inline": true}
+    },
+    {
+      "src": {"schema": "legacy schema", "entity": "post member details"},
+      "ref": {"entity": "post_members"},
+      "attrs": [{"src": ["post_id"], "ref": ["post_id"]}, {"src": ["user_id"], "ref": ["user_id"]}],
+      "extra": {"line": 39, "statement": 5}
+    },
+    {
+      "src": {"entity": "comments"},
+      "ref": {"entity": "users"},
+      "attrs": [{"src": ["created_by"], "ref": ["id"]}],
+      "extra": {"line": 52, "statement": 6, "inline": true, "natural": "ref"}
+    },
+    {
+      "src": {"entity": "comments"},
+      "ref": {"entity": "user"},
+      "attrs": [{"src": ["item_id"], "ref": ["id"]}],
+      "polymorphic": {"attribute": ["item_kind"], "value": "User"},
+      "extra": {"line": 54, "statement": 7}
+    },
+    {
+      "src": {"entity": "comments"},
+      "ref": {"schema": "cms", "entity": "posts"},
+      "attrs": [{"src": ["item_id"], "ref": ["id"]}],
+      "polymorphic": {"attribute": ["item_kind"], "value": "Post"},
+      "extra": {"onDelete": "cascade", "line": 55, "statement": 8}
+    },
+    {
+      "src": {"schema": "public", "catalog": "web", "entity": "legacy_slug"},
+      "ref": {"schema": "cms", "entity": "posts"},
+      "attrs": [{"src": ["cur_slug"], "ref": ["settings", "slug"]}],
+      "extra": {"line": 60, "statement": 9, "inline": true}
+    },
+    {
+      "kind": "many-to-many",
+      "src": {"entity": "organizations"},
+      "ref": {"entity": "users"},
+      "attrs": [{"src": ["id"], "ref": ["id"]}],
+      "extra": {"line": 63, "statement": 10, "inline": true, "natural": "ref"}
+    },
+    {
+      "kind": "one-to-one",
+      "src": {"entity": "profiles"},
+      "ref": {"entity": "users"},
+      "attrs": [{"src": ["id"], "ref": ["id"]}],
+      "extra": {"line": 68, "statement": 11, "inline": true}
+    },
+    {
+      "kind": "many-to-many",
+      "src": {"entity": "social_accounts"},
+      "ref": {"entity": "users"},
+      "attrs": [],
+      "doc": "natural many-to-many relation",
+      "extra": {"line": 86, "statement": 20, "natural": "both"}
+    }
+  ],
+  "types": [
+    {"name": "comment_item", "values": ["User", "Post"], "extra": {"line": 46, "statement": 6}},
+    {"name": "slug", "doc": "anonymous type", "extra": {"line": 78, "statement": 14}},
+    {"name": "uid", "alias": "int", "extra": {"tags": ["generic"], "line": 79, "statement": 15, "comment": "alias type"}},
+    {"schema": "cms", "name": "post_status", "values": ["draft", "published", "archived"], "extra": {"line": 80, "statement": 16, "comment": "enum type"}},
+    {"name": "position", "attrs": [{"name": "x", "type": "int"}, {"name": "y", "type": "int"}], "extra": {"line": 81, "statement": 17, "comment": "struct type"}},
+    {"name": "box", "definition": "(INTERNALLENGTH = 16, INPUT = lower, OUTPUT = lower)", "extra": {"line": 82, "statement": 18, "comment": "custom type"}}
+  ],
+  "extra": {
+    "comments": [{"line": 1, "comment": ""}, {"line": 2, "comment": "Full Schema AML"}, {"line": 3, "comment": ""}]
+  }
+}

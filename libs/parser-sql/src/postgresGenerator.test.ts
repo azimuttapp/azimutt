@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import {describe, expect, test} from "@jest/globals";
-import {Database} from "@azimutt/models";
+import {Database, parseJsonDatabase} from "@azimutt/models";
 import {generatePostgres} from "./postgresGenerator";
 
 describe('postgresGenerator', () => {
@@ -47,10 +47,9 @@ CREATE TABLE posts (
 `
         expect(generatePostgres(db)).toEqual(sql)
     })
-    test('complex', () => {
-        const json = fs.readFileSync('./resources/complex.json', 'utf8')
-        const sql = fs.readFileSync('./resources/complex.sql', 'utf8')
-        const db: Database = JSON.parse(json)
+    test('full', () => {
+        const db: Database = parseJsonDatabase(fs.readFileSync('../aml/resources/full.json', 'utf8')).result || {}
+        const sql = fs.readFileSync('./resources/full.postgres.sql', 'utf8')
         // const parsed = parsePostgres(sql)
         // expect(parsed).toEqual({result: db})
         expect(generatePostgres(db)).toEqual(sql)
