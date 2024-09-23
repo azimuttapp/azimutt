@@ -151,6 +151,7 @@ export const AttributeExtra = Extra.and(z.object({
     autoIncrement: z.boolean().optional(),
     hidden: z.boolean().optional(),
     tags: z.string().array().optional(),
+    comment: z.string().optional(), // if there is a comment in the attribute line
 }))
 export type AttributeExtra = z.infer<typeof AttributeExtra>
 
@@ -174,7 +175,7 @@ export type Attribute = { // define type explicitly because it's lazy (https://z
     attrs?: Attribute[] | undefined
     doc?: string | undefined
     stats?: AttributeStats | undefined
-    extra?: Extra | undefined
+    extra?: AttributeExtra | undefined
 }
 
 export const EntityKind = z.enum(['table', 'view', 'materialized view', 'foreign table'])
@@ -205,6 +206,7 @@ export const EntityExtra = Extra.and(z.object({
     color: z.string().optional(),
     tags: z.string().array().optional(),
     dependsOn: z.union([EntityRef, AttributeRef]).array().optional(), // for views, to know used entities/attributes
+    comment: z.string().optional(), // if there is a comment in the entity line
 }))
 export type EntityExtra = z.infer<typeof EntityExtra>
 
@@ -235,12 +237,13 @@ export const RelationExtra = Extra.and(z.object({
     natural: z.enum(['src', 'ref', 'both']).optional(), // natural join: attributes are not specified
     onUpdate: z.union([RelationAction, z.string()]).optional(),
     onDelete: z.union([RelationAction, z.string()]).optional(),
+    comment: z.string().optional(), // if there is a comment in the relation line
 }))
 export type RelationExtra = z.infer<typeof RelationExtra>
 
 export const Relation = z.object({
     name: ConstraintName.optional(),
-    kind: RelationKind.optional(), // 'many-to-one' when not specified
+    kind: RelationKind.optional(), // 'many-to-one' when not specified TODO: split in srcCardinality & refCardinality (or add cardinality in src & ref)
     origin: z.enum(['fk', 'infer-name', 'infer-similar', 'infer-query', 'user']).optional(), // 'fk' when not specified
     src: EntityRef,
     ref: EntityRef,
@@ -254,6 +257,7 @@ export type Relation = z.infer<typeof Relation>
 export const TypeExtra = Extra.and(z.object({
     line: z.number().optional(),
     statement: z.number().optional(),
+    comment: z.string().optional(), // if there is a comment in the type line
 }))
 export type TypeExtra = z.infer<typeof TypeExtra>
 

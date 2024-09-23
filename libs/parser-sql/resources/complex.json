@@ -1,0 +1,83 @@
+{
+  "entities": [
+    {
+      "name": "users",
+      "attrs": [
+        {"name": "id", "type": "uuid"},
+        {"name": "name", "type": "varchar"},
+        {"name": "role", "type": "user_role", "default": "guest"},
+        {"name": "settings", "type": "jsonb", "null": true, "attrs": [
+          {"name": "address", "type": "object", "attrs": [
+            {"name": "street", "type": "string"},
+            {"name": "city", "type": "string"},
+            {"name": "country", "type": "string"}
+          ]}
+        ]}
+      ],
+      "pk": {"attrs": [["id"]]},
+      "indexes": [
+        {"attrs": [["name"]], "unique": true},
+        {"attrs": [["settings", "address", "country"], ["settings", "address", "city"], ["settings", "address", "street"]], "name": "users_address_index"}
+      ],
+      "checks": [
+        {"attrs": [["name"]], "predicate": "name <> ''"},
+        {"attrs": [["role"], ["name"]], "predicate": "role = 'admin' AND name LIKE 'a_%'", "name": "users_admin_name_chk"}
+      ]
+    },
+    {
+      "name": "posts",
+      "attrs": [
+        {"name": "id", "type": "uuid"},
+        {"name": "title", "type": "varchar", "doc": "Post title", "extra": {"comment": "defining doc"}},
+        {"name": "content", "type": "text"},
+        {"name": "created_by", "type": "uuid"}
+      ],
+      "pk": {"attrs": [["id"]]},
+      "doc": "All posts",
+      "extra": {"comment": "Create posts"}
+    },
+    {
+      "name": "comments",
+      "attrs": [
+        {"name": "id", "type": "uuid"},
+        {"name": "content", "type": "text"},
+        {"name": "item_kind", "type": "varchar"},
+        {"name": "item_id", "type": "uuid"}
+      ],
+      "pk": {"attrs": [["id"]]}
+    },
+    {
+      "name": "post_members",
+      "attrs": [
+        {"name": "post_id", "type": "uuid"},
+        {"name": "user_id", "type": "int"},
+        {"name": "role", "type": "varchar(10)"}
+      ],
+      "pk": {"attrs": [["post_id"], ["user_id"]], "name": "post_members_pk"}
+    },
+    {
+      "name": "post_member_details",
+      "attrs": [
+        {"name": "post_id", "type": "uuid"},
+        {"name": "user_id", "type": "int"},
+        {"name": "added_by", "type": "int"}
+      ],
+      "pk": {"attrs": [["post_id"], ["user_id"]]}
+    },
+    {
+      "name": "admins",
+      "kind": "view",
+      "def": "SELECT * FROM users WHERE role = 'admin'"
+    }
+  ],
+  "relations": [
+    {"src": {"entity": "posts"}, "ref": {"entity": "users"}, "attrs": [{"src": ["created_by"], "ref": ["id"]}]},
+    {"src": {"entity": "comments"}, "ref": {"entity": "users"}, "attrs": [{"src": ["item_id"], "ref": ["id"]}], "polymorphic":  {"attribute":  ["item_kind"], "value": "User"}},
+    {"src": {"entity": "comments"}, "ref": {"entity": "posts"}, "attrs": [{"src": ["item_id"], "ref": ["id"]}], "polymorphic":  {"attribute":  ["item_kind"], "value": "Post"}},
+    {"src": {"entity": "post_member_details"}, "ref": {"entity": "users"}, "attrs": [{"src": ["added_by"], "ref": ["id"]}]},
+    {"src": {"entity": "post_member_details"}, "ref": {"entity": "post_members"}, "attrs": [{"src": ["post_id"], "ref": ["post_id"]}, {"src": ["user_id"], "ref": ["user_id"]}]}
+  ],
+  "types": [
+    {"name": "user_role", "values": ["admin", "guest"], "doc": "user roles"}
+  ]
+}

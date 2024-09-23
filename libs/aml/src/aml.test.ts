@@ -141,7 +141,7 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
         expect(parsed).toEqual({result: db})
         expect(generateAml(parsed.result || {})).toEqual(input.trim() + '\n')
     })
-    test.skip('complex schema',  () => { // TODO: unskip
+    test.skip('complex schema',  () => {
         const input = fs.readFileSync('./resources/complex.aml', 'utf8')
         const json = fs.readFileSync('./resources/complex.json', 'utf8')
         const db: Database = JSON.parse(json)

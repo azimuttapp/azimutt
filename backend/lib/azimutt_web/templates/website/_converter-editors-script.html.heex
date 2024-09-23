@@ -89,6 +89,7 @@
         }
         function editorLang(lang) {
             if (lang === 'postgres') return 'pgsql'
+            if (lang === 'mermaid') return 'plaintext'
             return lang
         }
         function parse(lang, content) {
@@ -100,6 +101,7 @@
             if (lang === 'aml') return aml.generateAml(content)
             if (lang === 'json') return aml.generateJsonDatabase(content)
             if (lang === 'postgres') return sql.generateSql(content, 'postgres')
+            if (lang === 'mermaid') return aml.generateMermaid(content)
             return 'Unsupported destination dialect: ' + lang
         }
         function defaultValue(lang) {
@@ -186,6 +188,24 @@ CREATE TABLE posts (
   created_by uuid NOT NULL REFERENCES users(id)
 );
 COMMENT ON COLUMN posts.content IS 'in markdown';
+`
+            if (lang === 'mermaid') return `erDiagram
+    users {
+        uuid id PK
+        varchar name
+        varchar email UK
+        user_role role
+    }
+    posts {
+        uuid id PK
+        varchar title
+        text content "in markdown"
+        uuid author FK
+        timestamp created_at
+        uuid created_by FK
+    }
+    posts }o--|| users : author
+    posts }o--|| users : created_by
 `
             return ''
         }
