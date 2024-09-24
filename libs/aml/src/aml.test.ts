@@ -44,7 +44,7 @@ identity.users as users |||
       country int index=address -> countries
   created_at timestamp=\`now()\`
 
-posts* {pii, tags: [cms]} | all posts # an other entity
+posts {view, pii, tags: [cms]} | all posts # an other entity
   id post_id pk
   title "character varying(100)"=draft nullable index | Title of the post
   author int check=\`author > 0\` -> users(id)

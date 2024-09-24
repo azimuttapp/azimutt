@@ -30,7 +30,7 @@ import {
 // keep Regex in sync with backend/assets/js/lang.aml.ts
 export const entityRegex = /^[a-zA-Z_][a-zA-Z0-9_#]*/
 export const attributeNameRegex = /^ +[a-zA-Z_][a-zA-Z0-9_#]*/
-export const attributeTypeRegex = /\b(uuid|varchar|text|int|boolean|timestamp)\b/
+export const attributeTypeRegex = /\b(uuid|(var|n)?char2?|character( varying)?|(tiny|medium|long|ci)?text|(tiny|small|big)?int(eger)?(\d+)?|numeric|float|double( precision)?|bool(ean)?|timestamp( with(out)? time zone)?|date(time)?|time( with(out)? time zone)?|interval|json|string|number)\b/
 export const keywordRegex = /\b(namespace|nullable|pk|index|unique|check|fk|rel|type)\b/
 export const notesRegex = /\|[^#\n]*/
 export const commentRegex = /#.*/
