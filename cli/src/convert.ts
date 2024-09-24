@@ -4,11 +4,11 @@ import {
     generateJsonDatabase,
     parseJsonDatabase,
     ParserError,
+    ParserErrorLevel,
     ParserResult,
-    TokenEditor,
-    zodParse
+    TokenEditor
 } from "@azimutt/models";
-import {parseAml, generateAml} from "@azimutt/aml";
+import {generateAml, parseAml} from "@azimutt/aml";
 import {fileRead, fileWrite} from "./utils/file.js";
 import {logger} from "./utils/logger.js";
 
@@ -41,7 +41,7 @@ export async function convertFile(path: string, opts: Opts): Promise<void> {
 function parseDialect(dialect: string, content: string): ParserResult<Database> {
     if (dialect === 'aml') return parseAml(content)
     if (dialect === 'json') return parseJsonDatabase(content)
-    return ParserResult.failure([parserError('BadArgument', `Can't parse ${dialect} dialect`)])
+    return ParserResult.failure([parserError(`Can't parse ${dialect} dialect`, 'BadArgument')])
 }
 
 function generateDialect(dialect: string, db: Database): Result<string, string> {
@@ -64,8 +64,8 @@ function dialectToExtension(dialect: string): string {
     return 'txt'
 }
 
-function parserError(name: string, message: string): ParserError {
-    return {name, kind: 'error', message, offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}
+function parserError(message: string, kind: string): ParserError {
+    return {message, kind, level: ParserErrorLevel.enum.error, offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}
 }
 
 function showPosition(pos: TokenEditor): string {

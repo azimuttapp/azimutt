@@ -367,10 +367,10 @@ describe('databaseUtils', () => {
     test('parseJsonDatabase', () => {
         expect(parseJsonDatabase(`{}`)).toEqual({result: {}})
         expect(parseJsonDatabase(`{"entities": [{"name": "users"}, {"name": "posts"}]}`)).toEqual({result: {entities: [{name: 'users'}, {name: 'posts'}]}})
-        expect(parseJsonDatabase(`{"bad": 1}`)).toEqual({errors: [{name: 'InvalidJson', kind: 'error', message: "Invalid Database, at _root_: invalid additional key 'bad' (1)", offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}]})
-        expect(parseJsonDatabase(`{"entities": [{"name": true}]}`)).toEqual({errors: [{name: 'InvalidJson', kind: 'error', message: "Invalid Database, at .entities.0.name: expect 'string' but got 'boolean' (true)", offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}]})
-        // expect(databaseJsonParse(`bad`)).toEqual({errors: [{name: 'MalformedJson', kind: 'error', message: "Unexpected token 'b', \"bad\" is not valid JSON", offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}]})
-        // expect(databaseJsonParse(`bad`)).toEqual({errors: [{name: 'MalformedJson', kind: 'error', message: "Unexpected token b in JSON at position 0", offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}]})
+        expect(parseJsonDatabase(`{"bad": 1}`)).toEqual({errors: [{message: "Invalid Database, at _root_: invalid additional key 'bad' (1)", kind: 'InvalidJson', level: 'error', offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}]})
+        expect(parseJsonDatabase(`{"entities": [{"name": true}]}`)).toEqual({errors: [{message: "Invalid Database, at .entities.0.name: expect 'string' but got 'boolean' (true)", kind: 'InvalidJson', level: 'error', offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}]})
+        // expect(databaseJsonParse(`bad`)).toEqual({errors: [{message: "Unexpected token 'b', \"bad\" is not valid JSON", kind: 'MalformedJson', level: 'error', offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}]})
+        // expect(databaseJsonParse(`bad`)).toEqual({errors: [{message: "Unexpected token b in JSON at position 0", kind: 'MalformedJson', level: 'error', offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}]})
     })
     test('generateJsonDatabase', () => {
         const prettyJson = generateJsonDatabase({

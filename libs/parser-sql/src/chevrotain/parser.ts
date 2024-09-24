@@ -20,7 +20,7 @@ import {
     WildcardAst
 } from "./ast";
 import {removeUndefined} from "@azimutt/utils";
-import {ParserError, ParserResult} from "@azimutt/models";
+import {ParserError, ParserErrorLevel, ParserResult} from "@azimutt/models";
 
 // https://chevrotain.io/docs/features/lexer_modes.html
 // https://chevrotain.io/docs/features/custom_token_patterns.html => indentation
@@ -248,7 +248,7 @@ export function parse(input: string): ParserResult<SqlScriptAst> {
 }
 
 function formatError(err: IRecognitionException): ParserError {
-    return {name: err.name, kind: 'error', message: err.message, ...parserInfo(err.token)}
+    return {message: err.message, kind: err.name, level: ParserErrorLevel.enum.error, ...parserInfo(err.token)}
 }
 
 function parserInfo(token: IToken): TokenInfo {

@@ -20,6 +20,7 @@ import {
     Entity,
     EntityName,
     Index,
+    ParserErrorLevel,
     ParserResult,
     PrimaryKey,
     Relation,
@@ -32,7 +33,7 @@ export function parsePrisma(content: string, opts: { context?: Database } = {}):
     try {
         return ParserResult.success(buildDatabase(parsePrismaSchema(content)))
     } catch (e) {
-        return ParserResult.failure([{name: 'PrismaParserError', kind: 'error', message: errorToString(e), offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}])
+        return ParserResult.failure([{message: errorToString(e), kind: 'PrismaParserError', level: ParserErrorLevel.enum.error, offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}])
     }
 }
 

@@ -1,5 +1,5 @@
 import {isObject} from "@azimutt/utils";
-import {isParserErrorKind, isTokenPosition, ParserErrorKind, TokenPosition} from "@azimutt/models";
+import {isParserErrorLevel, isTokenPosition, ParserErrorLevel, TokenPosition} from "@azimutt/models";
 
 export type AmlAst = StatementAst[]
 export type StatementAst = NamespaceStatement | EntityStatement | RelationStatement | TypeStatement | EmptyStatement
@@ -50,7 +50,7 @@ export type DocToken = { token: 'Doc', value: string } & TokenPosition
 export type CommentToken = { token: 'Comment', value: string } & TokenPosition
 
 export type TokenInfo = TokenPosition & { issues?: TokenIssue[] }
-export type TokenIssue = { name: string, kind: ParserErrorKind, message: string } // TODO: migrate to: { message: string, kind: string, level: ParserErrorLevel }
+export type TokenIssue = { message: string, kind: string, level: ParserErrorLevel }
 
 export const isTokenInfo = (value: unknown): value is TokenInfo => isTokenPosition(value) && (!('issues' in value) || ('issues' in value && Array.isArray(value.issues) && value.issues.every(isTokenIssue)))
-export const isTokenIssue = (value: unknown): value is TokenIssue => isObject(value) && ('kind' in value && isParserErrorKind(value.kind)) && ('message' in value && typeof value.message === 'string')
+export const isTokenIssue = (value: unknown): value is TokenIssue => isObject(value) && ('message' in value && typeof value.message === 'string') && ('kind' in value && typeof value.kind === 'string') && ('level' in value && isParserErrorLevel(value.level))

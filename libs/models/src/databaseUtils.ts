@@ -253,11 +253,11 @@ export function parseJsonDatabase(content: string): ParserResult<Database> {
     try {
         json = JSON.parse(content)
     } catch (e) {
-        return ParserResult.failure([{name: 'MalformedJson', kind: 'error', message: errorToString(e), offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}])
+        return ParserResult.failure([{message: errorToString(e), kind: 'MalformedJson', level: 'error', offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}])
     }
     return zodParse(Database)(json).fold(
         db => ParserResult.success(db),
-        err => ParserResult.failure([{name: 'InvalidJson', kind: 'error', message: err, offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}])
+        err => ParserResult.failure([{message: err, kind: 'InvalidJson', level: 'error', offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}])
     )
 }
 

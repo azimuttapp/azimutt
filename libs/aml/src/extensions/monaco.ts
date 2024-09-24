@@ -144,7 +144,7 @@ export const codeLens = (opts: {} = {}): CodeLensProvider => ({ // hints with ac
 })
 
 export const createMarker = (e: ParserError, model: ITextModel, editor: IStandaloneCodeEditor): IMarkerData => {
-    const severity = e.kind === 'error' ? MarkerSeverity.Error : e.kind === 'warning' ? MarkerSeverity.Warning : e.kind === 'info' ? MarkerSeverity.Info : MarkerSeverity.Hint
+    const severity = e.level === 'error' ? MarkerSeverity.Error : e.level === 'warning' ? MarkerSeverity.Warning : e.level === 'info' ? MarkerSeverity.Info : MarkerSeverity.Hint
     if (e.position.start.line === 0 || e.position.start.column === 0) { // unknown position :/
         const cursor = editor.getPosition()
         return {

@@ -8,7 +8,14 @@ import {
     TokenType
 } from "chevrotain";
 import {isNotUndefined, removeEmpty, removeUndefined, stripIndent} from "@azimutt/utils";
-import {mergePositions, ParserError, ParserResult, removeQuotes, TokenPosition} from "@azimutt/models";
+import {
+    mergePositions,
+    ParserError,
+    ParserErrorLevel,
+    ParserResult,
+    removeQuotes,
+    TokenPosition
+} from "@azimutt/models";
 import {
     AmlAst,
     AttributeAstFlat,
@@ -655,9 +662,9 @@ export function parseAmlAst(input: string, opts: { strict?: boolean }): ParserRe
 
 function formatLexerError(err: ILexingError): ParserError {
     return {
-        name: 'LexingError',
-        kind: 'error',
         message: err.message,
+        kind: 'LexingError',
+        level: ParserErrorLevel.enum.error,
         offset: {start: err.offset, end: err.offset + err.length},
         position: {
             start: {line: err.line || defaultPos, column: err.column || defaultPos},
@@ -667,7 +674,7 @@ function formatLexerError(err: ILexingError): ParserError {
 }
 
 function formatParserError(err: IRecognitionException): ParserError {
-    return {name: err.name, kind: 'error', message: err.message, ...tokenInfo(err.token)}
+    return {message: err.message, kind: err.name, level: ParserErrorLevel.enum.error, ...tokenInfo(err.token)}
 }
 
 function tokenInfo(token: IToken, issues?: TokenIssue[]): TokenInfo {

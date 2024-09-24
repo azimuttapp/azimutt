@@ -372,7 +372,7 @@ comments
                 }})
             })
             test('error', () => {
-                expect(parseRule(p => p.attributeRule(), '  12\n')).toEqual({result: {nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)}}, errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Identifier <-- but found --> '12' <--", ...tokenPosition(2, 3, 1, 3, 1, 4)}]})
+                expect(parseRule(p => p.attributeRule(), '  12\n')).toEqual({result: {nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)}}, errors: [{message: "Expecting token of type --> Identifier <-- but found --> '12' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(2, 3, 1, 3, 1, 4)}]})
             })
         })
     })
@@ -479,7 +479,7 @@ comments
             }})
         })
         test('bad', () => {
-            expect(parseRule(p => p.relationRule(), 'bad')).toEqual({errors: [{name: 'NoViableAltException', kind: 'error', message: "Expecting: one of these possible Token sequences:\n  1. [Relation]\n  2. [ForeignKey]\nbut found: 'bad'", ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
+            expect(parseRule(p => p.relationRule(), 'bad')).toEqual({errors: [{message: "Expecting: one of these possible Token sequences:\n  1. [Relation]\n  2. [ForeignKey]\nbut found: 'bad'", kind: 'NoViableAltException', level: 'error', ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
         })
     })
     describe('typeRule', () => {
@@ -660,13 +660,13 @@ comments
     describe('common', () => {
         test('integerRule', () => {
             expect(parseRule(p => p.integerRule(), '12')).toEqual({result: {token: 'Integer', value: 12, ...tokenPosition(0, 1, 1, 1, 1, 2)}})
-            expect(parseRule(p => p.integerRule(), '1.2')).toEqual({errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Integer <-- but found --> '1.2' <--", ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
-            expect(parseRule(p => p.integerRule(), 'bad')).toEqual({errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Integer <-- but found --> 'bad' <--", ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
+            expect(parseRule(p => p.integerRule(), '1.2')).toEqual({errors: [{message: "Expecting token of type --> Integer <-- but found --> '1.2' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
+            expect(parseRule(p => p.integerRule(), 'bad')).toEqual({errors: [{message: "Expecting token of type --> Integer <-- but found --> 'bad' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
         })
         test('decimalRule', () => {
             expect(parseRule(p => p.decimalRule(), '1.2')).toEqual({result: {token: 'Decimal', value: 1.2, ...tokenPosition(0, 2, 1, 1, 1, 3)}})
-            expect(parseRule(p => p.decimalRule(), '12')).toEqual({errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Decimal <-- but found --> '12' <--", ...tokenPosition(0, 1, 1, 1, 1, 2)}]})
-            expect(parseRule(p => p.decimalRule(), 'bad')).toEqual({errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Decimal <-- but found --> 'bad' <--", ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
+            expect(parseRule(p => p.decimalRule(), '12')).toEqual({errors: [{message: "Expecting token of type --> Decimal <-- but found --> '12' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(0, 1, 1, 1, 1, 2)}]})
+            expect(parseRule(p => p.decimalRule(), 'bad')).toEqual({errors: [{message: "Expecting token of type --> Decimal <-- but found --> 'bad' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
         })
         test('identifierRule', () => {
             expect(parseRule(p => p.identifierRule(), 'id')).toEqual({result: {token: 'Identifier', value: 'id', ...tokenPosition(0, 1, 1, 1, 1, 2)}})
@@ -675,17 +675,17 @@ comments
             expect(parseRule(p => p.identifierRule(), '"my col"')).toEqual({result: {token: 'Identifier', value: 'my col', ...tokenPosition(0, 7, 1, 1, 1, 8)}})
             expect(parseRule(p => p.identifierRule(), '"varchar[]"')).toEqual({result: {token: 'Identifier', value: 'varchar[]', ...tokenPosition(0, 10, 1, 1, 1, 11)}})
             expect(parseRule(p => p.identifierRule(), '"my \\"new\\" col"')).toEqual({result: {token: 'Identifier', value: 'my "new" col', ...tokenPosition(0, 15, 1, 1, 1, 16)}})
-            expect(parseRule(p => p.identifierRule(), 'bad col')).toEqual({result: {token: 'Identifier', value: 'bad', ...tokenPosition(0, 2, 1, 1, 1, 3)}, errors: [{name: 'NotAllInputParsedException', kind: 'error', message: "Redundant input, expecting EOF but found:  ", ...tokenPosition(3, 3, 1, 4, 1, 4)}]})
+            expect(parseRule(p => p.identifierRule(), 'bad col')).toEqual({result: {token: 'Identifier', value: 'bad', ...tokenPosition(0, 2, 1, 1, 1, 3)}, errors: [{message: "Redundant input, expecting EOF but found:  ", kind: 'NotAllInputParsedException', level: 'error', ...tokenPosition(3, 3, 1, 4, 1, 4)}]})
         })
         test('commentRule', () => {
             expect(parseRule(p => p.commentRule(), '# a comment')).toEqual({result: {token: 'Comment', value: 'a comment', ...tokenPosition(0, 10, 1, 1, 1, 11)}})
-            expect(parseRule(p => p.commentRule(), 'bad')).toEqual({errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Comment <-- but found --> 'bad' <--", ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
+            expect(parseRule(p => p.commentRule(), 'bad')).toEqual({errors: [{message: "Expecting token of type --> Comment <-- but found --> 'bad' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
         })
         test('noteRule', () => {
             expect(parseRule(p => p.docRule(), '| a note')).toEqual({result: {token: 'Doc', value: 'a note', ...tokenPosition(0, 7, 1, 1, 1, 8)}})
             expect(parseRule(p => p.docRule(), '| "a # note"')).toEqual({result: {token: 'Doc', value: 'a # note', ...tokenPosition(0, 11, 1, 1, 1, 12)}})
             expect(parseRule(p => p.docRule(), '|||\n   a note\n   multiline\n|||')).toEqual({result: {token: 'Doc', value: 'a note\nmultiline', ...tokenPosition(0, 29, 1, 1, 4, 3)}})
-            expect(parseRule(p => p.docRule(), 'bad')).toEqual({errors: [{name: 'NoViableAltException', kind: 'error', message: "Expecting: one of these possible Token sequences:\n  1. [DocMultiline]\n  2. [Doc]\nbut found: 'bad'", ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
+            expect(parseRule(p => p.docRule(), 'bad')).toEqual({errors: [{message: "Expecting: one of these possible Token sequences:\n  1. [DocMultiline]\n  2. [Doc]\nbut found: 'bad'", kind: 'NoViableAltException', level: 'error', ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
         })
         test('propertiesRule', () => {
             expect(parseRule(p => p.propertiesRule(), '{}')).toEqual({result: []})
@@ -724,10 +724,10 @@ comments
 
             // bad
             expect(parseRule(p => p.propertiesRule(), 'bad')).toEqual({errors: [
-                {name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> LCurly <-- but found --> 'bad' <--", ...tokenPosition(0, 2, 1, 1, 1, 3)},
-                {name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> RCurly <-- but found --> '' <--", ...tokenPosition(NaN, -1, -1, -1, -1, -1)},
+                {message: "Expecting token of type --> LCurly <-- but found --> 'bad' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(0, 2, 1, 1, 1, 3)},
+                {message: "Expecting token of type --> RCurly <-- but found --> '' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(NaN, -1, -1, -1, -1, -1)},
             ]})
-            expect(parseRule(p => p.propertiesRule(), '{')).toEqual({errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> RCurly <-- but found --> '' <--", ...tokenPosition(NaN, -1, -1, -1, -1, -1)}]})
+            expect(parseRule(p => p.propertiesRule(), '{')).toEqual({errors: [{message: "Expecting token of type --> RCurly <-- but found --> '' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(NaN, -1, -1, -1, -1, -1)}]})
         })
         test('extraRule', () => {
             expect(parseRule(p => p.extraRule(), '')).toEqual({result: {}})
@@ -758,7 +758,7 @@ comments
                 catalog: {token: 'Identifier', value: 'core', ...tokenPosition(10, 13, 1, 11, 1, 14)},
                 database: {token: 'Identifier', value: 'analytics', ...tokenPosition(0, 8, 1, 1, 1, 9)},
             }})
-            expect(parseRule(p => p.entityRefRule(), '42')).toEqual({errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Identifier <-- but found --> '42' <--", ...tokenPosition(0, 1, 1, 1, 1, 2)}]})
+            expect(parseRule(p => p.entityRefRule(), '42')).toEqual({errors: [{message: "Expecting token of type --> Identifier <-- but found --> '42' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(0, 1, 1, 1, 1, 2)}]})
         })
         test('columnPathRule', () => {
             expect(parseRule(p => p.attributePathRule(), 'details')).toEqual({result: {token: 'Identifier', value: 'details', ...tokenPosition(0, 6, 1, 1, 1, 7)}})
@@ -771,7 +771,7 @@ comments
                     {token: 'Identifier', value: 'street', ...tokenPosition(16, 21, 1, 17, 1, 22)}
                 ],
             }})
-            expect(parseRule(p => p.attributePathRule(), '42')).toEqual({errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Identifier <-- but found --> '42' <--", ...tokenPosition(0, 1, 1, 1, 1, 2)}]})
+            expect(parseRule(p => p.attributePathRule(), '42')).toEqual({errors: [{message: "Expecting token of type --> Identifier <-- but found --> '42' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(0, 1, 1, 1, 1, 2)}]})
         })
         test('columnRefRule', () => {
             expect(parseRule(p => p.attributeRefRule(), 'users(id)')).toEqual({result: {

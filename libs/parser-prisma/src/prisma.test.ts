@@ -194,6 +194,6 @@ model Post {
         expect(parsed.result).toEqual(expected)
     })
     test('handles errors', () => {
-        expect(parsePrisma(`model User`).errors).toEqual([{name: 'PrismaParserError', kind: 'error', message: 'Expected "{", [0-9a-z_\\-], or horizontal whitespace but end of input found.', ...tokenPosition(0, 0, 0, 0, 0, 0)}])
+        expect(parsePrisma(`model User`).errors).toEqual([{message: 'Expected "{", [0-9a-z_\\-], or horizontal whitespace but end of input found.', kind: 'PrismaParserError', level: 'error', ...tokenPosition(0, 0, 0, 0, 0, 0)}])
     })
 })

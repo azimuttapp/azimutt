@@ -166,7 +166,7 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
             extra: {}
         }
         const parsed = parseAmlTest(input)
-        expect(parsed).toEqual({result: db, errors: [{name: 'Duplicated', kind: 'warning', message: 'Type status already defined at line 2', ...tokenPosition(66, 81, 5, 17, 5, 32)}]})
+        expect(parsed).toEqual({result: db, errors: [{message: 'Type status already defined at line 2', kind: 'Duplicated', level: 'warning', ...tokenPosition(66, 81, 5, 17, 5, 32)}]})
         expect(generateAml(parsed.result || {})).toEqual(input)
     })
     test('bad schema', () => {
@@ -180,8 +180,8 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                 extra: {}
             },
             errors: [
-                {name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> NewLine <-- but found --> 'bad' <--", ...tokenPosition(2, 4, 1, 3, 1, 5)},
-                {name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> NewLine <-- but found --> 'schema' <--", ...tokenPosition(6, 11, 1, 7, 1, 12)},
+                {message: "Expecting token of type --> NewLine <-- but found --> 'bad' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(2, 4, 1, 3, 1, 5)},
+                {message: "Expecting token of type --> NewLine <-- but found --> 'schema' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(6, 11, 1, 7, 1, 12)},
             ]
         })
     })
@@ -250,22 +250,22 @@ type public.status (pending, wip, done)
             })
             expect(parseAmlTest('posts\n  author int -\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], extra: {}},
-                errors: [{name: 'NoViableAltException', kind: 'error', message: "Expecting: one of these possible Token sequences:\n  1. [Dash]\n  2. [LowerThan]\n  3. [GreaterThan]\nbut found: '\n'", ...tokenPosition(20, 20, 2, 15, 2, 15)}]
+                errors: [{message: "Expecting: one of these possible Token sequences:\n  1. [Dash]\n  2. [LowerThan]\n  3. [GreaterThan]\nbut found: '\n'", kind: 'NoViableAltException', level: 'error', ...tokenPosition(20, 20, 2, 15, 2, 15)}]
             })
             expect(parseAmlTest('posts\n  author int ->\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], extra: {}},
-                errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Identifier <-- but found --> '\n' <--", ...tokenPosition(21, 21, 2, 16, 2, 16)}]
+                errors: [{message: "Expecting token of type --> Identifier <-- but found --> '\n' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(21, 21, 2, 16, 2, 16)}]
             })
             expect(parseAmlTest('posts\n  author int -> users\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['unknown']}], extra: {line: 2, statement: 1, natural: 'ref', inline: true}}], extra: {}},
             })
             expect(parseAmlTest('posts\n  author int -> users(\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], extra: {}},
-                errors: [{name: 'EarlyExitException', kind: 'error', message: "Expecting: expecting at least one iteration which starts with one of these possible Token sequences::\n  <[WhiteSpace] ,[Identifier]>\nbut found: '\n'", ...tokenPosition(28, 28, 2, 23, 2, 23)}]
+                errors: [{message: "Expecting: expecting at least one iteration which starts with one of these possible Token sequences::\n  <[WhiteSpace] ,[Identifier]>\nbut found: '\n'", kind: 'EarlyExitException', level: 'error', ...tokenPosition(28, 28, 2, 23, 2, 23)}]
             })
             expect(parseAmlTest('posts\n  author int -> users(id\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ["author"], ref: ["id"]}], extra: {line: 2, statement: 1, inline: true}}], extra: {}},
-                errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> RParen <-- but found --> '\n' <--", ...tokenPosition(30, 30, 2, 25, 2, 25)}]
+                errors: [{message: "Expecting token of type --> RParen <-- but found --> '\n' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(30, 30, 2, 25, 2, 25)}]
             })
             expect(parseAmlTest('posts\n  author int -> users(id)\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ["author"], ref: ["id"]}], extra: {line: 2, statement: 1, inline: true}}], extra: {}},
@@ -273,15 +273,15 @@ type public.status (pending, wip, done)
 
             expect(parseAmlTest('posts\n  author int - users(id)\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ["author"], ref: ["id"]}], extra: {line: 2, statement: 1, inline: true}}], extra: {}},
-                errors: [{name: 'NoViableAltException', kind: 'error', message: "Expecting: one of these possible Token sequences:\n  1. [Dash]\n  2. [LowerThan]\n  3. [GreaterThan]\nbut found: ' '", ...tokenPosition(20, 20, 2, 15, 2, 15)}]
+                errors: [{message: "Expecting: one of these possible Token sequences:\n  1. [Dash]\n  2. [LowerThan]\n  3. [GreaterThan]\nbut found: ' '", kind: 'NoViableAltException', level: 'error', ...tokenPosition(20, 20, 2, 15, 2, 15)}]
             })
             expect(parseAmlTest('posts\n  author int  users(id)\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}, {name: 'id', extra: {line: 2, statement: 2}}], extra: {}},
                 // TODO handle error better to not generate a fake entity (id)
                 errors: [
-                    {name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> NewLine <-- but found --> 'users' <--", ...tokenPosition(20, 24, 2, 15, 2, 19)},
-                    {name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> NewLine <-- but found --> '(' <--", ...tokenPosition(25, 25, 2, 20, 2, 20)},
-                    {name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> NewLine <-- but found --> ')' <--", ...tokenPosition(28, 28, 2, 23, 2, 23)}
+                    {message: "Expecting token of type --> NewLine <-- but found --> 'users' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(20, 24, 2, 15, 2, 19)},
+                    {message: "Expecting token of type --> NewLine <-- but found --> '(' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(25, 25, 2, 20, 2, 20)},
+                    {message: "Expecting token of type --> NewLine <-- but found --> ')' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(28, 28, 2, 23, 2, 23)}
                 ]
             })
         })
@@ -291,12 +291,12 @@ type public.status (pending, wip, done)
             })
             expect(parseAmlTest('posts\n  author int f\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}, {name: 'f', extra: {line: 2, statement: 2}}], extra: {}},
-                errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> NewLine <-- but found --> 'f' <--", ...tokenPosition(19, 19, 2, 14, 2, 14)}]
+                errors: [{message: "Expecting token of type --> NewLine <-- but found --> 'f' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(19, 19, 2, 14, 2, 14)}]
             })
             expect(parseAmlTest('posts\n  author int fk\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], extra: {}},
                 errors: [
-                    {name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Identifier <-- but found --> '\n' <--", ...tokenPosition(21, 21, 2, 16, 2, 16)},
+                    {message: "Expecting token of type --> Identifier <-- but found --> '\n' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(21, 21, 2, 16, 2, 16)},
                     {...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(19, 20, 2, 14, 2, 15)},
                 ]
             })
@@ -308,7 +308,7 @@ type public.status (pending, wip, done)
             expect(parseAmlTest('posts\n  author int fk users.\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], extra: {}},
                 errors: [
-                    {name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Identifier <-- but found --> '\n' <--", ...tokenPosition(28, 28, 2, 23, 2, 23)},
+                    {message: "Expecting token of type --> Identifier <-- but found --> '\n' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(28, 28, 2, 23, 2, 23)},
                     {...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(19, 20, 2, 14, 2, 15)},
                     {...legacy('"users." is the legacy way, use "users()" instead'), ...tokenPosition(22, 26, 2, 17, 2, 21)},
                 ]

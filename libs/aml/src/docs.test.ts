@@ -57,7 +57,7 @@ describe('docs', () => {
             const snippets = path.indexOf('../demos/') !== -1 ? [] : (content.match(amlv1Regex) || []).map((s: string) => s.replace(/^```amlv1\n/, '').replace(/```$/, ''))
             snippets.forEach((aml, index) => {
                 const res = parseAml(aml)
-                const errors = (res.errors || []).filter(e => e.name !== 'LegacySyntax')
+                const errors = (res.errors || []).filter(e => e.kind !== 'LegacySyntax')
                 if (errors.length > 0) {
                     console.log(`File ${path}, snippet ${index + 1}:\n${aml}`)
                     expect(errors).toEqual([])

@@ -85,9 +85,9 @@ Ref:"users"."id" < "posts"."author"
               id uuid
             `
         const error = [
-            {name: 'DBMLException-1005', kind: 'error', message: "Expect an opening brace '{' or a colon ':'", ...tokenPosition(0, 0, 3, 18, 3, 22)},
-            {name: 'DBMLException-3057', kind: 'error', message: "A custom element can only appear in a Project", ...tokenPosition(0, 0, 2, 13, 3, 17)},
-            {name: 'DBMLException-3001', kind: 'error', message: "A Custom element shouldn't have a name", ...tokenPosition(0, 0, 3, 15, 3, 17)}
+            {message: "Expect an opening brace '{' or a colon ':'", kind: 'DBMLException-1005', level: 'error', ...tokenPosition(0, 0, 3, 18, 3, 22)},
+            {message: "A custom element can only appear in a Project", kind: 'DBMLException-3057', level: 'error', ...tokenPosition(0, 0, 2, 13, 3, 17)},
+            {message: "A Custom element shouldn't have a name", kind: 'DBMLException-3001', level: 'error', ...tokenPosition(0, 0, 3, 15, 3, 17)}
         ]
         expect(parseDbml(source).errors).toEqual(error)
     })

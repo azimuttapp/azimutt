@@ -108,15 +108,15 @@ update now projectRef msg model =
                 |> Maybe.map
                     (\source ->
                         if source.id /= id then
-                            ( model |> mapAmlSidebarM (setErrors [ { name = "EditorError", kind = ParserError.Error, message = "Source has changed", offset = { start = 0, end = 0 }, position = { start = { line = 1, column = 1 }, end = { line = 1, column = 1 } } } ]), Extra.none )
+                            ( model |> mapAmlSidebarM (setErrors [ { message = "Source has changed", kind = "EditorError", level = ParserError.Error, offset = { start = 0, end = 0 }, position = { start = { line = 1, column = 1 }, end = { line = 1, column = 1 } } } ]), Extra.none )
 
                         else if String.length (Source.contentStr source) /= length then
-                            ( model |> mapAmlSidebarM (setErrors [ { name = "EditorError", kind = ParserError.Error, message = "AML has changed", offset = { start = 0, end = 0 }, position = { start = { line = 1, column = 1 }, end = { line = 1, column = 1 } } } ]), Extra.none )
+                            ( model |> mapAmlSidebarM (setErrors [ { message = "AML has changed", kind = "EditorError", level = ParserError.Error, offset = { start = 0, end = 0 }, position = { start = { line = 1, column = 1 }, end = { line = 1, column = 1 } } } ]), Extra.none )
 
                         else
                             schema |> Maybe.map (\s -> model |> updateSource now source s errors |> setDirty) |> Maybe.withDefault ( model |> mapAmlSidebarM (setErrors errors), Extra.none )
                     )
-                |> Maybe.withDefault ( model |> mapAmlSidebarM (setErrors [ { name = "EditorError", kind = ParserError.Error, message = "Source not found", offset = { start = 0, end = 0 }, position = { start = { line = 1, column = 1 }, end = { line = 1, column = 1 } } } ]), Extra.none )
+                |> Maybe.withDefault ( model |> mapAmlSidebarM (setErrors [ { message = "Source not found", kind = "EditorError", level = ParserError.Error, offset = { start = 0, end = 0 }, position = { start = { line = 1, column = 1 }, end = { line = 1, column = 1 } } } ]), Extra.none )
 
         ASourceUpdated id ->
             (model.erd |> Maybe.andThen (.sources >> List.findBy .id id))
@@ -289,7 +289,7 @@ viewSourceEditor : AmlSidebar -> Source -> Html Msg
 viewSourceEditor model source =
     let
         ( errors, warnings ) =
-            ( model.errors |> List.filterBy .kind ParserError.Error, model.errors |> List.filterBy .kind ParserError.Warning )
+            ( model.errors |> List.filterBy .level ParserError.Error, model.errors |> List.filterBy .level ParserError.Warning )
     in
     div [ class "mt-3" ]
         [ -- , node "intl-date" [ attribute "lang" "fr-FR", attribute "year" (String.fromInt 2024), attribute "month" (String.fromInt 9) ] []

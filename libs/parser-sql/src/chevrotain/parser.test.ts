@@ -112,23 +112,23 @@ describe('chevrotain parser', () => {
     describe('common', () => {
         test('integerRule', () => {
             expect(parseRule(p => p.integerRule(), '12')).toEqual({result: {value: 12, parser: tokenPosition(0, 1, 1, 1, 1, 2)}})
-            expect(parseRule(p => p.integerRule(), 'bad')).toEqual({errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Integer <-- but found --> 'bad' <--", ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
+            expect(parseRule(p => p.integerRule(), 'bad')).toEqual({errors: [{message: "Expecting token of type --> Integer <-- but found --> 'bad' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
         })
         test('stringRule', () => {
             expect(parseRule(p => p.stringRule(), "'abc'")).toEqual({result: {value: 'abc', parser: tokenPosition(0, 4, 1, 1, 1, 5)}})
             expect(parseRule(p => p.stringRule(), "'It\\'s'")).toEqual({result: {value: "It's", parser: tokenPosition(0, 6, 1, 1, 1, 7)}})
-            expect(parseRule(p => p.stringRule(), "bad")).toEqual({errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> String <-- but found --> 'bad' <--", ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
+            expect(parseRule(p => p.stringRule(), "bad")).toEqual({errors: [{message: "Expecting token of type --> String <-- but found --> 'bad' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
         })
         test('booleanRule', () => {
             expect(parseRule(p => p.booleanRule(), 'true')).toEqual({result: {value: true, parser: tokenPosition(0, 3, 1, 1, 1, 4)}})
             expect(parseRule(p => p.booleanRule(), 'false')).toEqual({result: {value: false, parser: tokenPosition(0, 4, 1, 1, 1, 5)}})
-            expect(parseRule(p => p.booleanRule(), 'bad')).toEqual({errors: [{name: 'MismatchedTokenException', kind: 'error', message: "Expecting token of type --> Boolean <-- but found --> 'bad' <--", ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
+            expect(parseRule(p => p.booleanRule(), 'bad')).toEqual({errors: [{message: "Expecting token of type --> Boolean <-- but found --> 'bad' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
         })
         test('identifierRule', () => {
             expect(parseRule(p => p.identifierRule(), 'id')).toEqual({result: {identifier: 'id', parser: tokenPosition(0, 1, 1, 1, 1, 2)}})
             expect(parseRule(p => p.identifierRule(), '"my col"')).toEqual({result: {identifier: 'my col', parser: tokenPosition(0, 7, 1, 1, 1, 8)}})
             expect(parseRule(p => p.identifierRule(), '"my \\"new\\" col"')).toEqual({result: {identifier: 'my "new" col', parser: tokenPosition(0, 15, 1, 1, 1, 16)}})
-            expect(parseRule(p => p.identifierRule(), 'bad col')).toEqual({errors: [{name: 'NotAllInputParsedException', kind: 'error', message: "Redundant input, expecting EOF but found: col", ...tokenPosition(4, 6, 1, 5, 1, 7)}]})
+            expect(parseRule(p => p.identifierRule(), 'bad col')).toEqual({errors: [{message: "Redundant input, expecting EOF but found: col", kind: 'NotAllInputParsedException', level: 'error', ...tokenPosition(4, 6, 1, 5, 1, 7)}]})
         })
         test('tableRefRule', () => {
             expect(parseRule(p => p.tableRefRule(), 'users')).toEqual({result: {table: {identifier: 'users', parser: tokenPosition(0, 4, 1, 1, 1, 5)}}})
@@ -154,14 +154,14 @@ describe('chevrotain parser', () => {
             expect(parseRule(p => p.conditionOpRule(), '!=')).toEqual({result: {operator: '!=', parser: tokenPosition(0, 1, 1, 1, 1, 2)}})
             expect(parseRule(p => p.conditionOpRule(), '<')).toEqual({result: {operator: '<', parser: tokenPosition(0, 0, 1, 1, 1, 1)}})
             expect(parseRule(p => p.conditionOpRule(), '>')).toEqual({result: {operator: '>', parser: tokenPosition(0, 0, 1, 1, 1, 1)}})
-            expect(parseRule(p => p.conditionOpRule(), 'bad')).toEqual({errors: [{name: 'NoViableAltException', kind: 'error', message: "Expecting: one of these possible Token sequences:\n  1. [Equal]\n  2. [NotEqual]\n  3. [LessThan]\n  4. [GreaterThan]\nbut found: 'bad'", ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
+            expect(parseRule(p => p.conditionOpRule(), 'bad')).toEqual({errors: [{message: "Expecting: one of these possible Token sequences:\n  1. [Equal]\n  2. [NotEqual]\n  3. [LessThan]\n  4. [GreaterThan]\nbut found: 'bad'", kind: 'NoViableAltException', level: 'error', ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
         })
         test('conditionElemRule', () => {
             expect(parseRule(p => p.conditionElemRule(), '12')).toEqual({result: {value: 12, parser: tokenPosition(0, 1, 1, 1, 1, 2)}})
             expect(parseRule(p => p.conditionElemRule(), "'abc'")).toEqual({result: {value: 'abc', parser: tokenPosition(0, 4, 1, 1, 1, 5)}})
             expect(parseRule(p => p.conditionElemRule(), 'true')).toEqual({result: {value: true, parser: tokenPosition(0, 3, 1, 1, 1, 4)}})
             expect(parseRule(p => p.conditionElemRule(), 'id')).toEqual({result: {column: {identifier: 'id', parser: tokenPosition(0, 1, 1, 1, 1, 2)}}})
-            expect(parseRule(p => p.conditionElemRule(), '=')).toEqual({errors: [{name: 'NoViableAltException', kind: 'error', message: "Expecting: one of these possible Token sequences:\n  1. [Integer]\n  2. [String]\n  3. [Boolean]\n  4. [Identifier]\nbut found: '='", ...tokenPosition(0, 0, 1, 1, 1, 1)}]})
+            expect(parseRule(p => p.conditionElemRule(), '=')).toEqual({errors: [{message: "Expecting: one of these possible Token sequences:\n  1. [Integer]\n  2. [String]\n  3. [Boolean]\n  4. [Identifier]\nbut found: '='", kind: 'NoViableAltException', level: 'error', ...tokenPosition(0, 0, 1, 1, 1, 1)}]})
         })
         test('conditionRule', () => {
             expect(parseRule(p => p.conditionRule(), 'id<12')).toEqual({result: {
@@ -177,7 +177,7 @@ describe('chevrotain parser', () => {
                 operation: {operator: '=', parser: tokenPosition(19, 19, 1, 20, 1, 20)},
                 right: {value: 'loic', parser: tokenPosition(21, 26, 1, 22, 1, 27)}
             }})
-            expect(parseRule(p => p.conditionRule(), '=')).toEqual({errors: [{name: 'NoViableAltException', kind: 'error', message: "Expecting: one of these possible Token sequences:\n  1. [Integer]\n  2. [String]\n  3. [Boolean]\n  4. [Identifier]\nbut found: '='", ...tokenPosition(0, 0, 1, 1, 1, 1)}]})
+            expect(parseRule(p => p.conditionRule(), '=')).toEqual({errors: [{message: "Expecting: one of these possible Token sequences:\n  1. [Integer]\n  2. [String]\n  3. [Boolean]\n  4. [Identifier]\nbut found: '='", kind: 'NoViableAltException', level: 'error', ...tokenPosition(0, 0, 1, 1, 1, 1)}]})
         })
     })
 })

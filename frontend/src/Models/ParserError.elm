@@ -1,19 +1,19 @@
-module Models.ParserError exposing (EditorPosition, ParserError, ParserErrorKind(..), TokenOffset, TokenPosition, decode)
+module Models.ParserError exposing (EditorPosition, ParserError, ParserErrorLevel(..), TokenOffset, TokenPosition, decode)
 
 import Json.Decode as Decode
 import Libs.Json.Decode as Decode
 
 
 type alias ParserError =
-    { name : String
-    , kind : ParserErrorKind
-    , message : String
+    { message : String
+    , kind : String
+    , level : ParserErrorLevel
     , offset : TokenOffset
     , position : TokenPosition
     }
 
 
-type ParserErrorKind
+type ParserErrorLevel
     = Error
     | Warning
     | Info
@@ -35,20 +35,20 @@ type alias EditorPosition =
 decode : Decode.Decoder ParserError
 decode =
     Decode.map5 ParserError
-        (Decode.field "name" Decode.string)
-        (Decode.field "kind" decodeParserErrorKind)
         (Decode.field "message" Decode.string)
+        (Decode.field "kind" Decode.string)
+        (Decode.field "level" decodeParserErrorLevel)
         (Decode.field "offset" decodeTokenOffset)
         (Decode.field "position" decodeTokenPosition)
 
 
-decodeParserErrorKind : Decode.Decoder ParserErrorKind
-decodeParserErrorKind =
-    Decode.string |> Decode.andThen (\v -> v |> parserErrorKindFromString |> Decode.fromMaybe ("'" ++ v ++ "' is not a valid ParserErrorKind"))
+decodeParserErrorLevel : Decode.Decoder ParserErrorLevel
+decodeParserErrorLevel =
+    Decode.string |> Decode.andThen (\v -> v |> parserErrorLevelFromString |> Decode.fromMaybe ("'" ++ v ++ "' is not a valid ParserErrorLevel"))
 
 
-parserErrorKindFromString : String -> Maybe ParserErrorKind
-parserErrorKindFromString value =
+parserErrorLevelFromString : String -> Maybe ParserErrorLevel
+parserErrorLevelFromString value =
     case value of
         "error" ->
             Just Error
