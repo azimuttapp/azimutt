@@ -1,13 +1,12 @@
--- drop everything
+-- drop then create the database
 USE master; -- in order to stop using Billing ^^
 DROP DATABASE IF EXISTS Billing;
-
--- create the database
 CREATE DATABASE Billing;
 USE Billing;
 CREATE SCHEMA [billing];
 
 
+-- database schema
 CREATE TABLE [billing].[CustomerAddresses] (
     [CustomerAddressesId] [bigint] IDENTITY (1,1) PRIMARY KEY,
     [Name]                [nvarchar](255) NOT NULL,
@@ -104,7 +103,7 @@ CREATE TABLE [billing].[Payments] (
 );
 
 
--- insert some data
+-- database data
 INSERT INTO [billing].[CustomerAddresses] ([Name], [Street], [City], [State], [ZipCode], [Country], [Complements], [CreatedBy])
 VALUES ('SpongeHome', '124 Conch Street', 'Bikini Bottom', 'Pacific Ocean', '12345', 1, 'Pineapple house next to Squidward', 102);
 

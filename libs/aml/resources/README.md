@@ -18,6 +18,7 @@ A database schema in several format with all the schema specificities:
 
 Still missing:
 
+- primary key auto increment
 - namespace: can't generate it as is
 - composite checks: needs to evolve AML, only predicate can be defined now
 - relation natural just on one side

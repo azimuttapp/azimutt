@@ -1,13 +1,12 @@
--- drop everything
+-- drop then create the database
 USE master; -- in order to stop using Referential ^^
 DROP DATABASE IF EXISTS Referential;
-
--- create the database
 CREATE DATABASE Referential;
 USE Referential;
 CREATE SCHEMA [referential];
 
 
+-- database schema
 CREATE TABLE [referential].[Countries] (
     [CountryId] [bigint] IDENTITY (1,1) PRIMARY KEY,
     [Code]      [nvarchar](5)   NOT NULL,
@@ -46,7 +45,7 @@ CREATE INDEX [IDX_Cities_Name] ON [referential].[Cities] ([Name]);
 EXEC sp_addextendedproperty 'MS_Description', 'used for auto-competes', 'SCHEMA', 'referential', 'TABLE', 'Cities';
 
 
--- insert some data
+-- database data
 INSERT INTO [referential].[Countries] ([Code], [Name])
 VALUES ('FRA', 'France'),
        ('DEU', 'Germany'),

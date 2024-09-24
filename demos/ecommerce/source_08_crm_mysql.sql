@@ -1,10 +1,10 @@
--- drop everything
+-- drop then create the database (needs admin rights)
 DROP SCHEMA IF EXISTS crm;
-
--- create the database
 CREATE SCHEMA crm;
 USE crm;
 
+
+-- database schema
 CREATE TABLE People (
     id         BIGINT PRIMARY KEY AUTO_INCREMENT,
     name       VARCHAR(255) NOT NULL,
@@ -154,7 +154,7 @@ CREATE TABLE Coupons (
 );
 
 
--- insert some data
+-- database data
 INSERT INTO People (id, name, email, phone, created_by, updated_by)
 VALUES (1, 'Han Solo', 'han.solo@rebellion.com', '+33-1-45-67-89-01', 41, 41),
        (2, 'Luke Skywalker', 'luke.skywalker@rebellion.com', NULL, 41, 41),

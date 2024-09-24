@@ -1,9 +1,9 @@
--- drop everything
+-- drop then create the database
 DROP SCHEMA IF EXISTS catalog CASCADE;
 CREATE SCHEMA catalog;
 
 
--- create the database
+-- database schema
 CREATE TABLE catalog.categories (
     id               BIGINT PRIMARY KEY,
     parent           BIGINT REFERENCES catalog.categories (id),
@@ -164,7 +164,7 @@ CREATE TABLE catalog.product_review_feedbacks (
 CREATE INDEX idx_product_review_feedbacks_deleted_at ON catalog.product_review_feedbacks (deleted_at);
 
 
--- insert some data
+-- database data
 INSERT INTO catalog.categories (id, parent, depth, slug, name, description, description_html)
 VALUES (1, NULL, 0, 'electronics', 'Electronics', 'All electronic items', '<p>All electronic items</p>'),
        (2, 1, 1, 'phones', 'Phones', 'All kinds of phones', '<p>All kinds of phones</p>'),
