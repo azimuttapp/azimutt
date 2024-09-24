@@ -148,6 +148,15 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
         expect(parsed).toEqual({result: db})
         expect(generateAml(parsed.result || {})).toEqual(aml)
     })
+    test('legacy full', () => {
+        const db: Database = parseJsonDatabase(fs.readFileSync('./resources/full.json', 'utf8')).result || {}
+        const amlv1 = fs.readFileSync('./resources/full.legacy.aml', 'utf8')
+        const parsed = parseAmlTest(amlv1)
+        // expect(parsed.result).toEqual(db) // not the same as legacy AML has fewer features, worth checking the diff sometimes
+        expect(parsed.errors?.filter(e => e.kind !== 'LegacySyntax')).toEqual([])
+        expect(generateAml(parsed.result || {}, true)).toEqual(amlv1)
+        expect(generateAml(db, true)).toEqual(amlv1)
+    })
     test('escape doc', () => {
         const input = `users\n  settings json | ex: {color: \\#000} # you can escape # in doc using \\#\n`
         const db: Database = {entities: [{name: 'users', attrs: [{name: 'settings', type: 'json', doc: 'ex: {color: #000}', extra: {comment: 'you can escape # in doc using \\#'}}], extra: {line: 1, statement: 1}}], extra: {}}

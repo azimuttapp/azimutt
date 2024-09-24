@@ -124,7 +124,9 @@ Constraints:
 
 View definition:
 ```sql
-SELECT * FROM users WHERE is_admin = false
+SELECT *
+FROM users
+WHERE is_admin = false
 ```
 
 ### social_accounts

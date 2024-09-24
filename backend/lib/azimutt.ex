@@ -323,7 +323,8 @@ defmodule Azimutt do
       %{id: "prisma", name: "Prisma", parse: false, generate: false},
       %{id: "mermaid", name: "Mermaid", parse: false, generate: true},
       %{id: "quicksql", name: "Quick SQL", parse: false, generate: false},
-      %{id: "markdown", name: "Markdown", parse: false, generate: true}
+      %{id: "markdown", name: "Markdown", parse: false, generate: true},
+      %{id: "amlv1", name: "AMLv1", parse: true, generate: true}
     ]
   end
 end

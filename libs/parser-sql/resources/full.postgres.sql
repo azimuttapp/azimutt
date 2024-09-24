@@ -93,7 +93,9 @@ COMMENT ON COLUMN profiles.id IS 'one-to-one relation';
 -- CREATE VIEW admins AS <missing definition>;
 
 CREATE VIEW guests AS
-SELECT * FROM users WHERE is_admin = false;
+SELECT *
+FROM users
+WHERE is_admin = false;
 
 CREATE TABLE social_accounts ();
 COMMENT ON TABLE social_accounts IS 'entity with no attribute';

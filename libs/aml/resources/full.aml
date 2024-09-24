@@ -67,13 +67,13 @@ organizations
 profiles
   id int pk -- users(id) | one-to-one relation
 
-admins* {dependsOn: [users]}
+admins {view, dependsOn: [users]}
   id
   first_name
   last_name
   email
 
-guests {view: "SELECT * FROM users WHERE is_admin = false"} # a view without attributes but with definition
+guests {view: "SELECT *\nFROM users\nWHERE is_admin = false"} # a view without attributes but with definition
 
 type slug | anonymous type
 type uid int {tags: [generic]} # alias type

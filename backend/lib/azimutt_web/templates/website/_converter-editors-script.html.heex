@@ -40,7 +40,8 @@
         // sync right editor with parsing result
         function syncEditors() {
             var parsed = parse(leftLang, leftEditor.getValue())
-            if (parsed.result) {
+            if (parsed.result && (parsed.errors || []).filter(e => e.level === 'error').length === 0) {
+                window.schema = parsed.result // expose it to the JS console (debug & unknown use cases)
                 model.context.database = parsed.result
                 rightEditor.setValue(format(rightLang, parsed.result))
                 // preserve the undo stack with: `model.pushEditOperations([], [{range: model.getFullModelRange(), text: value}])`
@@ -88,17 +89,20 @@
             button.href = '/create?aml=' + encodeURIComponent(aml).slice(0, 2000) // URI length limit, should send it with POST at some point...
         }
         function editorLang(lang) {
+            if (lang === 'amlv1') return 'aml'
             if (lang === 'postgres') return 'pgsql'
             if (lang === 'mermaid') return 'plaintext'
             return lang
         }
         function parse(lang, content) {
             if (lang === 'aml') return aml.parseAml(content)
+            if (lang === 'amlv1') return aml.parseAml(content).mapError(errs => errs.filter(e => e.kind !== 'LegacySyntax'))
             if (lang === 'json') return aml.parseJsonDatabase(content)
             return {errors: [{message: 'Unsupported source dialect: ' + lang, kind: 'UnsupportedDialect', level: 'error', offset: {start: 0, end: 100}, position: {start: {line: 1, column: 1}, end: {line: 10, column: 10}}}]}
         }
         function format(lang, content) {
             if (lang === 'aml') return aml.generateAml(content)
+            if (lang === 'amlv1') return aml.generateAml(content, true)
             if (lang === 'json') return aml.generateJsonDatabase(content)
             if (lang === 'postgres') return sql.generateSql(content, 'postgres')
             if (lang === 'mermaid') return aml.generateMermaid(content)
@@ -123,6 +127,24 @@ posts {color: red}
   author uuid -> users(id)
   created_at timestamp=\`now()\`
   created_by uuid -> users(id) {hidden} # inline relation
+`
+            if (lang === 'amlv1') return `#
+# sample AML
+#
+
+users
+  id uuid pk
+  name varchar index
+  email varchar unique
+  role user_role(admin, guest)=guest
+
+posts
+  id uuid pk
+  title varchar
+  content text | in markdown
+  author uuid fk users.id
+  created_at timestamp=\`now()\`
+  created_by uuid fk users.id # inline relation
 `
             if (lang === 'json') return `{
   "entities": [

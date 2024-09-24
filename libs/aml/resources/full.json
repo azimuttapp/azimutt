@@ -135,8 +135,8 @@
     {
       "name": "guests",
       "kind": "view",
-      "def": "SELECT * FROM users WHERE is_admin = false",
-      "extra": {"view": "SELECT * FROM users WHERE is_admin = false", "line": 76, "statement": 13, "comment": "a view without attributes but with definition"}
+      "def": "SELECT *\nFROM users\nWHERE is_admin = false",
+      "extra": {"line": 76, "statement": 13, "comment": "a view without attributes but with definition"}
     },
     {
       "name": "social_accounts",

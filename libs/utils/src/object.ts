@@ -15,6 +15,10 @@ export function equalDeep<T>(a: T, b: T): boolean {
     return false
 }
 
+export function filterKeys<K extends keyof any, V, T extends Record<K, V>>(obj: T, p: (k: K) => boolean): T {
+    return Object.fromEntries(Object.entries(obj).filter(([k,]) => p(k as K))) as T
+}
+
 export function filterValues<K extends keyof any, V, T extends Record<K, V>>(obj: T, p: (v: V) => boolean): T {
     return Object.fromEntries(Object.entries(obj).filter(([, v]) => p(v as V))) as T
 }

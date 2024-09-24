@@ -61,7 +61,7 @@ import {badIndent, legacy} from "./errors";
 
 // special
 const WhiteSpace = createToken({name: 'WhiteSpace', pattern: /[ \t]+/})
-const Identifier = createToken({ name: 'Identifier', pattern: /\b[a-zA-Z_][a-zA-Z0-9_#]*\b|"([^\\"]|\\\\|\\")*"/ })
+const Identifier = createToken({ name: 'Identifier', pattern: /\b[a-zA-Z_][a-zA-Z0-9_#]*\b|"([^\\"]|\\\\|\\"|\\n)*"/ })
 const Expression = createToken({ name: 'Expression', pattern: /`[^`]+`/ })
 const Doc = createToken({ name: 'Doc', pattern: /\|(\s+"([^\\"]|\\\\|\\")*"|(\\#|[^#\n])*)/ })
 const DocMultiline = createToken({ name: 'DocMultiline', pattern: /\|\|\|[^]*?\|\|\|/, line_breaks: true })

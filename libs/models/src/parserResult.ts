@@ -19,6 +19,10 @@ export class ParserResult<T> {
         return new ParserResult<U>(this.result !== undefined ? f(this.result) : undefined, this.errors)
     }
 
+    public mapError(f: (errs: ParserError[]) => ParserError[]): ParserResult<T> {
+        return new ParserResult<T>(this.result, this.errors !== undefined ? f(this.errors) : undefined)
+    }
+
     public flatMap<U>(f: (t: T) => ParserResult<U>): ParserResult<U> {
         if (this.result !== undefined) {
             const res = f(this.result)
