@@ -16,8 +16,7 @@ describe('amlGenerator', () => {
         expect(generateAml(parsed.result || {})).toEqual(input)
     })
     test('sample schema', () => {
-        const input = `
-#
+        const input = `#
 # AML
 #
 
@@ -48,7 +47,7 @@ identity.users as users |||
 posts {view, pii, tags: [cms]} | all posts # an other entity
   id post_id pk
   title "character varying(100)"=draft nullable index | Title of the post
-  author int check=\`author > 0\` -> users(id)
+  author int check(\`author > 0\`)=has_author_chk -> users(id)
   created_by int
 
 rel posts(created_by) -> users(id) {onUpdate: no_action, onDelete: cascade} | standalone relation
@@ -72,7 +71,7 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                     {name: 'name', type: 'varchar'},
                 ],
                 pk: {attrs: [['id']]},
-                extra: {line: 6, statement: 1}
+                extra: {line: 5, statement: 1}
             }, {
                 schema: 'identity',
                 name: 'users',
@@ -95,7 +94,7 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                 pk: {attrs: [['id']]},
                 indexes: [{attrs: [['name']], unique: true}, {name: 'address', attrs: [['settings', 'address', 'city'], ['settings', 'address', 'country']]}],
                 doc: 'list\nall users',
-                extra: {line: 10, statement: 2, alias: "users"}
+                extra: {line: 9, statement: 2, alias: "users"}
             }, {
                 name: 'posts',
                 kind: 'view',
@@ -107,9 +106,9 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                 ],
                 pk: {attrs: [['id']]},
                 indexes: [{attrs: [['title']]}],
-                checks: [{attrs: [['author']], predicate: 'author > 0'}],
+                checks: [{attrs: [['author']], predicate: 'author > 0', name: 'has_author_chk'}],
                 doc: 'all posts',
-                extra: {line: 30, statement: 3, comment: 'an other entity', pii: true, tags: ['cms']}
+                extra: {line: 29, statement: 3, comment: 'an other entity', pii: true, tags: ['cms']}
             }, {
                 name: 'emails',
                 attrs: [
@@ -117,30 +116,30 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                     {name: 'email', type: 'varchar'},
                 ],
                 pk: {attrs: [['user_id'], ['email']]},
-                extra: {line: 38, statement: 5}
+                extra: {line: 37, statement: 5}
             }],
             relations: [
-                {src: {schema: 'identity', entity: 'users'}, ref: {entity: 'countries'}, attrs: [{src: ['settings', 'address', 'country'], ref: ['id']}], extra: {line: 27, statement: 2, natural: 'ref', inline: true}},
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {line: 33, statement: 3, inline: true}},
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}], doc: 'standalone relation', extra: {line: 36, statement: 4, onUpdate: 'no_action', onDelete: 'cascade'}},
+                {src: {schema: 'identity', entity: 'users'}, ref: {entity: 'countries'}, attrs: [{src: ['settings', 'address', 'country'], ref: ['id']}], extra: {line: 26, statement: 2, natural: 'ref', inline: true}},
+                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {line: 32, statement: 3, inline: true}},
+                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}], doc: 'standalone relation', extra: {line: 35, statement: 4, onUpdate: 'no_action', onDelete: 'cascade'}},
             ],
             types: [
-                {schema: 'identity', name: 'user_role', values: ['admin', 'guest'], extra: {line: 16, statement: 2, inline: true}},
-                {name: 'post_id', alias: 'int', doc: 'alias', extra: {line: 44, statement: 6, table: 'posts'}},
-                {name: 'status', values: ['draft', 'published', 'archived'], extra: {line: 45, statement: 7}},
-                {name: 'position', attrs: [{name: 'x', type: 'int'}, {name: 'y', type: 'int'}], extra: {line: 46, statement: 8, generic: true}},
-                {name: 'range', definition: '(subtype = float8, subtype_diff = float8mi)', extra: {line: 47, statement: 9, comment: 'custom type'}},
+                {schema: 'identity', name: 'user_role', values: ['admin', 'guest'], extra: {line: 15, statement: 2, inline: true}},
+                {name: 'post_id', alias: 'int', doc: 'alias', extra: {line: 43, statement: 6, table: 'posts'}},
+                {name: 'status', values: ['draft', 'published', 'archived'], extra: {line: 44, statement: 7}},
+                {name: 'position', attrs: [{name: 'x', type: 'int'}, {name: 'y', type: 'int'}], extra: {line: 45, statement: 8, generic: true}},
+                {name: 'range', definition: '(subtype = float8, subtype_diff = float8mi)', extra: {line: 46, statement: 9, comment: 'custom type'}},
             ],
             extra: {comments: [
-                {line: 2, comment: ''},
-                {line: 3, comment: 'AML'},
-                {line: 4, comment: ''},
-                {line: 42, comment: 'types'},
+                {line: 1, comment: ''},
+                {line: 2, comment: 'AML'},
+                {line: 3, comment: ''},
+                {line: 41, comment: 'types'},
             ]}
         }
         const parsed = parseAmlTest(input)
         expect(parsed).toEqual({result: db})
-        expect(generateAml(parsed.result || {})).toEqual(input.trim() + '\n')
+        expect(generateAml(parsed.result || {})).toEqual(input)
     })
     test('full', () => {
         const db: Database = parseJsonDatabase(fs.readFileSync('./resources/full.json', 'utf8')).result || {}
@@ -495,7 +494,7 @@ fk admins.id -> users.id
                     {...legacy('"=" is legacy, replace it with ":"'), ...tokenPosition(113, 113, 8, 20, 8, 20)},
                     {...legacy('"=" is legacy, replace it with ":"'), ...tokenPosition(122, 122, 8, 29, 8, 29)},
                     {...legacy('"=" is legacy, replace it with ":"'), ...tokenPosition(131, 131, 8, 38, 8, 38)},
-                    {...legacy('"email LIKE \'%@%\'" is the legacy way, use expression "`email LIKE \'%@%\'`" instead'), ...tokenPosition(441, 458, 14, 32, 14, 49)},
+                    {...legacy('"=email LIKE \'%@%\'" is the legacy way, use expression instead "(`email LIKE \'%@%\'`)"'), ...tokenPosition(440, 458, 14, 31, 14, 49)},
                     {...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(460, 461, 14, 51, 14, 52)},
                     {...legacy('"emails.email" is the legacy way, use "emails(email)" instead'), ...tokenPosition(463, 474, 14, 54, 14, 65)},
                     {...legacy('"fk" is legacy, replace it with "rel"'), ...tokenPosition(585, 586, 20, 1, 20, 2)},

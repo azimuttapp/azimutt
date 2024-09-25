@@ -11,7 +11,7 @@ users # simplest entity
 
 cms.posts # entity in schema
   id int pk {autoIncrement, tags: [id]}
-  title varchar(100) unique check=`title <> ''`
+  title varchar(100) unique check(`title <> ''`)
   status post_status
   content varchar nullable
   settings json nullable
@@ -28,7 +28,7 @@ cms.posts # entity in schema
 post_members
   post_id uuid pk=post_members_pk -> cms.posts(id)
   user_id int pk=post_members_pk -> users(id)
-  role varchar(10)=author check=`role IN ('author', 'editor')`
+  role varchar(10)=author check(`role IN ('author', 'editor')`)=members_role_chk
 
 "legacy schema"."post member details" # special entity name
   post_id uuid pk

@@ -13,6 +13,7 @@ import {
     ParserError,
     ParserErrorLevel,
     ParserResult,
+    positionStartAdd,
     removeQuotes,
     TokenPosition
 } from "@azimutt/models";
@@ -34,8 +35,8 @@ import {
     DecimalToken,
     DocToken,
     EmptyStatement,
-    EntityStatement,
     EntityRefAst,
+    EntityStatement,
     ExpressionToken,
     ExtraAst,
     IdentifierToken,
@@ -45,16 +46,16 @@ import {
     PropertiesAst,
     PropertyAst,
     PropertyValueAst,
-    RelationStatement,
     RelationCardinalityAst,
     RelationPolymorphicAst,
+    RelationStatement,
     StatementAst,
     TokenInfo,
     TokenIssue,
     TypeAliasAst,
-    TypeStatement,
     TypeCustomAst,
     TypeEnumAst,
+    TypeStatement,
     TypeStructAst
 } from "./amlAst";
 import {badIndent, legacy} from "./errors";
@@ -417,7 +418,9 @@ class AmlParser extends EmbeddedActionsParser {
             const name = $.OPTION2(() => {
                 $.CONSUME(Equal)
                 $.OPTION3(() => $.CONSUME2(WhiteSpace))
-                return $.SUBRULE($.identifierRule)
+                const res = $.SUBRULE($.identifierRule)
+                $.OPTION4(() => $.CONSUME3(WhiteSpace))
+                return res
             })
             return removeUndefined({keyword: tokenInfo(token), name})
         })
@@ -427,7 +430,9 @@ class AmlParser extends EmbeddedActionsParser {
             const name = $.OPTION2(() => {
                 $.CONSUME(Equal)
                 $.OPTION3(() => $.CONSUME2(WhiteSpace))
-                return $.SUBRULE($.identifierRule)
+                const res = $.SUBRULE($.identifierRule)
+                $.OPTION4(() => $.CONSUME3(WhiteSpace))
+                return res
             })
             return removeUndefined({keyword: tokenInfo(token), name})
         })
@@ -437,25 +442,36 @@ class AmlParser extends EmbeddedActionsParser {
             const name = $.OPTION2(() => {
                 $.CONSUME(Equal)
                 $.OPTION3(() => $.CONSUME2(WhiteSpace))
-                return $.SUBRULE($.identifierRule)
+                const res = $.SUBRULE($.identifierRule)
+                $.OPTION4(() => $.CONSUME3(WhiteSpace))
+                return res
             })
             return removeUndefined({keyword: tokenInfo(token), name})
         })
         const attributeConstraintCheckRule = $.RULE<() => AttributeCheckAst>('attributeConstraintCheckRule', () => {
             const token = $.CONSUME(Check)
             $.OPTION(() => $.CONSUME(WhiteSpace))
-            const definition = $.OPTION2(() => {
-                $.CONSUME(Equal)
+            const predicate = $.OPTION2(() => {
+                $.CONSUME(LParen)
+                const res = $.SUBRULE($.expressionRule)
+                $.CONSUME(RParen)
                 $.OPTION3(() => $.CONSUME2(WhiteSpace))
-                return $.OR([
-                    {ALT: () => $.SUBRULE($.expressionRule)},
-                    {ALT: () => {
-                        const identifier = $.SUBRULE($.identifierRule)
-                        return {...identifier, token: 'Expression', issues: [legacy(`"${identifier.value}" is the legacy way, use expression "\`${identifier.value}\`" instead`)]}
-                    }},
-                ])
+                return res
             })
-            return removeUndefined({keyword: tokenInfo(token), definition})
+            const name = $.OPTION4(() => {
+                $.CONSUME(Equal)
+                $.OPTION5(() => $.CONSUME3(WhiteSpace))
+                const res = $.SUBRULE($.identifierRule)
+                $.OPTION6(() => $.CONSUME4(WhiteSpace))
+                return res
+            })
+            if (!predicate && name && [' ', '<', '>', '=', 'IN'].some(c => name.value.includes(c))) {
+                // no definition and a name that look like a predicate => switch to the legacy syntax (predicate was in the name)
+                const def = {...positionStartAdd(name, -1), token: 'Expression' as const, issues: [legacy(`"=${name.value}" is the legacy way, use expression instead "(\`${name.value}\`)"`)]}
+                return removeUndefined({keyword: tokenInfo(token), predicate: def})
+            } else {
+                return removeUndefined({keyword: tokenInfo(token), predicate, name})
+            }
         })
         const attributeConstraintsRule = $.RULE<() => AttributeConstraintsAst>('attributeConstraintsRule', () => {
             const primaryKey = $.OPTION(() => $.SUBRULE(attributeConstraintPkRule))

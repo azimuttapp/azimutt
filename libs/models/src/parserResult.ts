@@ -71,6 +71,18 @@ export const mergePositions = (positions: (TokenPosition | undefined)[]): TokenP
     })
 }
 
+export const positionStartAdd = <T extends TokenPosition>(pos: T, value: number): T => ({
+    ...pos,
+    offset: {...pos.offset, start: pos.offset.start + value},
+    position: {...pos.position, start: {...pos.position.start, column: pos.position.start.column + value}}
+})
+
+export const positionEndAdd = <T extends TokenPosition>(pos: T, value: number): T => ({
+    ...pos,
+    offset: {...pos.offset, end: pos.offset.end + value},
+    position: {...pos.position, end: {...pos.position.end, column: pos.position.end.column + value}}
+})
+
 const posStart = (values: number[]): number => {
     const valid = values.filter(n => n >= 0 && !isNaN(n) && isFinite(n))
     return valid.length > 0 ? Math.min(...valid) : 0

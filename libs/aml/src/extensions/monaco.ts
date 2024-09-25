@@ -186,7 +186,7 @@ export function suggestAttributeProps(suggestions: CompletionItem[], position: P
     suggestions.push(suggestText('pk', CompletionItemKind.User, position))
     suggestions.push(suggestText('unique', CompletionItemKind.Issue, position))
     suggestions.push(suggestText('index', CompletionItemKind.Property, position))
-    suggestions.push(suggestText('check', CompletionItemKind.Operator, position))
+    suggestions.push(suggestSnippet('check', 'check(`${1:predicate}`)', CompletionItemKind.Operator, position))
     suggestions.push(suggestText('->', CompletionItemKind.Interface, position))
 }
 export function suggestRelationRef(suggestions: CompletionItem[], position: Position, entities: Entity[], attrs: number | undefined, prefix: string): void {

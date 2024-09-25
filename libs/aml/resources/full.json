@@ -60,7 +60,7 @@
       ],
       "pk": {"name": "post_members_pk", "attrs": [["post_id"], ["user_id"]]},
       "checks": [
-        {"predicate": "role IN ('author', 'editor')", "attrs": [["role"]]}
+        {"predicate": "role IN ('author', 'editor')", "attrs": [["role"]], "name": "members_role_chk"}
       ],
       "extra": {"line": 28, "statement": 3}
     },

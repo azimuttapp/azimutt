@@ -111,7 +111,7 @@ function genUniqueEntity(u: Index): TableInner {
 }
 
 function genCheckInline(c: Check): [string, string] {
-    return c.predicate ? [` CHECK (${c.predicate})`, ''] : ['', 'check constraint but no predicate']
+    return c.predicate ? [` ${c.name ? `CONSTRAINT ${c.name} ` : ''}CHECK (${c.predicate})`, ''] : ['', 'check constraint but no predicate']
 }
 
 function genCheckEntity(c: Check): TableInner {

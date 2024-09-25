@@ -32,13 +32,16 @@ import packageJson from "../package.json";
 import {
     AmlAst,
     AttributeAstNested,
+    AttributeConstraintAst,
     AttributePathAst,
     AttributeRefCompositeAst,
     AttributeRelationAst,
     AttributeValueAst,
     EntityRefAst,
     EntityStatement,
+    ExpressionToken,
     ExtraAst,
+    IdentifierToken,
     NamespaceStatement,
     PropertiesAst,
     PropertyValue,
@@ -172,9 +175,9 @@ function buildEntity(namespace: Namespace, statement: number, e: EntityStatement
     const attrs = validAttrs.map(a => buildAttribute(namespace, statement, a, {...entityNamespace, entity: e.name.value}))
     const flatAttrs = flattenAttributes(validAttrs).filter(a => !a.path.some(p => p === undefined)) // nested attributes can have `path` be `[undefined]` on invalid input :/
     const pkAttrs = flatAttrs.filter(a => a.primaryKey)
-    const indexes: Index[] = buildIndexes(flatAttrs.map(a => ({path: a.path.map(p => p.value), index: a.index ? a.index.name?.value || '' : undefined}))).map(i => removeUndefined({name: i.value, attrs: i.attrs}))
-    const uniques: Index[] = buildIndexes(flatAttrs.map(a => ({path: a.path.map(p => p.value), index: a.unique ? a.unique.name?.value || '' : undefined}))).map(i => removeUndefined({name: i.value, attrs: i.attrs, unique: true}))
-    const checks: Check[] = buildIndexes(flatAttrs.map(a => ({path: a.path.map(p => p.value), index: a.check ? a.check.definition?.value || '' : undefined}))).map(i => removeUndefined({predicate: i.value || '', attrs: i.attrs}))
+    const indexes: Index[] = buildIndexes(flatAttrs.map(a => a.index ? {path: a.path, ...a.index} : undefined).filter(isNotUndefined))
+    const uniques: Index[] = buildIndexes(flatAttrs.map(a => a.unique ? {path: a.path, ...a.unique} : undefined).filter(isNotUndefined)).map(u => ({...u, unique: true}))
+    const checks: Check[] = buildIndexes(flatAttrs.map(a => a.check ? {path: a.path, ...a.check} : undefined).filter(isNotUndefined)).map(c => ({...c, predicate: c.predicate || ''}))
     return {
         entity: removeEmpty({
             ...entityNamespace,
@@ -258,10 +261,10 @@ function flattenAttributes(attributes: AttributeAstNested[]): AttributeAstNested
     })
 }
 
-function buildIndexes(indexes: {path: AttributePath, index: string | undefined}[]): {value: string | undefined, attrs: AttributePath[]}[] {
-    const indexesByName: Record<string, {path: AttributePath, name: string}[]> = groupBy(indexes.map(i => i.index !== undefined ? {path: i.path, name: i.index} : undefined).filter(isNotUndefined), i => i.name)
-    const singleIndexes: {value: string | undefined, attrs: AttributePath[]}[] = (indexesByName[''] || []).map(i => ({value: undefined, attrs: [i.path]}))
-    const compositeIndexes: {value: string | undefined, attrs: AttributePath[]}[] = Object.entries(indexesByName).filter(([k, _]) => k !== '').map(([value, values]) => ({value, attrs: values.map(v => v.path)}))
+function buildIndexes(indexes: (AttributeConstraintAst & { path: IdentifierToken[], predicate?: ExpressionToken })[]): {name?: string, attrs: AttributePath[], predicate?: string}[] {
+    const indexesByName: Record<string, {name: string, path: AttributePath, predicate?: string}[]> = groupBy(indexes.map(i => ({name: i.name?.value || '', path: i.path.map(n => n.value), predicate: i.predicate?.value})), i => i.name)
+    const singleIndexes: {name?: string, attrs: AttributePath[], predicate?: string}[] = (indexesByName[''] || []).map(i => removeUndefined({attrs: [i.path], predicate: i.predicate}))
+    const compositeIndexes: {name?: string, attrs: AttributePath[], predicate?: string}[] = Object.entries(indexesByName).filter(([k, _]) => k !== '').map(([name, values]) => removeUndefined({name, attrs: values.map(v => v.path), predicate: values.map(v => v.predicate).find(p => !!p)}))
     return compositeIndexes.concat(singleIndexes)
 }
 

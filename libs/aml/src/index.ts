@@ -16,13 +16,8 @@ import {codeAction, codeLens, completion, createMarker, language} from "./extens
 import {generateMermaid} from "./mermaidGenerator";
 import {generateMarkdown} from "./markdownGenerator";
 
-// TODO: check predicate in parenthesis? (`  age int check(age > 0)=user_age_chk`)
-// TODO: check predicate in backticks? (`  age int check`age > 0`=user_age_chk`)
-// TODO: several checks on a single column & check on several columns
-// TODO: add index order in AML
-
-// TODO: index props: `  name varchar index(hash)=users_name_idx`
-// TODO: check props: `  name varchar check(name <> '')=users_name_chk`
+// TODO: add column order for indexes in AML: `  name varchar index(pos: 1)=name_idx` (have properties in parentheses)
+// TODO: allow several identical constraints in columns, ex: `  email varchar index index=other_index check(`email <> ''`) check(`len(email) > 3`)`
 
 function parseAml(content: string, opts: {
     strict?: boolean, // stop at first error (instead of adding missing tokens to continue parsing)

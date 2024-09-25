@@ -194,7 +194,7 @@ users
   id uuid pk=users_pk
   email varchar unique=users_email_uniq
   name varchar index=users_name_idx
-  age int check=`age >= 0`
+  age int check(`age >= 0`)
   profile_id uuid -> profiles(id)
 ```
 
@@ -212,14 +212,14 @@ user_roles # composite primary key on user_id and role_id
   role_id uuid pk -> roles(id)
 ```
 
-The `check` predicate can be defined using backticks:
+The `check` predicate can be defined using expression (backticks) in parentheses, and like other constrains it can have a name:
 
 ```aml
 users
   id uuid pk
   first_name varchar unique=users_name_uniq
-  last_name varchar unique=users_name_uniq check=`LEN(CONCAT(first_name, last_name)) > 5`
-  age int check=`age > 0`
+  last_name varchar unique=users_name_uniq check(`LEN(CONCAT(first_name, last_name)) > 5`)
+  age int check(`age > 0`)=users_age_chk
 ```
 
 > This constraint part is the same as AMLv1 and it "works" but may be improved to support the index kind, condition (for partial indexes) and other properties.

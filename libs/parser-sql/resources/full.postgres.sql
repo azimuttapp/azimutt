@@ -43,7 +43,7 @@ CREATE INDEX posts_settingscategoryid_idx ON cms.posts((settings->'category'->>'
 CREATE TABLE post_members (
   post_id uuid REFERENCES cms.posts(id),
   user_id int REFERENCES users(id),
-  role varchar(10) NOT NULL DEFAULT 'author' CHECK (role IN ('author', 'editor')),
+  role varchar(10) NOT NULL DEFAULT 'author' CONSTRAINT members_role_chk CHECK (role IN ('author', 'editor')),
   CONSTRAINT post_members_pk PRIMARY KEY (post_id, user_id)
 );
 

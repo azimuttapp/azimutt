@@ -14,7 +14,7 @@ export type AttributeAstNested = { path: IdentifierToken[], nullable?: TokenInfo
 export type AttributeTypeAst = { type?: IdentifierToken, enumValues?: AttributeValueAst[], defaultValue?: AttributeValueAst }
 export type AttributeConstraintsAst = { primaryKey?: AttributeConstraintAst, index?: AttributeConstraintAst, unique?: AttributeConstraintAst, check?: AttributeCheckAst }
 export type AttributeConstraintAst = { keyword: TokenInfo, name?: IdentifierToken }
-export type AttributeCheckAst = { keyword: TokenInfo, definition?: ExpressionToken }
+export type AttributeCheckAst = AttributeConstraintAst & { predicate?: ExpressionToken }
 export type AttributeRelationAst = { kind: RelationKindAst, ref: AttributeRefCompositeAst, polymorphic?: RelationPolymorphicAst, warning?: TokenInfo }
 
 export type RelationCardinalityAst = '1' | 'n'

@@ -324,7 +324,7 @@ cart_items
   cart_id uuid pk -> carts(id)
   product_id uuid pk -> products(id)
   price number
-  quantity int check=`quantity > 0` | should be > 0
+  quantity int check(`quantity > 0`) | should be > 0
   created_at timestamp
 
 #
@@ -341,7 +341,7 @@ order_lines
   order_id uuid -> orders(id)
   product_id uuid -> products(id) | used as reference and for re-order by copy data at order time as they should not change
   price number | in Euro
-  quantity int check=`quantity > 0` | should be > 0
+  quantity int check(`quantity > 0`) | should be > 0
 ```
 
 There is even a [much longer example](../../../demos/ecommerce/source_00_design.md) for the [e-commerce full demo](../../../demos/ecommerce/README.md) if you want to have a look.

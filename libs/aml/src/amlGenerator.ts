@@ -77,7 +77,7 @@ function genAttributeInner(a: Attribute, e: Entity, relations: Relation[], types
         .filter(i => i.attrs.some(attr => attributePathSame(attr, path)))
         .map(i => ` ${i.unique ? 'unique' : 'index'}${i.name ? `=${genIdentifier(i.name)}` : ''}`)
         .join('')
-    const checks = (e.checks || []).filter(i => i.attrs.some(attr => attributePathSame(attr, path))).map(i => ` check${i.predicate ? (legacy ? `="${i.predicate}"` : `=\`${i.predicate}\``) : ''}`).join('')
+    const checks = (e.checks || []).filter(i => i.attrs.some(attr => attributePathSame(attr, path))).map(i => ` check${i.predicate ? (!legacy ? `(\`${i.predicate}\`)` : `=${genIdentifier(i.predicate)}`) : ''}${i.name ? (!legacy ? `=${genIdentifier(i.name)}` : '') : ''}`).join('')
     const rel = relations.map(r => ' ' + genRelationTarget(r, false, legacy)).join('')
     const props = !legacy ? genProperties(a.extra, {}, ['comment']) : ''
     return `${genIdentifier(a.name)}${genAttributeType(a, types)}${a.null ? ' nullable' : ''}${pk}${indexes}${checks}${rel}${props}${genDoc(a.doc, legacy, indent)}${genComment(a.extra?.comment)}`
