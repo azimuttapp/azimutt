@@ -3,7 +3,7 @@ import {HLJSApi, Language} from "highlight.js"
 // keep in sync with libs/aml/src/extensions/monaco.ts
 const entityRegex = /^[a-zA-Z_][a-zA-Z0-9_#]*/
 const attributeNameRegex = /^ +[a-zA-Z_][a-zA-Z0-9_#]*/
-const attributeTypeRegex = /\b(uuid|varchar|text|int|boolean|timestamp)\b/
+const attributeTypeRegex = /\b(uuid|(var|n)?char2?|character( varying)?|(tiny|medium|long|ci)?text|(tiny|small|big)?int(eger)?(\d+)?|numeric|float|double( precision)?|bool(ean)?|timestamp( with(out)? time zone)?|date(time)?|time( with(out)? time zone)?|interval|json|string|number)\b/
 const notesRegex = /\|[^#\n]*/
 const commentRegex = /#.*/
 

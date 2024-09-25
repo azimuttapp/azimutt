@@ -1,6 +1,7 @@
 import {isNotUndefined} from "@azimutt/utils";
 import {entityToRef, ParserError} from "@azimutt/models";
-import {genAttributeRef, parseAml} from "../aml";
+import {parseAml} from "../index";
+import {genAttributeRef} from "../amlGenerator";
 import {
     CancellationToken,
     CodeAction,
@@ -27,7 +28,7 @@ import {
     Range
 } from "./monaco.types";
 
-// keep Regex in sync with backend/assets/js/lang.aml.ts
+// keep Regex in sync with backend/assets/js/aml.hljs.ts
 export const entityRegex = /^[a-zA-Z_][a-zA-Z0-9_#]*/
 export const attributeNameRegex = /^ +[a-zA-Z_][a-zA-Z0-9_#]*/
 export const attributeTypeRegex = /\b(uuid|(var|n)?char2?|character( varying)?|(tiny|medium|long|ci)?text|(tiny|small|big)?int(eger)?(\d+)?|numeric|float|double( precision)?|bool(ean)?|timestamp( with(out)? time zone)?|date(time)?|time( with(out)? time zone)?|interval|json|string|number)\b/

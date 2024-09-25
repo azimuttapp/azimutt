@@ -231,7 +231,7 @@
     }
   ],
   "types": [
-    {"name": "comment_item", "values": ["User", "Post"], "extra": {"line": 46, "statement": 6}},
+    {"name": "comment_item", "values": ["User", "Post"], "extra": {"line": 46, "statement": 6, "inline": true}},
     {"name": "slug", "doc": "anonymous type", "extra": {"line": 78, "statement": 14}},
     {"name": "uid", "alias": "int", "extra": {"tags": ["generic"], "line": 79, "statement": 15, "comment": "alias type"}},
     {"schema": "cms", "name": "post_status", "values": ["draft", "published", "archived"], "extra": {"line": 80, "statement": 16, "comment": "enum type"}},

@@ -1,5 +1,5 @@
 import {ParserError, ParserErrorLevel, TokenPosition} from "@azimutt/models";
-import {TokenIssue} from "./ast";
+import {TokenIssue} from "./amlAst";
 
 export const legacy = (message: string): TokenIssue => ({message, kind: 'LegacySyntax', level: ParserErrorLevel.enum.warning})
 

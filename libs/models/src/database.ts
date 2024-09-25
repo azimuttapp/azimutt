@@ -259,6 +259,7 @@ export type Relation = z.infer<typeof Relation>
 export const TypeExtra = Extra.and(z.object({
     line: z.number().optional(),
     statement: z.number().optional(),
+    inline: z.boolean().optional(), // when defined within the parent entity
     tags: z.string().array().optional(),
     comment: z.string().optional(), // if there is a comment in the type line
 }))

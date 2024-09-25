@@ -54,3 +54,8 @@ export type TokenIssue = { message: string, kind: string, level: ParserErrorLeve
 
 export const isTokenInfo = (value: unknown): value is TokenInfo => isTokenPosition(value) && (!('issues' in value) || ('issues' in value && Array.isArray(value.issues) && value.issues.every(isTokenIssue)))
 export const isTokenIssue = (value: unknown): value is TokenIssue => isObject(value) && ('message' in value && typeof value.message === 'string') && ('kind' in value && typeof value.kind === 'string') && ('level' in value && isParserErrorLevel(value.level))
+
+// other helper types
+export const amlKeywords = ['namespace', 'as', 'nullable', 'pk', 'fk', 'index', 'unique', 'check', 'rel', 'type']
+export type PropertyValueBasic = null | number | boolean | string
+export type PropertyValue = PropertyValueBasic | PropertyValueBasic[]

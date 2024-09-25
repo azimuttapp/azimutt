@@ -1,10 +1,11 @@
 import * as fs from "fs";
 import {describe, expect, test} from "@jest/globals";
 import {Database, parseJsonDatabase, ParserResult, tokenPosition} from "@azimutt/models";
-import {genEntity, generateAml, parseAml} from "./aml";
+import {generateAml, parseAml} from "./index";
+import {genEntity} from "./amlGenerator";
 import {duplicated, legacy} from "./errors";
 
-describe('aml', () => {
+describe('amlGenerator', () => {
     // TODO: namespace
     // TODO: entity alias
     test('empty schema', () => {
@@ -124,7 +125,7 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                 {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}], doc: 'standalone relation', extra: {line: 36, statement: 4, onUpdate: 'no_action', onDelete: 'cascade'}},
             ],
             types: [
-                {schema: 'identity', name: 'user_role', values: ['admin', 'guest'], extra: {line: 16, statement: 2}},
+                {schema: 'identity', name: 'user_role', values: ['admin', 'guest'], extra: {line: 16, statement: 2, inline: true}},
                 {name: 'post_id', alias: 'int', doc: 'alias', extra: {line: 44, statement: 6, table: 'posts'}},
                 {name: 'status', values: ['draft', 'published', 'archived'], extra: {line: 45, statement: 7}},
                 {name: 'position', attrs: [{name: 'x', type: 'int'}, {name: 'y', type: 'int'}], extra: {line: 46, statement: 8, generic: true}},
@@ -147,6 +148,7 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
         const parsed = parseAmlTest(aml)
         expect(parsed).toEqual({result: db})
         expect(generateAml(parsed.result || {})).toEqual(aml)
+        // expect(generateAml(removeFieldsDeep(parsed.result || {}, ['line', 'statement']))).toEqual(aml) // bad statement order (comments & relations), but not far ^^
     })
     test('legacy full', () => {
         const db: Database = parseJsonDatabase(fs.readFileSync('./resources/full.json', 'utf8')).result || {}
@@ -171,7 +173,7 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                 {name: 'posts', attrs: [{name: 'status', type: 'status'}], extra: {line: 1, statement: 1}},
                 {name: 'comments', attrs: [{name: 'status', type: 'status'}], extra: {line: 4, statement: 2}},
             ],
-            types: [{name: 'status', values: ['draft', 'published'], extra: {line: 2, statement: 1}}],
+            types: [{name: 'status', values: ['draft', 'published'], extra: {line: 2, statement: 1, inline: true}}],
             extra: {}
         }
         const parsed = parseAmlTest(input)
@@ -416,7 +418,7 @@ talks
                         {src: {entity: 'talks'}, ref: {entity: 'users'}, attrs: [{src: ['speaker'], ref: ['id']}], extra: {line: 10, statement: 2, inline: true}}
                     ],
                     types: [
-                        {name: 'user_role', values: ['admin', 'guest'], extra: {line: 5, statement: 1}}
+                        {name: 'user_role', values: ['admin', 'guest'], extra: {line: 5, statement: 1, inline: true}}
                     ],
                     extra: {}
                 },

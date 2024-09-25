@@ -56,7 +56,7 @@ import {
     TypeCustomAst,
     TypeEnumAst,
     TypeStructAst
-} from "./ast";
+} from "./amlAst";
 import {badIndent, legacy} from "./errors";
 
 // special

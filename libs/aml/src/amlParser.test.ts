@@ -1,11 +1,11 @@
 import {describe, expect, test} from "@jest/globals";
 import {removeFieldsDeep} from "@azimutt/utils";
 import {tokenPosition} from "@azimutt/models";
-import {AttributeRelationAst} from "./ast";
-import {nestAttributes, parseAmlAst, parseRule} from "./parser";
+import {AttributeRelationAst} from "./amlAst";
+import {nestAttributes, parseAmlAst, parseRule} from "./amlParser";
 import {badIndent, legacy} from "./errors";
 
-describe('aml parser', () => {
+describe('amlParser', () => {
     test('empty', () => {
         expect(parseAmlAst('', {strict: false})).toEqual({result: []})
     })

@@ -1,9 +1,9 @@
 import * as fs from "fs";
 import {describe, expect, test} from "@jest/globals";
 import {pathJoin, pathParent, pluralize, pluralizeL, slugifyGitHub} from "@azimutt/utils";
-import {generateAml, parseAml} from "./aml";
+import {generateAml, parseAml} from "./index";
 
-describe('docs', () => {
+describe('AML docs', () => {
     const project = 'libs/aml'
     const amlDocs = './docs'
     const amlPaths: string[] = fs.readdirSync(amlDocs, {recursive: true})

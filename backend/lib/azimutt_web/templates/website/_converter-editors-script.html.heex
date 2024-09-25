@@ -8,7 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.51.0/min/vs/loader.min.js"></script>
 <script>
     require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.51.0/min/vs' }})
-    require(["vs/editor/editor.main"], function() {
+    require(['vs/editor/editor.main'], function() {
         // define AML language for monaco
         monaco.languages.register({id: 'aml'})
         monaco.languages.setMonarchTokensProvider('aml', aml.monaco.language()) // syntax highlighting
@@ -41,7 +41,8 @@
         function syncEditors() {
             var parsed = parse(leftLang, leftEditor.getValue())
             if (parsed.result && (parsed.errors || []).filter(e => e.level === 'error').length === 0) {
-                window.schema = parsed.result // expose it to the JS console (debug & unknown use cases)
+                window.azimuttSchema = parsed.result // expose it to the JS console (debug & unknown use cases)
+                storeDatabase(parsed.result)
                 model.context.database = parsed.result
                 rightEditor.setValue(format(rightLang, parsed.result))
                 // preserve the undo stack with: `model.pushEditOperations([], [{range: model.getFullModelRange(), text: value}])`
@@ -100,137 +101,64 @@
             if (lang === 'json') return aml.parseJsonDatabase(content)
             return {errors: [{message: 'Unsupported source dialect: ' + lang, kind: 'UnsupportedDialect', level: 'error', offset: {start: 0, end: 100}, position: {start: {line: 1, column: 1}, end: {line: 10, column: 10}}}]}
         }
-        function format(lang, content) {
-            if (lang === 'aml') return aml.generateAml(content)
-            if (lang === 'amlv1') return aml.generateAml(content, true)
-            if (lang === 'json') return aml.generateJsonDatabase(content)
-            if (lang === 'postgres') return sql.generateSql(content, 'postgres')
-            if (lang === 'mermaid') return aml.generateMermaid(content)
-            if (lang === 'markdown') return aml.generateMarkdown(content)
+        function format(lang, db) {
+            if (lang === 'aml') return aml.generateAml(db)
+            if (lang === 'amlv1') return aml.generateAml(db, true)
+            if (lang === 'json') return aml.generateJsonDatabase(db)
+            if (lang === 'postgres') return sql.generateSql(db, 'postgres')
+            if (lang === 'mermaid') return aml.generateMermaid(db)
+            if (lang === 'markdown') return aml.generateMarkdown(db)
             return 'Unsupported destination dialect: ' + lang
         }
         function defaultValue(lang) {
-            if (lang === 'aml') return `#
-# sample AML
-#
-
-users
-  id uuid pk
-  name varchar index
-  email varchar unique
-  role user_role(admin, guest)=guest
-
-posts {color: red}
-  id uuid pk
-  title varchar
-  content text | in markdown
-  author uuid -> users(id)
-  created_at timestamp=\`now()\`
-  created_by uuid -> users(id) {hidden} # inline relation
-`
-            if (lang === 'amlv1') return `#
-# sample AML
-#
-
-users
-  id uuid pk
-  name varchar index
-  email varchar unique
-  role user_role(admin, guest)=guest
-
-posts
-  id uuid pk
-  title varchar
-  content text | in markdown
-  author uuid fk users.id
-  created_at timestamp=\`now()\`
-  created_by uuid fk users.id # inline relation
-`
-            if (lang === 'json') return `{
-  "entities": [
-    {
-      "name": "users",
-      "attrs": [
-        {"name": "id", "type": "uuid"},
-        {"name": "name", "type": "varchar"},
-        {"name": "email", "type": "varchar"},
-        {"name": "role", "type": "user_role", "default": "guest"}
-      ],
-      "pk": {"attrs": [["id"]]},
-      "indexes": [
-        {"attrs": [["email"]], "unique": true},
-        {"attrs": [["name"]]}
-      ]
-    },
-    {
-      "name": "posts",
-      "attrs": [
-        {"name": "id", "type": "uuid"},
-        {"name": "title", "type": "varchar"},
-        {"name": "content", "type": "text", "doc": "in markdown"},
-        {"name": "author", "type": "uuid"},
-        {"name": "created_at", "type": "timestamp", "default": "\`now()\`"},
-        {"name": "created_by", "type": "uuid"}
-      ],
-      "pk": {"attrs": [["id"]]}
-    }
-  ],
-  "relations": [
-    {
-      "src": {"entity": "posts"},
-      "ref": {"entity": "users"},
-      "attrs": [{"src": ["created_by"], "ref": ["id"]}]
-    },
-    {
-      "src": {"entity": "posts"},
-      "ref": {"entity": "users"},
-      "attrs": [{"src": ["author"], "ref": ["id"]}]
-    }
-  ],
-  "types": [
-    {"name": "user_role", "values": ["admin", "guest"]}
-  ]
-}
-`
-            if (lang === 'postgres') return `CREATE TYPE user_role AS ENUM ('admin', 'guest');
-
-CREATE TABLE users (
-  id uuid PRIMARY KEY,
-  name varchar NOT NULL,
-  email varchar NOT NULL UNIQUE,
-  role user_role NOT NULL DEFAULT 'guest'
-);
-CREATE INDEX users_name_idx ON users(name);
-
-CREATE TABLE posts (
-  id uuid PRIMARY KEY,
-  title varchar NOT NULL,
-  content text NOT NULL,
-  author uuid NOT NULL REFERENCES users(id),
-  created_at timestamp NOT NULL DEFAULT now(),
-  created_by uuid NOT NULL REFERENCES users(id)
-);
-COMMENT ON COLUMN posts.content IS 'in markdown';
-`
-            if (lang === 'mermaid') return `erDiagram
-    users {
-        uuid id PK
-        varchar name
-        varchar email UK
-        user_role role
-    }
-    posts {
-        uuid id PK
-        varchar title
-        text content "in markdown"
-        uuid author FK
-        timestamp created_at
-        uuid created_by FK
-    }
-    posts }o--|| users : author
-    posts }o--|| users : created_by
-`
-            return ''
+            const storedDb = getStoredDatabase()
+            const defaultDb = {
+                entities: [{
+                    name: 'users',
+                    attrs: [
+                        {name: 'id', type: 'uuid'},
+                        {name: 'name', type: 'varchar'},
+                        {name: 'email', type: 'varchar'},
+                        {name: 'role', type: 'user_role', default: 'guest'}
+                    ],
+                    pk: {attrs: [['id']]},
+                    indexes: [
+                        {attrs: [['email']], unique: true},
+                        {attrs: [['name']]}
+                    ]
+                }, {
+                    name: 'posts',
+                    attrs: [
+                        {name: 'id', type: 'uuid'},
+                        {name: 'title', type: 'varchar'},
+                        {name: 'content', type: 'text', doc: 'in markdown'},
+                        {name: 'author', type: 'uuid'},
+                        {name: 'created_at', type: 'timestamp', default: '`now()`'},
+                        {name: 'created_by', type: 'uuid'}
+                    ],
+                    pk: {attrs: [['id']]}
+                }],
+                relations: [
+                    {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}], extra: {inline: true}},
+                    {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {inline: true}}
+                ],
+                types: [{name: 'user_role', values: ['admin', 'guest'], extra: {inline: true}}]
+            }
+            return format(lang, storedDb || defaultDb)
+        }
+        function getStoredDatabase() {
+            try {
+                return JSON.parse(localStorage.getItem('converter-database'))
+            } catch (e) {
+                console.warn('Unable to get stored Azimutt schema', e)
+            }
+        }
+        function storeDatabase(db) {
+            try {
+                localStorage.setItem('converter-database', JSON.stringify(db))
+            } catch (e) {
+                console.warn('Unable to store Azimutt schema', e)
+            }
         }
     })
 </script>

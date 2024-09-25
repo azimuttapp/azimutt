@@ -8,7 +8,7 @@ import Models.Project.TableId exposing (TableId)
 
 relationStandalone : ColumnRef -> ColumnRef -> String
 relationStandalone src ref =
-    -- MUST stay sync with AML syntax, and more specifically libs/aml/src/aml.ts:313 (genRelation)
+    -- MUST stay sync with AML syntax, and more specifically libs/aml/src/amlGenerator.ts:108 (genRelation)
     "rel " ++ columnRef src ++ " -> " ++ columnRef ref
 
 

@@ -54,6 +54,7 @@
     <a href={Routes.website_path(@conn, :pricing)} class={"inline-block #{link_style}"}>Pricing</a>
     <a href={Routes.blog_path(@conn, :index)} class={"inline-block #{link_style}"}>Blog</a>
     <a href={Routes.gallery_path(@conn, :index)} class={"inline-block #{link_style}"}>Inspirations</a>
+    <a href={Routes.website_path(@conn, :aml)} class={"inline-block #{link_style}"}>AML</a>
   </:menu>
   <:right_menu>
     <%= if @current_user do %>
@@ -75,5 +76,6 @@
     <a href={Routes.website_path(@conn, :pricing)} class={link_style}>Pricing</a>
     <a href={Routes.blog_path(@conn, :index)} class={link_style}>Blog</a>
     <a href={Routes.gallery_path(@conn, :index)} class={link_style}>Inspirations</a>
+    <a href={Routes.website_path(@conn, :aml)} class={link_style}>AML</a>
   </:mobile_menu>
 </AzimuttWeb.Components.Header.header>
