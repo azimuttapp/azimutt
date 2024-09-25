@@ -75,7 +75,7 @@
             var element = document.createElement('div')
             element.className = 'editor h-full'
             container.appendChild(element)
-            return monaco.editor.create(element, Object.assign({theme: 'vs-light', minimap: {enabled: false}, automaticLayout: true, scrollBeyondLastLine: false}, settings))
+            return monaco.editor.create(element, Object.assign({theme: 'vs-light', minimap: {enabled: false}, automaticLayout: true, scrollBeyondLastLine: true}, settings))
         }
         function createAmlButton(container) {
             var buttonEl = document.createElement('a')
