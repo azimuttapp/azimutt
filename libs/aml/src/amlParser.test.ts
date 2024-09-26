@@ -362,7 +362,7 @@ comments
                 }})
             })
             test('all', () => {
-                expect(parseRule(p => p.attributeRule(), '    id int(8, 9, 10)=8 nullable pk index=idx unique check(`id > 0`) -kind=users> public.users(id) { tag : pii , owner:PANDA} | some note # comment\n')).toEqual({result: {
+                expect(parseRule(p => p.attributeRule(), '    id int(8, 9, 10)=8 nullable pk unique index=idx check(`id > 0`) -kind=users> public.users(id) { tag : pii , owner:PANDA} | some note # comment\n')).toEqual({result: {
                     nesting: {depth: 1, ...tokenPosition(0, 3, 1, 1, 1, 4)},
                     name: {token: 'Identifier', value: 'id', ...tokenPosition(4, 5, 1, 5, 1, 6)},
                     type: {token: 'Identifier', value: 'int', ...tokenPosition(7, 9, 1, 8, 1, 10)},
@@ -370,8 +370,8 @@ comments
                     defaultValue: {token: 'Integer', value: 8, ...tokenPosition(21, 21, 1, 22, 1, 22)},
                     nullable: tokenPosition(23, 30, 1, 24, 1, 31),
                     primaryKey: {keyword: tokenPosition(32, 33, 1, 33, 1, 34)},
-                    index: {keyword: tokenPosition(35, 39, 1, 36, 1, 40), name: {token: 'Identifier', value: 'idx', ...tokenPosition(41, 43, 1, 42, 1, 44)}},
-                    unique: {keyword: tokenPosition(45, 50, 1, 46, 1, 51)},
+                    index: {keyword: tokenPosition(42, 46, 1, 43, 1, 47), name: {token: 'Identifier', value: 'idx', ...tokenPosition(48, 50, 1, 49, 1, 51)}},
+                    unique: {keyword: tokenPosition(35, 40, 1, 36, 1, 41)},
                     check: {keyword: tokenPosition(52, 56, 1, 53, 1, 57), predicate: {token: 'Expression', value: 'id > 0', ...tokenPosition(58, 65, 1, 59, 1, 66)}},
                     relation: {kind: 'n-1',
                         ref: {schema: {token: 'Identifier', value: 'public', ...tokenPosition(81, 86, 1, 82, 1, 87)}, entity: {token: 'Identifier', value: 'users', ...tokenPosition(88, 92, 1, 89, 1, 93)}, attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(94, 95, 1, 95, 1, 96)}]},
