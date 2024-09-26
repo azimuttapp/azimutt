@@ -2,7 +2,7 @@
 
 ## Full
 
-A database schema in several format with all the schema specificities:
+A database schema with all the AML features and several format for tests:
 
 - tables, with schema, special name, alias
 - attributes with name only, with special/keyword name/type, nullable, default, enum, nested

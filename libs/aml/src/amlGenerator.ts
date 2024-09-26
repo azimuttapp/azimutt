@@ -85,7 +85,7 @@ function genAttributeInner(a: Attribute, e: Entity, relations: Relation[], types
 
 function genAttributeType(a: Attribute, types: Type[]): string {
     // regex from `Identifier` token to know if it should be escaped or not (cf libs/aml/src/parser.ts:7)
-    const typeName = a.type && a.type !== legacyColumnTypeUnknown ? ' ' + genIdentifier(a.type) : ''
+    const typeName = a.type && a.type !== legacyColumnTypeUnknown ? ' ' + (a.type.match(/^[a-zA-Z_][a-zA-Z0-9_#(),]*$/) ? a.type : genIdentifier(a.type)) : '' // allow unescaped `varchar(10)`
     const enumType = types.find(t => t.name === a.type && t.values)
     const enumValues = enumType ? '(' + enumType.values?.map(genAttributeValueStr).join(', ') + ')' : ''
     const defaultValue = a.default !== undefined ? `=${genAttributeValue(a.default)}` : ''
@@ -181,6 +181,6 @@ function genComment(comment: string | undefined): string {
 
 function genIdentifier(identifier: string): string {
     if (amlKeywords.includes(identifier.trim().toLowerCase())) return '"' + identifier + '"'
-    if (identifier.match(/^[a-zA-Z_][a-zA-Z0-9_#(),]*$/)) return identifier
+    if (identifier.match(/^[a-zA-Z_][a-zA-Z0-9_#]*$/)) return identifier
     return '"' + identifier + '"'
 }

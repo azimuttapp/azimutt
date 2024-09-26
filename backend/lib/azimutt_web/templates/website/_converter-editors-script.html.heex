@@ -24,8 +24,9 @@
         var editorLeftContainer = document.getElementById('<%= @left.id %>')
         var editorRightContainer = document.getElementById('<%= @right.id %>')
 
-        var model = monaco.editor.createModel(defaultValue(leftLang), editorLang(leftLang))
-        model.context = {database: {}} // store values to be used at several place
+        var db = initDb()
+        var model = monaco.editor.createModel(format(leftLang, db), editorLang(leftLang))
+        model.context = {database: db} // store values to be used at several place
 
         var leftEditor = createEditor(editorLeftContainer, {model})
         var rightEditor = createEditor(editorRightContainer, {language: editorLang(rightLang), value: '', readOnly: true})
@@ -110,7 +111,7 @@
             if (lang === 'markdown') return aml.generateMarkdown(db)
             return 'Unsupported destination dialect: ' + lang
         }
-        function defaultValue(lang) {
+        function initDb() {
             const storedDb = getStoredDatabase()
             const defaultDb = {
                 entities: [{
@@ -144,11 +145,13 @@
                 ],
                 types: [{name: 'user_role', values: ['admin', 'guest'], extra: {inline: true}}]
             }
-            return format(lang, storedDb || defaultDb)
+            return storedDb || defaultDb
         }
         function getStoredDatabase() {
             try {
-                return JSON.parse(localStorage.getItem('converter-database'))
+                const db = JSON.parse(localStorage.getItem('converter-database'))
+                if (!db.entities || !db.types) return null
+                return db
             } catch (e) {
                 console.warn('Unable to get stored Azimutt schema', e)
             }

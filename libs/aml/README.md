@@ -1,9 +1,9 @@
 <p align="center">
     <a href="https://azimutt.app/aml" target="_blank" rel="noopener">
         <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="docs/logo-white.png">
-          <source media="(prefers-color-scheme: light)" srcset="docs/logo.png">
-          <img alt="Azimutt logo" src="docs/logo.png" width="500">
+          <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-white.png">
+          <source media="(prefers-color-scheme: light)" srcset="docs/assets/logo.png">
+          <img alt="Azimutt logo" src="docs/assets/logo.png" width="500">
         </picture>
     </a>
 </p>
@@ -15,7 +15,7 @@
 </p>
 
 **AML** (Azimutt Markup Language) is the **easiest language to design databases**.  
-It's made to be fast to learn and write, with very few keywords or special characters.
+Made to be fast to learn and write.
 
 
 ## Why AML?
@@ -47,26 +47,33 @@ posts
 ```
 
 
+## How to use it
+
+- In [Azimutt designer](https://azimutt.app/create?aml): design your database schema with AML
+- In [Dialect converters](https://azimutt.app/converters/aml): convert AML to other dialects such as SQL, JSON, Markdown...
+- As a code library (see API below)
+
+
 ## API
 
-This package has a very simple API, you will mainly care about:
+This package has a very simple API:
 
 ```typescript
-function parseAml(content: string): ParserResult<Database> {}
-function generateAml(database: Database): string {}
+function parseAml(content: string): ParserResult<Database> { /* ... */ }
+function generateAml(database: Database): string { /* ... */ }
 ```
 
-You can look at the [Database](../models/src/database.ts) definition, it's how Azimutt is modeling any database schema in JavaScript (and JSON).
+You can look at the [Database](../models/src/database.ts) definition, it's how Azimutt model any database schema (offers [zod](https://zod.dev) validations and TypeScript types).
 
-The [ParserResult](../models/src/parserResult.ts) is just a class with a `result` and `errors` fields.
+[ParserResult](../models/src/parserResult.ts) is just a class with a `result` and `errors` fields.
 
-Here is a usage example:
+Here is a sample usage:
 
 ```typescript
 const aml = 'users\  id int pk\n  name varchar\n'
 const parsed = parseAml(aml)
 if (parsed.errors) {
-    parsed.errors.forEach(e => console.log('error', e))
+    parsed.errors.forEach(e => console.log('paring error', e.message))
 }
 if (parsed.result) {
     console.log('database', parsed.result)
@@ -75,14 +82,16 @@ if (parsed.result) {
 }
 ```
 
-There are some more functions you could like:
+You can have both, a `result` and some `errors` as there is syntax recovery and some errors are warnings (see `level` field).
+
+This package also offer a few more features:
 
 ```typescript
 function generateMermaid(database: Database) {} // generate a Mermaid erDiagram
 function generateMarkdown(database: Database) {} // generate markdown documentation
-function generateJsonDatabase(database: Database): string {} // generate nicly formatted JSON (similar to `JSON.stringify(db, null, 2) è but more compact)
-function parseJsonDatabase(content: string): ParserResult<Database> {} // parse and validate JSON, ie, zod.safeParse() adapted to Azimutt APIs
-const schemaJsonDatabase: JSONSchema = {...} // the JSON Schema object for the Database type
+function generateJsonDatabase(database: Database): string {} // generate nice JSON (similar to `JSON.stringify(db, null, 2), but more compact)
+function parseJsonDatabase(content: string): ParserResult<Database> {} // parse and validate JSON (`zod.safeParse()` adapted to Azimutt APIs)
+const schemaJsonDatabase: JSONSchema = {} // the JSON Schema object for the Database type
 ```
 
 The last useful thing is the [Monaco Editor helpers](src/extensions/monaco.ts):
@@ -91,7 +100,7 @@ The last useful thing is the [Monaco Editor helpers](src/extensions/monaco.ts):
 const monaco = {language, completion, codeAction, codeLens, createMarker}
 ```
 
-You can set up your Monaco Editor with AML like this:
+You can set up [Monaco Editor](https://microsoft.github.io/monaco-editor) to be a powerful IDE for AML:
 
 ```typescript
 monaco.languages.register({id: 'aml'})
@@ -100,22 +109,22 @@ monaco.languages.registerCompletionItemProvider('aml', aml.monaco.completion()) 
 monaco.languages.registerCodeActionProvider('aml', aml.monaco.codeAction()) // quick-fixes
 monaco.languages.registerCodeLensProvider('aml', aml.monaco.codeLens()) // hints with actions
 
-const model = monaco.editor.createModel('', 'aml')
+const model = monaco.editor.createModel('users\n  id int pk\n  name varchar index\n', 'aml')
 var editor = monaco.editor.create(document.getElementById('aml-editor'), {
-  theme: 'vs-light',
   model,
+  theme: 'vs-light',
   minimap: {enabled: false},
   automaticLayout: true,
-  scrollBeyondLastLine: false,
+  scrollBeyondLastLine: true,
 })
 editor.onDidChangeModelContent(e => {
   const parsed = parseAml(editor.getValue())
   monaco.editor.setModelMarkers(model, 'owner', (parsed.errors || []).map(e => aml.monaco.createMarker(e, model, editor)))
-  const db = parsed.result // <= here is your Database (or undefined ^^)
+  const db = parsed.result // <= here is your Database object (or undefined ^^)
 })
 ```
 
-You can also use the Database JSON Schema for improved JSON editing experience in Monaco.
+You can also use the Database JSON Schema for improved JSON editing experience in Monaco.  
 As an example you can try the [AML to JSON converter](https://azimutt.app/converters/aml/to/json) or the [JSON to AML converter](https://azimutt.app/converters/json/to/aml)
 
 

@@ -19,11 +19,17 @@ Each level is optional. When defining a database object, they can be added in fr
 
 Here are some examples:
 
-- `users` defines the users entity with no hierarchical level
-- `public.users` defines the users entity inside the public schema
-- `core.public.users` defines the users entity inside the public schema and core catalog
-- `analytics.core.public.users` defines the users entity inside the public schema, core catalog and analytics database
-- `analytics...users` defines the users entity inside the analytics database
+```aml
+users # defines the users entity with no hierarchical level
+
+public.users # defines the users entity inside the public schema
+
+core.public.users # defines the users entity inside the public schema and core catalog
+
+analytics.core.public.users # defines the users entity inside the public schema, core catalog and analytics database
+
+analytics...users # defines the users entity inside the analytics database
+```
 
 This can be done anywhere, for example in relations:
 
@@ -34,7 +40,7 @@ rel public.posts(user_id) -> auth.users(id)
 
 ### Namespace directive
 
-As it can be painful to repeat everywhere the namespace, you can use the namespace directive to define one as default for every following object:
+As it can be painful to repeat everywhere the same namespace, you can use the namespace directive to define one as default for every following object:
 
 ```aml
 namespace core.public
@@ -57,7 +63,7 @@ namespace auth
 
 users # defines the `users` entity inside the `auth` schema
 
-namespace seo # override the default namespace
+namespace seo # override the previous default namespace
 
 posts # defines the `posts` entity inside the `seo` schema
 ```

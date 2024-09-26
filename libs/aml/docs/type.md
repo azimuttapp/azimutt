@@ -36,6 +36,12 @@ To add some semantics and have a concrete type, a type can map to another one, l
 type bug_status varchar
 ```
 
+For course, this can also work recursively ^^
+
+```aml
+type issue_status bug_status
+```
+
 
 ### Enum
 
@@ -52,6 +58,8 @@ Or standalone:
 ```aml
 type bug_status (new, "in progress", done)
 ```
+
+When used in several entities, it's recommended to define them standalone.
 
 
 ### Struct
@@ -71,10 +79,12 @@ Types can also hold custom definitions like:
 type bug_status `range(subtype = float8, subtype_diff = float8mi)`
 ```
 
+This is useful to have database specific types not handled otherwise.
+
 
 ### Namespace
 
-Like [entities](./entity.md), types are defined within a [namespace](./namespace.md) and inherit the defined default namespace:
+Like [entities](./entity.md), types are defined within a [namespace](./namespace.md) and inherit the defined [default namespace](./namespace.md#namespace-directive):
 
 ```aml
 type reporting.public.bug_status varchar

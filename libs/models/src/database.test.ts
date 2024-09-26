@@ -1,13 +1,10 @@
-import {describe, expect, test} from "@jest/globals";
+import * as fs from "fs";
 import Ajv from "ajv";
+import {describe, expect, test} from "@jest/globals";
 import {Database, DatabaseSchema} from "./index";
 
 describe('database', () => {
     const validate = new Ajv().compile(DatabaseSchema)
-    test.skip('print schema', () => {
-        // useful to sync `DatabaseSchema` to backend/priv/static/aml_schema.json
-        console.log(JSON.stringify(DatabaseSchema))
-    })
     test('basic db', () => {
         // TypeScript validation (type specified explicitly)
         const db: Database = {
@@ -160,5 +157,11 @@ describe('database', () => {
         // JSON Schema validation
         validate(db)
         expect(validate.errors).toEqual(null)
+    })
+    test('aml_schema.json not out of sync', () => {
+        // make sure the exposed AML schema stays aligned with the current one
+        const json = JSON.parse(fs.readFileSync('../../backend/priv/static/aml_schema.json', 'utf8'))
+        // console.log(JSON.stringify(DatabaseSchema)) // useful to sync to the aml_schema.json ^^
+        expect(json).toEqual(DatabaseSchema)
     })
 })

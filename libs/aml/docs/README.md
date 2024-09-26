@@ -1,9 +1,9 @@
 <p align="center">
     <a href="https://azimutt.app/aml" target="_blank" rel="noopener">
         <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="logo-white.png">
-          <source media="(prefers-color-scheme: light)" srcset="logo.png">
-          <img alt="Azimutt logo" src="logo.png" width="500">
+          <source media="(prefers-color-scheme: dark)" srcset="assets/logo-white.png">
+          <source media="(prefers-color-scheme: light)" srcset="assets/logo.png">
+          <img alt="Azimutt logo" src="assets/logo.png" width="500">
         </picture>
     </a>
 </p>
@@ -15,12 +15,12 @@
 </p>
 
 **AML** (Azimutt Markup Language) is the **easiest language to design databases**.  
-It's made to be fast to learn and write, with very few keywords or special characters.
+Made to be fast to learn and write.
 
 
 ## Why AML?
 
-- **Structured text** is WAY better than GUI: portable, copy/paste, find/replace, versioning, column edition...
+- **Structured text** is WAY better than GUI: portable, copy/paste, find/replace, versioning, auto-complete...
 - It's **simpler, faster to write and less error-prone than SQL** or other database schema DSLs
 - **Made for humans**: readable, flexible, can hold [custom properties](./properties.md)
 - **Database agnostic**: hold concepts, not specific syntax, can be [converted to other dialects](https://azimutt.app/converters/aml)
@@ -49,13 +49,13 @@ posts
 
 ## Introduction
 
-This page will give you a **quick overview** of how to use AML, follow links for a more exhaustive specification.
+This page will give you a **quick overview** of how to use AML, follow links for an exhaustive specification.
 
 - [Entities](#entities)
 - [Relations](#relations)
 - [Types](#types)
-- [Migration from v1](#migration-from-v1)
 - [Full example](#full-example)
+- [Migration from v1](#migration-from-v1)
 - [Other database schema DSLs](#other-database-schema-dsls)
 
 One last thing, AML [comments](./comment.md) are single line and start with `#`, you will see them in many places 😉
@@ -63,7 +63,7 @@ One last thing, AML [comments](./comment.md) are single line and start with `#`,
 
 ## Entities
 
-[Entities](./entity.md) can be used to model data objects from databases, such as **tables** or **collections** in databases.
+[Entities](./entity.md) can be used to model objects from databases, such as **tables** or **collections**.
 
 Defining one in AML can't be simpler, just type its name:
 
@@ -106,8 +106,8 @@ core.public.posts as p
 And you can document them both with structured [properties](./properties.md) or unstructured [documentation](./documentation.md):
 
 ```aml
-events {color: yellow, scope: tracking} | store all user events
-  id uuid pk
+events {color: red, scope: tracking, tags: [pii, deprecated]} | store all user events
+  id int pk {autoIncrement}
   name varchar index | should be structured with `context__object__action` format
   item_kind varchar {values: [users, posts, projects]} | polymorphic relation
   item_id uuid
@@ -188,18 +188,18 @@ rel credential_details(provider_key, provider_uid) -> credentials(provider_key, 
 
 Of course, relations can be used with nested attributes:
 
-```
+```aml
 users
   id int pk
-  friends json[]
-    id number -> users(id)
+  friends "json[]"
+    id number -> users(id) # inline relation
 
 events
   id uuid pk
   details json
     user_id number
 
-rel events(details.user_id) -> users(id)
+rel events(details.user_id) -> users(id) # standalone relation
 ```
 
 
@@ -210,22 +210,12 @@ You can also create [custom types](./type.md) for better semantics, consistency 
 They can be defined inline in the entity attribute definition when not re-used, on standalone for more global usage:
 
 ```aml
-type my_type # just a named type for better semantics
+type my_type # just a named type for better semantics, not really necessary in AML as types can be anything
 type id_type uuid # here is a type alias
 type bug_status (draft, "in progress", done) # enums are quite useful and explicit
 type position {x int, y int} # even structs can be defined
-type float8_range `RANGE (subtype = float8, subtype_diff = float8mi)` # custom types allows any complex definition
+type float8_range `RANGE (subtype = float8, subtype_diff = float8mi)` # custom types allows any specific definition
 ```
-
-
-## Migration from v1
-
-This new version of AML is coming 2 years after the first one ([post](https://azimutt.app/blog/aml-a-language-to-define-your-database-schema) & [PR](https://github.com/azimuttapp/azimutt/pull/98) ^^).
-During this time we discovered a lot of new use cases and some shortcomings (such as composite foreign keys).
-
-This new iteration fixes the issues, improve consistency and add nice features such as [namespace](./namespace.md), [properties](./properties.md), [nested attributes](./entity.md#nested-attribute), [polymorphic relations](./relation.md#polymorphic-relation) and more.
-
-We made it mostly retro-compatible, so you only have to fix the issued warnings in most cases. If you want to look at what needs to be adapted, look at the [migration doc](./migration.md).
 
 
 ## Full example
@@ -344,12 +334,24 @@ order_lines
   quantity int check(`quantity > 0`) | should be > 0
 ```
 
-There is even a [much longer example](../../../demos/ecommerce/source_00_design.md) for the [e-commerce full demo](../../../demos/ecommerce/README.md) if you want to have a look.
+If you want more examples, there is a [much longer example](../../../demos/ecommerce/source_00_design.md) for the [e-commerce full demo](../../../demos/ecommerce/README.md), and another one with [all the AML features](../resources/full.aml) ^^.
 
-Hope you enjoyed [AML](https://azimutt.app/aml), happy hacking on [Azimutt](https://azimutt.app)!
+I hope you enjoyed [AML](https://azimutt.app/aml) and can only wish you happy hacking on [Azimutt](https://azimutt.app)!
+
+
+## Migration from v1
+
+This new version of AML is coming 2 years after the first one ([post](https://azimutt.app/blog/aml-a-language-to-define-your-database-schema) & [PR](https://github.com/azimuttapp/azimutt/pull/98) ^^).
+During this time we discovered a lot of new use cases and some shortcomings (such as composite foreign keys).
+
+This new iteration fixes the issues, improve consistency and add nice features such as [namespace](./namespace.md), [properties](./properties.md), [nested attributes](./entity.md#nested-attribute), [polymorphic relations](./relation.md#polymorphic-relation) and more.
+
+We made it mostly retro-compatible, so you only have to fix the issued warnings in most cases. If you want to look at what needs to be adapted, look at the [migration doc](./migration.md), or just use our [converter](https://azimutt.app/converters/amlv1/to/aml) ^^.
 
 
 ## Other database schema DSLs
+
+Of course, AML is not the only DSL for database design, here are some alternatives:
 
 - [DBML](https://dbml.dbdiagram.io)
 - [Quick DBD syntax](https://www.quickdatabasediagrams.com)

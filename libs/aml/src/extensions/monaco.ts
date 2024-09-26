@@ -41,6 +41,8 @@ import {
     Range
 } from "./monaco.types";
 
+// TODO: use hover provider to show entity/type definition or AML doc
+
 // keep Regex in sync with backend/assets/js/aml.hljs.ts
 export const entityRegex = /^[a-zA-Z_][a-zA-Z0-9_#]*/
 export const attributeNameRegex = /^ +[a-zA-Z_][a-zA-Z0-9_#]*/

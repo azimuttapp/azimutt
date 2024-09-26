@@ -73,4 +73,4 @@ rel posts(author) -> public.users(id) |||
 |||
 ```
 
-The common indentation to every line will be removed using [stripIndent](../../utils/src/string.ts) to keep your code and documentation clean 😉
+The common indentation to every line will be removed to keep your code and documentation clean 😉

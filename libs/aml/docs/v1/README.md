@@ -1,4 +1,7 @@
-# AML - Azimutt Markup Language (v1, legacy)
+# AML - Azimutt Markup Language (v1: legacy)
+
+> This is the **legacy** documentation for reference!
+> Look at the [current one](../README.md) to learn AML!
 
 **AML is a text language allowing you to define your database schema in the quickest and most intuitive way.**
 
@@ -13,13 +16,13 @@ users | store every user # AML comment
   role user_role(guest, member, admin)=guest
   email varchar nullable
   group_id fk groups.id
-  created timestamp=now()
+  created timestamp="now()" # /!\ breaking change: you need " with new version!
 ```
 
 As you can see, almost all characters are your own content, no ceremony.
 
 Now let's dig more into it and see all the features...  
-If you want to try them live, just create a [new empty project](https://azimutt.app/projects/create) on Azimutt.
+If you want to try them live, just create a [new empty project](https://azimutt.app/create?aml) on Azimutt.
 
 - [Tables](#-tables)
 - [Columns](#-columns)
@@ -44,10 +47,15 @@ Here are some examples of tables definitions:
 
 ```amlv1
 users
+
 public.users
+
 "user table"
+
 "users.sql"
+
 users_view*
+
 "demo 2"."users 2"
 ```
 
@@ -71,7 +79,7 @@ Of course, you may want to provide additional details on columns, here is its fu
 
 ```amlv1
 users
-  name type nullable pk index unique check fk table.column | notes # comment
+  col_name col_type nullable pk unique index check fk table.column | notes # comment
 ```
 
 Every part being optional except the name. Some parts may have additional options.
@@ -102,11 +110,11 @@ Here are some valid examples:
 
 As seen in the [Columns](#-columns) section, a column can have several modifiers.
 
-`nullable` is a simple flag, telling the column can contain `null` values. In AML, by default columns are not nullable, this is the opposite of SQL but much more convenient and quick to write, as most of your columns should not be nullable.
+`nullable` is a simple flag, telling the column can contain `null` values. **In AML, by default columns are not nullable**, this is the opposite of SQL, but much more convenient and quick to write, as most of your columns should not be nullable.
 
 `pk` means *primary key*, use it to identify a column as a table primary key. You can use this flag in several columns to create a composite primary key.
 
-`index`, `unique` and `check` have a similar behavior. You can use them as flag to express the column property, but you can also give them a name using the `=` sign (ex: `unique=user_slug`). This name will be shown in the interface but also will allow to create a constraint on several columns sharing the same constraint name.
+`index`, `unique` and `check` have a similar behavior. You can use them as flag to express the column property, but you can also give them a name using the `=` sign (ex: `unique=user_slug`). This name will be shown in the UI but also will allow to create a constraint on several columns sharing the same constraint name.
 
 For the `check` constraint, you can use this name (or label) to define the condition.
 
@@ -118,6 +126,7 @@ users
   first_name varchar unique=name
   last_name varchar unique=name check="LEN(last_name) > 3"
   bio text nullable
+
 credentials
   provider_id varchar pk
   provider_key varchar pk
@@ -127,7 +136,7 @@ credentials
 ### Column relation
 
 Some columns can reference another column, eventually using a SQL foreign key. In AML, this can be done with the `fk` keyword (shortcut for *foreign key* 😉) in the column definition or as a standalone instruction (see [Relations](#-relations)).  
-This relation means a column references another one, and thus can be used in a join clause. But it does not necessarily imply there is a real foreign key in the database schema.
+This relation means a column references another one, and thus can be used in a join clause. But it does not necessarily imply there is a real foreign key in the database.
 
 To define a relation in the column definition, just add the `fk` keyword with a column reference after like this: `fk table.column`, or with the table schema: `fk schema.table.column`.
 
@@ -158,6 +167,7 @@ requests
   kind varchar
   item_type varchar
   item_id integer
+
 fk requests.item_id -> users.id
 fk requests.item_id -> talks.id
 fk requests.item_id -> logins.id
@@ -165,7 +175,7 @@ fk requests.item_id -> logins.id
 
 ## 🔖 Comments
 
-Having comments on tables and relations can be a great help for people to understand how the database works. In AML you can define a *SQL comment* using the `|` symbol at the end of your table or column definition. It will be visible directly inside the interface.
+Having comments on tables and relations can be a great help for people to understand how the database works. In AML you can define a *SQL comment* using the `|` symbol at the end of your table or column definition. It will be visible directly inside the UI.
 
 For example:
 
@@ -183,10 +193,11 @@ Let's see an example:
 
 ```amlv1
 # the user table
+
 users | store ALL users
   id | unique identifier # not sure if I should put `uuid` or `int`
   name varchar # which size?
-  created_at timestamp=now() | never update this column
+  created_at timestamp="now()" | never update this column
 ```
 
 ## 🔖 Philosophy & Conventions
@@ -211,6 +222,7 @@ Let's define a hypothetical e-commerce shop:
 #
 # Identity domain
 #
+
 users
   id uuid pk
   slug varchar unique | user identifier in urls
@@ -227,6 +239,7 @@ users
   created_at timestamp
   updated_at timestamp
   last_login timestamp
+
 credentials
   provider_id provider(google, facebook, twitter, email) pk
   provider_key varchar pk | user id in provider system
@@ -234,23 +247,27 @@ credentials
   password_hash varchar
   password_salt varchar
   user_id uuid fk users.id
+
 social_profiles
   user_id uuid fk users.id
   platform social_platform(facebook, twitter, instagram, slack, github)
   platform_user varchar
   created_at timestamp
+
 #
 # Catalog domain
 #
+
 categories
   id uuid pk
   slug varchar unique | category identifier in urls
   name varchar
   description text
-  tags varchar[]
+  tags "varchar[]" # breaking change: " are now required for array types
   parent_category uuid fk categories.id
   created_at timestamp
   updated_at timestamp
+
 products
   id uuid pk
   category_id uuid nullable fk categories.id
@@ -261,9 +278,10 @@ products
   price number | in Euro
   discount_type discount_type(none, percent, amount)
   discount_value number
-  tags varchar[]
+  tags "varchar[]"
   created_at timestamp
   updated_at timestamp
+
 reviews
   id uuid pk
   user_id uuid fk users.id
@@ -271,28 +289,34 @@ reviews
   rating int index | between 1 and 5
   comment text
   created_at timestamp
+
 #
 # Cart domain
 #
+
 carts
   id uuid pk
   status cart_status(active, ordered, abandonned)
   created_at timestamp=now
   created_by uuid fk users.id
   updated_at timestamp
+
 cart_items
   cart_id uuid pk fk carts.id
   product_id uuid pk fk products.id
   price number
   quantity int check="quantity > 0" | should be > 0
   created_at timestamp
+
 #
 # Order domain
 #
+
 orders
   id uuid pk
   user_id uuid fk users.id
   created_at timestamp
+
 order_lines
   id uuid pk
   order_id uuid fk orders.id

@@ -27,7 +27,7 @@ users
   name
 ```
 
-[Attributes may have options](#attribute) such as [type](#attribute-type), [nullability](#not-null), [indexes, constraints](#index-and-constraint) and more. Here are some examples:
+[Attributes can have options](#attribute) such as [type](#attribute-type), [nullability](#not-null), [constraints](#index-and-constraint), [relations](./relation.md) and more. Here are some examples:
 
 ```aml
 users
@@ -36,6 +36,7 @@ users
   email varchar(256) unique
   bio text nullable
   role user_role(admin, guest)=guest index
+  profile_id int -> profiles(id)
 ```
 
 
@@ -49,7 +50,7 @@ users {color: red, tags: [pii, sensitive], deprecated} | storing all users
   name
 ```
 
-You can use properties to define a view:
+There are [specific properties](./properties.md#entity-properties) for entities, for examples to define view:
 
 ```aml
 admins {view: "SELECT * FROM users WHERE role = 'admin'"}
@@ -60,7 +61,7 @@ admins {view: "SELECT * FROM users WHERE role = 'admin'"}
 
 ### Alias
 
-Finally, they can be **aliased** to simplify their references, entity aliases are also [identifiers](./identifier.md):
+Finally, entities can be **aliased** to simplify their references, entity aliases are also [identifiers](./identifier.md):
 
 ```aml
 db1.referential.identity.accounts as users
@@ -79,7 +80,7 @@ Attributes define possible values inside an entity, such as **columns** in relat
 
 They are defined with 2 space indentation under the entity they belong to, but they can also have [several nesting levels](#nested-attribute).
 
-The only required thing is their name, which is an [identifier](./identifier.md). After they have several options for the [type](#attribute-type), [nullable](#not-null), [indexes and constraints](#index-and-constraint).
+The only required thing is their name, which is an [identifier](./identifier.md). After they have several options for the [type](#attribute-type), [nullable](#not-null), [constraints](#index-and-constraint) and [relations](./relation.md).
 
 Here is an example:
 
@@ -108,7 +109,7 @@ events
   created_at "timestamp with time zone"
 ```
 
-You can define the default attribute value with the `=` symbol:
+You can define the default values for the attribute with the `=` symbol:
 
 ```aml
 users
@@ -128,7 +129,7 @@ Known types are automatically inferred:
 - number when only numbers and one dot (at most)
 - object when starting with `{`
 - array when starting with `[`
-- function when starting by backticks (`)
+- expression when starting by backticks (`)
 - string otherwise, use `"` for multi-word string
 
 [Custom types](./type.md) can be defined in standalone and used for an attribute:
@@ -155,7 +156,7 @@ In this case, they inherit the [namespace](./namespace.md) of the entity, and of
 
 #### Not null
 
-Contrary to SQL, in AML the attributes come with the NOT NULL constraint **by default**.
+Contrary to SQL, in AML the attributes come with the **NOT NULL constraint by default**.
 
 To remove it, you can mark the attribute as `nullable`. This "not constraint" should come after the attribute name and type (if present).
 
@@ -187,19 +188,26 @@ users
   profile_id uuid -> profiles(id) # define a relation for the profile_id attribute
 ```
 
-Constraints can be named using the `=` symbol, except for check and relations, here is how:
+Check should hold a predicate (even if not strictly required in AML), you can define it as an expression in parentheses:
+
+```aml
+users
+  id uuid pk
+  age int check(`age > 0`)
+```
+
+Constraints can be named using the `=` symbol:
 
 ```aml
 users
   id uuid pk=users_pk
   email varchar unique=users_email_uniq
   name varchar index=users_name_idx
-  age int check(`age >= 0`)
+  age int check(`age >= 0`)=age_chk
   profile_id uuid -> profiles(id)
 ```
 
-If you want to define a single constraint on several attributes (like uniqueness of `first_name` and `last_name`), you can apply it to the needed attributes with the same name, they will be put together.
-The primary key doesn't need this as there is only one per an entity:
+Constraints with the same name are put together to form a composite constraint. Only the primary key doesn't need this as there is just one per an entity:
 
 ```aml
 users # unique constraint on first_name AND last_name
@@ -212,24 +220,15 @@ user_roles # composite primary key on user_id and role_id
   role_id uuid pk -> roles(id)
 ```
 
-The `check` predicate can be defined using expression (backticks) in parentheses, and like other constrains it can have a name:
-
-```aml
-users
-  id uuid pk
-  first_name varchar unique=users_name_uniq
-  last_name varchar unique=users_name_uniq check(`LEN(CONCAT(first_name, last_name)) > 5`)
-  age int check(`age > 0`)=users_age_chk
-```
-
-> This constraint part is the same as AMLv1 and it "works" but may be improved to support the index kind, condition (for partial indexes) and other properties.
-> We didn't find a nice syntax to do it inline, but if you have ideas, feel free to shoot!
-> Also we are considering creating standalone index & constraint definitions, but not trivial to make them obvious, and it could come later easily.
+> For now, AML doesn't allow more properties on indexes and constraints, this is in thinking.
+> We plan using parentheses on `index` and `unique` to define custom properties like: `  deleted_at timestamp nullable index(kind: HASH, where: `not null`, include: [deleted_by])=soft_delete_idx`.
+> We also plan to allow defining standalone constraints to be more flexible.
+> Let us know what you think, what are your needs and what seems the most intuitive to you.
 
 
 #### Nested attribute
 
-Attributes may have nested attributes, this is especially useful to define the schema of complex objects like `json`.
+Attributes may have nested attributes, this is especially useful to define the schema of complex objects for document database or `json` columns.
 
 Nested attributes are just like other attributes, just with an additional indentation level under the attribute they belong to. Here is how they look:
 

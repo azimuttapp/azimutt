@@ -512,6 +512,9 @@
         "name": {
           "$ref": "#/definitions/TypeName"
         },
+        "alias": {
+          "type": "string"
+        },
         "values": {
           "type": "array",
           "items": {
@@ -584,6 +587,9 @@
             "alias": {
               "type": "string"
             },
+            "view": {
+              "type": "string"
+            },
             "color": {
               "type": "string"
             },
@@ -596,15 +602,11 @@
             "dependsOn": {
               "type": "array",
               "items": {
-                "anyOf": [
-                  {
-                    "$ref": "#/definitions/EntityRef"
-                  },
-                  {
-                    "$ref": "#/definitions/AttributeRef"
-                  }
-                ]
+                "type": "string"
               }
+            },
+            "comment": {
+              "type": "string"
             }
           }
         }
@@ -635,6 +637,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "comment": {
+              "type": "string"
             }
           }
         }
@@ -672,14 +677,25 @@
             "statement": {
               "type": "number"
             },
+            "inline": {
+              "type": "boolean"
+            },
+            "natural": {
+              "type": "string",
+              "enum": [
+                "src",
+                "ref",
+                "both"
+              ]
+            },
             "onUpdate": {
               "anyOf": [
                 {
                   "type": "string",
                   "enum": [
-                    "no_action",
-                    "set_null",
-                    "set_default",
+                    "no action",
+                    "set null",
+                    "set default",
                     "cascade",
                     "restrict"
                   ]
@@ -698,6 +714,15 @@
                   "type": "string"
                 }
               ]
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "comment": {
+              "type": "string"
             }
           }
         }
@@ -716,6 +741,18 @@
             },
             "statement": {
               "type": "number"
+            },
+            "inline": {
+              "type": "boolean"
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "comment": {
+              "type": "string"
             }
           }
         }

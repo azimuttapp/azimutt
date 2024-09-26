@@ -8,7 +8,7 @@ import DataSources.JsonMiner.JsonAdapter as JsonAdapter
 import DataSources.JsonMiner.JsonSchema exposing (JsonSchema)
 import DataSources.JsonMiner.Models.JsonTable as JsonTable
 import Dict exposing (Dict)
-import Html exposing (Html, button, div, h3, label, option, p, select, text)
+import Html exposing (Html, br, button, div, h3, label, option, p, select, text)
 import Html.Attributes exposing (class, disabled, for, id, name, selected, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Bool as Bool
@@ -41,6 +41,7 @@ import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (E
 import PagesComponents.Organization_.Project_.Updates.Table exposing (hideTable, showColumns, showTable)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyM)
 import Ports
+import Services.Backend as Backend
 import Services.Lenses exposing (mapAmlSidebarM, mapAmlSidebarMTM, mapErdM, mapErdMT, mapSelectedMT, setAmlSidebar, setContent, setErrors, setSelected, setUpdatedAt)
 import Set exposing (Set)
 import Time
@@ -330,7 +331,21 @@ viewErrors errors =
 
 viewWarnings : List String -> Html msg
 viewWarnings warnings =
-    div [] (warnings |> List.map (\warning -> p [ class "mt-2 text-sm text-yellow-600" ] [ text warning ]))
+    div []
+        ((if warnings |> List.any (String.contains "legacy") then
+            div [ class "mt-2 text-sm text-gray-500" ]
+                [ text "Oh! It seems you are using the legacy AML syntax 😅"
+                , br [] []
+                , text "Fix it easily with "
+                , extLink Backend.amlv1ConverterUrl [ class "link" ] [ text "our converter tool" ]
+                , text " 🪄"
+                ]
+
+          else
+            div [] []
+         )
+            :: (warnings |> List.map (\warning -> p [ class "mt-2 text-sm text-yellow-600" ] [ text warning ]))
+        )
 
 
 viewHelp : Html msg

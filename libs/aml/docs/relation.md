@@ -246,14 +246,14 @@ posts
   id uuid pk
   title varchar
 
+pages
+  id uuid pk
+  title varchar
+
 post_comments
   id uuid pk
   post_id -> posts
   content text
-
-pages
-  id uuid pk
-  title varchar
 
 page_comments
   id uuid pk
@@ -261,9 +261,9 @@ page_comments
   content text
 ```
 
-But this can become painful as the number of commentable entities grows, keeping everything consistent or getting all the comments from a user.
+But this can become painful as the number of commentable entities grows, to keep everything consistent or to get all the comments from a user.
 
-Instead, you can create a single comment entity targeting different entities, depending on an attribute value (discriminator):
+Instead, you can create a single comment entity targeting different entities depending on another attribute value (discriminator):
 
 ```aml
 posts
@@ -290,7 +290,9 @@ We could even make nested comments with:
 rel comments(item_id) -item_kind=comments> comments(id)
 ```
 
-The value is not always the table name, some ORMs use the model name instead, so it could be `Post` instead of `posts`.
+Just make sure all your target entities have the same primary key type (used for the `item_id` attribute).
+
+The value in the `item_kind` attribute is not always the table name, some ORMs use the model name instead, so it could be `Post` instead of `posts`.
 
 
 ### Metadata

@@ -228,7 +228,7 @@ export type Entity = z.infer<typeof Entity>
 export const RelationKind = z.enum(['many-to-one', 'one-to-many', 'one-to-one', 'many-to-many'])
 export type RelationKind = z.infer<typeof RelationKind>
 
-export const RelationAction = z.enum(['no_action', 'set_null', 'set_default', 'cascade', 'restrict'])
+export const RelationAction = z.enum(['no action', 'set null', 'set default', 'cascade', 'restrict'])
 export type RelationAction = z.infer<typeof RelationAction>
 
 export const RelationExtra = Extra.and(z.object({

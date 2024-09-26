@@ -476,9 +476,9 @@ class AmlParser extends EmbeddedActionsParser {
         const attributeConstraintsRule = $.RULE<() => AttributeConstraintsAst>('attributeConstraintsRule', () => {
             const primaryKey = $.OPTION(() => $.SUBRULE(attributeConstraintPkRule))
             $.OPTION2(() => $.CONSUME(WhiteSpace))
-            const index = $.OPTION3(() => $.SUBRULE(attributeConstraintIndexRule))
+            const unique = $.OPTION3(() => $.SUBRULE(attributeConstraintUniqueRule))
             $.OPTION4(() => $.CONSUME2(WhiteSpace))
-            const unique = $.OPTION5(() => $.SUBRULE(attributeConstraintUniqueRule))
+            const index = $.OPTION5(() => $.SUBRULE(attributeConstraintIndexRule))
             $.OPTION6(() => $.CONSUME3(WhiteSpace))
             const check = $.OPTION7(() => $.SUBRULE(attributeConstraintCheckRule))
             return removeUndefined({primaryKey, index, unique, check})

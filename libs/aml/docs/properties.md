@@ -27,10 +27,11 @@ Some specific keys are standardized for certain objects and can be interpreted b
 
 Here are the standardized properties for [entities](./entity.md):
 
-- `color`, to define the default color for Azimutt layouts, values: red, orange, amber, yellow, lime, green, emerald, teal, cyan, sky, blue, indigo, violet, purple, fuchsia, pink, rose, gray
-- `tags`, to define tags for the entity
+- `view`, define the entity as a view, use it to define the view query, ex: `{view: "SELECT * FROM users"}`
+- `color`, to define the entity default color for Azimutt layouts, values: red, orange, amber, yellow, lime, green, emerald, teal, cyan, sky, blue, indigo, violet, purple, fuchsia, pink, rose, gray (`{color: red}`)
+- `tags`, to define tags for the entity (`{tags: [pii, "owner:team1"]}`)
 
-An example with all the properties:
+Here is an example:
 
 ```aml
 users {color: red, tags: [pii, deprecated]}
@@ -38,21 +39,21 @@ users {color: red, tags: [pii, deprecated]}
 
 Some others are considered but not handled yet:
 
-- `icon`, show an icon in the entity header, values: email, folder, home, user, users...
-- `position`, to define the default position when added to a layout, the value should be an array with two numbers, left and top
-- `notes`, to define default notes for the entity
-- `deprecated`, will be added to tags in Azimutt but can be better defined here
+- `icon`, show an icon in the entity header, values: email, folder, home, user, users... (`{icon: user}`)
+- `position`, define the default position when added to a layout, the value should be an array with two numbers, left and top (`{position: [15, 10]}`)
+- `notes`, define default notes for the entity (similar to doc but saved in Azimutt) (`{notes: "stored in Azimutt"}`)
+- `deprecated`, will be added to tags in Azimutt (`{deprecated}`)
 
 
 ### Entity attribute properties
 
 Here are the standardized properties for [entity attributes](./entity.md#attribute):
 
-- `autoIncrement`, for primary keys with auto-increment
-- `hidden`, to make the column not visible by default
-- `tags`, to define default tags for the attribute
+- `autoIncrement`, for primary keys with auto-increment (`{autoIncrement}`)
+- `hidden`, to make the column not visible by default on layouts (`{hidden}`)
+- `tags`, to define default tags for the attribute (`{tags: [pii]}`)
 
-An example with all the properties:
+Here is an example:
 
 ```aml
 users
@@ -61,21 +62,21 @@ users
 
 Some others are considered but not handled yet:
 
-- `notes`, to define default notes for the attribute
-- `deprecated`, will be added to tags in Azimutt but can be better defined here
+- `notes`, define default notes for the entity (similar to doc but saved in Azimutt) (`{notes: "stored in Azimutt"}`)
+- `deprecated`, will be added to tags in Azimutt (`{deprecated}`)
 
 
 ### Relation properties
 
 Here are the standardized properties for [relations](./relation.md):
 
-- `onUpdate`, values should be in: no_action, set_null, set_default, cascade, restrict
-- `onDelete`, values should be in: no_action, set_null, set_default, cascade, restrict
+- `onUpdate`, values should be in: no action, set null, set default, cascade, restrict ({`onUpdate: "set null"`})
+- `onDelete`, values should be in: no action, set null, set default, cascade, restrict ({`onDelete: "cascade"`})
 
 An example with all the properties:
 
 ```aml
-rel posts(author) -> users(id) {onUpdate: no_action, onDelete: cascade}
+rel posts(author) -> users(id) {onUpdate: "no action", onDelete: cascade}
 ```
 
 

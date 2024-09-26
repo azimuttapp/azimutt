@@ -50,7 +50,7 @@ posts {view, pii, tags: [cms]} | all posts # an other entity
   author int check(\`author > 0\`)=has_author_chk -> users(id)
   created_by int
 
-rel posts(created_by) -> users(id) {onUpdate: no_action, onDelete: cascade} | standalone relation
+rel posts(created_by) -> users(id) {onUpdate: "no action", onDelete: cascade} | standalone relation
 
 emails
   user_id int pk
@@ -121,7 +121,7 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
             relations: [
                 {src: {schema: 'identity', entity: 'users'}, ref: {entity: 'countries'}, attrs: [{src: ['settings', 'address', 'country'], ref: ['id']}], extra: {line: 26, statement: 2, natural: 'ref', inline: true}},
                 {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {line: 32, statement: 3, inline: true}},
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}], doc: 'standalone relation', extra: {line: 35, statement: 4, onUpdate: 'no_action', onDelete: 'cascade'}},
+                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}], doc: 'standalone relation', extra: {line: 35, statement: 4, onUpdate: 'no action', onDelete: 'cascade'}},
             ],
             types: [
                 {schema: 'identity', name: 'user_role', values: ['admin', 'guest'], extra: {line: 15, statement: 2, inline: true}},
