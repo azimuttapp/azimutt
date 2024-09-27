@@ -90,7 +90,7 @@
         {"name": "item", "attrs": [["item_kind"], ["item_id"]]}
       ],
       "doc": "a table with most options\nlooks quite complex but not intended to be used all together ^^",
-      "extra": {"color": "#ccc", "tags": ["utils", "owner:infra"], "line": 41, "statement": 6, "alias": "c", "comment": "several additional props"}
+      "extra": {"line": 41, "statement": 6, "alias": "c", "color": "#ccc", "tags": ["utils", "owner:infra"], "comment": "several additional props"}
     },
     {
       "database": "db1",
@@ -133,7 +133,7 @@
         {"name": "last_name", "type": "unknown"},
         {"name": "email", "type": "unknown"}
       ],
-      "extra": {"dependsOn": ["users"], "line": 70, "statement": 12}
+      "extra": {"line": 70, "statement": 12}
     },
     {
       "name": "guests",
@@ -237,7 +237,7 @@
   "types": [
     {"name": "comment_item", "values": ["User", "Post"], "extra": {"line": 46, "statement": 6, "inline": true}},
     {"name": "slug", "doc": "anonymous type", "extra": {"line": 78, "statement": 14}},
-    {"name": "uid", "alias": "int", "extra": {"tags": ["generic"], "line": 79, "statement": 15, "comment": "alias type"}},
+    {"name": "uid", "alias": "int", "extra": {"line": 79, "statement": 15, "tags": ["generic"], "comment": "alias type"}},
     {"schema": "cms", "name": "post_status", "values": ["draft", "published", "archived"], "extra": {"line": 80, "statement": 16, "comment": "enum type"}},
     {"name": "position", "attrs": [{"name": "x", "type": "int"}, {"name": "y", "type": "int"}], "extra": {"line": 81, "statement": 17, "comment": "struct type"}},
     {"name": "box", "definition": "(INTERNALLENGTH = 16, INPUT = lower, OUTPUT = lower)", "extra": {"line": 82, "statement": 18, "comment": "custom type"}}

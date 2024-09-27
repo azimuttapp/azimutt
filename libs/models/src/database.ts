@@ -9,7 +9,6 @@ import {DateTime, Millis} from "./common";
 //   - function to diff two Database
 //   - function to merge two Database
 //   - convert Database to Project and the reverse
-//   - parseAttributeType(AttributeType): AttributeTypeParsed
 
 export const DatabaseName = z.string()
 export type DatabaseName = z.infer<typeof DatabaseName>
@@ -155,6 +154,7 @@ export const AttributeExtra = Extra.and(z.object({
 }))
 export type AttributeExtra = z.infer<typeof AttributeExtra>
 export const attributeExtraKeys = ['line', 'statement', 'autoIncrement', 'hidden', 'tags', 'comment']
+export const attributeExtraProps = ['autoIncrement', 'hidden', 'tags'] // extra keys manually set in properties
 
 export const Attribute: z.ZodType<Attribute> = z.object({
     name: AttributeName,
@@ -205,13 +205,13 @@ export const EntityExtra = Extra.and(z.object({
     statement: z.number().optional(),
     alias: z.string().optional(),
     view: z.string().optional(), // query definition of the view
-    dependsOn: z.union([EntityId, AttributeId]).array().optional(), // for views, to know used entities/attributes
     color: z.string().optional(),
     tags: z.string().array().optional(),
     comment: z.string().optional(), // if there is a comment in the entity line
 }))
 export type EntityExtra = z.infer<typeof EntityExtra>
-export const entityExtraKeys = ['line', 'statement', 'alias', 'view', 'dependsOn', 'color', 'tags', 'comment']
+export const entityExtraKeys = ['line', 'statement', 'alias', 'view', 'color', 'tags', 'comment']
+export const entityExtraProps = ['view', 'color', 'tags'] // extra keys manually set in properties
 
 export const Entity = Namespace.extend({
     name: EntityName,
@@ -247,10 +247,11 @@ export const RelationExtra = Extra.and(z.object({
 }))
 export type RelationExtra = z.infer<typeof RelationExtra>
 export const relationExtraKeys = ['line', 'statement', 'inline', 'natural', 'onUpdate', 'onDelete', 'srcAlias', 'refAlias', 'tags', 'comment']
+export const relationExtraProps = ['onUpdate', 'onDelete', 'tags'] // extra keys manually set in properties
 
 export const Relation = z.object({
     name: ConstraintName.optional(),
-    kind: RelationKind.optional(), // 'many-to-one' when not specified TODO: split in srcCardinality & refCardinality (or add cardinality in src & ref)
+    kind: RelationKind.optional(), // 'many-to-one' when not specified
     origin: z.enum(['fk', 'infer-name', 'infer-similar', 'infer-query', 'user']).optional(), // 'fk' when not specified
     src: EntityRef,
     ref: EntityRef,
@@ -269,6 +270,8 @@ export const TypeExtra = Extra.and(z.object({
     comment: z.string().optional(), // if there is a comment in the type line
 }))
 export type TypeExtra = z.infer<typeof TypeExtra>
+export const typeExtraKeys = ['line', 'statement', 'inline', 'tags', 'comment']
+export const typeExtraProps = ['tags'] // extra keys manually set in properties
 
 export const Type = Namespace.extend({
     name: TypeName,

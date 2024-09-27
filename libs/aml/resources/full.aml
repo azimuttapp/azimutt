@@ -67,7 +67,7 @@ organizations
 identity...profiles
   id int pk -- users(id) | one-to-one relation
 
-admins {view, dependsOn: [users]}
+admins {view}
   id
   first_name
   last_name

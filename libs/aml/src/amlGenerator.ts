@@ -1,12 +1,16 @@
 import {isNever, partition} from "@azimutt/utils";
 import {
     Attribute,
+    attributeExtraKeys,
+    attributeExtraProps,
     AttributePath,
     attributePathSame,
     AttributeValue,
     Check,
     Database,
     Entity,
+    entityExtraKeys,
+    entityExtraProps,
     EntityRef,
     entityRefSame,
     entityToRef,
@@ -14,7 +18,11 @@ import {
     legacyColumnTypeUnknown,
     Namespace,
     Relation,
-    Type
+    relationExtraKeys,
+    relationExtraProps,
+    Type,
+    typeExtraKeys,
+    typeExtraProps
 } from "@azimutt/models";
 import {amlKeywords, PropertyValue} from "./amlAst";
 
@@ -67,7 +75,7 @@ function getCurrentNamespace(database: Database, s: {extra?: {line?: number}}): 
 export function genEntity(e: Entity, namespace: Namespace, relations: Relation[], types: Type[], legacy: boolean): string {
     const legacyView = e.kind === 'view' && legacy ? '*' : ''
     const alias = e.extra?.alias && !legacy ? ' as ' + genIdentifier(e.extra.alias) : ''
-    const props = !legacy ? genProperties(e.extra, e.kind === 'view' && !legacy ? {view: e.def?.replaceAll(/\n/g, '\\n')} : {}, ['line', 'statement', 'alias', 'comment']) : ''
+    const props = !legacy ? genProperties(e.extra, e.kind === 'view' && !legacy ? {view: e.def?.replaceAll(/\n/g, '\\n')} : {}, entityExtraKeys.filter(k => !entityExtraProps.includes(k))) : ''
     const entity = `${genName(e, namespace, legacy)}${legacyView}${alias}${props}${genDoc(e.doc, legacy)}${genComment(e.extra?.comment)}\n`
     return entity + (e.attrs ? e.attrs.map(a => genAttribute(a, e, namespace, relations.filter(r => r.attrs[0].src[0] === a.name), types, legacy)).join('') : '')
 }
@@ -89,7 +97,7 @@ function genAttributeInner(a: Attribute, e: Entity, namespace: Namespace, relati
         .join('')
     const checks = (e.checks || []).filter(c => c.attrs.some(attr => attributePathSame(attr, path))).map(c => ' ' + genCheck(c, path, legacy)).join('')
     const rel = relations.map(r => ' ' + genRelationTarget(r, namespace, false, legacy)).join('')
-    const props = !legacy ? genProperties(a.extra, {}, ['comment']) : ''
+    const props = !legacy ? genProperties(a.extra, {}, attributeExtraKeys.filter(k => !attributeExtraProps.includes(k))) : ''
     return `${genIdentifier(a.name)}${genAttributeType(a, types)}${a.null ? ' nullable' : ''}${pk}${indexes}${checks}${rel}${props}${genDoc(a.doc, legacy, indent)}${genComment(a.extra?.comment)}`
 }
 function genCheck(c: Check, path: AttributePath, legacy: boolean) {
@@ -126,7 +134,7 @@ function genRelation(r: Relation, namespace: Namespace, legacy: boolean): string
     if (legacy && r.attrs.length > 1) return r.attrs.map(attr => genRelation({...r, attrs: [attr]}, namespace, legacy)).join('') // in v1 composite relations are defined as several relations
     if (legacy && (r.extra?.natural === 'both' || r.extra?.natural === 'src')) return '' // v1 doesn't support src natural relation
     const srcNatural: boolean = !r.extra?.inline && (r.extra?.natural === 'src' || r.extra?.natural === 'both')
-    const props = !legacy ? genProperties(r.extra, {}, ['line', 'statement', 'inline', 'natural', 'srcAlias', 'refAlias', 'comment']) : ''
+    const props = !legacy ? genProperties(r.extra, {}, relationExtraKeys.filter(k => !relationExtraProps.includes(k))) : ''
     return `${legacy ? 'fk' : 'rel'} ${genAttributeRef(r.src, r.attrs.map(a => a.src), namespace, srcNatural, r.extra?.srcAlias, legacy)} ${genRelationTarget(r, namespace, true, legacy)}${props}${genDoc(r.doc, legacy)}${genComment(r.extra?.comment)}\n`
 }
 
@@ -150,7 +158,7 @@ function genAttributePath(p: AttributePath, legacy: boolean): string {
 
 function genType(t: Type, namespace: Namespace, legacy: boolean): string {
     if (legacy) return '' // no type in v1
-    const props = genProperties(t.extra, {}, ['line', 'statement', 'comment'])
+    const props = genProperties(t.extra, {}, typeExtraKeys.filter(k => !typeExtraProps.includes(k)))
     return `type ${genName(t, namespace, legacy)}${genTypeContent(t, namespace, legacy)}${props}${genDoc(t.doc, legacy)}${genComment(t.extra?.comment)}\n`
 }
 

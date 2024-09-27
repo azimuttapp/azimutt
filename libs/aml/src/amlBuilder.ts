@@ -207,18 +207,15 @@ type InlineType = {type: Type, position: TokenPosition}
 
 function buildAttribute(namespace: Namespace, statement: number, a: AttributeAstNested, entity: EntityRef): { attribute: Attribute, relations: InlineRelation[], types: InlineType[] } {
     const {entity: _, ...entityNamespace} = entity
-    const typeExt = a.enumValues && a.enumValues.length <= 2 && a.enumValues.every(v => v.token === 'Integer') ? '(' + a.enumValues.map(stringifyAttrValue).join(',') + ')' : ''
-    const enumType: InlineType[] = a.type && a.enumValues && !typeExt ? [{
-        type: {...entityNamespace, name: a.type.value, values: a.enumValues.map(stringifyAttrValue), extra: {line: a.enumValues[0].position.start.line, statement, inline: true}},
-        position: mergePositions(a.enumValues)
-    }] : []
+    const numType = a.enumValues && a.enumValues.length <= 2 && a.enumValues.every(v => v.token === 'Integer') ? '(' + a.enumValues.map(stringifyAttrValue).join(',') + ')' : '' // types with num parameter (varchar(10), decimal(2,3)...)
+    const enumType: InlineType[] = buildTypeInline(entityNamespace, statement, a, numType)
     const relation: InlineRelation[] = a.relation ? [{namespace, statement, entity, attrs: [a.path.map(p => p.value)], ref: a.relation}] : []
     const validAttrs = (a.attrs || []).filter(aa => !aa.path.some(p => p === undefined)) // `path` can be `[undefined]` on invalid input :/
     const nested = validAttrs.map(aa => buildAttribute(namespace, statement, aa, entity))
     return {
         attribute: removeEmpty({
             name: a.path[a.path.length - 1].value,
-            type: buildAttributeType(a, typeExt),
+            type: buildAttributeType(a, numType),
             null: a.nullable ? true : undefined,
             gen: undefined,
             default: a.defaultValue ? buildAttrValue(a.defaultValue) : undefined,
@@ -280,7 +277,8 @@ function buildRelationAttribute(entities: Entity[], aliases: Record<string, Enti
 }
 
 function buildRelation(entities: Entity[], aliases: Record<string, EntityRef>, statement: number, line: number, kind: RelationKindAst | undefined, srcEntity: EntityRef, srcAlias: string | undefined, srcAttrs: AttributePath[], ref: AttributeRefCompositeAst, polymorphic: RelationPolymorphicAst | undefined, extra: ExtraAst | undefined, inline: boolean): Relation | undefined {
-    if (!ref || !ref.entity.value || !ref.attrs || ref.attrs.some(a => a.value === undefined)) return undefined // `ref` can be undefined or with empty entity or undefined attrs on invalid input :/ TODO: report an error instead of just ignoring?
+    // TODO: report an error instead of just ignoring?
+    if (!ref || !ref.entity.value || !ref.attrs || ref.attrs.some(a => a.value === undefined)) return undefined // `ref` can be undefined or with empty entity or undefined attrs on invalid input :/
     const [refEntity, refAlias] = buildEntityRef(ref, {}, aliases) // current namespace not used for relation ref, good idea???
     const refAttrs: AttributePath[] = ref.attrs.length > 0 ? ref.attrs.map(buildAttrPath) : entities.find(e => entityRefSame(entityToRef(e), refEntity))?.pk?.attrs || [['unknown']]
     const natural = ref.attrs.length === 0 ? (srcAttrs.length === 0 ? 'both' : 'ref') : (srcAttrs.length === 0 ? 'src' : undefined)
@@ -318,6 +316,13 @@ function buildEntityRef(e: EntityRefAst, namespace: Namespace, aliases: Record<s
 
 function buildAttrPath(a: AttributePathAst): AttributePath {
     return [a.value].concat(a.path?.map(p => p.value) || [])
+}
+
+function buildTypeInline(namespace: Namespace, statement: number, a: AttributeAstNested, numType: string): InlineType[] {
+    return a.type && a.enumValues && !numType ? [{
+        type: {...namespace, name: a.type.value, values: a.enumValues.map(stringifyAttrValue), extra: {line: a.enumValues[0].position.start.line, statement, inline: true}},
+        position: mergePositions(a.enumValues)
+    }] : []
 }
 
 function buildType(namespace: Namespace, statement: number, t: TypeStatement): Type {
