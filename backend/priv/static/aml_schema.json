@@ -636,16 +636,16 @@
             "view": {
               "type": "string"
             },
-            "color": {
-              "type": "string"
-            },
-            "tags": {
+            "dependsOn": {
               "type": "array",
               "items": {
                 "type": "string"
               }
             },
-            "dependsOn": {
+            "color": {
+              "type": "string"
+            },
+            "tags": {
               "type": "array",
               "items": {
                 "type": "string"
@@ -673,10 +673,10 @@
               "type": "number"
             },
             "autoIncrement": {
-              "type": "boolean"
+              "type": "null"
             },
             "hidden": {
-              "type": "boolean"
+              "type": "null"
             },
             "tags": {
               "type": "array",

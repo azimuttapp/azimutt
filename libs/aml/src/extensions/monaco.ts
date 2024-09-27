@@ -231,11 +231,11 @@ export const attributeNestedMatch = (line: string): string[] | undefined => comp
 export const relationLinkWrittenMatch = (line: string): string[] | undefined => completionMatch(line, new RegExp(`(${relationCardinalityR})(${relationPolyR})?(${relationCardinalityR}) +$`))
 export const relationSrcWrittenMatch = (line: string): string[] | undefined => completionMatch(line, new RegExp(`^rel +(${entityRefR}\\(${attributePathsR}\\)) +$`))
 export const entityPropsKeyMatch = (line: string): string[] | undefined => startsWithKeyword(line) ? undefined : completionMatch(line, new RegExp(`^${entityNameR} +.*{((?: *${propKeyR} *(?:: *${propValueR} *)?,)*) *$`))?.flatMap(m => m.split(',')).map(p => p.split(':')[0].trim()).filter(k => !!k)
-export const entityPropsValueMatch = (line: string): string[] | undefined => startsWithKeyword(line) ? undefined : completionMatch(line, new RegExp(`^${entityNameR} +.*{(?: *${propKeyR} *(?:: *${propValueR} *)?,)* *(${propKeyR}) *: *[\["]?$`))
+export const entityPropsValueMatch = (line: string): string[] | undefined => startsWithKeyword(line) ? undefined : completionMatch(line, new RegExp(`^${entityNameR} +.*{(?: *${propKeyR} *(?:: *${propValueR} *)?,)* *(${propKeyR}) *: *[["]?$`))
 export const attributePropsKeyMatch = (line: string): string[] | undefined => completionMatch(line, new RegExp(`^ +${attributeNameR} +.*{((?: *${propKeyR} *(?:: *${propValueR} *)?,)*) *$`))?.flatMap(m => m.split(',')).map(p => p.split(':')[0].trim()).filter(k => !!k)
-export const attributePropsValueMatch = (line: string): string[] | undefined => completionMatch(line, new RegExp(`^ +${attributeNameR} +.*{(?: *${propKeyR} *(?:: *${propValueR} *)?,)* *(${propKeyR}) *: *[\["]?$`))
+export const attributePropsValueMatch = (line: string): string[] | undefined => completionMatch(line, new RegExp(`^ +${attributeNameR} +.*{(?: *${propKeyR} *(?:: *${propValueR} *)?,)* *(${propKeyR}) *: *[["]?$`))
 export const relationPropsKeyMatch = (line: string): string[] | undefined => completionMatch(line, new RegExp(`^rel +.*{((?: *${propKeyR} *(?:: *${propValueR} *)?,)*) *$`))?.flatMap(m => m.split(',')).map(p => p.split(':')[0].trim()).filter(k => !!k)
-export const relationPropsValueMatch = (line: string): string[] | undefined => completionMatch(line, new RegExp(`^rel +.*{(?: *${propKeyR} *(?:: *${propValueR} *)?,)* *(${propKeyR}) *: *[\["]?$`))
+export const relationPropsValueMatch = (line: string): string[] | undefined => completionMatch(line, new RegExp(`^rel +.*{(?: *${propKeyR} *(?:: *${propValueR} *)?,)* *(${propKeyR}) *: *[["]?$`))
 
 export function suggestAttributeType(types: Type[], attributes: Attribute[], suggestions: CompletionItem[], position: Position): void {
     const toSuggest = ['varchar', 'text', 'integer', 'bigint', 'boolean', 'uuid', 'timestamp', '"timestamp with time zone"', 'json', 'jsonb', 'string', 'number'].concat(types.map(typeToId), attributes.map(a => a.type))
