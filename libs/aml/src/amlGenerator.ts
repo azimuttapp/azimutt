@@ -127,7 +127,7 @@ function genRelation(r: Relation, namespace: Namespace, legacy: boolean): string
     if (legacy && (r.extra?.natural === 'both' || r.extra?.natural === 'src')) return '' // v1 doesn't support src natural relation
     const srcNatural: boolean = !r.extra?.inline && (r.extra?.natural === 'src' || r.extra?.natural === 'both')
     const props = !legacy ? genProperties(r.extra, {}, ['line', 'statement', 'inline', 'natural', 'comment']) : ''
-    return `${legacy ? 'fk' : 'rel'} ${genAttributeRef(r.src, r.attrs.map(a => a.src), namespace, srcNatural, legacy)} ${genRelationTarget(r, namespace, true, legacy)}${props}${genDoc(r.doc, legacy)}${genComment(r.extra?.comment)}\n`
+    return `${legacy ? 'fk' : 'rel'} ${genAttributeRef(r.src, r.attrs.map(a => a.src), namespace, srcNatural, r.extra?.srcAlias, legacy)} ${genRelationTarget(r, namespace, true, legacy)}${props}${genDoc(r.doc, legacy)}${genComment(r.extra?.comment)}\n`
 }
 
 function genRelationTarget(r: Relation, namespace: Namespace, standalone: boolean, legacy: boolean): string {
@@ -136,12 +136,12 @@ function genRelationTarget(r: Relation, namespace: Namespace, standalone: boolea
     const aSecond = qSrc === 'many' ? '>' : '-'
     const aFirst = qRef === 'many' ? '<' : '-'
     const refNatural = r.extra?.natural === 'ref' || r.extra?.natural === 'both'
-    return `${legacy && !standalone ? 'fk' : aFirst + poly + aSecond} ${genAttributeRef(r.ref, r.attrs.map(a => a.ref), namespace, refNatural, legacy)}`
+    return `${legacy && !standalone ? 'fk' : aFirst + poly + aSecond} ${genAttributeRef(r.ref, r.attrs.map(a => a.ref), namespace, refNatural, r.extra?.refAlias, legacy)}`
 }
 
-export function genAttributeRef(e: EntityRef, attrs: AttributePath[], namespace: Namespace, natural: boolean, legacy: boolean): string {
+export function genAttributeRef(e: EntityRef, attrs: AttributePath[], namespace: Namespace, natural: boolean, alias: string | undefined, legacy: boolean): string {
     if (legacy) return `${genName({...e, name: e.entity}, namespace, legacy)}.${attrs.map(a => genAttributePath(a, legacy)).join(':')}`
-    return `${genName({...e, name: e.entity}, namespace, legacy)}${natural || attrs.length === 0 ? '' : `(${attrs.map(a => genAttributePath(a, legacy)).join(', ')})`}`
+    return `${alias ? alias : genName({...e, name: e.entity}, namespace, legacy)}${natural || attrs.length === 0 ? '' : `(${attrs.map(a => genAttributePath(a, legacy)).join(', ')})`}`
 }
 
 function genAttributePath(p: AttributePath, legacy: boolean): string {

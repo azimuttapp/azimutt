@@ -9,7 +9,7 @@ users # simplest entity
   email varchar unique check
   is_admin bool=false
 
-cms.posts # entity in schema
+cms.posts as p # entity in schema
   id int pk {autoIncrement, tags: [id]}
   title varchar(100) unique check(`title <> ''`)
   status post_status
@@ -57,7 +57,7 @@ rel comments(item_id) -item_kind=Post> cms.posts(id) {onDelete: cascade}
 db1.web.public.legacy_slug
   old_slug slug check(`old_slug <> '' AND new_slug <> ''`)=slug_check
   new_slug slug check=slug_check # composite check, add it to every attribute, predicate can be defined once
-  cur_slug varchar nullable -> cms.posts(settings.slug)
+  cur_slug varchar nullable -> p(settings.slug)
 
 organizations
   id int pk <> users | many-to-many relation

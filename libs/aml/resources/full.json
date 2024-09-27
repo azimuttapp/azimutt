@@ -49,7 +49,7 @@
       "checks": [
         {"predicate": "title <> ''", "attrs": [["title"]]}
       ],
-      "extra": {"line": 12, "statement": 2, "comment": "entity in schema"}
+      "extra": {"line": 12, "statement": 2, "alias": "p", "comment": "entity in schema"}
     },
     {
       "name": "post_members",
@@ -203,13 +203,13 @@
       "ref": {"schema": "cms", "entity": "posts"},
       "attrs": [{"src": ["item_id"], "ref": ["id"]}],
       "polymorphic": {"attribute": ["item_kind"], "value": "Post"},
-      "extra": {"onDelete": "cascade", "line": 55, "statement": 8}
+      "extra": {"line": 55, "statement": 8, "onDelete": "cascade"}
     },
     {
       "src": {"database": "db1", "catalog": "web", "schema": "public", "entity": "legacy_slug"},
       "ref": {"schema": "cms", "entity": "posts"},
       "attrs": [{"src": ["cur_slug"], "ref": ["settings", "slug"]}],
-      "extra": {"line": 60, "statement": 9, "inline": true}
+      "extra": {"line": 60, "statement": 9, "inline": true, "refAlias": "p"}
     },
     {
       "kind": "many-to-many",

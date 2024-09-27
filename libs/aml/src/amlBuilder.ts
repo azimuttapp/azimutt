@@ -73,7 +73,7 @@ export function buildDatabase(ast: AmlAst, start: number, parsed: number): {db: 
         parsingTimeMs: parsed - start,
         formattingTimeMs: done - parsed,
         comments,
-        namespaces: ast.filter(s => s.statement === 'Namespace').map((s, i) => ({line: s.line, ...buildNamespace(i, s), comment: s.comment?.value}))
+        namespaces: ast.filter(s => s.statement === 'Namespace').map((s, i) => removeUndefined({line: s.line, ...buildNamespace(i, s), comment: s.comment?.value}))
     })
     return {db: removeEmpty({
         entities: db.entities?.sort((a, b) => a.extra?.line && b.extra?.line ? a.extra.line - b.extra.line : a.name.toLowerCase().localeCompare(b.name.toLowerCase())),
@@ -116,11 +116,12 @@ function buildTypesAndEntities(db: Database, errors: ParserError[], ast: AmlAst)
 }
 
 function buildRelations(db: Database, errors: ParserError[], ast: AmlAst, attrRelations: InlineRelation[]): void {
+    const aliases: Record<string, EntityRef> = Object.fromEntries(db.entities?.map(e => e.extra?.alias ? [e.extra?.alias, entityToRef(e)] : undefined).filter(isNotUndefined) || [])
     let namespace: Namespace = {}
     attrRelations.forEach(r => addRelation(
         db,
         errors,
-        buildRelationAttribute(db.entities || [], r.statement, r.entity, r.attrs, r.ref),
+        buildRelationAttribute(db.entities || [], aliases, r.statement, r.entity, r.attrs, r.ref),
         mergePositions([r.ref.ref.database, r.ref.ref.catalog, r.ref.ref.schema, r.ref.ref.entity, ...r.ref.ref.attrs])
     ))
     ast.forEach((stmt, i) => {
@@ -131,7 +132,7 @@ function buildRelations(db: Database, errors: ParserError[], ast: AmlAst, attrRe
             addRelation(
                 db,
                 errors,
-                buildRelationStatement(db.entities || [], namespace, index, stmt),
+                buildRelationStatement(db.entities || [], aliases, namespace, index, stmt),
                 mergePositions([stmt.src.database, stmt.src.catalog, stmt.src.schema, stmt.src.entity, ...(stmt.ref?.attrs || [])])
             )
         } else {
@@ -269,18 +270,18 @@ function buildIndexes(indexes: (AttributeConstraintAst & { path: IdentifierToken
     return compositeIndexes.concat(singleIndexes)
 }
 
-function buildRelationStatement(entities: Entity[], namespace: Namespace, statement: number, r: RelationStatement): Relation | undefined {
-    const entitySrc = buildEntityRef(r.src, namespace)
-    return buildRelation(entities, statement, r.src.entity.position.start.line, r.kind, entitySrc, r.src.attrs.map(buildAttrPath), r.ref, r.polymorphic, r, false)
+function buildRelationStatement(entities: Entity[], aliases: Record<string, EntityRef>, namespace: Namespace, statement: number, r: RelationStatement): Relation | undefined {
+    const [srcEntity, srcAlias] = buildEntityRef(r.src, namespace, aliases)
+    return buildRelation(entities, aliases, statement, r.src.entity.position.start.line, r.kind, srcEntity, srcAlias, r.src.attrs.map(buildAttrPath), r.ref, r.polymorphic, r, false)
 }
 
-function buildRelationAttribute(entities: Entity[], statement: number, srcEntity: EntityRef, srcAttrs: AttributePath[], r: AttributeRelationAst): Relation | undefined {
-    return buildRelation(entities, statement, r.ref.entity?.position.start.line, r.kind, srcEntity, srcAttrs, r.ref, r.polymorphic, undefined, true)
+function buildRelationAttribute(entities: Entity[], aliases: Record<string, EntityRef>, statement: number, srcEntity: EntityRef, srcAttrs: AttributePath[], r: AttributeRelationAst): Relation | undefined {
+    return buildRelation(entities, aliases, statement, r.ref.entity?.position.start.line, r.kind, srcEntity, undefined, srcAttrs, r.ref, r.polymorphic, undefined, true)
 }
 
-function buildRelation(entities: Entity[], statement: number, line: number, kind: RelationKindAst | undefined, srcEntity: EntityRef, srcAttrs: AttributePath[], ref: AttributeRefCompositeAst, polymorphic: RelationPolymorphicAst | undefined, extra: ExtraAst | undefined, inline: boolean): Relation | undefined {
+function buildRelation(entities: Entity[], aliases: Record<string, EntityRef>, statement: number, line: number, kind: RelationKindAst | undefined, srcEntity: EntityRef, srcAlias: string | undefined, srcAttrs: AttributePath[], ref: AttributeRefCompositeAst, polymorphic: RelationPolymorphicAst | undefined, extra: ExtraAst | undefined, inline: boolean): Relation | undefined {
     if (!ref || !ref.entity.value || !ref.attrs || ref.attrs.some(a => a.value === undefined)) return undefined // `ref` can be undefined or with empty entity or undefined attrs on invalid input :/ TODO: report an error instead of just ignoring?
-    const refEntity = buildEntityRef(ref, {}) // current namespace not used for relation ref, good idea???
+    const [refEntity, refAlias] = buildEntityRef(ref, {}, aliases) // current namespace not used for relation ref, good idea???
     const refAttrs: AttributePath[] = ref.attrs.length > 0 ? ref.attrs.map(buildAttrPath) : entities.find(e => entityRefSame(entityToRef(e), refEntity))?.pk?.attrs || [['unknown']]
     const natural = ref.attrs.length === 0 ? (srcAttrs.length === 0 ? 'both' : 'ref') : (srcAttrs.length === 0 ? 'src' : undefined)
     return removeUndefined({
@@ -292,7 +293,7 @@ function buildRelation(entities: Entity[], statement: number, line: number, kind
         attrs: zip(srcAttrs, refAttrs).map(([srcAttr, refAttr]) => ({src: srcAttr, ref: refAttr})),
         polymorphic: polymorphic ? {attribute: buildAttrPath(polymorphic.attr), value: buildAttrValue(polymorphic.value)} : undefined,
         doc: extra?.doc?.value,
-        extra: buildExtra({line, statement, inline: inline ? true : undefined, natural, comment: extra?.comment?.value}, extra || {}, []),
+        extra: buildExtra({line, statement, inline: inline ? true : undefined, natural, srcAlias, refAlias, comment: extra?.comment?.value}, extra || {}, []),
     })
 }
 
@@ -305,11 +306,13 @@ function buildRelationKind(k: RelationKindAst): RelationKind | undefined {
     }
 }
 
-function buildEntityRef(e: EntityRefAst, namespace: Namespace): EntityRef {
+function buildEntityRef(e: EntityRefAst, namespace: Namespace, aliases: Record<string, EntityRef>): [EntityRef, string | undefined] {
     if (e.database || e.catalog || e.schema) {
-        return removeUndefined({database: e.database?.value, catalog: e.catalog?.value, schema: e.schema?.value, entity: e.entity.value})
+        return [removeUndefined({database: e.database?.value, catalog: e.catalog?.value, schema: e.schema?.value, entity: e.entity.value}), undefined]
+    } else if (aliases[e.entity.value]) {
+        return [aliases[e.entity.value], e.entity.value]
     } else {
-        return removeUndefined({...namespace, entity: e.entity.value})
+        return [removeUndefined({...namespace, entity: e.entity.value}), undefined]
     }
 }
 

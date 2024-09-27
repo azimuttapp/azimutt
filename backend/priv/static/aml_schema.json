@@ -565,6 +565,52 @@
             },
             "creationTimeMs": {
               "type": "number"
+            },
+            "comments": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "line": {
+                    "type": "number"
+                  },
+                  "comment": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "line",
+                  "comment"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "namespaces": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "database": {
+                    "$ref": "#/definitions/Namespace/properties/database"
+                  },
+                  "catalog": {
+                    "$ref": "#/definitions/Namespace/properties/catalog"
+                  },
+                  "schema": {
+                    "$ref": "#/definitions/Namespace/properties/schema"
+                  },
+                  "line": {
+                    "type": "number"
+                  },
+                  "comment": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "line"
+                ],
+                "additionalProperties": false
+              }
             }
           }
         }
@@ -714,6 +760,12 @@
                   "type": "string"
                 }
               ]
+            },
+            "srcAlias": {
+              "type": "string"
+            },
+            "refAlias": {
+              "type": "string"
             },
             "tags": {
               "type": "array",

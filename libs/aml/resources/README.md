@@ -18,6 +18,5 @@ A database schema with all the AML features and several format for tests:
 
 Still missing:
 
-- entity alias in relation
 - primary key auto increment
 - relation natural just on one side

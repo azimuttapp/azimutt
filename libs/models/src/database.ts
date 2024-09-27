@@ -238,6 +238,8 @@ export const RelationExtra = Extra.and(z.object({
     natural: z.enum(['src', 'ref', 'both']).optional(), // natural join: attributes are not specified
     onUpdate: z.union([RelationAction, z.string()]).optional(),
     onDelete: z.union([RelationAction, z.string()]).optional(),
+    srcAlias: z.string().optional(),
+    refAlias: z.string().optional(),
     tags: z.string().array().optional(),
     comment: z.string().optional(), // if there is a comment in the relation line
 }))
