@@ -23,7 +23,7 @@
       "schema": "cms",
       "name": "posts",
       "attrs": [
-        {"name": "id", "type": "int", "extra": {"autoIncrement": true, "tags": ["id"]}},
+        {"name": "id", "type": "int", "extra": {"autoIncrement": null, "tags": ["id"]}},
         {"name": "title", "type": "varchar(100)"},
         {"name": "status", "type": "post_status"},
         {"name": "content", "type": "varchar", "null": true},

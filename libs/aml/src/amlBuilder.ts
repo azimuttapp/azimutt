@@ -338,7 +338,7 @@ function buildTypeContent(namespace: Namespace, statement: number, t: TypeConten
 function buildExtra(extra: Extra, v: {properties?: PropertiesAst}, ignore: string[]): Extra {
     const properties = v?.properties
         ?.filter(p => !ignore.includes(p.key.value))
-        ?.reduce((acc, prop) => ({...acc, [prop.key.value]: prop.value ? buildPropValue(prop.value) : true}), {} as Record<string, PropertyValue | undefined>) || {}
+        ?.reduce((acc, prop) => ({...acc, [prop.key.value]: prop.value ? buildPropValue(prop.value) : null}), {} as Record<string, PropertyValue | undefined>) || {}
     return {...properties, ...removeEmpty(extra)}
 }
 

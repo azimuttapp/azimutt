@@ -20,3 +20,16 @@ export function limitDepth(value: any, depth: number): any {
         return value
     }
 }
+
+export function anyAsString(value: any): string {
+    if (typeof value === 'string') return value
+    if (value === undefined) return ''
+    if (value === null) return 'null'
+    if (typeof value === 'number') return isNaN(value) || !isFinite(value) ? 'null' : value.toString()
+    if (typeof value === 'boolean') return value ? 'true' : 'false'
+    if (Array.isArray(value)) return '[' + value.map(anyAsString).join(', ') + ']'
+    if (value instanceof Date) return value.toISOString()
+    if (value instanceof String || value instanceof Number || value instanceof Boolean) value.toString()
+    if (typeof value === 'object') return '{' + Object.entries(value).map(([k, v]) => k + ': ' + anyAsString(v)).join(', ') + '}'
+    return ''
+}

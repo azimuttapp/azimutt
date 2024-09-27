@@ -106,7 +106,7 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                 indexes: [{attrs: [['title']]}],
                 checks: [{attrs: [['author']], predicate: 'author > 0', name: 'has_author_chk'}],
                 doc: 'all posts',
-                extra: {line: 29, statement: 3, comment: 'an other entity', pii: true, tags: ['cms']}
+                extra: {line: 29, statement: 3, comment: 'an other entity', pii: null, tags: ['cms']}
             }, {
                 name: 'emails',
                 attrs: [
@@ -118,14 +118,14 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
             }],
             relations: [
                 {src: {schema: 'identity', entity: 'users'}, ref: {entity: 'countries'}, attrs: [{src: ['settings', 'address', 'country'], ref: ['id']}], extra: {line: 26, statement: 2, natural: 'ref', inline: true}},
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {line: 32, statement: 3, inline: true}},
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}], doc: 'standalone relation', extra: {line: 35, statement: 4, onUpdate: 'no action', onDelete: 'cascade'}},
+                {src: {entity: 'posts'}, ref: {schema: 'identity', entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {line: 32, statement: 3, inline: true, refAlias: 'users'}},
+                {src: {entity: 'posts'}, ref: {schema: 'identity', entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}], doc: 'standalone relation', extra: {line: 35, statement: 4, refAlias: 'users', onUpdate: 'no action', onDelete: 'cascade'}},
             ],
             types: [
                 {schema: 'identity', name: 'user_role', values: ['admin', 'guest'], extra: {line: 15, statement: 2, inline: true}},
                 {name: 'post_id', alias: 'int', doc: 'alias', extra: {line: 43, statement: 6, table: 'posts'}},
                 {name: 'status', values: ['draft', 'published', 'archived'], extra: {line: 44, statement: 7}},
-                {name: 'position', attrs: [{name: 'x', type: 'int'}, {name: 'y', type: 'int'}], extra: {line: 45, statement: 8, generic: true}},
+                {name: 'position', attrs: [{name: 'x', type: 'int'}, {name: 'y', type: 'int'}], extra: {line: 45, statement: 8, generic: null}},
                 {name: 'range', definition: '(subtype = float8, subtype_diff = float8mi)', extra: {line: 46, statement: 9, comment: 'custom type'}},
             ],
             extra: {comments: [
@@ -140,7 +140,9 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
         expect(generateAml(parsed.result || {})).toEqual(input)
     })
     test('full', () => {
-        const db: Database = parseJsonDatabase(fs.readFileSync('./resources/full.json', 'utf8')).result || {}
+        const json = parseJsonDatabase(fs.readFileSync('./resources/full.json', 'utf8'))
+        expect(json.errors).toEqual(undefined)
+        const db: Database = json.result || {}
         const aml = fs.readFileSync('./resources/full.aml', 'utf8')
         const parsed = parseAmlTest(aml)
         expect(parsed).toEqual({result: db})
@@ -463,8 +465,8 @@ fk admins.id -> users.id
                         name: "users",
                         attrs: [
                             {name: 'id', type: 'int'},
-                            {name: 'role', type: 'varchar', default: 'guest', extra: {hidden: true}},
-                            {name: 'score', type: 'double precision', default: 0, doc: 'User progression', extra: {comment: 'a column with almost all possible attributes', hidden: true}},
+                            {name: 'role', type: 'varchar', default: 'guest', extra: {hidden: null}},
+                            {name: 'score', type: 'double precision', default: 0, doc: 'User progression', extra: {comment: 'a column with almost all possible attributes', hidden: null}},
                             {name: 'first_name', type: 'varchar(10)'},
                             {name: 'last_name', type: 'varchar(10)'},
                             {name: 'email', type: 'varchar', null: true},

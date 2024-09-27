@@ -126,7 +126,7 @@ function genRelation(r: Relation, namespace: Namespace, legacy: boolean): string
     if (legacy && r.attrs.length > 1) return r.attrs.map(attr => genRelation({...r, attrs: [attr]}, namespace, legacy)).join('') // in v1 composite relations are defined as several relations
     if (legacy && (r.extra?.natural === 'both' || r.extra?.natural === 'src')) return '' // v1 doesn't support src natural relation
     const srcNatural: boolean = !r.extra?.inline && (r.extra?.natural === 'src' || r.extra?.natural === 'both')
-    const props = !legacy ? genProperties(r.extra, {}, ['line', 'statement', 'inline', 'natural', 'comment']) : ''
+    const props = !legacy ? genProperties(r.extra, {}, ['line', 'statement', 'inline', 'natural', 'srcAlias', 'refAlias', 'comment']) : ''
     return `${legacy ? 'fk' : 'rel'} ${genAttributeRef(r.src, r.attrs.map(a => a.src), namespace, srcNatural, r.extra?.srcAlias, legacy)} ${genRelationTarget(r, namespace, true, legacy)}${props}${genDoc(r.doc, legacy)}${genComment(r.extra?.comment)}\n`
 }
 
@@ -183,7 +183,7 @@ function genName(e: Namespace & { name: string }, n: Namespace, legacy: boolean)
 
 function genProperties(extra: Extra | undefined, additional: Extra, ignore: string[]): string {
     const entries = Object.entries(additional).concat(Object.entries(extra || {})).filter(([k, ]) => !ignore.includes(k))
-    return entries.length > 0 ? ' {' + entries.map(([key, value]) => value !== undefined && value !== true ? `${key}: ${genPropertyValue(value)}` : key).join(', ') + '}' : ''
+    return entries.length > 0 ? ' {' + entries.map(([key, value]) => value !== undefined && value !== null ? `${key}: ${genPropertyValue(value)}` : key).join(', ') + '}' : ''
 }
 
 function genPropertyValue(v: PropertyValue): string {

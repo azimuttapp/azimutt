@@ -3,11 +3,17 @@ import {Entity} from "@azimutt/models";
 import {
     attributeIndentationMatch,
     attributeNameWrittenMatch,
-    attributeTypeWrittenMatch,
     attributeNestedMatch,
+    attributePropsKeyMatch,
+    attributePropsValueMatch,
     attributeRootMatch,
+    attributeTypeWrittenMatch,
+    entityPropsKeyMatch,
+    entityPropsValueMatch,
     entityWrittenMatch,
     relationLinkWrittenMatch,
+    relationPropsKeyMatch,
+    relationPropsValueMatch,
     relationSrcWrittenMatch,
     suggestAttributeType,
     suggestExtra,
@@ -87,17 +93,54 @@ describe('Monaco AML', () => {
                 expect(relationSrcWrittenMatch('rel users(id, name) ')).toEqual(['users(id, name)'])
                 expect(relationSrcWrittenMatch('rel web.public.users(id, settings.addess.street) ')).toEqual(['web.public.users(id, settings.addess.street)'])
             })
+            test('(entity|attribute|relation)PropsKeyMatch', () => {
+                [{prefix: 'users', match: entityPropsKeyMatch}, {prefix: '  id', match: attributePropsKeyMatch}, {prefix: 'rel posts(author) -> users(id)', match: relationPropsKeyMatch}].forEach(matcher => {
+                    expect(matcher.match(``)).toEqual(undefined)
+                    expect(matcher.match(`${matcher.prefix}`)).toEqual(undefined)
+                    expect(matcher.match(`${matcher.prefix} {`)).toEqual([])
+                    expect(matcher.match(`${matcher.prefix} {pii`)).toEqual(undefined)
+                    expect(matcher.match(`${matcher.prefix} {pii,`)).toEqual(['pii'])
+                    expect(matcher.match(`${matcher.prefix} {pii, `)).toEqual(['pii'])
+                    expect(matcher.match(`${matcher.prefix} {pii, color`)).toEqual(undefined)
+                    expect(matcher.match(`${matcher.prefix} {pii, color:`)).toEqual(undefined)
+                    expect(matcher.match(`${matcher.prefix} {pii, color: `)).toEqual(undefined)
+                    expect(matcher.match(`${matcher.prefix} {pii, color: red`)).toEqual(undefined)
+                    expect(matcher.match(`${matcher.prefix} {pii, color: red,`)).toEqual(['pii', 'color'])
+                    expect(matcher.match(`${matcher.prefix} {pii, color: red, `)).toEqual(['pii', 'color'])
+                    expect(matcher.match(`${matcher.prefix} {pii, color: red, t`)).toEqual(undefined)
+                    expect(matcher.match(`${matcher.prefix} {tags: [pii], `)).toEqual(['tags'])
+                    // expect(matcher.match(`${matcher.prefix} {tags: [pii, deprecated], `)).toEqual(['tags']) // FIXME: fails on nested ','
+                    expect(matcher.match(`${matcher.prefix} {view: "SELECT * FROM users", `)).toEqual(['view'])
+                })
+            })
+            test('(entity|attribute|relation)PropsValueMatch', () => {
+                [{prefix: 'users', match: entityPropsValueMatch}, {prefix: '  id', match: attributePropsValueMatch}, {prefix: 'rel posts(author) -> users(id)', match: relationPropsValueMatch}].forEach(matcher => {
+                    expect(matcher.match(`${matcher.prefix}`)).toEqual(undefined)
+                    expect(matcher.match(`${matcher.prefix} {`)).toEqual(undefined)
+                    expect(matcher.match(`${matcher.prefix} {pii`)).toEqual(undefined)
+                    expect(matcher.match(`${matcher.prefix} {pii:`)).toEqual(['pii'])
+                    expect(matcher.match(`${matcher.prefix} {pii: `)).toEqual(['pii'])
+                    expect(matcher.match(`${matcher.prefix} {pii: true`)).toEqual(undefined)
+                    expect(matcher.match(`${matcher.prefix} {pii: true, color`)).toEqual(undefined)
+                    expect(matcher.match(`${matcher.prefix} {pii: true, color:`)).toEqual(['color'])
+                    expect(matcher.match(`${matcher.prefix} {pii: true, color: `)).toEqual(['color'])
+                    expect(matcher.match(`${matcher.prefix} {pii: true, color: r`)).toEqual(undefined)
+                    expect(matcher.match(`${matcher.prefix} {pii: true, tags: [`)).toEqual(['tags'])
+                    // expect(matcher.match(`${matcher.prefix} {pii: true, tags: [pii,`)).toEqual(['tags']) // FIXME: fails on nested ','
+                    expect(matcher.match(`${matcher.prefix} {pii: true, view: "`)).toEqual(['view'])
+                })
+            })
         })
         describe('suggestions', () => {
             const pos: Position = {column: 0, lineNumber: 0}
             test('suggestAttributeType', () => {
                 const basic: CompletionItem[] = []
-                suggestAttributeType(basic, pos, [])
+                suggestAttributeType([], [], basic, pos)
                 expect(basic.map(e => e.insertText).includes('varchar')).toBeTruthy()
                 expect(basic.map(e => e.insertText).includes('public.box')).toBeFalsy()
 
                 const custom: CompletionItem[] = []
-                suggestAttributeType(custom, pos, [{schema: 'public', name: 'box'}])
+                suggestAttributeType([{schema: 'public', name: 'box'}], [], custom, pos)
                 expect(custom.map(e => e.insertText).includes('varchar')).toBeTruthy()
                 expect(custom.map(e => e.insertText).includes('public.box')).toBeTruthy()
             })

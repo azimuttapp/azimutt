@@ -148,12 +148,13 @@ export type AttributeStats = z.infer<typeof AttributeStats>
 export const AttributeExtra = Extra.and(z.object({
     line: z.number().optional(),
     statement: z.number().optional(),
-    autoIncrement: z.boolean().optional(),
-    hidden: z.boolean().optional(),
+    autoIncrement: z.null().optional(),
+    hidden: z.null().optional(),
     tags: z.string().array().optional(),
     comment: z.string().optional(), // if there is a comment in the attribute line
 }))
 export type AttributeExtra = z.infer<typeof AttributeExtra>
+export const attributeExtraKeys = ['line', 'statement', 'autoIncrement', 'hidden', 'tags', 'comment']
 
 export const Attribute: z.ZodType<Attribute> = z.object({
     name: AttributeName,
@@ -204,12 +205,13 @@ export const EntityExtra = Extra.and(z.object({
     statement: z.number().optional(),
     alias: z.string().optional(),
     view: z.string().optional(), // query definition of the view
+    dependsOn: z.union([EntityId, AttributeId]).array().optional(), // for views, to know used entities/attributes
     color: z.string().optional(),
     tags: z.string().array().optional(),
-    dependsOn: z.union([EntityId, AttributeId]).array().optional(), // for views, to know used entities/attributes
     comment: z.string().optional(), // if there is a comment in the entity line
 }))
 export type EntityExtra = z.infer<typeof EntityExtra>
+export const entityExtraKeys = ['line', 'statement', 'alias', 'view', 'dependsOn', 'color', 'tags', 'comment']
 
 export const Entity = Namespace.extend({
     name: EntityName,
@@ -244,6 +246,7 @@ export const RelationExtra = Extra.and(z.object({
     comment: z.string().optional(), // if there is a comment in the relation line
 }))
 export type RelationExtra = z.infer<typeof RelationExtra>
+export const relationExtraKeys = ['line', 'statement', 'inline', 'natural', 'onUpdate', 'onDelete', 'srcAlias', 'refAlias', 'tags', 'comment']
 
 export const Relation = z.object({
     name: ConstraintName.optional(),

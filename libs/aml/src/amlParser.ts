@@ -225,7 +225,8 @@ class AmlParser extends EmbeddedActionsParser {
                             SEP: Comma,
                             DEF: () => {
                                 $.OPTION(() => $.CONSUME(WhiteSpace))
-                                values.push($.SUBRULE(propertyValueRule))
+                                const value = $.SUBRULE(propertyValueRule)
+                                if (value) values.push(value) // on invalid input, `value` can be undefined :/
                                 $.OPTION2(() => $.CONSUME2(WhiteSpace))
                             }
                         })
