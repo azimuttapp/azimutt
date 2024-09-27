@@ -18,8 +18,6 @@ A database schema with all the AML features and several format for tests:
 
 Still missing:
 
-- primary key auto increment
-- namespace: can't generate it as is
-- composite checks: needs to evolve AML, only predicate can be defined now
-- relation natural just on one side
 - entity alias in relation
+- primary key auto increment
+- relation natural just on one side

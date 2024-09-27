@@ -6,8 +6,6 @@ import {genEntity} from "./amlGenerator";
 import {duplicated, legacy} from "./errors";
 
 describe('amlGenerator', () => {
-    // TODO: namespace
-    // TODO: entity alias
     test('empty schema', () => {
         const input = ``
         const db: Database = {extra: {}}
@@ -204,7 +202,7 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
         })
         describe('genEntity', () => {
             test('should work without attributes', () => {
-                expect(genEntity({name: 'users'}, [], [], false)).toEqual('users\n')
+                expect(genEntity({name: 'users'}, {}, [], [], false)).toEqual('users\n')
             })
         })
     })
@@ -316,11 +314,13 @@ type public.status (pending, wip, done)
                 errors: [{...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(19, 20, 2, 14, 2, 15)}]
             })
             expect(parseAmlTest('posts\n  author int fk users.\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], extra: {}},
+                result: {
+                    entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}],
+                    relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['unknown']}], extra: {line: 2, statement: 1, inline: true, natural: 'ref'}}],
+                    extra: {}
+                },
                 errors: [
-                    {message: "Expecting token of type --> Identifier <-- but found --> '\n' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(28, 28, 2, 23, 2, 23)},
                     {...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(19, 20, 2, 14, 2, 15)},
-                    {...legacy('"users." is the legacy way, use "users()" instead'), ...tokenPosition(22, 26, 2, 17, 2, 21)},
                 ]
             })
             expect(parseAmlTest('posts\n  author int fk users.id\n')).toEqual({

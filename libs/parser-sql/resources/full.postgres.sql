@@ -3,7 +3,7 @@ DROP VIEW IF EXISTS guests;
 DROP VIEW IF EXISTS admins;
 DROP TABLE IF EXISTS profiles;
 DROP TABLE IF EXISTS organizations;
-DROP TABLE IF EXISTS web.public.legacy_slug;
+DROP TABLE IF EXISTS public.legacy_slug;
 DROP TABLE IF EXISTS comments;
 DROP TABLE IF EXISTS "legacy schema"."post member details";
 DROP TABLE IF EXISTS post_members;
@@ -17,6 +17,10 @@ COMMENT ON TYPE slug IS 'anonymous type';
 CREATE TYPE cms.post_status AS ENUM ('draft', 'published', 'archived');
 CREATE TYPE position AS (x int, y int);
 CREATE TYPE box (INTERNALLENGTH = 16, INPUT = lower, OUTPUT = lower);
+
+--
+-- Full Schema AML
+--
 
 -- simplest entity
 CREATE TABLE users (
@@ -72,10 +76,11 @@ COMMENT ON TABLE comments IS E'a table with most options\nlooks quite complex bu
 COMMENT ON COLUMN comments.item_kind IS E'polymorphic column for polymorphic relation\nused with both item_kind and item_id';
 COMMENT ON COLUMN comments.content IS 'doc with # escaped';
 
-CREATE TABLE web.public.legacy_slug (
+CREATE TABLE public.legacy_slug (
   old_slug slug NOT NULL,
-  new_slug slug NOT NULL,
-  cur_slug varchar -- reference nested attribute cms.posts(settings.slug)
+  new_slug slug NOT NULL, -- composite check, add it to every attribute, predicate can be defined once
+  cur_slug varchar, -- reference nested attribute cms.posts(settings.slug)
+  CONSTRAINT slug_check CHECK (old_slug <> '' AND new_slug <> '')
 );
 
 CREATE TABLE organizations (

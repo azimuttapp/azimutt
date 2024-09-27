@@ -41,6 +41,7 @@ import {
     ExtraAst,
     IdentifierToken,
     IntegerToken,
+    NamespaceRefAst,
     NamespaceStatement,
     NullToken,
     PropertiesAst,
@@ -134,7 +135,7 @@ class AmlParser extends EmbeddedActionsParser {
     attributeValueRule: () => AttributeValueAst
 
     // namespace
-    namespaceRule: () => NamespaceStatement
+    namespaceStatementRule: () => NamespaceStatement
 
     // entity
     attributeRule: () => AttributeAstFlat
@@ -270,24 +271,50 @@ class AmlParser extends EmbeddedActionsParser {
             return removeUndefined({properties, doc, comment})
         })
 
-        const nestedRule = $.RULE<() => IdentifierToken>('nestedRule', () => {
-            $.CONSUME(Dot)
-            return $.SUBRULE($.identifierRule)
+        const namespaceRule = $.RULE<() => NamespaceRefAst>('namespaceRule', () => {
+            const first = $.SUBRULE($.identifierRule)
+            const second = $.OPTION3(() => {
+                const dot = $.CONSUME(Dot)
+                return {dot, id: $.OPTION4(() => $.SUBRULE2($.identifierRule))}
+            })
+            const third = $.OPTION5(() => {
+                const dot = $.CONSUME2(Dot)
+                return {dot, id: $.OPTION6(() => $.SUBRULE3($.identifierRule))}
+            })
+            $.OPTION7(() => $.CONSUME(WhiteSpace))
+            if (second && third) return removeUndefined({database: first, catalog: second.id, schema: third.id})
+            if (second) return removeUndefined({catalog: first, schema: second.id})
+            return {schema: first}
         })
 
         this.entityRefRule = $.RULE<() => EntityRefAst>('entityRefRule', () => {
             const first = $.SUBRULE($.identifierRule)
-            const second = $.OPTION(() => $.SUBRULE(nestedRule))
-            const third = $.OPTION2(() => $.SUBRULE2(nestedRule))
-            const fourth = $.OPTION3(() => $.SUBRULE3(nestedRule))
-            const [entity, schema, catalog, database] = [fourth, third, second, first].filter(i => !!i)
-            return removeUndefined({entity: entity || first, schema, catalog, database})
+            const second = $.OPTION3(() => {
+                const dot = $.CONSUME(Dot)
+                return {dot, id: $.OPTION4(() => $.SUBRULE2($.identifierRule))}
+            })
+            const third = $.OPTION5(() => {
+                const dot = $.CONSUME2(Dot)
+                return {dot, id: $.OPTION6(() => $.SUBRULE3($.identifierRule))}
+            })
+            const fourth = $.OPTION7(() => {
+                const dot = $.CONSUME3(Dot)
+                return {dot, id: $.OPTION8(() => $.SUBRULE4($.identifierRule))}
+            })
+            $.OPTION9(() => $.CONSUME(WhiteSpace))
+            if (second && third && fourth && fourth.id) return removeUndefined({database: first, catalog: second.id, schema: third.id, entity: fourth.id})
+            if (second && third && third.id) return removeUndefined({catalog: first, schema: second.id, entity: third.id})
+            if (second && second.id) return removeUndefined({schema: first, entity: second.id})
+            return {entity: first}
         })
 
         this.attributePathRule = $.RULE<() => AttributePathAst>('attributePathRule', () => {
             const attr = $.SUBRULE($.identifierRule)
             const path: IdentifierToken[] = []
-            $.MANY(() => path.push($.SUBRULE(nestedRule)))
+            $.MANY(() => {
+                $.CONSUME(Dot)
+                path.push($.SUBRULE2($.identifierRule))
+            })
             return removeEmpty({...attr, path})
         })
 
@@ -370,20 +397,13 @@ class AmlParser extends EmbeddedActionsParser {
         })
 
         // namespace rules
-        this.namespaceRule = $.RULE<() => NamespaceStatement>('namespaceRule', () => {
-            $.CONSUME(Namespace)
+        this.namespaceStatementRule = $.RULE<() => NamespaceStatement>('namespaceStatementRule', () => {
+            const keyword = $.CONSUME(Namespace)
             $.OPTION(() => $.CONSUME(WhiteSpace))
-            const namespace = $.OPTION2(() => {
-                const first = $.SUBRULE($.identifierRule)
-                const second = $.OPTION3(() => $.SUBRULE(nestedRule))
-                const third = $.OPTION4(() => $.SUBRULE2(nestedRule))
-                $.OPTION5(() => $.CONSUME2(WhiteSpace))
-                const extra = $.SUBRULE($.extraRule)
-                const [schema, catalog, database] = [third, second, first].filter(i => !!i)
-                return removeUndefined({statement: 'Namespace' as const, schema: schema || first, catalog, database, ...extra})
-            })
+            const namespace = $.OPTION2(() => $.SUBRULE(namespaceRule)) || {}
+            const extra = $.SUBRULE($.extraRule)
             $.CONSUME(NewLine)
-            return namespace ? namespace : {statement: 'Namespace'}
+            return {statement: 'Namespace', line: keyword.startLine || defaultPos, ...namespace, ...extra}
         })
 
         // entity rules
@@ -639,7 +659,7 @@ class AmlParser extends EmbeddedActionsParser {
         // general rules
         this.statementRule = $.RULE<() => StatementAst>('statementRule', () => {
             return $.OR([
-                { ALT: () => $.SUBRULE($.namespaceRule) },
+                { ALT: () => $.SUBRULE($.namespaceStatementRule) },
                 { ALT: () => $.SUBRULE($.entityRule) },
                 { ALT: () => $.SUBRULE($.relationRule) },
                 { ALT: () => $.SUBRULE($.typeRule) },

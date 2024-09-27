@@ -43,34 +43,46 @@ comments
         ]
         expect(parseAmlAst(input, {strict: false})).toEqual({result: ast})
     })
-    describe('namespaceRule', () => {
+    describe('namespaceStatementRule', () => {
         test('schema', () => {
-            expect(parseRule(p => p.namespaceRule(), 'namespace public\n')).toEqual({result: {
+            expect(parseRule(p => p.namespaceStatementRule(), 'namespace public\n')).toEqual({result: {
                 statement: 'Namespace',
+                line: 1,
                 schema: {token: 'Identifier', value: 'public', ...tokenPosition(10, 15, 1, 11, 1, 16)},
             }})
         })
         test('catalog', () => {
-            expect(parseRule(p => p.namespaceRule(), 'namespace core.public\n')).toEqual({result: {
+            expect(parseRule(p => p.namespaceStatementRule(), 'namespace core.public\n')).toEqual({result: {
                 statement: 'Namespace',
+                line: 1,
                 catalog: {token: 'Identifier', value: 'core', ...tokenPosition(10, 13, 1, 11, 1, 14)},
                 schema: {token: 'Identifier', value: 'public', ...tokenPosition(15, 20, 1, 16, 1, 21)},
             }})
         })
         test('database', () => {
-            expect(parseRule(p => p.namespaceRule(), 'namespace analytics.core.public\n')).toEqual({result: {
+            expect(parseRule(p => p.namespaceStatementRule(), 'namespace analytics.core.public\n')).toEqual({result: {
                 statement: 'Namespace',
+                line: 1,
                 database: {token: 'Identifier', value: 'analytics', ...tokenPosition(10, 18, 1, 11, 1, 19)},
                 catalog: {token: 'Identifier', value: 'core', ...tokenPosition(20, 23, 1, 21, 1, 24)},
                 schema: {token: 'Identifier', value: 'public', ...tokenPosition(25, 30, 1, 26, 1, 31)},
             }})
         })
         test('extra', () => {
-            expect(parseRule(p => p.namespaceRule(), 'namespace public | a note # and a comment\n')).toEqual({result: {
+            expect(parseRule(p => p.namespaceStatementRule(), 'namespace public | a note # and a comment\n')).toEqual({result: {
                 statement: 'Namespace',
+                line: 1,
                 schema: {token: 'Identifier', value: 'public', ...tokenPosition(10, 15, 1, 11, 1, 16)},
                 doc: {token: 'Doc', value: 'a note', ...tokenPosition(17, 25, 1, 18, 1, 26)},
                 comment: {token: 'Comment', value: 'and a comment', ...tokenPosition(26, 40, 1, 27, 1, 41)},
+            }})
+        })
+        test('empty catalog', () => {
+            expect(parseRule(p => p.namespaceStatementRule(), 'namespace analytics..public\n')).toEqual({result: {
+                statement: 'Namespace',
+                line: 1,
+                database: {token: 'Identifier', value: 'analytics', ...tokenPosition(10, 18, 1, 11, 1, 19)},
+                schema: {token: 'Identifier', value: 'public', ...tokenPosition(21, 26, 1, 22, 1, 27)},
             }})
         })
     })

@@ -93,14 +93,16 @@
       "extra": {"color": "#ccc", "tags": ["utils", "owner:infra"], "line": 41, "statement": 6, "alias": "c", "comment": "several additional props"}
     },
     {
-      "schema": "public",
+      "database": "db1",
       "catalog": "web",
+      "schema": "public",
       "name": "legacy_slug",
       "attrs": [
         {"name": "old_slug", "type": "slug"},
-        {"name": "new_slug", "type": "slug"},
+        {"name": "new_slug", "type": "slug", "extra": {"comment": "composite check, add it to every attribute, predicate can be defined once"}},
         {"name": "cur_slug", "type": "varchar", "null": true}
       ],
+      "checks": [{"attrs": [["old_slug"], ["new_slug"]], "predicate": "old_slug <> '' AND new_slug <> ''", "name":  "slug_check"}],
       "extra": {"line": 57, "statement": 9}
     },
     {
@@ -114,6 +116,7 @@
       "extra": {"line": 62, "statement": 10}
     },
     {
+      "database": "identity",
       "name": "profiles",
       "attrs": [
         {"name": "id", "type": "int", "doc": "one-to-one relation"}
@@ -139,9 +142,10 @@
       "extra": {"line": 76, "statement": 13, "comment": "a view without attributes but with definition"}
     },
     {
+      "catalog": "social",
       "name": "social_accounts",
       "doc": "entity with no attribute",
-      "extra": {"line": 84, "statement": 19}
+      "extra": {"line": 86, "statement": 20}
     }
   ],
   "relations": [
@@ -202,7 +206,7 @@
       "extra": {"onDelete": "cascade", "line": 55, "statement": 8}
     },
     {
-      "src": {"schema": "public", "catalog": "web", "entity": "legacy_slug"},
+      "src": {"database": "db1", "catalog": "web", "schema": "public", "entity": "legacy_slug"},
       "ref": {"schema": "cms", "entity": "posts"},
       "attrs": [{"src": ["cur_slug"], "ref": ["settings", "slug"]}],
       "extra": {"line": 60, "statement": 9, "inline": true}
@@ -216,18 +220,18 @@
     },
     {
       "kind": "one-to-one",
-      "src": {"entity": "profiles"},
+      "src": {"database": "identity", "entity": "profiles"},
       "ref": {"entity": "users"},
       "attrs": [{"src": ["id"], "ref": ["id"]}],
       "extra": {"line": 68, "statement": 11, "inline": true}
     },
     {
       "kind": "many-to-many",
-      "src": {"entity": "social_accounts"},
+      "src": {"catalog": "social", "entity": "social_accounts"},
       "ref": {"entity": "users"},
       "attrs": [],
       "doc": "natural many-to-many relation",
-      "extra": {"line": 86, "statement": 20, "natural": "both"}
+      "extra": {"line": 88, "statement": 21, "natural": "both"}
     }
   ],
   "types": [
@@ -239,6 +243,7 @@
     {"name": "box", "definition": "(INTERNALLENGTH = 16, INPUT = lower, OUTPUT = lower)", "extra": {"line": 82, "statement": 18, "comment": "custom type"}}
   ],
   "extra": {
-    "comments": [{"line": 1, "comment": ""}, {"line": 2, "comment": "Full Schema AML"}, {"line": 3, "comment": ""}]
+    "comments": [{"line": 1, "comment": ""}, {"line": 2, "comment": "Full Schema AML"}, {"line": 3, "comment": ""}],
+    "namespaces": [{"line":  84, "catalog":  "social"}]
   }
 }

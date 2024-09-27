@@ -43,8 +43,8 @@ fk comments.item_id -> users.id
 fk comments.item_id -> cms.posts.id
 
 public.legacy_slug
-  old_slug slug
-  new_slug slug
+  old_slug slug check="old_slug <> '' AND new_slug <> ''"
+  new_slug slug check="old_slug <> '' AND new_slug <> ''" # composite check, add it to every attribute, predicate can be defined once
   cur_slug varchar nullable fk cms.posts.settings:slug
 
 organizations

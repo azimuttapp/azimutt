@@ -47,12 +47,12 @@ erDiagram
     comments }o--|| users : item_id
     comments }o--|| "cms.posts" : item_id
 
-    "web.public.legacy_slug" {
+    "db1.web.public.legacy_slug" {
         slug old_slug
         slug new_slug
         varchar cur_slug FK
     }
-    "web.public.legacy_slug" }o..|| "cms.posts" : cur_slug
+    "db1.web.public.legacy_slug" }o..|| "cms.posts" : cur_slug
 
     organizations {
         int id PK, FK "many-to-many relation"
@@ -61,10 +61,10 @@ erDiagram
     }
     organizations }o--o{ users : id
 
-    profiles {
+    "identity...profiles" {
         int id PK, FK "one-to-one relation"
     }
-    profiles ||--|| users : id
+    "identity...profiles" ||--|| users : id
 
     admins {
         unknown id
@@ -75,5 +75,5 @@ erDiagram
 
     guests
 
-    social_accounts
-    social_accounts }o--o{ users : "natural many-to-many relation"
+    "social..social_accounts"
+    "social..social_accounts" }o--o{ users : "natural many-to-many relation"

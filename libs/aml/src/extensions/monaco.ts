@@ -104,14 +104,14 @@ export const completion = (opts: {} = {}): CompletionItemProvider => ({ // auto-
         if (attributeIndentationMatch(line)) {
             if (prevLine.match(/^[a-zA-Z_][a-zA-Z0-9_#]*/)) { // on first attribute
                 suggestions.push(suggestText('  id uuid pk'.replace(line, ''), CompletionItemKind.User, position))
-                suggestions.push(suggestText('  id bigint pk'.replace(line, ''), CompletionItemKind.User, position))
+                suggestions.push(suggestText('  id bigint pk {autoIncrement}'.replace(line, ''), CompletionItemKind.User, position))
             }
         }
         if (res = attributeNameWrittenMatch(line)) {
             const [attributeName] = res
             if (attributeName === 'id' && !!prevLine.match(/^[a-zA-Z_][a-zA-Z0-9_#]*/)) { // on first attribute
                 suggestions.push(suggestText('uuid pk', CompletionItemKind.User, position))
-                suggestions.push(suggestText('bigint pk', CompletionItemKind.User, position))
+                suggestions.push(suggestText('bigint pk {autoIncrement}', CompletionItemKind.User, position))
             }
             if (attributeName.endsWith('_id') || attributeName.endsWith('Id')) {
                 suggestRelationRef(suggestions, position, getDb().entities || [], 1, '-> ')
@@ -192,7 +192,7 @@ export function suggestAttributeProps(suggestions: CompletionItem[], position: P
     suggestions.push(suggestText('->', CompletionItemKind.Interface, position))
 }
 export function suggestRelationRef(suggestions: CompletionItem[], position: Position, entities: Entity[], attrs: number | undefined, prefix: string): void {
-    entities.map(e => e.pk && (attrs === undefined || e.pk.attrs.length === attrs) ? prefix + genAttributeRef(entityToRef(e), e.pk.attrs, false, false) : '')
+    entities.map(e => e.pk && (attrs === undefined || e.pk.attrs.length === attrs) ? prefix + genAttributeRef(entityToRef(e), e.pk.attrs, {}, false, false) : '')
         .filter(rel => !!rel)
         .forEach(rel => suggestions.push(suggestText(rel, CompletionItemKind.Interface, position)))
 }

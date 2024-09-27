@@ -27,6 +27,8 @@ public.users # defines the users entity inside the public schema
 core.public.users # defines the users entity inside the public schema and core catalog
 
 analytics.core.public.users # defines the users entity inside the public schema, core catalog and analytics database
+
+analytics...users # defines the users entity inside the analytics database
 ```
 
 This can be done anywhere, for example in relations:
@@ -71,6 +73,7 @@ The new defined namespace fully overrides the previous one, for all levels:
 ```aml
 namespace core.public
 namespace seo
+
 posts # defines the `posts` entity inside the `seo` schema (not inside the `core` catalog)
 ```
 

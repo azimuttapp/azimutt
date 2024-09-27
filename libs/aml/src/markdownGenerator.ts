@@ -106,10 +106,10 @@ function genEntityRef(e: EntityRef) {
 }
 
 function genName(e: Namespace & { name: string }): string {
-    const database = e.database ? e.database + '.' : ''
-    const catalog = e.catalog ? e.catalog + '.' : ''
-    const schema = e.schema ? e.schema + '.' : ''
-    return database + catalog + schema + e.name
+    if (e.database) return [e.database, e.catalog, e.schema, e.name].map(v => v || '').join('.')
+    if (e.catalog) return [e.catalog, e.schema, e.name].map(v => v || '').join('.')
+    if (e.schema) return [e.schema, e.name].map(v => v || '').join('.')
+    return e.name
 }
 
 function genAttributePath(p: AttributePath): string {

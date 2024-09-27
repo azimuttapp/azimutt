@@ -23,19 +23,21 @@ export function generatePostgres(database: Database): string {
     const typesById = indexBy(database.types || [], typeToId)
     const drops = (database.entities || []).map(e => genDropEntity(e)).reverse().join('')
     const types = (database.types || []).map(genType).join('')
+    let lineComments = database.extra?.comments || []
     const entities = (database.entities || []).map(e => {
         const ref = entityToRef(e)
         const entityRelations = (database.relations || []).filter(r => entityRefSame(r.src, ref))
-        return genEntity(e, entityRelations, typesById)
+        const entityComments = lineComments.filter(c => c.line < (e.extra?.line || 0))
+        lineComments = lineComments.slice(entityComments.length)
+        const comments = entityComments.length > 0 ? entityComments.map(c => c.comment ? `-- ${c.comment}\n` : '--\n').join('') + '\n' : ''
+        return comments + genEntity(e, entityRelations, typesById)
     }).join('\n')
     return (drops ? drops + '\n' : '') + (types ? types + '\n' : '') + entities
 }
 
 function genNamespace(n: Namespace): string {
-    const database = n.database ? genIdentifier(n.database) + '.' : ''
-    const catalog = n.catalog ? genIdentifier(n.catalog) + '.' : ''
-    const schema = n.schema ? genIdentifier(n.schema) + '.' : ''
-    return database + catalog + schema
+    // database & catalog are not handled in PostgreSQL
+    return n.schema ? genIdentifier(n.schema) + '.' : ''
 }
 
 function genDropEntity(e: Entity) {
@@ -57,7 +59,7 @@ function genTable(e: Entity, relations: Relation[], typesById: Record<TypeId, Ty
     const rels = relations.filter(r => r.attrs.length > 1).map(r => genRelationEntity(r))
     const comments = [genCommentEntity(e), ...(e.attrs || []).map(a => genCommentAttribute(a, e))].filter(c => !!c).join('')
     const inner = attrs.concat(pk, uniques, checks, rels).map(({value, comment}, i, arr) => '  ' + value + (arr[i + 1] ? `,` : '') + (comment ? ' -- ' + comment : '') + '\n').join('')
-    return `${comment}CREATE TABLE ${genEntityName(e)} (${inner ? '\n' + inner : ''});\n${indexes}${comments}`
+    return comment + `CREATE TABLE ${genEntityName(e)} (${inner ? '\n' + inner : ''});\n${indexes}${comments}`
 }
 
 function genView(e: Entity): string {

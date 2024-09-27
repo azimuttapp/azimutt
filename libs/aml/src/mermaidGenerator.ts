@@ -60,10 +60,10 @@ function genRelationKind(k: RelationKind | undefined, a: Attribute | undefined):
 }
 
 function genEntityName(e: EntityRef): string {
-    const database = e.database ? e.database + '.' : ''
-    const catalog = e.catalog ? e.catalog + '.' : ''
-    const schema = e.schema ? e.schema + '.' : ''
-    return genIdentifier(database + catalog + schema + e.entity)
+    if (e.database) return genIdentifier([e.database, e.catalog, e.schema, e.entity].map(v => v || '').join('.'))
+    if (e.catalog) return genIdentifier([e.catalog, e.schema, e.entity].map(v => v || '').join('.'))
+    if (e.schema) return genIdentifier([e.schema, e.entity].map(v => v || '').join('.'))
+    return genIdentifier(e.entity)
 }
 
 function genAttributePath(p: AttributePath): string {

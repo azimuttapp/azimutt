@@ -23,7 +23,7 @@ describe('AML docs', () => {
                     expect(res.errors).toEqual([])
                 }
                 const gen = generateAml(res.result || {}, !!version)
-                if (gen !== aml && !aml.includes('namespace')) { // can't generate `namespace` directive for now :/
+                if (gen !== aml) {
                     console.log(`File ${path}, snippet ${index + 1}${version ? ` (${version})` : ''}`)
                     expect(gen).toEqual(aml)
                 }

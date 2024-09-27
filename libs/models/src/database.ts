@@ -293,6 +293,8 @@ export const DatabaseExtra = Extra.and(z.object({
     source: z.string().optional(), // what/who created this database, format: `${name} <${version}>` (version is optional, inspired by package.json author)
     createdAt: DateTime.optional(), // when it was created
     creationTimeMs: Millis.optional(), // how long it took to create it
+    comments: z.object({line: z.number(), comment: z.string()}).array().optional(), // source line comments, used to generate them back
+    namespaces: Namespace.extend({line: z.number(), comment: z.string().optional()}).array().optional(), // source namespace statements, used to generate them back
 }))
 export type DatabaseExtra = z.infer<typeof DatabaseExtra>
 

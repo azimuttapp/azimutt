@@ -8,12 +8,12 @@
   - [post_members](#post_members)
   - [legacy schema.post member details](#legacy-schemapost-member-details)
   - [comments](#comments)
-  - [web.public.legacy_slug](#webpubliclegacy_slug)
+  - [db1.web.public.legacy_slug](#db1webpubliclegacy_slug)
   - [organizations](#organizations)
-  - [profiles](#profiles)
+  - [identity...profiles](#identityprofiles)
   - [admins](#admins)
   - [guests](#guests)
-  - [social_accounts](#social_accounts)
+  - [social..social_accounts](#socialsocial_accounts)
 - [Types](#types)
   - [comment_item](#comment_item)
   - [slug](#slug)
@@ -89,13 +89,17 @@ Constraints:
 
 - index on (item_kind, item_id): item
 
-### web.public.legacy_slug
+### db1.web.public.legacy_slug
 
 | Attribute    | Type    | Properties | Reference               | Documentation |
 |--------------|---------|------------|-------------------------|---------------|
 | **old_slug** | slug    |            |                         |               |
 | **new_slug** | slug    |            |                         |               |
 | **cur_slug** | varchar | nullable   | cms.posts.settings.slug |               |
+
+Constraints:
+
+- check(old_slug <> '' AND new_slug <> ''): slug_check
 
 ### organizations
 
@@ -105,7 +109,7 @@ Constraints:
 | **name**    | varchar(50) |            |           |                       |
 | **content** | box         | nullable   |           |                       |
 
-### profiles
+### identity...profiles
 
 | Attribute | Type | Properties | Reference | Documentation       |
 |-----------|------|------------|-----------|---------------------|
@@ -129,7 +133,7 @@ FROM users
 WHERE is_admin = false
 ```
 
-### social_accounts
+### social..social_accounts
 
 entity with no attribute
 
@@ -215,12 +219,12 @@ erDiagram
     comments }o--|| users : item_id
     comments }o--|| "cms.posts" : item_id
 
-    "web.public.legacy_slug" {
+    "db1.web.public.legacy_slug" {
         slug old_slug
         slug new_slug
         varchar cur_slug FK
     }
-    "web.public.legacy_slug" }o..|| "cms.posts" : cur_slug
+    "db1.web.public.legacy_slug" }o..|| "cms.posts" : cur_slug
 
     organizations {
         int id PK, FK "many-to-many relation"
@@ -229,10 +233,10 @@ erDiagram
     }
     organizations }o--o{ users : id
 
-    profiles {
+    "identity...profiles" {
         int id PK, FK "one-to-one relation"
     }
-    profiles ||--|| users : id
+    "identity...profiles" ||--|| users : id
 
     admins {
         unknown id
@@ -243,6 +247,6 @@ erDiagram
 
     guests
 
-    social_accounts
-    social_accounts }o--o{ users : "natural many-to-many relation"
+    "social..social_accounts"
+    "social..social_accounts" }o--o{ users : "natural many-to-many relation"
 ```

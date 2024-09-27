@@ -54,9 +54,9 @@ comments as c {color: "#ccc", tags: [utils, "owner:infra"]} |||
 rel comments(item_id) -item_kind=User> users(id)
 rel comments(item_id) -item_kind=Post> cms.posts(id) {onDelete: cascade}
 
-web.public.legacy_slug
-  old_slug slug
-  new_slug slug
+db1.web.public.legacy_slug
+  old_slug slug check(`old_slug <> '' AND new_slug <> ''`)=slug_check
+  new_slug slug check=slug_check # composite check, add it to every attribute, predicate can be defined once
   cur_slug varchar nullable -> cms.posts(settings.slug)
 
 organizations
@@ -64,7 +64,7 @@ organizations
   name varchar(50)
   content box nullable
 
-profiles
+identity...profiles
   id int pk -- users(id) | one-to-one relation
 
 admins {view, dependsOn: [users]}
@@ -80,6 +80,8 @@ type uid int {tags: [generic]} # alias type
 type cms.post_status (draft, published, archived) # enum type
 type position {x int, y int} # struct type
 type box `(INTERNALLENGTH = 16, INPUT = lower, OUTPUT = lower)` # custom type
+
+namespace social.
 
 social_accounts | entity with no attribute
 

@@ -72,7 +72,8 @@ export function buildDatabase(ast: AmlAst, start: number, parsed: number): {db: 
         creationTimeMs: done - start,
         parsingTimeMs: parsed - start,
         formattingTimeMs: done - parsed,
-        comments
+        comments,
+        namespaces: ast.filter(s => s.statement === 'Namespace').map((s, i) => ({line: s.line, ...buildNamespace(i, s), comment: s.comment?.value}))
     })
     return {db: removeEmpty({
         entities: db.entities?.sort((a, b) => a.extra?.line && b.extra?.line ? a.extra.line - b.extra.line : a.name.toLowerCase().localeCompare(b.name.toLowerCase())),
@@ -119,7 +120,7 @@ function buildRelations(db: Database, errors: ParserError[], ast: AmlAst, attrRe
     attrRelations.forEach(r => addRelation(
         db,
         errors,
-        buildRelationAttribute(db.entities || [], r.namespace, r.statement, r.entity, r.attrs, r.ref),
+        buildRelationAttribute(db.entities || [], r.statement, r.entity, r.attrs, r.ref),
         mergePositions([r.ref.ref.database, r.ref.ref.catalog, r.ref.ref.schema, r.ref.ref.entity, ...r.ref.ref.attrs])
     ))
     ast.forEach((stmt, i) => {
@@ -270,16 +271,16 @@ function buildIndexes(indexes: (AttributeConstraintAst & { path: IdentifierToken
 
 function buildRelationStatement(entities: Entity[], namespace: Namespace, statement: number, r: RelationStatement): Relation | undefined {
     const entitySrc = buildEntityRef(r.src, namespace)
-    return buildRelation(entities, namespace, statement, r.src.entity.position.start.line, r.kind, entitySrc, r.src.attrs.map(buildAttrPath), r.ref, r.polymorphic, r, false)
+    return buildRelation(entities, statement, r.src.entity.position.start.line, r.kind, entitySrc, r.src.attrs.map(buildAttrPath), r.ref, r.polymorphic, r, false)
 }
 
-function buildRelationAttribute(entities: Entity[], namespace: Namespace, statement: number, srcEntity: EntityRef, srcAttrs: AttributePath[], r: AttributeRelationAst): Relation | undefined {
-    return buildRelation(entities, namespace, statement, r.ref.entity?.position.start.line, r.kind, srcEntity, srcAttrs, r.ref, r.polymorphic, undefined, true)
+function buildRelationAttribute(entities: Entity[], statement: number, srcEntity: EntityRef, srcAttrs: AttributePath[], r: AttributeRelationAst): Relation | undefined {
+    return buildRelation(entities, statement, r.ref.entity?.position.start.line, r.kind, srcEntity, srcAttrs, r.ref, r.polymorphic, undefined, true)
 }
 
-function buildRelation(entities: Entity[], namespace: Namespace, statement: number, line: number, kind: RelationKindAst | undefined, srcEntity: EntityRef, srcAttrs: AttributePath[], ref: AttributeRefCompositeAst, polymorphic: RelationPolymorphicAst | undefined, extra: ExtraAst | undefined, inline: boolean): Relation | undefined {
+function buildRelation(entities: Entity[], statement: number, line: number, kind: RelationKindAst | undefined, srcEntity: EntityRef, srcAttrs: AttributePath[], ref: AttributeRefCompositeAst, polymorphic: RelationPolymorphicAst | undefined, extra: ExtraAst | undefined, inline: boolean): Relation | undefined {
     if (!ref || !ref.entity.value || !ref.attrs || ref.attrs.some(a => a.value === undefined)) return undefined // `ref` can be undefined or with empty entity or undefined attrs on invalid input :/ TODO: report an error instead of just ignoring?
-    const refEntity = buildEntityRef(ref, namespace)
+    const refEntity = buildEntityRef(ref, {}) // current namespace not used for relation ref, good idea???
     const refAttrs: AttributePath[] = ref.attrs.length > 0 ? ref.attrs.map(buildAttrPath) : entities.find(e => entityRefSame(entityToRef(e), refEntity))?.pk?.attrs || [['unknown']]
     const natural = ref.attrs.length === 0 ? (srcAttrs.length === 0 ? 'both' : 'ref') : (srcAttrs.length === 0 ? 'src' : undefined)
     return removeUndefined({
