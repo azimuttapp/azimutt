@@ -222,15 +222,12 @@ export const getForeignKeyColumns = (opts: ConnectorSchemaOpts) => async (conn: 
 
 function buildRelation(columns: RawForeignKeyColumn[]): Relation {
     const rel = columns[0]
+    const cols = columns.slice(0).sort((a, b) => a.key_sequence - b.key_sequence)
     return removeUndefined({
         name: rel.fk_name,
-        kind: undefined,
         origin: undefined,
-        src: {catalog: rel.fk_database_name, schema: rel.fk_schema_name, entity: rel.fk_table_name},
-        ref: {catalog: rel.pk_database_name, schema: rel.pk_schema_name, entity: rel.pk_table_name},
-        attrs: columns.slice(0)
-            .sort((a, b) => a.key_sequence - b.key_sequence)
-            .map(r => ({src: [r.fk_column_name], ref: [r.pk_column_name]})),
+        src: {catalog: rel.fk_database_name, schema: rel.fk_schema_name, entity: rel.fk_table_name, attrs: cols.map(c => [c.fk_column_name])},
+        ref: {catalog: rel.pk_database_name, schema: rel.pk_schema_name, entity: rel.pk_table_name, attrs: cols.map(c => [c.pk_column_name])},
         polymorphic: undefined,
         doc: rel.comment || undefined,
         extra: undefined

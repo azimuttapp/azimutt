@@ -6,22 +6,22 @@ import {ruleConf} from "../rule.test";
 describe('indexOnRelation', () => {
     const now = Date.now()
     test('empty', () => {
-        const postAuthor: Relation = {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]}
+        const postAuthor: Relation = {src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}}
         expect(getMissingIndexOnRelation(postAuthor, {})).toEqual([])
     })
     test('has indexes', () => {
-        const postAuthor: Relation = {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]}
+        const postAuthor: Relation = {src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}}
         const users: Entity = {name: 'users', attrs: [{name: 'id', type: 'uuid'}], pk: {attrs: [['id']]}}
         const posts: Entity = {name: 'posts', attrs: [{name: 'id', type: 'uuid'}, {name: 'author', type: 'uuid'}], indexes: [{attrs: [['author']]}]}
         expect(getMissingIndexOnRelation(postAuthor, {users, posts})).toEqual([])
     })
     test('missing indexes', () => {
-        const postAuthor: Relation = {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]}
+        const postAuthor: Relation = {src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}}
         const users: Entity = {name: 'users', attrs: [{name: 'id', type: 'uuid'}]}
         const posts: Entity = {name: 'posts', attrs: [{name: 'id', type: 'uuid'}, {name: 'author', type: 'uuid'}]}
         expect(getMissingIndexOnRelation(postAuthor, {users, posts})).toEqual([
-            {relation: postAuthor, ref: {entity: 'users'}, attrs: [['id']]},
-            {relation: postAuthor, ref: {entity: 'posts'}, attrs: [['author']]},
+            {relation: postAuthor, ref: {entity: 'users', attrs: [['id']]}},
+            {relation: postAuthor, ref: {entity: 'posts', attrs: [['author']]}},
         ])
     })
     test('violation message', () => {
@@ -31,7 +31,7 @@ describe('indexOnRelation', () => {
                 {name: 'posts', attrs: [{name: 'id', type: 'uuid'}, {name: 'author', type: 'uuid'}]},
             ],
             relations: [
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]}
+                {src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}}
             ]
         }
         expect(indexOnRelationRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
@@ -45,8 +45,8 @@ describe('indexOnRelation', () => {
                 {name: 'posts', attrs: [{name: 'id', type: 'uuid'}, {name: 'author', type: 'uuid'}, {name: 'created_by', type: 'uuid'}]},
             ],
             relations: [
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]},
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}]},
+                {src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}},
+                {src: {entity: 'posts', attrs: [['created_by']]}, ref: {entity: 'users', attrs: [['id']]}},
             ]
         }
         expect(indexOnRelationRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([

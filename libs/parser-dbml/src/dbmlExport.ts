@@ -24,7 +24,7 @@ export function exportDatabase(db: Database): JsonDatabase {
     const schemas = [...new Set(Object.keys(entitiesBySchema).concat(Object.keys(typesBySchema), Object.keys(groupsBySchema)))]
     return {
         schemas: schemas.map(schema => exportSchema(schema, entitiesBySchema[schema] || [], [], typesBySchema[schema] || [], groupsBySchema[schema] || []))
-            .concat([exportSchema('relations', [], db.relations || [], [], [])]) // put relations in an other schema to avoid JSON parser bug
+            .concat([exportSchema('relations', [], db.relations || [], [], [])]) // put relations in another schema to avoid JSON parser bug
     }
 }
 
@@ -96,13 +96,13 @@ function exportRelation(relation: Relation): JsonRef {
         endpoints: [{
             schemaName: relation.ref.schema || null,
             tableName: relation.ref.entity,
-            fieldNames: relation.attrs.map(c => attributePathToId(c.ref)),
-            relation: relation.kind?.endsWith('many') ? '*' : '1'
+            fieldNames: relation.ref.attrs.map(c => attributePathToId(c)),
+            relation: relation.ref.cardinality === 'n' ? '*' : '1' // one when not defined
         }, {
             schemaName: relation.src.schema || null,
             tableName: relation.src.entity,
-            fieldNames: relation.attrs.map(c => attributePathToId(c.src)),
-            relation: relation.kind?.startsWith('one') ? '1' : '*'
+            fieldNames: relation.src.attrs.map(c => attributePathToId(c)),
+            relation: relation.src.cardinality === '1' ? '1' : '*' // many when not defined
         }] as [JsonRefEndpoint, JsonRefEndpoint],
         onDelete: extra.onDelete || undefined,
         onUpdate: extra.onUpdate || undefined

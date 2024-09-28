@@ -227,6 +227,12 @@ export const Entity = Namespace.extend({
 }).strict()
 export type Entity = z.infer<typeof Entity>
 
+export const RelationCardinality = z.enum(['0', '1', 'n'])
+export type RelationCardinality = z.infer<typeof RelationCardinality>
+
+export const RelationLink = EntityRef.extend({attrs: AttributePath.array(), cardinality: RelationCardinality.optional()})
+export type RelationLink = z.infer<typeof RelationLink>
+
 export const RelationKind = z.enum(['many-to-one', 'one-to-many', 'one-to-one', 'many-to-many'])
 export type RelationKind = z.infer<typeof RelationKind>
 
@@ -251,11 +257,9 @@ export const relationExtraProps = ['onUpdate', 'onDelete', 'tags'] // extra keys
 
 export const Relation = z.object({
     name: ConstraintName.optional(),
-    kind: RelationKind.optional(), // 'many-to-one' when not specified
     origin: z.enum(['fk', 'infer-name', 'infer-similar', 'infer-query', 'user']).optional(), // 'fk' when not specified
-    src: EntityRef,
-    ref: EntityRef,
-    attrs: z.object({src: AttributePath, ref: AttributePath}).array(),
+    src: RelationLink,
+    ref: RelationLink,
     polymorphic: z.object({attribute: AttributePath, value: AttributeValue}).optional(),
     doc: z.string().optional(),
     extra: RelationExtra.optional(),
@@ -326,8 +330,8 @@ export const DatabaseSchema = zodToJsonSchema(Database, {
         DatabaseName, CatalogName, SchemaName, Namespace,
         Entity, EntityRef, EntityName, EntityKind,
         Attribute, AttributeRef, AttributeName, AttributePath, AttributeType, AttributeValue,
-        PrimaryKey, Index, Check,
-        Relation, ConstraintName, RelationKind,
+        PrimaryKey, Index, Check, ConstraintName,
+        Relation, RelationLink, RelationCardinality,
         Type, TypeName,
         Extra, DatabaseExtra, EntityExtra, AttributeExtra, IndexExtra, RelationExtra, TypeExtra
     }

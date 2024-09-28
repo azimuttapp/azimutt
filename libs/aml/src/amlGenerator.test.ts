@@ -117,9 +117,9 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
                 extra: {line: 37, statement: 5}
             }],
             relations: [
-                {src: {schema: 'identity', entity: 'users'}, ref: {entity: 'countries'}, attrs: [{src: ['settings', 'address', 'country'], ref: ['id']}], extra: {line: 26, statement: 2, natural: 'ref', inline: true}},
-                {src: {entity: 'posts'}, ref: {schema: 'identity', entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {line: 32, statement: 3, inline: true, refAlias: 'users'}},
-                {src: {entity: 'posts'}, ref: {schema: 'identity', entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}], doc: 'standalone relation', extra: {line: 35, statement: 4, refAlias: 'users', onUpdate: 'no action', onDelete: 'cascade'}},
+                {src: {schema: 'identity', entity: 'users', attrs: [['settings', 'address', 'country']]}, ref: {entity: 'countries', attrs: [['id']]}, extra: {line: 26, statement: 2, natural: 'ref', inline: true}},
+                {src: {entity: 'posts', attrs: [['author']]}, ref: {schema: 'identity', entity: 'users', attrs: [['id']]}, extra: {line: 32, statement: 3, inline: true, refAlias: 'users'}},
+                {src: {entity: 'posts', attrs: [['created_by']]}, ref: {schema: 'identity', entity: 'users', attrs: [['id']]}, doc: 'standalone relation', extra: {line: 35, statement: 4, refAlias: 'users', onUpdate: 'no action', onDelete: 'cascade'}},
             ],
             types: [
                 {schema: 'identity', name: 'user_role', values: ['admin', 'guest'], extra: {line: 15, statement: 2, inline: true}},
@@ -267,22 +267,22 @@ type public.status (pending, wip, done)
                 errors: [{message: "Expecting token of type --> Identifier <-- but found --> '\n' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(21, 21, 2, 16, 2, 16)}]
             })
             expect(parseAmlTest('posts\n  author int -> users\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['unknown']}], extra: {line: 2, statement: 1, natural: 'ref', inline: true}}], extra: {}},
+                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: []}, extra: {line: 2, statement: 1, natural: 'ref', inline: true}}], extra: {}},
             })
             expect(parseAmlTest('posts\n  author int -> users(\n')).toEqual({
                 result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], extra: {}},
                 errors: [{message: "Expecting: expecting at least one iteration which starts with one of these possible Token sequences::\n  <[WhiteSpace] ,[Identifier]>\nbut found: '\n'", kind: 'EarlyExitException', level: 'error', ...tokenPosition(28, 28, 2, 23, 2, 23)}]
             })
             expect(parseAmlTest('posts\n  author int -> users(id\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ["author"], ref: ["id"]}], extra: {line: 2, statement: 1, inline: true}}], extra: {}},
+                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {line: 2, statement: 1, inline: true}}], extra: {}},
                 errors: [{message: "Expecting token of type --> RParen <-- but found --> '\n' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(30, 30, 2, 25, 2, 25)}]
             })
             expect(parseAmlTest('posts\n  author int -> users(id)\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ["author"], ref: ["id"]}], extra: {line: 2, statement: 1, inline: true}}], extra: {}},
+                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {line: 2, statement: 1, inline: true}}], extra: {}},
             })
 
             expect(parseAmlTest('posts\n  author int - users(id)\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ["author"], ref: ["id"]}], extra: {line: 2, statement: 1, inline: true}}], extra: {}},
+                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {line: 2, statement: 1, inline: true}}], extra: {}},
                 errors: [{message: "Expecting: one of these possible Token sequences:\n  1. [Dash]\n  2. [LowerThan]\n  3. [GreaterThan]\nbut found: ' '", kind: 'NoViableAltException', level: 'error', ...tokenPosition(20, 20, 2, 15, 2, 15)}]
             })
             expect(parseAmlTest('posts\n  author int  users(id)\n')).toEqual({
@@ -311,14 +311,14 @@ type public.status (pending, wip, done)
                 ]
             })
             expect(parseAmlTest('posts\n  author int fk users\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['unknown']}], extra: {line: 2, statement: 1, natural: 'ref', inline: true}}], extra: {}},
+                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: []}, extra: {line: 2, statement: 1, natural: 'ref', inline: true}}], extra: {}},
                 // TODO: an error should be reported here
                 errors: [{...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(19, 20, 2, 14, 2, 15)}]
             })
             expect(parseAmlTest('posts\n  author int fk users.\n')).toEqual({
                 result: {
                     entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}],
-                    relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['unknown']}], extra: {line: 2, statement: 1, inline: true, natural: 'ref'}}],
+                    relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: []}, extra: {line: 2, statement: 1, inline: true, natural: 'ref'}}],
                     extra: {}
                 },
                 errors: [
@@ -328,7 +328,7 @@ type public.status (pending, wip, done)
             expect(parseAmlTest('posts\n  author int fk users.id\n')).toEqual({
                 result: {
                     entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}],
-                    relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {line: 2, statement: 1, inline: true}}],
+                    relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {line: 2, statement: 1, inline: true}}],
                     extra: {}
                 },
                 errors: [
@@ -416,7 +416,7 @@ talks
                         extra: {line: 7, statement: 2}
                     }],
                     relations: [
-                        {src: {entity: 'talks'}, ref: {entity: 'users'}, attrs: [{src: ['speaker'], ref: ['id']}], extra: {line: 10, statement: 2, inline: true}}
+                        {src: {entity: 'talks', attrs: [['speaker']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {line: 10, statement: 2, inline: true}}
                     ],
                     types: [
                         {name: 'user_role', values: ['admin', 'guest'], extra: {line: 5, statement: 1, inline: true}}
@@ -487,8 +487,8 @@ fk admins.id -> users.id
                         extra: {line: 16, statement: 3}
                     }],
                     relations: [
-                        {src: {schema: 'public', entity: 'users'}, ref: {entity: 'emails'}, attrs: [{src: ['email'], ref: ['email']}], extra: {line: 14, statement: 2, inline: true}},
-                        {src: {entity: 'admins'}, ref: {entity: 'users'}, attrs: [{src: ['id'], ref: ['id']}], extra: {line: 20, statement: 4}},
+                        {src: {schema: 'public', entity: 'users', attrs: [['email']]}, ref: {entity: 'emails', attrs: [['email']]}, extra: {line: 14, statement: 2, inline: true}},
+                        {src: {entity: 'admins', attrs: [['id']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {line: 20, statement: 4}},
                     ],
                     extra: {comments: [{line: 7, comment: 'How to define a table and it\'s columns'}]}
                 },
@@ -562,9 +562,9 @@ roles
                     extra: {line: 16, statement: 4}
                 }],
                 relations: [
-                    {src: {entity: 'contact_roles'}, ref: {entity: 'contacts'}, attrs: [{src: ['contact_id'], ref: ['id']}], extra: {line: 2, statement: 1, inline: true}},
-                    {src: {entity: 'contact_roles'}, ref: {entity: 'roles'}, attrs: [{src: ['role_id'], ref: ['id']}], extra: {line: 3, statement: 1, inline: true}},
-                    {src: {entity: 'events'}, ref: {entity: 'contacts'}, attrs: [{src: ['contact_id'], ref: ['id']}], extra: {line: 12, statement: 3, inline: true}},
+                    {src: {entity: 'contact_roles', attrs: [['contact_id']]}, ref: {entity: 'contacts', attrs: [['id']]}, extra: {line: 2, statement: 1, inline: true}},
+                    {src: {entity: 'contact_roles', attrs: [['role_id']]}, ref: {entity: 'roles', attrs: [['id']]}, extra: {line: 3, statement: 1, inline: true}},
+                    {src: {entity: 'events', attrs: [['contact_id']]}, ref: {entity: 'contacts', attrs: [['id']]}, extra: {line: 12, statement: 3, inline: true}},
                 ],
                 extra: {}
             }

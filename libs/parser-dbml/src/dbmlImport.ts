@@ -7,18 +7,17 @@ import DbmlEndpoint from "@dbml/core/types/model_structure/endpoint";
 import DbmlEnum from "@dbml/core/types/model_structure/enum";
 import DbmlTableGroup from "@dbml/core/types/model_structure/tableGroup";
 import DbmlSchema from "@dbml/core/types/model_structure/schema";
-import {removeEmpty, removeUndefined, zip} from "@azimutt/utils";
+import {removeEmpty, removeUndefined} from "@azimutt/utils";
 import {
     Attribute,
     AttributePath,
     attributePathFromId,
     Database,
     Entity,
-    EntityRef,
     Index,
     PrimaryKey,
     Relation,
-    RelationKind,
+    RelationLink,
     SchemaName,
     Type
 } from "@azimutt/models";
@@ -102,11 +101,9 @@ function importIndex(index: DbmlIndex): Index {
 
 function importRef(relation: DbmlRef): Relation {
     let [src, ref] = relation.endpoints
-    let kind: RelationKind = 'many-to-one'
     switch (src.relation + '-' + ref.relation) {
         case '1-*': [src, ref] = [ref, src]; break
-        case '1-1': kind = 'one-to-one'; if (src.fields.some(f => f.pk)) [src, ref] = [ref, src]; break
-        case '*-*': kind = 'many-to-many'; break
+        case '1-1': if (src.fields.some(f => f.pk)) [src, ref] = [ref, src]; break
     }
     const extra: RelationExtra = removeUndefined({
         onDelete: relation.onDelete,
@@ -114,16 +111,14 @@ function importRef(relation: DbmlRef): Relation {
     })
     return removeEmpty({
         name: relation.name || undefined,
-        kind: kind !== 'many-to-one' ? kind : undefined,
-        src: importEndpoint(src),
-        ref: importEndpoint(ref),
-        attrs: zip(src.fieldNames, ref.fieldNames).map(([src, ref]) => ({src: attributePathFromId(src), ref: attributePathFromId(ref)})),
+        src: removeUndefined({...importEndpoint(src), cardinality: src.relation === '1' ? '1' as const : undefined}),
+        ref: removeUndefined({...importEndpoint(ref), cardinality: ref.relation === '*' ? 'n' as const : undefined}),
         extra
     })
 }
 
-function importEndpoint(endpoint: DbmlEndpoint): EntityRef {
-    return removeUndefined({schema: endpoint.schemaName || undefined, entity: endpoint.tableName})
+function importEndpoint(endpoint: DbmlEndpoint): RelationLink {
+    return removeUndefined({schema: endpoint.schemaName || undefined, entity: endpoint.tableName, attrs: endpoint.fieldNames.map(attributePathFromId)})
 }
 
 function importType(e: DbmlEnum): Type {

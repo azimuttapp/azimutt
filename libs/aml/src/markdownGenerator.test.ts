@@ -54,7 +54,7 @@ erDiagram
                 def: "SELECT * FROM users WHERE role = 'admin'"
             }],
             relations: [
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]}
+                {src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}}
             ],
             types: [
                 {name: 'user_role', values: ['admin', 'guest']}

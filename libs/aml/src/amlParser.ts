@@ -14,6 +14,7 @@ import {
     ParserErrorLevel,
     ParserResult,
     positionStartAdd,
+    RelationCardinality,
     removeQuotes,
     TokenPosition
 } from "@azimutt/models";
@@ -47,7 +48,6 @@ import {
     PropertiesAst,
     PropertyAst,
     PropertyValueAst,
-    RelationCardinalityAst,
     RelationPolymorphicAst,
     RelationStatement,
     StatementAst,
@@ -505,22 +505,22 @@ class AmlParser extends EmbeddedActionsParser {
             return removeUndefined({primaryKey, index, unique, check})
         })
         const attributeRelationRule = $.RULE<() => AttributeRelationAst>('attributeRelationRule', () => {
-            const {kind, polymorphic, warning} = $.OR([{
+            const {srcCardinality, refCardinality, polymorphic, warning} = $.OR([{
                 ALT: () => {
                     const refCardinality = $.SUBRULE(relationCardinalityRule)
                     const polymorphic = $.OPTION(() => $.SUBRULE(relationPolymorphicRule))
                     const srcCardinality = $.SUBRULE2(relationCardinalityRule)
-                    return {kind: `${srcCardinality}-${refCardinality}` as const, polymorphic, warning: undefined}
+                    return {srcCardinality, refCardinality, polymorphic, warning: undefined}
                 }
             }, {
                 ALT: () => {
                     const warning = tokenInfoLegacy($.CONSUME(ForeignKey), '"fk" is legacy, replace it with "->"')
-                    return {kind: 'n-1', polymorphic: undefined, warning}
+                    return {srcCardinality: 'n' as const, refCardinality: '1' as const, polymorphic: undefined, warning}
                 }
             }])
             $.OPTION2(() => $.CONSUME(WhiteSpace))
             const ref = $.SUBRULE2($.attributeRefCompositeRule)
-            return removeUndefined({kind, ref, polymorphic, warning})
+            return removeUndefined({ref, srcCardinality, refCardinality, polymorphic, warning})
         })
         const attributeRuleInner = $.RULE<() => AttributeAstFlat>('attributeRuleInner', () => {
             const name = $.SUBRULE($.identifierRule)
@@ -564,7 +564,7 @@ class AmlParser extends EmbeddedActionsParser {
         })
 
         // relation rules
-        const relationCardinalityRule = $.RULE<() => RelationCardinalityAst>('relationCardinalityRule', () => {
+        const relationCardinalityRule = $.RULE<() => RelationCardinality>('relationCardinalityRule', () => {
             return $.OR([
                 { ALT: () => { $.CONSUME(Dash); return '1' } },
                 { ALT: () => { $.CONSUME(LowerThan); return 'n' } },
@@ -585,11 +585,11 @@ class AmlParser extends EmbeddedActionsParser {
             $.CONSUME(WhiteSpace)
             const src = $.SUBRULE($.attributeRefCompositeRule)
             $.OPTION(() => $.CONSUME2(WhiteSpace))
-            const {kind, ref, polymorphic} = $.SUBRULE(attributeRelationRule) || {} // returns undefined on invalid input :/
+            const {ref, srcCardinality, refCardinality, polymorphic} = $.SUBRULE(attributeRelationRule) || {} // returns undefined on invalid input :/
             $.OPTION2(() => $.CONSUME3(WhiteSpace))
             const extra = $.SUBRULE($.extraRule)
             $.CONSUME(NewLine)
-            return removeUndefined({statement: 'Relation' as const, kind, src, ref, polymorphic, ...extra, warning})
+            return removeUndefined({statement: 'Relation' as const, src, ref, srcCardinality, refCardinality, polymorphic, ...extra, warning})
         })
 
         // type rules

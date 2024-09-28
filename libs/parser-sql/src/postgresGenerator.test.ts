@@ -27,7 +27,7 @@ describe('postgresGenerator', () => {
                 pk: {attrs: [['id']]}
             }],
             relations: [
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]}
+                {src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}}
             ],
         }
         const sql = `DROP TABLE IF EXISTS posts;

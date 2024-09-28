@@ -20,6 +20,7 @@ import {
     entityToRef,
     flattenAttribute,
     getPeerAttributes,
+    relationLinkToEntityRef,
     relationRefFromId,
     relationRefSame,
     relationToRef
@@ -62,9 +63,9 @@ export const relationMissingRule: Rule<CustomRuleConf> = {
                 ruleId,
                 ruleName,
                 ruleLevel: conf.level,
-                message: `Create a relation from ${attributesRefToId({...r.src, attributes: r.attrs.map(a => a.src)})} to ${attributesRefToId({...r.ref, attributes: r.attrs.map(a => a.ref)})}.`,
-                entity: r.src,
-                attribute: r.attrs[0].src,
+                message: `Create a relation from ${attributesRefToId({...r.src, attributes: r.src.attrs})} to ${attributesRefToId({...r.ref, attributes: r.ref.attrs})}.`,
+                entity: relationLinkToEntityRef(r.src),
+                attribute: r.src.attrs[0],
                 extra: {relation: r}
             }))
     }
@@ -92,7 +93,7 @@ export function getMissingRelations(entities: Entity[], relations: Relation[]): 
                 const entityRef: EntityRef = entityToRef(entity)
                 let targets = guessRelationTargets(entitiesByName, entityRef, ['user', 'id'])
                 targets = targets.length === 0 ? guessRelationTargets(entitiesByName, entityRef, ['account', 'id']) : targets
-                results = targets.map(ref => ({src: entityRef, ref: ref.entity, attrs: [{src: path, ref: ref.attr}], origin: 'infer-name'}))
+                results = targets.map(ref => ({src: {...entityRef, attrs: [path]}, ref: {...ref.entity, attrs: [ref.attr]}, origin: 'infer-name'}))
             }
             return results
         })
@@ -134,7 +135,7 @@ function guessRelationTargetsWithPrefixes(
     let targets = guessRelationTargets(entitiesByName, entityRef, attrWords)
     targets = targets.length === 0 ? guessRelationTargets(entitiesByPrefixName, entityRef, attrWords) : targets
     targets = targets.length === 0 ? guessRelationTargets(entitiesByPrefixName2, entityRef, attrWords) : targets
-    return targets.map(ref => ({src: entityRef, ref: ref.entity, attrs: [{src: attrPath, ref: ref.attr}], origin: 'infer-name'}))
+    return targets.map(ref => ({src: {...entityRef, attrs: [attrPath]}, ref: {...ref.entity, attrs: [ref.attr]}, origin: 'infer-name'}))
 }
 
 function guessRelationTargets(entitiesByName: Record<EntityNameNormalized, Entity[]>, ref: EntityRef, attrWords: string[]): {entity: EntityRef, attr: AttributePath}[] {
@@ -172,16 +173,16 @@ function getPolymorphicColumn(entity: Entity, attribute: AttributePath): {path: 
 }
 
 function loopingRelation(r: Relation): boolean {
-    return entityRefToId(r.src) === entityRefToId(r.ref) && r.attrs.map(a => attributePathToId(a.src)).join(',') === r.attrs.map(a => attributePathToId(a.ref)).join(',')
+    return entityRefToId(r.src) === entityRefToId(r.ref) && r.src.attrs.map(attributePathToId).join(',') === r.ref.attrs.map(attributePathToId).join(',')
 }
 
 function relationAlreadyExist(relationsBySrc: Record<EntityId, Relation[]>, relation: Relation): boolean {
     const relationRefEntity = entityRefToId(relation.ref)
-    const relationSrcAttrs = relation.attrs.map(a => attributePathToId(a.src)).join(',')
-    const relationRefAttrs = relation.attrs.map(a => attributePathToId(a.ref)).join(',')
+    const relationSrcAttrs = relation.src.attrs.map(attributePathToId).join(',')
+    const relationRefAttrs = relation.ref.attrs.map(attributePathToId).join(',')
     const sameRelations = (relationsBySrc[entityRefToId(relation.src)] || []) // from same entity
         .filter(r => entityRefToId(r.ref) === relationRefEntity) // to same entity
-        .filter(r => r.attrs.map(a => attributePathToId(a.src)).join(',') === relationSrcAttrs) // from same attributes
-        .filter(r => r.attrs.map(a => attributePathToId(a.ref)).join(',') === relationRefAttrs) // to same attributes
+        .filter(r => r.src.attrs.map(attributePathToId).join(',') === relationSrcAttrs) // from same attributes
+        .filter(r => r.ref.attrs.map(attributePathToId).join(',') === relationRefAttrs) // to same attributes
     return sameRelations.length > 0
 }

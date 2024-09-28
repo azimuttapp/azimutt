@@ -338,7 +338,7 @@ comments
                 expect(parseRule(p => p.attributeRule(), '  user_id -> users(id)\n')).toEqual({result: {
                     nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'user_id', ...tokenPosition(2, 8, 1, 3, 1, 9)},
-                    relation: {kind: 'n-1', ref: {
+                    relation: {srcCardinality: 'n', refCardinality: '1', ref: {
                         entity: {token: 'Identifier', value: 'users', ...tokenPosition(13, 17, 1, 14, 1, 18)},
                         attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(19, 20, 1, 20, 1, 21)}],
                     }}
@@ -346,7 +346,7 @@ comments
                 expect(parseRule(p => p.attributeRule(), '  user_id -> users\n')).toEqual({result: {
                     nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'user_id', ...tokenPosition(2, 8, 1, 3, 1, 9)},
-                    relation: {kind: 'n-1', ref: {
+                    relation: {srcCardinality: 'n', refCardinality: '1', ref: {
                         entity: {token: 'Identifier', value: 'users', ...tokenPosition(13, 17, 1, 14, 1, 18)},
                         attrs: [],
                     }}
@@ -385,7 +385,9 @@ comments
                     index: {keyword: tokenPosition(42, 46, 1, 43, 1, 47), name: {token: 'Identifier', value: 'idx', ...tokenPosition(48, 50, 1, 49, 1, 51)}},
                     unique: {keyword: tokenPosition(35, 40, 1, 36, 1, 41)},
                     check: {keyword: tokenPosition(52, 56, 1, 53, 1, 57), predicate: {token: 'Expression', value: 'id > 0', ...tokenPosition(58, 65, 1, 59, 1, 66)}},
-                    relation: {kind: 'n-1',
+                    relation: {
+                        srcCardinality: 'n',
+                        refCardinality: '1',
                         ref: {schema: {token: 'Identifier', value: 'public', ...tokenPosition(81, 86, 1, 82, 1, 87)}, entity: {token: 'Identifier', value: 'users', ...tokenPosition(88, 92, 1, 89, 1, 93)}, attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(94, 95, 1, 95, 1, 96)}]},
                         polymorphic: {attr: {token: 'Identifier', value: 'kind', ...tokenPosition(69, 72, 1, 70, 1, 73)}, value: {token: 'Identifier', value: 'users', ...tokenPosition(74, 78, 1, 75, 1, 79)}}
                     },
@@ -406,7 +408,8 @@ comments
         test('basic', () => {
             expect(parseRule(p => p.relationRule(), 'rel groups(owner) -> users(id)\n')).toEqual({result: {
                 statement: 'Relation',
-                kind: 'n-1',
+                srcCardinality: 'n',
+                refCardinality: '1',
                 src: {
                     entity: {token: 'Identifier', value: 'groups', ...tokenPosition(4, 9, 1, 5, 1, 10)},
                     attrs: [{token: 'Identifier', value: 'owner', ...tokenPosition(11, 15, 1, 12, 1, 16)}],
@@ -420,7 +423,8 @@ comments
         test('one-to-one', () => {
             expect(parseRule(p => p.relationRule(), 'rel profiles(id) -- users(id)\n')).toEqual({result: {
                 statement: 'Relation',
-                kind: '1-1',
+                srcCardinality: '1',
+                refCardinality: '1',
                 src: {
                     entity: {token: 'Identifier', value: 'profiles', ...tokenPosition(4, 11, 1, 5, 1, 12)},
                     attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(13, 14, 1, 14, 1, 15)}],
@@ -434,7 +438,8 @@ comments
         test('many-to-many', () => {
             expect(parseRule(p => p.relationRule(), 'rel groups(id) <> users(id)\n')).toEqual({result: {
                 statement: 'Relation',
-                kind: 'n-n',
+                srcCardinality: 'n',
+                refCardinality: 'n',
                 src: {
                     entity: {token: 'Identifier', value: 'groups', ...tokenPosition(4, 9, 1, 5, 1, 10)},
                     attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(11, 12, 1, 12, 1, 13)}],
@@ -448,7 +453,8 @@ comments
         test('composite', () => {
             expect(parseRule(p => p.relationRule(), 'rel audit(user_id, role_id) -> user_roles(user_id, role_id)\n')).toEqual({result: {
                 statement: 'Relation',
-                kind: 'n-1',
+                srcCardinality: 'n',
+                refCardinality: '1',
                 src: {
                     entity: {token: 'Identifier', value: 'audit', ...tokenPosition(4, 8, 1, 5, 1, 9)},
                     attrs: [
@@ -468,7 +474,8 @@ comments
         test('polymorphic', () => {
             expect(parseRule(p => p.relationRule(), 'rel events(item_id) -item_kind=User> users(id)\n')).toEqual({result: {
                 statement: 'Relation',
-                kind: 'n-1',
+                srcCardinality: 'n',
+                refCardinality: '1',
                 src: {
                     entity: {token: 'Identifier', value: 'events', ...tokenPosition(4, 9, 1, 5, 1, 10)},
                     attrs: [{token: 'Identifier', value: 'item_id', ...tokenPosition(11, 17, 1, 12, 1, 18)}],
@@ -486,7 +493,8 @@ comments
         test('extra', () => {
             expect(parseRule(p => p.relationRule(), 'rel groups(owner) -> users(id) {color: red} | a note # a comment\n')).toEqual({result: {
                 statement: 'Relation',
-                kind: 'n-1',
+                srcCardinality: 'n',
+                refCardinality: '1',
                 src: {
                     entity: {token: 'Identifier', value: 'groups', ...tokenPosition(4, 9, 1, 5, 1, 10)},
                     attrs: [{token: 'Identifier', value: 'owner', ...tokenPosition(11, 15, 1, 12, 1, 16)}],
@@ -609,7 +617,8 @@ comments
             const v1 = parseRule(p => p.attributeRule(), '  user_id fk users.id\n').result?.relation as AttributeRelationAst
             const v2 = parseRule(p => p.attributeRule(), '  user_id -> users(id)\n').result?.relation
             expect(v1).toEqual({
-                kind: 'n-1',
+                srcCardinality: 'n',
+                refCardinality: '1',
                 ref: {
                     entity: {token: 'Identifier', value: 'users', ...tokenPosition(13, 17, 1, 14, 1, 18)},
                     attrs: [{token: 'Identifier', value: 'id', ...tokenPosition(19, 20, 1, 20, 1, 21)}],
@@ -624,7 +633,8 @@ comments
             const v2 = parseRule(p => p.relationRule(), 'rel groups(owner) -> users(id)\n')
             expect(v1).toEqual({result: {
                 statement: 'Relation',
-                kind: 'n-1',
+                srcCardinality: 'n',
+                refCardinality: '1',
                 src: {
                     entity: {token: 'Identifier', value: 'groups', ...tokenPosition(3, 8, 1, 4, 1, 9)},
                     attrs: [{token: 'Identifier', value: 'owner', ...tokenPosition(10, 14, 1, 11, 1, 15)}],

@@ -540,21 +540,16 @@ export const getRelations = (opts: ScopeOpts) => async (conn: Conn): Promise<Raw
 function buildRelation(r: RawRelation): Relation | undefined {
     const rel: Relation = {
         name: r.CONSTRAINT_NAME,
-        kind: undefined, // 'many-to-one' when not specified
         origin: undefined, // 'fk' when not specified
-        src: {schema: r.TABLE_OWNER, entity: r.TABLE_NAME},
-        ref: {schema: r.TARGET_OWNER, entity: r.TARGET_TABLE},
-        attrs: zip(
-            r.TABLE_COLUMNS.split(',').map(attributePathFromId),
-            r.TARGET_COLUMNS.split(',').map(attributePathFromId)
-        ).map(([src, ref]) => ({src, ref})),
+        src: {schema: r.TABLE_OWNER, entity: r.TABLE_NAME, attrs: r.TABLE_COLUMNS.split(',').map(attributePathFromId)},
+        ref: {schema: r.TARGET_OWNER, entity: r.TARGET_TABLE, attrs: r.TARGET_COLUMNS.split(',').map(attributePathFromId)},
         polymorphic: undefined,
         doc: undefined,
         extra: undefined,
     }
     // don't keep relation if columns are not found :/
     // should not happen if errors are not skipped
-    return rel.attrs.length > 0 ? removeUndefined(rel) : undefined
+    return rel.src.attrs.length > 0 ? removeUndefined(rel) : undefined
 }
 
 export type RawType = {

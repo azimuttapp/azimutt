@@ -102,7 +102,7 @@
         {"name": "new_slug", "type": "slug", "extra": {"comment": "composite check, add it to every attribute, predicate can be defined once"}},
         {"name": "cur_slug", "type": "varchar", "null": true}
       ],
-      "checks": [{"attrs": [["old_slug"], ["new_slug"]], "predicate": "old_slug <> '' AND new_slug <> ''", "name":  "slug_check"}],
+      "checks": [{"attrs": [["old_slug"], ["new_slug"]], "predicate": "old_slug <> '' AND new_slug <> ''", "name": "slug_check"}],
       "extra": {"line": 57, "statement": 9}
     },
     {
@@ -150,86 +150,70 @@
   ],
   "relations": [
     {
-      "src": {"schema": "cms", "entity": "posts"},
-      "ref": {"entity": "users"},
-      "attrs": [{"src": ["settings", "publish_by"], "ref": ["id"]}],
+      "src": {"schema": "cms", "entity": "posts", "attrs": [["settings", "publish_by"]]},
+      "ref": {"entity": "users", "attrs": [["id"]]},
       "extra": {"line": 20, "statement": 2, "inline": true}
     },
     {
-      "src": {"schema": "cms", "entity": "posts"},
-      "ref": {"entity": "users"},
-      "attrs": [{"src": ["created_by"], "ref": ["id"]}],
+      "src": {"schema": "cms", "entity": "posts", "attrs": [["created_by"]]},
+      "ref": {"entity": "users", "attrs": [["id"]]},
       "extra": {"line": 26, "statement": 2, "inline": true}
     },
     {
-      "src": {"entity": "post_members"},
-      "ref": {"schema": "cms", "entity": "posts"},
-      "attrs": [{"src": ["post_id"], "ref": ["id"]}],
+      "src": {"entity": "post_members", "attrs": [["post_id"]]},
+      "ref": {"schema": "cms", "entity": "posts", "attrs": [["id"]]},
       "extra": {"line": 29, "statement": 3, "inline": true}
     },
     {
-      "src": {"entity": "post_members"},
-      "ref": {"entity": "users"},
-      "attrs": [{"src": ["user_id"], "ref": ["id"]}],
+      "src": {"entity": "post_members", "attrs": [["user_id"]]},
+      "ref": {"entity": "users", "attrs": [["id"]]},
       "extra": {"line": 30, "statement": 3, "inline": true}
     },
     {
-      "src": {"schema": "legacy schema", "entity": "post member details"},
-      "ref": {"entity": "users"},
-      "attrs": [{"src": ["added by"], "ref": ["id"]}],
+      "src": {"schema": "legacy schema", "entity": "post member details", "attrs": [["added by"]]},
+      "ref": {"entity": "users", "attrs": [["id"]]},
       "extra": {"line": 37, "statement": 4, "inline": true}
     },
     {
-      "src": {"schema": "legacy schema", "entity": "post member details"},
-      "ref": {"entity": "post_members"},
-      "attrs": [{"src": ["post_id"], "ref": ["post_id"]}, {"src": ["user_id"], "ref": ["user_id"]}],
+      "src": {"schema": "legacy schema", "entity": "post member details", "attrs": [["post_id"], ["user_id"]]},
+      "ref": {"entity": "post_members", "attrs": [["post_id"], ["user_id"]]},
       "extra": {"line": 39, "statement": 5}
     },
     {
-      "src": {"entity": "comments"},
-      "ref": {"entity": "users"},
-      "attrs": [{"src": ["created_by"], "ref": ["id"]}],
+      "src": {"entity": "comments", "attrs": [["created_by"]]},
+      "ref": {"entity": "users", "attrs": [["id"]]},
       "extra": {"line": 52, "statement": 6, "inline": true, "natural": "ref"}
     },
     {
-      "src": {"entity": "comments"},
-      "ref": {"entity": "users"},
-      "attrs": [{"src": ["item_id"], "ref": ["id"]}],
+      "src": {"entity": "comments", "attrs": [["item_id"]]},
+      "ref": {"entity": "users", "attrs": [["id"]]},
       "polymorphic": {"attribute": ["item_kind"], "value": "User"},
       "extra": {"line": 54, "statement": 7}
     },
     {
-      "src": {"entity": "comments"},
-      "ref": {"schema": "cms", "entity": "posts"},
-      "attrs": [{"src": ["item_id"], "ref": ["id"]}],
+      "src": {"entity": "comments", "attrs": [["item_id"]]},
+      "ref": {"schema": "cms", "entity": "posts", "attrs": [["id"]]},
       "polymorphic": {"attribute": ["item_kind"], "value": "Post"},
       "extra": {"line": 55, "statement": 8, "onDelete": "cascade"}
     },
     {
-      "src": {"database": "db1", "catalog": "web", "schema": "public", "entity": "legacy_slug"},
-      "ref": {"schema": "cms", "entity": "posts"},
-      "attrs": [{"src": ["cur_slug"], "ref": ["settings", "slug"]}],
+      "src": {"database": "db1", "catalog": "web", "schema": "public", "entity": "legacy_slug", "attrs": [["cur_slug"]]},
+      "ref": {"schema": "cms", "entity": "posts", "attrs": [["settings", "slug"]]},
       "extra": {"line": 60, "statement": 9, "inline": true, "refAlias": "p"}
     },
     {
-      "kind": "many-to-many",
-      "src": {"entity": "organizations"},
-      "ref": {"entity": "users"},
-      "attrs": [{"src": ["id"], "ref": ["id"]}],
+      "src": {"entity": "organizations", "attrs": [["id"]]},
+      "ref": {"entity": "users", "attrs": [["id"]], "cardinality": "n"},
       "extra": {"line": 63, "statement": 10, "inline": true, "natural": "ref"}
     },
     {
-      "kind": "one-to-one",
-      "src": {"database": "identity", "entity": "profiles"},
-      "ref": {"entity": "users"},
-      "attrs": [{"src": ["id"], "ref": ["id"]}],
+      "src": {"database": "identity", "entity": "profiles", "attrs": [["id"]], "cardinality": "1"},
+      "ref": {"entity": "users", "attrs": [["id"]]},
       "extra": {"line": 68, "statement": 11, "inline": true}
     },
     {
-      "kind": "many-to-many",
-      "src": {"catalog": "social", "entity": "social_accounts"},
-      "ref": {"entity": "users"},
-      "attrs": [],
+      "src": {"catalog": "social", "entity": "social_accounts", "attrs": []},
+      "ref": {"entity": "users", "attrs": [["id"]], "cardinality": "n"},
       "doc": "natural many-to-many relation",
       "extra": {"line": 88, "statement": 21, "natural": "both"}
     }
@@ -244,6 +228,6 @@
   ],
   "extra": {
     "comments": [{"line": 1, "comment": ""}, {"line": 2, "comment": "Full Schema AML"}, {"line": 3, "comment": ""}],
-    "namespaces": [{"line":  84, "catalog":  "social"}]
+    "namespaces": [{"line": 84, "catalog": "social"}]
   }
 }

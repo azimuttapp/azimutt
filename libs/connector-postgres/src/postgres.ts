@@ -1,6 +1,7 @@
 import {parse} from "postgres-array";
 import {
     groupBy,
+    isNotUndefined,
     Logger,
     mapEntriesAsync,
     mapValues,
@@ -600,28 +601,20 @@ function buildRelation(r: RawRelation, columnsByIndex: Record<EntityId, { [i: nu
     const ref = {schema: r.target_schema, entity: r.target_table}
     const srcId = entityRefToId(src)
     const refId = entityRefToId(ref)
+    const srcAttrs: AttributePath[] = r.table_columns.map(src => columnsByIndex[srcId] && columnsByIndex[srcId][src] ? [columnsByIndex[srcId][src]] : undefined).filter(isNotUndefined)
+    const refAttrs: AttributePath[] = r.target_columns.map(ref => columnsByIndex[refId] && columnsByIndex[refId][ref] ? [columnsByIndex[srcId][ref]] : undefined).filter(isNotUndefined)
     const rel = {
         name: r.constraint_name,
-        kind: undefined, // 'many-to-one' when not specified
         origin: undefined, // 'fk' when not specified
-        src,
-        ref,
-        attrs: zip(r.table_columns, r.target_columns)
-            .map(([src, ref]) => {
-                if (columnsByIndex[srcId] && columnsByIndex[srcId][src] && columnsByIndex[refId] && columnsByIndex[refId][ref]) {
-                    return {src: [columnsByIndex[srcId][src]], ref: [columnsByIndex[refId][ref]]}
-                } else {
-                    return undefined
-                }
-            })
-            .filter((attr): attr is { src: AttributePath, ref: AttributePath } => !!attr),
+        src: {...src, attrs: srcAttrs},
+        ref: {...ref, attrs: refAttrs},
         polymorphic: undefined,
         doc: r.relation_comment || undefined,
         extra: undefined
     }
     // don't keep relation if columns are not found :/
     // should not happen if errors are not skipped
-    return rel.attrs.length > 0 ? removeUndefined(rel) : undefined
+    return rel.src.attrs.length > 0 ? removeUndefined(rel) : undefined
 }
 
 export type RawTypeKind = 'b' | 'c' | 'd' | 'e' | 'p' | 'r' | 'm' // b: base, c: composite, d: domain, e: enum, p: pseudo-type, r: range, m: multirange

@@ -52,7 +52,7 @@ function genEntity(e: Entity, relations: Relation[]): string {
     const attrTable = attrs.length > 0 ? mdTable(attrs.map(a => ['**' + a.attr + '**', a.type, a.props, a.ref, a.doc]), ['Attribute', 'Type', 'Properties', 'Reference', 'Documentation']) + '\n' : ''
     const compositeIndexes = (e.indexes || []).filter(i => i.attrs.length > 1).map(i => `- ${i.unique ? 'unique ' : ''}index on (${i.attrs.map(genAttributePath).join(', ')})${i.name ? `: ${i.name}` : ''}\n`)
     const compositeChecks = (e.checks || []).filter(c => c.attrs.length > 1).map(i => `- check(${i.predicate})${i.name ? `: ${i.name}` : ''}\n`)
-    const compositeRelations = relations.filter(r => r.attrs.length > 1).map(r => `- relation: ${genEntityRef(r.src)}(${r.attrs.map(a => genAttributePath(a.src)).join(', ')}) -> ${genEntityRef(r.ref)}(${r.attrs.map(a => genAttributePath(a.ref)).join(', ')})\n`)
+    const compositeRelations = relations.filter(r => r.src.attrs.length > 1).map(r => `- relation: ${genEntityRef(r.src)}(${r.src.attrs.map(genAttributePath).join(', ')}) -> ${genEntityRef(r.ref)}(${r.ref.attrs.map(genAttributePath).join(', ')})\n`)
     const constraints = compositeIndexes.concat(compositeChecks, compositeRelations)
     return `### ${genName(e)}\n\n${doc}${def}${attrTable}${constraints.length > 0 ? `Constraints:\n\n${constraints.join('')}\n` : ''}`
 }
@@ -69,8 +69,8 @@ function genAttribute(a: Attribute, e: Entity, relations: Relation[]): Attribute
     const checks = (e.checks || []).filter(c => c.attrs.length === 1 && attributePathSame(c.attrs[0], [a.name])).map(c => c.predicate ? `check(${c.predicate})` : 'check')
     const notNull = a.null ? 'nullable' : ''
     const props = [pk, unique, index, ...checks, notNull].filter(k => !!k).join(', ')
-    const attrRelations = relations.filter(r => r.attrs.length === 1 && attributePathSame(r.attrs[0].src, [a.name]))
-    const ref = attrRelations.length > 0 ? joinLast(attrRelations.map(r => `${genEntityRef(r.ref)}.${genAttributePath(r.attrs[0].ref)}${r.polymorphic ? ` (${genAttributePath(r.polymorphic.attribute)}=${genAttributeValue(r.polymorphic.value)})` : ''}`), ', ', ' or ') : ''
+    const attrRelations = relations.filter(r => r.src.attrs.length === 1 && attributePathSame(r.src.attrs[0], [a.name]))
+    const ref = attrRelations.length > 0 ? joinLast(attrRelations.map(r => `${genEntityRef(r.ref)}.${genAttributePath(r.ref.attrs[0])}${r.polymorphic ? ` (${genAttributePath(r.polymorphic.attribute)}=${genAttributeValue(r.polymorphic.value)})` : ''}`), ', ', ' or ') : ''
     return {attr: a.name, type: a.type, props, ref, doc: a.doc?.replaceAll(/\n/g, '\\n') || ''}
 }
 

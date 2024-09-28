@@ -412,14 +412,14 @@
       ],
       "additionalProperties": false
     },
+    "ConstraintName": {
+      "type": "string"
+    },
     "Relation": {
       "type": "object",
       "properties": {
         "name": {
           "$ref": "#/definitions/ConstraintName"
-        },
-        "kind": {
-          "$ref": "#/definitions/RelationKind"
         },
         "origin": {
           "type": "string",
@@ -432,29 +432,10 @@
           ]
         },
         "src": {
-          "$ref": "#/definitions/EntityRef"
+          "$ref": "#/definitions/RelationLink"
         },
         "ref": {
-          "$ref": "#/definitions/EntityRef"
-        },
-        "attrs": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "src": {
-                "$ref": "#/definitions/AttributePath"
-              },
-              "ref": {
-                "$ref": "#/definitions/AttributePath"
-              }
-            },
-            "required": [
-              "src",
-              "ref"
-            ],
-            "additionalProperties": false
-          }
+          "$ref": "#/definitions/RelationLink"
         },
         "polymorphic": {
           "type": "object",
@@ -480,21 +461,47 @@
       },
       "required": [
         "src",
-        "ref",
+        "ref"
+      ],
+      "additionalProperties": false
+    },
+    "RelationLink": {
+      "type": "object",
+      "properties": {
+        "database": {
+          "$ref": "#/definitions/Namespace/properties/database"
+        },
+        "catalog": {
+          "$ref": "#/definitions/Namespace/properties/catalog"
+        },
+        "schema": {
+          "$ref": "#/definitions/Namespace/properties/schema"
+        },
+        "entity": {
+          "$ref": "#/definitions/EntityName"
+        },
+        "attrs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AttributePath"
+          }
+        },
+        "cardinality": {
+          "$ref": "#/definitions/RelationCardinality"
+        }
+      },
+      "required": [
+        "entity",
         "attrs"
       ],
       "additionalProperties": false
     },
-    "ConstraintName": {
-      "type": "string"
-    },
-    "RelationKind": {
+    "RelationCardinality": {
       "type": "string",
       "enum": [
-        "many-to-one",
-        "one-to-many",
-        "one-to-one",
-        "many-to-many"
+        "0",
+        "1",
+        "n"
       ]
     },
     "Type": {
@@ -635,12 +642,6 @@
             },
             "view": {
               "type": "string"
-            },
-            "dependsOn": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
             },
             "color": {
               "type": "string"

@@ -6,13 +6,13 @@ import {ruleConf} from "../rule.test";
 describe('relationMissAttribute', () => {
     const now = Date.now()
     test('valid relation', () => {
-        const postAuthor: Relation = {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]}
+        const postAuthor: Relation = {src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}}
         const users: Entity = {name: 'users', attrs: [{name: 'id', type: 'uuid'}]}
         const posts: Entity = {name: 'posts', attrs: [{name: 'author', type: 'uuid'}]}
         expect(getMissingAttributeRelations(postAuthor, {users, posts})).toEqual(undefined)
     })
     test('missing attributes', () => {
-        const postAuthor: Relation = {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]}
+        const postAuthor: Relation = {src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}}
         const users: Entity = {name: 'users', attrs: [{name: 'id', type: 'uuid'}]}
         expect(getMissingAttributeRelations(postAuthor, {users, posts: {name: 'posts', attrs: []}})).toEqual({relation: postAuthor, missing: [
             {entity: 'posts', attribute: ['author']}
@@ -29,7 +29,7 @@ describe('relationMissAttribute', () => {
                 {name: 'posts', attrs: [{name: 'id', type: 'uuid'}]},
             ],
             relations: [
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}]},
+                {src: {entity: 'posts', attrs: [['created_by']]}, ref: {entity: 'users', attrs: [['id']]}},
             ]
         }
         expect(relationMissAttributeRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
@@ -44,8 +44,8 @@ describe('relationMissAttribute', () => {
                 {name: 'events', attrs: [{name: 'id', type: 'uuid'}]},
             ],
             relations: [
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}]},
-                {src: {entity: 'events'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['email']}]},
+                {src: {entity: 'posts', attrs: [['created_by']]}, ref: {entity: 'users', attrs: [['id']]}},
+                {src: {entity: 'events', attrs: [['created_by']]}, ref: {entity: 'users', attrs: [['email']]}},
             ]
         }
         expect(relationMissAttributeRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
@@ -59,7 +59,7 @@ describe('relationMissAttribute', () => {
         expect(relationMissAttributeRule.analyze({...ruleConf, ignores: ['events(created_by)', 'users(email)']}, now, db, [], [], []).map(v => v.message)).toEqual([
             'Relation posts(created_by)->users(id), not found attributes: posts(created_by)',
         ])
-        expect(relationMissAttributeRule.analyze(ruleConf, now, db, [], [], [{message: '', extra: {relation: {src: {entity: 'events'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['email']}]}}}]).map(v => v.message)).toEqual([
+        expect(relationMissAttributeRule.analyze(ruleConf, now, db, [], [], [{message: '', extra: {relation: {src: {entity: 'events', attrs: [['created_by']]}, ref: {entity: 'users', attrs: [['email']]}}}}]).map(v => v.message)).toEqual([
             'Relation posts(created_by)->users(id), not found attributes: posts(created_by)',
         ])
     })

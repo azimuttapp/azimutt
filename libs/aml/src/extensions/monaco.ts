@@ -249,7 +249,7 @@ export function suggestAttributeProps(suggestions: CompletionItem[], position: P
     suggestions.push(suggestText('->', CompletionItemKind.Interface, position))
 }
 export function suggestRelationRef(suggestions: CompletionItem[], position: Position, entities: Entity[], attrs: number | undefined, prefix: string): void {
-    entities.map(e => e.pk && (attrs === undefined || e.pk.attrs.length === attrs) ? prefix + genAttributeRef(entityToRef(e), e.pk.attrs, {}, false, undefined, false) : '')
+    entities.map(e => e.pk && (attrs === undefined || e.pk.attrs.length === attrs) ? prefix + genAttributeRef({...entityToRef(e), attrs: e.pk.attrs}, {}, false, undefined, false) : '')
         .filter(rel => !!rel)
         .forEach(rel => suggestions.push(suggestText(rel, CompletionItemKind.Interface, position)))
 }

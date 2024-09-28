@@ -1,5 +1,5 @@
 import {z} from "zod";
-import {indexBy, isNotUndefined} from "@azimutt/utils";
+import {indexBy, isNotUndefined, zip} from "@azimutt/utils";
 import {Timestamp} from "../../common";
 import {AttributeId, AttributeRef, Database, Entity, EntityId, Relation, RelationRef} from "../../database";
 import {
@@ -9,6 +9,7 @@ import {
     entityRefToId,
     entityToId,
     getAttribute,
+    relationLinkToEntityRef,
     relationRefSame,
     relationToId,
     relationToRef
@@ -72,15 +73,15 @@ export function getMissingAttributeRelations(relation: Relation, entities: Recor
     const ref = entities[entityRefToId(relation.ref)]
     if (!src || !ref) { return undefined }
 
-    const attrs = relation.attrs.map(attr => ({
-        src: attr.src,
-        srcAttr: getAttribute(src.attrs, attr.src),
-        ref: attr.ref,
-        refAttr: getAttribute(ref.attrs, attr.ref),
+    const attrs = zip(relation.src.attrs, relation.ref.attrs).map(([srcAttr, refAttr]) => ({
+        src: srcAttr,
+        srcAttr: getAttribute(src.attrs, srcAttr),
+        ref: refAttr,
+        refAttr: getAttribute(ref.attrs, refAttr),
     }))
     const missing: AttributeRef[] = attrs.flatMap(attr => [
-        attr.srcAttr ? undefined : {...relation.src, attribute: attr.src},
-        attr.refAttr ? undefined : {...relation.ref, attribute: attr.ref},
+        attr.srcAttr ? undefined : {...relationLinkToEntityRef(relation.src), attribute: attr.src},
+        attr.refAttr ? undefined : {...relationLinkToEntityRef(relation.ref), attribute: attr.ref},
     ].filter(isNotUndefined))
     return missing.length > 0 ? {relation, missing} : undefined
 }

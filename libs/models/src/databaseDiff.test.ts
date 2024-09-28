@@ -11,7 +11,7 @@ describe('databaseDiff', () => {
                 {name: 'users', attrs: [{name: 'id', type: 'uuid'}]},
                 {name: 'posts', attrs: [{name: 'id', type: 'uuid'}, {name: 'author', type: 'uuid'}]},
             ],
-            relations: [{src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]}]
+            relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}}]
         }
         expect(databaseDiff(db, db)).toEqual({})
         expect(databaseEvolve(db, {})).toEqual(db)

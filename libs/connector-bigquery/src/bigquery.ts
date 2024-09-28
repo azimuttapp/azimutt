@@ -1,5 +1,5 @@
 import {BigQueryTimestamp, Dataset, DatasetsResponse} from "@google-cloud/bigquery";
-import {groupBy, joinLimit, pluralizeL, removeEmpty, removeUndefined, sequence, zip} from "@azimutt/utils";
+import {groupBy, joinLimit, pluralizeL, removeEmpty, removeUndefined, sequence} from "@azimutt/utils";
 import {
     Attribute,
     ConnectorSchemaOpts,
@@ -303,11 +303,9 @@ export const getForeignKeys = (projectId: string, datasetId: string, opts: Conne
 function buildRelation(fk: RawForeignKey): Relation {
     return removeUndefined({
         name: fk.constraint_name,
-        kind: undefined,
         origin: undefined,
-        src: { schema: fk.table_schema, entity: fk.table_name },
-        ref: { schema: fk.target_schema, entity: fk.target_name },
-        attrs: zip(fk.table_columns, fk.target_columns).map(([src, ref]) => ({src: [src], ref: [ref]})),
+        src: { schema: fk.table_schema, entity: fk.table_name, attrs: [fk.table_columns] },
+        ref: { schema: fk.target_schema, entity: fk.target_name, attrs: [fk.target_columns] },
         polymorphic: undefined,
         doc: undefined,
         extra: undefined

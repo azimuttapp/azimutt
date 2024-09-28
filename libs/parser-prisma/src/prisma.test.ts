@@ -67,9 +67,8 @@ model Post {
             }],
             relations: [{
                 name: 'fk_Post_authorId_User_id',
-                src: {entity: 'Post'},
-                ref: {entity: 'User'},
-                attrs: [{src: ['authorId'], ref: ['id']}]
+                src: {entity: 'Post', attrs: [['authorId']]},
+                ref: {entity: 'User', attrs: [['id']]},
             }],
             extra: {source: 'Prisma parser <0.1.1>'},
         }
@@ -139,9 +138,8 @@ type Photo {
             }],
             relations: [{
                 name: 'fk_Post_authorId_users_id',
-                src: {entity: 'Post'},
-                ref: {schema: 'auth', entity: 'users'},
-                attrs: [{src: ['authorId'], ref: ['id']}]
+                src: {entity: 'Post', attrs: [['authorId']]},
+                ref: {schema: 'auth', entity: 'users', attrs: [['id']]},
             }],
             types: [
                 {name: 'Role', values: ['USER', 'ADMIN']},
@@ -185,9 +183,8 @@ model Post {
             }],
             relations: [{
                 name: 'fk_posts_author_id_users__id',
-                src: {schema: 'public', entity: 'posts'},
-                ref: {schema: 'public', entity: 'users'},
-                attrs: [{src: ['author_id'], ref: ['_id']}]
+                src: {schema: 'public', entity: 'posts', attrs: [['author_id']]},
+                ref: {schema: 'public', entity: 'users', attrs: [['_id']]},
             }],
             extra: {source: 'Prisma parser <0.1.1>'}
         }

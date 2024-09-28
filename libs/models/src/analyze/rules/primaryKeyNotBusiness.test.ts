@@ -12,8 +12,8 @@ describe('primaryKeyNotBusiness', () => {
     test('primary key has relations', () => {
         const userRoles: Entity = {name: 'user_roles', attrs: [{name: 'user', type: 'uuid'}, {name: 'role', type: 'uuid'}], pk: {attrs: [['user'], ['role']]}}
         expect(isPrimaryKeyTechnical(userRoles, [
-            {src: {entity: 'user_roles'}, ref: {entity: 'users'}, attrs: [{src: ['user'], ref: ['id']}]},
-            {src: {entity: 'user_roles'}, ref: {entity: 'roles'}, attrs: [{src: ['role'], ref: ['id']}]},
+            {src: {entity: 'user_roles', attrs: [['user']]}, ref: {entity: 'users', attrs: [['id']]}},
+            {src: {entity: 'user_roles', attrs: [['role']]}, ref: {entity: 'roles', attrs: [['id']]}},
         ])).toEqual(true)
     })
     test('primary key not technical', () => {

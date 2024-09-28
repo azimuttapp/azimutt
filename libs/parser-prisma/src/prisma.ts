@@ -127,9 +127,8 @@ function formatRelation(schema: PrismaSchema, model: ModelDeclaration, field: Fi
         const refFieldName = refField ? getAttributeName(refField) : ref
         return {
             name: `fk_${srcTableName}_${srcFieldName}_${refTableName}_${refFieldName}`,
-            src: removeUndefined({schema: getEntitySchema(model) || undefined, entity: srcTableName}),
-            ref: removeUndefined({schema: refModel ? getEntitySchema(refModel) || undefined : undefined, entity: refTableName}),
-            attrs: [{src: [srcFieldName], ref: [refFieldName]}]
+            src: removeUndefined({schema: getEntitySchema(model) || undefined, entity: srcTableName, attrs: [[srcFieldName]]}),
+            ref: removeUndefined({schema: refModel ? getEntitySchema(refModel) || undefined : undefined, entity: refTableName, attrs: [[refFieldName]]}),
         }
     })
 }

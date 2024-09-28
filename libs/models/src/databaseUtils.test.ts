@@ -408,9 +408,8 @@ describe('databaseUtils', () => {
             }],
             relations: [{
                 name: 'posts_created_by_fk',
-                src: {entity: 'posts'},
-                ref: {entity: 'users'},
-                attrs: [{src: ['created_by'], ref: ['id']}]
+                src: {entity: 'posts', attrs: [['created_by']]},
+                ref: {entity: 'users', attrs: [['id']]},
             }],
             types: [{name: 'user_role', values: ['admin', 'guest']}],
             doc: 'CMS database',
@@ -461,9 +460,8 @@ describe('databaseUtils', () => {
   "relations": [
     {
       "name": "posts_created_by_fk",
-      "src": {"entity": "posts"},
-      "ref": {"entity": "users"},
-      "attrs": [{"src": ["created_by"], "ref": ["id"]}]
+      "src": {"entity": "posts", "attrs": [["created_by"]]},
+      "ref": {"entity": "users", "attrs": [["id"]]}
     }
   ],
   "types": [

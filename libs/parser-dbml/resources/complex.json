@@ -57,10 +57,10 @@
     "indexes": [{"name": "created_at_index", "attrs": [["created_at"]], "doc": "Date"}]
   }],
   "relations": [
-    {"src": {"entity": "profiles"}, "ref": {"entity": "users"}, "attrs": [{"src": ["user_id"], "ref": ["id"]}], "kind":  "one-to-one"},
-    {"src": {"entity": "user_roles"}, "ref": {"entity": "users"}, "attrs": [{"src": ["user_id"], "ref": ["id"]}]},
-    {"src": {"entity": "user_roles"}, "ref": {"entity": "roles"}, "attrs": [{"src": ["role_id"], "ref": ["id"]}]},
-    {"src": {"schema": "blog", "entity": "posts"}, "ref": {"entity": "users"}, "attrs": [{"src": ["author"], "ref": ["id"]}]}
+    {"src": {"entity": "profiles", "attrs": [["user_id"]], "cardinality": "1"}, "ref": {"entity": "users", "attrs": [["id"]]}},
+    {"src": {"entity": "user_roles", "attrs": [["user_id"]]}, "ref": {"entity": "users", "attrs": [["id"]]}},
+    {"src": {"entity": "user_roles", "attrs": [["role_id"]]}, "ref": {"entity": "roles", "attrs": [["id"]]}},
+    {"src": {"schema": "blog", "entity": "posts", "attrs": [["author"]]}, "ref": {"entity": "users", "attrs": [["id"]]}}
   ],
   "types": [
     {"schema": "blog", "name": "post_status", "values": ["draft", "published", "archived"], "extra": {"notes": {"draft": "Waiting to be processed"}}}

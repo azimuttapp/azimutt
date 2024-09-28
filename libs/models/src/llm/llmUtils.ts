@@ -12,8 +12,8 @@ ${entities.join('\n')}
 }
 
 export function entityToPrompt(e: Entity, rels: Relation[]): string {
-    const [compositeRelations, simpleRelations] = partition(rels, r => r.attrs.length > 1)
-    const simpleRelationsByAttr = groupBy(simpleRelations, r => attributePathToId(r.attrs[0].src))
+    const [compositeRelations, simpleRelations] = partition(rels, r => r.src.attrs.length > 1)
+    const simpleRelationsByAttr = groupBy(simpleRelations, r => attributePathToId(r.src.attrs[0]))
     const polymorphicRelations = Object.values(simpleRelationsByAttr).filter(rs => rs.length > 1).flatMap(rs => rs)
     const attrs = (e.attrs || []).map(a => attributeToPrompt(a, simpleRelationsByAttr[a.name] || []))
     const otherRels = compositeRelations.concat(polymorphicRelations).map(entityForeignKey)
@@ -21,11 +21,11 @@ export function entityToPrompt(e: Entity, rels: Relation[]): string {
 }
 
 function attributeToPrompt(a: Attribute, rels: Relation[]): string {
-    return `${a.name} ${a.type}${rels.length === 1 ? ` REFERENCES ${entityRefToId(rels[0].ref)}(${attributePathToId(rels[0].attrs[0].ref)})` : ''}`
+    return `${a.name} ${a.type}${rels.length === 1 ? ` REFERENCES ${entityRefToId(rels[0].ref)}(${attributePathToId(rels[0].ref.attrs[0])})` : ''}`
 }
 
 function entityForeignKey(r: Relation): string {
-    return `FOREIGN KEY (${r.attrs.map(a => attributePathToId(a.src)).join(', ')}) REFERENCES ${entityRefToId(r.ref)}(${r.attrs.map(a => attributePathToId(a.ref)).join(', ')})`
+    return `FOREIGN KEY (${r.src.attrs.map(attributePathToId).join(', ')}) REFERENCES ${entityRefToId(r.ref)}(${r.ref.attrs.map(attributePathToId).join(', ')})`
 }
 
 export function cleanSqlAnswer(answer: string): string {

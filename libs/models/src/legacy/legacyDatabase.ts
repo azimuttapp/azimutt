@@ -1,5 +1,5 @@
 import {z} from "zod";
-import {removeEmpty, removeUndefined, stringify} from "@azimutt/utils";
+import {removeEmpty, removeUndefined, stringify, zip} from "@azimutt/utils";
 import {
     Attribute,
     AttributePath,
@@ -389,14 +389,13 @@ function checkToLegacy(c: Check): LegacyCheck {
 export function relationFromLegacy(r: LegacyRelation): Relation {
     return removeUndefined({
         name: r.name || undefined,
-        src: columnRefFromLegacy2(r.src),
-        ref: columnRefFromLegacy2(r.ref),
-        attrs: [{src: r.src.column.split(legacyColumnPathSeparator), ref: r.ref.column.split(legacyColumnPathSeparator)}],
+        src: {...columnRefFromLegacy2(r.src), attrs: [r.src.column.split(legacyColumnPathSeparator)]},
+        ref: {...columnRefFromLegacy2(r.ref), attrs: [r.ref.column.split(legacyColumnPathSeparator)]},
     })
 }
 
 function relationToLegacy(r: Relation): LegacyRelation[] {
-    return r.attrs.map(attr => ({ name: r.name || '', src: columnRefToLegacy2(r.src, attr.src), ref: columnRefToLegacy2(r.ref, attr.ref) }))
+    return zip(r.src.attrs, r.ref.attrs).map(([srcAttr, refAttr]) => ({ name: r.name || '', src: columnRefToLegacy2(r.src, srcAttr), ref: columnRefToLegacy2(r.ref, refAttr) }))
 }
 
 export function tableRefFromId(id: LegacyTableId): LegacyTableRef {

@@ -1,4 +1,4 @@
-import {isNever, partition} from "@azimutt/utils";
+import {isNever, partition, zip} from "@azimutt/utils";
 import {
     Attribute,
     attributeExtraKeys,
@@ -11,7 +11,6 @@ import {
     Entity,
     entityExtraKeys,
     entityExtraProps,
-    EntityRef,
     entityRefSame,
     entityToRef,
     Extra,
@@ -20,6 +19,7 @@ import {
     Relation,
     relationExtraKeys,
     relationExtraProps,
+    RelationLink,
     Type,
     typeExtraKeys,
     typeExtraProps
@@ -77,13 +77,13 @@ export function genEntity(e: Entity, namespace: Namespace, relations: Relation[]
     const alias = e.extra?.alias && !legacy ? ' as ' + genIdentifier(e.extra.alias) : ''
     const props = !legacy ? genProperties(e.extra, e.kind === 'view' && !legacy ? {view: e.def?.replaceAll(/\n/g, '\\n')} : {}, entityExtraKeys.filter(k => !entityExtraProps.includes(k))) : ''
     const entity = `${genName(e, namespace, legacy)}${legacyView}${alias}${props}${genDoc(e.doc, legacy)}${genComment(e.extra?.comment)}\n`
-    return entity + (e.attrs ? e.attrs.map(a => genAttribute(a, e, namespace, relations.filter(r => r.attrs[0].src[0] === a.name), types, legacy)).join('') : '')
+    return entity + (e.attrs ? e.attrs.map(a => genAttribute(a, e, namespace, relations.filter(r => r.src.attrs[0][0] === a.name), types, legacy)).join('') : '')
 }
 
 function genAttribute(a: Attribute, e: Entity, namespace: Namespace, relations: Relation[], types: Type[], legacy: boolean, parents: AttributePath = []): string {
     const path = [...parents, a.name]
     const indent = '  '.repeat(path.length)
-    const attrRelations = relations.filter(r => attributePathSame(path, r.attrs[0].src))
+    const attrRelations = relations.filter(r => attributePathSame(path, r.src.attrs[0]))
     const nested = !legacy ? a.attrs?.map(aa => genAttribute(aa, e, namespace, relations, types, legacy, path)).join('') || '' : ''
     return indent + genAttributeInner(a, e, namespace, attrRelations, types, path, indent, legacy) + '\n' + nested
 }
@@ -131,25 +131,24 @@ function genAttributeValueStr(value: string): string {
 }
 
 function genRelation(r: Relation, namespace: Namespace, legacy: boolean): string {
-    if (legacy && r.attrs.length > 1) return r.attrs.map(attr => genRelation({...r, attrs: [attr]}, namespace, legacy)).join('') // in v1 composite relations are defined as several relations
+    if (legacy && r.src.attrs.length > 1) return zip(r.src.attrs, r.ref.attrs).map(([srcAttr, refAttr]) => genRelation({...r, src: {...r.src, attrs: [srcAttr]}, ref: {...r.ref, attrs: [refAttr]}}, namespace, legacy)).join('') // in v1 composite relations are defined as several relations
     if (legacy && (r.extra?.natural === 'both' || r.extra?.natural === 'src')) return '' // v1 doesn't support src natural relation
     const srcNatural: boolean = !r.extra?.inline && (r.extra?.natural === 'src' || r.extra?.natural === 'both')
     const props = !legacy ? genProperties(r.extra, {}, relationExtraKeys.filter(k => !relationExtraProps.includes(k))) : ''
-    return `${legacy ? 'fk' : 'rel'} ${genAttributeRef(r.src, r.attrs.map(a => a.src), namespace, srcNatural, r.extra?.srcAlias, legacy)} ${genRelationTarget(r, namespace, true, legacy)}${props}${genDoc(r.doc, legacy)}${genComment(r.extra?.comment)}\n`
+    return `${legacy ? 'fk' : 'rel'} ${genAttributeRef(r.src, namespace, srcNatural, r.extra?.srcAlias, legacy)} ${genRelationTarget(r, namespace, true, legacy)}${props}${genDoc(r.doc, legacy)}${genComment(r.extra?.comment)}\n`
 }
 
 function genRelationTarget(r: Relation, namespace: Namespace, standalone: boolean, legacy: boolean): string {
     const poly = r.polymorphic && !legacy ? `${r.polymorphic.attribute}=${r.polymorphic.value}` : ''
-    const [qSrc, qRef] = (r.kind || 'many-to-one').split('-to-')
-    const aSecond = qSrc === 'many' ? '>' : '-'
-    const aFirst = qRef === 'many' ? '<' : '-'
+    const aSecond = (r.src.cardinality || 'n') === 'n' ? '>' : '-'
+    const aFirst = (r.ref.cardinality || '1') === 'n' ? '<' : '-'
     const refNatural = r.extra?.natural === 'ref' || r.extra?.natural === 'both'
-    return `${legacy && !standalone ? 'fk' : aFirst + poly + aSecond} ${genAttributeRef(r.ref, r.attrs.map(a => a.ref), namespace, refNatural, r.extra?.refAlias, legacy)}`
+    return `${legacy && !standalone ? 'fk' : aFirst + poly + aSecond} ${genAttributeRef(r.ref, namespace, refNatural, r.extra?.refAlias, legacy)}`
 }
 
-export function genAttributeRef(e: EntityRef, attrs: AttributePath[], namespace: Namespace, natural: boolean, alias: string | undefined, legacy: boolean): string {
-    if (legacy) return `${genName({...e, name: e.entity}, namespace, legacy)}.${attrs.map(a => genAttributePath(a, legacy)).join(':')}`
-    return `${alias ? alias : genName({...e, name: e.entity}, namespace, legacy)}${natural || attrs.length === 0 ? '' : `(${attrs.map(a => genAttributePath(a, legacy)).join(', ')})`}`
+export function genAttributeRef(l: RelationLink, namespace: Namespace, natural: boolean, alias: string | undefined, legacy: boolean): string {
+    if (legacy) return `${genName({...l, name: l.entity}, namespace, legacy)}.${l.attrs.map(a => genAttributePath(a, legacy)).join(':')}`
+    return `${alias ? alias : genName({...l, name: l.entity}, namespace, legacy)}${natural || l.attrs.length === 0 ? '' : `(${l.attrs.map(a => genAttributePath(a, legacy)).join(', ')})`}`
 }
 
 function genAttributePath(p: AttributePath, legacy: boolean): string {

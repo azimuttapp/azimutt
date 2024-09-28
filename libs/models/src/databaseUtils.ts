@@ -29,12 +29,15 @@ import {
     NamespaceId,
     Relation,
     RelationId,
+    RelationLink,
     RelationRef,
     Type,
     TypeId,
     TypeRef
 } from "./database";
 import {ParserResult} from "./parserResult";
+
+const namespace = (n: Namespace) => removeUndefined({database: n.database, catalog: n.catalog, schema: n.schema})
 
 export const namespaceToId = (n: Namespace): NamespaceId => [
     n.database || '',
@@ -64,7 +67,7 @@ export const entityRefSame = (a: EntityRef, b: EntityRef): boolean =>
     (a.catalog === b.catalog || a.catalog === '*' || b.catalog === '*') &&
     (a.database === b.database || a.database === '*' || b.database === '*')
 
-export const entityToRef = (e: Entity): EntityRef => removeUndefined({database: e.database, catalog: e.catalog, schema: e.schema, entity: e.name})
+export const entityToRef = (e: Entity): EntityRef => removeUndefined({...namespace(e), entity: e.name})
 export const entityToId = (e: Entity): EntityId => entityRefToId(entityToRef(e))
 
 export const entityRefFromAttribute = (a: AttributeRef): EntityRef => {
@@ -168,10 +171,12 @@ export const typeRefSame = (a: TypeRef, b: TypeRef): boolean =>
     (a.catalog === b.catalog || a.catalog === '*' || b.catalog === '*') &&
     (a.database === b.database || a.database === '*' || b.database === '*')
 
-export const typeToRef = (t: Type): TypeRef => removeUndefined({database: t.database, catalog: t.catalog, schema: t.schema, type: t.name})
+export const typeToRef = (t: Type): TypeRef => removeUndefined({...namespace(t), type: t.name})
 export const typeToId = (t: Type): TypeId => typeRefToId(typeToRef(t))
 
-export const relationToRef = (r: Relation): RelationRef => ({src: {...r.src, attributes: r.attrs.map(a => a.src)}, ref: {...r.ref, attributes: r.attrs.map(a => a.ref)}})
+export const relationLinkToEntityRef = (l: RelationLink): EntityRef => removeUndefined({...namespace(l), entity: l.entity})
+export const relationLinkToAttributeRef = (l: RelationLink): AttributesRef => ({...relationLinkToEntityRef(l), attributes: l.attrs})
+export const relationToRef = (r: Relation): RelationRef => ({src: relationLinkToAttributeRef(r.src), ref: relationLinkToAttributeRef(r.ref)})
 export const relationToId = (r: Relation): RelationId => relationRefToId(relationToRef(r))
 
 export const relationRefToId = (ref: RelationRef): RelationId => `${attributesRefToId(ref.src)}->${attributesRefToId(ref.ref)}`

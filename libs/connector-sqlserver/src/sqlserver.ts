@@ -326,11 +326,9 @@ function buildRelation(columns: RawForeignKeyColumn[]): Relation {
     const first = columns[0]
     return removeUndefined({
         name: first.constraint_name,
-        kind: undefined,
         origin: undefined,
-        src: { schema: first.src_schema, entity: first.src_table },
-        ref: { schema: first.ref_schema, entity: first.ref_table },
-        attrs: columns.map(c => ({src: [c.src_column], ref: [c.ref_column]})),
+        src: { schema: first.src_schema, entity: first.src_table, attrs: columns.map(c => [c.src_column]) },
+        ref: { schema: first.ref_schema, entity: first.ref_table, attrs: columns.map(c => [c.ref_column]) },
         polymorphic: undefined,
         doc: undefined,
         extra: undefined

@@ -1,5 +1,5 @@
 import {z} from "zod";
-import {indexBy, isNotUndefined} from "@azimutt/utils";
+import {indexBy, isNotUndefined, zip} from "@azimutt/utils";
 import {Timestamp} from "../../common";
 import {
     AttributeRef,
@@ -16,6 +16,7 @@ import {
     entityRefToId,
     entityToId,
     getAttribute,
+    relationLinkToEntityRef,
     relationRefFromId,
     relationRefSame,
     relationToId,
@@ -67,8 +68,8 @@ export const relationMisalignedRule: Rule<CustomRuleConf> = {
                     ruleName,
                     ruleLevel: conf.level,
                     message: `Relation ${relationName(violation.relation)} link attributes different types: ${violation.misalignedTypes.map(formatMisalignedType).join(', ')}`,
-                    entity: violation.relation.src,
-                    attribute: violation.relation.attrs[0].src,
+                    entity: relationLinkToEntityRef(violation.relation.src),
+                    attribute: violation.relation.src.attrs[0],
                     extra: {relation, misalignedTypes: violation.misalignedTypes}
                 }
             })
@@ -87,18 +88,18 @@ export function getMisalignedRelation(relation: Relation, entities: Record<Entit
     const ref = entities[entityRefToId(relation.ref)]
     if (!src && !ref) { return undefined }
 
-    const attrs = relation.attrs.map(attr => ({
-        src: attr.src,
-        srcAttr: getAttribute(src.attrs, attr.src),
-        ref: attr.ref,
-        refAttr: getAttribute(ref.attrs, attr.ref),
+    const attrs = zip(relation.src.attrs, relation.ref.attrs).map(([srcAttr, refAttr]) => ({
+        src: srcAttr,
+        srcAttr: getAttribute(src.attrs, srcAttr),
+        ref: refAttr,
+        refAttr: getAttribute(ref.attrs, refAttr),
     }))
     if (attrs.some(a => !a.srcAttr || !a.refAttr)) { return undefined }
 
     const misalignedTypes: MisalignedType[] = attrs.flatMap(attr => attr.srcAttr && attr.refAttr && attr.srcAttr.type !== attr.refAttr.type ? [{
-        src: {...relation.src, attribute: attr.src},
+        src: {...relationLinkToEntityRef(relation.src), attribute: attr.src},
         srcType: attr.srcAttr?.type,
-        ref: {...relation.ref, attribute: attr.ref},
+        ref: {...relationLinkToEntityRef(relation.ref), attribute: attr.ref},
         refType: attr.refAttr?.type,
     }] : [])
     return misalignedTypes.length > 0 ? {relation, misalignedTypes} : undefined

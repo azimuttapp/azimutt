@@ -56,7 +56,7 @@ function genTable(e: Entity, relations: Relation[], typesById: Record<TypeId, Ty
     const indexes = (e.indexes || []).filter(i => !i.unique).map(i => genIndexCommand(i, e)).join('')
     const uniques = (e.indexes || []).filter(i => i.unique && i.attrs.length > 1).map(genUniqueEntity) // TODO: also unique on a single column when there is several
     const checks = (e.checks || []).filter(c => c.attrs.length > 1).map(genCheckEntity) // TODO: also check on a single column when there is several
-    const rels = relations.filter(r => r.attrs.length > 1).map(r => genRelationEntity(r))
+    const rels = relations.filter(r => r.src.attrs.length > 1).map(r => genRelationEntity(r))
     const comments = [genCommentEntity(e), ...(e.attrs || []).map(a => genCommentAttribute(a, e))].filter(c => !!c).join('')
     const inner = attrs.concat(pk, uniques, checks, rels).map(({value, comment}, i, arr) => '  ' + value + (arr[i + 1] ? `,` : '') + (comment ? ' -- ' + comment : '') + '\n').join('')
     return comment + `CREATE TABLE ${genEntityName(e)} (${inner ? '\n' + inner : ''});\n${indexes}${comments}`
@@ -85,9 +85,9 @@ function genAttribute(a: Attribute, e: Entity, relations: Relation[], typesById:
     const unique = attrUniques.length === 1 ? ' UNIQUE' : ''
     const attrChecks = (e.checks || []).filter(c => c.attrs.length === 1 && attributePathSame(c.attrs[0], [a.name]))
     const [check, checkComment] = attrChecks.length === 1 ? genCheckInline(attrChecks[0]) : ['', '']
-    const attrRelations = relations.filter(r => r.attrs.length === 1 && attributePathSame(r.attrs[0].src, [a.name]))
+    const attrRelations = relations.filter(r => r.src.attrs.length === 1 && attributePathSame(r.src.attrs[0], [a.name]))
     const [relation, relComment] = attrRelations.length === 1 ? genRelationInline(attrRelations[0]) : ['', '']
-    const relComment2 = attrRelations.length > 1 ? `references: ${joinLast(attrRelations.map(r => `${genEntityRef(r.ref)}.${showAttributePath(r.attrs[0].ref)}${r.polymorphic ? ` (${showAttributePath(r.polymorphic.attribute)}=${genAttributeValue(r.polymorphic.value)})` : ''}`), ', ', ' or ')}` : ''
+    const relComment2 = attrRelations.length > 1 ? `references: ${joinLast(attrRelations.map(r => `${genEntityRef(r.ref)}.${showAttributePath(r.ref.attrs[0])}${r.polymorphic ? ` (${showAttributePath(r.polymorphic.attribute)}=${genAttributeValue(r.polymorphic.value)})` : ''}`), ', ', ' or ')}` : ''
     const comment = [typeComment, checkComment, relComment, relComment2, a.extra?.comment || ''].filter(c => !!c).join(', ')
     return {value: `${genIdentifier(a.name)} ${type}${notNull}${df}${pk}${unique}${check}${relation}`, comment}
 }
@@ -122,18 +122,18 @@ function genCheckEntity(c: Check): TableInner {
 }
 
 function genRelationInline(relation: Relation): [string, string] {
-    if (relation.attrs.some(a => a.ref.length > 1)) {
-        return ['', `reference nested attribute ${genEntityRef(relation.ref)}(${relation.attrs.map(a => showAttributePath(a.ref)).join(', ')})`]
+    if (relation.ref.attrs.some(a => a.length > 1)) {
+        return ['', `reference nested attribute ${genEntityRef(relation.ref)}(${relation.ref.attrs.map(showAttributePath).join(', ')})`]
     } else {
-        return [` REFERENCES ${genEntityRef(relation.ref)}(${relation.attrs.map(a => genAttributePath(a.ref)).join(', ')})`, '']
+        return [` REFERENCES ${genEntityRef(relation.ref)}(${relation.ref.attrs.map(genAttributePath).join(', ')})`, '']
     }
 }
 
 function genRelationEntity(relation: Relation): TableInner {
     const name = relation.name ? `CONSTRAINT ${genIdentifier(relation.name)} ` : ''
-    const src = relation.attrs.map(a => genAttributePath(a.src)).join(', ')
+    const src = relation.src.attrs.map(genAttributePath).join(', ')
     const refTable = `${genNamespace(relation.ref)}${genIdentifier(relation.ref.entity)}`
-    const refAttrs = relation.attrs.map(a => genAttributePath(a.ref)).join(', ')
+    const refAttrs = relation.ref.attrs.map(genAttributePath).join(', ')
     return {value: `${name}FOREIGN KEY (${src}) REFERENCES ${refTable}(${refAttrs})`}
 }
 

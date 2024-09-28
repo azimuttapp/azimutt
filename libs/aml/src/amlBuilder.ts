@@ -1,4 +1,4 @@
-import {groupBy, isNever, isNotUndefined, removeEmpty, removeUndefined, zip} from "@azimutt/utils";
+import {groupBy, isNever, isNotUndefined, removeEmpty, removeUndefined} from "@azimutt/utils";
 import {
     Attribute,
     AttributePath,
@@ -18,7 +18,6 @@ import {
     Namespace,
     ParserError,
     Relation,
-    RelationKind,
     relationRefSame,
     relationToId,
     relationToRef,
@@ -34,7 +33,6 @@ import {
     AttributeAstNested,
     AttributeConstraintAst,
     AttributePathAst,
-    AttributeRefCompositeAst,
     AttributeRelationAst,
     AttributeValueAst,
     EntityRefAst,
@@ -47,8 +45,6 @@ import {
     PropertyValue,
     PropertyValueAst,
     PropertyValueBasic,
-    RelationKindAst,
-    RelationPolymorphicAst,
     RelationStatement,
     TypeContentAst,
     TypeStatement
@@ -269,39 +265,29 @@ function buildIndexes(indexes: (AttributeConstraintAst & { path: IdentifierToken
 
 function buildRelationStatement(entities: Entity[], aliases: Record<string, EntityRef>, namespace: Namespace, statement: number, r: RelationStatement): Relation | undefined {
     const [srcEntity, srcAlias] = buildEntityRef(r.src, namespace, aliases)
-    return buildRelation(entities, aliases, statement, r.src.entity.position.start.line, r.kind, srcEntity, srcAlias, r.src.attrs.map(buildAttrPath), r.ref, r.polymorphic, r, false)
+    return buildRelation(entities, aliases, statement, r.src.entity.position.start.line, srcEntity, srcAlias, r.src.attrs.map(buildAttrPath), r, r, false)
 }
 
 function buildRelationAttribute(entities: Entity[], aliases: Record<string, EntityRef>, statement: number, srcEntity: EntityRef, srcAttrs: AttributePath[], r: AttributeRelationAst): Relation | undefined {
-    return buildRelation(entities, aliases, statement, r.ref.entity?.position.start.line, r.kind, srcEntity, undefined, srcAttrs, r.ref, r.polymorphic, undefined, true)
+    return buildRelation(entities, aliases, statement, r.ref.entity?.position.start.line, srcEntity, undefined, srcAttrs, r, undefined, true)
 }
 
-function buildRelation(entities: Entity[], aliases: Record<string, EntityRef>, statement: number, line: number, kind: RelationKindAst | undefined, srcEntity: EntityRef, srcAlias: string | undefined, srcAttrs: AttributePath[], ref: AttributeRefCompositeAst, polymorphic: RelationPolymorphicAst | undefined, extra: ExtraAst | undefined, inline: boolean): Relation | undefined {
+function buildRelation(entities: Entity[], aliases: Record<string, EntityRef>, statement: number, line: number, srcEntity: EntityRef, srcAlias: string | undefined, srcAttrs: AttributePath[], rel: AttributeRelationAst, extra: ExtraAst | undefined, inline: boolean): Relation | undefined {
     // TODO: report an error instead of just ignoring?
-    if (!ref || !ref.entity.value || !ref.attrs || ref.attrs.some(a => a.value === undefined)) return undefined // `ref` can be undefined or with empty entity or undefined attrs on invalid input :/
-    const [refEntity, refAlias] = buildEntityRef(ref, {}, aliases) // current namespace not used for relation ref, good idea???
-    const refAttrs: AttributePath[] = ref.attrs.length > 0 ? ref.attrs.map(buildAttrPath) : entities.find(e => entityRefSame(entityToRef(e), refEntity))?.pk?.attrs || [['unknown']]
-    const natural = ref.attrs.length === 0 ? (srcAttrs.length === 0 ? 'both' : 'ref') : (srcAttrs.length === 0 ? 'src' : undefined)
+    if (!rel.ref || !rel.ref.entity.value || !rel.ref.attrs || rel.ref.attrs.some(a => a.value === undefined)) return undefined // `ref` can be undefined or with empty entity or undefined attrs on invalid input :/
+    const [refEntity, refAlias] = buildEntityRef(rel.ref, {}, aliases) // current namespace not used for relation ref, good idea???
+    const natural = rel.ref.attrs.length === 0 ? (srcAttrs.length === 0 ? 'both' : 'ref') : (srcAttrs.length === 0 ? 'src' : undefined)
+    const srcAttrs2: AttributePath[] = srcAttrs.length > 0 ? srcAttrs : entities.find(e => entityRefSame(entityToRef(e), srcEntity))?.pk?.attrs || []
+    const refAttrs: AttributePath[] = rel.ref.attrs.length > 0 ? rel.ref.attrs.map(buildAttrPath) : entities.find(e => entityRefSame(entityToRef(e), refEntity))?.pk?.attrs || []
     return removeUndefined({
         name: undefined,
-        kind: kind ? buildRelationKind(kind) : undefined,
         origin: undefined,
-        src: srcEntity,
-        ref: refEntity,
-        attrs: zip(srcAttrs, refAttrs).map(([srcAttr, refAttr]) => ({src: srcAttr, ref: refAttr})),
-        polymorphic: polymorphic ? {attribute: buildAttrPath(polymorphic.attr), value: buildAttrValue(polymorphic.value)} : undefined,
+        src: removeUndefined({...srcEntity, attrs: srcAttrs2, cardinality: rel.srcCardinality === 'n' ? undefined : rel.srcCardinality}),
+        ref: removeUndefined({...refEntity, attrs: refAttrs, cardinality: rel.refCardinality === '1' ? undefined : rel.refCardinality}),
+        polymorphic: rel.polymorphic ? {attribute: buildAttrPath(rel.polymorphic.attr), value: buildAttrValue(rel.polymorphic.value)} : undefined,
         doc: extra?.doc?.value,
         extra: buildExtra({line, statement, inline: inline ? true : undefined, natural, srcAlias, refAlias, comment: extra?.comment?.value}, extra || {}, []),
     })
-}
-
-function buildRelationKind(k: RelationKindAst): RelationKind | undefined {
-    switch (k) {
-        case '1-1': return 'one-to-one'
-        case '1-n': return 'one-to-many'
-        case 'n-1': return undefined // 'many-to-one' is default choice
-        case 'n-n': return 'many-to-many'
-    }
 }
 
 function buildEntityRef(e: EntityRefAst, namespace: Namespace, aliases: Record<string, EntityRef>): [EntityRef, string | undefined] {

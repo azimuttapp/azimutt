@@ -25,7 +25,7 @@ describe('database', () => {
                 ]
             }],
             relations: [
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]},
+                {src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}},
             ],
             types: [
                 {name: 'post_status', values: ['draft', 'published', 'archived']},
@@ -123,14 +123,14 @@ describe('database', () => {
                 extra: {partition: 'HASH (item_kind)', fillfactor: 70}
             }],
             relations: [
-                {src: {entity: 'user_posts'}, ref: {entity: 'users'}, attrs: [{src: ['user_id'], ref: ['id']}]},
-                {src: {entity: 'user_posts'}, ref: {entity: 'posts'}, attrs: [{src: ['post_id'], ref: ['id']}]},
-                {src: {entity: 'contributions'}, ref: {entity: 'posts'}, attrs: [{src: ['item_id'], ref: ['id']}], polymorphic: {attribute: ['item_kind'], value: 'Post'}},
-                {src: {entity: 'contributions'}, ref: {schema: 'social', entity: 'tweets'}, attrs: [{src: ['item_id'], ref: ['id']}], polymorphic: {attribute: ['item_kind'], value: 'Tweet'}},
-                {src: {entity: 'profiles'}, ref: {entity: 'users'}, attrs: [{src: ['user_id'], ref: ['id']}], kind: 'one-to-one'},
-                {src: {schema: 'social', entity: 'tweets'}, ref: {entity: 'users'}, attrs: [{src: ['id'], ref: ['id']}], name: 'poly_tweets_users', kind: 'many-to-many', doc: 'Users mentioned in tweets', extra: {deferred: true}},
-                {src: {database: 'snowflake', catalog: 'analytics', schema: 'raw', entity: 'events'}, ref: {entity: 'users'}, attrs: [{src: ['payload', 'user_id'], ref: ['id']}]},
-                {src: {database: 'snowflake', catalog: 'analytics', schema: 'raw', entity: 'events'}, ref: {schema: 'social', entity: 'tweets'}, attrs: [{src: ['payload', 'tweet_id'], ref: ['id']}]},
+                {src: {entity: 'user_posts', attrs: [['user_id']]}, ref: {entity: 'users', attrs: [['id']]}},
+                {src: {entity: 'user_posts', attrs: [['post_id']]}, ref: {entity: 'posts', attrs: [['id']]}},
+                {src: {entity: 'contributions', attrs: [['item_id']]}, ref: {entity: 'posts', attrs: [['id']]}, polymorphic: {attribute: ['item_kind'], value: 'Post'}},
+                {src: {entity: 'contributions', attrs: [['item_id']]}, ref: {schema: 'social', entity: 'tweets', attrs: [['id']]}, polymorphic: {attribute: ['item_kind'], value: 'Tweet'}},
+                {src: {entity: 'profiles', attrs: [['user_id']], cardinality: '1'}, ref: {entity: 'users', attrs: [['id']], cardinality: '1'}},
+                {src: {schema: 'social', entity: 'tweets', attrs: [['id']], cardinality: 'n'}, ref: {entity: 'users', attrs: [['id']], cardinality: 'n'}, name: 'poly_tweets_users', doc: 'Users mentioned in tweets', extra: {deferred: true}},
+                {src: {database: 'snowflake', catalog: 'analytics', schema: 'raw', entity: 'events', attrs: [['payload', 'user_id']]}, ref: {entity: 'users', attrs: [['id']]}},
+                {src: {database: 'snowflake', catalog: 'analytics', schema: 'raw', entity: 'events', attrs: [['payload', 'tweet_id']]}, ref: {schema: 'social', entity: 'tweets', attrs: [['id']]}},
             ],
             types: [
                 {name: 'markdown'},

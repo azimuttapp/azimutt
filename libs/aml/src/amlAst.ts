@@ -1,11 +1,17 @@
 import {isObject} from "@azimutt/utils";
-import {isParserErrorLevel, isTokenPosition, ParserErrorLevel, TokenPosition} from "@azimutt/models";
+import {
+    isParserErrorLevel,
+    isTokenPosition,
+    ParserErrorLevel,
+    RelationCardinality,
+    TokenPosition
+} from "@azimutt/models";
 
 export type AmlAst = StatementAst[]
 export type StatementAst = NamespaceStatement | EntityStatement | RelationStatement | TypeStatement | EmptyStatement
 export type NamespaceStatement = { statement: 'Namespace', line: number, schema?: IdentifierToken, catalog?: IdentifierToken, database?: IdentifierToken } & ExtraAst
 export type EntityStatement = { statement: 'Entity', name: IdentifierToken, view?: TokenInfo, alias?: IdentifierToken, attrs?: AttributeAstNested[] } & NamespaceRefAst & ExtraAst
-export type RelationStatement = { statement: 'Relation', kind: RelationKindAst, src: AttributeRefCompositeAst, ref: AttributeRefCompositeAst, polymorphic?: RelationPolymorphicAst } & ExtraAst & { warning?: TokenInfo }
+export type RelationStatement = { statement: 'Relation', src: AttributeRefCompositeAst, ref: AttributeRefCompositeAst, srcCardinality: RelationCardinality, refCardinality: RelationCardinality, polymorphic?: RelationPolymorphicAst } & ExtraAst & { warning?: TokenInfo }
 export type TypeStatement = { statement: 'Type', name: IdentifierToken, content?: TypeContentAst } & NamespaceRefAst & ExtraAst
 export type EmptyStatement = { statement: 'Empty', comment?: CommentToken }
 
@@ -15,10 +21,8 @@ export type AttributeTypeAst = { type?: IdentifierToken, enumValues?: AttributeV
 export type AttributeConstraintsAst = { primaryKey?: AttributeConstraintAst, index?: AttributeConstraintAst, unique?: AttributeConstraintAst, check?: AttributeCheckAst }
 export type AttributeConstraintAst = { keyword: TokenInfo, name?: IdentifierToken }
 export type AttributeCheckAst = AttributeConstraintAst & { predicate?: ExpressionToken }
-export type AttributeRelationAst = { kind: RelationKindAst, ref: AttributeRefCompositeAst, polymorphic?: RelationPolymorphicAst, warning?: TokenInfo }
+export type AttributeRelationAst = { ref: AttributeRefCompositeAst, srcCardinality: RelationCardinality, refCardinality: RelationCardinality, polymorphic?: RelationPolymorphicAst, warning?: TokenInfo }
 
-export type RelationCardinalityAst = '1' | 'n'
-export type RelationKindAst = `${RelationCardinalityAst}-${RelationCardinalityAst}`
 export type RelationPolymorphicAst = { attr: AttributePathAst, value: AttributeValueAst }
 
 export type TypeContentAst = TypeAliasAst | TypeEnumAst | TypeStructAst | TypeCustomAst
