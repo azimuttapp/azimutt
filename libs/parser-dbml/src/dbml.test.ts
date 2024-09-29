@@ -54,7 +54,7 @@ Ref:"users"."id" < "posts"."author"
             relations: [
                 {src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}}
             ],
-            extra: {source: 'DBML parser <0.1.1>'}
+            extra: {source: 'DBML parser <0.1.0>'}
         }
         expect(parseDbml(source).result).toEqual(parsed)
         expect(parseDbml(generated).result).toEqual(parsed)
@@ -73,7 +73,7 @@ Ref:"users"."id" < "posts"."author"
     test('empty schema', () => {
         const source = ``
         const generated = ``
-        const parsed: Database = {extra: {source: 'DBML parser <0.1.1>'}}
+        const parsed: Database = {extra: {source: 'DBML parser <0.1.0>'}}
         expect(parseDbml(source).result).toEqual(parsed)
         expect(parseDbml(generated).result).toEqual(parsed)
         expect(generateDbml(parsed)).toEqual(generated)
