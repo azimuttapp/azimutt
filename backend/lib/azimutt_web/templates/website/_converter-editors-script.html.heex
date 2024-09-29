@@ -140,8 +140,8 @@
                     pk: {attrs: [['id']]}
                 }],
                 relations: [
-                    {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}], extra: {inline: true}},
-                    {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}], extra: {inline: true}}
+                    {src: {entity: 'posts', attrs: [['created_by']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {inline: true}},
+                    {src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {inline: true}}
                 ],
                 types: [{name: 'user_role', values: ['admin', 'guest'], extra: {inline: true}}]
             }

@@ -2,6 +2,7 @@ import {groupBy, isNever, isNotUndefined, removeEmpty, removeUndefined} from "@a
 import {
     Attribute,
     AttributePath,
+    attributePathToId,
     AttributeType,
     AttributeValue,
     Check,
@@ -9,15 +10,21 @@ import {
     Entity,
     EntityRef,
     entityRefSame,
+    entityRefToId,
     entityToId,
     entityToRef,
     Extra,
+    getAttribute,
     Index,
     legacyColumnTypeUnknown,
+    mergeEntity,
     mergePositions,
+    mergeRelation,
+    mergeType,
     Namespace,
     ParserError,
     Relation,
+    RelationLink,
     relationRefSame,
     relationToId,
     relationToRef,
@@ -49,7 +56,7 @@ import {
     TypeContentAst,
     TypeStatement
 } from "./amlAst";
-import {duplicated} from "./errors";
+import {duplicated, notFound} from "./errors";
 
 export function buildDatabase(ast: AmlAst, start: number, parsed: number): {db: Database, errors: ParserError[]} {
     const db: Database = {entities: [], relations: [], types: []}
@@ -90,17 +97,20 @@ function buildTypesAndEntities(db: Database, errors: ParserError[], ast: AmlAst)
             const type = buildType(namespace, index, stmt)
             addType(db, errors, type, mergePositions([stmt.database, stmt.catalog, stmt.schema, stmt.name]))
         } else if (stmt.statement === 'Entity') {
+            if (!db.entities) db.entities = []
             const res = buildEntity(namespace, index, stmt)
-            const prev = db.entities?.find(e => entityRefSame(entityToRef(e), entityToRef(res.entity)))
-            if (prev) {
+            const ref = entityToRef(res.entity)
+            const prevIndex = db.entities.findIndex(e => entityRefSame(entityToRef(e), ref))
+            if (prevIndex !== -1) {
+                const prev = db.entities[prevIndex]
                 errors.push(duplicated(
                     `Entity ${entityToId(res.entity)}`,
                     prev.extra?.line ? prev.extra.line : undefined,
                     mergePositions([stmt.database, stmt.catalog, stmt.schema, stmt.name])
                 ))
-                // TODO: merge entities
+                db.entities[prevIndex] = mergeEntity(prev, res.entity)
             } else {
-                db.entities?.push(res.entity)
+                db.entities.push(res.entity)
             }
             res.relations.forEach(r => relations.push(r))
             res.types.forEach(({type, position}) => addType(db, errors, type, position))
@@ -118,7 +128,7 @@ function buildRelations(db: Database, errors: ParserError[], ast: AmlAst, attrRe
         db,
         errors,
         buildRelationAttribute(db.entities || [], aliases, r.statement, r.entity, r.attrs, r.ref),
-        mergePositions([r.ref.ref.database, r.ref.ref.catalog, r.ref.ref.schema, r.ref.ref.entity, ...r.ref.ref.attrs])
+        mergePositions([r.ref.ref.database, r.ref.ref.catalog, r.ref.ref.schema, r.ref.ref.entity, ...r.ref.ref.attrs, ...r.ref.ref.attrs.flatMap(a => a.path)])
     ))
     ast.forEach((stmt, i) => {
         const index = i + 1
@@ -129,7 +139,7 @@ function buildRelations(db: Database, errors: ParserError[], ast: AmlAst, attrRe
                 db,
                 errors,
                 buildRelationStatement(db.entities || [], aliases, namespace, index, stmt),
-                mergePositions([stmt.src.database, stmt.src.catalog, stmt.src.schema, stmt.src.entity, ...(stmt.ref?.attrs || [])])
+                mergePositions([stmt.src.database, stmt.src.catalog, stmt.src.schema, stmt.src.entity, ...(stmt.ref?.attrs || []), ...(stmt.ref?.attrs || []).flatMap(a => a.path)])
             )
         } else {
             // last to be built, types & relations are already built
@@ -138,27 +148,45 @@ function buildRelations(db: Database, errors: ParserError[], ast: AmlAst, attrRe
 }
 
 function addRelation(db: Database, errors: ParserError[], relation: Relation | undefined, position: TokenPosition) {
-    // TODO: relation src & ref should have exist, otherwise warning
     if (relation) {
-        const prev = db.relations?.find(r => relationRefSame(relationToRef(r), relationToRef(relation)))
-        if (prev && !prev.polymorphic) {
+        if (!db.relations) db.relations = []
+        const ref = relationToRef(relation)
+        const prevIndex = db.relations.findIndex(r => relationRefSame(relationToRef(r), ref))
+        if (prevIndex !== -1) {
+            const prev = db.relations[prevIndex]
             errors.push(duplicated(`Relation ${relationToId(relation)}`, prev.extra?.line ? prev.extra.line : undefined, position))
-            // TODO: merge relations (extra)? add duplicates?
+            db.relations[prevIndex] = mergeRelation(prev, relation)
         } else {
-            db.relations?.push(relation)
+            db.relations.push(relation)
+            checkRelationLinks(db.entities || [], errors, relation.src, position)
+            checkRelationLinks(db.entities || [], errors, relation.ref, position)
         }
     } else {
         // TODO: warning: ignored relation (should return the cause)
     }
 }
 
-function addType(db: Database, errors: ParserError[], type: Type, position: TokenPosition): void {
-    const prev = db.types?.find(t => typeRefSame(typeToRef(t), typeToRef(type)))
-    if (prev) {
-        errors.push(duplicated(`Type ${typeToId(type)}`, prev.extra?.line ? prev.extra.line : undefined, position))
-        // TODO: merge types? add duplicates?
+function checkRelationLinks(entities: Entity[], errors: ParserError[], link: RelationLink, position: TokenPosition) {
+    const entity = entities.find(e => entityRefSame(entityToRef(e), link))
+    if (entity) {
+        link.attrs.forEach(a => {
+            if (!getAttribute(entity.attrs, a)) errors.push(notFound(attributePathToId(a) + ' attribute', entityRefToId(link) + ' entity', position))
+        })
     } else {
-        db.types?.push(type)
+        errors.push(notFound(entityRefToId(link) + ' entity', undefined, position))
+    }
+}
+
+function addType(db: Database, errors: ParserError[], type: Type, position: TokenPosition): void {
+    if (!db.types) db.types = []
+    const ref = typeToRef(type)
+    const prevIndex = db.types.findIndex(t => typeRefSame(typeToRef(t), ref))
+    if (prevIndex !== -1) {
+        const prev = db.types[prevIndex]
+        errors.push(duplicated(`Type ${typeToId(type)}`, prev.extra?.line ? prev.extra.line : undefined, position))
+        db.types[prevIndex] = mergeType(prev, type)
+    } else {
+        db.types.push(type)
     }
 }
 

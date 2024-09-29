@@ -6,5 +6,8 @@ export const legacy = (message: string): TokenIssue => ({message, kind: 'LegacyS
 export const duplicated = (name: string, definedAtLine: number | undefined, position: TokenPosition): ParserError =>
     ({message: `${name} already defined${definedAtLine !== undefined ? ` at line ${definedAtLine}` : ''}`, kind: 'Duplicated', level: ParserErrorLevel.enum.warning, offset: position.offset, position: position.position})
 
+export const notFound = (name: string, entity: string | undefined, position: TokenPosition): ParserError =>
+    ({message: `${name} not found${entity ? ` in ${entity}` : ''}`, kind: 'NotFound', level: ParserErrorLevel.enum.warning, offset: position.offset, position: position.position})
+
 export const badIndent = (expectedDepth: number, actualDepth: number): TokenIssue =>
     ({message: `Expecting indentation of ${expectedDepth} but got ${actualDepth}`, kind: 'WrongIndentation', level: ParserErrorLevel.enum.error})

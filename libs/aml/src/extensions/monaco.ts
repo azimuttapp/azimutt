@@ -12,7 +12,7 @@ import {
     entityRefToId,
     entityToRef,
     Extra,
-    flattenAttribute,
+    flattenAttributes,
     getAttribute,
     ParserError,
     Relation,
@@ -100,7 +100,7 @@ export const completion = (opts: {} = {}): CompletionItemProvider => ({ // auto-
             return database || {}
         }
         const getEntities = (): Entity[] => getDb().entities || []
-        const getAttributes = (): Attribute[] => getEntities().flatMap(e => e.attrs || []).flatMap(a => flattenAttribute(a)).map(a => a.attr)
+        const getAttributes = (): Attribute[] => getEntities().flatMap(e => flattenAttributes(e.attrs))
         const getRelations = (): Relation[] => getDb().relations || []
         const getTypes = (): Type[] => getDb().types || []
         let res: string[] | undefined // storing match result

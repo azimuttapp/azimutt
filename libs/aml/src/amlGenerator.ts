@@ -14,6 +14,7 @@ import {
     entityRefSame,
     entityToRef,
     Extra,
+    flattenAttributes,
     legacyColumnTypeUnknown,
     Namespace,
     Relation,
@@ -22,7 +23,8 @@ import {
     RelationLink,
     Type,
     typeExtraKeys,
-    typeExtraProps
+    typeExtraProps,
+    typeToId
 } from "@azimutt/models";
 import {amlKeywords, PropertyValue} from "./amlAst";
 
@@ -30,16 +32,20 @@ import {amlKeywords, PropertyValue} from "./amlAst";
 export function genDatabase(database: Database, legacy: boolean): string {
     const [entityRels, aloneRels] = partition(database.relations || [], r => {
         const statement = r.extra?.statement
-        return statement ? !!database.entities?.find(e => e.extra?.statement === statement) :
-            r.extra?.inline ? !!database.entities?.find(e => entityRefSame(r.src, entityToRef(e))) :
+        return r.extra?.inline ? !!database.entities?.find(e => entityRefSame(entityToRef(e), r.src)) :
+            statement ? !!database.entities?.find(e => e.extra?.statement === statement) :
                 false
     })
     const [entityTypes, aloneTypes] = partition(database.types || [], t => {
+        const tId = typeToId(t)
         const statement = t.extra?.statement
-        return statement ? !!database.entities?.find(e => e.extra?.statement === statement) : !!t.extra?.inline
+        return t.extra?.inline ? !!database.entities?.find(e => !!flattenAttributes(e.attrs).find(a => a.type === tId)) :
+            statement ? !!database.entities?.find(e => e.extra?.statement === statement) :
+                false
     })
     const entities = (database.entities || []).map((e, i) => {
-        const rels = entityRels.filter(r => r.extra?.statement ? r.extra?.statement === e.extra?.statement : entityRefSame(r.src, entityToRef(e)))
+        const ref = entityToRef(e)
+        const rels = entityRels.filter(r => r.extra?.statement ? r.extra?.statement === e.extra?.statement : entityRefSame(r.src, ref))
         return {index: e.extra?.line || i, kind: 'entity', aml: genEntity(e, getCurrentNamespace(database, e), rels, entityTypes, legacy)}
     })
     const entityCount = entities.length
@@ -100,11 +106,6 @@ function genAttributeInner(a: Attribute, e: Entity, namespace: Namespace, relati
     const props = !legacy ? genProperties(a.extra, {}, attributeExtraKeys.filter(k => !attributeExtraProps.includes(k))) : ''
     return `${genIdentifier(a.name)}${genAttributeType(a, types)}${a.null ? ' nullable' : ''}${pk}${indexes}${checks}${rel}${props}${genDoc(a.doc, legacy, indent)}${genComment(a.extra?.comment)}`
 }
-function genCheck(c: Check, path: AttributePath, legacy: boolean) {
-    const predicate = c.predicate ? (legacy ? `=${genIdentifier(c.predicate)}` : (attributePathSame(c.attrs[0], path) ? `(\`${c.predicate}\`)` : '')) : ''
-    const name = c.name ? (!legacy ? `=${genIdentifier(c.name)}` : '') : ''
-    return `check${predicate}${name}`
-}
 
 function genAttributeType(a: Attribute, types: Type[]): string {
     // regex from `Identifier` token to know if it should be escaped or not (cf libs/aml/src/parser.ts:7)
@@ -128,6 +129,12 @@ function genAttributeValueStr(value: string): string {
     if (value.match(/^\d+(\.\d+)?$/)) return value
     if (value.match(/^true|false$/i)) return value
     return genIdentifier(value)
+}
+
+function genCheck(c: Check, path: AttributePath, legacy: boolean) {
+    const predicate = c.predicate ? (legacy ? `=${genIdentifier(c.predicate)}` : (attributePathSame(c.attrs[0], path) ? `(\`${c.predicate}\`)` : '')) : ''
+    const name = c.name ? (!legacy ? `=${genIdentifier(c.name)}` : '') : ''
+    return `check${predicate}${name}`
 }
 
 function genRelation(r: Relation, namespace: Namespace, legacy: boolean): string {

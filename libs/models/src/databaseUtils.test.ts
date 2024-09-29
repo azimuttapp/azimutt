@@ -16,21 +16,21 @@ import {
     attributesRefSame,
     attributesRefToId,
     attributeTypeParse,
-    generateJsonDatabase,
-    parseJsonDatabase,
     DatabaseKind,
     EntityId,
     EntityRef,
     entityRefFromId,
     entityRefSame,
     entityRefToId,
-    flattenAttribute,
+    flattenAttributes,
+    generateJsonDatabase,
     getAttribute,
     getPeerAttributes,
     Namespace,
     namespaceFromId,
     NamespaceId,
     namespaceToId,
+    parseJsonDatabase,
     TypeId,
     TypeRef,
     typeRefFromId,
@@ -332,36 +332,38 @@ describe('databaseUtils', () => {
         expect(getPeerAttributes([id, details], ['details', 'address', 'city'])).toEqual([street, city])
         expect(getPeerAttributes([id, details], ['details', 'bad', 'city'])).toEqual([])
     })
-    test('flattenAttribute', () => {
-        expect(flattenAttribute({name: 'id', type: 'uuid'})).toEqual([{path: ['id'], attr: {name: 'id', type: 'uuid'}}])
-        expect(flattenAttribute({name: 'details', type: 'json', attrs: [{name: 'address', type: 'varchar'}]})).toEqual([
-            {path: ['details'], attr: {name: 'details', type: 'json', attrs: [{name: 'address', type: 'varchar'}]}},
-            {path: ['details', 'address'], attr: {name: 'address', type: 'varchar'}},
+    test('flattenAttributes', () => {
+        expect(flattenAttributes(undefined)).toEqual([])
+        expect(flattenAttributes([])).toEqual([])
+        expect(flattenAttributes([{name: 'id', type: 'uuid'}])).toEqual([{path: ['id'], name: 'id', type: 'uuid'}])
+        expect(flattenAttributes([{name: 'details', type: 'json', attrs: [{name: 'address', type: 'varchar'}]}])).toEqual([
+            {path: ['details'], name: 'details', type: 'json', attrs: [{name: 'address', type: 'varchar'}]},
+            {path: ['details', 'address'], name: 'address', type: 'varchar'},
         ])
-        expect(flattenAttribute({name: 'details', type: 'json', attrs: [
+        expect(flattenAttributes([{name: 'details', type: 'json', attrs: [
             {name: 'twitter', type: 'varchar'},
             {name: 'address', type: 'json', attrs: [
                 {name: 'street', type: 'varchar'},
                 {name: 'city', type: 'varchar'},
             ]},
             {name: 'created', type: 'varchar'},
-        ]})).toEqual([
-            {path: ['details'], attr: {name: 'details', type: 'json', attrs: [
+        ]}])).toEqual([
+            {path: ['details'], name: 'details', type: 'json', attrs: [
                 {name: 'twitter', type: 'varchar'},
                 {name: 'address', type: 'json', attrs: [
                     {name: 'street', type: 'varchar'},
                     {name: 'city', type: 'varchar'},
                 ]},
                 {name: 'created', type: 'varchar'},
-            ]}},
-            {path: ['details', 'twitter'], attr: {name: 'twitter', type: 'varchar'}},
-            {path: ['details', 'address'], attr: {name: 'address', type: 'json', attrs: [
+            ]},
+            {path: ['details', 'twitter'], name: 'twitter', type: 'varchar'},
+            {path: ['details', 'address'], name: 'address', type: 'json', attrs: [
                 {name: 'street', type: 'varchar'},
                 {name: 'city', type: 'varchar'},
-            ]}},
-            {path: ['details', 'address', 'street'], attr: {name: 'street', type: 'varchar'}},
-            {path: ['details', 'address', 'city'], attr: {name: 'city', type: 'varchar'}},
-            {path: ['details', 'created'], attr: {name: 'created', type: 'varchar'}},
+            ]},
+            {path: ['details', 'address', 'street'], name: 'street', type: 'varchar'},
+            {path: ['details', 'address', 'city'], name: 'city', type: 'varchar'},
+            {path: ['details', 'created'], name: 'created', type: 'varchar'},
         ])
     })
     test('parseJsonDatabase', () => {

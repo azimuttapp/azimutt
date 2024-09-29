@@ -16,6 +16,7 @@ import {codeAction, codeLens, completion, createMarker, language} from "./extens
 import {generateMermaid} from "./mermaidGenerator";
 import {generateMarkdown} from "./markdownGenerator";
 
+// TODO: warning is one-to-one relation don't have a unique constraint
 // TODO: add column order for indexes in AML: `  name varchar index(pos: 1)=name_idx` (have properties in parentheses)
 // TODO: allow several identical constraints in columns, ex: `  email varchar index index=other_index check(`email <> ''`) check(`len(email) > 3`)`
 

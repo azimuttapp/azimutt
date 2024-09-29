@@ -18,7 +18,7 @@ import {
     attributeValueToString,
     entityRefToId,
     entityToRef,
-    flattenAttribute,
+    flattenAttributes,
     getPeerAttributes,
     relationLinkToEntityRef,
     relationRefFromId,
@@ -80,7 +80,7 @@ export function getMissingRelations(entities: Entity[], relations: Relation[]): 
     const relationsBySrc: Record<EntityId, Relation[]> = groupBy(relations, r => entityRefToId(r.src))
 
     return tableEntities.flatMap(entity => {
-        return (entity.attrs || []).flatMap(a => flattenAttribute(a)).flatMap(({path, attr}) => {
+        return flattenAttributes(entity.attrs).flatMap(({path, ...attr}) => {
             const attrWords = splitWords(attr.name).map(singular)
             const lastWord = attrWords[attrWords.length - 1]
             let results: Relation[] = []

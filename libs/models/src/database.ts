@@ -7,7 +7,6 @@ import {DateTime, Millis} from "./common";
 // TODO:
 //   - function to check Database consistency (no relation to non-existing entity, etc)
 //   - function to diff two Database
-//   - function to merge two Database
 //   - convert Database to Project and the reverse
 
 export const DatabaseName = z.string()
@@ -84,6 +83,7 @@ export const IndexExtra = Extra.and(z.object({
     statement: z.number().optional(),
 }))
 export type IndexExtra = z.infer<typeof IndexExtra>
+export const indexExtraKeys = ['line', 'statement']
 
 export const Check = z.object({
     name: ConstraintName.optional(),
@@ -204,14 +204,13 @@ export const EntityExtra = Extra.and(z.object({
     line: z.number().optional(),
     statement: z.number().optional(),
     alias: z.string().optional(),
-    view: z.string().optional(), // query definition of the view
     color: z.string().optional(),
     tags: z.string().array().optional(),
     comment: z.string().optional(), // if there is a comment in the entity line
 }))
 export type EntityExtra = z.infer<typeof EntityExtra>
-export const entityExtraKeys = ['line', 'statement', 'alias', 'view', 'color', 'tags', 'comment']
-export const entityExtraProps = ['view', 'color', 'tags'] // extra keys manually set in properties
+export const entityExtraKeys = ['line', 'statement', 'alias', 'color', 'tags', 'comment']
+export const entityExtraProps = ['view', 'color', 'tags'] // extra keys manually set in properties (view is set in props but stored in entity def, not extra ^^)
 
 export const Entity = Namespace.extend({
     name: EntityName,
@@ -309,6 +308,7 @@ export const DatabaseExtra = Extra.and(z.object({
     namespaces: Namespace.extend({line: z.number(), comment: z.string().optional()}).array().optional(), // source namespace statements, used to generate them back
 }))
 export type DatabaseExtra = z.infer<typeof DatabaseExtra>
+export const databaseExtraKeys = ['source', 'createdAt', 'creationTimeMs', 'comments', 'namespaces']
 
 export const Database = z.object({
     entities: Entity.array().optional(),
