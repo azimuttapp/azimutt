@@ -68,7 +68,7 @@
   "extra": {
     "source": "DBML parser <0.1.1>",
     "groups": [
-      {"schema": "blog", "name": "publication", "entities": [{"entity":  "users"}, {"schema":  "blog", "entity":  "posts"}]}
+      {"name": "publication", "entities": [{"entity":  "users"}, {"schema":  "blog", "entity":  "posts"}]}
     ]
   }
 }

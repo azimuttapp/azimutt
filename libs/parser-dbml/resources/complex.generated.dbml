@@ -6,15 +6,10 @@ Enum "blog"."post_status" {
 
 Table "blog"."posts" [headerColor: #ccc] {
   "id" "bigint unsigned" [pk, increment]
-  "status" post_status [default: "draft"]
+  "status" post_status [default: 'draft']
   "title" varchar [note: 'Title of the post']
   "author" integer
   Note: 'Stores all posts'
-}
-
-TableGroup "blog"."publication" {
-  "users"
-  "blog"."posts"
 }
 
 Table "users" {
@@ -49,6 +44,11 @@ Table "user_roles" {
     (user_id, role_id) [pk]
     created_at [name: "created_at_index"]
   }
+}
+
+TableGroup "publication" {
+  "users"
+  "blog"."posts"
 }
 
 Ref:"users"."id" - "profiles"."user_id"

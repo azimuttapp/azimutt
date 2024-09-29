@@ -57,7 +57,7 @@ enum blog.post_status {
     archived
 }
 
-TableGroup blog.publication {
+TableGroup publication {
   users
   blog.posts
 }

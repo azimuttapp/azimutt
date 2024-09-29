@@ -28,8 +28,8 @@
   "dependencies": {
     "@azimutt/models": "workspace:^",
     "@azimutt/utils": "workspace:^",
-    "@dbml/core": "3.4.3",
-    "@dbml/parse": "3.4.3",
+    "@dbml/core": "3.9.0",
+    "@dbml/parse": "3.9.0",
     "zod": "3.23.8"
   },
   "devDependencies": {
