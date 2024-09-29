@@ -1,6 +1,6 @@
 {
   "name": "@azimutt/connector-couchbase",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Connect to Couchbase, extract schema, run analysis and queries",
   "keywords": [],
   "homepage": "https://azimutt.app",

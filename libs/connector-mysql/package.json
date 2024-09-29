@@ -1,6 +1,6 @@
 {
   "name": "@azimutt/connector-mysql",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Connect to MySQL, extract schema, run analysis and queries",
   "keywords": [],
   "homepage": "https://azimutt.app",
