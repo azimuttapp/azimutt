@@ -31,7 +31,7 @@ import topbar from "topbar"
 import {language as hljsAml} from "./aml.hljs"
 
 Hljs.registerLanguage('aml', hljsAml)
-Hljs.configure({cssSelector: 'code.hljs'})
+Hljs.configure({cssSelector: 'pre code'})
 Hljs.highlightAll()
 
 

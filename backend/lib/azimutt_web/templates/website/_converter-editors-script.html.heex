@@ -7,6 +7,12 @@
 <!--<script src="/elm/dbml.min.js"></script>-->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.51.0/min/vs/loader.min.js"></script>
 <script>
+    // get inputs
+    var leftLang = '<%= @left.lang %>'
+    var rightLang = '<%= @right.lang %>'
+    var editorLeftContainer = document.getElementById('<%= @left.id %>')
+    var editorRightContainer = document.getElementById('<%= @right.id %>')
+
     require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.51.0/min/vs' }})
     require(['vs/editor/editor.main'], function() {
         // define AML language for monaco
@@ -19,36 +25,24 @@
         // define schema for JSON
         monaco.languages.json.jsonDefaults.setDiagnosticsOptions({validate: true, schemas: [{fileMatch: ['*'], schema: aml.schemaJsonDatabase}]})
 
-        var leftLang = '<%= @left.lang %>'
-        var rightLang = '<%= @right.lang %>'
-        var editorLeftContainer = document.getElementById('<%= @left.id %>')
-        var editorRightContainer = document.getElementById('<%= @right.id %>')
-
-        var db = initDb()
-        var model = monaco.editor.createModel(format(leftLang, db), editorLang(leftLang))
-        model.context = {database: db} // store values to be used at several place
-
+        var model = monaco.editor.createModel(getDefaultValue(leftLang), monacoLang(leftLang))
         var leftEditor = createEditor(editorLeftContainer, {model})
-        var rightEditor = createEditor(editorRightContainer, {language: editorLang(rightLang), value: '', readOnly: true})
+        var rightEditor = createEditor(editorRightContainer, {language: monacoLang(rightLang), value: '', readOnly: true})
         var leftAmlButton = leftLang === 'aml' ? createAmlButton(editorLeftContainer) : undefined
         var rightAmlButton = rightLang === 'aml' ? createAmlButton(editorRightContainer) : undefined
-        // get selected text: `model.getValueInRange(editor.getSelection())`
-        // get cursor position: `editor.getPosition()` & `editor.setPosition(new monaco.Position(5, 3))`
-        // move editor: `editor.revealLine(30)` but also: `revealLines`, `revealPosition`, `revealRange`, and also: `revealLineNearTop`, `revealLineInCenter`, `revealLineInCenterIfOutsideViewport`...
-        // window.model = model
-        // window.editor = leftEditor
 
         // sync right editor with parsing result
         function syncEditors() {
             var parsed = parse(leftLang, leftEditor.getValue())
             if (parsed.result && (parsed.errors || []).filter(e => e.level === 'error').length === 0) {
+                if (!model.context) model.context = {}
+                model.context.database = parsed.result // make parsed result available in the model (used in completion for example)
                 window.azimuttSchema = parsed.result // expose it to the JS console (debug & unknown use cases)
-                storeDatabase(parsed.result)
-                model.context.database = parsed.result
-                rightEditor.setValue(format(rightLang, parsed.result))
-                // preserve the undo stack with: `model.pushEditOperations([], [{range: model.getFullModelRange(), text: value}])`
-                if (leftAmlButton) { amlButtonUpdateUrl(leftAmlButton, leftEditor.getValue()) }
-                if (rightAmlButton) { amlButtonUpdateUrl(rightAmlButton, rightEditor.getValue()) }
+                storeDatabase(parsed.result) // store it in the browser to keep it over reloads
+
+                rightEditor.setValue(format(rightLang, parsed.result)) // preserve the undo stack with: `model.pushEditOperations([], [{range: model.getFullModelRange(), text: value}])`
+                if (leftAmlButton) { updatedAmlButtonUrl(leftAmlButton, leftEditor.getValue()) }
+                if (rightAmlButton) { updatedAmlButtonUrl(rightAmlButton, rightEditor.getValue()) }
             }
             monaco.editor.setModelMarkers(model, 'owner', (parsed.errors || []).map(e => aml.monaco.createMarker(e, model, leftEditor)))
         }
@@ -87,10 +81,10 @@
             container.appendChild(buttonEl)
             return buttonEl
         }
-        function amlButtonUpdateUrl(button, aml) {
+        function updatedAmlButtonUrl(button, aml) {
             button.href = '/create?aml=' + encodeURIComponent(aml).slice(0, 2000) // URI length limit, should send it with POST at some point...
         }
-        function editorLang(lang) {
+        function monacoLang(lang) {
             if (lang === 'amlv1') return 'aml'
             if (lang === 'postgres') return 'pgsql'
             if (lang === 'mermaid') return 'plaintext'
@@ -111,9 +105,15 @@
             if (lang === 'markdown') return aml.generateMarkdown(db)
             return 'Unsupported destination dialect: ' + lang
         }
-        function initDb() {
-            const storedDb = getStoredDatabase()
-            const defaultDb = {
+        function getDefaultValue(lang) {
+            // default value from: `value` query param, or url hash, or local storage, or hardcoded
+            var urlValue = getUrlValue(lang)
+            if (urlValue) return urlValue
+
+            var storedDb = getStoredDatabase()
+            if (storedDb) return format(lang, storedDb)
+
+            return format(lang, {
                 entities: [{
                     name: 'users',
                     attrs: [
@@ -144,14 +144,24 @@
                     {src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {inline: true}}
                 ],
                 types: [{name: 'user_role', values: ['admin', 'guest'], extra: {inline: true}}]
+            })
+        }
+        function getUrlValue(lang) {
+            try {
+                var url = new URL(window.location)
+                var value = url.searchParams.get('value') // automatically decoded!
+                var hash = decodeURIComponent(url.hash.slice(1))
+                var urlInput = (value || hash || '').trim() + '\n'
+                var parsed = parse(lang, urlInput)
+                return isEmptyDatabase(parsed.result) ? null : urlInput
+            } catch (e) {
+                console.warn('Unable to get stored url value', e)
             }
-            return storedDb || defaultDb
         }
         function getStoredDatabase() {
             try {
-                const db = JSON.parse(localStorage.getItem('converter-database'))
-                if (!db.entities || !db.types) return null
-                return db
+                var db = JSON.parse(localStorage.getItem('converter-database'))
+                return isEmptyDatabase(db) ? null : db
             } catch (e) {
                 console.warn('Unable to get stored Azimutt schema', e)
             }
@@ -162,6 +172,12 @@
             } catch (e) {
                 console.warn('Unable to store Azimutt schema', e)
             }
+        }
+        function isEmptyDatabase(db) {
+            if (!db) return true
+            return (Array.isArray(db.entities) ? db.entities.length === 0 : true) &&
+                (Array.isArray(db.relations) ? db.relations.length === 0 : true) &&
+                (Array.isArray(db.types) ? db.types.length === 0 : true)
         }
     })
 </script>

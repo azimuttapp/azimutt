@@ -640,9 +640,6 @@
             "alias": {
               "type": "string"
             },
-            "view": {
-              "type": "string"
-            },
             "color": {
               "type": "string"
             },
