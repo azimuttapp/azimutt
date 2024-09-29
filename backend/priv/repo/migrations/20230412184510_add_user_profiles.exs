@@ -2,7 +2,7 @@ defmodule Azimutt.Repo.Migrations.AddUserProfiles do
   use Ecto.Migration
 
   def change do
-    create table(:user_profiles, comments: "store complementary data on users") do
+    create table(:user_profiles, comment: "store complementary data on users") do
       add :user_id, references(:users, on_delete: :delete_all), null: false
       add :usecase, :string
       add :usage, :string

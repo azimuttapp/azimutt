@@ -4,7 +4,7 @@ defmodule Azimutt.Repo.Migrations.InitDatabase do
   def change do
     execute "CREATE EXTENSION IF NOT EXISTS citext", ""
 
-    create table(:users, comments: "users are not deleted but cleared to not break foreign keys") do
+    create table(:users, comment: "users are not deleted but cleared to not break foreign keys") do
       add :slug, :citext, null: false, comment: "friendly id to show on url"
       add :name, :string, null: false
       add :email, :citext, null: false
