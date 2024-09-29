@@ -154,7 +154,7 @@ type range \`(subtype = float8, subtype_diff = float8mi)\` # custom type
         const amlv1 = fs.readFileSync('./resources/full.legacy.aml', 'utf8')
         const parsed = parseAmlTest(amlv1)
         // expect(parsed.result).toEqual(db) // not the same as legacy AML has fewer features, worth checking the diff sometimes
-        expect(parsed.errors?.filter(e => e.kind !== 'LegacySyntax')).toEqual([])
+        expect(parsed.errors?.filter(e => e.kind !== 'LegacySyntax' && e.kind !== 'NotFound')).toEqual([]) // ignore not found nested columns
         expect(generateAml(parsed.result || {}, true)).toEqual(amlv1)
         expect(generateAml(db, true)).toEqual(amlv1)
     })
@@ -234,12 +234,15 @@ users
         })
         test('duplicate relation', () => {
             expect(parseAml(`
+users
+  id uuid pk
+
 posts
   id uuid pk
   author uuid -> users(id)
 
 rel posts(author) -> users(id)
-`).errors).toEqual([duplicated('Relation posts(author)->users(id)', 4, tokenPosition(52, 76, 6, 5, 6, 29))])
+`).errors).toEqual([duplicated('Relation posts(author)->users(id)', 7, tokenPosition(72, 96, 9, 5, 9, 29))])
         })
         test('duplicate type', () => {
             expect(parseAml(`
@@ -255,85 +258,87 @@ type public.status (pending, wip, done)
     // make sure the parser don't fail on invalid input
     describe('errors', () => {
         test('attribute relation', () => {
-            expect(parseAmlTest('posts\n  author int\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], extra: {}}
+            const users = {name: 'users', attrs: [{name: 'id', type: 'int'}], pk: {attrs: [['id']]}, extra: {line: 1, statement: 1}}
+            expect(parseAmlTest('users\n  id int pk\n\nposts\n  author int\n')).toEqual({
+                result: {entities: [users, {name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 4, statement: 2}}], extra: {}}
             })
-            expect(parseAmlTest('posts\n  author int -\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], extra: {}},
-                errors: [{message: "Expecting: one of these possible Token sequences:\n  1. [Dash]\n  2. [LowerThan]\n  3. [GreaterThan]\nbut found: '\n'", kind: 'NoViableAltException', level: 'error', ...tokenPosition(20, 20, 2, 15, 2, 15)}]
+            expect(parseAmlTest('users\n  id int pk\n\nposts\n  author int -\n')).toEqual({
+                result: {entities: [users, {name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 4, statement: 2}}], extra: {}},
+                errors: [{message: "Expecting: one of these possible Token sequences:\n  1. [Dash]\n  2. [LowerThan]\n  3. [GreaterThan]\nbut found: '\n'", kind: 'NoViableAltException', level: 'error', ...tokenPosition(39, 39, 5, 15, 5, 15)}]
             })
-            expect(parseAmlTest('posts\n  author int ->\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], extra: {}},
-                errors: [{message: "Expecting token of type --> Identifier <-- but found --> '\n' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(21, 21, 2, 16, 2, 16)}]
+            expect(parseAmlTest('users\n  id int pk\n\nposts\n  author int ->\n')).toEqual({
+                result: {entities: [users, {name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 4, statement: 2}}], extra: {}},
+                errors: [{message: "Expecting token of type --> Identifier <-- but found --> '\n' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(40, 40, 5, 16, 5, 16)}]
             })
-            expect(parseAmlTest('posts\n  author int -> users\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: []}, extra: {line: 2, statement: 1, natural: 'ref', inline: true}}], extra: {}},
+            expect(parseAmlTest('users\n  id int pk\n\nposts\n  author int -> users\n')).toEqual({
+                result: {entities: [users, {name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 4, statement: 2}}], relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {line: 5, statement: 2, natural: 'ref', inline: true}}], extra: {}},
             })
-            expect(parseAmlTest('posts\n  author int -> users(\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], extra: {}},
-                errors: [{message: "Expecting: expecting at least one iteration which starts with one of these possible Token sequences::\n  <[WhiteSpace] ,[Identifier]>\nbut found: '\n'", kind: 'EarlyExitException', level: 'error', ...tokenPosition(28, 28, 2, 23, 2, 23)}]
+            expect(parseAmlTest('users\n  id int pk\n\nposts\n  author int -> users(\n')).toEqual({
+                result: {entities: [users, {name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 4, statement: 2}}], extra: {}},
+                errors: [{message: "Expecting: expecting at least one iteration which starts with one of these possible Token sequences::\n  <[WhiteSpace] ,[Identifier]>\nbut found: '\n'", kind: 'EarlyExitException', level: 'error', ...tokenPosition(47, 47, 5, 23, 5, 23)}]
             })
-            expect(parseAmlTest('posts\n  author int -> users(id\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {line: 2, statement: 1, inline: true}}], extra: {}},
-                errors: [{message: "Expecting token of type --> RParen <-- but found --> '\n' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(30, 30, 2, 25, 2, 25)}]
+            expect(parseAmlTest('users\n  id int pk\n\nposts\n  author int -> users(id\n')).toEqual({
+                result: {entities: [users, {name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 4, statement: 2}}], relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {line: 5, statement: 2, inline: true}}], extra: {}},
+                errors: [{message: "Expecting token of type --> RParen <-- but found --> '\n' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(49, 49, 5, 25, 5, 25)}]
             })
-            expect(parseAmlTest('posts\n  author int -> users(id)\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {line: 2, statement: 1, inline: true}}], extra: {}},
+            expect(parseAmlTest('users\n  id int pk\n\nposts\n  author int -> users(id)\n')).toEqual({
+                result: {entities: [users, {name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 4, statement: 2}}], relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {line: 5, statement: 2, inline: true}}], extra: {}},
             })
 
-            expect(parseAmlTest('posts\n  author int - users(id)\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {line: 2, statement: 1, inline: true}}], extra: {}},
-                errors: [{message: "Expecting: one of these possible Token sequences:\n  1. [Dash]\n  2. [LowerThan]\n  3. [GreaterThan]\nbut found: ' '", kind: 'NoViableAltException', level: 'error', ...tokenPosition(20, 20, 2, 15, 2, 15)}]
+            expect(parseAmlTest('users\n  id int pk\n\nposts\n  author int - users(id)\n')).toEqual({
+                result: {entities: [users, {name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 4, statement: 2}}], relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {line: 5, statement: 2, inline: true}}], extra: {}},
+                errors: [{message: "Expecting: one of these possible Token sequences:\n  1. [Dash]\n  2. [LowerThan]\n  3. [GreaterThan]\nbut found: ' '", kind: 'NoViableAltException', level: 'error', ...tokenPosition(39, 39, 5, 15, 5, 15)}]
             })
-            expect(parseAmlTest('posts\n  author int  users(id)\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}, {name: 'id', extra: {line: 2, statement: 2}}], extra: {}},
+            expect(parseAmlTest('users\n  id int pk\n\nposts\n  author int  users(id)\n')).toEqual({
+                result: {entities: [users, {name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 4, statement: 2}}, {name: 'id', extra: {line: 5, statement: 3}}], extra: {}},
                 // TODO handle error better to not generate a fake entity (id)
                 errors: [
-                    {message: "Expecting token of type --> NewLine <-- but found --> 'users' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(20, 24, 2, 15, 2, 19)},
-                    {message: "Expecting token of type --> NewLine <-- but found --> '(' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(25, 25, 2, 20, 2, 20)},
-                    {message: "Expecting token of type --> NewLine <-- but found --> ')' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(28, 28, 2, 23, 2, 23)}
+                    {message: "Expecting token of type --> NewLine <-- but found --> 'users' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(39, 43, 5, 15, 5, 19)},
+                    {message: "Expecting token of type --> NewLine <-- but found --> '(' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(44, 44, 5, 20, 5, 20)},
+                    {message: "Expecting token of type --> NewLine <-- but found --> ')' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(47, 47, 5, 23, 5, 23)}
                 ]
             })
         })
         test('attribute relation legacy', () => {
-            expect(parseAmlTest('posts\n  author int\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], extra: {}}
+            const users = {name: 'users', attrs: [{name: 'id', type: 'int'}], pk: {attrs: [['id']]}, extra: {line: 1, statement: 1}}
+            expect(parseAmlTest('users\n  id int pk\n\nposts\n  author int\n')).toEqual({
+                result: {entities: [users, {name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 4, statement: 2}}], extra: {}}
             })
-            expect(parseAmlTest('posts\n  author int f\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}, {name: 'f', extra: {line: 2, statement: 2}}], extra: {}},
-                errors: [{message: "Expecting token of type --> NewLine <-- but found --> 'f' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(19, 19, 2, 14, 2, 14)}]
+            expect(parseAmlTest('users\n  id int pk\n\nposts\n  author int f\n')).toEqual({
+                result: {entities: [users, {name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 4, statement: 2}}, {name: 'f', extra: {line: 5, statement: 3}}], extra: {}},
+                errors: [{message: "Expecting token of type --> NewLine <-- but found --> 'f' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(38, 38, 5, 14, 5, 14)}]
             })
-            expect(parseAmlTest('posts\n  author int fk\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], extra: {}},
+            expect(parseAmlTest('users\n  id int pk\n\nposts\n  author int fk\n')).toEqual({
+                result: {entities: [users, {name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 4, statement: 2}}], extra: {}},
                 errors: [
-                    {message: "Expecting token of type --> Identifier <-- but found --> '\n' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(21, 21, 2, 16, 2, 16)},
-                    {...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(19, 20, 2, 14, 2, 15)},
+                    {message: "Expecting token of type --> Identifier <-- but found --> '\n' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(40, 40, 5, 16, 5, 16)},
+                    {...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(38, 39, 5, 14, 5, 15)},
                 ]
             })
-            expect(parseAmlTest('posts\n  author int fk users\n')).toEqual({
-                result: {entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}], relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: []}, extra: {line: 2, statement: 1, natural: 'ref', inline: true}}], extra: {}},
+            expect(parseAmlTest('users\n  id int pk\n\nposts\n  author int fk users\n')).toEqual({
+                result: {entities: [users, {name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 4, statement: 2}}], relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {line: 5, statement: 2, natural: 'ref', inline: true}}], extra: {}},
                 // TODO: an error should be reported here
-                errors: [{...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(19, 20, 2, 14, 2, 15)}]
+                errors: [{...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(38, 39, 5, 14, 5, 15)}]
             })
-            expect(parseAmlTest('posts\n  author int fk users.\n')).toEqual({
+            expect(parseAmlTest('users\n  id int pk\n\nposts\n  author int fk users.\n')).toEqual({
                 result: {
-                    entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}],
-                    relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: []}, extra: {line: 2, statement: 1, inline: true, natural: 'ref'}}],
+                    entities: [users, {name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 4, statement: 2}}],
+                    relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {line: 5, statement: 2, inline: true, natural: 'ref'}}],
                     extra: {}
                 },
                 errors: [
-                    {...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(19, 20, 2, 14, 2, 15)},
+                    {...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(38, 39, 5, 14, 5, 15)},
                 ]
             })
-            expect(parseAmlTest('posts\n  author int fk users.id\n')).toEqual({
+            expect(parseAmlTest('users\n  id int pk\n\nposts\n  author int fk users.id\n')).toEqual({
                 result: {
-                    entities: [{name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 1, statement: 1}}],
-                    relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {line: 2, statement: 1, inline: true}}],
+                    entities: [users, {name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 4, statement: 2}}],
+                    relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {line: 5, statement: 2, inline: true}}],
                     extra: {}
                 },
                 errors: [
-                    {...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(19, 20, 2, 14, 2, 15)},
-                    {...legacy('"users.id" is the legacy way, use "users(id)" instead'), ...tokenPosition(22, 29, 2, 17, 2, 24)},
+                    {...legacy('"fk" is legacy, replace it with "->"'), ...tokenPosition(38, 39, 5, 14, 5, 15)},
+                    {...legacy('"users.id" is the legacy way, use "users(id)" instead'), ...tokenPosition(41, 48, 5, 17, 5, 24)},
                 ]
             })
         })
@@ -449,7 +454,7 @@ admins* | View of \`users\` table with only admins
   id
   name | Computed from user first_name and last_name
 
-fk admins.id -> users.id
+fk admins.id -> public.users.id
 
 `)).toEqual({
                 result: {
@@ -488,7 +493,7 @@ fk admins.id -> users.id
                     }],
                     relations: [
                         {src: {schema: 'public', entity: 'users', attrs: [['email']]}, ref: {entity: 'emails', attrs: [['email']]}, extra: {line: 14, statement: 2, inline: true}},
-                        {src: {entity: 'admins', attrs: [['id']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {line: 20, statement: 4}},
+                        {src: {entity: 'admins', attrs: [['id']]}, ref: {schema: 'public', entity: 'users', attrs: [['id']]}, extra: {line: 20, statement: 4}},
                     ],
                     extra: {comments: [{line: 7, comment: 'How to define a table and it\'s columns'}]}
                 },
@@ -501,7 +506,7 @@ fk admins.id -> users.id
                     {...legacy('"emails.email" is the legacy way, use "emails(email)" instead'), ...tokenPosition(463, 474, 14, 54, 14, 65)},
                     {...legacy('"fk" is legacy, replace it with "rel"'), ...tokenPosition(585, 586, 20, 1, 20, 2)},
                     {...legacy('"admins.id" is the legacy way, use "admins(id)" instead'), ...tokenPosition(588, 596, 20, 4, 20, 12)},
-                    {...legacy('"users.id" is the legacy way, use "users(id)" instead'), ...tokenPosition(601, 608, 20, 17, 20, 24)},
+                    {...legacy('"public.users.id" is the legacy way, use "public.users(id)" instead'), ...tokenPosition(601, 615, 20, 17, 20, 31)},
                 ]
             })
         })

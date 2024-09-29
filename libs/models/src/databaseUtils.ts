@@ -87,6 +87,7 @@ export const entityRefFromId = (id: EntityId): EntityRef => {
 }
 
 export const entityRefSame = (a: EntityRef, b: EntityRef): boolean => (a.entity === b.entity || a.entity === '*' || b.entity === '*') && namespaceSame(a, b)
+export const entityToNamespace = (e: Entity): Namespace => namespace(e)
 export const entityToRef = (e: Entity): EntityRef => removeUndefined({...namespace(e), entity: e.name})
 export const entityToId = (e: Entity): EntityId => entityRefToId(entityToRef(e))
 

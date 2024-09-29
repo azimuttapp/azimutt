@@ -12,6 +12,7 @@ import {
     entityExtraKeys,
     entityExtraProps,
     entityRefSame,
+    entityToNamespace,
     entityToRef,
     Extra,
     flattenAttributes,
@@ -24,6 +25,8 @@ import {
     Type,
     typeExtraKeys,
     typeExtraProps,
+    typeRefFromId,
+    typeRefToId,
     typeToId
 } from "@azimutt/models";
 import {amlKeywords, PropertyValue} from "./amlAst";
@@ -39,7 +42,7 @@ export function genDatabase(database: Database, legacy: boolean): string {
     const [entityTypes, aloneTypes] = partition(database.types || [], t => {
         const tId = typeToId(t)
         const statement = t.extra?.statement
-        return t.extra?.inline ? !!database.entities?.find(e => !!flattenAttributes(e.attrs).find(a => a.type === tId)) :
+        return t.extra?.inline ? !!database.entities?.find(e => !!flattenAttributes(e.attrs).find(a => a.type === tId || typeRefToId({...typeRefFromId(a.type), ...entityToNamespace(e)}) === tId)) :
             statement ? !!database.entities?.find(e => e.extra?.statement === statement) :
                 false
     })
