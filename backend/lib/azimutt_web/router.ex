@@ -42,6 +42,16 @@ defmodule AzimuttWeb.Router do
   scope "/", AzimuttWeb do
     pipe_through([:browser, :website_root_layout])
     get("/", WebsiteController, :index)
+    get("/aml", WebsiteController, :aml)
+    # get("/cli", WebsiteController, :cli)
+    # get("/analyze", WebsiteController, :analyze)
+    # get("/analyze/rules", WebsiteController, :analyze_rules)
+    # get("/analyze/rules/:id", WebsiteController, :analyze_rule)
+    # get("/connectors", WebsiteController, :connectors)
+    # get("/connectors/:id", WebsiteController, :connector)
+    get("/converters", WebsiteController, :converters)
+    get("/converters/:from", WebsiteController, :converter)
+    get("/converters/:from/to/:to", WebsiteController, :convert)
     get("/last", WebsiteController, :last)
     get("/use-cases", WebsiteController, :use_cases_index)
     get("/use-cases/:use_case_id", WebsiteController, :use_cases_show)
@@ -53,6 +63,12 @@ defmodule AzimuttWeb.Router do
     get("/blog/:article_id", BlogController, :show)
     get("/gallery", GalleryController, :index)
     get("/gallery/:slug", GalleryController, :show)
+    # get("/vs", WebsiteController, :vs_tools)
+    # get("/vs/:tool", WebsiteController, :vs_tool)
+    # get("/database-tools", WebsiteController, :db_tools)
+    # get("/database-tools/:tool", WebsiteController, :db_tool)
+    # get("/friends", WebsiteController, :friends)
+    # get("/friends/:friend", WebsiteController, :friend)
     get("/logout", UserSessionController, :delete)
     delete("/logout", UserSessionController, :delete)
     get("/sitemap.xml", SitemapController, :index)
@@ -206,18 +222,27 @@ defmodule AzimuttWeb.Router do
   end
 
   # public APIs
-  scope "/api/v1", AzimuttWeb do
+  scope "/", AzimuttWeb do
     pipe_through([:api])
-    get("/gallery", Api.GalleryController, :index)
-    get("/organizations/:organization_id/projects/:project_id", Api.ProjectController, :show)
-    resources("/organizations/:organization_id/projects/:project_id/sources", Api.SourceController, param: "source_id", only: [:index, :show, :create, :update, :delete])
-    get("/organizations/:organization_id/projects/:project_id/metadata", Api.MetadataController, :index)
-    put("/organizations/:organization_id/projects/:project_id/metadata", Api.MetadataController, :update)
-    get("/organizations/:organization_id/projects/:project_id/tables/:table_id/metadata", Api.MetadataController, :table)
-    put("/organizations/:organization_id/projects/:project_id/tables/:table_id/metadata", Api.MetadataController, :table_update)
-    get("/organizations/:organization_id/projects/:project_id/tables/:table_id/columns/:column_path/metadata", Api.MetadataController, :column)
-    put("/organizations/:organization_id/projects/:project_id/tables/:table_id/columns/:column_path/metadata", Api.MetadataController, :column_update)
-    post("/events", Api.TrackingController, :create)
+    get("/aml/schema", Api.MainController, :aml_schema)
+
+    scope "/api" do
+      get("/", Api.MainController, :index)
+
+      scope "/v1" do
+        get("/", Api.MainController, :index)
+        get("/gallery", Api.GalleryController, :index)
+        get("/organizations/:organization_id/projects/:project_id", Api.ProjectController, :show)
+        resources("/organizations/:organization_id/projects/:project_id/sources", Api.SourceController, param: "source_id", only: [:index, :show, :create, :update, :delete])
+        get("/organizations/:organization_id/projects/:project_id/metadata", Api.MetadataController, :index)
+        put("/organizations/:organization_id/projects/:project_id/metadata", Api.MetadataController, :update)
+        get("/organizations/:organization_id/projects/:project_id/tables/:table_id/metadata", Api.MetadataController, :table)
+        put("/organizations/:organization_id/projects/:project_id/tables/:table_id/metadata", Api.MetadataController, :table_update)
+        get("/organizations/:organization_id/projects/:project_id/tables/:table_id/columns/:column_path/metadata", Api.MetadataController, :column)
+        put("/organizations/:organization_id/projects/:project_id/tables/:table_id/columns/:column_path/metadata", Api.MetadataController, :column_update)
+        post("/events", Api.TrackingController, :create)
+      end
+    end
   end
 
   # authed APIs
@@ -296,14 +321,14 @@ defmodule AzimuttWeb.Router do
     pipe_through([:browser, :enforce_user_requirements, :elm_root_layout])
     get("/create", ElmController, :create)
     get("/new", ElmController, :new)
-    get("/:organization_id", ElmController, :orga_show)
+    get("/:organization_id", ElmController, :org_show)
   end
 
   # allow cross origin iframe for Clever Cloud
   scope "/", AzimuttWeb do
     pipe_through([:browser, :enforce_user_requirements, :elm_root_layout, AllowCrossOriginIframe])
-    get("/:organization_id/new", ElmController, :orga_new)
-    get("/:organization_id/create", ElmController, :orga_create)
+    get("/:organization_id/new", ElmController, :org_new)
+    get("/:organization_id/create", ElmController, :org_create)
     get("/:organization_id/:project_id", ElmController, :project_show)
   end
 end

@@ -7,9 +7,7 @@ import {DateTime, Millis} from "./common";
 // TODO:
 //   - function to check Database consistency (no relation to non-existing entity, etc)
 //   - function to diff two Database
-//   - function to merge two Database
 //   - convert Database to Project and the reverse
-//   - parseAttributeType(AttributeType): AttributeTypeParsed
 
 export const DatabaseName = z.string()
 export type DatabaseName = z.infer<typeof DatabaseName>
@@ -80,13 +78,20 @@ export const IndexStats = z.object({
 }).strict()
 export type IndexStats = z.infer<typeof IndexStats>
 
+export const IndexExtra = Extra.and(z.object({
+    line: z.number().optional(),
+    statement: z.number().optional(),
+}))
+export type IndexExtra = z.infer<typeof IndexExtra>
+export const indexExtraKeys = ['line', 'statement']
+
 export const Check = z.object({
     name: ConstraintName.optional(),
     attrs: AttributePath.array(),
     predicate: z.string(),
     doc: z.string().optional(),
     stats: IndexStats.optional(),
-    extra: Extra.optional()
+    extra: IndexExtra.optional(),
 }).strict()
 export type Check = z.infer<typeof Check>
 
@@ -98,7 +103,7 @@ export const Index = z.object({
     definition: z.string().optional(),
     doc: z.string().optional(),
     stats: IndexStats.optional(),
-    extra: Extra.optional()
+    extra: IndexExtra.optional(),
 }).strict()
 export type Index = z.infer<typeof Index>
 
@@ -107,7 +112,7 @@ export const PrimaryKey = z.object({
     attrs: AttributePath.array(),
     doc: z.string().optional(),
     stats: IndexStats.optional(),
-    extra: Extra.optional()
+    extra: IndexExtra.optional(),
 }).strict()
 export type PrimaryKey = z.infer<typeof PrimaryKey>
 
@@ -139,6 +144,18 @@ export const AttributeStats = z.object({
 }).strict()
 export type AttributeStats = z.infer<typeof AttributeStats>
 
+export const AttributeExtra = Extra.and(z.object({
+    line: z.number().optional(),
+    statement: z.number().optional(),
+    autoIncrement: z.null().optional(),
+    hidden: z.null().optional(),
+    tags: z.string().array().optional(),
+    comment: z.string().optional(), // if there is a comment in the attribute line
+}))
+export type AttributeExtra = z.infer<typeof AttributeExtra>
+export const attributeExtraKeys = ['line', 'statement', 'autoIncrement', 'hidden', 'tags', 'comment']
+export const attributeExtraProps = ['autoIncrement', 'hidden', 'tags'] // extra keys manually set in properties
+
 export const Attribute: z.ZodType<Attribute> = z.object({
     name: AttributeName,
     type: AttributeType,
@@ -148,7 +165,7 @@ export const Attribute: z.ZodType<Attribute> = z.object({
     attrs: z.lazy(() => Attribute.array().optional()),
     doc: z.string().optional(),
     stats: AttributeStats.optional(),
-    extra: Extra.optional()
+    extra: AttributeExtra.optional(),
 }).strict()
 export type Attribute = { // define type explicitly because it's lazy (https://zod.dev/?id=recursive-types)
     name: AttributeName
@@ -159,7 +176,7 @@ export type Attribute = { // define type explicitly because it's lazy (https://z
     attrs?: Attribute[] | undefined
     doc?: string | undefined
     stats?: AttributeStats | undefined
-    extra?: Extra | undefined
+    extra?: AttributeExtra | undefined
 }
 
 export const EntityKind = z.enum(['table', 'view', 'materialized view', 'foreign table'])
@@ -183,43 +200,90 @@ export const EntityStats = z.object({
 }).strict()
 export type EntityStats = z.infer<typeof EntityStats>
 
+export const EntityExtra = Extra.and(z.object({
+    line: z.number().optional(),
+    statement: z.number().optional(),
+    alias: z.string().optional(),
+    color: z.string().optional(),
+    tags: z.string().array().optional(),
+    comment: z.string().optional(), // if there is a comment in the entity line
+}))
+export type EntityExtra = z.infer<typeof EntityExtra>
+export const entityExtraKeys = ['line', 'statement', 'alias', 'color', 'tags', 'comment']
+export const entityExtraProps = ['view', 'color', 'tags'] // extra keys manually set in properties (view is set in props but stored in entity def, not extra ^^)
+
 export const Entity = Namespace.extend({
     name: EntityName,
     kind: EntityKind.optional(), // 'table' when not specified
     def: z.string().optional(), // the query definition for views
-    attrs: Attribute.array(),
+    attrs: Attribute.array().optional(),
     pk: PrimaryKey.optional(),
     indexes: Index.array().optional(),
     checks: Check.array().optional(),
     doc: z.string().optional(),
     stats: EntityStats.optional(),
-    extra: Extra.optional()
+    extra: EntityExtra.optional(),
 }).strict()
 export type Entity = z.infer<typeof Entity>
+
+export const RelationCardinality = z.enum(['0', '1', 'n'])
+export type RelationCardinality = z.infer<typeof RelationCardinality>
+
+export const RelationLink = EntityRef.extend({attrs: AttributePath.array(), cardinality: RelationCardinality.optional()})
+export type RelationLink = z.infer<typeof RelationLink>
 
 export const RelationKind = z.enum(['many-to-one', 'one-to-many', 'one-to-one', 'many-to-many'])
 export type RelationKind = z.infer<typeof RelationKind>
 
+export const RelationAction = z.enum(['no action', 'set null', 'set default', 'cascade', 'restrict'])
+export type RelationAction = z.infer<typeof RelationAction>
+
+export const RelationExtra = Extra.and(z.object({
+    line: z.number().optional(),
+    statement: z.number().optional(),
+    inline: z.boolean().optional(), // when defined within the parent entity
+    natural: z.enum(['src', 'ref', 'both']).optional(), // natural join: attributes are not specified
+    onUpdate: z.union([RelationAction, z.string()]).optional(),
+    onDelete: z.union([RelationAction, z.string()]).optional(),
+    srcAlias: z.string().optional(),
+    refAlias: z.string().optional(),
+    tags: z.string().array().optional(),
+    comment: z.string().optional(), // if there is a comment in the relation line
+}))
+export type RelationExtra = z.infer<typeof RelationExtra>
+export const relationExtraKeys = ['line', 'statement', 'inline', 'natural', 'onUpdate', 'onDelete', 'srcAlias', 'refAlias', 'tags', 'comment']
+export const relationExtraProps = ['onUpdate', 'onDelete', 'tags'] // extra keys manually set in properties
+
 export const Relation = z.object({
     name: ConstraintName.optional(),
-    kind: RelationKind.optional(), // 'many-to-one' when not specified
     origin: z.enum(['fk', 'infer-name', 'infer-similar', 'infer-query', 'user']).optional(), // 'fk' when not specified
-    src: EntityRef,
-    ref: EntityRef,
-    attrs: z.object({src: AttributePath, ref: AttributePath}).array(),
+    src: RelationLink,
+    ref: RelationLink,
     polymorphic: z.object({attribute: AttributePath, value: AttributeValue}).optional(),
     doc: z.string().optional(),
-    extra: Extra.optional()
+    extra: RelationExtra.optional(),
 }).strict()
 export type Relation = z.infer<typeof Relation>
 
+export const TypeExtra = Extra.and(z.object({
+    line: z.number().optional(),
+    statement: z.number().optional(),
+    inline: z.boolean().optional(), // when defined within the parent entity
+    tags: z.string().array().optional(),
+    comment: z.string().optional(), // if there is a comment in the type line
+}))
+export type TypeExtra = z.infer<typeof TypeExtra>
+export const typeExtraKeys = ['line', 'statement', 'inline', 'tags', 'comment']
+export const typeExtraProps = ['tags'] // extra keys manually set in properties
+
 export const Type = Namespace.extend({
     name: TypeName,
+    alias: z.string().optional(),
     values: z.string().array().optional(),
     attrs: Attribute.array().optional(),
     definition: z.string().optional(),
     doc: z.string().optional(),
-    extra: Extra.optional()
+    extra: TypeExtra.optional(),
 }).strict()
 export type Type = z.infer<typeof Type>
 
@@ -230,34 +294,45 @@ export const DatabaseStats = z.object({
     name: DatabaseName,
     kind: DatabaseKind,
     version: z.string(),
-    extractedAt: DateTime, // when the database was extracted
-    extractionDuration: Millis,
     size: z.number(), // used bytes
+    extractedAt: DateTime, // legacy, see extra.createdAt instead
+    extractionDuration: Millis, // legacy, see extra.creationTimeMs instead
 }).partial().strict()
 export type DatabaseStats = z.infer<typeof DatabaseStats>
+
+export const DatabaseExtra = Extra.and(z.object({
+    source: z.string().optional(), // what/who created this database, format: `${name} <${version}>` (version is optional, inspired by package.json author)
+    createdAt: DateTime.optional(), // when it was created
+    creationTimeMs: Millis.optional(), // how long it took to create it
+    comments: z.object({line: z.number(), comment: z.string()}).array().optional(), // source line comments, used to generate them back
+    namespaces: Namespace.extend({line: z.number(), comment: z.string().optional()}).array().optional(), // source namespace statements, used to generate them back
+}))
+export type DatabaseExtra = z.infer<typeof DatabaseExtra>
+export const databaseExtraKeys = ['source', 'createdAt', 'creationTimeMs', 'comments', 'namespaces']
 
 export const Database = z.object({
     entities: Entity.array().optional(),
     relations: Relation.array().optional(),
     types: Type.array().optional(),
     // functions: z.record(FunctionId, Function.array()).optional(),
-    // procedures: z.record(ProcedureId, Procedure.array()).optional(),
-    // triggers: z.record(TriggerId, Trigger.array()).optional(),
+    // procedures: z.record(ProcedureId, Procedure.array()).optional(), // parse procedures and list them on tables they use
+    // triggers: z.record(TriggerId, Trigger.array()).optional(), // list triggers on tables they belong
     doc: z.string().optional(),
     stats: DatabaseStats.optional(),
-    extra: Extra.optional(),
+    extra: DatabaseExtra.optional(),
 }).strict().describe('Database')
 export type Database = z.infer<typeof Database>
 
+// keep it sync with backend/priv/static/aml_schema.json (see test)
 export const DatabaseSchema = zodToJsonSchema(Database, {
     name: 'Database',
     definitions: {
         DatabaseName, CatalogName, SchemaName, Namespace,
         Entity, EntityRef, EntityName, EntityKind,
         Attribute, AttributeRef, AttributeName, AttributePath, AttributeType, AttributeValue,
-        PrimaryKey, Index, Check,
-        Relation, ConstraintName, RelationKind,
+        PrimaryKey, Index, Check, ConstraintName,
+        Relation, RelationLink, RelationCardinality,
         Type, TypeName,
-        Extra
+        Extra, DatabaseExtra, EntityExtra, AttributeExtra, IndexExtra, RelationExtra, TypeExtra
     }
 })

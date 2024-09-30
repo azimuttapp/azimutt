@@ -69,7 +69,7 @@ export function isPrimaryKeyTechnical(entity: Entity, relations: Relation[]): bo
         return entity.pk.attrs.every(pkAttr => {
             const isAutoIncrement = false // FIXME: compute this!
             const endsWithId = pkAttr.slice(-1)[0].toLowerCase().endsWith('id')
-            const hasRelation = relations.find(r => r.attrs.find(a => attributePathToId(a.src) === attributePathToId(pkAttr)))
+            const hasRelation = relations.find(r => r.src.attrs.find(a => attributePathToId(a) === attributePathToId(pkAttr)))
             return !isAutoIncrement && (endsWithId || hasRelation)
         })
     } else {

@@ -7,6 +7,7 @@ import {
     entityRefSame,
     entityRefToId,
     entityToId,
+    relationLinkToEntityRef,
     relationRefSame,
     relationToId,
     relationToRef
@@ -64,6 +65,6 @@ export type MissingEntityRelation = { relation: Relation, missing: EntityRef[] }
 export function getMissingEntityRelations(relation: Relation, entities: Record<EntityId, Entity>): MissingEntityRelation | undefined {
     const src = entities[entityRefToId(relation.src)]
     const ref = entities[entityRefToId(relation.ref)]
-    const missing: EntityRef[] = [src ? undefined : relation.src, ref ? undefined : relation.ref].filter(isNotUndefined)
+    const missing: EntityRef[] = [src ? undefined : relationLinkToEntityRef(relation.src), ref ? undefined : relationLinkToEntityRef(relation.ref)].filter(isNotUndefined)
     return missing.length > 0 ? {relation, missing} : undefined
 }

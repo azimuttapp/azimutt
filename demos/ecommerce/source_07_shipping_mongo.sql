@@ -1,12 +1,11 @@
+// drop then create the database
 use shipping;
-
-// drop everything
 db.ShipmentItems.drop();
 db.Shipments.drop();
 db.Carriers.drop();
 
 
-// create the collections
+// database schema
 db.createCollection('Carriers', {
     validator: {
         $jsonSchema: {
@@ -74,7 +73,7 @@ db.ShipmentItems.createIndex({ shipmentId: 1 });
 db.ShipmentItems.createIndex({ invoiceId: 1 });
 
 
-// insert some data
+// database data
 db.Carriers.insertMany([
     {_id: ObjectId("66cb179dfdd0405e567c1938"), id: 1, registration: "KR123456789", licensePlate: "KR-PLATE-001", cargoWidth: 2500, cargoLength: 12000, cargoHeight: 3000, cargoWeight: 24000, createdAt: new Date(), createdBy: 24, updatedAt: new Date(), updatedBy: 24},
     {_id: ObjectId("66cb179dfdd0405e567c1939"), id: 2, registration: "KR987654321", licensePlate: "KR-PLATE-002", cargoWidth: 2600, cargoLength: 13000, cargoHeight: 3200, cargoWeight: 25000, createdAt: new Date(), createdBy: 24, updatedAt: new Date(), updatedBy: 24},

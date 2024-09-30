@@ -2,7 +2,7 @@ defmodule Azimutt.Repo.Migrations.CreateCleverCloudResources do
   use Ecto.Migration
 
   def change do
-    create table(:clever_cloud_resources, comments: "Clever Cloud addon resources") do
+    create table(:clever_cloud_resources, comment: "Clever Cloud addon resources") do
       add :addon_id, :string, null: false
       add :owner_id, :string, null: false
       add :owner_name, :string, null: false

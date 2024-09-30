@@ -1,11 +1,10 @@
+// drop then create the database
 use analytics;
-
-// drop everything
 db.Events.drop();
 db.Entities.drop();
 
 
-// create the collections
+// database schema
 db.createCollection('Events', {
     validator: {
         $jsonSchema: {
@@ -58,10 +57,10 @@ db.createCollection('Entities', {
 db.Entities.createIndex({ name: 1 });
 
 
-// insert some data
+// database data
 db.Events.insertMany([
-    {_id: ObjectId("66c19109ab46f11e824ed6a9"), id: "af099435-b2ed-4871-8f27-8bc88e15b68c", name: "user__login__success", source: "website", details: { ip: "192.168.1.1", browser: "Chrome" }, entities: { user: [{ id: "1", name: "Loïc Knuchel", email: "loic@azimutt.app" }] }, createdAt: new Date()},
-    {_id: ObjectId("66c19109ab46f11e824ed6aa"), id: "f35afcfa-92e4-491e-9e51-ed8ac51a9e20", name: "order__purchase__completed", source: "app", details: { amount: 200 }, entities: {user: [{id: "1", name: "Loïc Knuchel"}], cart: [{id: "1", name: "Cart 1", items: 2}], invoice: [{id: "1", name: "INV-001", price: 200, currency: "USD", lines: 1}]}, createdAt: new Date()},
+    {_id: ObjectId("66c19109ab46f11e824ed6a9"), id: UUID("af099435-b2ed-4871-8f27-8bc88e15b68c"), name: "user__login__success", source: "website", details: { ip: "192.168.1.1", browser: "Chrome" }, entities: { user: [{ id: "1", name: "Loïc Knuchel", email: "loic@azimutt.app" }] }, createdAt: new Date()},
+    {_id: ObjectId("66c19109ab46f11e824ed6aa"), id: UUID("f35afcfa-92e4-491e-9e51-ed8ac51a9e20"), name: "order__purchase__completed", source: "app", details: { amount: 200 }, entities: {user: [{id: "1", name: "Loïc Knuchel"}], cart: [{id: "1", name: "Cart 1", items: 2}], invoice: [{id: "1", name: "INV-001", price: 200, currency: "USD", lines: 1}]}, createdAt: new Date()},
 ]);
 
 db.Entities.insertMany([

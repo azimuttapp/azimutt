@@ -16466,8 +16466,11 @@
     "name": "metabase",
     "kind": "postgres",
     "version": "PostgreSQL 16.2 on x86_64-pc-linux-musl, compiled by gcc (Alpine 13.2.1_git20231014) 13.2.1 20231014, 64-bit",
-    "extractedAt": "2024-04-29T21:35:59.264Z",
-    "extractionDuration": 721,
     "size": 7970816
+  },
+  "extra": {
+    "source": "PostgreSQL connector",
+    "createdAt": "2024-04-29T21:35:59.264Z",
+    "creationTimeMs": 721
   }
 }

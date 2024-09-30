@@ -26,6 +26,25 @@ defmodule AzimuttWeb.WebsiteController do
     end
   end
 
+  def aml(conn, _params), do: conn |> render("aml.html")
+  def converters(conn, _params), do: conn |> render("converters.html")
+
+  def converter(conn, %{"from" => from}) do
+    Azimutt.converters()
+    |> Enum.find(fn c -> c.id == from end)
+    |> Result.from_nillable()
+    |> Result.map(fn converter -> conn |> render("converter.html", converter: converter) end)
+  end
+
+  def convert(conn, %{"from" => from_id, "to" => to_id}) do
+    from_converter = Azimutt.converters() |> Enum.find(fn c -> c.id == from_id end) |> Result.from_nillable()
+    to_converter = Azimutt.converters() |> Enum.find(fn c -> c.id == to_id end) |> Result.from_nillable()
+
+    from_converter
+    |> Result.flat_map(fn f -> to_converter |> Result.map(fn t -> {f, t} end) end)
+    |> Result.map(fn {from, to} -> conn |> render("convert.html", from: from, to: to) end)
+  end
+
   def last(conn, _params) do
     case conn |> last_used_project do
       {:ok, p} -> conn |> redirect(to: Routes.elm_path(conn, :project_show, p.organization_id, p.id))

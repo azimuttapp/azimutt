@@ -7,7 +7,6 @@ Main models:
 - [database](src/database.ts): defines a generic database infos (structure & stats), used for every connector and serde
 - [project](src/project.ts): defines an Azimutt project, holding everything
 - [connector](src/interfaces/connector.ts): defines the interface to connect to any database
-- [serde](src/interfaces/serde.ts): defines the interface to parse and generate database schema
 
 Here are the main utilities:
 

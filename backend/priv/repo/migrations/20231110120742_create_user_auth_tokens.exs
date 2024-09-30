@@ -2,7 +2,7 @@ defmodule Azimutt.Repo.Migrations.CreateUserAuthTokens do
   use Ecto.Migration
 
   def change do
-    create table(:user_auth_tokens, comments: "Tokens allowing to log as the user, useful for API") do
+    create table(:user_auth_tokens, comment: "Tokens allowing to log as the user, useful for API") do
       add :user_id, references(:users, on_delete: :delete_all), null: false
       add :name, :string, null: false
       add :nb_access, :integer, null: false

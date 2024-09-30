@@ -8,8 +8,8 @@ import {
     Database,
     Entity,
     EntityId,
-    EntityRef,
-    Relation
+    Relation,
+    RelationLink
 } from "../../database";
 import {
     attributePathToId,
@@ -18,6 +18,7 @@ import {
     attributesRefToId,
     entityRefToId,
     entityToId,
+    relationLinkToEntityRef,
     relationToId
 } from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
@@ -56,36 +57,36 @@ export const indexOnRelationRule: Rule<CustomRuleConf> = {
         const entities: Record<EntityId, Entity> = indexBy(db.entities || [], entityToId)
         return (db.relations || [])
             .flatMap(r => getMissingIndexOnRelation(r, entities))
-            .filter(idx => !ignores.some(i => attributesRefSame(i, {...idx.ref, attributes: idx.attrs})))
+            .filter(idx => !ignores.some(i => attributesRefSame(i, {...idx.ref, attributes: idx.ref.attrs})))
             .map(i => ({
                 ruleId,
                 ruleName,
                 ruleLevel: conf.level,
-                message: `Create an index on ${attributesRefToId({...i.ref, attributes: i.attrs})} to improve ${relationToId(i.relation)} relation.`,
-                entity: i.ref,
-                attribute: i.attrs[0],
-                extra: {indexAttrs: i.attrs, relation: i.relation}
+                message: `Create an index on ${attributesRefToId({...i.ref, attributes: i.ref.attrs})} to improve ${relationToId(i.relation)} relation.`,
+                entity: relationLinkToEntityRef(i.ref),
+                attribute: i.ref.attrs[0],
+                extra: {indexAttrs: i.ref.attrs, relation: i.relation}
             }))
     }
 }
 
-export type MissingIndex = { relation: Relation, ref: EntityRef, attrs: AttributePath[] }
+export type MissingIndex = { relation: Relation, ref: RelationLink }
 
 // same as frontend/src/PagesComponents/Organization_/Project_/Views/Modals/SchemaAnalysis/IndexOnForeignKeys.elm
 export function getMissingIndexOnRelation(relation: Relation, entities: Record<EntityId, Entity>): MissingIndex[] {
     return [
-        hasIndex(relation, relation.ref, relation.attrs.map(a => a.ref), entities),
-        hasIndex(relation, relation.src, relation.attrs.map(a => a.src), entities),
+        hasIndex(relation, relation.ref, entities),
+        hasIndex(relation, relation.src, entities),
     ].filter(isNotUndefined)
 }
 
-function hasIndex(relation: Relation, ref: EntityRef, attrs: AttributePath[], entities: Record<EntityId, Entity>): MissingIndex | undefined {
+function hasIndex(relation: Relation, ref: RelationLink, entities: Record<EntityId, Entity>): MissingIndex | undefined {
     const entity = entities[entityRefToId(ref)]
     if (!entity) return undefined // don't suggest new index if entity is not found
-    if (matchIndex(entity.pk?.attrs || [], attrs) || entity.indexes?.find(i => matchIndex(i.attrs, attrs)) !== undefined) {
+    if (matchIndex(entity.pk?.attrs || [], ref.attrs) || entity.indexes?.find(i => matchIndex(i.attrs, ref.attrs)) !== undefined) {
         return undefined
     } else {
-        return {relation, ref, attrs}
+        return {relation, ref}
     }
 }
 

@@ -29,7 +29,7 @@
                             <path d="m0 1.28925c0-.712125.59175-1.28925 1.32187-1.28925h15.35623c.7301 0 1.3219.577125 1.3219 1.28925v15.42155c0 .7121-.5918 1.2892-1.3219 1.2892h-15.35623c-.73012 0-1.32187-.5771-1.32187-1.2892zm5.56087 13.77905v-8.12817h-2.70112v8.12817zm-1.34999-9.23855c.94162 0 1.52774-.62325 1.52774-1.404-.01687-.79762-.58499-1.404-1.50974-1.404s-1.52888.6075-1.52888 1.404c0 .78075.58613 1.404 1.49287 1.404zm5.5215 9.23855v-4.5394c0-.243.01799-.486.08999-.65928.19463-.48487.63903-.98775 1.38603-.98775.9776 0 1.368.74476 1.368 1.83823v4.3482h2.7011v-4.6621c0-2.49745-1.332-3.65845-3.1095-3.65845-1.4333 0-2.0756.7875-2.43562 1.34212v.02813h-.018c.00597-.00939.01197-.01877.018-.02813v-1.14974h-2.70001c.03375.76275 0 8.12817 0 8.12817z"></path>
                         </svg>
                     </a>
-    </div>
+                </div>
             </div>
             <div class="mt-16 grid grid-cols-2 gap-8 xl:col-span-2 xl:mt-0">
                 <div class="md:grid md:grid-cols-2 md:gap-8">
@@ -44,11 +44,13 @@
                     <div class="mt-10 md:mt-0">
                         <h3 class="text-sm font-semibold leading-6 text-gray-900">Products</h3>
                         <ul role="list" class="mt-6 space-y-4">
-                            <li><a href={Azimutt.config(:cli_url)} target="_blank" rel="noopener" title="Export schema from PostgreSQL, MongoDB and Couchbase" class="text-sm leading-6 text-gray-600 hover:text-gray-900">Azimutt CLI</a></li>
-                            <li><a href="#soon" title="Sync local files, imported source or exported project, connect to local databases and more" class="text-sm leading-6 text-gray-600 hover:text-gray-900">Azimutt Desktop <span class="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-800">soon</span></a></li>
-                            <li><a href={Azimutt.config(:heroku_url)} target="_blank" rel="noopener" title="Connect your Heroku app/database with Azimutt" class="text-sm leading-6 text-gray-600 hover:text-gray-900">Heroku Add-on</a></li>
+                            <li><a href={Routes.website_path(@conn, :aml)} title="The easiest DSL to design databases" class="text-sm leading-6 text-gray-600 hover:text-gray-900">AML</a></li>
+                            <li><a href={Azimutt.config(:cli_url)} target="_blank" rel="noopener" title="Utilities from Azimutt: gateway, db analyze, export, conversions, diff..." class="text-sm leading-6 text-gray-600 hover:text-gray-900">Azimutt CLI</a></li>
+                            <li><a href={Routes.website_path(@conn, :converters)} title="Convert from a dialect to another: SQL, AML, DBML, JSON..." class="text-sm leading-6 text-gray-600 hover:text-gray-900">Dialect converters</a></li>
+<!--                            <li><a href="#soon" title="Sync local files, imported source or exported project, connect to local databases and more" class="text-sm leading-6 text-gray-600 hover:text-gray-900">Azimutt Desktop <span class="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-800">soon</span></a></li>-->
                             <li><a href={Azimutt.config(:browser_extension_url)} target="_blank" rel="noopener" title="Open any SQL schema in GitHub with Azimutt" class="text-sm leading-6 text-gray-600 hover:text-gray-900">Browser extension</a></li>
-                            <li><a href={Routes.gallery_path(@conn, :index)} title="Gallery of many database schemas, for inspiration" class="text-sm leading-6 text-gray-600 hover:text-gray-900">Schema gallery</a></li>
+                            <li><a href={Azimutt.config(:heroku_url)} target="_blank" rel="noopener" title="Connect your Heroku app/database with Azimutt" class="text-sm leading-6 text-gray-600 hover:text-gray-900">Heroku Add-on</a></li>
+                            <li><a href={Routes.gallery_path(@conn, :index)} title="Gallery of many database schemas, for inspiration" class="text-sm leading-6 text-gray-600 hover:text-gray-900">Database samples</a></li>
                         </ul>
                     </div>
                 </div>

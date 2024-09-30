@@ -120,4 +120,11 @@ defmodule Azimutt.MixProject do
       swagger: ["phx.swagger.generate priv/static/swagger.json"]
     ]
   end
+
+  def assets do
+    [
+      esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]},
+      esbuild_typescript: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch --loader:.ts=ts --loader:.tsx=tsx)]}
+    ]
+  end
 end

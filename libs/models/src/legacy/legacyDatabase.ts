@@ -1,5 +1,5 @@
 import {z} from "zod";
-import {removeEmpty, removeUndefined} from "@azimutt/utils";
+import {removeEmpty, removeUndefined, stringify, zip} from "@azimutt/utils";
 import {
     Attribute,
     AttributePath,
@@ -225,7 +225,7 @@ function tableToLegacy(e: Entity): LegacyTable {
     return removeUndefined({
         schema: e.schema || '',
         table: e.name,
-        columns: e.attrs.map(columnToLegacy),
+        columns: (e.attrs || []).map(columnToLegacy),
         view: e.kind === 'view' || e.kind === 'materialized view' || undefined,
         definition: e.def,
         primaryKey: e.pk ? primaryKeyToLegacy(e.pk) : undefined,
@@ -389,14 +389,13 @@ function checkToLegacy(c: Check): LegacyCheck {
 export function relationFromLegacy(r: LegacyRelation): Relation {
     return removeUndefined({
         name: r.name || undefined,
-        src: columnRefFromLegacy2(r.src),
-        ref: columnRefFromLegacy2(r.ref),
-        attrs: [{src: r.src.column.split(legacyColumnPathSeparator), ref: r.ref.column.split(legacyColumnPathSeparator)}],
+        src: {...columnRefFromLegacy2(r.src), attrs: [r.src.column.split(legacyColumnPathSeparator)]},
+        ref: {...columnRefFromLegacy2(r.ref), attrs: [r.ref.column.split(legacyColumnPathSeparator)]},
     })
 }
 
 function relationToLegacy(r: Relation): LegacyRelation[] {
-    return r.attrs.map(attr => ({ name: r.name || '', src: columnRefToLegacy2(r.src, attr.src), ref: columnRefToLegacy2(r.ref, attr.ref) }))
+    return zip(r.src.attrs, r.ref.attrs).map(([srcAttr, refAttr]) => ({ name: r.name || '', src: columnRefToLegacy2(r.src, srcAttr), ref: columnRefToLegacy2(r.ref, refAttr) }))
 }
 
 export function tableRefFromId(id: LegacyTableId): LegacyTableRef {
@@ -442,4 +441,20 @@ function typeToLegacy(t: Type): LegacyType {
     } else {
         return {schema: t.schema || '', name: t.name, definition: t.definition || ''}
     }
+}
+
+
+export function legacyDatabaseJsonFormat(database: LegacyDatabase): string {
+    return stringify(database, (path: (string | number)[], value: any) => {
+        const last = path[path.length - 1]
+        // if (last === 'tables' || last === 'relations' || last === 'types') return 0
+        if (path.includes('columns') && last !== 'columns') return 0
+        if (path.includes('primaryKey')) return 0
+        if (path.includes('uniques') && path.length > 3) return 0
+        if (path.includes('indexes') && path.length > 3) return 0
+        if (path.includes('checks') && path.length > 3) return 0
+        if (path.includes('relations') && path.length > 2) return 0
+        if (path.includes('types') && path.length > 1) return 0
+        return 2
+    })
 }

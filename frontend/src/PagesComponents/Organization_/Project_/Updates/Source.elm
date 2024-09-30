@@ -38,7 +38,7 @@ createRelations now rels erd =
         Nothing ->
             ( erd
             , Extra.cmdL
-                [ SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Source.addRelations now rels >> CreateUserSourceWithId)
+                [ SourceId.generator |> Random.generate (Source.empty Conf.constants.virtualRelationSourceName now >> Source.addRelations now rels >> CreateUserSourceWithId)
                 , "'" ++ Conf.constants.virtualRelationSourceName ++ "' source added to project with new relation." |> Toasts.info |> Toast |> T.send
                 ]
             )

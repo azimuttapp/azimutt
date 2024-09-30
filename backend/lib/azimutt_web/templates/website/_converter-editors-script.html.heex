@@ -1,0 +1,182 @@
+<script src="https://cdn.jsdelivr.net/npm/@azimutt/aml@0.1.5/out/bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@azimutt/parser-sql@0.1.1/out/bundle.min.js"></script>
+<!--<script src="/elm/aml.min.js"></script>-->
+<!--<script src="/elm/sql.min.js"></script>-->
+<!--<script src="/elm/prisma.min.js"></script>-->
+<!--<script src="/elm/dbml.min.js"></script>-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.51.0/min/vs/loader.min.js"></script>
+<script>
+    // get inputs
+    var leftLang = '<%= @left.lang %>'
+    var rightLang = '<%= @right.lang %>'
+    var editorLeftContainer = document.getElementById('<%= @left.id %>')
+    var editorRightContainer = document.getElementById('<%= @right.id %>')
+
+    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.51.0/min/vs' }})
+    require(['vs/editor/editor.main'], function() {
+        // define AML language for monaco
+        monaco.languages.register({id: 'aml'})
+        monaco.languages.setMonarchTokensProvider('aml', aml.monaco.language()) // syntax highlighting
+        monaco.languages.registerCompletionItemProvider('aml', aml.monaco.completion()) // auto-complete
+        monaco.languages.registerCodeActionProvider('aml', aml.monaco.codeAction()) // quick-fixes
+        monaco.languages.registerCodeLensProvider('aml', aml.monaco.codeLens()) // hints with actions
+
+        // define schema for JSON
+        monaco.languages.json.jsonDefaults.setDiagnosticsOptions({validate: true, schemas: [{fileMatch: ['*'], schema: aml.schemaJsonDatabase}]})
+
+        var model = monaco.editor.createModel(getDefaultValue(leftLang), monacoLang(leftLang))
+        var leftEditor = createEditor(editorLeftContainer, {model})
+        var rightEditor = createEditor(editorRightContainer, {language: monacoLang(rightLang), value: '', readOnly: true})
+        var leftAmlButton = leftLang === 'aml' ? createAmlButton(editorLeftContainer) : undefined
+        var rightAmlButton = rightLang === 'aml' ? createAmlButton(editorRightContainer) : undefined
+
+        // sync right editor with parsing result
+        function syncEditors() {
+            var parsed = parse(leftLang, leftEditor.getValue())
+            if (parsed.result && (parsed.errors || []).filter(e => e.level === 'error').length === 0) {
+                if (!model.context) model.context = {}
+                model.context.database = parsed.result // make parsed result available in the model (used in completion for example)
+                window.azimuttSchema = parsed.result // expose it to the JS console (debug & unknown use cases)
+                storeDatabase(parsed.result) // store it in the browser to keep it over reloads
+
+                rightEditor.setValue(format(rightLang, parsed.result)) // preserve the undo stack with: `model.pushEditOperations([], [{range: model.getFullModelRange(), text: value}])`
+                if (leftAmlButton) { updatedAmlButtonUrl(leftAmlButton, leftEditor.getValue()) }
+                if (rightAmlButton) { updatedAmlButtonUrl(rightAmlButton, rightEditor.getValue()) }
+            }
+            monaco.editor.setModelMarkers(model, 'owner', (parsed.errors || []).map(e => aml.monaco.createMarker(e, model, leftEditor)))
+        }
+
+        syncEditors()
+        leftEditor.onDidChangeModelContent(function (e /* {
+          changes: [{
+            text: 'posts',
+            range: {startLineNumber: 11, startColumn: 1, endLineNumber: 11, endColumn: 1},
+            rangeLength: 0,
+            rangeOffset: 113,
+            forceMoveMarkers: false
+          }],
+          isUndoing: true,
+          isRedoing: false,
+          isFlush: false,
+          isEolChange: false,
+          versionId: 4,
+          eol: '\\n'
+        } */) {
+            syncEditors()
+        })
+
+        function createEditor(container, settings) {
+            var element = document.createElement('div')
+            element.className = 'editor h-full'
+            container.appendChild(element)
+            return monaco.editor.create(element, Object.assign({theme: 'vs-light', minimap: {enabled: false}, automaticLayout: true, scrollBeyondLastLine: true}, settings))
+        }
+        function createAmlButton(container) {
+            var buttonEl = document.createElement('a')
+            buttonEl.innerText = 'Open in Azimutt'
+            buttonEl.className = 'absolute bottom-2 right-5 rounded bg-white px-2 py-1 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50'
+            buttonEl.href = '#'
+            buttonEl.setAttribute('target', '_blank')
+            container.appendChild(buttonEl)
+            return buttonEl
+        }
+        function updatedAmlButtonUrl(button, aml) {
+            button.href = '/create?aml=' + encodeURIComponent(aml).slice(0, 2000) // URI length limit, should send it with POST at some point...
+        }
+        function monacoLang(lang) {
+            if (lang === 'amlv1') return 'aml'
+            if (lang === 'postgres') return 'pgsql'
+            if (lang === 'mermaid') return 'plaintext'
+            return lang
+        }
+        function parse(lang, content) {
+            if (lang === 'aml') return aml.parseAml(content)
+            if (lang === 'amlv1') return aml.parseAml(content).mapError(errs => errs.filter(e => e.kind !== 'LegacySyntax'))
+            if (lang === 'json') return aml.parseJsonDatabase(content)
+            return {errors: [{message: 'Unsupported source dialect: ' + lang, kind: 'UnsupportedDialect', level: 'error', offset: {start: 0, end: 100}, position: {start: {line: 1, column: 1}, end: {line: 10, column: 10}}}]}
+        }
+        function format(lang, db) {
+            if (lang === 'aml') return aml.generateAml(db)
+            if (lang === 'amlv1') return aml.generateAml(db, true)
+            if (lang === 'json') return aml.generateJsonDatabase(db)
+            if (lang === 'postgres') return sql.generateSql(db, 'postgres')
+            if (lang === 'mermaid') return aml.generateMermaid(db)
+            if (lang === 'markdown') return aml.generateMarkdown(db)
+            return 'Unsupported destination dialect: ' + lang
+        }
+        function getDefaultValue(lang) {
+            // default value from: `value` query param, or url hash, or local storage, or hardcoded
+            var urlValue = getUrlValue(lang)
+            if (urlValue) return urlValue
+
+            var storedDb = getStoredDatabase()
+            if (storedDb) return format(lang, storedDb)
+
+            return format(lang, {
+                entities: [{
+                    name: 'users',
+                    attrs: [
+                        {name: 'id', type: 'uuid'},
+                        {name: 'name', type: 'varchar'},
+                        {name: 'email', type: 'varchar'},
+                        {name: 'role', type: 'user_role', default: 'guest'}
+                    ],
+                    pk: {attrs: [['id']]},
+                    indexes: [
+                        {attrs: [['email']], unique: true},
+                        {attrs: [['name']]}
+                    ]
+                }, {
+                    name: 'posts',
+                    attrs: [
+                        {name: 'id', type: 'uuid'},
+                        {name: 'title', type: 'varchar'},
+                        {name: 'content', type: 'text', doc: 'in markdown'},
+                        {name: 'author', type: 'uuid'},
+                        {name: 'created_at', type: 'timestamp', default: '`now()`'},
+                        {name: 'created_by', type: 'uuid'}
+                    ],
+                    pk: {attrs: [['id']]}
+                }],
+                relations: [
+                    {src: {entity: 'posts', attrs: [['created_by']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {inline: true}},
+                    {src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {inline: true}}
+                ],
+                types: [{name: 'user_role', values: ['admin', 'guest'], extra: {inline: true}}]
+            })
+        }
+        function getUrlValue(lang) {
+            try {
+                var url = new URL(window.location)
+                var value = url.searchParams.get('value') // automatically decoded!
+                var hash = decodeURIComponent(url.hash.slice(1))
+                var urlInput = (value || hash || '').trim() + '\n'
+                var parsed = parse(lang, urlInput)
+                return isEmptyDatabase(parsed.result) ? null : urlInput
+            } catch (e) {
+                console.warn('Unable to get stored url value', e)
+            }
+        }
+        function getStoredDatabase() {
+            try {
+                var db = JSON.parse(localStorage.getItem('converter-database'))
+                return isEmptyDatabase(db) ? null : db
+            } catch (e) {
+                console.warn('Unable to get stored Azimutt schema', e)
+            }
+        }
+        function storeDatabase(db) {
+            try {
+                localStorage.setItem('converter-database', JSON.stringify(db))
+            } catch (e) {
+                console.warn('Unable to store Azimutt schema', e)
+            }
+        }
+        function isEmptyDatabase(db) {
+            if (!db) return true
+            return (Array.isArray(db.entities) ? db.entities.length === 0 : true) &&
+                (Array.isArray(db.relations) ? db.relations.length === 0 : true) &&
+                (Array.isArray(db.types) ? db.types.length === 0 : true)
+        }
+    })
+</script>

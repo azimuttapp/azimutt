@@ -1,11 +1,13 @@
-module Models.Project.Layout exposing (Layout, decode, empty, encode)
+module Models.Project.Layout exposing (Layout, decode, doc, docLayout, empty, encode)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.Time as Time
+import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Group as Group exposing (Group)
+import Models.Project.TableName exposing (TableName)
 import Models.Project.TableProps as TableProps exposing (TableProps)
 import Models.Project.TableRow as TableRow exposing (TableRow)
 import PagesComponents.Organization_.Project_.Models.Memo as Memo exposing (Memo)
@@ -48,3 +50,13 @@ decode =
         (Decode.defaultField "memos" (Decode.list Memo.decode) [])
         (Decode.field "createdAt" Time.decode)
         (Decode.field "updatedAt" Time.decode)
+
+
+docLayout : Layout
+docLayout =
+    { tables = [], tableRows = [], groups = [], memos = [], createdAt = Time.zero, updatedAt = Time.zero }
+
+
+doc : List ( TableName, List ColumnName ) -> Layout
+doc tables =
+    { docLayout | tables = tables |> List.map (\( t, c ) -> TableProps.doc t c) }

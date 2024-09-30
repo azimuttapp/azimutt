@@ -196,6 +196,7 @@ describe('string', () => {
     })
     test('slugifyGitHub', () => {
         expect(slugifyGitHub('🔖 Philosophy & Conventions')).toEqual('-philosophy--conventions')
+        expect(slugifyGitHub('user_roles')).toEqual('user_roles')
     })
     test('splitWords', () => {
         expect(splitWords('')).toEqual([])

@@ -194,7 +194,7 @@ viewJsonSourceTab htmlId openedCollapse urlOrganization projects model =
 viewEmptyProjectTab : Html Msg
 viewEmptyProjectTab =
     div []
-        [ viewHeading "Create a new project" [ text "When you don't want to import a schema, just create it in Azimutt using ", extLink "https://github.com/azimuttapp/azimutt/blob/main/docs/aml/README.md" [ class "link" ] [ text "AML" ], text "." ]
+        [ viewHeading "Create a new project" [ text "When you don't want to import a schema, just create it in Azimutt using ", extLink "https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/README.md" [ class "link" ] [ text "AML" ], text "." ]
         , div [ css [ "mt-20" ] ]
             [ div [ css [ "flex justify-center" ] ]
                 [ Button.primary5 Tw.primary [ onClick (CreateEmptyProject Conf.constants.newProjectName), id "create-project-btn", css [ "ml-3" ] ] [ text "Create new project!" ]

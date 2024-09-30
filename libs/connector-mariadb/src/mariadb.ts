@@ -85,12 +85,13 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
             name: conn.url.db,
             kind: DatabaseKind.Enum.mariadb,
             version: undefined,
-            doc: undefined,
-            extractedAt: new Date().toISOString(),
-            extractionDuration: Date.now() - start,
             size: undefined,
         }),
-        extra: undefined,
+        extra: removeUndefined({
+            source: `MariaDB connector`,
+            createdAt: new Date().toISOString(),
+            creationTimeMs: Date.now() - start,
+        }),
     })
 }
 
@@ -305,11 +306,9 @@ function buildRelation(columns: RawConstraintColumn[]): Relation {
     const first = columns[0]
     return removeUndefined({
         name: first.constraint_name || undefined,
-        kind: undefined,
         origin: undefined,
-        src: { schema: first.table_schema, entity: first.table_name },
-        ref: { schema: first.ref_schema || '', entity: first.ref_table || '' },
-        attrs: columns.map(c => ({src: [c.column_name], ref: [c.ref_column || '']})),
+        src: { schema: first.table_schema, entity: first.table_name, attrs: columns.map(c => [c.column_name]) },
+        ref: { schema: first.ref_schema || '', entity: first.ref_table || '', attrs: columns.map(c => [c.ref_column || '']) },
         polymorphic: undefined,
         doc: undefined,
         extra: undefined

@@ -1,0 +1,79 @@
+erDiagram
+    users {
+        uid id PK
+        varchar first_name
+        varchar last_name
+        varchar email UK
+        bool is_admin
+    }
+
+    "cms.posts" {
+        int id PK
+        varchar(100) title UK
+        post_status status
+        varchar content
+        json settings
+        timestamp_with_time_zone created_at
+        int created_by FK
+    }
+    "cms.posts" }o--|| users : "settings.publish_by"
+    "cms.posts" }o--|| users : created_by
+
+    post_members {
+        uuid post_id FK
+        int user_id FK
+        varchar(10) role
+    }
+    post_members }o--|| "cms.posts" : post_id
+    post_members }o--|| users : user_id
+
+    "legacy schema.post member details" {
+        uuid post_id
+        int user_id
+        int index "keyword attribute name"
+        int added_by FK "special attribute name"
+    }
+    "legacy schema.post member details" }o..|| users : "added by"
+    "legacy schema.post member details" }o--|| post_members : post_id
+
+    comments {
+        uuid id PK
+        comment_item item_kind "polymorphic column for polymorphic relation\nused with both item_kind and item_id"
+        int item_id FK
+        unknown content "doc with # escaped"
+        unknown created_by FK
+    }
+    comments }o--|| users : created_by
+    comments }o--|| users : item_id
+    comments }o--|| "cms.posts" : item_id
+
+    "db1.web.public.legacy_slug" {
+        slug old_slug
+        slug new_slug
+        varchar cur_slug FK
+    }
+    "db1.web.public.legacy_slug" }o..|| "cms.posts" : cur_slug
+
+    organizations {
+        int id PK, FK "many-to-many relation"
+        varchar(50) name
+        box content
+    }
+    organizations }o--o{ users : id
+
+    "identity...profiles" {
+        int id PK, FK "one-to-one relation"
+    }
+    "identity...profiles" ||--|| users : id
+
+    admins {
+        unknown id
+        unknown first_name
+        unknown last_name
+        unknown email
+    }
+
+    guests
+
+    "social..social_accounts"
+    "social..social_accounts" }o--o{ users : "natural many-to-many relation"

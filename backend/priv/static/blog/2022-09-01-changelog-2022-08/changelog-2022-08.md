@@ -50,7 +50,7 @@ users | store every user # AML comment
 
 It's awesome as you don't need to change focus or click anywhere to write everything you have in mind. Your only limit is your typing speed. Obviously, it's used in Azimutt to create or extend your database schema, but until now the only available documentation was the [announcement blog post](./aml-a-language-to-define-your-database-schema). It worked well but with the new addition of the *type definition* we needed to have a better documentation, targeted at learning it.
 
-This is done now, [the AML documentation](https://github.com/azimuttapp/azimutt/blob/main/docs/aml/README.md) is now available and has [several great examples](https://github.com/azimuttapp/azimutt/blob/main/docs/aml/README.md#-full-example) 📖
+This is done now, [the AML documentation](https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/README.md) is now available and has [several great examples](https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/README.md#-full-example) 📖
 
 
 ## Smoother navigation

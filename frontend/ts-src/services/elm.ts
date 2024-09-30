@@ -14,13 +14,14 @@ import {
     LegacySqlQueryOrigin,
     LegacyTableId,
     LegacyTableStats,
+    ParserError,
     Position,
     SourceId,
     SqlStatement,
     zodParse
 } from "@azimutt/models";
 import {ElementSize, ElmFlags, ElmMsg, ElmRuntime, GetLocalFile, Hotkey, HotkeyId, JsMsg} from "../types/ports";
-import {ToastLevel} from "../types/basics";
+import {Dialect, ToastLevel} from "../types/basics";
 import {Logger} from "./logger";
 
 export class ElmApp {
@@ -54,7 +55,9 @@ export class ElmApp {
         GetTableStats: [],
         GetColumnStats: [],
         RunDatabaseQuery: [],
+        GetAmlSchema: [],
         GetPrismaSchema: [],
+        GetCode: [],
         ObserveSizes: [],
         LlmGenerateSql: [],
         ListenKeys: [],
@@ -111,8 +114,10 @@ export class ElmApp {
     gotColumnStats = (source: LegacySourceId, stats: LegacyColumnStats): void => this.send({kind: 'GotColumnStats', source, stats})
     gotColumnStatsError = (source: LegacySourceId, column: LegacyColumnRef, error: string): void => this.send({kind: 'GotColumnStatsError', source, column, error})
     gotDatabaseQueryResult = (context: string, source: SourceId, query: LegacySqlQueryOrigin, result: string | {columns: LegacyDatabaseQueryResultsColumn[], rows: LegacyJsValue[]}, started: number, finished: number): void => this.send({kind: 'GotDatabaseQueryResult', context, source, query, result, started, finished})
+    gotAmlSchema = (source: SourceId, length: number, schema: LegacyDatabase | undefined, errors: ParserError[]): void => this.send({kind: 'GotAmlSchema', source, length, schema, errors})
     gotPrismaSchema = (schema: LegacyDatabase): void => this.send({kind: 'GotPrismaSchema', schema})
     gotPrismaSchemaError = (error: string): void => this.send({kind: 'GotPrismaSchemaError', error})
+    gotCode = (dialect: Dialect, content: string): void => this.send({kind: 'GotCode', dialect, content})
     gotHotkey = (hotkey: Hotkey & { id: HotkeyId }): void => this.send({kind: 'GotHotkey', id: hotkey.id})
     gotKeyHold = (key: string, start: boolean): void => this.send({kind: 'GotKeyHold', key, start})
     toast = (level: ToastLevel, message: string): void => this.send({kind: 'GotToast', level, message})

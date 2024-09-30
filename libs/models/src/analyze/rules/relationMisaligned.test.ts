@@ -6,13 +6,13 @@ import {ruleConf} from "../rule.test";
 describe('relationMisaligned', () => {
     const now = Date.now()
     test('valid relation', () => {
-        const postAuthor: Relation = {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]}
+        const postAuthor: Relation = {src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}}
         const users: Entity = {name: 'users', attrs: [{name: 'id', type: 'uuid'}]}
         const posts: Entity = {name: 'posts', attrs: [{name: 'author', type: 'uuid'}]}
         expect(getMisalignedRelation(postAuthor, {users, posts})).toEqual(undefined)
     })
     test('misaligned types', () => {
-        const postAuthor: Relation = {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]}
+        const postAuthor: Relation = {src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}}
         const users: Entity = {name: 'users', attrs: [{name: 'id', type: 'uuid'}]}
         const posts: Entity = {name: 'posts', attrs: [{name: 'author', type: 'string'}]}
         expect(getMisalignedRelation(postAuthor, {users, posts})).toEqual({relation: postAuthor, misalignedTypes: [
@@ -26,7 +26,7 @@ describe('relationMisaligned', () => {
                 {name: 'posts', attrs: [{name: 'id', type: 'uuid'}, {name: 'author', type: 'varchar'}]},
             ],
             relations: [
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]},
+                {src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}},
             ]
         }
         expect(relationMisalignedRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
@@ -40,8 +40,8 @@ describe('relationMisaligned', () => {
                 {name: 'posts', attrs: [{name: 'id', type: 'uuid'}, {name: 'author', type: 'varchar'}, {name: 'created_by', type: 'text'}]},
             ],
             relations: [
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['author'], ref: ['id']}]},
-                {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}]},
+                {src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}},
+                {src: {entity: 'posts', attrs: [['created_by']]}, ref: {entity: 'users', attrs: [['id']]}},
             ]
         }
         expect(relationMisalignedRule.analyze(ruleConf, now, db, [], [], []).map(v => v.message)).toEqual([
@@ -51,7 +51,7 @@ describe('relationMisaligned', () => {
         expect(relationMisalignedRule.analyze({...ruleConf, ignores: ['posts(created_by)->users(id)']}, now, db, [], [], []).map(v => v.message)).toEqual([
             'Relation posts(author)->users(id) link attributes different types: posts(author): varchar != users(id): uuid',
         ])
-        expect(relationMisalignedRule.analyze(ruleConf, now, db, [], [], [{message: '', extra: {relation: {src: {entity: 'posts'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}]}}}]).map(v => v.message)).toEqual([
+        expect(relationMisalignedRule.analyze(ruleConf, now, db, [], [], [{message: '', extra: {relation: {src: {entity: 'posts', attrs: [['created_by']]}, ref: {entity: 'users', attrs: [['id']]}}}}]).map(v => v.message)).toEqual([
             'Relation posts(author)->users(id) link attributes different types: posts(author): varchar != users(id): uuid',
         ])
     })

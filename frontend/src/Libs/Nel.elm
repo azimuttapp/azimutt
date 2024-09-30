@@ -1,4 +1,4 @@
-module Libs.Nel exposing (Nel, add, all, any, append, concatMap, drop, filter, filterMap, filterNot, filterZip, find, from, fromList, get, indexedAll, indexedMap, join, last, length, map, mapLast, member, merge, partition, prepend, sortBy, startsWith, toList, unique, uniqueBy, zip, zipWith)
+module Libs.Nel exposing (Nel, add, all, any, append, concatMap, drop, filter, filterMap, filterNot, filterZip, find, from, from2, fromList, get, indexedAll, indexedMap, join, last, length, map, mapLast, member, merge, partition, prepend, sortBy, startsWith, toList, unique, uniqueBy, zip, zipWith)
 
 import Libs.List as List
 import Set
@@ -205,6 +205,11 @@ join sep nel =
 from : a -> Nel a
 from value =
     Nel value []
+
+
+from2 : a -> a -> Nel a
+from2 value1 value2 =
+    Nel value1 [ value2 ]
 
 
 fromList : List a -> Maybe (Nel a)

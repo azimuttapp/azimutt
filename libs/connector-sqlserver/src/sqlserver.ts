@@ -83,12 +83,13 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
             name: conn.url.db,
             kind: DatabaseKind.Enum.sqlserver,
             version: undefined,
-            doc: undefined,
-            extractedAt: new Date().toISOString(),
-            extractionDuration: Date.now() - start,
             size: undefined,
         }),
-        extra: undefined,
+        extra: removeUndefined({
+            source: `SQL Server connector`,
+            createdAt: new Date().toISOString(),
+            creationTimeMs: Date.now() - start,
+        }),
     })
 }
 
@@ -325,11 +326,9 @@ function buildRelation(columns: RawForeignKeyColumn[]): Relation {
     const first = columns[0]
     return removeUndefined({
         name: first.constraint_name,
-        kind: undefined,
         origin: undefined,
-        src: { schema: first.src_schema, entity: first.src_table },
-        ref: { schema: first.ref_schema, entity: first.ref_table },
-        attrs: columns.map(c => ({src: [c.src_column], ref: [c.ref_column]})),
+        src: { schema: first.src_schema, entity: first.src_table, attrs: columns.map(c => [c.src_column]) },
+        ref: { schema: first.ref_schema, entity: first.ref_table, attrs: columns.map(c => [c.ref_column]) },
         polymorphic: undefined,
         doc: undefined,
         extra: undefined

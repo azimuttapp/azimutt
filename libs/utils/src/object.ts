@@ -15,6 +15,10 @@ export function equalDeep<T>(a: T, b: T): boolean {
     return false
 }
 
+export function filterKeys<K extends keyof any, V, T extends Record<K, V>>(obj: T, p: (k: K) => boolean): T {
+    return Object.fromEntries(Object.entries(obj).filter(([k,]) => p(k as K))) as T
+}
+
 export function filterValues<K extends keyof any, V, T extends Record<K, V>>(obj: T, p: (v: V) => boolean): T {
     return Object.fromEntries(Object.entries(obj).filter(([, v]) => p(v as V))) as T
 }
@@ -60,6 +64,21 @@ export function removeEmpty<K extends keyof any, V, T extends Record<K, V>>(obj:
     return filterValues(obj, v => !isEmpty(v))
 }
 
+export function mapEntriesDeep(obj: unknown, f: (path: (string | number)[], value: unknown) => unknown, path: (string | number)[] = []): unknown {
+    if (Array.isArray(obj)) {
+        return obj.map((item, i) => mapEntriesDeep(item, f, [...path, i]))
+    }
+
+    if (typeof obj === 'object' && obj !== null) {
+        return Object.fromEntries(Object.entries(obj).map(([key, value]) => {
+            const entryPath = [...path, key]
+            return [key, f(entryPath, mapEntriesDeep(value, f, entryPath))]
+        }))
+    }
+
+    return obj
+}
+
 export function removeFieldsDeep(obj: any, keysToRemove: string[]): any {
     if (Array.isArray(obj)) {
         return obj.map(item => removeFieldsDeep(item, keysToRemove))
@@ -67,7 +86,7 @@ export function removeFieldsDeep(obj: any, keysToRemove: string[]): any {
 
     if (typeof obj === 'object' && obj !== null) {
         const res: { [key: string]: any } = {}
-        Object.keys(obj).forEach((key) => {
+        Object.keys(obj).forEach(key => {
             if (keysToRemove.indexOf(key) < 0) {
                 res[key] = removeFieldsDeep(obj[key], keysToRemove)
             }

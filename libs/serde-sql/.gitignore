@@ -1,5 +1,0 @@
-node_modules
-out
-local
-src/**/*.js
-*.tgz

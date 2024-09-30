@@ -1,0 +1,66 @@
+#
+# Full Schema AML
+#
+
+users # simplest entity
+  id uid pk
+  first_name varchar unique=name
+  last_name varchar unique=name
+  email varchar unique check
+  is_admin bool=false
+
+cms.posts # entity in schema
+  id int pk
+  title varchar(100) unique check="title <> ''"
+  status post_status
+  content varchar nullable
+  settings json nullable
+  created_at "timestamp with time zone"
+  created_by int fk users.id
+
+post_members
+  post_id uuid pk fk cms.posts.id
+  user_id int pk fk users.id
+  role varchar(10)=author check="role IN ('author', 'editor')"
+
+"legacy schema"."post member details" # special entity name
+  post_id uuid pk
+  user_id int pk
+  "index" int=0 | keyword attribute name
+  "added by" int nullable fk users.id | special attribute name
+
+fk "legacy schema"."post member details".post_id -> post_members.post_id
+fk "legacy schema"."post member details".user_id -> post_members.user_id
+
+comments | a table with most options looks quite complex but not intended to be used all together ^^ # several additional props
+  id uuid pk
+  item_kind comment_item(User, Post) index=item | polymorphic column for polymorphic relation used with both item_kind and item_id
+  item_id int index=item
+  content | doc with \# escaped # no type
+  created_by fk users.id # attribute type should default to target column is not set
+
+fk comments.item_id -> users.id
+fk comments.item_id -> cms.posts.id
+
+public.legacy_slug
+  old_slug slug check="old_slug <> '' AND new_slug <> ''"
+  new_slug slug check="old_slug <> '' AND new_slug <> ''" # composite check, add it to every attribute, predicate can be defined once
+  cur_slug varchar nullable fk cms.posts.settings:slug
+
+organizations
+  id int pk fk users.id | many-to-many relation
+  name varchar(50)
+  content box nullable
+
+profiles
+  id int pk fk users.id | one-to-one relation
+
+admins*
+  id
+  first_name
+  last_name
+  email
+
+guests* # a view without attributes but with definition
+
+social_accounts | entity with no attribute

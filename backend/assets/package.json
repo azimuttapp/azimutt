@@ -1,0 +1,26 @@
+{
+  "name": "@azimutt/phoenix-app",
+  "version": "0.0.1",
+  "description": "App managed by Phoenix assets and loaded in every page",
+  "author": {
+    "name": "Loïc Knuchel",
+    "email": "loicknuchel@gmail.com",
+    "url": "https://loicknuchel.fr"
+  },
+  "license": "MIT",
+  "main": "js/app.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "alpinejs": "^3.14.1",
+    "highlight.js": "^11.10.0",
+    "topbar": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/alpinejs": "^3.13.10",
+    "@types/phoenix": "^1.6.5",
+    "@types/phoenix_live_view": "^0.18.5",
+    "typescript": "^5.5.4"
+  }
+}

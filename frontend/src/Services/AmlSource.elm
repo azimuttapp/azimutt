@@ -61,7 +61,7 @@ update wrap now project msg model =
                 ( model, Extra.none )
 
             else
-                Source.aml model.name now id |> (\source -> ( { model | parsedSource = source |> Ok |> Just }, Track.amlSourceCreated project source |> Extra.cmd ))
+                Source.empty model.name now id |> (\source -> ( { model | parsedSource = source |> Ok |> Just }, Track.amlSourceCreated project source |> Extra.cmd ))
 
 
 
@@ -78,7 +78,7 @@ viewInput wrap htmlId model =
     div []
         [ p [ class "mt-1 text-sm text-gray-500" ]
             [ text "AML means "
-            , extLink "https://github.com/azimuttapp/azimutt/blob/main/docs/aml/README.md" [ class "link" ] [ text "Azimutt Markup Language" ]
+            , extLink "https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/README.md" [ class "link" ] [ text "Azimutt Markup Language" ]
             , text ", it's our very simple language allowing you to define your own schema in Azimutt."
             ]
         , label [ for fieldId, class "mt-1 block text-sm font-medium text-gray-700" ] [ text "Source name" ]

@@ -1,6 +1,22 @@
-import {arraySame, filterValues, groupBy, indexBy, mapValues, removeUndefined} from "@azimutt/utils";
+import {
+    arraySame,
+    distinct,
+    errorToString,
+    filterKeys,
+    filterValues,
+    groupBy,
+    indexBy,
+    mapValues,
+    mergeBy,
+    removeEmpty,
+    removeUndefined,
+    stringify
+} from "@azimutt/utils";
+import {zodParse} from "./zod";
 import {
     Attribute,
+    AttributeExtra,
+    attributeExtraKeys,
     AttributeId,
     AttributePath,
     AttributePathId,
@@ -9,20 +25,39 @@ import {
     AttributeType,
     AttributeTypeParsed,
     AttributeValue,
+    Check,
     ConstraintId,
     ConstraintRef,
+    Database,
+    DatabaseExtra,
+    databaseExtraKeys,
     Entity,
+    EntityExtra,
+    entityExtraKeys,
     EntityId,
     EntityRef,
+    Index,
+    IndexExtra,
+    indexExtraKeys,
     Namespace,
     NamespaceId,
+    PrimaryKey,
     Relation,
+    RelationExtra,
+    relationExtraKeys,
     RelationId,
+    RelationLink,
     RelationRef,
     Type,
+    TypeExtra,
+    typeExtraKeys,
     TypeId,
     TypeRef
 } from "./database";
+import {ParserResult} from "./parserResult";
+import {legacyColumnTypeUnknown} from "./legacy/legacyDatabase";
+
+const namespace = (n: Namespace) => removeUndefined({database: n.database, catalog: n.catalog, schema: n.schema})
 
 export const namespaceToId = (n: Namespace): NamespaceId => [
     n.database || '',
@@ -35,6 +70,11 @@ export const namespaceFromId = (id: NamespaceId): Namespace => {
     return filterValues({database: database.reverse().join('.'), catalog, schema}, v => !!v)
 }
 
+export const namespaceSame = (a: Namespace, b: Namespace): boolean =>
+    (a.schema === b.schema || a.schema === '*' || b.schema === '*') &&
+    (a.catalog === b.catalog || a.catalog === '*' || b.catalog === '*') &&
+    (a.database === b.database || a.database === '*' || b.database === '*')
+
 export const entityRefToId = (ref: EntityRef): EntityId => {
     const ns = namespaceToId(ref)
     return ns ? `${ns}.${ref.entity}` : addQuotes(ref.entity)
@@ -46,13 +86,9 @@ export const entityRefFromId = (id: EntityId): EntityRef => {
     return {...namespace, entity}
 }
 
-export const entityRefSame = (a: EntityRef, b: EntityRef): boolean =>
-    (a.entity === b.entity || a.entity === '*' || b.entity === '*') &&
-    (a.schema === b.schema || a.schema === '*' || b.schema === '*') &&
-    (a.catalog === b.catalog || a.catalog === '*' || b.catalog === '*') &&
-    (a.database === b.database || a.database === '*' || b.database === '*')
-
-export const entityToRef = (e: Entity): EntityRef => removeUndefined({database: e.database, catalog: e.catalog, schema: e.schema, entity: e.name})
+export const entityRefSame = (a: EntityRef, b: EntityRef): boolean => (a.entity === b.entity || a.entity === '*' || b.entity === '*') && namespaceSame(a, b)
+export const entityToNamespace = (e: Entity): Namespace => namespace(e)
+export const entityToRef = (e: Entity): EntityRef => removeUndefined({...namespace(e), entity: e.name})
 export const entityToId = (e: Entity): EntityId => entityRefToId(entityToRef(e))
 
 export const entityRefFromAttribute = (a: AttributeRef): EntityRef => {
@@ -150,10 +186,18 @@ export const typeRefFromId = (id: TypeId): TypeRef => {
     return {...namespace, type}
 }
 
-export const typeToRef = (t: Type): TypeRef => removeUndefined({database: t.database, catalog: t.catalog, schema: t.schema, type: t.name})
+export const typeRefSame = (a: TypeRef, b: TypeRef): boolean =>
+    (a.type === b.type || a.type === '*' || b.type === '*') &&
+    (a.schema === b.schema || a.schema === '*' || b.schema === '*') &&
+    (a.catalog === b.catalog || a.catalog === '*' || b.catalog === '*') &&
+    (a.database === b.database || a.database === '*' || b.database === '*')
+
+export const typeToRef = (t: Type): TypeRef => removeUndefined({...namespace(t), type: t.name})
 export const typeToId = (t: Type): TypeId => typeRefToId(typeToRef(t))
 
-export const relationToRef = (r: Relation): RelationRef => ({src: {...r.src, attributes: r.attrs.map(a => a.src)}, ref: {...r.ref, attributes: r.attrs.map(a => a.ref)}})
+export const relationLinkToEntityRef = (l: RelationLink): EntityRef => removeUndefined({...namespace(l), entity: l.entity})
+export const relationLinkToAttributeRef = (l: RelationLink): AttributesRef => ({...relationLinkToEntityRef(l), attributes: l.attrs})
+export const relationToRef = (r: Relation): RelationRef => ({src: relationLinkToAttributeRef(r.src), ref: relationLinkToAttributeRef(r.ref)})
 export const relationToId = (r: Relation): RelationId => relationRefToId(relationToRef(r))
 
 export const relationRefToId = (ref: RelationRef): RelationId => `${attributesRefToId(ref.src)}->${attributesRefToId(ref.ref)}`
@@ -209,9 +253,13 @@ export function getPeerAttributes(attrs: Attribute[] | undefined, path: Attribut
     }
 }
 
-export function flattenAttribute(attr: Attribute, p: AttributePath = []): {path: AttributePath, attr: Attribute}[] {
+export function flattenAttributes(attrs: Attribute[] | undefined): (Attribute & {path: AttributePath})[] {
+    return (attrs || []).flatMap(a => flattenAttribute(a))
+}
+
+function flattenAttribute(attr: Attribute, p: AttributePath = []): (Attribute & {path: AttributePath})[] {
     const path = [...p, attr.name]
-    return [{path, attr}, ...(attr.attrs || []).flatMap(a => flattenAttribute(a, path))]
+    return [{...attr, path}, ...(attr.attrs || []).flatMap(a => flattenAttribute(a, path))]
 }
 
 export function attributeValueToString(value: AttributeValue): string {
@@ -229,3 +277,240 @@ export const indexRelations = (relations: Relation[]): Record<EntityId, Record<E
     mapValues(groupBy(relations, r => entityRefToId(r.src)), rels => groupBy(rels, r => entityRefToId(r.ref)))
 export const indexTypes = (types: Type[]): Record<TypeId, Type> =>
     indexBy(types, typeToId)
+
+export function parseJsonDatabase(content: string): ParserResult<Database> {
+    let json: any = undefined
+    try {
+        json = JSON.parse(content)
+    } catch (e) {
+        return ParserResult.failure([{message: errorToString(e), kind: 'MalformedJson', level: 'error', offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}])
+    }
+    return zodParse(Database)(json).fold(
+        db => ParserResult.success(db),
+        err => ParserResult.failure([{message: err, kind: 'InvalidJson', level: 'error', offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}])
+    )
+}
+
+export function generateJsonDatabase(database: Database): string {
+    return stringify(database, (path: (string | number)[], value: any) => {
+        const last = path[path.length - 1]
+        // if (last === 'entities' || last === 'relations' || last === 'types') return 0
+        if (path.includes('attrs') && last !== 'attrs') return 0
+        if (path.includes('pk')) return 0
+        if (path.includes('indexes') && path.length > 3) return 0
+        if (path.includes('checks') && path.length > 3) return 0
+        if (path.includes('relations') && path.length > 2) return 0
+        if (path.includes('types') && path.length > 1) return 0
+        if (path.includes('stats')) return 0
+        if (path.includes('extra') && path.length > 1) return 0
+        return 2
+    }) + '\n'
+}
+
+
+// the first database has priority on the second one when it makes sense
+export function mergeDatabase(a: Database, b: Database): Database {
+    return removeEmpty({
+        entities: mergeBy(a.entities || [], b.entities || [], entityToId, mergeEntity),
+        relations: mergeBy(a.relations || [], b.relations || [], relationToId, mergeRelation),
+        types: mergeBy(a.types || [], b.types || [], typeToId, mergeType),
+        doc: a.doc || b.doc,
+        stats: mergeStats(a.stats, b.stats),
+        extra: mergeDatabaseExtra(a.extra, b.extra),
+    })
+}
+
+export function mergeDatabaseExtra(a: DatabaseExtra | undefined, b: DatabaseExtra | undefined): DatabaseExtra | undefined {
+    if (a === undefined) return b
+    if (b === undefined) return a
+    const extra = filterKeys(Object.assign({}, b || {}, a || {}), k => !databaseExtraKeys.includes(k.toString())) // a should overrides b
+    return removeUndefined({
+        source: mergeOneOrSame(a.source, b.source),
+        createdAt: mergeOneOrSame(a.createdAt, b.createdAt),
+        creationTimeMs: mergeOneOrSame(a.creationTimeMs, b.creationTimeMs),
+        comments: a.comments && b.comments ? a.comments.concat(b.comments) : a.comments || b.comments, // keep all comments
+        namespaces: a.namespaces && b.namespaces ? undefined : a.namespaces || b.namespaces, // remove if defined in both
+        ...extra
+    })
+}
+
+export function mergeEntity(a: Entity, b: Entity): Entity {
+    return removeUndefined({
+        database: a.database, // keep the 'a' reference (database, catalog, schema, name), should be the same as b
+        catalog: a.catalog,
+        schema: a.schema,
+        name: a.name,
+        kind: a.kind, // don't change kind, undefined means table
+        def: a.def || b.def,
+        attrs: a.attrs && b.attrs ? mergeBy(a.attrs, b.attrs, attr => attr.name, mergeAttribute) : a.attrs || b.attrs,
+        pk: a.pk && b.pk ? mergePrimaryKey(a.pk, b.pk) : a.pk || b.pk,
+        indexes: a.indexes && b.indexes ? mergeBy(a.indexes, b.indexes, i => i.attrs.map(attributePathToId).join(','), mergeIndex) : a.indexes || b.indexes,
+        checks: a.checks && b.checks ? mergeBy(a.checks, b.checks, c => c.predicate + ':' + c.attrs.map(attributePathToId).join(','), mergeCheck) : a.checks || b.checks,
+        doc: a.doc || b.doc,
+        stats: mergeStats(a.stats, b.stats),
+        extra: mergeEntityExtra(a.extra, b.extra),
+    })
+}
+
+export function mergeEntityExtra(a: EntityExtra | undefined, b: EntityExtra | undefined): EntityExtra | undefined {
+    if (a === undefined) return b
+    if (b === undefined) return a
+    const extra = filterKeys(Object.assign({}, b || {}, a || {}), k => !entityExtraKeys.includes(k.toString())) // a should overrides b
+    return removeUndefined({
+        line:a.line || b.line,
+        statement: a.statement || b.statement,
+        alias: a.alias || b.alias,
+        color: a.color || b.color,
+        tags: a.tags && b.tags ? distinct(a.tags.concat(b.tags)) : a.tags || b.tags,
+        comment: a.comment || b.comment,
+        ...extra
+    })
+}
+
+export function mergeAttribute(a: Attribute, b: Attribute): Attribute {
+    return removeUndefined({
+        name: a.name, // keep the 'a' reference (name), should be the same as b
+        type: a.type === '' || a.type === legacyColumnTypeUnknown ? b.type : a.type,
+        null: a.null || b.null,
+        gen: a.gen, // don't change unique, undefined means 'false'
+        default: a.default || b.default,
+        attrs: a.attrs && b.attrs ? mergeBy(a.attrs, b.attrs, attr => attr.name, mergeAttribute) : a.attrs || b.attrs,
+        doc: a.doc || b.doc,
+        stats: mergeStats(a.stats, b.stats),
+        extra: mergeAttributeExtra(a.extra, b.extra),
+    })
+}
+
+export function mergeAttributeExtra(a: AttributeExtra | undefined, b: AttributeExtra | undefined): AttributeExtra | undefined {
+    if (a === undefined) return b
+    if (b === undefined) return a
+    const extra = filterKeys(Object.assign({}, b || {}, a || {}), k => !attributeExtraKeys.includes(k.toString())) // a should overrides b
+    return removeUndefined({
+        line:a.line || b.line,
+        statement: a.statement || b.statement,
+        autoIncrement: a.autoIncrement === undefined ? b.autoIncrement : a.autoIncrement,
+        hidden: a.hidden === undefined ? b.hidden : a.hidden,
+        tags: a.tags && b.tags ? distinct(a.tags.concat(b.tags)) : a.tags || b.tags,
+        comment: a.comment || b.comment,
+        ...extra
+    })
+}
+
+export function mergePrimaryKey(a: PrimaryKey, b: PrimaryKey): PrimaryKey {
+    return removeUndefined({
+        name: a.name || b.name,
+        attrs: a.attrs, // don't change primary key attrs
+        doc: a.doc || b.doc,
+        stats: mergeStats(a.stats, b.stats),
+        extra: mergeIndexExtra(a.extra, b.extra),
+    })
+}
+
+export function mergeIndex(a: Index, b: Index): Index {
+    return removeUndefined({
+        name: a.name || b.name,
+        attrs: a.attrs, // keep the 'a' reference (attrs & predicate), should be the same as b
+        unique: a.unique, // don't change unique, undefined means 'false'
+        partial: a.partial, // don't change partial, undefined means 'false'
+        definition: a.definition || b.definition,
+        doc: a.doc || b.doc,
+        stats: mergeStats(a.stats, b.stats),
+        extra: mergeIndexExtra(a.extra, b.extra),
+    })
+}
+
+export function mergeCheck(a: Check, b: Check): Check {
+    return removeUndefined({
+        name: a.name || b.name,
+        attrs: a.attrs, // keep the 'a' reference (attrs & predicate), should be the same as b
+        predicate: a.predicate,
+        doc: a.doc || b.doc,
+        stats: mergeStats(a.stats, b.stats),
+        extra: mergeIndexExtra(a.extra, b.extra),
+    })
+}
+
+export function mergeIndexExtra(a: IndexExtra | undefined, b: IndexExtra | undefined): IndexExtra | undefined {
+    if (a === undefined) return b
+    if (b === undefined) return a
+    const extra = filterKeys(Object.assign({}, b || {}, a || {}), k => !indexExtraKeys.includes(k.toString())) // a should overrides b
+    return removeUndefined({
+        line:a.line || b.line,
+        statement: a.statement || b.statement,
+        ...extra
+    })
+}
+
+export function mergeRelation(a: Relation, b: Relation): Relation {
+    return removeUndefined({
+        name: a.name || b.name,
+        origin: a.origin, // don't change origin, undefined means 'fk'
+        src: a.src, // keep the 'a' reference (src & ref), should be the same as b
+        ref: a.ref,
+        polymorphic: a.polymorphic || b.polymorphic,
+        doc: a.doc || b.doc,
+        extra: mergeRelationExtra(a.extra, b.extra),
+    })
+}
+
+export function mergeRelationExtra(a: RelationExtra | undefined, b: RelationExtra | undefined): RelationExtra | undefined {
+    if (a === undefined) return b
+    if (b === undefined) return a
+    const extra = filterKeys(Object.assign({}, b || {}, a || {}), k => !relationExtraKeys.includes(k.toString())) // a should overrides b
+    return removeUndefined({
+        line:a.line || b.line,
+        statement: a.statement || b.statement,
+        inline: mergeOneOrSame(a.inline, b.inline),
+        natural: a.natural || b.natural,
+        onUpdate: a.onUpdate || b.onUpdate,
+        onDelete: a.onDelete || b.onDelete,
+        srcAlias: a.srcAlias || b.srcAlias,
+        refAlias: a.refAlias || b.refAlias,
+        tags: a.tags && b.tags ? distinct(a.tags.concat(b.tags)) : a.tags || b.tags,
+        comment: a.comment || b.comment,
+        ...extra
+    })
+}
+
+export function mergeType(a: Type, b: Type): Type {
+    return removeUndefined({
+        database: a.database, // keep the 'a' reference (database, catalog, schema, name), should be the same as b
+        catalog: a.catalog,
+        schema: a.schema,
+        name: a.name,
+        alias: a.alias || b.alias,
+        values: a.values && b.values ? distinct(a.values.concat(b.values)) : a.values || b.values,
+        attrs: a.attrs && b.attrs ? mergeBy(a.attrs, b.attrs, attr => attr.name, mergeAttribute) : a.attrs || b.attrs,
+        definition: a.definition || b.definition,
+        doc: a.doc || b.doc,
+        extra: mergeTypeExtra(a.extra, b.extra),
+    })
+}
+
+export function mergeTypeExtra(a: TypeExtra | undefined, b: TypeExtra | undefined): TypeExtra | undefined {
+    if (a === undefined) return b
+    if (b === undefined) return a
+    const extra = filterKeys(Object.assign({}, b || {}, a || {}), k => !typeExtraKeys.includes(k.toString())) // a should overrides b
+    return removeUndefined({
+        line:a.line || b.line,
+        statement: a.statement || b.statement,
+        inline: mergeOneOrSame(a.inline, b.inline),
+        tags: a.tags && b.tags ? distinct(a.tags.concat(b.tags)) : a.tags || b.tags,
+        comment: a.comment || b.comment,
+        ...extra
+    })
+}
+
+export function mergeStats<T>(a: T | undefined, b: T | undefined): T | undefined {
+    // keep stats only when just one db has them, otherwise discard them to avoid false stats on db but allow extending a db with stats
+    if (a === undefined) return b
+    if (b === undefined) return a
+    return undefined
+}
+
+function mergeOneOrSame<T extends string | number | boolean>(a: T | undefined, b: T | undefined): T | undefined {
+    if (a === undefined) return b
+    if (b === undefined) return a
+    if (a === b) return a
+    return undefined // remove if defined differently in both
+}

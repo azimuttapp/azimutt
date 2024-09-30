@@ -1,14 +1,14 @@
 module PagesComponents.Organization_.Project_.Components.AmlSidebar exposing (Model, init, setOtherSourcesTableIdsCache, setSource, update, view)
 
-import Array exposing (Array)
 import Components.Atoms.Icon as Icon
 import Components.Molecules.Editor as Editor
 import Components.Slices.PlanDialog as PlanDialog
 import Conf
-import DataSources.AmlMiner.AmlAdapter as AmlAdapter
-import DataSources.AmlMiner.AmlParser as AmlParser
-import Dict
-import Html exposing (Html, button, div, h3, label, option, p, select, text)
+import DataSources.JsonMiner.JsonAdapter as JsonAdapter
+import DataSources.JsonMiner.JsonSchema exposing (JsonSchema)
+import DataSources.JsonMiner.Models.JsonTable as JsonTable
+import Dict exposing (Dict)
+import Html exposing (Html, br, button, div, h3, label, option, p, select, text)
 import Html.Attributes exposing (class, disabled, for, id, name, selected, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Bool as Bool
@@ -22,26 +22,26 @@ import Libs.Tailwind as Tw exposing (focus)
 import Libs.Tuple as Tuple
 import Models.Feature as Feature
 import Models.Organization as Organization
+import Models.ParserError as ParserError exposing (ParserError)
 import Models.Position as Position
-import Models.Project.ColumnId as ColumnId
-import Models.Project.ColumnPath as ColumnPath
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind as SourceKind
 import Models.Project.Table exposing (Table)
-import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableId exposing (TableId)
 import Models.ProjectRef exposing (ProjectRef)
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), Msg(..), simplePrompt)
 import PagesComponents.Organization_.Project_.Models.CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
-import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint(..))
 import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import PagesComponents.Organization_.Project_.Updates.Table exposing (hideTable, showColumns, showTable)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyM)
+import Ports
+import Services.Backend as Backend
 import Services.Lenses exposing (mapAmlSidebarM, mapAmlSidebarMTM, mapErdM, mapErdMT, mapSelectedMT, setAmlSidebar, setContent, setErrors, setSelected, setUpdatedAt)
 import Set exposing (Set)
 import Time
@@ -101,30 +101,41 @@ update now projectRef msg model =
         AChangeSource sourceId ->
             ( model |> mapAmlSidebarM (setSelected (sourceId |> Maybe.andThen (buildSelected model.erd))) |> setOtherSourcesTableIdsCache sourceId, Extra.none )
 
-        AUpdateSource id value ->
+        AUpdateSource id content ->
+            ( model |> mapErdM (Erd.mapSource id (setContent (Source.buildContent content) >> setUpdatedAt now)), Ports.getAmlSchema id content |> Extra.cmd )
+
+        AGotSchema id length schema errors ->
             (model.erd |> Maybe.andThen (.sources >> List.findBy .id id))
-                |> Maybe.map (\s -> model |> updateSource now s value |> setDirty)
-                |> Maybe.withDefault ( model |> mapAmlSidebarM (setErrors [ { row = 0, col = 0, problem = "Invalid source" } ]), Extra.none )
+                |> Maybe.map
+                    (\source ->
+                        if source.id /= id then
+                            ( model |> mapAmlSidebarM (setErrors [ { message = "Source has changed", kind = "EditorError", level = ParserError.Error, offset = { start = 0, end = 0 }, position = { start = { line = 1, column = 1 }, end = { line = 1, column = 1 } } } ]), Extra.none )
+
+                        else if String.length (Source.contentStr source) /= length then
+                            ( model |> mapAmlSidebarM (setErrors [ { message = "AML has changed", kind = "EditorError", level = ParserError.Error, offset = { start = 0, end = 0 }, position = { start = { line = 1, column = 1 }, end = { line = 1, column = 1 } } } ]), Extra.none )
+
+                        else
+                            schema |> Maybe.map (\s -> model |> updateSource now source s errors |> setDirty) |> Maybe.withDefault ( model |> mapAmlSidebarM (setErrors errors), Extra.none )
+                    )
+                |> Maybe.withDefault ( model |> mapAmlSidebarM (setErrors [ { message = "Source not found", kind = "EditorError", level = ParserError.Error, offset = { start = 0, end = 0 }, position = { start = { line = 1, column = 1 }, end = { line = 1, column = 1 } } } ]), Extra.none )
 
         ASourceUpdated id ->
             (model.erd |> Maybe.andThen (.sources >> List.findBy .id id))
-                |> Maybe.map (\source -> model |> mapAmlSidebarMTM (mapSelectedMT (Tuple.mapSecondT (\old -> source |> contentStr |> (\new -> ( new, Extra.new (Track.sourceRefreshed model.erd source) (( AUpdateSource source.id old, AUpdateSource source.id new ) |> Tuple.map AmlSidebarMsg) ))))) |> Extra.defaultT)
+                |> Maybe.map (\source -> model |> mapAmlSidebarMTM (mapSelectedMT (Tuple.mapSecondT (\old -> source |> Source.contentStr |> (\new -> ( new, Extra.new (Track.sourceRefreshed model.erd source) (( AUpdateSource source.id old, AUpdateSource source.id new ) |> Tuple.map AmlSidebarMsg) ))))) |> Extra.defaultT)
                 |> Maybe.withDefault ( model, Extra.none )
 
 
-updateSource : Time.Posix -> Source -> String -> Model x -> ( Model x, Extra Msg )
-updateSource now source input model =
+updateSource : Time.Posix -> Source -> JsonSchema -> List ParserError -> Model x -> ( Model x, Extra Msg )
+updateSource now source schema errors model =
     let
         tableLayouts : List ErdTableLayout
         tableLayouts =
             model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables) []
 
-        content : Array String
-        content =
-            contentSplit input
-
-        ( errors, parsed, amlColumns ) =
-            (String.trim input ++ "\n") |> AmlParser.parse |> AmlAdapter.buildSource (source |> Source.toInfo) content
+        ( parsed, amlColumns ) =
+            ( schema |> JsonAdapter.buildSchema >> (\s -> Source.setSchema s source)
+            , schema.tables |> List.map (\t -> ( ( t.schema, t.table ), JsonTable.orderedColumnPaths t )) |> Dict.fromList
+            )
 
         ( removed, bothPresent, added ) =
             List.diff .id (source.tables |> Dict.values) (parsed.tables |> Dict.values)
@@ -156,20 +167,15 @@ updateSource now source input model =
                             |> Maybe.map PlaceAt
                         )
                     )
-    in
-    if List.nonEmpty errors then
-        ( model |> mapAmlSidebarM (setErrors errors) |> mapErdM (Erd.mapSource source.id (setContent content >> setUpdatedAt now)), Extra.none )
 
-    else
-        let
-            apply : List a -> (a -> Model x -> ( Model x, Extra Msg )) -> ( Model x, Extra Msg ) -> ( Model x, Extra Msg )
-            apply items f m =
-                items |> List.foldl (\a ( curModel, curExtra ) -> curModel |> f a |> Tuple.mapSecond (Extra.combine curExtra >> Extra.dropHistory)) m
-        in
-        ( model |> mapAmlSidebarM (setErrors []) |> mapErdM (Erd.mapSource source.id (Source.updateWith parsed)), Extra.none )
-            |> apply toShow (\( id, hint ) -> mapErdMT (showTable now id hint "aml") >> setDirtyM)
-            |> apply toHide (\id -> mapErdMT (hideTable now id) >> setDirtyM)
-            |> apply updated (\t -> mapErdMT (showColumns now t.id (ShowColumns.List (amlColumns |> Dict.getOrElse t.id []))) >> setDirtyM)
+        apply : List a -> (a -> Model x -> ( Model x, Extra Msg )) -> ( Model x, Extra Msg ) -> ( Model x, Extra Msg )
+        apply items f m =
+            items |> List.foldl (\a ( curModel, curExtra ) -> curModel |> f a |> Tuple.mapSecond (Extra.combine curExtra >> Extra.dropHistory)) m
+    in
+    ( model |> mapAmlSidebarM (setErrors errors) |> mapErdM (Erd.mapSource source.id (Source.updateWith parsed)), Extra.none )
+        |> apply toShow (\( id, hint ) -> mapErdMT (showTable now id hint "aml") >> setDirtyM)
+        |> apply toHide (\id -> mapErdMT (hideTable now id) >> setDirtyM)
+        |> apply updated (\t -> mapErdMT (showColumns now t.id (ShowColumns.List (amlColumns |> Dict.getOrElse t.id []))) >> setDirtyM)
 
 
 associateTables : List Table -> List Table -> List ( Table, Maybe Table )
@@ -183,7 +189,7 @@ associateTables removed added =
 
 setSource : Maybe Source -> AmlSidebar -> AmlSidebar
 setSource source model =
-    model |> setSelected (source |> Maybe.map (\s -> ( s.id, s |> contentStr )))
+    model |> setSelected (source |> Maybe.map (\s -> ( s.id, s |> Source.contentStr )))
 
 
 setOtherSourcesTableIdsCache : Maybe SourceId -> Model x -> Model x
@@ -193,17 +199,7 @@ setOtherSourcesTableIdsCache sourceId model =
 
 buildSelected : Maybe Erd -> SourceId -> Maybe ( SourceId, String )
 buildSelected erd sourceId =
-    erd |> Maybe.andThen (.sources >> List.findBy .id sourceId) |> Maybe.map (\s -> ( s.id, s |> contentStr ))
-
-
-contentSplit : String -> Array String
-contentSplit input =
-    input |> String.split "\n" |> Array.fromList
-
-
-contentStr : Source -> String
-contentStr source =
-    source.content |> Array.toList |> String.join "\n"
+    erd |> Maybe.andThen (.sources >> List.findBy .id sourceId) |> Maybe.map (\s -> ( s.id, s |> Source.contentStr ))
 
 
 getOtherSourcesTableIds : Maybe SourceId -> Maybe Erd -> Set TableId
@@ -234,32 +230,13 @@ view projectRef erd model =
         selectedSource : Maybe Source
         selectedSource =
             model.selected |> Maybe.andThen (\( id, _ ) -> userSources |> List.findBy .id id)
-
-        warnings : List String
-        warnings =
-            selectedSource
-                |> Maybe.mapOrElse .relations []
-                |> List.concatMap (\r -> [ ColumnId.fromRef r.src, ColumnId.fromRef r.ref ])
-                |> List.unique
-                |> List.filterMap
-                    (\( table, column ) ->
-                        case erd |> Erd.getTableI table |> Maybe.map (ErdTable.getColumnI (ColumnPath.fromString column)) of
-                            Just (Just _) ->
-                                Nothing
-
-                            Just Nothing ->
-                                Just ("Column '" ++ column ++ "' not found in table '" ++ TableId.show Conf.schema.empty table ++ "'")
-
-                            Nothing ->
-                                Just ("Table '" ++ TableId.show Conf.schema.empty table ++ "' not found")
-                    )
     in
     div []
         [ viewHeading
         , if projectRef |> Organization.canUseAml then
             div [ class "px-3 py-2" ]
                 [ viewChooseSource selectedSource userSources
-                , selectedSource |> Maybe.mapOrElse (viewSourceEditor model warnings) (div [] [])
+                , selectedSource |> Maybe.mapOrElse (viewSourceEditor model) (div [] [])
                 ]
 
           else
@@ -280,7 +257,7 @@ viewHeading =
             ]
         , p [ class "mt-1 text-sm text-gray-500" ]
             [ text "In Azimutt your schema is the union of all active sources. Create or update one with "
-            , extLink "https://github.com/azimuttapp/azimutt/blob/main/docs/aml/README.md" [ class "link" ] [ text "AML syntax" ]
+            , extLink "https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/README.md" [ class "link" ] [ text "AML syntax" ]
             , text " to extend it."
             ]
         ]
@@ -309,10 +286,16 @@ viewChooseSource selectedSource userSources =
         ]
 
 
-viewSourceEditor : AmlSidebar -> List String -> Source -> Html Msg
-viewSourceEditor model warnings source =
+viewSourceEditor : AmlSidebar -> Source -> Html Msg
+viewSourceEditor model source =
+    let
+        ( errors, warnings ) =
+            ( model.errors |> List.filterBy .level ParserError.Error, model.errors |> List.filterBy .level ParserError.Warning )
+    in
     div [ class "mt-3" ]
-        [ Editor.basic "source-editor" (contentStr source) (AUpdateSource source.id >> AmlSidebarMsg) (ASourceUpdated source.id |> AmlSidebarMsg) """Write your schema using AML syntax
+        [ -- , node "intl-date" [ attribute "lang" "fr-FR", attribute "year" (String.fromInt 2024), attribute "month" (String.fromInt 9) ] []
+          -- , node "aml-editor" [ value (contentStr source), onInput (AUpdateSource source.id >> AmlSidebarMsg), onBlur (ASourceUpdated source.id |> AmlSidebarMsg) ] []
+          Editor.basic "source-editor" (Source.contentStr source) (AUpdateSource source.id >> AmlSidebarMsg) (ASourceUpdated source.id |> AmlSidebarMsg) """Write your schema using AML syntax
 
 Ex:
 
@@ -333,9 +316,9 @@ roles
   slug varchar(10)
 
 # define a standalone relation
-fk credentials.role -> roles.slug""" 30 (List.nonEmpty model.errors)
-        , viewErrors (model.errors |> List.map (\err -> err.problem ++ " at line " ++ String.fromInt err.row ++ ", column " ++ String.fromInt err.col) |> List.unique)
-        , viewWarnings (warnings |> List.unique)
+fk credentials.role -> roles.slug""" 30 (List.nonEmpty errors)
+        , viewErrors (errors |> List.map (\err -> err.message ++ " at line " ++ String.fromInt err.position.start.line ++ ", column " ++ String.fromInt err.position.start.column))
+        , viewWarnings (warnings |> List.map (\err -> err.message ++ " at line " ++ String.fromInt err.position.start.line ++ ", column " ++ String.fromInt err.position.start.column))
         , viewHelp
         ]
 
@@ -348,13 +331,27 @@ viewErrors errors =
 
 viewWarnings : List String -> Html msg
 viewWarnings warnings =
-    div [] (warnings |> List.map (\warning -> p [ class "mt-2 text-sm text-yellow-600" ] [ text warning ]))
+    div []
+        ((if warnings |> List.any (String.contains "legacy") then
+            div [ class "mt-2 text-sm text-gray-500" ]
+                [ text "Oh! It seems you are using the legacy AML syntax 😅"
+                , br [] []
+                , text "Fix it easily with "
+                , extLink Backend.amlv1ConverterUrl [ class "link" ] [ text "our converter tool" ]
+                , text " 🪄"
+                ]
+
+          else
+            div [] []
+         )
+            :: (warnings |> List.map (\warning -> p [ class "mt-2 text-sm text-yellow-600" ] [ text warning ]))
+        )
 
 
 viewHelp : Html msg
 viewHelp =
     p [ class "mt-2 text-sm text-gray-500" ]
         [ text "Write your schema using "
-        , extLink "https://github.com/azimuttapp/azimutt/blob/main/docs/aml/README.md" [ class "link" ] [ text "AML syntax" ]
+        , extLink "https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/README.md" [ class "link" ] [ text "AML syntax" ]
         , text "."
         ]

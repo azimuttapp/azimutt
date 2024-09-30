@@ -2,7 +2,7 @@ defmodule Azimutt.Repo.Migrations.CreateHerokuResources do
   use Ecto.Migration
 
   def change do
-    create table(:heroku_resources, comments: "Heroku addon resources") do
+    create table(:heroku_resources, comment: "Heroku addon resources") do
       add :name, :string, null: false
       add :app, :string
       add :plan, :string, null: false

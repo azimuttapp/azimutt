@@ -28,8 +28,8 @@ config :azimutt,
   azimutt_github_issues_new: "https://github.com/azimuttapp/azimutt/issues/new",
   environment: config_env(),
   # TODO: find an automated process to build it
-  version: "2.1.5",
-  version_date: "2024-09-11T00:00:00.000Z",
+  version: "2.1.6",
+  version_date: "2024-09-29T00:00:00.000Z",
   commit_hash: System.cmd("git", ["log", "-1", "--pretty=format:%h"]) |> elem(0) |> String.trim(),
   commit_message: System.cmd("git", ["log", "-1", "--pretty=format:%s"]) |> elem(0) |> String.trim(),
   commit_date: System.cmd("git", ["log", "-1", "--pretty=format:%aI"]) |> elem(0) |> String.trim(),
@@ -51,9 +51,9 @@ config :azimutt, AzimuttWeb.Endpoint,
 
 # Configure esbuild (the version is required)
 config :esbuild,
-  version: "0.14.29",
+  version: "0.23.1",
   default: [
-    args: ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
+    args: ~w(js/app.ts --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/* --loader:.ttf=file),
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
   ]

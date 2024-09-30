@@ -12,7 +12,7 @@
             "jfmengels/elm-review-debug": "1.0.8",
             "jfmengels/elm-review-the-elm-architecture": "1.0.3",
             "jfmengels/elm-review-unused": "1.2.3",
-            "stil4m/elm-syntax": "7.3.4"
+            "stil4m/elm-syntax": "7.3.6"
         },
         "indirect": {
             "elm/bytes": "1.0.8",
@@ -25,7 +25,6 @@
             "elm/time": "1.0.0",
             "elm/virtual-dom": "1.0.3",
             "elm-explorations/test": "2.2.0",
-            "miniBill/elm-unicode": "1.1.1",
             "rtfeldman/elm-hex": "1.0.0",
             "stil4m/structured-writer": "1.0.3"
         }

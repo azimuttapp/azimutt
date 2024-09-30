@@ -1,0 +1,64 @@
+<div class="bg-white px-6 lg:px-8 pt-0">
+    <div class="mx-auto max-w-4xl text-center">
+        <div class="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+            <div x-data="{ open: false }" @click.outside="open = false" class="relative inline-block text-left">
+                <div>
+                    <button type="button" @click="open = !open" class="inline-flex w-full justify-center items-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" aria-expanded="true" aria-haspopup="true">
+                        <%= @from.name %>
+                        <Icon.chevron_down kind="outline" class="-mr-1 h-5 w-5 text-gray-400" />
+                    </button>
+                </div>
+                <div :class="{ 'block': open, 'hidden': !open }" class="hidden absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
+                    <div class="py-1" role="none">
+                        <%= for converter <- Azimutt.converters() |> Enum.filter(fn c -> c.parse && c.id != @from.id end) do %>
+                            <a href={Routes.website_path(@conn, :convert, converter.id, @to.id)} class="block px-4 py-2 text-sm font-normal text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem" tabindex="-1"><%= converter.name %></a>
+                        <% end %>
+                    </div>
+                </div>
+            </div>
+            to
+            <div x-data="{ open: false }" @click.outside="open = false" class="relative inline-block text-left">
+                <div>
+                    <button type="button" @click="open = !open" class="inline-flex w-full justify-center items-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" aria-expanded="true" aria-haspopup="true">
+                        <%= @to.name %>
+                        <Icon.chevron_down kind="outline" class="-mr-1 h-5 w-5 text-gray-400" />
+                    </button>
+                </div>
+                <div :class="{ 'block': open, 'hidden': !open }" class="hidden absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
+                    <div class="py-1" role="none">
+                        <%= for converter <- Azimutt.converters() |> Enum.filter(fn c -> c.generate && c.id != @to.id end) do %>
+                        <a href={Routes.website_path(@conn, :convert, @from.id, converter.id)} class="block px-4 py-2 text-sm font-normal text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem" tabindex="-1"><%= converter.name %></a>
+                        <% end %>
+                    </div>
+                </div>
+            </div>
+            converter
+        </div>
+    </div>
+</div>
+
+<div class="my-4 flex justify-center">
+    <p class="relative rounded-full bg-gray-50 px-4 py-1.5 text-sm leading-6 text-gray-600 ring-1 ring-inset ring-gray-900/5">
+        <span class="hidden md:inline">Azimutt is a database exploration and documentation tool made for large databases.</span>
+        <a href={Routes.website_path(@conn, :index)} class="font-semibold text-indigo-600"><span aria-hidden="true" class="absolute inset-0"></span> Try Azimutt now <span aria-hidden="true">→</span></a>
+    </p>
+</div>
+
+<div class="px-12 flex flex-col lg:flex-row gap-6">
+    <div id="monaco-editor-left" class="relative w-full h-[40rem] border border-gray-300 rounded-lg overflow-hidden"></div>
+    <div id="monaco-editor-right" class="relative w-full h-[40rem] border border-gray-300 rounded-lg overflow-hidden"></div>
+</div>
+
+<div class="mt-6 flex justify-around justify-items-center">
+    <div class="w-1/3">
+        <div class="text-base font-semibold leading-7 text-gray-900"><%= @from.name %></div>
+        <p class="mt-3 text-base leading-7 text-gray-600"><%= render "_converter-description.html", conn: @conn, converter: @from.id %></p>
+    </div>
+    <div class="w-1/3">
+        <div class="text-base font-semibold leading-7 text-gray-900"><%= @to.name %></div>
+        <p class="mt-3 text-base leading-7 text-gray-600"><%= render "_converter-description.html", conn: @conn, converter: @to.id %></p>
+    </div>
+</div>
+
+<%= render "_converter-editors-script.html", left: %{id: "monaco-editor-left", lang: @from.id}, right: %{id: "monaco-editor-right", lang: @to.id} %>
+<%= render "_footer.html", conn: @conn %>

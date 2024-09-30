@@ -2,7 +2,7 @@ import {z} from "zod";
 import {filterValues, groupBy, isNotUndefined, pluralize} from "@azimutt/utils";
 import {Timestamp} from "../../common";
 import {Attribute, AttributeName, AttributeRef, AttributeType, Database, Entity} from "../../database";
-import {attributeRefToId, entityToRef, flattenAttribute} from "../../databaseUtils";
+import {attributeRefToId, entityToRef, flattenAttributes} from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
 import {
     AnalyzeHistory,
@@ -54,9 +54,9 @@ export type AttributeWithRef = { ref: AttributeRef, value: Attribute }
 
 // same as frontend/src/PagesComponents/Organization_/Project_/Views/Modals/SchemaAnalysis/InconsistentTypeOnColumns.elm
 export function getInconsistentAttributeTypes(entities: Entity[]): Record<AttributeName, AttributeWithRef[]> {
-    const attributes: AttributeWithRef[] = entities.flatMap(e => e.attrs.flatMap(a => flattenAttribute(a)).map(a => ({
-        ref: {...entityToRef(e), attribute: a.path},
-        value: a.attr
+    const attributes: AttributeWithRef[] = entities.flatMap(e => flattenAttributes(e.attrs).map(({path, ...a}) => ({
+        ref: {...entityToRef(e), attribute: path},
+        value: a
     })))
     const attributesByName: Record<AttributeName, AttributeWithRef[]> = groupBy(attributes, a => a.value.name)
     return filterValues(attributesByName, (attrs: AttributeWithRef[]) => !attrs.every(a => a.value.type === attrs[0].value.type))

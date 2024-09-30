@@ -1,11 +1,10 @@
--- drop everything
+-- drop then create the database (needs admin rights)
 DROP DATABASE IF EXISTS identity;
-
--- create the database (needs admin rights)
 CREATE DATABASE identity;
 USE identity;
 
 
+-- database schema
 CREATE TABLE identity.Users (
     id         BIGINT PRIMARY KEY AUTO_INCREMENT,
     first_name VARCHAR(255) NOT NULL,
@@ -84,7 +83,7 @@ CREATE TABLE identity.AuthLogs (
 );
 
 
--- insert some data
+-- database data
 INSERT INTO identity.Users (id, first_name, last_name, username, email, settings)
 VALUES (1, 'John', 'Doe', 'johndoe', 'johndoe@example.com', '{"theme": "dark", "language": "en"}'),
        (2, 'Jane', 'Doe', 'janedoe', 'janedoe@example.com', '{"theme": "light", "language": "en"}'),

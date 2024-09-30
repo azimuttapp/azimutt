@@ -1,4 +1,4 @@
-module Models.Project.Table exposing (Table, TableLike, cleanStats, decode, empty, encode, findColumn, getColumnI, getPeerColumnsI, new)
+module Models.Project.Table exposing (Table, TableLike, cleanStats, decode, doc, docTable, empty, encode, findColumn, getColumnI, getPeerColumnsI, new)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode
@@ -12,7 +12,8 @@ import Libs.Nel as Nel
 import Models.Project.Check as Check exposing (Check)
 import Models.Project.Column as Column exposing (Column, ColumnLike)
 import Models.Project.ColumnName exposing (ColumnName)
-import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
+import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
+import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.Comment as Comment exposing (Comment)
 import Models.Project.Index as Index exposing (Index)
 import Models.Project.PrimaryKey as PrimaryKey exposing (PrimaryKey)
@@ -123,3 +124,25 @@ decode =
         (Decode.defaultField "checks" (Decode.list Check.decode) [])
         (Decode.maybeField "comment" Comment.decode)
         (Decode.maybeField "stats" TableDbStats.decode)
+
+
+docTable : Table
+docTable =
+    { id = ( "", "doc_table" )
+    , schema = ""
+    , name = "doc_table"
+    , view = False
+    , definition = Nothing
+    , columns = Dict.empty
+    , primaryKey = Nothing
+    , uniques = []
+    , indexes = []
+    , checks = []
+    , comment = Nothing
+    , stats = Nothing
+    }
+
+
+doc : TableId -> List ColumnPathStr -> List ( ColumnName, ColumnType ) -> Table
+doc ( schema, table ) pk columns =
+    { docTable | id = ( schema, table ), schema = schema, name = table, columns = Dict.fromListBy .name (columns |> List.indexedMap (\i ( col, kind ) -> Column.doc (i + 1) col kind)), primaryKey = PrimaryKey.doc pk }

@@ -5,8 +5,8 @@ import Components.Organisms.Table exposing (TableHover)
 import Components.Organisms.TableRow as TableRow exposing (TableRowHover)
 import Components.Slices.DataExplorer as DataExplorer
 import Components.Slices.PlanDialog as PlanDialog
-import DataSources.AmlMiner.AmlAdapter exposing (AmlSchemaError)
 import DataSources.DbMiner.DbTypes exposing (RowQuery)
+import DataSources.JsonMiner.JsonSchema exposing (JsonSchema)
 import Dict exposing (Dict)
 import Html exposing (Html, text)
 import Libs.Html.Events exposing (PointerEvent, WheelEvent)
@@ -18,11 +18,11 @@ import Libs.Models.Notes exposing (Notes)
 import Libs.Tailwind as Tw exposing (Color)
 import Libs.Task as T
 import Models.ColumnOrder exposing (ColumnOrder)
-import Models.DbSourceInfo exposing (DbSourceInfo)
 import Models.ErdProps as ErdProps exposing (ErdProps)
 import Models.OpenAIKey exposing (OpenAIKey)
 import Models.OpenAIModel exposing (OpenAIModel)
 import Models.Organization exposing (Organization)
+import Models.ParserError exposing (ParserError)
 import Models.Position as Position
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnId exposing (ColumnId)
@@ -195,7 +195,7 @@ type alias MemoEdit =
 
 
 type alias AmlSidebar =
-    { id : HtmlId, selected : Maybe ( SourceId, String ), errors : List AmlSchemaError, otherSourcesTableIdsCache : Set TableId }
+    { id : HtmlId, selected : Maybe ( SourceId, String ), errors : List ParserError, otherSourcesTableIdsCache : Set TableId }
 
 
 type alias VirtualRelation =
@@ -374,6 +374,7 @@ type AmlSidebarMsg
     | AToggle
     | AChangeSource (Maybe SourceId)
     | AUpdateSource SourceId String
+    | AGotSchema SourceId Int (Maybe JsonSchema) (List ParserError)
     | ASourceUpdated SourceId
 
 

@@ -53,7 +53,7 @@ export const attributeEmptyRule: Rule<CustomRuleConf> = {
 
 export function getEmptyAttributes(entity: Entity): AttributeRef[] {
     if (entity.stats?.rows || 0 > 0) {
-        return entity.attrs.filter(isAttributeEmpty).map(attribute => ({...entityToRef(entity), attribute: [attribute.name]}))
+        return (entity.attrs || []).filter(isAttributeEmpty).map(attribute => ({...entityToRef(entity), attribute: [attribute.name]}))
     } else {
         return []
     }

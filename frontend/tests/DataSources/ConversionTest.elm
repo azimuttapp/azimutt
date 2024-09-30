@@ -1,10 +1,6 @@
 module DataSources.ConversionTest exposing (..)
 
-import DataSources.AmlMiner.AmlAdapter as AmlAdapter
-import DataSources.AmlMiner.AmlGenerator as AmlGenerator
-import DataSources.AmlMiner.AmlParser as AmlParser
 import DataSources.JsonMiner.JsonAdapter as JsonAdapter
-import DataSources.JsonMiner.JsonGenerator as JsonGenerator
 import DataSources.JsonMiner.JsonSchema as JsonSchema
 import DataSources.SqlMiner.MysqlGenerator as MysqlGenerator
 import DataSources.SqlMiner.PostgreSqlGenerator as PostgreSqlGenerator
@@ -28,14 +24,11 @@ import Test exposing (Test, describe, test)
 suite : Test
 suite =
     describe "DataSourceConversion"
-        [ test "parse AML" (\_ -> crmAml |> parseAml |> Expect.equal crmSchema)
-        , test "generate AML" (\_ -> crmSchema |> AmlGenerator.generate |> Expect.equal crmAml)
-        , test "parse PostgreSQL" (\_ -> crmPostgres |> parseSql |> Expect.equal crmSchema)
+        [ test "parse PostgreSQL" (\_ -> crmPostgres |> parseSql |> Expect.equal crmSchema)
         , test "generate PostgreSQL" (\_ -> crmSchema |> PostgreSqlGenerator.generate |> Expect.equal crmPostgres)
         , test "parse MySQL" (\_ -> crmMysql |> parseSql |> Expect.equal crmSchema)
         , test "generate MySQL" (\_ -> crmSchema |> MysqlGenerator.generate |> Expect.equal crmMysql)
         , test "parse JSON" (\_ -> crmJson |> parseJson |> Expect.equal crmSchema)
-        , test "generate JSON" (\_ -> crmSchema |> JsonGenerator.generate |> Expect.equal crmJson)
         ]
 
 
@@ -99,28 +92,6 @@ crmSchema =
             |> List.map buildRelation
     , types = Dict.empty
     }
-
-
-crmAml : String
-crmAml =
-    """contact_roles
-  contact_id uuid pk fk contacts.id
-  role_id uuid pk fk roles.id
-
-contacts
-  id uuid pk
-  name varchar
-  email varchar
-
-events
-  id uuid pk
-  contact_id uuid nullable fk contacts.id
-  instance_name varchar | hostname
-  instance_id uuid
-
-roles
-  id uuid pk
-  name varchar"""
 
 
 crmPostgres : String
@@ -314,15 +285,6 @@ crmJson =
     }
   ]
 }"""
-
-
-parseAml : String -> Schema
-parseAml aml =
-    aml
-        |> AmlParser.parse
-        |> Result.withDefault []
-        |> List.foldl (\c s -> s |> AmlAdapter.evolve c) AmlAdapter.initSchema
-        |> (\schema -> { tables = schema.tables, relations = schema.relations |> List.sortBy .id, types = schema.types })
 
 
 parseSql : String -> Schema

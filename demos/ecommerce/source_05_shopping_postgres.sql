@@ -1,9 +1,9 @@
--- drop everything
+-- drop then create the database
 DROP SCHEMA IF EXISTS shopping CASCADE;
 CREATE SCHEMA shopping;
 
 
--- create the database
+-- database schema
 CREATE TABLE shopping.carts (
     id         BIGINT PRIMARY KEY,
     owner_kind VARCHAR(255),
@@ -74,7 +74,7 @@ CREATE TABLE shopping.wishlist_members (
 CREATE INDEX idx_wishlist_members_deleted_at ON shopping.wishlist_members (deleted_at);
 
 
--- insert some data
+-- database data
 INSERT INTO shopping.carts (id, owner_kind, owner_id, expire_at)
 VALUES (1, 'Users', 102, CURRENT_TIMESTAMP + INTERVAL '1 day'),
        (2, 'Devices', 1, CURRENT_TIMESTAMP + INTERVAL '1 day');

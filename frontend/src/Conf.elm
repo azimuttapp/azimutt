@@ -27,6 +27,7 @@ constants :
     , defaultDescription : String
     , newProjectName : ProjectName
     , defaultLayout : LayoutName
+    , defaultSourceName : SourceName
     , virtualRelationSourceName : SourceName
     , cheeringTweet : String
     , sharingTweet : String
@@ -51,12 +52,13 @@ constants =
     , defaultDescription = "Next-Gen ERD: Design, Explore, Document and Analyze your database."
     , newProjectName = "New Project"
     , defaultLayout = "initial layout"
-    , virtualRelationSourceName = "default"
+    , defaultSourceName = "default"
+    , virtualRelationSourceName = "additional relations"
     , cheeringTweet = "Hi team, I really like what you've done with @" ++ twitter ++ ". Keep up the good work 💪"
     , sharingTweet = "Hi @" ++ twitter ++ ", I just published my schema at ..., I would love if you can share 🚀"
     , canvasMargins = 20
     , manyTablesLimit = 50
-    , fewTablesLimit = 20
+    , fewTablesLimit = 10
     }
 
 

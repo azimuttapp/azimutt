@@ -8,8 +8,10 @@ export function isEmpty(v: any): boolean {
         || (typeof v === 'object' && Object.keys(v).length === 0)
 }
 
-export const isObject = (value: unknown): value is Record<string, any> => typeof value === "object" && !Array.isArray(value) && value !== null;
+export const isObject = (value: unknown): value is Record<string, any> => typeof value === "object" && !Array.isArray(value) && value !== null
+export const isNotUndefined = <T>(t: T | undefined): t is T => t !== undefined
 
-export function isNotUndefined<T>(t: T | undefined): t is T {
-    return t !== undefined
+// this function should never be called, useful for making sure checks are exhaustive
+export function isNever(p: never): any {
+    throw new Error('a never param has been produced 🤯')
 }

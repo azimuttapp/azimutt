@@ -1,6 +1,7 @@
 module PagesComponents.Create.Updates exposing (update)
 
 import Conf
+import DataSources.JsonMiner.JsonAdapter as JsonAdapter
 import Dict
 import Gen.Route as Route
 import Libs.Dict as Dict
@@ -48,12 +49,14 @@ update req now projects projectsLoaded urlOrganization msg model =
                     |> Maybe.orElse (req.query |> Dict.get "sql" |> Maybe.map (\_ -> { model | sqlSource = Just (SqlSource.init Nothing (Tuple.second >> createProject urlOrganization projects storage name)) }))
                     |> Maybe.orElse (req.query |> Dict.get "prisma" |> Maybe.map (\_ -> { model | prismaSource = Just (PrismaSource.init Nothing (createProject urlOrganization projects storage name)) }))
                     |> Maybe.orElse (req.query |> Dict.get "json" |> Maybe.map (\_ -> { model | jsonSource = Just (JsonSource.init Nothing (createProject urlOrganization projects storage name)) }))
+                    |> Maybe.orElse (req.query |> Dict.get "aml" |> Maybe.map (\aml -> { model | amlSource = Just { content = aml, callback = createProject urlOrganization projects storage name } }))
                     |> Maybe.withDefault model
                 , (req.query |> Dict.get "database" |> Maybe.map (DatabaseSource.GetSchema >> DatabaseSourceMsg >> T.send))
                     |> Maybe.orElse (req.query |> Dict.get "sql" |> Maybe.map (SqlSource.GetRemoteFile >> SqlSourceMsg >> T.send))
                     |> Maybe.orElse (req.query |> Dict.get "prisma" |> Maybe.map (PrismaSource.GetRemoteFile >> PrismaSourceMsg >> T.send))
                     |> Maybe.orElse (req.query |> Dict.get "json" |> Maybe.map (JsonSource.GetRemoteFile >> JsonSourceMsg >> T.send))
-                    |> Maybe.withDefault (AmlSourceMsg storage name |> T.send)
+                    |> Maybe.orElse (req.query |> Dict.get "aml" |> Maybe.map (AmlSourceMsg >> T.send))
+                    |> Maybe.withDefault (NoSourceMsg storage name |> T.send)
                 )
 
             else
@@ -71,8 +74,11 @@ update req now projects projectsLoaded urlOrganization msg model =
         JsonSourceMsg message ->
             model |> mapJsonSourceMT (JsonSource.update JsonSourceMsg now Nothing message) |> Extra.unpackTM
 
-        AmlSourceMsg storage name ->
-            ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create urlOrganization projects name >> CreateProjectTmp storage) )
+        AmlSourceMsg content ->
+            ( model, SourceId.generator |> Random.generate (\sourceId -> Ports.getAmlSchema sourceId content |> Send) )
+
+        NoSourceMsg storage name ->
+            ( model, SourceId.generator |> Random.generate (Source.empty Conf.constants.defaultSourceName now >> Project.create urlOrganization projects name >> CreateProjectTmp storage) )
 
         CreateProjectTmp storage project ->
             ( model
@@ -86,8 +92,14 @@ update req now projects projectsLoaded urlOrganization msg model =
         Toast message ->
             model |> mapToastsT (Toasts.update Toast message) |> Extra.unpackT
 
+        Send cmd ->
+            ( model, cmd )
+
+        Noop _ ->
+            ( model, Cmd.none )
+
         JsMessage message ->
-            model |> handleJsMessage req urlOrganization message
+            model |> handleJsMessage req urlOrganization now message
 
 
 createProject : Maybe OrganizationId -> List ProjectInfo -> Maybe ProjectStorage -> ProjectName -> Result String Source -> Msg
@@ -95,8 +107,8 @@ createProject urlOrganization projects storage name =
     Result.fold (Toasts.error >> Toast) (Project.create urlOrganization projects name >> CreateProjectTmp storage)
 
 
-handleJsMessage : Request.With params -> Maybe OrganizationId -> JsMsg -> Model -> ( Model, Cmd Msg )
-handleJsMessage req urlOrganization msg model =
+handleJsMessage : Request.With params -> Maybe OrganizationId -> Time.Posix -> JsMsg -> Model -> ( Model, Cmd Msg )
+handleJsMessage req urlOrganization now msg model =
     case msg of
         GotProject _ project ->
             ( model
@@ -120,6 +132,19 @@ handleJsMessage req urlOrganization msg model =
 
         GotPrismaSchemaError error ->
             ( model, Cmd.batch [ Err error |> PrismaSource.GotSchema |> PrismaSourceMsg |> T.send, error |> Toasts.error |> Toast |> T.send ] )
+
+        GotAmlSchema sourceId length jsonSchema errors ->
+            model.amlSource
+                |> Maybe.map
+                    (\amlSource ->
+                        jsonSchema
+                            |> Maybe.filter (\_ -> length == String.length amlSource.content)
+                            |> Maybe.map JsonAdapter.buildSchema
+                            |> Maybe.map (\schema -> Source.aml sourceId Conf.constants.defaultSourceName amlSource.content schema now |> Ok)
+                            |> Maybe.withDefault ("Errors: " ++ (errors |> List.map (\e -> e.message ++ " at line " ++ String.fromInt e.position.start.line) |> String.join ", ") |> Err)
+                            |> (\res -> ( model, amlSource.callback res |> T.send ))
+                    )
+                |> Maybe.withDefault ( model, Cmd.none )
 
         GotToast level message ->
             ( model, message |> Toasts.create level |> Toast |> T.send )

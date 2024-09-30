@@ -8,7 +8,7 @@ import {
     attributeRefToId,
     entityRefFromAttribute,
     entityToRef,
-    flattenAttribute
+    flattenAttributes
 } from "../../databaseUtils";
 import {DatabaseQuery} from "../../interfaces/connector";
 import {
@@ -62,12 +62,12 @@ export type ConsistencyCheck = { convention: StringCase, invalid: AttributeRef[]
 // same as frontend/src/PagesComponents/Organization_/Project_/Views/Modals/SchemaAnalysis/NamingConsistency.elm
 export function checkNamingConsistency(entities: Entity[]): ConsistencyCheck {
     const counts = entities.reduce((acc, entity) =>
-        entity.attrs.flatMap(a => flattenAttribute(a)).reduce((acc, a) => addCases(acc, a.attr.name), acc),
+        flattenAttributes(entity.attrs).reduce((acc, a) => addCases(acc, a.name), acc),
         {} as Record<StringCase, number>
     )
     const attributeCase = bestCase(counts)
     return {
         convention: attributeCase.name,
-        invalid: entities.flatMap(e => e.attrs.flatMap(a => flattenAttribute(a)).filter(a => !attributeCase.isValid(a.attr.name)).map(a => ({...entityToRef(e), attribute: a.path})))
+        invalid: entities.flatMap(e => flattenAttributes(e.attrs).filter(a => !attributeCase.isValid(a.name)).map(a => ({...entityToRef(e), attribute: a.path})))
     }
 }

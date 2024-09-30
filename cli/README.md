@@ -37,14 +37,24 @@ Get the help simply by running the CLI (`npx azimutt@latest`) or for a specific 
   - `--format` is optional, default to `json` but for relational database it could also be `sql`
   - `--output` is optional, database name will be inferred from url and prefixed by the timestamp
   - `--debug` allows to see the full stack trace of the error (can be helpful to debug)
+- **convert** (`npx azimutt convert <path> --from <dialect> --to <dialect>`): convert a file from a dialect to an other
+  - `path` the file path
+  - `--from` the source dialect (currently supported: aml, json)
+  - `--to` the target dialect (currently supported: aml, json)
+  - `--out` is optional, to specify the file to write
 
 ## Developing
 
 Start with `pnpm install` to install dependencies and set up the CLI, then you have:
 
-- `pnpm run exec` launch the CLI (use `-- args` for CLI args, ex: `pnpm run exec -- export postgresql://postgres:postgres@localhost:5432/azimutt_dev`), or `pnpm run build && pnpm run exec`
+- `pnpm run exec` launch the CLI (use `-- args` for CLI args, ex: `npm run exec -- export postgresql://postgres:postgres@localhost:5432/azimutt_dev`), or `npm run build && npm run exec`
 - `pnpm run start` to launch it with live reload (same, use `-- args` to pass arguments to the CLI)
 - `pnpm run test` to launch tests
+
+Issues:
+
+- upgrading to typescript 5.6.2 cause the error: `TypeError: Cannot read properties of undefined (reading 'sourceFile')` when running tests :/
+- importing @azimutt/aml fails as it's commonjs, not es module :/
 
 ## Publish
 

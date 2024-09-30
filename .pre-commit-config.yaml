@@ -78,33 +78,33 @@ repos:
       pass_filenames: false
       files: libs/connector-sqlserver/.*\.ts*$
 
-    - id: libs-serde-aml
-      name: 'libs/serde-aml'
+    - id: libs-aml
+      name: 'libs/aml'
       language: system
-      entry: bash -c 'cd libs/serde-aml && exec npm run build && exec npm test'
+      entry: bash -c 'cd libs/aml && exec npm run build && exec npm test'
       pass_filenames: false
-      files: libs/serde-aml/.*\.ts*$
+      files: libs/aml/.*\.ts*$
 
-    - id: libs-serde-dbml
-      name: 'libs/serde-dbml'
+    - id: libs-parser-dbml
+      name: 'libs/parser-dbml'
       language: system
-      entry: bash -c 'cd libs/serde-dbml && exec npm run build && exec npm test'
+      entry: bash -c 'cd libs/parser-dbml && exec npm run build && exec npm test'
       pass_filenames: false
-      files: libs/serde-dbml/.*\.ts*$
+      files: libs/parser-dbml/.*\.ts*$
 
-    - id: libs-serde-prisma
-      name: 'libs/serde-prisma'
+    - id: libs-parser-prisma
+      name: 'libs/parser-prisma'
       language: system
-      entry: bash -c 'cd libs/serde-prisma && exec npm run build && exec npm test'
+      entry: bash -c 'cd libs/parser-prisma && exec npm run build && exec npm test'
       pass_filenames: false
-      files: libs/serde-prisma/.*\.ts*$
+      files: libs/parser-prisma/.*\.ts*$
 
-    - id: libs-serde-sql
-      name: 'libs/serde-sql'
+    - id: libs-parser-sql
+      name: 'libs/parser-sql'
       language: system
-      entry: bash -c 'cd libs/serde-sql && exec npm run build && exec npm test'
+      entry: bash -c 'cd libs/parser-sql && exec npm run build && exec npm test'
       pass_filenames: false
-      files: libs/serde-sql/.*\.ts*$
+      files: libs/parser-sql/.*\.ts*$
 
     - id: mix-format
       name: 'Elixir format'

@@ -1,4 +1,4 @@
-module Models.Project.Source exposing (Source, addRelations, aml, database, databaseKind, databaseUrl, databaseUrlStorage, decode, encode, getColumnI, getTableI, removeRelations, toInfo, updateWith)
+module Models.Project.Source exposing (Source, addRelations, aml, buildContent, contentStr, database, databaseKind, databaseUrl, databaseUrlStorage, decode, doc, docSource, empty, encode, getColumnI, getTableI, removeRelations, setSchema, toInfo, updateWith)
 
 import Array exposing (Array)
 import Conf
@@ -21,6 +21,7 @@ import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.DatabaseUrlStorage exposing (DatabaseUrlStorage)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.SampleKey as SampleKey exposing (SampleKey)
+import Models.Project.Schema exposing (Schema)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind as SourceKind exposing (SourceKind(..), SourceKindDatabase)
 import Models.Project.SourceLine as SourceLine exposing (SourceLine)
@@ -48,8 +49,8 @@ type alias Source =
     }
 
 
-aml : SourceName -> Time.Posix -> SourceId -> Source
-aml name now id =
+empty : SourceName -> Time.Posix -> SourceId -> Source
+empty name now id =
     { id = id
     , name = name
     , kind = AmlEditor
@@ -57,6 +58,22 @@ aml name now id =
     , tables = Dict.empty
     , relations = []
     , types = Dict.empty
+    , enabled = True
+    , fromSample = Nothing
+    , createdAt = now
+    , updatedAt = now
+    }
+
+
+aml : SourceId -> SourceName -> String -> Schema -> Time.Posix -> Source
+aml id name content schema now =
+    { id = id
+    , name = name
+    , kind = AmlEditor
+    , content = buildContent content
+    , tables = schema.tables
+    , relations = schema.relations
+    , types = schema.types
     , enabled = True
     , fromSample = Nothing
     , createdAt = now
@@ -74,6 +91,21 @@ toInfo source =
     , createdAt = source.createdAt
     , updatedAt = source.updatedAt
     }
+
+
+buildContent : String -> Array SourceLine
+buildContent input =
+    input |> String.split "\n" |> Array.fromList
+
+
+contentStr : Source -> String
+contentStr source =
+    source.content |> Array.toList |> String.join "\n"
+
+
+setSchema : Schema -> Source -> Source
+setSchema schema source =
+    { source | tables = schema.tables, relations = schema.relations, types = schema.types }
 
 
 database : Source -> Maybe SourceKindDatabase
@@ -121,7 +153,7 @@ addRelations now rels source =
         |> mapContent
             (\content ->
                 rels
-                    |> List.map (\r -> AmlGenerator.relation r.src r.ref)
+                    |> List.map (\r -> AmlGenerator.relationStandalone r.src r.ref)
                     |> List.insert ""
                     |> Array.fromList
                     |> Array.append
@@ -144,7 +176,7 @@ removeRelations rels source =
                 let
                     amlRels : Set String
                     amlRels =
-                        rels |> List.map (\r -> AmlGenerator.relation r.src r.ref) |> Set.fromList
+                        rels |> List.map (\r -> AmlGenerator.relationStandalone r.src r.ref) |> Set.fromList
                 in
                 content |> Array.filterNot (\line -> amlRels |> Set.member line)
             )
@@ -190,8 +222,8 @@ decodeSource id name kind content tables relations types enabled fromSample crea
         ( n, c ) =
             if kind == AmlEditor && Array.isEmpty content && Dict.isEmpty tables && List.nonEmpty relations then
                 -- migration from previous: no content, only relations and bad name for virtual relations
-                ( Conf.constants.virtualRelationSourceName
-                , Array.fromList (relations |> List.map (\r -> AmlGenerator.relation r.src r.ref))
+                ( Conf.constants.defaultSourceName
+                , Array.fromList (relations |> List.map (\r -> AmlGenerator.relationStandalone r.src r.ref))
                 )
 
             else
@@ -209,3 +241,24 @@ decodeSource id name kind content tables relations types enabled fromSample crea
     , createdAt = createdAt
     , updatedAt = updatedAt
     }
+
+
+docSource : Source
+docSource =
+    { id = SourceId.zero
+    , name = "Doc source"
+    , kind = AmlEditor
+    , content = Array.empty
+    , tables = Dict.empty
+    , relations = []
+    , types = Dict.empty
+    , enabled = True
+    , fromSample = Nothing
+    , createdAt = Time.zero
+    , updatedAt = Time.zero
+    }
+
+
+doc : SourceName -> List Table -> List Relation -> Source
+doc name tables relations =
+    { docSource | name = name, tables = Dict.fromListBy .id tables, relations = relations }

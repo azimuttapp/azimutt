@@ -16,18 +16,21 @@ import {
     attributesRefSame,
     attributesRefToId,
     attributeTypeParse,
+    DatabaseKind,
     EntityId,
     EntityRef,
     entityRefFromId,
     entityRefSame,
     entityRefToId,
-    flattenAttribute,
+    flattenAttributes,
+    generateJsonDatabase,
     getAttribute,
     getPeerAttributes,
     Namespace,
     namespaceFromId,
     NamespaceId,
     namespaceToId,
+    parseJsonDatabase,
     TypeId,
     TypeRef,
     typeRefFromId,
@@ -329,36 +332,149 @@ describe('databaseUtils', () => {
         expect(getPeerAttributes([id, details], ['details', 'address', 'city'])).toEqual([street, city])
         expect(getPeerAttributes([id, details], ['details', 'bad', 'city'])).toEqual([])
     })
-    test('flattenAttribute', () => {
-        expect(flattenAttribute({name: 'id', type: 'uuid'})).toEqual([{path: ['id'], attr: {name: 'id', type: 'uuid'}}])
-        expect(flattenAttribute({name: 'details', type: 'json', attrs: [{name: 'address', type: 'varchar'}]})).toEqual([
-            {path: ['details'], attr: {name: 'details', type: 'json', attrs: [{name: 'address', type: 'varchar'}]}},
-            {path: ['details', 'address'], attr: {name: 'address', type: 'varchar'}},
+    test('flattenAttributes', () => {
+        expect(flattenAttributes(undefined)).toEqual([])
+        expect(flattenAttributes([])).toEqual([])
+        expect(flattenAttributes([{name: 'id', type: 'uuid'}])).toEqual([{path: ['id'], name: 'id', type: 'uuid'}])
+        expect(flattenAttributes([{name: 'details', type: 'json', attrs: [{name: 'address', type: 'varchar'}]}])).toEqual([
+            {path: ['details'], name: 'details', type: 'json', attrs: [{name: 'address', type: 'varchar'}]},
+            {path: ['details', 'address'], name: 'address', type: 'varchar'},
         ])
-        expect(flattenAttribute({name: 'details', type: 'json', attrs: [
+        expect(flattenAttributes([{name: 'details', type: 'json', attrs: [
             {name: 'twitter', type: 'varchar'},
             {name: 'address', type: 'json', attrs: [
                 {name: 'street', type: 'varchar'},
                 {name: 'city', type: 'varchar'},
             ]},
             {name: 'created', type: 'varchar'},
-        ]})).toEqual([
-            {path: ['details'], attr: {name: 'details', type: 'json', attrs: [
+        ]}])).toEqual([
+            {path: ['details'], name: 'details', type: 'json', attrs: [
                 {name: 'twitter', type: 'varchar'},
                 {name: 'address', type: 'json', attrs: [
                     {name: 'street', type: 'varchar'},
                     {name: 'city', type: 'varchar'},
                 ]},
                 {name: 'created', type: 'varchar'},
-            ]}},
-            {path: ['details', 'twitter'], attr: {name: 'twitter', type: 'varchar'}},
-            {path: ['details', 'address'], attr: {name: 'address', type: 'json', attrs: [
+            ]},
+            {path: ['details', 'twitter'], name: 'twitter', type: 'varchar'},
+            {path: ['details', 'address'], name: 'address', type: 'json', attrs: [
                 {name: 'street', type: 'varchar'},
                 {name: 'city', type: 'varchar'},
-            ]}},
-            {path: ['details', 'address', 'street'], attr: {name: 'street', type: 'varchar'}},
-            {path: ['details', 'address', 'city'], attr: {name: 'city', type: 'varchar'}},
-            {path: ['details', 'created'], attr: {name: 'created', type: 'varchar'}},
+            ]},
+            {path: ['details', 'address', 'street'], name: 'street', type: 'varchar'},
+            {path: ['details', 'address', 'city'], name: 'city', type: 'varchar'},
+            {path: ['details', 'created'], name: 'created', type: 'varchar'},
         ])
+    })
+    test('parseJsonDatabase', () => {
+        expect(parseJsonDatabase(`{}`)).toEqual({result: {}})
+        expect(parseJsonDatabase(`{"entities": [{"name": "users"}, {"name": "posts"}]}`)).toEqual({result: {entities: [{name: 'users'}, {name: 'posts'}]}})
+        expect(parseJsonDatabase(`{"bad": 1}`)).toEqual({errors: [{message: "Invalid Database, at _root_: invalid additional key 'bad' (1)", kind: 'InvalidJson', level: 'error', offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}]})
+        expect(parseJsonDatabase(`{"entities": [{"name": true}]}`)).toEqual({errors: [{message: "Invalid Database, at .entities.0.name: expect 'string' but got 'boolean' (true)", kind: 'InvalidJson', level: 'error', offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}]})
+        // expect(databaseJsonParse(`bad`)).toEqual({errors: [{message: "Unexpected token 'b', \"bad\" is not valid JSON", kind: 'MalformedJson', level: 'error', offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}]})
+        // expect(databaseJsonParse(`bad`)).toEqual({errors: [{message: "Unexpected token b in JSON at position 0", kind: 'MalformedJson', level: 'error', offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}]})
+    })
+    test('generateJsonDatabase', () => {
+        const prettyJson = generateJsonDatabase({
+            entities: [{
+                name: 'users',
+                attrs: [
+                    {name: 'id', type: 'int'},
+                    {name: 'name', type: 'varchar'},
+                    {name: 'role', type: 'user_role', default: 'guest'},
+                    {name: 'settings', type: 'json', attrs: [
+                        {name: 'github', type: 'string'},
+                        {name: 'twitter', type: 'string'},
+                    ]},
+                ],
+                pk: {name: 'users_pk', attrs: [['id']]},
+                indexes: [{name: 'user_name_idx', attrs: [['name']]}],
+                checks: [{name: 'user_role_chk', attrs: [['role']], predicate: 'role in ("admin", "guest")'}]
+            }, {
+                name: 'posts',
+                attrs: [
+                    {name: 'id', type: 'int'},
+                    {name: 'title', type: 'varchar'},
+                    {name: 'created_by', type: 'int'},
+                ],
+                indexes: []
+            }, {
+                name: 'admins',
+                kind: 'view',
+                def: `SELECT *\nFROM users\nWHERE role='admin';`,
+                attrs: [
+                    {name: 'id', type: 'int'},
+                    {name: 'name', type: 'varchar'},
+                    {name: 'role', type: 'varchar'},
+                ]
+            }],
+            relations: [{
+                name: 'posts_created_by_fk',
+                src: {entity: 'posts', attrs: [['created_by']]},
+                ref: {entity: 'users', attrs: [['id']]},
+            }],
+            types: [{name: 'user_role', values: ['admin', 'guest']}],
+            doc: 'CMS database',
+            stats: {name: 'cms', kind: DatabaseKind.Enum.postgres, version: '1.2.3'},
+            extra: {comment: 'great!'}
+        })
+        expect(prettyJson).toEqual(`{
+  "entities": [
+    {
+      "name": "users",
+      "attrs": [
+        {"name": "id", "type": "int"},
+        {"name": "name", "type": "varchar"},
+        {"name": "role", "type": "user_role", "default": "guest"},
+        {"name": "settings", "type": "json", "attrs": [
+          {"name": "github", "type": "string"},
+          {"name": "twitter", "type": "string"}
+        ]}
+      ],
+      "pk": {"name": "users_pk", "attrs": [["id"]]},
+      "indexes": [
+        {"name": "user_name_idx", "attrs": [["name"]]}
+      ],
+      "checks": [
+        {"name": "user_role_chk", "attrs": [["role"]], "predicate": "role in (\\"admin\\", \\"guest\\")"}
+      ]
+    },
+    {
+      "name": "posts",
+      "attrs": [
+        {"name": "id", "type": "int"},
+        {"name": "title", "type": "varchar"},
+        {"name": "created_by", "type": "int"}
+      ],
+      "indexes": []
+    },
+    {
+      "name": "admins",
+      "kind": "view",
+      "def": "SELECT *\\nFROM users\\nWHERE role='admin';",
+      "attrs": [
+        {"name": "id", "type": "int"},
+        {"name": "name", "type": "varchar"},
+        {"name": "role", "type": "varchar"}
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "name": "posts_created_by_fk",
+      "src": {"entity": "posts", "attrs": [["created_by"]]},
+      "ref": {"entity": "users", "attrs": [["id"]]}
+    }
+  ],
+  "types": [
+    {"name": "user_role", "values": ["admin", "guest"]}
+  ],
+  "doc": "CMS database",
+  "stats": {"name": "cms", "kind": "postgres", "version": "1.2.3"},
+  "extra": {
+    "comment": "great!"
+  }
+}
+`)
     })
 })

@@ -5,6 +5,7 @@ import {
     attributePathFromId,
     AttributeRef,
     columnStatsToLegacy,
+    databaseFromLegacy,
     databaseToLegacy,
     DatabaseUrl,
     entityRefFromId,
@@ -15,6 +16,7 @@ import {
     LegacyColumnStats,
     LegacyDatabase,
     LegacyDatabaseConnection,
+    legacyDatabaseJsonFormat,
     LegacyDatabaseQueryResults,
     LegacyProject,
     LegacyProjectStorage,
@@ -29,8 +31,9 @@ import {
     tableStatsToLegacy,
     textToSql
 } from "@azimutt/models";
-import {prisma} from "@azimutt/serde-prisma";
-import {HtmlId, Platform, ToastLevel, ViewPosition} from "./types/basics";
+import {generateAml, parseAml} from "@azimutt/aml";
+import {parsePrisma} from "@azimutt/parser-prisma";
+import {Dialect, HtmlId, Platform, ToastLevel, ViewPosition} from "./types/basics";
 import * as Uuid from "./types/uuid";
 import {
     CreateProject,
@@ -38,6 +41,8 @@ import {
     DeleteProject,
     DeleteSource,
     ElmFlags,
+    GetAmlSchema,
+    GetCode,
     GetColumnStats,
     GetDatabaseSchema,
     GetLocalFile,
@@ -66,7 +71,13 @@ import {Env} from "./utils/env";
 import {loadPolyfills} from "./utils/polyfills";
 import * as url from "./utils/url";
 import {Utils} from "./utils/utils";
+// import {loadIntlDate} from "./components/intl-date";
+// import {loadAzEditor} from "./components/az-editor";
+// import {loadAmlEditor} from "./components/aml-editor";
 
+// loadIntlDate() // should be before the Elm init
+// loadAzEditor() // should be before the Elm init
+// loadAmlEditor() // should be before the Elm init
 const platform = Utils.getPlatform()
 const logger = new ConsoleLogger(window.env)
 const flags: ElmFlags = {now: Date.now(), conf: {env: window.env, platform, role: window.role, desktop: !!window.desktop}}
@@ -121,7 +132,9 @@ app.on('GetDatabaseSchema', getDatabaseSchema)
 app.on('GetTableStats', getTableStats)
 app.on('GetColumnStats', getColumnStats)
 app.on('RunDatabaseQuery', runDatabaseQuery)
+app.on('GetAmlSchema', getAmlSchema)
 app.on('GetPrismaSchema', getPrismaSchema)
+app.on('GetCode', getCode)
 app.on('ObserveSizes', observeSizes)
 app.on('LlmGenerateSql', llmGenerateSql)
 app.on('ListenKeys', listenHotkeys)
@@ -422,11 +435,26 @@ function runDatabaseQuery(msg: RunDatabaseQuery) {
     )
 }
 
+function getAmlSchema(msg: GetAmlSchema) {
+    const res = parseAml(msg.content).map(databaseToLegacy)
+    app.gotAmlSchema(msg.source, msg.content.length, res.result, res.errors || [])
+}
+
 function getPrismaSchema(msg: GetPrismaSchema) {
-    prisma.parse(msg.content).map(databaseToLegacy).fold(
+    parsePrisma(msg.content).map(databaseToLegacy).fold(
         (schema: LegacyDatabase) => app.gotPrismaSchema(schema),
         (errors: ParserError[]) => app.gotPrismaSchemaError(errors.map(errorToString).join(', '))
     )
+}
+
+function getCode(msg: GetCode) {
+    let content = `Unsupported dialect ${msg.dialect}`
+    if (msg.dialect === Dialect.enum.AML) {
+        content = generateAml(databaseFromLegacy(msg.schema))
+    } else if (msg.dialect === Dialect.enum.JSON) {
+        content = legacyDatabaseJsonFormat(msg.schema)
+    }
+    app.gotCode(msg.dialect, content)
 }
 
 const resizeObserver = new ResizeObserver(entries => {

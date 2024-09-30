@@ -5,6 +5,8 @@ import Components.Slices.ExportDialogBody as ExportDialogBody
 import Html exposing (Html)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Task as T
+import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.ProjectName exposing (ProjectName)
 import Models.ProjectRef exposing (ProjectRef)
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
@@ -26,16 +28,16 @@ type Msg
     | BodyMsg ExportDialogBody.Msg
 
 
-init : Model
-init =
-    { id = dialogId, body = ExportDialogBody.init dialogId }
+init : ProjectName -> LayoutName -> Model
+init project layout =
+    { id = dialogId, body = ExportDialogBody.init dialogId project layout }
 
 
 update : (Msg -> msg) -> (HtmlId -> msg) -> ProjectRef -> Erd -> Msg -> Maybe Model -> ( Maybe Model, Extra msg )
 update wrap modalOpen projectRef erd msg model =
     case msg of
         Open ->
-            ( Just init, modalOpen dialogId |> T.sendAfter 1 |> Extra.cmd )
+            ( Just (init erd.project.name erd.currentLayout), modalOpen dialogId |> T.sendAfter 1 |> Extra.cmd )
 
         Close ->
             ( Nothing, Extra.none )

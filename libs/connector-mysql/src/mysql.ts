@@ -85,12 +85,13 @@ export const getSchema = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
             name: conn.url.db,
             kind: DatabaseKind.Enum.mysql,
             version: undefined,
-            doc: undefined,
-            extractedAt: new Date().toISOString(),
-            extractionDuration: Date.now() - start,
             size: undefined,
         }),
-        extra: undefined,
+        extra: removeUndefined({
+            source: `MySQL connector`,
+            createdAt: new Date().toISOString(),
+            creationTimeMs: Date.now() - start,
+        }),
     })
 }
 
@@ -316,11 +317,9 @@ function buildRelation(columns: RawConstraintColumn[]): Relation {
     const first = columns[0]
     return removeUndefined({
         name: first.constraint_name || undefined,
-        kind: undefined,
         origin: undefined,
-        src: { schema: first.table_schema, entity: first.table_name },
-        ref: { schema: first.ref_schema || '', entity: first.ref_table || '' },
-        attrs: columns.map((c, i) => ({src: buildConstraintColumnPath(c.column_name, c.column_expr, i), ref: buildConstraintColumnPath(c.ref_column, null, i)})),
+        src: { schema: first.table_schema, entity: first.table_name, attrs: columns.map((c, i) => buildConstraintColumnPath(c.column_name, c.column_expr, i)) },
+        ref: { schema: first.ref_schema || '', entity: first.ref_table || '', attrs: columns.map((c, i) => buildConstraintColumnPath(c.ref_column, null, i)) },
         polymorphic: undefined,
         doc: undefined,
         extra: undefined

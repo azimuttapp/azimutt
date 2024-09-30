@@ -40,7 +40,8 @@ defmodule Azimutt do
           "Unlimited tables",
           "Schema exploration",
           "Data exploration"
-        ]
+        ],
+        order: 1
       },
       solo: %{
         id: :solo,
@@ -54,7 +55,8 @@ defmodule Azimutt do
           "Long term usage",
           "Database design",
           "Schema export"
-        ]
+        ],
+        order: 3
       },
       team: %{
         id: :team,
@@ -70,7 +72,8 @@ defmodule Azimutt do
           "Documentation",
           "AI capabilities",
           "Export project"
-        ]
+        ],
+        order: 4
       },
       enterprise: %{
         id: :enterprise,
@@ -83,14 +86,16 @@ defmodule Azimutt do
           "Unlimited usage",
           "User management",
           "Custom integrations"
-        ]
+        ],
+        order: 5
       },
       pro: %{
         id: :pro,
         name: "Pro",
         monthly: 13,
         yearly: 13,
-        features: []
+        features: [],
+        order: 2
       }
     }
   end
@@ -164,6 +169,13 @@ defmodule Azimutt do
         description: "The all-in-one tool to understand and design your database following your thought process."
       },
       %{
+        id: "document",
+        # tag / archive-box / bars-3-center-left
+        icon: "book-open",
+        name: "Document",
+        description: "Nice and contextual documentation for databases is now finally a reality."
+      },
+      %{
         id: "analyze",
         # check-badge / beaker / clipboard-document-check / finger-print / funnel
         icon: "shield-check",
@@ -171,11 +183,11 @@ defmodule Azimutt do
         description: "Identify database design warts and automate any check to keep it consistent."
       },
       %{
-        id: "document",
-        # tag / archive-box / bars-3-center-left
-        icon: "book-open",
-        name: "Document",
-        description: "Nice and contextual documentation for databases is now finally a reality."
+        id: "design",
+        # adjustments-horizontal / sparkles
+        icon: "academic-cap",
+        name: "Design",
+        description: "Make beautiful diagrams at your typing speed using our minimal DSL."
       }
     ]
   end
@@ -294,6 +306,25 @@ defmodule Azimutt do
       #   description: "Ideal for micro-services, CQRS, or drafting new features.",
       #   image: "/images/screenshots/sources.png"
       # },
+    ]
+  end
+
+  def converters do
+    [
+      %{id: "aml", name: "AML", parse: true, generate: true},
+      %{id: "dbml", name: "DBML", parse: false, generate: false},
+      %{id: "json", name: "JSON", parse: true, generate: true},
+      %{id: "postgres", name: "PostgreSQL", parse: false, generate: true},
+      %{id: "mysql", name: "MySQL", parse: false, generate: false},
+      %{id: "oracle", name: "Oracle", parse: false, generate: false},
+      %{id: "sqlserver", name: "SQL Server", parse: false, generate: false},
+      %{id: "mongodb", name: "MongoDB", parse: false, generate: false},
+      %{id: "mariadb", name: "MariaDB", parse: false, generate: false},
+      %{id: "prisma", name: "Prisma", parse: false, generate: false},
+      %{id: "mermaid", name: "Mermaid", parse: false, generate: true},
+      %{id: "quicksql", name: "Quick SQL", parse: false, generate: false},
+      %{id: "markdown", name: "Markdown", parse: false, generate: true},
+      %{id: "amlv1", name: "AMLv1", parse: true, generate: true}
     ]
   end
 end

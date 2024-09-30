@@ -64,7 +64,7 @@ export const attributeTypeBadRule: Rule<CustomRuleConf> = {
 }
 
 export function getAttributesWithBadType(entity: Entity): {ref: AttributeRef, type: AttributeType, suggestion: AttributeType, values: string[]}[] {
-    return entity.attrs.map(a => {
+    return (entity.attrs || []).map(a => {
         const suggestion = suggestedAttributeType(a)
         return suggestion ? {ref: {...entityToRef(entity), attribute: [a.name]}, type: a.type, ...suggestion} : undefined
     }).filter(isNotUndefined)

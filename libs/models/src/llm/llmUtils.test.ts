@@ -15,9 +15,9 @@ describe('llmUtils', () => {
             ]
         }
         const relations: Relation[] = [
-            {src: {entity: 'events'}, ref: {entity: 'groups'}, attrs: [{src: ['item_id'], ref: ['id']}], polymorphic: {attribute: ['item_type'], value: 'Group'}},
-            {src: {entity: 'events'}, ref: {entity: 'organizations'}, attrs: [{src: ['item_id'], ref: ['id']}], polymorphic: {attribute: ['item_type'], value: 'Organization'}},
-            {src: {entity: 'events'}, ref: {entity: 'users'}, attrs: [{src: ['created_by'], ref: ['id']}]},
+            {src: {entity: 'events', attrs: [['item_id']]}, ref: {entity: 'groups', attrs: [['id']]}, polymorphic: {attribute: ['item_type'], value: 'Group'}},
+            {src: {entity: 'events', attrs: [['item_id']]}, ref: {entity: 'organizations', attrs: [['id']]}, polymorphic: {attribute: ['item_type'], value: 'Organization'}},
+            {src: {entity: 'events', attrs: [['created_by']]}, ref: {entity: 'users', attrs: [['id']]}},
         ]
         const attributes = [
             'id uuid',

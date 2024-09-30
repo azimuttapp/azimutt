@@ -66,7 +66,7 @@
                     <% end %>
                     <%= if Azimutt.Organizations.writer?(@organization, @current_user) do %>
                     <div class="flex flex-col py-2">
-                        <%= link "New Project", to: Routes.elm_path(@conn, :orga_new, @organization), class: "inline-flex items-center justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 xl:w-full" %>
+                        <%= link "New Project", to: Routes.elm_path(@conn, :org_new, @organization), class: "inline-flex items-center justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 xl:w-full" %>
                     </div>
                     <% end %>
                 </div>
