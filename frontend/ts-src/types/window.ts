@@ -14,5 +14,6 @@ declare global {
         gateway_url: string
         sentry_frontend_dsn?: string
         desktop?: DesktopBridge
+        params: Record<string, string>
     }
 }

@@ -17,6 +17,8 @@
             window.env = '<%= Azimutt.config(:environment) %>'
             window.gateway_url = '<%= org_gateway || Azimutt.config(:gateway_url) %>'
             window.role = '<%= member && member.role || :owner %>'
+            window.params = {}<%= for param <- ["database", "sql", "prisma", "json", "aml", "empty", "project", "sample", "name", "storage"] |> Enum.filter(fn p -> @conn.params[p] end) do %>
+            window.params.<%= param %> = '<%= @conn.params[param] %>'<% end %>
         </script>
         <%= if Azimutt.config(:sentry_frontend_dsn) do %>
             <script>

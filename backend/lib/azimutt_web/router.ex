@@ -328,7 +328,9 @@ defmodule AzimuttWeb.Router do
   scope "/", AzimuttWeb do
     pipe_through([:browser, :enforce_user_requirements, :elm_root_layout, AllowCrossOriginIframe])
     get("/:organization_id/new", ElmController, :org_new)
+    post("/:organization_id/new", ElmController, :org_new)
     get("/:organization_id/create", ElmController, :org_create)
+    post("/:organization_id/create", ElmController, :org_create)
     get("/:organization_id/:project_id", ElmController, :project_show)
   end
 end

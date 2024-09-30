@@ -80,7 +80,7 @@ import {Utils} from "./utils/utils";
 // loadAmlEditor() // should be before the Elm init
 const platform = Utils.getPlatform()
 const logger = new ConsoleLogger(window.env)
-const flags: ElmFlags = {now: Date.now(), conf: {env: window.env, platform, role: window.role, desktop: !!window.desktop}}
+const flags: ElmFlags = {now: Date.now(), conf: {env: window.env, platform, role: window.role, desktop: !!window.desktop}, params: Object.entries(window.params)}
 logger.debug('flags', flags)
 const app = ElmApp.init(flags, logger)
 const storage = new Storage(logger)

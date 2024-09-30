@@ -1,6 +1,7 @@
 module Shared exposing (Confirm, Flags, GlobalConf, Model, Msg, Prompt, init, subscriptions, update)
 
 import Components.Atoms.Icon exposing (Icon)
+import Dict exposing (Dict)
 import Html exposing (Html)
 import Libs.Bool as Bool
 import Libs.Models.Env as Env exposing (Env)
@@ -22,6 +23,7 @@ import Time
 type alias Flags =
     { now : Int
     , conf : { env : String, platform : String, role : String, desktop : Bool }
+    , params : List ( String, String )
     }
 
 
@@ -37,6 +39,7 @@ type alias Model =
     { zone : Time.Zone
     , now : Time.Posix
     , conf : GlobalConf
+    , params : Dict String String
     , user : Maybe User
     , userLoaded : Bool
     , organizations : List Organization
@@ -94,6 +97,7 @@ init _ flags =
             , role = flags.conf.role |> UserRole.fromString |> Maybe.withDefault UserRole.Owner
             , desktop = flags.conf.desktop
             }
+      , params = flags.params |> Dict.fromList
       , user = Nothing
       , userLoaded = False
       , projects = []

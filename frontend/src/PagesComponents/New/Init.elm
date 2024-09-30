@@ -19,7 +19,7 @@ import Services.Toasts as Toasts
 
 
 init : Maybe OrganizationId -> Dict String String -> ( Model, Cmd Msg )
-init urlOrganization query =
+init urlOrganization params =
     ( { selectedMenu = "New project"
       , mobileMenuOpen = False
       , openedCollapse = ""
@@ -46,13 +46,13 @@ init urlOrganization query =
             }
          , Backend.getSamples GotSamples
          ]
-            ++ ((query |> Dict.get "database" |> Maybe.map (\value -> [ InitTab TabDatabase |> T.send, DatabaseSourceMsg (DatabaseSource.GetSchema value) |> T.sendAfter 1 ]))
-                    |> Maybe.orElse (query |> Dict.get "sql" |> Maybe.map (\value -> [ InitTab TabSql |> T.send, SqlSourceMsg (SqlSource.GetRemoteFile value) |> T.sendAfter 1 ]))
-                    |> Maybe.orElse (query |> Dict.get "prisma" |> Maybe.map (\value -> [ InitTab TabPrisma |> T.send, PrismaSourceMsg (PrismaSource.GetRemoteFile value) |> T.sendAfter 1 ]))
-                    |> Maybe.orElse (query |> Dict.get "json" |> Maybe.map (\value -> [ InitTab TabJson |> T.send, JsonSourceMsg (JsonSource.GetRemoteFile value) |> T.sendAfter 1 ]))
-                    |> Maybe.orElse (query |> Dict.get "empty" |> Maybe.map (\_ -> [ InitTab TabEmptyProject |> T.send ]))
-                    |> Maybe.orElse (query |> Dict.get "project" |> Maybe.map (\value -> [ InitTab TabProject |> T.send, ProjectSourceMsg (ProjectSource.GetRemoteFile value) |> T.sendAfter 1 ]))
-                    |> Maybe.orElse (query |> Dict.get "sample" |> Maybe.map (\_ -> [ InitTab TabSamples |> T.send ]))
+            ++ ((params |> Dict.get "database" |> Maybe.map (\value -> [ InitTab TabDatabase |> T.send, DatabaseSourceMsg (DatabaseSource.GetSchema value) |> T.sendAfter 1 ]))
+                    |> Maybe.orElse (params |> Dict.get "sql" |> Maybe.map (\value -> [ InitTab TabSql |> T.send, SqlSourceMsg (SqlSource.GetRemoteFile value) |> T.sendAfter 1 ]))
+                    |> Maybe.orElse (params |> Dict.get "prisma" |> Maybe.map (\value -> [ InitTab TabPrisma |> T.send, PrismaSourceMsg (PrismaSource.GetRemoteFile value) |> T.sendAfter 1 ]))
+                    |> Maybe.orElse (params |> Dict.get "json" |> Maybe.map (\value -> [ InitTab TabJson |> T.send, JsonSourceMsg (JsonSource.GetRemoteFile value) |> T.sendAfter 1 ]))
+                    |> Maybe.orElse (params |> Dict.get "empty" |> Maybe.map (\_ -> [ InitTab TabEmptyProject |> T.send ]))
+                    |> Maybe.orElse (params |> Dict.get "project" |> Maybe.map (\value -> [ InitTab TabProject |> T.send, ProjectSourceMsg (ProjectSource.GetRemoteFile value) |> T.sendAfter 1 ]))
+                    |> Maybe.orElse (params |> Dict.get "sample" |> Maybe.map (\_ -> [ InitTab TabSamples |> T.send ]))
                     |> Maybe.withDefault [ InitTab TabDatabase |> T.send ]
                )
         )

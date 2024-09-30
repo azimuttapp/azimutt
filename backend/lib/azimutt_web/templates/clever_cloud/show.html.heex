@@ -40,7 +40,7 @@
                                         You are almost setup to <span class="italic font-bold">explore and document your database</span>, just connect it now 👇️
                                     </p>
                                     <div class="mt-10 sm:mt-12">
-                                        <%= form_for @conn, Routes.elm_path(@conn, :org_create, @resource.organization.id), [method: :get, class: "sm:mx-auto sm:max-w-xl lg:mx-0"], fn _ -> %>
+                                        <%= form_for @conn, Routes.elm_path(@conn, :org_create, @resource.organization.id), [method: :post, class: "sm:mx-auto sm:max-w-xl lg:mx-0"], fn _ -> %>
                                             <input type="hidden" name="storage" value="remote">
                                             <input type="hidden" name="name" value={@resource.owner_name}>
                                             <div class="sm:flex">

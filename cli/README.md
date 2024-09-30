@@ -15,7 +15,7 @@
 
 Azimutt CLI ease your work with databases 😎
 
-It works with **PostgreSQL**, **MySQL**, **MariaDB**, **SQL Server**, **Oracle**, **MongoDB**, **Couchbase**, **Snowflake**, **BigQuery** (can be extended on demand).
+It works with: **PostgreSQL**, **MySQL**, **MariaDB**, **SQL Server**, **Oracle**, **MongoDB**, **Couchbase**, **Snowflake**, **BigQuery** (can be extended on demand).
 
 It's a toolbox to interact with those databases but also [AML](../libs/aml), here are the main features:
 
@@ -117,6 +117,10 @@ Convert a dialect to another, supporting [AML](https://azimutt.app/aml), SQL (Po
 ```shell
 npx azimutt@latest convert <file_path> --from <dialect> --to <dialect>
 ```
+
+Input dialects: `aml`, `amlv1`, `json`
+
+Output dialects: `aml`, `amlv1`, `postgres`, `mermaid`, `markdown`, `json`
 
 Options:
 

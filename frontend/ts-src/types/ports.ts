@@ -59,12 +59,8 @@ export interface ElmRuntime<I, O> {
 
 export interface ElmFlags {
     now: Timestamp
-    conf: {
-        env: Env
-        platform: Platform
-        role: UserRole
-        desktop: boolean
-    }
+    conf: { env: Env, platform: Platform, role: UserRole, desktop: boolean },
+    params: [string, string][]
 }
 
 export interface ElementSize {

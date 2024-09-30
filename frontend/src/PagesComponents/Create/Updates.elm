@@ -2,7 +2,7 @@ module PagesComponents.Create.Updates exposing (update)
 
 import Conf
 import DataSources.JsonMiner.JsonAdapter as JsonAdapter
-import Dict
+import Dict exposing (Dict)
 import Gen.Route as Route
 import Libs.Dict as Dict
 import Libs.Maybe as Maybe
@@ -31,31 +31,31 @@ import Time
 import Track
 
 
-update : Request.With params -> Time.Posix -> List ProjectInfo -> Bool -> Maybe OrganizationId -> Msg -> Model -> ( Model, Cmd Msg )
-update req now projects projectsLoaded urlOrganization msg model =
+update : Request.With params -> Dict String String -> Time.Posix -> List ProjectInfo -> Bool -> Maybe OrganizationId -> Msg -> Model -> ( Model, Cmd Msg )
+update req params now projects projectsLoaded urlOrganization msg model =
     case msg of
         InitProject ->
             if projectsLoaded then
                 let
                     name : ProjectName
                     name =
-                        req.query |> Dict.getOrElse "name" Conf.constants.newProjectName
+                        params |> Dict.getOrElse "name" Conf.constants.newProjectName
 
                     storage : Maybe ProjectStorage
                     storage =
-                        req.query |> Dict.get "storage" |> Maybe.andThen ProjectStorage.fromString
+                        params |> Dict.get "storage" |> Maybe.andThen ProjectStorage.fromString
                 in
-                ( (req.query |> Dict.get "database" |> Maybe.map (\_ -> { model | databaseSource = Just (DatabaseSource.init Nothing (createProject urlOrganization projects storage name)) }))
-                    |> Maybe.orElse (req.query |> Dict.get "sql" |> Maybe.map (\_ -> { model | sqlSource = Just (SqlSource.init Nothing (Tuple.second >> createProject urlOrganization projects storage name)) }))
-                    |> Maybe.orElse (req.query |> Dict.get "prisma" |> Maybe.map (\_ -> { model | prismaSource = Just (PrismaSource.init Nothing (createProject urlOrganization projects storage name)) }))
-                    |> Maybe.orElse (req.query |> Dict.get "json" |> Maybe.map (\_ -> { model | jsonSource = Just (JsonSource.init Nothing (createProject urlOrganization projects storage name)) }))
-                    |> Maybe.orElse (req.query |> Dict.get "aml" |> Maybe.map (\aml -> { model | amlSource = Just { content = aml, callback = createProject urlOrganization projects storage name } }))
+                ( (params |> Dict.get "database" |> Maybe.map (\_ -> { model | databaseSource = Just (DatabaseSource.init Nothing (createProject urlOrganization projects storage name)) }))
+                    |> Maybe.orElse (params |> Dict.get "sql" |> Maybe.map (\_ -> { model | sqlSource = Just (SqlSource.init Nothing (Tuple.second >> createProject urlOrganization projects storage name)) }))
+                    |> Maybe.orElse (params |> Dict.get "prisma" |> Maybe.map (\_ -> { model | prismaSource = Just (PrismaSource.init Nothing (createProject urlOrganization projects storage name)) }))
+                    |> Maybe.orElse (params |> Dict.get "json" |> Maybe.map (\_ -> { model | jsonSource = Just (JsonSource.init Nothing (createProject urlOrganization projects storage name)) }))
+                    |> Maybe.orElse (params |> Dict.get "aml" |> Maybe.map (\aml -> { model | amlSource = Just { content = aml, callback = createProject urlOrganization projects storage name } }))
                     |> Maybe.withDefault model
-                , (req.query |> Dict.get "database" |> Maybe.map (DatabaseSource.GetSchema >> DatabaseSourceMsg >> T.send))
-                    |> Maybe.orElse (req.query |> Dict.get "sql" |> Maybe.map (SqlSource.GetRemoteFile >> SqlSourceMsg >> T.send))
-                    |> Maybe.orElse (req.query |> Dict.get "prisma" |> Maybe.map (PrismaSource.GetRemoteFile >> PrismaSourceMsg >> T.send))
-                    |> Maybe.orElse (req.query |> Dict.get "json" |> Maybe.map (JsonSource.GetRemoteFile >> JsonSourceMsg >> T.send))
-                    |> Maybe.orElse (req.query |> Dict.get "aml" |> Maybe.map (AmlSourceMsg >> T.send))
+                , (params |> Dict.get "database" |> Maybe.map (DatabaseSource.GetSchema >> DatabaseSourceMsg >> T.send))
+                    |> Maybe.orElse (params |> Dict.get "sql" |> Maybe.map (SqlSource.GetRemoteFile >> SqlSourceMsg >> T.send))
+                    |> Maybe.orElse (params |> Dict.get "prisma" |> Maybe.map (PrismaSource.GetRemoteFile >> PrismaSourceMsg >> T.send))
+                    |> Maybe.orElse (params |> Dict.get "json" |> Maybe.map (JsonSource.GetRemoteFile >> JsonSourceMsg >> T.send))
+                    |> Maybe.orElse (params |> Dict.get "aml" |> Maybe.map (AmlSourceMsg >> T.send))
                     |> Maybe.withDefault (NoSourceMsg storage name |> T.send)
                 )
 

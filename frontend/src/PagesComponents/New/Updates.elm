@@ -2,7 +2,7 @@ module PagesComponents.New.Updates exposing (update)
 
 import Components.Molecules.Dropdown as Dropdown
 import Conf
-import Dict
+import Dict exposing (Dict)
 import Gen.Route as Route
 import Json.Decode as Decode
 import Json.Encode as Encode
@@ -34,8 +34,8 @@ import Time
 import Track
 
 
-update : Request.With params -> Time.Posix -> List ProjectInfo -> Maybe OrganizationId -> Msg -> Model -> ( Model, Cmd Msg )
-update req now projects urlOrganization msg model =
+update : Request.With params -> Dict String String -> Time.Posix -> List ProjectInfo -> Maybe OrganizationId -> Msg -> Model -> ( Model, Cmd Msg )
+update req params now projects urlOrganization msg model =
     case msg of
         SelectMenu menu ->
             ( { model | selectedMenu = menu }, Cmd.none )
@@ -48,7 +48,7 @@ update req now projects urlOrganization msg model =
                 |> Result.fold (\err -> ( model, "Error on samples: " ++ Backend.errorToString err |> Toasts.warning |> Toast |> T.send ))
                     (\samples ->
                         ( { model | samples = samples }
-                        , req.query
+                        , params
                             |> Dict.get "sample"
                             |> Maybe.andThen (\value -> samples |> List.find (\s -> s.slug == value))
                             |> Maybe.map (SampleSource.GetSample >> SampleSourceMsg >> T.send)
