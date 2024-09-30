@@ -1,6 +1,6 @@
 import * as fs from "node:fs";
-// import {dirname} from "node:path";
-// import {fileURLToPath} from "node:url";
+import {dirname} from "node:path";
+import {fileURLToPath} from "node:url";
 import os from "os";
 import {pathParent} from "@azimutt/utils";
 
@@ -18,5 +18,5 @@ export const fileWrite = (path: string, content: string): Promise<void> => fs.pr
 export const userHome = (): string => os.homedir()
 export const pathResolve = (path: string): string => path.startsWith('~/') ? path.replace(/^~/, userHome()) : path
 
-// export const __filename = fileURLToPath(import.meta.url);
-// export const __dirname = dirname(__filename);
+export const __filename = fileURLToPath(import.meta.url);
+export const __dirname = dirname(__filename);

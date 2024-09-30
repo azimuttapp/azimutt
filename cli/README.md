@@ -51,6 +51,11 @@ Start with `pnpm install` to install dependencies and set up the CLI, then you h
 - `pnpm run start` to launch it with live reload (same, use `-- args` to pass arguments to the CLI)
 - `pnpm run test` to launch tests
 
+Issues:
+
+- upgrading to typescript 5.6.2 cause the error: `TypeError: Cannot read properties of undefined (reading 'sourceFile')` when running tests :/
+- importing @azimutt/aml fails as it's commonjs, not es module :/
+
 ## Publish
 
 - update `package.json` and `src/version.ts` version
