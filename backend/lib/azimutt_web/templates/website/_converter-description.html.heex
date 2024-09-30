@@ -39,7 +39,7 @@
         Perfect for versioned technical documentation like database schema reference.
     <% @converter == "amlv1" -> %>
         The first (legacy) version of <a href={Routes.website_path(@conn, :aml)} class="underline">AML</a>.
-        You can look at the <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/migration.md" target="_blank" rel="noopener" class="underline">migration guide</a> but, there is mostly additions and the new parser handles it well. You can convert from v1 to current one easily 🥳
+        You can look at the <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/migration.md" target="_blank" rel="noopener" class="underline">migration guide</a> but, there is mostly additions and the new parser handles it well. Use it to convert from v1 to current one easily 🥳
     <% true -> %>
         Missing converter description for <%= @converter %> 😱
 <% end %>

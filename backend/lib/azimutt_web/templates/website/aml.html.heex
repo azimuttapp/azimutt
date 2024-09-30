@@ -3,6 +3,7 @@
   aml_npm = "https://www.npmjs.com/package/@azimutt/aml"
   aml_converter = Routes.website_path(@conn, :converter, "aml")
   aml_azimutt = Routes.elm_path(@conn, :create)
+  cli_convert = "https://github.com/azimuttapp/azimutt/blob/main/cli/README.md#convert"
 %>
 <div class="relative isolate overflow-hidden bg-gradient-to-b from-indigo-100/20 pt-10 pb-24">
     <div class="mx-auto max-w-7xl lg:grid lg:grid-cols-2 lg:gap-x-8 lg:px-8">
@@ -116,11 +117,11 @@ COMMENT ON COLUMN posts.content IS 'in markdown';</code></pre>
             <h2 class="text-base font-semibold leading-7 text-indigo-600">Available in all flavors</h2>
             <p class="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Use AML as you like</p>
         </div>
-        <div class="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
-            <dl class="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-3">
+        <div class="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-4xl">
+            <dl class="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-2">
                 <div class="flex flex-col">
                     <dt class="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900">
-                        <Icon.arrow_path kind="solid" class="h-5 w-5 flex-none text-indigo-600" />
+                        <Icon.arrow_path kind="outline" class="h-5 w-5 flex-none text-indigo-600" />
                         In converters
                     </dt>
                     <dd class="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
@@ -132,7 +133,7 @@ COMMENT ON COLUMN posts.content IS 'in markdown';</code></pre>
                 </div>
                 <div class="flex flex-col">
                     <dt class="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900">
-                        <Icon.squares_2_2 kind="solid" class="h-5 w-5 flex-none text-indigo-600" />
+                        <Icon.squares_2_2 kind="outline" class="h-5 w-5 flex-none text-indigo-600" />
                         In Azimutt
                     </dt>
                     <dd class="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
@@ -144,7 +145,19 @@ COMMENT ON COLUMN posts.content IS 'in markdown';</code></pre>
                 </div>
                 <div class="flex flex-col">
                     <dt class="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900">
-                        <Icon.code_bracket kind="solid" class="h-5 w-5 flex-none text-indigo-600" />
+                        <Icon.command_line kind="outline" class="h-5 w-5 flex-none text-indigo-600" />
+                        With the CLI
+                    </dt>
+                    <dd class="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
+                        <p class="flex-auto">The Azimutt CLI is a toolbox to work with databases, and now you can also convert dialects from one to another with a single command.</p>
+                        <p class="mt-6">
+                            <a href={cli_convert} target="_blank" rel="noopener" class="text-sm font-semibold leading-6 text-indigo-600">View command <span aria-hidden="true">→</span></a>
+                        </p>
+                    </dd>
+                </div>
+                <div class="flex flex-col">
+                    <dt class="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900">
+                        <Icon.code_bracket kind="outline" class="h-5 w-5 flex-none text-indigo-600" />
                         As a library
                     </dt>
                     <dd class="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
