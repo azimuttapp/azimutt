@@ -32,6 +32,7 @@ import Random
 import Services.Backend as Backend
 import Services.Lenses exposing (mapShow)
 import Services.SourceLogs as SourceLogs
+import Services.Urls as Urls
 import Time
 import Track
 
@@ -226,7 +227,7 @@ viewInput wrap htmlId model =
             [ Alert.simple Tw.blue
                 Icon.QuestionMarkCircle
                 [ text "Access databases from your computer using "
-                , extLink "https://www.npmjs.com/package/azimutt" [ class "link" ] [ text "Azimutt CLI" ]
+                , extLink Urls.cliNpm [ class "link" ] [ text "Azimutt CLI" ]
                 , text " (install "
                 , extLink "https://docs.npmjs.com/downloading-and-installing-node-js-and-npm" [ class "link" ] [ text "npm" ]
                 , text " & run "

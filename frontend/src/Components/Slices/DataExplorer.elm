@@ -52,6 +52,7 @@ import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (E
 import Ports
 import Services.Lenses exposing (mapDetailsT, mapFilters, mapResultsT, mapVisualEditor, setOperation, setOperator, setValue)
 import Services.Toasts as Toasts
+import Services.Urls as Urls
 import Track
 
 
@@ -376,7 +377,7 @@ viewSources wrap htmlId sources selectedSource =
                     , p [] [ text "To add one, open settings (top right cog), click on 'add source' and provide your database url." ]
                     , p []
                         [ text "Local databases are accessible with "
-                        , extLink "https://www.npmjs.com/package/azimutt" [ class "link" ] [ text "Azimutt CLI" ]
+                        , extLink Urls.cliNpm [ class "link" ] [ text "Azimutt CLI" ]
                         , text " ("
                         , Badge.basic Tw.blue [] [ text "npx azimutt@latest gateway" ] |> Tooltip.t "Starts the Azimutt Gateway on your computer to access local databases."
                         , text ")."

@@ -262,7 +262,7 @@ C##INVENTORY.SUPPLIER_PRICES
 
 C##INVENTORY.SUPPLIER_EMPLOYEES
   SUPPLIER_ID BIGINT pk -> C##INVENTORY.SUPPLIERS(ID)
-  EMPLOYEE_ID BIGINT pk -> C##INVENTORY.Employees(ID)
+  EMPLOYEE_ID BIGINT pk -> C##INVENTORY.EMPLOYEES(ID)
   ROLE supplier_role(delivery, sale)
   START TIMESTAMP nullable
   END TIMESTAMP nullable
@@ -807,7 +807,24 @@ analytics.Events
   name string index | in form of `$context__$object__$action`
   source event_source(website, app, admin, job) | the name of the system which emitted this event
   details json nullable | any additional info for the event
+    ip string nullable
+    amount number nullable
+    browser string nullable
   entities json nullable | {[kind: string]: {id: string, name: string}[]}
+    user "Object[]" nullable
+      id string
+      name string
+      email string
+    cart "Object[]" nullable
+      id string
+      name string
+      items number
+    invoice "Object[]" nullable
+      id number
+      name string
+      lines number
+      price number
+      currency string
   createdAt timestamp index
 
 rel analytics.Events(entities.user.id) -> identity.Users(id)
@@ -818,7 +835,12 @@ analytics.Entities
   kind string unique="pk"
   id string unique="pk"
   name string index
-  properties json
+  properties json nullable
+    email string nullable
+    items number nullable
+    lines number nullable
+    price number nullable
+    currency string nullable
   createdAt timestamp
   updatedAt timestamp
 

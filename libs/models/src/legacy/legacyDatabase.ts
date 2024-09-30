@@ -74,12 +74,12 @@ export type LegacyColumnDbStats = z.infer<typeof LegacyColumnDbStats>
 export type LegacyColumn = {
     name: LegacyColumnName
     type: LegacyColumnType
-    nullable?: boolean | null
-    default?: LegacyColumnValue | null
-    comment?: string | null
-    values?: string[] | null
-    columns?: LegacyColumn[] | null
-    stats?: LegacyColumnDbStats | null
+    nullable?: boolean | null | undefined
+    default?: LegacyColumnValue | null | undefined
+    comment?: string | null | undefined
+    values?: string[] | null | undefined
+    columns?: LegacyColumn[] | null | undefined
+    stats?: LegacyColumnDbStats | null | undefined
 }
 export const LegacyColumn: z.ZodType<LegacyColumn> = z.object({
     name: LegacyColumnName,
@@ -442,7 +442,6 @@ function typeToLegacy(t: Type): LegacyType {
         return {schema: t.schema || '', name: t.name, definition: t.definition || ''}
     }
 }
-
 
 export function legacyDatabaseJsonFormat(database: LegacyDatabase): string {
     return stringify(database, (path: (string | number)[], value: any) => {

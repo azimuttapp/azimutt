@@ -36,6 +36,7 @@ import Services.ProjectSource as ProjectSource
 import Services.SampleSource as SampleSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
+import Services.Urls as Urls
 import Shared
 import Time
 import Url exposing (Url)
@@ -149,7 +150,7 @@ viewTabContent htmlId zone projects urlOrganization model =
 viewDatabaseSourceTab : HtmlId -> HtmlId -> Maybe OrganizationId -> List ProjectInfo -> DatabaseSource.Model Msg -> Html Msg
 viewDatabaseSourceTab htmlId openedCollapse urlOrganization projects model =
     div []
-        [ viewHeading "Extract your database schema" [ text "Browsers can't connect to databases, schema extraction is done through a proxy, Azimutt Gateway or ", extLink "https://www.npmjs.com/package/azimutt" [ class "link" ] [ text "CLI" ], text ". Nothing is stored." ]
+        [ viewHeading "Extract your database schema" [ text "Browsers can't connect to databases, schema extraction is done through a proxy, Azimutt Gateway or ", extLink Urls.cliNpm [ class "link" ] [ text "CLI" ], text ". Nothing is stored." ]
         , div [ class "mt-6" ] [ DatabaseSource.viewInput DatabaseSourceMsg htmlId model ]
         , div [ class "mt-3" ] [ viewDataPrivacyCollapse htmlId openedCollapse ]
         , DatabaseSource.viewParsing DatabaseSourceMsg model
@@ -194,7 +195,7 @@ viewJsonSourceTab htmlId openedCollapse urlOrganization projects model =
 viewEmptyProjectTab : Html Msg
 viewEmptyProjectTab =
     div []
-        [ viewHeading "Create a new project" [ text "When you don't want to import a schema, just create it in Azimutt using ", extLink "https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/README.md" [ class "link" ] [ text "AML" ], text "." ]
+        [ viewHeading "Create a new project" [ text "When you don't want to import a schema, just create it in Azimutt using ", extLink Urls.amlDocs [ class "link" ] [ text "AML" ], text "." ]
         , div [ css [ "mt-20" ] ]
             [ div [ css [ "flex justify-center" ] ]
                 [ Button.primary5 Tw.primary [ onClick (CreateEmptyProject Conf.constants.newProjectName), id "create-project-btn", css [ "ml-3" ] ] [ text "Create new project!" ]

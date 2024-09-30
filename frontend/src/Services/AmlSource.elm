@@ -11,6 +11,7 @@ import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Random
+import Services.Urls as Urls
 import Time
 import Track
 
@@ -78,7 +79,7 @@ viewInput wrap htmlId model =
     div []
         [ p [ class "mt-1 text-sm text-gray-500" ]
             [ text "AML means "
-            , extLink "https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/README.md" [ class "link" ] [ text "Azimutt Markup Language" ]
+            , extLink Urls.amlDocs [ class "link" ] [ text "Azimutt Markup Language" ]
             , text ", it's our very simple language allowing you to define your own schema in Azimutt."
             ]
         , label [ for fieldId, class "mt-1 block text-sm font-medium text-gray-700" ] [ text "Source name" ]

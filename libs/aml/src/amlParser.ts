@@ -559,7 +559,10 @@ class AmlParser extends EmbeddedActionsParser {
             const extra = $.SUBRULE($.extraRule)
             $.CONSUME(NewLine)
             const attrs: AttributeAstFlat[] = []
-            $.MANY(() => attrs.push($.SUBRULE($.attributeRule)))
+            $.MANY(() => {
+                const attr = $.SUBRULE($.attributeRule)
+                if (attr.name?.value) attrs.push(attr) // name can be '' on invalid input :/
+            })
             return removeEmpty({statement: 'Entity' as const, name: entity, view: view ? tokenInfo(view) : undefined, ...namespace, alias, ...extra, attrs: nestAttributes(attrs)})
         })
 

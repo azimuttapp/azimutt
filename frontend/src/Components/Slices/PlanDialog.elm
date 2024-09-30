@@ -8,7 +8,7 @@ import Conf
 import ElmBook
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, a, blockquote, br, button, div, h3, input, label, p, span, text)
+import Html exposing (Html, blockquote, br, button, div, h3, input, label, p, span, text)
 import Html.Attributes exposing (class, for, href, id, name, placeholder, rel, style, target, title, type_, value)
 import Html.Events exposing (onBlur, onClick, onInput)
 import Libs.Html exposing (bText, extLink, sendTweet)
@@ -28,6 +28,7 @@ import Models.ProjectRef as ProjectRef exposing (ProjectRef)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Services.Backend as Backend exposing (TableColorTweet)
 import Services.Lenses exposing (setColors, setResult)
+import Services.Urls as Urls
 
 
 projectsNoSaveAlert : Organization -> Html msg
@@ -38,7 +39,7 @@ projectsNoSaveAlert organization =
     in
     Alert.withDescription { color = color, icon = Icon.Exclamation, title = "Can't save project" }
         [ text ("You " ++ organization.plan.name ++ " plan can't save projects (see ")
-        , extLink Backend.pricingUrl [ class "link" ] [ text "pricing" ]
+        , extLink Urls.pricing [ class "link" ] [ text "pricing" ]
         , text "). "
         , br [] []
         , text "Please "
@@ -70,7 +71,7 @@ amlDisabledAlert project =
     in
     warning color
         ("Database design not available in " ++ planName project)
-        [ p [] [ text "Azimutt allows database design with a ", extLink Backend.amlUrl [ class "link" ] [ text "very simple DSL" ], text " called AML, here is how it looks:" ]
+        [ p [] [ text "Azimutt allows database design with a ", extLink Urls.amlHome [ class "link" ] [ text "very simple DSL" ], text " called AML, here is how it looks:" ]
         , p [ class ("whitespace-pre font-mono " ++ Tw.bg_200 color ++ " p-2 my-3 rounded shadow") ]
             [ text "users\n  id uuid pk\n  name varchar\n  email varchar unique\n  created_at timestamp index\n\n"
             , text "posts\n  id uuid pk\n  title varchar index\n  status post_status(draft, published)\n  content text nullable\n  created_at timestamp index\n  created_by uuid fk users.id"

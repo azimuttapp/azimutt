@@ -41,8 +41,8 @@ import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (E
 import PagesComponents.Organization_.Project_.Updates.Table exposing (hideTable, showColumns, showTable)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirty, setDirtyM)
 import Ports
-import Services.Backend as Backend
 import Services.Lenses exposing (mapAmlSidebarM, mapAmlSidebarMTM, mapErdM, mapErdMT, mapSelectedMT, setAmlSidebar, setContent, setErrors, setSelected, setUpdatedAt)
+import Services.Urls as Urls
 import Set exposing (Set)
 import Time
 import Track
@@ -257,7 +257,7 @@ viewHeading =
             ]
         , p [ class "mt-1 text-sm text-gray-500" ]
             [ text "In Azimutt your schema is the union of all active sources. Create or update one with "
-            , extLink "https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/README.md" [ class "link" ] [ text "AML syntax" ]
+            , extLink Urls.amlDocs [ class "link" ] [ text "AML syntax" ]
             , text " to extend it."
             ]
         ]
@@ -326,7 +326,22 @@ fk credentials.role -> roles.slug""" 30 (List.nonEmpty errors)
 viewErrors : List String -> Html msg
 viewErrors errors =
     div []
-        (errors |> List.map (\err -> p [ class "mt-2 text-sm text-red-600" ] [ text err ]))
+        ((if errors |> List.nonEmpty then
+            div [ class "mt-2 text-sm text-gray-500" ]
+                [ text "Issues with AML? Try our "
+                , extLink Urls.amlEditor [ class "link" ] [ text "online editor" ]
+                , text " or check the "
+                , extLink Urls.amlDocs [ class "link" ] [ text "documentation" ]
+                , text "."
+                , br [] []
+                , text "(We are working to bring the editor here but have issues with Elm, Web Components & Monaco Editor, contact us if you can help 😉)"
+                ]
+
+          else
+            div [] []
+         )
+            :: (errors |> List.map (\err -> p [ class "mt-2 text-sm text-red-600" ] [ text err ]))
+        )
 
 
 viewWarnings : List String -> Html msg
@@ -337,7 +352,7 @@ viewWarnings warnings =
                 [ text "Oh! It seems you are using the legacy AML syntax 😅"
                 , br [] []
                 , text "Fix it easily with "
-                , extLink Backend.amlv1ConverterUrl [ class "link" ] [ text "our converter tool" ]
+                , extLink Urls.amlV1Converter [ class "link" ] [ text "our converter tool" ]
                 , text " 🪄"
                 ]
 
@@ -352,6 +367,6 @@ viewHelp : Html msg
 viewHelp =
     p [ class "mt-2 text-sm text-gray-500" ]
         [ text "Write your schema using "
-        , extLink "https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/README.md" [ class "link" ] [ text "AML syntax" ]
+        , extLink Urls.amlDocs [ class "link" ] [ text "AML syntax" ]
         , text "."
         ]
