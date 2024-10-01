@@ -9,8 +9,10 @@ import {
     TokenEditor
 } from "@azimutt/models";
 // import {generateAml, parseAml} from "@azimutt/aml";
+import {track} from "@azimutt/gateway";
 import {fileRead, fileWrite} from "./utils/file.js";
 import {logger} from "./utils/logger.js";
+import {version} from "./version";
 
 export type Opts = {
     from: string
@@ -22,6 +24,7 @@ export async function convertFile(path: string, opts: Opts): Promise<void> {
     logger.log(`Convert ${path} from ${opts.from} to ${opts.to}...`)
     logger.log(`Reading to ${path}...`)
     const content = await fileRead(path)
+    track('cli__convert__run', {version, from: opts.from, to: opts.to, length: content.length}, 'cli').then(() => {})
     logger.log(`Parsing ${opts.from} content...`)
     const parsed = parseDialect(opts.from, content)
     parsed.errors?.forEach(err => logger.error(`Parsing ${err.level}: ${err.message} (${err.kind})${showPosition(err.position)}`))

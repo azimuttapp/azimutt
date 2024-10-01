@@ -1,6 +1,5 @@
 module PagesComponents.New.Element exposing (init)
 
-import Dict exposing (Dict)
 import Models.OrganizationId exposing (OrganizationId)
 import Page
 import PagesComponents.New.Init as Init
@@ -14,18 +13,9 @@ import Shared
 
 init : Maybe OrganizationId -> Shared.Model -> Request.With params -> Page.With Model Msg
 init urlOrganization shared req =
-    let
-        hash : Dict String String
-        hash =
-            req.url.fragment |> Maybe.map (\h -> Dict.fromList [ ( "database", h ) ]) |> Maybe.withDefault Dict.empty
-
-        params : Dict String String
-        params =
-            hash |> Dict.union shared.params |> Dict.union req.query
-    in
     Page.element
-        { init = Init.init urlOrganization params
-        , update = Updates.update req params shared.now shared.projects urlOrganization
+        { init = Init.init urlOrganization shared.params
+        , update = Updates.update req shared.params shared.now shared.projects urlOrganization
         , view = Views.view shared req.url urlOrganization
         , subscriptions = Subscriptions.subscriptions
         }

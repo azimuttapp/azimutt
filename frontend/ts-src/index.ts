@@ -66,7 +66,7 @@ import {AzimuttApi} from "./services/api";
 import {ConsoleLogger} from "./services/logger";
 import {Storage} from "./services/storage";
 import {Backend} from "./services/backend";
-import {aesDecrypt, aesEncrypt, base64Valid} from "./utils/crypto";
+import {aesDecrypt, aesEncrypt, base64Decode, base64Valid} from "./utils/crypto";
 import {Env} from "./utils/env";
 import {loadPolyfills} from "./utils/polyfills";
 import * as url from "./utils/url";
@@ -80,7 +80,7 @@ import {Utils} from "./utils/utils";
 // loadAmlEditor() // should be before the Elm init
 const platform = Utils.getPlatform()
 const logger = new ConsoleLogger(window.env)
-const flags: ElmFlags = {now: Date.now(), conf: {env: window.env, platform, role: window.role, desktop: !!window.desktop}, params: Object.entries(window.params)}
+const flags: ElmFlags = {now: Date.now(), conf: {env: window.env, platform, role: window.role, desktop: !!window.desktop}, params: buildFlagParams()}
 logger.debug('flags', flags)
 const app = ElmApp.init(flags, logger)
 const storage = new Storage(logger)
@@ -169,6 +169,19 @@ function setMeta(meta: SetMeta) {
     if (typeof meta.body === 'string') {
         document.getElementsByTagName('body')[0]?.setAttribute('class', meta.body)
     }
+}
+
+function buildFlagParams(): [string, string][] {
+    const hash = url.hash(window.location.hash)
+    return Object.entries(Object.assign(
+        url.queryParams(window.location.search),
+        window.params,
+        hash ? {database: hash} : {}
+    )).map(([key, value]) => {
+        value = url.uriComponentEncoded(value) ? decodeURIComponent(value) : value
+        value = base64Valid(value) ? base64Decode(value) : value
+        return [key, value]
+    })
 }
 
 function getProject(msg: GetProject) {

@@ -1,9 +1,10 @@
 import chalk from "chalk";
 import {isNotUndefined, pluralizeL} from "@azimutt/utils";
 import {Connector, databaseToLegacy, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/models";
-import {getConnector} from "@azimutt/gateway";
+import {getConnector, track} from "@azimutt/gateway";
 import {FileFormat, FilePath, fileWriteJson} from "./utils/file.js";
 import {logger} from "./utils/logger.js";
+import {version} from "./version";
 
 export type Opts = {
     database: string | undefined
@@ -26,6 +27,7 @@ export async function exportDbSchema(url: string, opts: Opts): Promise<void> {
     logger.log(`Exporting database schema from ${url} ...`)
     const parsedUrl = parseDatabaseUrl(url)
     const connector = getConnector(parsedUrl)
+    track('cli__export__run', {version, database: parsedUrl.kind}, 'cli').then(() => {})
     if (connector) {
         await exportJsonSchema(parsedUrl, opts, connector)
     } else {
