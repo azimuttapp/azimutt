@@ -58,11 +58,87 @@ CREATE TABLE posts (
         test('empty', () => {
             expect(generatePostgresDiff({})).toEqual('')
         })
+        describe('tables', () => {
+            test('create', () => {
+                expect(generatePostgresDiff(databaseDiff({}, {entities: [{name: 'users', attrs: [{name: 'id', type: 'int'}, {name: 'name', type: 'varchar'}]}]})))
+                    .toEqual(`CREATE TABLE users (\n  id int NOT NULL,\n  name varchar NOT NULL\n);\n`)
+            })
+            test('delete', () => {
+                expect(generatePostgresDiff(databaseDiff({entities: [{name: 'users', attrs: [{name: 'id', type: 'int'}, {name: 'name', type: 'varchar'}]}]}, {})))
+                    .toEqual(`DROP TABLE IF EXISTS users;\n`)
+            })
+            describe('attributes', () => {
+                test('create', () => {
+                    expect(generatePostgresDiff(databaseDiff(
+                        {entities: [{name: 'users', attrs: [{name: 'id', type: 'int'}]}]},
+                        {entities: [{name: 'users', attrs: [{name: 'id', type: 'int'}, {name: 'name', type: 'varchar'}]}]}
+                    ))).toEqual(`ALTER TABLE users ADD name varchar NOT NULL;\n`)
+                })
+                test('delete', () => {
+                    expect(generatePostgresDiff(databaseDiff(
+                        {entities: [{name: 'users', attrs: [{name: 'id', type: 'int'}, {name: 'name', type: 'varchar'}]}]},
+                        {entities: [{name: 'users', attrs: [{name: 'id', type: 'int'}]}]}
+                    ))).toEqual(`ALTER TABLE users DROP name;\n`)
+                })
+                test('rename', () => {
+                    expect(generatePostgresDiff(databaseDiff(
+                        {entities: [{name: 'users', attrs: [{name: 'id', type: 'int'}]}]},
+                        {entities: [{name: 'users', attrs: [{name: 'user_id', type: 'int'}]}]}
+                    ))).toEqual(`ALTER TABLE users RENAME id TO user_id;\n`)
+                })
+                test('update type', () => {
+                    expect(generatePostgresDiff(databaseDiff(
+                        {entities: [{name: 'users', attrs: [{name: 'id', type: 'int'}]}]},
+                        {entities: [{name: 'users', attrs: [{name: 'id', type: 'uuid'}]}]}
+                    ))).toEqual(`ALTER TABLE users ALTER id TYPE uuid;\n`)
+                })
+                test('update nullable', () => {
+                    expect(generatePostgresDiff(databaseDiff(
+                        {entities: [{name: 'users', attrs: [{name: 'name', type: 'varchar', null: true}, {name: 'email', type: 'varchar'}]}]},
+                        {entities: [{name: 'users', attrs: [{name: 'name', type: 'varchar'}, {name: 'email', type: 'varchar', null: true}]}]},
+                    ))).toEqual(`ALTER TABLE users ALTER name SET NOT NULL;\nALTER TABLE users ALTER email DROP NOT NULL;\n`)
+                })
+                test('update default', () => {
+                    expect(generatePostgresDiff(databaseDiff(
+                        {entities: [{name: 'users', attrs: [{name: 'name', type: 'varchar'}, {name: 'role', type: 'varchar', default: 'guest'}, {name: 'cpt', type: 'int'}]}]},
+                        {entities: [{name: 'users', attrs: [{name: 'name', type: 'varchar', default: 'anonymous'}, {name: 'role', type: 'varchar'}, {name: 'cpt', type: 'int', default: 0}]}]},
+                    ))).toEqual(`ALTER TABLE users ALTER name SET DEFAULT 'anonymous';\nALTER TABLE users ALTER role DROP DEFAULT;\nALTER TABLE users ALTER cpt SET DEFAULT 0;\n`)
+                })
+            })
+            test('create doc', () => {
+                expect(generatePostgresDiff(databaseDiff({entities: [{name: 'users'}]}, {entities: [{name: 'users', doc: 'list users'}]},))).toEqual(`COMMENT ON TABLE users IS 'list users';\n`)
+            })
+            test('delete doc', () => {
+                expect(generatePostgresDiff(databaseDiff({entities: [{name: 'users', doc: 'list users'}]}, {entities: [{name: 'users'}]},))).toEqual(`COMMENT ON TABLE users IS NULL;\n`)
+            })
+            test('update doc', () => {
+                expect(generatePostgresDiff(databaseDiff({entities: [{name: 'users', doc: 'store users'}]}, {entities: [{name: 'users', doc: 'list users'}]},))).toEqual(`COMMENT ON TABLE users IS 'list users';\n`)
+            })
+        })
+        describe('views', () => {
+            test('create', () => {
+                expect(generatePostgresDiff(databaseDiff({}, {entities: [{name: 'admins', kind: 'view', def: 'SELECT * FROM users', attrs: [{name: 'id', type: 'int'}, {name: 'name', type: 'varchar'}]}]})))
+                    .toEqual(`CREATE VIEW admins AS\nSELECT * FROM users;\n`)
+            })
+            test('delete', () => {
+                expect(generatePostgresDiff(databaseDiff({entities: [{name: 'admins', kind: 'view', def: 'SELECT * FROM users', attrs: [{name: 'id', type: 'int'}, {name: 'name', type: 'varchar'}]}]}, {})))
+                    .toEqual(`DROP VIEW IF EXISTS admins;\n`)
+            })
+            test('create doc', () => {
+                expect(generatePostgresDiff(databaseDiff({entities: [{name: 'admins', kind: 'view'}]}, {entities: [{name: 'admins', kind: 'view', doc: 'list admins'}]},))).toEqual(`COMMENT ON VIEW admins IS 'list admins';\n`)
+            })
+            test('delete doc', () => {
+                expect(generatePostgresDiff(databaseDiff({entities: [{name: 'admins', kind: 'view', doc: 'list admins'}]}, {entities: [{name: 'admins', kind: 'view'}]},))).toEqual(`COMMENT ON VIEW admins IS NULL;\n`)
+            })
+            test('update doc', () => {
+                expect(generatePostgresDiff(databaseDiff({entities: [{name: 'admins', kind: 'view', doc: 'store admins'}]}, {entities: [{name: 'admins', kind: 'view', doc: 'list admins'}]},))).toEqual(`COMMENT ON VIEW admins IS 'list admins';\n`)
+            })
+        })
         describe('types', () => {
-            test('create type', () => {
+            test('create', () => {
                 expect(generatePostgresDiff(databaseDiff({}, {types: [{name: 'status', values: ['draft', 'public']}]}))).toEqual(`CREATE TYPE status AS ENUM ('draft', 'public');\n`)
             })
-            test('remove type', () => {
+            test('delete', () => {
                 expect(generatePostgresDiff(databaseDiff({types: [{name: 'status', values: ['draft', 'public']}]}, {}))).toEqual(`DROP TYPE IF EXISTS status;\n`)
             })
             test('update alias', () => {
@@ -71,7 +147,7 @@ CREATE TABLE posts (
                     {types: [{name: 'email', alias: 'varchar(150)'}]},
                 ))).toEqual(`-- ALTER TYPE email AS varchar(150); -- type alias not supported on PostgreSQL\n`)
             })
-            test('other to alias', () => {
+            test('change to alias', () => {
                 expect(generatePostgresDiff(databaseDiff(
                     {types: [{name: 'email', values: ['varchar']}]},
                     {types: [{name: 'email', alias: 'varchar'}]},
@@ -86,7 +162,7 @@ ALTER TYPE post_status ADD VALUE IF NOT EXISTS 'private';
 -- ALTER TYPE post_status DROP VALUE 'published'; -- can't drop enum value in PostgreSQL
 `)
             })
-            test('other to enum', () => {
+            test('change to enum', () => {
                 expect(generatePostgresDiff(databaseDiff(
                     {types: [{name: 'status', alias: 'varchar'}]},
                     {types: [{name: 'status', values: ['draft', 'published']}]},
@@ -102,7 +178,7 @@ ALTER TYPE position ADD ATTRIBUTE z int;
 ALTER TYPE position DROP ATTRIBUTE IF EXISTS tmp;
 `)
             })
-            test('other to struct', () => {
+            test('change to struct', () => {
                 expect(generatePostgresDiff(databaseDiff(
                     {types: [{name: 'position', alias: 'varchar'}]},
                     {types: [{name: 'position', attrs: [{name: 'x', type: 'int'}, {name: 'y', type: 'int'}]}]},
@@ -114,29 +190,20 @@ ALTER TYPE position DROP ATTRIBUTE IF EXISTS tmp;
                     {types: [{name: 'size', definition: 'range(1..100)'}]},
                 ))).toEqual(`DROP TYPE IF EXISTS size;\nCREATE TYPE size range(1..100);\n`)
             })
-            test('other to custom', () => {
+            test('change to custom', () => {
                 expect(generatePostgresDiff(databaseDiff(
                     {types: [{name: 'size', alias: 'varchar'}]},
                     {types: [{name: 'size', definition: 'range(1..100)'}]},
                 ))).toEqual(`DROP TYPE IF EXISTS size;\nCREATE TYPE size range(1..100);\n`)
             })
             test('create doc', () => {
-                expect(generatePostgresDiff(databaseDiff(
-                    {types: [{name: 'email'}]},
-                    {types: [{name: 'email', doc: 'basic email'}]},
-                ))).toEqual(`COMMENT ON TYPE email IS 'basic email';\n`)
+                expect(generatePostgresDiff(databaseDiff({types: [{name: 'email'}]}, {types: [{name: 'email', doc: 'basic email'}]},))).toEqual(`COMMENT ON TYPE email IS 'basic email';\n`)
             })
-            test('remove doc', () => {
-                expect(generatePostgresDiff(databaseDiff(
-                    {types: [{name: 'email', doc: 'basic email'}]},
-                    {types: [{name: 'email'}]},
-                ))).toEqual(`COMMENT ON TYPE email IS NULL;\n`)
+            test('delete doc', () => {
+                expect(generatePostgresDiff(databaseDiff({types: [{name: 'email', doc: 'basic email'}]}, {types: [{name: 'email'}]},))).toEqual(`COMMENT ON TYPE email IS NULL;\n`)
             })
             test('update doc', () => {
-                expect(generatePostgresDiff(databaseDiff(
-                    {types: [{name: 'email', doc: 'basic email'}]},
-                    {types: [{name: 'email', doc: 'better email'}]},
-                ))).toEqual(`COMMENT ON TYPE email IS 'better email';\n`)
+                expect(generatePostgresDiff(databaseDiff({types: [{name: 'email', doc: 'basic email'}]}, {types: [{name: 'email', doc: 'better email'}]},))).toEqual(`COMMENT ON TYPE email IS 'better email';\n`)
             })
         })
     })

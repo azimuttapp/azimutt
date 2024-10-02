@@ -1,6 +1,7 @@
 import {equalDeep, indexBy, joinLast} from "@azimutt/utils";
 import {
     Attribute,
+    AttributeDiff,
     AttributePath,
     attributePathSame,
     AttributeType,
@@ -9,12 +10,14 @@ import {
     Database,
     DatabaseDiff,
     Entity,
+    EntityDiff,
     EntityRef,
     entityRefSame,
     entityToRef,
     Index,
     namespace,
     Namespace,
+    PrimaryKey,
     Relation,
     Type,
     TypeDiff,
@@ -24,7 +27,7 @@ import {
 
 export function generatePostgres(database: Database): string {
     const typesById = indexBy(database.types || [], typeToId)
-    const drops = (database.entities || []).map(e => genDropEntity(e)).reverse().join('')
+    const drops = (database.entities || []).map(genEntityDrop).reverse().join('')
     const types = (database.types || []).map(genType).join('')
     let lineComments = database.extra?.comments || []
     const entities = (database.entities || []).map(e => {
@@ -35,14 +38,23 @@ export function generatePostgres(database: Database): string {
         const comments = entityComments.length > 0 ? entityComments.map(c => c.comment ? `-- ${c.comment}\n` : '--\n').join('') + '\n' : ''
         return comments + genEntity(e, entityRelations, typesById)
     }).join('\n')
-    return (drops ? drops + '\n' : '') + (types ? types + '\n' : '') + entities
+    return [drops, types, entities].filter(v => !!v).join('\n')
 }
 
 export function generatePostgresDiff(diff: DatabaseDiff): string {
-    const createdTypes = diff.types?.created?.map(genType).join('') || ''
-    const updatedTypes = diff.types?.updated?.map(genTypeAlter).join('') || ''
-    const deletedTypes = diff.types?.deleted?.map(genTypeDrop).join('') || ''
-    return createdTypes + updatedTypes + deletedTypes
+    // TODO: rename types? (search in deleted if some created are identical except the name)
+    const createdTypes = diff.types?.created?.map(genType) || []
+    const updatedTypes = diff.types?.updated?.map(genTypeAlter) || []
+    const deletedTypes = diff.types?.deleted?.map(genTypeDrop) || []
+    const types = createdTypes.concat(updatedTypes, deletedTypes).join('')
+
+    // TODO: rename entities? (search in deleted if some created are identical except the name)
+    const createdEntities = diff.entities?.created?.map(e => genEntity(e, [], {})) || []
+    const updatedEntities = diff.entities?.updated?.map(e => genEntityAlter(e, [], {})) || []
+    const deletedEntities = diff.entities?.deleted?.map(genEntityDrop) || []
+    const entities = createdEntities.concat(updatedEntities, deletedEntities).join('\n')
+
+    return [types, entities].filter(v => !!v).join('\n')
 }
 
 function genNamespace(n: Namespace): string {
@@ -50,8 +62,8 @@ function genNamespace(n: Namespace): string {
     return n.schema ? genIdentifier(n.schema) + '.' : ''
 }
 
-function genDropEntity(e: Entity) {
-    return `DROP ${e.kind === 'view' ? 'VIEW' : 'TABLE'} IF EXISTS ${genEntityName(e)};\n`
+function genEntityDrop(e: Entity) {
+    return `DROP ${e.kind === 'view' ? 'VIEW' : 'TABLE'} IF EXISTS ${genEntityIdentifier(e)};\n`
 }
 
 function genEntity(e: Entity, relations: Relation[], typesById: Record<TypeId, Type>): string {
@@ -61,45 +73,46 @@ function genEntity(e: Entity, relations: Relation[], typesById: Record<TypeId, T
 
 function genTable(e: Entity, relations: Relation[], typesById: Record<TypeId, Type>): string {
     const comment = e.extra?.comment ? `-- ${e.extra.comment}\n` : ''
-    const attrs = (e.attrs || []).map(a => genAttribute(a, e, relations, typesById))
+    const attrs = (e.attrs || []).map(a => genAttribute(a, e.pk, e.indexes || [], e.checks || [], relations, typesById))
     const pk = e.pk && e.pk.attrs.length > 1 ? [{value: `${e.pk.name ? `CONSTRAINT ${genIdentifier(e.pk.name)} ` : ''}PRIMARY KEY (${e.pk.attrs.map(genAttributePath).join(', ')})`}] : []
     const indexes = (e.indexes || []).filter(i => !i.unique).map(i => genIndexCommand(i, e)).join('')
     const uniques = (e.indexes || []).filter(i => i.unique && i.attrs.length > 1).map(genUniqueEntity) // TODO: also unique on a single column when there is several
     const checks = (e.checks || []).filter(c => c.attrs.length > 1).map(genCheckEntity) // TODO: also check on a single column when there is several
     const rels = relations.filter(r => r.src.attrs.length > 1).map(r => genRelationEntity(r))
-    const comments = [genCommentEntity(e), ...(e.attrs || []).map(a => genCommentAttribute(a, e))].filter(c => !!c).join('')
+    const comments = [genCommentTable(e), ...(e.attrs || []).map(a => genCommentAttribute(a, e))].filter(c => !!c).join('')
     const inner = attrs.concat(pk, uniques, checks, rels).map(({value, comment}, i, arr) => '  ' + value + (arr[i + 1] ? `,` : '') + (comment ? ' -- ' + comment : '') + '\n').join('')
-    return comment + `CREATE TABLE ${genEntityName(e)} (${inner ? '\n' + inner : ''});\n${indexes}${comments}`
+    return comment + `CREATE TABLE ${genEntityIdentifier(e)} (${inner ? '\n' + inner : ''});\n${indexes}${comments}`
 }
 
 function genView(e: Entity): string {
+    const comments = [genCommentView(e), ...(e.attrs || []).map(a => genCommentAttribute(a, e))].filter(c => !!c).join('')
     if (e.def) {
-        return `CREATE VIEW ${genEntityName(e)} AS\n${e.def};\n`
+        return `CREATE VIEW ${genEntityIdentifier(e)} AS\n${e.def};\n${comments}`
     } else {
-        return `-- CREATE VIEW ${genEntityName(e)} AS <missing definition>;\n`
+        return `-- CREATE VIEW ${genEntityIdentifier(e)} AS <missing definition>;\n${comments}`
     }
 }
 
-function genEntityName(e: Entity) {
+function genEntityIdentifier(e: Namespace & { name: string }): string {
     return `${genNamespace(e)}${genIdentifier(e.name)}`
 }
 
 type TableInner = {value: string, comment?: string | undefined}
 
-function genAttribute(a: Attribute, e: Entity, relations: Relation[], typesById: Record<TypeId, Type>): TableInner {
+function genAttribute(a: Attribute, pk: PrimaryKey | undefined, indexes: Index[], checks: Check[], relations: Relation[], typesById: Record<TypeId, Type>): TableInner {
     const [type, typeComment] = genAttributeType(a.type, typesById)
-    const notNull = a.null || (e.pk?.attrs.find(aa => attributePathSame(aa, [a.name]))) ? '' : ' NOT NULL'
+    const notNull = a.null || (pk?.attrs.find(aa => attributePathSame(aa, [a.name]))) ? '' : ' NOT NULL'
     const df = a.default ? ` DEFAULT ${genAttributeValue(a.default)}` : ''
-    const pk = e.pk && e.pk.attrs.length === 1 && attributePathSame(e.pk.attrs[0], [a.name]) ? ` ${e.pk.name ? `CONSTRAINT ${genIdentifier(e.pk.name)} ` : ''}PRIMARY KEY` : ''
-    const attrUniques = (e.indexes || []).filter(u => u.unique && u.attrs.length === 1 && attributePathSame(u.attrs[0], [a.name]))
+    const primaryKey = pk && pk.attrs.length === 1 && attributePathSame(pk.attrs[0], [a.name]) ? ` ${pk.name ? `CONSTRAINT ${genIdentifier(pk.name)} ` : ''}PRIMARY KEY` : ''
+    const attrUniques = indexes.filter(u => u.unique && u.attrs.length === 1 && attributePathSame(u.attrs[0], [a.name]))
     const unique = attrUniques.length === 1 ? ' UNIQUE' : ''
-    const attrChecks = (e.checks || []).filter(c => c.attrs.length === 1 && attributePathSame(c.attrs[0], [a.name]))
+    const attrChecks = checks.filter(c => c.attrs.length === 1 && attributePathSame(c.attrs[0], [a.name]))
     const [check, checkComment] = attrChecks.length === 1 ? genCheckInline(attrChecks[0]) : ['', '']
     const attrRelations = relations.filter(r => r.src.attrs.length === 1 && attributePathSame(r.src.attrs[0], [a.name]))
     const [relation, relComment] = attrRelations.length === 1 ? genRelationInline(attrRelations[0]) : ['', '']
     const relComment2 = attrRelations.length > 1 ? `references: ${joinLast(attrRelations.map(r => `${genEntityRef(r.ref)}.${showAttributePath(r.ref.attrs[0])}${r.polymorphic ? ` (${showAttributePath(r.polymorphic.attribute)}=${genAttributeValue(r.polymorphic.value)})` : ''}`), ', ', ' or ')}` : ''
     const comment = [typeComment, checkComment, relComment, relComment2, a.extra?.comment || ''].filter(c => !!c).join(', ')
-    return {value: `${genIdentifier(a.name)} ${type}${notNull}${df}${pk}${unique}${check}${relation}`, comment}
+    return {value: `${genIdentifier(a.name)} ${type}${notNull}${df}${primaryKey}${unique}${check}${relation}`, comment}
 }
 
 function genAttributeType(type: AttributeType, typesById: Record<TypeId, Type>): [string, string] {
@@ -114,7 +127,7 @@ function genAttributeType(type: AttributeType, typesById: Record<TypeId, Type>):
 
 function genIndexCommand(i: Index, e: Entity) {
     const name = i.name || `${e.name}_${i.attrs.map(a => a.join('')).join('_')}_${i.unique ? 'uniq' : 'idx'}`
-    return `CREATE ${i.unique ? 'UNIQUE ' : ''}INDEX ${name} ON ${genEntityName(e)}(${i.attrs.map(genAttributePathIndex).join(', ')});\n`
+    return `CREATE ${i.unique ? 'UNIQUE ' : ''}INDEX ${name} ON ${genEntityIdentifier(e)}(${i.attrs.map(genAttributePathIndex).join(', ')});\n`
 }
 
 function genUniqueEntity(u: Index): TableInner {
@@ -129,6 +142,55 @@ function genCheckInline(c: Check): [string, string] {
 function genCheckEntity(c: Check): TableInner {
     const name = c.name ? `CONSTRAINT ${genIdentifier(c.name)} ` : ''
     return {value: `${name}CHECK (${c.predicate})`}
+}
+
+function genEntityAlter(e: EntityDiff, relations: Relation[], typesById: Record<TypeId, Type>): string {
+    if (e.kind.after !== e.kind.before) {
+        // drop & create
+        return `TODO ${e.kind.before || 'table'} -> ${e.kind.after || 'table'}`
+    } else if (e.kind.after === 'view') {
+        return genViewAlter(e)
+    } else {
+        return genTableAlter(e, relations, typesById)
+    }
+}
+
+function genTableAlter(e: EntityDiff, relations: Relation[], typesById: Record<TypeId, Type>): string { // see https://www.postgresql.org/docs/current/sql-altertable.html
+    return [
+        genEntityAlterAttributes(e, relations, typesById),
+        e.doc ? [genComment('TABLE', genEntityIdentifier(e), e.doc.after)] : [],
+    ].flat().join('')
+}
+
+function genViewAlter(e: EntityDiff): string { // see https://www.postgresql.org/docs/current/sql-alterview.html
+    // TODO improve
+    return [
+        e.doc ? [genComment('VIEW', genEntityIdentifier(e), e.doc.after)] : [],
+    ].flat().join('')
+}
+
+function genEntityAlterAttributes(e: EntityDiff, relations: Relation[], typesById: Record<TypeId, Type>): string[] {
+    if (e.attrs) {
+        const renamed = e.attrs.deleted?.flatMap(d => {
+            const replace = e.attrs?.created?.find(c => c.i === d.i)
+            return replace && equalDeep(d, {...replace, name: d.name}) ? [{i: d.i, name: {before: d.name, after: replace.name}}] : []
+        }) || []
+        return [
+            renamed.map(r => `ALTER TABLE ${genTypeIdentifier(e)} RENAME ${r.name.before} TO ${r.name.after};\n`),
+            e.attrs.updated?.flatMap(a => genEntityAlterAttribute(a, e, relations, typesById)),
+            e.attrs.created?.flatMap(a => renamed.find(r => r.i === a.i) ? [] : [`ALTER TABLE ${genTypeIdentifier(e)} ADD ${genAttribute(a, undefined, [], [], relations, typesById).value};\n`]),
+            e.attrs.deleted?.flatMap(a => renamed.find(r => r.i === a.i) ? [] : [`ALTER TABLE ${genTypeIdentifier(e)} DROP ${a.name};\n`]),
+        ].flat()
+    }
+    return []
+}
+
+function genEntityAlterAttribute(a: AttributeDiff, e: EntityDiff, relations: Relation[], typesById: Record<TypeId, Type>): string[] {
+    return [
+        a.type?.after ? [`ALTER TABLE ${genTypeIdentifier(e)} ALTER ${a.name} TYPE ${a.type.after};\n`] : [],
+        a.null ? [`ALTER TABLE ${genTypeIdentifier(e)} ALTER ${a.name} ${a.null.after ? 'DROP' : 'SET'} NOT NULL;\n`] : [],
+        a.default ? [`ALTER TABLE ${genTypeIdentifier(e)} ALTER ${a.name} ${a.default.after === undefined ? 'DROP DEFAULT' : `SET DEFAULT ${genAttributeValue(a.default.after)}`};\n`] : [],
+    ].flat()
 }
 
 function genRelationInline(relation: Relation): [string, string] {
@@ -229,19 +291,23 @@ function genTypeDrop(t: Namespace & { name: string }): string {
     return `DROP TYPE IF EXISTS ${genTypeIdentifier(t)};\n`
 }
 
-function genCommentEntity(e: Entity): string {
-    return e.doc ? genComment('TABLE', genEntityName(e), e.doc) : ''
+function genCommentTable(e: Entity): string {
+    return e.doc ? genComment('TABLE', genEntityIdentifier(e), e.doc) : ''
+}
+
+function genCommentView(e: Entity): string {
+    return e.doc ? genComment('VIEW', genEntityIdentifier(e), e.doc) : ''
 }
 
 function genCommentAttribute(a: Attribute, e: Entity): string {
-    return a.doc ? genComment('COLUMN', `${genEntityName(e)}.${genIdentifier(a.name)}`, a.doc) : ''
+    return a.doc ? genComment('COLUMN', `${genEntityIdentifier(e)}.${genIdentifier(a.name)}`, a.doc) : ''
 }
 
 function genCommentType(t: Type): string {
     return t.doc ? genComment('TYPE', genTypeIdentifier(t), t.doc) : ''
 }
 
-function genComment(kind: 'TABLE' | 'COLUMN' | 'TYPE', identifier: string, value: string | undefined): string {
+function genComment(kind: 'TABLE' | 'VIEW' | 'COLUMN' | 'TYPE', identifier: string, value: string | undefined): string {
     return `COMMENT ON ${kind} ${identifier} IS ${value ? genString(value) : 'NULL'};\n`
 }
 
