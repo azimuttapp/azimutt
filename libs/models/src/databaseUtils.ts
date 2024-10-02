@@ -57,7 +57,7 @@ import {
 import {ParserResult} from "./parserResult";
 import {legacyColumnTypeUnknown} from "./legacy/legacyDatabase";
 
-const namespace = (n: Namespace) => removeUndefined({database: n.database, catalog: n.catalog, schema: n.schema})
+export const namespace = (n: Namespace) => removeUndefined({database: n.database, catalog: n.catalog, schema: n.schema})
 
 export const namespaceToId = (n: Namespace): NamespaceId => [
     n.database || '',
@@ -192,6 +192,7 @@ export const typeRefSame = (a: TypeRef, b: TypeRef): boolean =>
     (a.catalog === b.catalog || a.catalog === '*' || b.catalog === '*') &&
     (a.database === b.database || a.database === '*' || b.database === '*')
 
+export const typeToNamespace = (t: Type): Namespace => namespace(t)
 export const typeToRef = (t: Type): TypeRef => removeUndefined({...namespace(t), type: t.name})
 export const typeToId = (t: Type): TypeId => typeRefToId(typeToRef(t))
 

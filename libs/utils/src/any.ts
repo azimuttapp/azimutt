@@ -1,3 +1,14 @@
+import {arraySame} from "./array";
+import {objectSame} from "./object";
+
+export function anySame(a: any, b: any): boolean {
+    if (a === null && b === null) return true
+    if (a === undefined && b === undefined) return true
+    if (Array.isArray(a) && Array.isArray(b)) return arraySame(a, b, anySame)
+    if (typeof a === 'object' && typeof b === 'object') return objectSame(a, b)
+    return a === b
+}
+
 export function getValueDeep(value: any, path: (string | number)[]): any {
     if (path.length === 0 || value === null || typeof value !== 'object') {
         return value

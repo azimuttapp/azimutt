@@ -34,7 +34,7 @@ defmodule Azimutt.Blog.Article do
   end
 
   def get_author(id) do
-    authors() |> Mapx.fetch(id)
+    authors() |> Map.get(id, %Author{name: id})
   end
 
   def build(path, map) do
@@ -47,7 +47,7 @@ defmodule Azimutt.Blog.Article do
          {:ok, category} when is_binary(category) <- map |> Mapx.fetch("category"),
          {:ok, tags} <- map |> Mapx.fetch("tags") |> Result.flat_map(&build_tags/1),
          {:ok, author_id} when is_binary(author_id) <- map |> Mapx.fetch("author"),
-         {:ok, %Author{} = author} <- author_id |> get_author,
+         author = author_id |> get_author,
          {:ok, published} <- published_str |> Date.from_iso8601(),
          {:ok, body} when is_binary(body) <- map |> Mapx.fetch("body"),
          markdown = Markdown.preprocess(body, path),

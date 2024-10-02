@@ -1,5 +1,3 @@
-import {removeEmpty} from "./object";
-
 // functions sorted alphabetically
 
 export const arraySame = <T>(a1: T[], a2: T[], eq: (a: T, b: T) => boolean): boolean =>
@@ -19,13 +17,13 @@ export const collectOne = <T, U>(arr: T[], f: (t: T) => U | undefined): U | unde
 
 export const distinct = <T>(arr: T[]): T[] => arr.filter((t, i) => arr.indexOf(t) === i)
 
-export type Diff<T> = {left?: T[], right?: T[], both?: {left: T, right: T}[]}
-export const diffBy = <T, K extends keyof any>(arr1: T[], arr2: T[], f: (t: T) => K): Diff<T> => {
+export type Diff<T> = {left: T[], right: T[], both: {left: T, right: T}[]}
+export const diffBy = <T>(arr1: T[], arr2: T[], f: (t: T, i: number) => string): Diff<T> => {
     const left: T[] = []
     const both: {left: T, right: T}[] = []
     const obj2 = indexBy(arr2, f)
-    arr1.forEach(a1 => {
-        const k = f(a1)
+    arr1.forEach((a1, i) => {
+        const k = f(a1, i)
         const a2 = obj2[k]
         if (a2 === undefined) {
             left.push(a1)
@@ -34,8 +32,8 @@ export const diffBy = <T, K extends keyof any>(arr1: T[], arr2: T[], f: (t: T) =
         }
         delete obj2[k]
     })
-    const right: T[] = arr2.filter(a2 => obj2[f(a2)] !== undefined)
-    return removeEmpty({left, right, both})
+    const right: T[] = arr2.filter((a2, i) => obj2[f(a2, i)] !== undefined)
+    return {left, right, both}
 }
 
 export const findLastIndex = <T>(arr: T[], p: (t: T) => boolean): number => {
@@ -58,9 +56,9 @@ export const groupBy = <T, K extends keyof any>(list: T[], getKey: (item: T) => 
     }, {} as Record<K, T[]>)
 
 // similar to group by but keys must be unique so values are not a list
-export const indexBy = <T, K extends keyof any>(list: T[], getKey: (item: T) => K): Record<K, T> =>
-    list.reduce((acc, item) => {
-        acc[getKey(item)] = item
+export const indexBy = <T, K extends keyof any>(list: T[], getKey: (item: T, index: number) => K): Record<K, T> =>
+    list.reduce((acc, item, i) => {
+        acc[getKey(item, i)] = item
         return acc
     }, {} as Record<K, T>)
 

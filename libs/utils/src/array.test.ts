@@ -30,7 +30,7 @@ describe('array', () => {
         expect(diffBy(
             [{id: 1, name: 'a'}, {id: 2, name: 'b'}],
             [{id: 1, name: 'c'}, {id: 3, name: 'd'}],
-            e => e.id
+            e => e.id.toString()
         )).toEqual({
             left: [{id: 2, name: 'b'}],
             right: [{id: 3, name: 'd'}],

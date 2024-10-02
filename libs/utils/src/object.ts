@@ -1,4 +1,5 @@
 import {isEmpty} from "./validation";
+import {anySame} from "./any";
 
 // functions sorted alphabetically
 
@@ -58,6 +59,14 @@ export function minusFieldsDeep(source: any, ref: any): any {
             return source
         }
     }
+}
+
+export function objectSame(a: object, b: object): boolean {
+    if (a instanceof Date && b instanceof Date) return a.getTime() === b.getTime()
+    if ((a instanceof Number || a instanceof Boolean) && (b instanceof Number || b instanceof Boolean)) return a.valueOf() === b.valueOf()
+    const aEntries = Object.entries(a)
+    const bEntries = Object.entries(b)
+    return aEntries.length === bEntries.length && aEntries.every(([key, value]) => anySame(value, (b as any)[key]))
 }
 
 export function removeEmpty<K extends keyof any, V, T extends Record<K, V>>(obj: T): T {

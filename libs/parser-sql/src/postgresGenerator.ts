@@ -1,4 +1,4 @@
-import {indexBy, joinLast} from "@azimutt/utils";
+import {equalDeep, indexBy, joinLast} from "@azimutt/utils";
 import {
     Attribute,
     AttributePath,
@@ -7,14 +7,17 @@ import {
     AttributeValue,
     Check,
     Database,
+    DatabaseDiff,
     Entity,
     EntityRef,
     entityRefSame,
     entityToRef,
     Index,
+    namespace,
     Namespace,
     Relation,
     Type,
+    TypeDiff,
     TypeId,
     typeToId
 } from "@azimutt/models";
@@ -33,6 +36,13 @@ export function generatePostgres(database: Database): string {
         return comments + genEntity(e, entityRelations, typesById)
     }).join('\n')
     return (drops ? drops + '\n' : '') + (types ? types + '\n' : '') + entities
+}
+
+export function generatePostgresDiff(diff: DatabaseDiff): string {
+    const createdTypes = diff.types?.created?.map(genType).join('') || ''
+    const updatedTypes = diff.types?.updated?.map(genTypeAlter).join('') || ''
+    const deletedTypes = diff.types?.deleted?.map(genTypeDrop).join('') || ''
+    return createdTypes + updatedTypes + deletedTypes
 }
 
 function genNamespace(n: Namespace): string {
@@ -137,10 +147,14 @@ function genRelationEntity(relation: Relation): TableInner {
     return {value: `${name}FOREIGN KEY (${src}) REFERENCES ${refTable}(${refAttrs})`}
 }
 
+function genTypeIdentifier(t: Namespace & { name: string }): string {
+    return `${genNamespace(t)}${genIdentifier(t.name)}`
+}
+
 function genType(t: Type): string {
     const content = genTypeContent(t)
     const comment = genCommentType(t)
-    return `${t.alias ? '-- ' : ''}CREATE TYPE ${genNamespace(t)}${genIdentifier(t.name)}${content};${t.alias ? ' -- type alias not supported on PostgreSQL' : ''}\n${comment}`
+    return `${t.alias ? '-- ' : ''}CREATE TYPE ${genTypeIdentifier(t)}${content};${t.alias ? ' -- type alias not supported on PostgreSQL' : ''}\n${comment}`
 }
 
 function genTypeContent(t: Type): string {
@@ -151,16 +165,84 @@ function genTypeContent(t: Type): string {
     return ''
 }
 
+function genTypeAlter(t: TypeDiff): string { // see https://www.postgresql.org/docs/current/sql-altertype.html
+    return [
+        getTypeAlterAlias(t),
+        genTypeAlterEnum(t),
+        getTypeAlterStruct(t),
+        getTypeAlterCustom(t),
+        t.doc ? [genComment('TYPE', genTypeIdentifier(t), t.doc.after)] : [],
+    ].flat().join('')
+}
+
+function getTypeAlterAlias(t: TypeDiff): string[] {
+    if (t.alias?.after) {
+        if (t.alias.before) { // was already an alias
+            return [`-- ALTER TYPE ${genTypeIdentifier(t)} AS ${t.alias.after}; -- type alias not supported on PostgreSQL\n`]
+        } else { // was something else
+            return [genTypeDrop(t), genType({...namespace(t), name: t.name, alias: t.alias.after})]
+        }
+    }
+    return []
+}
+
+function genTypeAlterEnum(t: TypeDiff): string[] {
+    if (t.values?.after) {
+        if (t.values.before) { // already enum
+            return t.values.after.flatMap(v => t.values?.before?.includes(v) ? [] : [`ALTER TYPE ${genTypeIdentifier(t)} ADD VALUE IF NOT EXISTS ${genString(v)};\n`])
+                .concat(t.values.before.flatMap(v => t.values?.after?.includes(v) ? [] : [`-- ALTER TYPE ${genTypeIdentifier(t)} DROP VALUE ${genString(v)}; -- can't drop enum value in PostgreSQL\n`]))
+        } else { // was something else
+            return [genTypeDrop(t), genType({...namespace(t), name: t.name, values: t.values.after})]
+        }
+    }
+    return []
+}
+
+function getTypeAlterStruct(t: TypeDiff): string[] {
+    if (t.attrs) {
+        if (t.alias || t.values || t.values || t.definition) { // was not a struct
+            return [genTypeDrop(t), genType({...namespace(t), name: t.name, attrs: t.attrs.created})]
+        } else {
+            const renamed = t.attrs.deleted?.flatMap(d => {
+                const replace = t.attrs?.created?.find(c => c.i === d.i)
+                return replace && equalDeep(d, {...replace, name: d.name}) ? [{i: d.i, name: {before: d.name, after: replace.name}}] : []
+            }) || []
+            return [
+                renamed.map(r => `ALTER TYPE ${genTypeIdentifier(t)} RENAME ATTRIBUTE ${r.name.before} TO ${r.name.after};\n`),
+                t.attrs.updated?.flatMap(a => a.type?.after ? [`ALTER TYPE ${genTypeIdentifier(t)} ALTER ATTRIBUTE ${a.name} TYPE ${a.type.after};\n`] : []),
+                t.attrs.created?.flatMap(a => renamed.find(r => r.i === a.i) ? [] : [`ALTER TYPE ${genTypeIdentifier(t)} ADD ATTRIBUTE ${a.name} ${a.type};\n`]),
+                t.attrs.deleted?.flatMap(a => renamed.find(r => r.i === a.i) ? [] : [`ALTER TYPE ${genTypeIdentifier(t)} DROP ATTRIBUTE IF EXISTS ${a.name};\n`]),
+            ].flat()
+        }
+    }
+    return []
+}
+
+function getTypeAlterCustom(t: TypeDiff): string[] {
+    if (t.definition?.after) { // can't update custom types, so drop & create
+        return [genTypeDrop(t), genType({...namespace(t), name: t.name, definition: t.definition.after})]
+    }
+    return []
+}
+
+function genTypeDrop(t: Namespace & { name: string }): string {
+    return `DROP TYPE IF EXISTS ${genTypeIdentifier(t)};\n`
+}
+
 function genCommentEntity(e: Entity): string {
-    return e.doc ? `COMMENT ON TABLE ${genEntityName(e)} IS ${genString(e.doc)};\n` : ''
+    return e.doc ? genComment('TABLE', genEntityName(e), e.doc) : ''
 }
 
 function genCommentAttribute(a: Attribute, e: Entity): string {
-    return a.doc ? `COMMENT ON COLUMN ${genEntityName(e)}.${genIdentifier(a.name)} IS ${genString(a.doc)};\n` : ''
+    return a.doc ? genComment('COLUMN', `${genEntityName(e)}.${genIdentifier(a.name)}`, a.doc) : ''
 }
 
 function genCommentType(t: Type): string {
-    return t.doc ? `COMMENT ON TYPE ${genNamespace(t)}${genIdentifier(t.name)} IS ${genString(t.doc)};\n` : ''
+    return t.doc ? genComment('TYPE', genTypeIdentifier(t), t.doc) : ''
+}
+
+function genComment(kind: 'TABLE' | 'COLUMN' | 'TYPE', identifier: string, value: string | undefined): string {
+    return `COMMENT ON ${kind} ${identifier} IS ${value ? genString(value) : 'NULL'};\n`
 }
 
 function genEntityRef(ref: EntityRef): string {
