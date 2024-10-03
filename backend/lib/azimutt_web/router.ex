@@ -43,6 +43,8 @@ defmodule AzimuttWeb.Router do
     pipe_through([:browser, :website_root_layout])
     get("/", WebsiteController, :index)
     get("/aml", WebsiteController, :aml)
+    get("/portal", WebsiteController, :portal)
+    get("/portal/subscribed", WebsiteController, :portal_subscribed)
     # get("/cli", WebsiteController, :cli)
     # get("/analyze", WebsiteController, :analyze)
     # get("/analyze/rules", WebsiteController, :analyze_rules)

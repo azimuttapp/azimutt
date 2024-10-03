@@ -45,6 +45,9 @@ defmodule AzimuttWeb.WebsiteController do
     |> Result.map(fn {from, to} -> conn |> render("convert.html", from: from, to: to) end)
   end
 
+  def portal(conn, _params), do: conn |> render("portal.html")
+  def portal_subscribed(conn, _params), do: conn |> render("portal-subscribed.html")
+
   def last(conn, _params) do
     case conn |> last_used_project do
       {:ok, p} -> conn |> redirect(to: Routes.elm_path(conn, :project_show, p.organization_id, p.id))
