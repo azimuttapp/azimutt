@@ -43,11 +43,12 @@ export async function launchDiff(leftUrl: string, rightUrl: string, opts: Opts, 
     logger.log('')
 
     const diff = databaseDiff(leftDb, rightDb)
-    const lines = showDatabaseDiff(diff)
+    logger.log('\nWork In Progress...\n')
+    /*const lines = showDatabaseDiff(diff)
     lines.forEach(l => logger.log(l))
     if (lines.length === 0) {
         logger.log('No diff found!')
-    }
+    }*/
     logger.log('')
     logger.log('Database schema diff done!')
     logger.log('')
@@ -55,7 +56,7 @@ export async function launchDiff(leftUrl: string, rightUrl: string, opts: Opts, 
 
 const indexToId = (i: Index): string => `${i.name}(${i.attrs.map(attributePathToId).join(', ')})`
 
-function showDatabaseDiff(diff: DatabaseDiff): string[] {
+/*function showDatabaseDiff(diff: DatabaseDiff): string[] {
     return ([] as string[]).concat(
         showDiff(diff.types, 'type', typeToId),
         showDiff(diff.relations, 'relation', relationToId),
@@ -69,7 +70,7 @@ function showDatabaseDiff(diff: DatabaseDiff): string[] {
             return entityToId(d.left) + lines.join('')
         }),
     )
-}
+}*/
 
 function showDiff<T extends object>(diff: Diff<T> | undefined, entity: string, show: (t: T) => string): string[] {
     return [
