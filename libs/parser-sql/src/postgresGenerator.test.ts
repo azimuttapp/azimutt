@@ -104,15 +104,34 @@ CREATE TABLE posts (
                         {entities: [{name: 'users', attrs: [{name: 'name', type: 'varchar', default: 'anonymous'}, {name: 'role', type: 'varchar'}, {name: 'cpt', type: 'int', default: 0}]}]},
                     ))).toEqual(`ALTER TABLE users ALTER name SET DEFAULT 'anonymous';\nALTER TABLE users ALTER role DROP DEFAULT;\nALTER TABLE users ALTER cpt SET DEFAULT 0;\n`)
                 })
+                test('create doc', () => {
+                    expect(generatePostgresDiff(databaseDiff(
+                        {entities: [{name: 'users', attrs: [{name: 'id', type: 'int'}]}]},
+                        {entities: [{name: 'users', attrs: [{name: 'id', type: 'int', doc: 'user id'}]}]}
+                    ))).toEqual(`COMMENT ON COLUMN users.id IS 'user id';\n`)
+                })
+            })
+            describe('constraints', () => {
+                test.skip('primary key', () => {
+                    expect(generatePostgresDiff(databaseDiff(
+                        {entities: [{name: 'users', attrs: []}]},
+                        {entities: [{name: 'users', attrs: [{name: 'id', type: 'int'}], pk: {name: 'users_pk', attrs: [['id']]}}]}
+                    ))).toEqual(`ALTER TABLE users ADD id int CONSTRAINT users_pk PRIMARY KEY;\n`)
+                    expect(generatePostgresDiff(databaseDiff(
+                        {entities: [{name: 'users', attrs: [{name: 'id', type: 'int'}]}]},
+                        {entities: [{name: 'users', attrs: [{name: 'id', type: 'int'}], pk: {name: 'users_pk', attrs: [['id']]}}]}
+                    ))).toEqual(`ALTER TABLE users ADD CONSTRAINT users_pk PRIMARY KEY (id);\n`)
+                })
+                // TODO: indexes, checks
             })
             test('create doc', () => {
-                expect(generatePostgresDiff(databaseDiff({entities: [{name: 'users'}]}, {entities: [{name: 'users', doc: 'list users'}]},))).toEqual(`COMMENT ON TABLE users IS 'list users';\n`)
+                expect(generatePostgresDiff(databaseDiff({entities: [{name: 'users'}]}, {entities: [{name: 'users', doc: 'list users'}]}))).toEqual(`COMMENT ON TABLE users IS 'list users';\n`)
             })
             test('delete doc', () => {
-                expect(generatePostgresDiff(databaseDiff({entities: [{name: 'users', doc: 'list users'}]}, {entities: [{name: 'users'}]},))).toEqual(`COMMENT ON TABLE users IS NULL;\n`)
+                expect(generatePostgresDiff(databaseDiff({entities: [{name: 'users', doc: 'list users'}]}, {entities: [{name: 'users'}]}))).toEqual(`COMMENT ON TABLE users IS NULL;\n`)
             })
             test('update doc', () => {
-                expect(generatePostgresDiff(databaseDiff({entities: [{name: 'users', doc: 'store users'}]}, {entities: [{name: 'users', doc: 'list users'}]},))).toEqual(`COMMENT ON TABLE users IS 'list users';\n`)
+                expect(generatePostgresDiff(databaseDiff({entities: [{name: 'users', doc: 'store users'}]}, {entities: [{name: 'users', doc: 'list users'}]}))).toEqual(`COMMENT ON TABLE users IS 'list users';\n`)
             })
         })
         describe('views', () => {
@@ -134,6 +153,7 @@ CREATE TABLE posts (
                 expect(generatePostgresDiff(databaseDiff({entities: [{name: 'admins', kind: 'view', doc: 'store admins'}]}, {entities: [{name: 'admins', kind: 'view', doc: 'list admins'}]},))).toEqual(`COMMENT ON VIEW admins IS 'list admins';\n`)
             })
         })
+        // TODO: relations
         describe('types', () => {
             test('create', () => {
                 expect(generatePostgresDiff(databaseDiff({}, {types: [{name: 'status', values: ['draft', 'public']}]}))).toEqual(`CREATE TYPE status AS ENUM ('draft', 'public');\n`)

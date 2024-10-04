@@ -1,5 +1,5 @@
 import {z} from "zod";
-import {anySame, arraySame, diffBy, removeEmpty, removeUndefined} from "@azimutt/utils";
+import {anySame, arraySame, diffBy, equalDeep, removeEmpty, removeUndefined} from "@azimutt/utils";
 import {
     Attribute,
     AttributeName,
@@ -11,6 +11,7 @@ import {
     EntityName,
     Extra,
     Namespace,
+    PrimaryKey,
     Type,
     TypeName
 } from "./database";
@@ -42,30 +43,30 @@ export const AttributeDiff = z.object({
     // gen: z.boolean().optional(), // false when not specified
     default: OptValueDiff(AttributeValue).optional(),
     // attrs: z.lazy(() => Attribute.array().optional()),
-    // doc: z.string().optional(),
+    doc: OptValueDiff(z.string()).optional(),
     // stats: AttributeStats.optional(),
-    // extra: AttributeExtra.optional(),
+    extra: ExtraDiff.optional(),
 }).strict()
 export type AttributeDiff = { // define type explicitly because it's lazy (https://zod.dev/?id=recursive-types)
     name: AttributeName
-    i?: ValueDiff<number>,
-    type?: ValueDiff<AttributeType>,
+    i?: ValueDiff<number>
+    type?: ValueDiff<AttributeType>
     null?: OptValueDiff<boolean>
     // gen?: boolean | undefined
     default?: OptValueDiff<AttributeValue>
     // attrs?: Attribute[] | undefined
-    // doc?: string | undefined
+    doc?: OptValueDiff<string>
     // stats?: AttributeStats | undefined
-    // extra?: AttributeExtra | undefined
+    extra?: ExtraDiff
 }
 export const EntityDiff = Namespace.extend({
     name: EntityName,
-    kind: OptValueDiff(EntityKind),
+    kind: OptValueDiff(EntityKind).optional(),
     def: OptValueDiff(z.string()).optional(),
     attrs: ArrayDiff(Attribute, AttributeDiff).optional(),
-    // pk: PrimaryKey.optional(),
-    // indexes: Index.array().optional(),
-    // checks: Check.array().optional(),
+    pk: OptValueDiff(PrimaryKey).optional(),
+    // TODO: indexes: Index.array().optional(),
+    // TODO: checks: Check.array().optional(),
     doc: OptValueDiff(z.string()).optional(),
     // stats: EntityStats.optional(),
     extra: ExtraDiff.optional(),
@@ -83,6 +84,7 @@ export const TypeDiff = Namespace.extend({
 export type TypeDiff = z.infer<typeof TypeDiff>
 export const DatabaseDiff = z.object({
     entities: ArrayDiff(Entity, EntityDiff).optional(),
+    // TODO: relations: ArrayDiff(Relation, RelationDiff).optional(),
     types: ArrayDiff(Type, TypeDiff).optional(),
 }).strict().describe('DatabaseDiff')
 export type DatabaseDiff = z.infer<typeof DatabaseDiff>
@@ -95,13 +97,14 @@ export function databaseDiff(before: Database, after: Database): DatabaseDiff {
 }
 
 function entityDiff(before: Entity & {i: number}, after: Entity & {i: number}): EntityDiff | undefined {
-    const kind = valueDiff(before.kind, after.kind)
+    const kind = before.kind === undefined && after.kind === undefined ? undefined : valueDiff(before.kind, after.kind)
     const def = before.def === after.def ? undefined : valueDiff(before.def, after.def)
     const attrs = attributesDiff(before.attrs || [], after.attrs || [])
+    const pk = equalDeep(before.pk, after.pk) ? undefined : valueDiff(before.pk, after.pk)
     const doc = before.doc === after.doc ? undefined : valueDiff(before.doc, after.doc)
     const extra = extraDiff(before.extra || {}, after.extra || {})
-    if ([def, attrs, doc, extra].every(v => v === undefined)) return undefined
-    return removeUndefined({...typeToNamespace(before), name: before.name, kind, def, attrs, doc, extra})
+    if ([kind, def, attrs, pk, doc, extra].every(v => v === undefined)) return undefined
+    return removeUndefined({...typeToNamespace(before), name: before.name, kind, def, attrs, pk, doc, extra})
 }
 
 function typeDiff(before: Type & {i: number}, after: Type & {i: number}): TypeDiff | undefined {
@@ -124,8 +127,10 @@ function attributeDiff(before: Attribute & {i: number}, after: Attribute & {i: n
     const type = before.type === after.type ? undefined : valueDiff(before.type, after.type)
     const nullable = before.null === after.null ? undefined : valueDiff(before.null, after.null)
     const defaultValue = before.default === after.default ? undefined : valueDiff(before.default, after.default)
-    if ([i, type, nullable, defaultValue].every(v => v === undefined)) return undefined
-    return removeUndefined({...typeToNamespace(before), name: before.name, i, type, null: nullable, default: defaultValue})
+    const doc = before.doc === after.doc ? undefined : valueDiff(before.doc, after.doc)
+    const extra = extraDiff(before.extra || {}, after.extra || {})
+    if ([i, type, nullable, defaultValue, doc, extra].every(v => v === undefined)) return undefined
+    return removeUndefined({...typeToNamespace(before), name: before.name, i, type, null: nullable, default: defaultValue, doc, extra})
 }
 
 function extraDiff(before: Extra, after: Extra): ExtraDiff | undefined {

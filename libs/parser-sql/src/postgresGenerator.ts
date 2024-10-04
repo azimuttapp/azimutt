@@ -97,6 +97,10 @@ function genEntityIdentifier(e: Namespace & { name: string }): string {
     return `${genNamespace(e)}${genIdentifier(e.name)}`
 }
 
+function genAttributeIdentifier(a: { name: string }, e: Namespace & { name: string }): string {
+    return `${genEntityIdentifier(e)}.${genIdentifier(a.name)}`
+}
+
 type TableInner = {value: string, comment?: string | undefined}
 
 function genAttribute(a: Attribute, pk: PrimaryKey | undefined, indexes: Index[], checks: Check[], relations: Relation[], typesById: Record<TypeId, Type>): TableInner {
@@ -145,10 +149,14 @@ function genCheckEntity(c: Check): TableInner {
 }
 
 function genEntityAlter(e: EntityDiff, relations: Relation[], typesById: Record<TypeId, Type>): string {
-    if (e.kind.after !== e.kind.before) {
+    // TODO: rename table
+    // TODO: add, remove, update, rename columns
+    // TODO: create, delete, update, rename pk, indexes & checks
+    // TODO: set comments
+    if (e.kind && e.kind.after !== e.kind.before) {
         // drop & create
         return `TODO ${e.kind.before || 'table'} -> ${e.kind.after || 'table'}`
-    } else if (e.kind.after === 'view') {
+    } else if (e.kind?.after === 'view') {
         return genViewAlter(e)
     } else {
         return genTableAlter(e, relations, typesById)
@@ -156,6 +164,23 @@ function genEntityAlter(e: EntityDiff, relations: Relation[], typesById: Record<
 }
 
 function genTableAlter(e: EntityDiff, relations: Relation[], typesById: Record<TypeId, Type>): string { // see https://www.postgresql.org/docs/current/sql-altertable.html
+    // table:
+    // ALTER TABLE table_name SET SCHEMA new_schema_name;
+    // ALTER TABLE table_name RENAME TO new_table_name;
+    // columns:
+    // OK ALTER TABLE table_name ADD column_name column_type column_constraint;
+    // OK ALTER TABLE table_name DROP column_name;
+    // OK ALTER TABLE table_name ALTER column_name TYPE column_type;
+    // OK ALTER TABLE table_name RENAME column_name TO new_column_name;
+    // OK ALTER TABLE table_name ALTER column_name SET NOT NULL;
+    // OK ALTER TABLE table_name ALTER column_name DROP NOT NULL;
+    // OK ALTER TABLE table_name ALTER column_name SET DEFAULT column_default;
+    // OK ALTER TABLE table_name ALTER column_name DROP DEFAULT;
+    // constraints:
+    // ??? ALTER TABLE table_name ADD table_constraint;
+    // ??? ALTER TABLE table_name DROP CONSTRAINT constraint_name;
+    // ??? ALTER TABLE table_name ALTER CONSTRAINT constraint_name;
+    // ALTER TABLE table_name RENAME CONSTRAINT constraint_name TO new_constraint_name;
     return [
         genEntityAlterAttributes(e, relations, typesById),
         e.doc ? [genComment('TABLE', genEntityIdentifier(e), e.doc.after)] : [],
@@ -178,7 +203,7 @@ function genEntityAlterAttributes(e: EntityDiff, relations: Relation[], typesByI
         return [
             renamed.map(r => `ALTER TABLE ${genTypeIdentifier(e)} RENAME ${r.name.before} TO ${r.name.after};\n`),
             e.attrs.updated?.flatMap(a => genEntityAlterAttribute(a, e, relations, typesById)),
-            e.attrs.created?.flatMap(a => renamed.find(r => r.i === a.i) ? [] : [`ALTER TABLE ${genTypeIdentifier(e)} ADD ${genAttribute(a, undefined, [], [], relations, typesById).value};\n`]),
+            e.attrs.created?.flatMap(a => renamed.find(r => r.i === a.i) ? [] : [`ALTER TABLE ${genTypeIdentifier(e)} ADD ${genAttribute(a, e.pk?.after, [], [], relations, typesById).value};\n`]),
             e.attrs.deleted?.flatMap(a => renamed.find(r => r.i === a.i) ? [] : [`ALTER TABLE ${genTypeIdentifier(e)} DROP ${a.name};\n`]),
         ].flat()
     }
@@ -190,6 +215,7 @@ function genEntityAlterAttribute(a: AttributeDiff, e: EntityDiff, relations: Rel
         a.type?.after ? [`ALTER TABLE ${genTypeIdentifier(e)} ALTER ${a.name} TYPE ${a.type.after};\n`] : [],
         a.null ? [`ALTER TABLE ${genTypeIdentifier(e)} ALTER ${a.name} ${a.null.after ? 'DROP' : 'SET'} NOT NULL;\n`] : [],
         a.default ? [`ALTER TABLE ${genTypeIdentifier(e)} ALTER ${a.name} ${a.default.after === undefined ? 'DROP DEFAULT' : `SET DEFAULT ${genAttributeValue(a.default.after)}`};\n`] : [],
+        a.doc ? [genComment('COLUMN', genAttributeIdentifier(a, e), a.doc.after)] : [],
     ].flat()
 }
 
@@ -300,7 +326,7 @@ function genCommentView(e: Entity): string {
 }
 
 function genCommentAttribute(a: Attribute, e: Entity): string {
-    return a.doc ? genComment('COLUMN', `${genEntityIdentifier(e)}.${genIdentifier(a.name)}`, a.doc) : ''
+    return a.doc ? genComment('COLUMN', genAttributeIdentifier(a, e), a.doc) : ''
 }
 
 function genCommentType(t: Type): string {

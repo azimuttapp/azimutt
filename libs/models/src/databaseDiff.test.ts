@@ -25,6 +25,12 @@ describe('databaseDiff', () => {
             const diff = {entities: {updated: [{name: 'users', def: {before: 'SELECT * FROM users', after: 'SELECT id, name FROM users'}}]}}
             expect(databaseDiff(before, after)).toEqual(diff)
         })
+        test('update pk', () => {
+            const before = {entities: [{name: 'users', pk: {attrs: [['user_id'], ['role_id']]}}]}
+            const after = {entities: [{name: 'users', pk: {attrs: [['id']]}}]}
+            const diff = {entities: {updated: [{name: 'users', pk: {before: {attrs: [['user_id'], ['role_id']]}, after: {attrs: [['id']]}}}]}}
+            expect(databaseDiff(before, after)).toEqual(diff)
+        })
         test('update doc', () => {
             const before = {entities: [{name: 'users', doc: 'store users'}]}
             const after = {entities: [{name: 'users', doc: 'list users'}]}
@@ -123,6 +129,18 @@ describe('databaseDiff', () => {
             const before: Attribute[] = [{name: 'x', type: 'int', default: 0}, {name: 'y', type: 'int'}]
             const after: Attribute[] = [{name: 'x', type: 'int'}, {name: 'y', type: 'int', default: '5'}]
             const diff = {updated: [{name: 'x', default: {before: 0, after: undefined}}, {name: 'y', default: {before: undefined, after: '5'}}]}
+            expect(attributesDiff(before, after)).toEqual(diff)
+        })
+        test('update doc', () => {
+            const before: Attribute[] = [{name: 'name', type: 'varchar', doc: 'user name'}]
+            const after: Attribute[] = [{name: 'name', type: 'varchar', doc: 'the user name'}]
+            const diff = {updated: [{name: 'name', doc: {before: 'user name', after: 'the user name'}}]}
+            expect(attributesDiff(before, after)).toEqual(diff)
+        })
+        test('update extra', () => {
+            const before: Attribute[] = [{name: 'name', type: 'varchar', extra: {}}]
+            const after: Attribute[] = [{name: 'name', type: 'varchar', extra: {deprecated: null}}]
+            const diff = {updated: [{name: 'name', extra: {deprecated: {before: undefined, after: null}}}]}
             expect(attributesDiff(before, after)).toEqual(diff)
         })
     })
