@@ -1,14 +1,14 @@
-<li class={if (@nesting == 0), do: "py-1", else: ""}>
+<li>
     <%= if @item[:slug] do %>
-        <a href={Routes.website_path(@conn, :doc, @item.slug)} class="underline font-semibold text-indigo-600"><%= @item.name %></a>
+        <a href={Routes.website_path(@conn, :doc, @item.slug)}><%= @item.name %></a>
     <% else %>
         <span class="font-semibold"><%= @item.name %></span>
     <% end %>
     <%= if @item[:details] do %>- <%= @item.details %><% end %>
     <%= if @item[:children] do %>
-        <ul role="list" class="list-inside list-disc pl-3">
+        <ul role="list">
             <%= for child <- @item.children do %>
-                <%= render "docs/_menu-item.html", conn: @conn, item: child, nesting: @nesting + 1 %>
+                <%= render "docs/_menu-item.html", conn: @conn, item: child %>
             <% end %>
         </ul>
     <% end %>

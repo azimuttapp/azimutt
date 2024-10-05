@@ -1,6 +1,6 @@
 <%= if @page[:children] do %>
 <div class="bg-white pt-12 px-6 lg:px-8">
-    <div class="mx-auto max-w-3xl">
+    <div class="mx-auto max-w-3xl prose prose-a:text-indigo-600">
         <%= render "docs/_menu.html", conn: @conn, pages: @page.children %>
     </div>
 </div>
@@ -18,21 +18,21 @@
     <div class="mx-auto max-w-3xl">
         <nav class="flex gap-3">
             <%= if @prev do %>
-            <a href={Routes.website_path(@conn, :doc, @prev.slug)} class="block w-full rounded-lg px-4 py-3 shadow-sm ring-1 ring-inset ring-gray-300 hover:ring-indigo-500">
-                Previous<br>
-                <span class="text-base font-semibold leading-7 text-indigo-600">« <%= @prev.name %></span>
-            </a>
+                <a href={Routes.website_path(@conn, :doc, @prev.slug)} class="block w-full rounded-lg px-4 py-3 shadow-sm ring-1 ring-inset ring-gray-300 hover:ring-indigo-500">
+                    Previous<br>
+                    <span class="text-base font-semibold leading-7 text-indigo-600">« <%= @prev.name %></span>
+                </a>
             <% else %>
-            <div class="w-full"></div>
+                <div class="w-full"></div>
             <% end %>
 
             <%= if @next do %>
-            <a href={Routes.website_path(@conn, :doc, @next.slug)} class="block w-full rounded-lg px-4 py-3 shadow-sm ring-1 ring-inset ring-gray-300 hover:ring-indigo-500 text-right">
-                Next<br>
-                <span class="text-base font-semibold leading-7 text-indigo-600"><%= @next.name %> »</span>
-            </a>
+                <a href={Routes.website_path(@conn, :doc, @next.slug)} class="block w-full rounded-lg px-4 py-3 shadow-sm ring-1 ring-inset ring-gray-300 hover:ring-indigo-500 text-right">
+                    Next<br>
+                    <span class="text-base font-semibold leading-7 text-indigo-600"><%= @next.name %> »</span>
+                </a>
             <% else %>
-            <div class="w-full"></div>
+                <div class="w-full"></div>
             <% end %>
         </nav>
     </div>

@@ -1,15 +1,11 @@
 <%= render "docs/_header.html", conn: @conn, page: @page %>
 
-<div class="bg-white px-6 lg:px-8">
-    <div class="mx-auto max-w-3xl text-base leading-7 text-gray-700 prose">
-        <p class="mt-6 text-xl leading-8">
-            Work In Progress 😅
-        </p>
+<%= doc_prose do %>
+    <p class="lead">Work In Progress 😅</p>
 
-        <%= render "docs/_h2.html", title: "SQL query" %>
-        <%= render "docs/_h2.html", title: "Rows navigation" %>
-        <%= render "docs/_h2.html", title: "AI query generation" %>
-    </div>
-</div>
+    <%= render "docs/_h2.html", title: "SQL query" %>
+    <%= render "docs/_h2.html", title: "Rows navigation" %>
+    <%= render "docs/_h2.html", title: "AI query generation" %>
+<% end %>
 
 <%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>
