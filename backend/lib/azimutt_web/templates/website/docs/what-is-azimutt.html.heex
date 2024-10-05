@@ -1,14 +1,43 @@
 <%= render "docs/_header.html", conn: @conn, page: @page %>
 
 <div class="bg-white px-6 lg:px-8">
-    <div class="mx-auto max-w-3xl text-base leading-7 text-gray-700">
+    <div class="mx-auto max-w-3xl text-base leading-7 text-gray-700 prose">
         <p class="mt-6 text-xl leading-8">
-            Work In Progress 😅
-            <%= render "docs/_h2.html", title: "Azimutt explorer" %>
-            <%= render "docs/_h3.html", title: "Gateway" %>
-            <%= render "docs/_h2.html", title: "Azimutt CLI" %>
-            <%= render "docs/_h2.html", title: "Azimutt converters" %>
+            Azimutt goal is to make databases way more accessible for everyone who wants or needs to understand them.
+            For that we have built several tools, the biggest one being the
+            <a href="#azimutt-explorer" class="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline">explorer</a>, the there is also other interesting ones like the
+            <a href="#azimutt-cli" class="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline">CLI</a> and the
+            <a href="#azimutt-converters" class="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline">converters</a>.
         </p>
+
+        <%= render "docs/_h2.html", title: "Azimutt explorer" %>
+        <p class="mt-3">If you are here, you probably already know it:</p>
+        <img src={Routes.static_path(@conn, "/images/doc/azimutt-explorer.png")} alt="Azimutt explorer" class="mt-3 rounded-xl">
+        <p class="mt-3">It's the main Azimutt product, allowing you to explore or design your databases. The documentation after is mainly about it.</p>
+
+        <%= render "docs/_h2.html", title: "Gateway" %>
+        <p class="mt-3">
+            The Gateway is the central piece allowing Azimutt to connect to any database.
+            It's a simple Node.js server with all the databases connector allowing Azimutt editor frontend to access databases.
+            It can be launched locally using <code>npx azimutt@latest gateway</code>, hosted in your infrastructure or using the Azimutt one if your database is accessible over internet.
+        </p>
+
+        <%= render "docs/_h2.html", title: "Azimutt CLI" %>
+        <p class="mt-3">The Azimutt CLI is a <a href="https://www.npmjs.com/package/azimutt" target="_blank" class="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline">npm package</a> useful to perform some tasks:</p>
+        <img src={Routes.static_path(@conn, "/images/doc/azimutt-cli.png")} alt="Azimutt CLI" class="mt-3 rounded-xl">
+        <p class="mt-3">
+            Here are the main task it can be used for:
+            <ul>
+                <li>Launch the Gateway locally (you just need <i>npm</i>)</li>
+                <li>Export your database schema (to check what's included before uploading it to Azimutt explorer)</li>
+                <li>Analyze your database</li>
+                <li>More to come soon...</li>
+            </ul>
+        </p>
+
+        <%= render "docs/_h2.html", title: "Azimutt converters" %>
+        <p class="mt-3">Azimutt is doing a lot of work around database schemas. We took this opportunity to build these <a href={Routes.website_path(@conn, :convert, "aml", "postgres")} class="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline">standalone converters</a> to be easily accessible:</p>
+        <img src={Routes.static_path(@conn, "/images/doc/converter-aml-to-postgresql.png")} alt="Azimutt converter from AML to PostgreSQL" class="mt-3 rounded-xl">
     </div>
 </div>
 

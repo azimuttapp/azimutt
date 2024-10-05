@@ -1,18 +1,12 @@
-<div class="bg-white px-6 py-12 lg:px-8">
-    <div class="mx-auto max-w-3xl text-base leading-7 text-gray-700">
-        <h1 class="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Azimutt Documentation</h1>
+<%= render "docs/_header.html", conn: @conn, page: @page %>
+
+<div class="bg-white px-6 lg:px-8">
+    <div class="mx-auto max-w-3xl text-base leading-7 text-gray-700 prose">
         <p class="mt-6 text-xl leading-8">
             Here is an overview of Azimutt features, how they work and other questions you might have on Azimutt grouped by topic.
             If you see anything missing or unclear, let us know to improve it.
         </p>
-        <div class="mt-10 max-w-2xl">
-            <ul role="list" class="list-inside list-disc">
-                <%= for page <- Azimutt.doc_pages() do %>
-                    <%= render "docs/_menu-item.html", conn: @conn, item: page %>
-                <% end %>
-            </ul>
-        </div>
     </div>
 </div>
 
-<%= render "_footer.html", conn: @conn %>
+<%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

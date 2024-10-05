@@ -1,12 +1,18 @@
 <%= render "docs/_header.html", conn: @conn, page: @page %>
 
 <div class="bg-white px-6 lg:px-8">
-    <div class="mx-auto max-w-3xl text-base leading-7 text-gray-700">
+    <div class="mx-auto max-w-3xl text-base leading-7 text-gray-700 prose">
         <p class="mt-6 text-xl leading-8">
             Work In Progress 😅
         </p>
 
+        <%= render "docs/_h2.html", title: "Refresh source" %>
         <%= render "docs/_h2.html", title: "Multi-sources" %>
+        <p class="mt-3">
+            Azimutt is quite unique with its multi-sources capability.
+            They are all independent and can be refreshed on their own, overriding only their own schema.
+            What is accessible from the search and layouts, is the global merge of all sources.
+        </p>
     </div>
 </div>
 

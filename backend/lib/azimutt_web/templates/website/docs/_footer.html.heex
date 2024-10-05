@@ -1,11 +1,7 @@
 <%= if @page[:children] do %>
 <div class="bg-white pt-12 px-6 lg:px-8">
     <div class="mx-auto max-w-3xl">
-        <ul role="list" class="list-inside list-disc">
-            <%= for page <- @page.children do %>
-            <%= render "docs/_menu-item.html", conn: @conn, item: page %>
-            <% end %>
-        </ul>
+        <%= render "docs/_menu.html", conn: @conn, pages: @page.children %>
     </div>
 </div>
 <% end %>

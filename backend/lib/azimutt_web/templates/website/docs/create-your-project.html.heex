@@ -1,21 +1,55 @@
 <%= render "docs/_header.html", conn: @conn, page: @page %>
 
 <div class="bg-white px-6 lg:px-8">
-    <div class="mx-auto max-w-3xl text-base leading-7 text-gray-700">
+    <div class="mx-auto max-w-3xl text-base leading-7 text-gray-700 prose">
         <p class="mt-6 text-xl leading-8">
-            Work In Progress 😅
+            Azimutt explorer has several ways to import your schema. The suggested one being the
+            <a href="#from-database" class="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline">database connection</a>
+            as it's more reliable and offer more features (see below) but you have many other options if you prefer.
+            <img src={Routes.static_path(@conn, "/images/doc/new-project.png")} alt="New Azimutt project" class="mt-3 rounded-xl">
         </p>
 
         <%= render "docs/_h2.html", title: "From database" %>
-        <ul class="list-inside list-disc">
-            <li>extracts schema, comments & statistics</li>
-            <li>needed rights</li>
-        </ul>
+        <p class="mt-3">
+            This is the suggested way to import your database schema into Azimutt.
+            In addition to being more reliable than parsing SQL, it's also more powerful and offer more features:
+            <ul>
+                <li>Inspect JSON columns and infer nested schema</li>
+                <li>Detect polymorphic relations and extract kind values to suggest them in UI</li>
+                <li>Extract statistics, showing table size and # rows, column most common values and index size...</li>
+                <li>(soon) Query history when available to infer relations and table similarity</li>
+            </ul>
+            Also, with a database connection, you will be able to ise the <a href={Routes.website_path(@conn, :doc, "data-privacy")} class="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline">Data exploration</a> feature of Azimutt. Quite awesome if you ask me 😉
+        </p>
+        <p class="mt-3">
+            For more details, you can have a look at the connectors to see exactly what and how its being done, here are the scripts for
+            <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/connector-postgres/src/postgres.ts" class="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline" target="_blank">PostgreSQL</a>,
+            <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/connector-mysql/src/mysql.ts" class="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline" target="_blank">MySQL</a> and
+            <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/connector-mongodb/src/mongodb.ts" class="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline" target="_blank">MongoDB</a>.
+            Other connectors are of course also available in the repository.
+        </p>
+        <div class="mt-3 border-l-4 border-yellow-400 bg-yellow-50 p-4 flex not-prose">
+            <Icon.exclamation_triangle kind="mini" class="text-yellow-400" />
+            <p class="ml-3 text-sm text-yellow-700">
+                Your database URI is <span class="font-bold">not</span> sent to Azimutt server, just the Gateway.
+                For more details, see <a href={Routes.website_path(@conn, :doc, "data-privacy")} class="font-medium text-yellow-700 underline hover:text-yellow-600">Data privacy</a> section.
+            </p>
+        </div>
 
         <%= render "docs/_h2.html", title: "From SQL" %>
-        <%= render "docs/_h3.html", title: "Export your database schema" %>
+        <p class="mt-3">
+            If you just want to explore your database schema, you can upload its structure as SQL statements (CREATE TABLE and others).
+            You can do it safely as nothing will be sent to Azimutt servers, the parsing is made on the frontend and your schema is shown with no business data being sent to Azimutt server.
+        </p>
+        <p class="mt-3">
+            Here is some additional documentation if you need help <a href={Routes.website_path(@conn, :doc, "export-your-database-schema")} class="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline">exporting your database schema</a>.
+        </p>
 
         <%= render "docs/_h2.html", title: "From JSON" %>
+        <p class="mt-3">Work In Progress 😅</p>
+
+        <%= render "docs/_h2.html", title: "Save your project" %>
+        <p class="mt-3">Work In Progress 😅</p>
     </div>
 </div>
 

@@ -48,7 +48,8 @@ defmodule AzimuttWeb.WebsiteController do
   def portal(conn, _params), do: conn |> render("portal.html")
   def portal_subscribed(conn, _params), do: conn |> render("portal-subscribed.html")
 
-  def docs(conn, _params), do: conn |> render("docs/index.html")
+  def docs(conn, _params),
+    do: conn |> render("docs/index.html", page: %{slug: "index", name: "Azimutt Documentation", children: Azimutt.doc_pages(), parents: []}, prev: nil, next: nil)
 
   def doc(conn, %{"slug" => slug}) do
     pages = Azimutt.doc_pages_flat()

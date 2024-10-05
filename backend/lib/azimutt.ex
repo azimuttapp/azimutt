@@ -336,7 +336,7 @@ defmodule Azimutt do
         slug: "getting-started",
         name: "Getting started",
         children: [
-          %{slug: "create-your-project", name: "Create your project"},
+          %{slug: "create-your-project", name: "Create your project", children: [%{slug: "export-your-database-schema", name: "Export your database schema"}]},
           %{
             slug: "schema-exploration",
             name: "Schema exploration",

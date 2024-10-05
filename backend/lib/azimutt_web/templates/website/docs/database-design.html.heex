@@ -1,12 +1,38 @@
 <%= render "docs/_header.html", conn: @conn, page: @page %>
 
 <div class="bg-white px-6 lg:px-8">
-    <div class="mx-auto max-w-3xl text-base leading-7 text-gray-700">
+    <div class="mx-auto max-w-3xl text-base leading-7 text-gray-700 prose">
         <p class="mt-6 text-xl leading-8">
-            Work In Progress 😅
+            In Azimutt, database design is made through a dedicated language called <a href={Routes.website_path(@conn, :aml)} class="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline">AML</a>.<br>
         </p>
+        <p class="mt-3">
+            Here is how it looks:
+        </p>
+        <pre><code class="aml">users
+  id uuid pk
+  name varchar
+  email varchar unique
+  role user_role(admin, guest)=guest
 
-        <%= render "docs/_h2.html", title: "AML" %>
+posts
+  id uuid pk
+  title varchar
+  content text | in markdown
+  created_at timestamp=`now()`
+  created_by uuid -> users(id) # inline relation</code></pre>
+        <p class="mt-3">
+            We believe it's really the best UX any tool can offer as it allows you to type as fast as you can, use copy/paste, find/replace, code generation, versioning and more...
+        </p>
+        <p class="mt-3">
+            To use it in Azimutt, just create a new source and select AML:
+            <img src={Routes.static_path(@conn, "/images/doc/new-source-aml.png")} alt="New source AML" class="mt-3 rounded-xl">
+        </p>
+        <p class="mt-3">
+            You can also <a href={Routes.website_path(@conn, :convert, "aml", "json")} target="_blank" rel="noopener noreferrer" class="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline">try it live with a powerful editor</a> in the converters.
+        </p>
+        <p class="mt-3">
+            For more details, have a look to <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/README.md" target="_blank" rel="noopener noreferrer" class="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline">full specification</a>.
+        </p>
     </div>
 </div>
 
