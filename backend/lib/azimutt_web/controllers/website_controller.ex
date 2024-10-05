@@ -27,13 +27,13 @@ defmodule AzimuttWeb.WebsiteController do
   end
 
   def aml(conn, _params), do: conn |> render("aml.html")
-  def converters(conn, _params), do: conn |> render("converters.html")
+  def converters(conn, _params), do: conn |> render("converters/index.html")
 
   def converter(conn, %{"from" => from}) do
     Azimutt.converters()
     |> Enum.find(fn c -> c.id == from end)
     |> Result.from_nillable()
-    |> Result.map(fn converter -> conn |> render("converter.html", converter: converter) end)
+    |> Result.map(fn converter -> conn |> render("converters/converter.html", converter: converter) end)
   end
 
   def convert(conn, %{"from" => from_id, "to" => to_id}) do
@@ -42,7 +42,7 @@ defmodule AzimuttWeb.WebsiteController do
 
     from_converter
     |> Result.flat_map(fn f -> to_converter |> Result.map(fn t -> {f, t} end) end)
-    |> Result.map(fn {from, to} -> conn |> render("convert.html", from: from, to: to) end)
+    |> Result.map(fn {from, to} -> conn |> render("converters/convert.html", from: from, to: to) end)
   end
 
   def portal(conn, _params), do: conn |> render("portal.html")
@@ -79,16 +79,16 @@ defmodule AzimuttWeb.WebsiteController do
     conn |> get_req_header("referer") |> Enum.any?(fn h -> h |> String.contains?(Azimutt.config(:host)) end)
   end
 
-  def use_cases_index(conn, _params), do: conn |> render("use-cases.html")
+  def use_cases_index(conn, _params), do: conn |> render("use-cases/index.html")
 
   def use_cases_show(conn, %{"use_case_id" => use_case_id}) do
     Azimutt.showcase_usages()
     |> Enum.find(fn u -> u.id == use_case_id end)
     |> Result.from_nillable()
-    |> Result.map(fn use_case -> conn |> render("use-case-#{use_case_id}.html", use_case: use_case) end)
+    |> Result.map(fn use_case -> conn |> render("use-cases/#{use_case_id}.html", use_case: use_case) end)
   end
 
-  def features_index(conn, _params), do: conn |> render("features.html")
+  def features_index(conn, _params), do: conn |> render("features/index.html")
 
   def features_show(conn, %{"feature_id" => feature_id}) do
     Azimutt.showcase_features()
@@ -96,7 +96,7 @@ defmodule AzimuttWeb.WebsiteController do
     |> Result.from_nillable()
     |> Result.map(fn index ->
       conn
-      |> render("feature-#{feature_id}.html",
+      |> render("features/#{feature_id}.html",
         feature: Azimutt.showcase_features() |> Enum.at(index),
         previous: if(index > 0, do: Azimutt.showcase_features() |> Enum.at(index - 1), else: nil),
         next: Azimutt.showcase_features() |> Enum.at(index + 1)

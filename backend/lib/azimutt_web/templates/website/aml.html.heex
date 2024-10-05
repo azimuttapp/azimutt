@@ -183,7 +183,7 @@ COMMENT ON COLUMN posts.content IS 'in markdown';</code></pre>
         <div id="monaco-editor-left" class="relative w-full md:w-1/2 h-96 border border-gray-300 rounded-lg overflow-hidden"></div>
         <div id="monaco-editor-right" class="relative w-full md:w-1/2 h-96 border border-gray-300 rounded-lg overflow-hidden"></div>
     </div>
-    <%= render "_converter-editors-script.html", left: %{id: "monaco-editor-left", lang: "aml"}, right: %{id: "monaco-editor-right", lang: "json"} %>
+    <%= render "converters/_editors-script.html", left: %{id: "monaco-editor-left", lang: "aml"}, right: %{id: "monaco-editor-right", lang: "json"} %>
 </div>
 
 <div class="py-24">

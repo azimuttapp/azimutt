@@ -1,8 +1,8 @@
 <div class="relative isolate overflow-hidden bg-white px-6 pt-24 lg:px-0 lg:overflow-visible">
     <%= render AzimuttWeb.PartialsView, "_bg_grid.html" %>
     <div class="mx-auto grid max-w-2xl grid-cols-1 gap-y-16 gap-x-8 lg:mx-0 lg:max-w-none lg:grid-cols-2 lg:items-start lg:gap-y-10">
-        <%= render "_feature-heading.html", title: @feature.name, description: "Are you a developer? So are we! Having programmatic access to your tools make them much more powerful, so we built it!" %>
-        <%= render "_feature-screenshot.html", conn: @conn, feature: @feature, previous: @previous, next: @next %>
+        <%= render "features/_heading.html", title: @feature.name, description: "Are you a developer? So are we! Having programmatic access to your tools make them much more powerful, so we built it!" %>
+        <%= render "features/_screenshot.html", conn: @conn, feature: @feature, previous: @previous, next: @next %>
         <div class="lg:col-span-2 lg:col-start-1 lg:row-start-2 lg:row-span-4 lg:mx-auto lg:grid lg:w-full lg:max-w-7xl lg:grid-cols-2 lg:gap-x-8 lg:px-8">
             <div class="lg:pr-4">
                 <div class="prose max-w-xl text-base leading-7 text-gray-700 lg:max-w-lg">
