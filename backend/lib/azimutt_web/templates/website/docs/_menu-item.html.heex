@@ -1,0 +1,15 @@
+<li>
+    <%= if @item[:slug] do %>
+        <a href={Routes.website_path(@conn, :doc, @item.slug)} class="underline font-semibold text-indigo-600"><%= @item.name %></a>
+    <% else %>
+        <span class="font-semibold"><%= @item.name %></span>
+    <% end %>
+    <%= if @item[:details] do %>- <%= @item.details %><% end %>
+    <%= if @item[:children] do %>
+        <ul role="list" class="list-inside list-disc pl-3">
+            <%= for child <- @item.children do %>
+                <%= render "docs/_menu-item.html", conn: @conn, item: child %>
+            <% end %>
+        </ul>
+    <% end %>
+</li>

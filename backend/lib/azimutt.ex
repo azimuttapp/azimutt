@@ -327,4 +327,64 @@ defmodule Azimutt do
       %{id: "amlv1", name: "AMLv1", parse: true, generate: true}
     ]
   end
+
+  def doc_pages do
+    # slugs must be unique and not change as they are used for urls (SEO) and template names.
+    [
+      %{slug: "what-is-azimutt", name: "What is Azimutt?"},
+      %{
+        slug: "getting-started",
+        name: "Getting started",
+        children: [
+          %{slug: "create-your-project", name: "Create your project"},
+          %{
+            slug: "schema-exploration",
+            name: "Schema exploration",
+            children: [
+              %{slug: "search", name: "Search"},
+              %{slug: "follow-relations", name: "Follow relations"},
+              %{slug: "find-path", name: "Find path"}
+            ]
+          },
+          %{slug: "schema-documentation", name: "Schema documentation"},
+          %{slug: "database-design", name: "Database design"}
+        ]
+      },
+      %{
+        slug: "main-features",
+        name: "Main features",
+        children: [
+          %{slug: "layouts", name: "Layouts"},
+          %{slug: "sources", name: "Sources"},
+          %{slug: "data-exploration", name: "Data exploration"},
+          %{slug: "database-analysis", name: "Database analysis"},
+          %{slug: "keyboard-shortcuts", name: "Keyboard shortcuts"},
+          %{slug: "collaboration", name: "Collaboration"},
+          %{slug: "export", name: "Export"},
+          %{slug: "project-settings", name: "Project settings"},
+          %{slug: "api", name: "API"}
+        ]
+      },
+      %{
+        slug: "other-tools",
+        name: "Other tools",
+        children: [
+          %{slug: "cli", name: "CLI"},
+          %{slug: "converters", name: "Converters"}
+        ]
+      },
+      %{slug: "installation", name: "Installation"},
+      %{slug: "data-privacy", name: "Data privacy", details: "how Azimutt keep your data safe"}
+    ]
+  end
+
+  def doc_pages_flat, do: doc_pages() |> flatten_pages()
+
+  defp flatten_pages(pages, parents \\ []) do
+    pages
+    |> Enum.flat_map(fn page ->
+      children = if page[:children], do: page.children |> flatten_pages(parents ++ [page]), else: []
+      [page |> Map.put(:parents, parents) | children]
+    end)
+  end
 end

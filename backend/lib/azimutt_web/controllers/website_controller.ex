@@ -48,6 +48,19 @@ defmodule AzimuttWeb.WebsiteController do
   def portal(conn, _params), do: conn |> render("portal.html")
   def portal_subscribed(conn, _params), do: conn |> render("portal-subscribed.html")
 
+  def docs(conn, _params), do: conn |> render("docs/index.html")
+
+  def doc(conn, %{"slug" => slug}) do
+    pages = Azimutt.doc_pages_flat()
+
+    pages
+    |> Enum.find_index(fn p -> p.slug == slug end)
+    |> Result.from_nillable()
+    |> Result.map(fn index ->
+      conn |> render("docs/#{slug}.html", page: pages |> Enum.at(index), prev: if(index > 0, do: pages |> Enum.at(index - 1), else: nil), next: pages |> Enum.at(index + 1))
+    end)
+  end
+
   def last(conn, _params) do
     case conn |> last_used_project do
       {:ok, p} -> conn |> redirect(to: Routes.elm_path(conn, :project_show, p.organization_id, p.id))
