@@ -1,0 +1,41 @@
+<%= if @page[:children] do %>
+<div class="bg-white pt-12 px-6 lg:px-8">
+    <div class="mx-auto max-w-3xl prose prose-a:text-indigo-600">
+        <%= render "docs/_menu.html", conn: @conn, pages: @page.children %>
+    </div>
+</div>
+<% end %>
+
+<div class="bg-white pt-12 px-6 lg:px-8">
+    <div class="mx-auto max-w-3xl">
+        <a href={"https://github.com/azimuttapp/azimutt/blob/main/backend/lib/azimutt_web/templates/website/docs/#{Enum.join(@page.path, "/")}.html.heex"} target="_blank" rel="noopener noreferrer" class="font-semibold text-indigo-600 hover:underline">
+            <Icon.pencil kind="solid" class="w-4 h-4 mr-1 inline" /> Update this page
+        </a>
+    </div>
+</div>
+
+<div class="bg-white pt-3 px-6 lg:px-8">
+    <div class="mx-auto max-w-3xl">
+        <nav class="flex gap-3">
+            <%= if @prev do %>
+                <a href={Routes.website_path(@conn, :doc, @prev.path)} class="block w-full rounded-lg px-4 py-3 shadow-sm ring-1 ring-inset ring-gray-300 hover:ring-indigo-500">
+                    Previous<br>
+                    <span class="text-base font-semibold leading-7 text-indigo-600">« <%= @prev.name %></span>
+                </a>
+            <% else %>
+                <div class="w-full"></div>
+            <% end %>
+
+            <%= if @next do %>
+                <a href={Routes.website_path(@conn, :doc, @next.path)} class="block w-full rounded-lg px-4 py-3 shadow-sm ring-1 ring-inset ring-gray-300 hover:ring-indigo-500 text-right">
+                    Next<br>
+                    <span class="text-base font-semibold leading-7 text-indigo-600"><%= @next.name %> »</span>
+                </a>
+            <% else %>
+                <div class="w-full"></div>
+            <% end %>
+        </nav>
+    </div>
+</div>
+
+<%= render "_footer.html", conn: @conn %>

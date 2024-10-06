@@ -1,0 +1,10 @@
+<%= render "docs/_header.html", conn: @conn, page: @page %>
+
+<%= doc_prose do %>
+    <p class="lead">
+        Here is an overview of Azimutt features, how they work and other questions you might have on Azimutt grouped by topic.
+        If you see anything missing or unclear, let us know to improve it.
+    </p>
+<% end %>
+
+<%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

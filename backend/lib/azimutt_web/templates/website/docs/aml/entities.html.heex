@@ -1,0 +1,212 @@
+<%= render "docs/_header.html", conn: @conn, page: @page %>
+
+<%= doc_prose do %>
+    <p class="lead">
+        Entities are nodes in <a href="https://wikipedia.org/wiki/Entity%E2%80%93relationship_model" target="_blank" rel="noopener noreferrer">Entity-Relationship model</a>,
+        they are often used to model <strong>tables</strong> or <strong>collections</strong> in databases.
+    </p>
+
+    <p>Here is the simplest entity definition, just its name:</p>
+    <pre><code class="hljs aml">users
+</code></pre>
+    <p>
+        The name is an <a href={Routes.website_path(@conn, :doc, ["aml", "identifiers"])}>identifier</a>
+        and can be prefixed with a <a href={Routes.website_path(@conn, :doc, ["aml", "namespaces"])}>namespace</a>:
+    </p>
+    <pre><code class="hljs aml">core.public."user list"
+</code></pre>
+    <p>
+        Entities can contain <a href="#attribute">attributes</a> (corresponding to <strong>columns</strong> or <strong>fields</strong> in most databases).
+        They are defined one per line with two spaces indentation:
+    </p>
+    <pre><code class="hljs aml">users
+  id
+  name
+</code></pre>
+    <p>
+        Attributes can have options such as <a href="#attribute-type">type</a>, <a href="#not-null">nullability</a>, <a href="#index-and-constraint">constraints</a>,
+        <a href={Routes.website_path(@conn, :doc, ["aml", "relations"])}>relations</a> and more. Here are some examples:
+    </p>
+    <pre><code class="hljs aml">users
+  id uuid pk
+  name varchar
+  email varchar(256) unique
+  bio text nullable
+  role user_role(admin, guest)=guest index
+  profile_id int -> profiles(id)
+</code></pre>
+
+    <%= render "docs/_h2.html", title: "Metadata" %>
+    <p>
+        Entities can also have <a href={Routes.website_path(@conn, :doc, ["aml", "properties"])}>custom properties</a>
+        and <a href={Routes.website_path(@conn, :doc, ["aml", "documentation"])}>documentation</a> (as well as <a href="#attribute">attributes</a>):
+    </p>
+    <pre><code class="hljs aml">users {color: red, tags: [pii, sensitive], deprecated} | storing all users
+  id int pk {autoIncrement} | the user id
+  name
+</code></pre>
+    <p>There are <a href={"#{Routes.website_path(@conn, :doc, ["aml", "properties"])}#entity-properties"}>specific properties</a> for entities, for examples to define view:</p>
+    <pre><code class="hljs aml">admins {view: "SELECT * FROM users WHERE role = 'admin'"}
+  id
+  name
+</code></pre>
+
+    <%= render "docs/_h2.html", title: "Alias" %>
+    <p>
+        Finally, entities can be <strong>aliased</strong> to simplify their references,
+        entity aliases are also <a href={Routes.website_path(@conn, :doc, ["aml", "identifiers"])}>identifiers</a>:
+    </p>
+    <pre><code class="hljs aml">db1.referential.identity.accounts as users
+  id
+  name
+
+posts
+  id
+  author -> users(id) # refers to `db1.referential.identity.accounts` entity
+</code></pre>
+
+    <%= render "docs/_h2.html", title: "Attribute" %>
+    <p>Attributes define possible values inside an entity, such as <strong>columns</strong> in relational databases and <strong>fields</strong> in document ones.</p>
+    <p>They are defined with 2 space indentation under the entity they belong to, but they can also have <a href="#nested-attribute">several nesting levels</a>.</p>
+    <p>
+        The only required thing is their name, which is an <a href={Routes.website_path(@conn, :doc, ["aml", "identifiers"])}>identifier</a>.
+        After they have several options for the <a href="#attribute-type">type</a>, <a href="#not-null">nullable</a>, <a href="#index-and-constraint">constraints</a>
+        and <a href={Routes.website_path(@conn, :doc, ["aml", "relations"])}>relations</a>.
+    </p>
+    <p>Here is an example:</p>
+    <pre><code class="hljs aml">users
+  id # only the name
+  name varchar # the name and the type
+  email varchar unique # the name, type and unique constraint
+  bio nullable # the name and allowing null (by default not null constraint is applied)
+  profile_id -> profiles(id) # the name and relation
+</code></pre>
+
+    <%= render "docs/_h3.html", title: "Attribute type" %>
+    <p>The attribute type should come just after the attribute name, if there is space or special character inside the type, surround it with <code>"</code>, here are some examples:</p>
+    <pre><code class="hljs aml">events
+  id uuid
+  name varchar(50)
+  age int
+  rating decimal(5,2)
+  details json
+  tags "varchar[]"
+  created_at "timestamp with time zone"
+</code></pre>
+    <p>You can define the default values for the attribute with the <code>=</code> symbol:</p>
+    <pre><code class="hljs aml">users
+  id uuid
+  name varchar(50)=John
+  age int=0
+  rating decimal(5,2)=0.5
+  details json="{}"
+  tags "varchar[]"="[]"
+  admin boolean=false
+  created_at "timestamp with time zone"=`now()`
+</code></pre>
+    <p>Known types are automatically inferred:</p>
+    <ul>
+        <li>boolean for <code>true</code> and <code>false</code></li>
+        <li>number when only numbers and one dot (at most)</li>
+        <li>object when starting with <code>{</code></li>
+        <li>array when starting with <code>[</code></li>
+        <li>expression when starting with backticks (<code>`</code>)</li>
+        <li>string otherwise, use <code>"</code> for multi-word string</li>
+    </ul>
+    <p><a href={Routes.website_path(@conn, :doc, ["aml", "types"])}>Custom types</a> can be defined in standalone and used for an attribute:</p>
+    <pre><code class="hljs aml">type post_status (draft, publiched, archived)
+
+posts
+  id uuid
+  status post_status=draft
+</code></pre>
+    <p>But enums can also be defined inline with the attribute:</p>
+    <pre><code class="hljs aml">posts
+  id uuid
+  status post_status(draft, publiched, archived)=draft
+  code post_code(0, 1, 2)=2
+</code></pre>
+    <p>
+        In this case, they inherit the <a href={Routes.website_path(@conn, :doc, ["aml", "namespaces"])}>namespace</a> of the entity, and of course,
+        they can be reused elsewhere (but in this case it's best to define them standalone).
+    </p>
+
+    <%= render "docs/_h3.html", title: "Not null" %>
+    <p>Contrary to SQL, in AML the attributes come with the <strong>NOT NULL constraint by default</strong>.</p>
+    <p>To remove it, you can mark the attribute as <code>nullable</code>. This "not constraint" should come after the attribute name and type (if present).</p>
+    <p>Here are some examples:</p>
+    <pre><code class="hljs aml">profiles
+  id uuid
+  user_id uuid -> users(id)
+  company nullable
+  company_size int nullable
+</code></pre>
+
+    <%= render "docs/_h3.html", title: "Index and constraint" %>
+    <p>Entity attributes may have constraints and AML allows defining them, though not as detailed as SQL.</p>
+    <p>They come in this order: primary key, unique, index, check and relation, but most of the time you will have just one per attribute ^^</p>
+    <p>Here is an example:</p>
+    <pre><code class="hljs aml">users
+  id uuid pk # define a primary key constraint
+  email varchar unique # define a unique constraint on email attribute
+  name varchar index # define an index for the name attribute
+  age int check # define a check constraint for the age attribute
+  profile_id uuid -> profiles(id) # define a relation for the profile_id attribute
+</code></pre>
+    <p>Check should hold a predicate (even if not strictly required in AML), you can define it as an expression in parentheses:</p>
+    <pre><code class="hljs aml">users
+  id uuid pk
+  age int check(`age > 0`)
+</code></pre>
+    <p>Constraints can be named using the <code>=</code> symbol:</p>
+    <pre><code class="hljs aml">users
+  id uuid pk=users_pk
+  email varchar unique=users_email_uniq
+  name varchar index=users_name_idx
+  age int check(`age >= 0`)=age_chk
+  profile_id uuid -> profiles(id)
+</code></pre>
+    <p>Constraints with the same name are put together to form a composite constraint. Only the primary key doesn't need this as there is just one per an entity:</p>
+    <pre><code class="hljs aml">users # unique constraint on first_name AND last_name
+  id uuid pk
+  first_name varchar unique=users_name_uniq
+  last_name varchar unique=users_name_uniq
+
+user_roles # composite primary key on user_id and role_id
+  user_id uuid pk -> users(id)
+  role_id uuid pk -> roles(id)
+</code></pre>
+    <%= doc_info do %>
+        For now, AML doesn't allow additional properties on indexes and constraints, this is in thinking.
+        We plan using parentheses on <code>index</code> and <code>unique</code> to define custom properties like:<br>
+        <code>deleted_at timestamp nullable index(kind: HASH, where: `not null`, include: [deleted_by])=soft_delete_idx</code><br>
+        We also plan to allow defining standalone constraints to be more flexible.
+        Let us know what you think, what are your needs and what seems the most intuitive to you.
+    <% end %>
+
+    <%= render "docs/_h3.html", title: "Nested attribute" %>
+    <p>Attributes may have nested attributes, this is especially useful to define the schema of complex objects for document database or <code>json</code> columns.</p>
+    <p>Nested attributes are just like other attributes, just with an additional indentation level under the attribute they belong to. Here is how they look:</p>
+    <pre><code class="hljs aml">users
+  id uuid pk
+  name varchar
+  details json
+    github_url varchar nullable unique
+    twitter_url varchar nullable unique
+    company json nullable
+      id uuid -> companies(id)
+      name varchar index=users_company_name_idx
+      size number
+      job varchar
+    address json nullable
+      no number
+      street varchar
+      city varchar
+      zipcode number
+      country varchar
+    gender varchar nullable
+    age number nullable
+</code></pre>
+<% end %>
+
+<%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

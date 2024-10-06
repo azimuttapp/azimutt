@@ -1,0 +1,133 @@
+<div class="relative overflow-hidden bg-white py-16">
+    <%= render AzimuttWeb.PartialsView, "_bg_dots.html" %>
+    <div class="relative px-6 lg:px-8">
+        <div class="mx-auto max-w-prose text-lg">
+            <h1>
+                <span class="block text-center text-lg font-semibold text-indigo-600">Use case for Azimutt:</span>
+                <span class="mt-2 block text-center text-3xl font-bold leading-8 tracking-tight text-gray-900 sm:text-4xl">Exploring your database</span>
+            </h1>
+            <p class="mt-8 text-xl leading-8 text-gray-500">
+                Do you know a good tool to explore real world databases with a lot of tables? <strong>I don't.</strong> And so we built Azimutt ❤️
+                Let's dig a bit and discover why is Azimutt so special for exploration...
+            </p>
+        </div>
+        <div class="prose prose-lg prose-indigo mx-auto mt-6 text-gray-500">
+            <ul role="list">
+                <li><a href="#the-sad-state-of-the-art">The sad state of the art</a></li>
+                <li><a href="#what-s-the-bare-minimum-for-a-decent-tool">What's the bare minimum for a decent tool?</a></li>
+                <li><a href="#how-azimutt-went-further">How Azimutt went further?</a></li>
+                <li><a href="#what-s-the-promised-future-we-can-only-dream-of-today">What's the promised future we can only dream of today?</a></li>
+            </ul>
+
+            <h2 id="the-sad-state-of-the-art">The sad state of the art</h2>
+            <p>
+                Imagine you land a job at a company that has a sizable database (let's say 400 tables in one or several databases) and you have to work on a new feature.
+                How would you investigate where to write the code, which entities to interact with and if you should evolve the database structure?
+            </p>
+            <p>
+                If you have good documentation and a clear architecture, it helps.
+                If you have an abstraction layer clearly separating physical storage and business data manipulation that's good.
+                If you have a typed language declaring properties and shared naming practices, you're lucky.
+                But sometimes you miss one, two, if not all of them.
+            </p>
+            <p>
+                In that case, you are left only with your database access to have an overview of what the application is doing.
+                But you can't just browse the 400 tables and probably 8000 columns, especially to understand relations between them.
+            </p>
+            <p>
+                I have been in this situation. I used to spend a lot of time in the <code>structure.sql</code>, declaring our database schema.
+                As you can imagine, it was long, painful and inefficient.
+                I looked for a tool to help me navigate through the database schema.
+                <strong>Entity-Relationship diagrams</strong> were the obvious choice, but as all of them display everything on screen, that made them unusable with 400 tables (I think the limit is around 40 tables).
+                I know <strong>data catalogs</strong> (built 2 already ^^) but their use case is for organization wise documentation, not exploring from scratch a application database.
+                I made a <a href="/blog/how-to-choose-your-entity-relationship-diagram">review of all those tools</a> if you are interested but the conclusion was: nothing came close to the basics I needed.
+            </p>
+            <p>
+                This is <a href="/blog/the-story-behind-azimutt">how we started Azimutt</a>.
+            </p>
+
+            <h2 id="what-s-the-bare-minimum-for-a-decent-tool">What's the bare minimum for a decent tool?</h2>
+            <p>
+                As I said, earlier, I couldn't find any tool that met basic requirements to explore a sizeable database, and that's probably why ERDs are not used so much in the industry.
+                Here is what I needed:
+            </p>
+            <ul role="list">
+                <li><strong>Build from database</strong> (SQL or connection): you can't manually input everything, there's too much.</li>
+                <li><strong>Display only tables I want</strong>: don't pollute the whole diagram with unneeded information.</li>
+                <li><strong>Search everywhere</strong>: table, column, relation and constraint names as well as SQL comments.</li>
+                <li><strong>Display only columns I want</strong>: some tables have tens of columns but only a few are relevant to your use case.</li>
+                <li><strong>See and follow relations</strong>: outgoing but also incoming, showing tables using relations is great exploration.</li>
+                <li><strong>Save table & columns layouts</strong>: having one diagram for each use case is key to understand, not everything fit together.</li>
+            </ul>
+            <img src="/images/use-cases/exploration-features-slide.png" alt="Basic features for exploration" class="w-full rounded-lg">
+            <p>
+                These six features were the core of Azimutt MVP and already provided a <a href="/blog/how-to-explore-your-database-schema-with-azimutt">solid solution to explore and understand a big database schema</a>.
+                The biggest used one had around 1500 tables and 100k columns 😱
+            </p>
+
+            <h2 id="how-azimutt-went-further">How Azimutt went further?</h2>
+            <p>
+                As you may guess, we didn't stop there, at the MVP stage. We added tons of big and small features.
+                Some to support crucial use cases around the database:
+                <a href={Routes.website_path(@conn, :use_cases_show, "design")}>design</a>, <a href={Routes.website_path(@conn, :use_cases_show, "document")}>documentation</a> and <a href={Routes.website_path(@conn, :use_cases_show, "analyze")}>analysis</a>.
+                Some to expand exploration capabilities (that's what we will cover right after).
+                And many other gold nuggets you will have to discover on your own ^^
+            </p>
+            <p>
+                The first one was <strong>multi-database exploration</strong>.
+                If you want to explore several databases together, for example if you have multiple databases backing your monolith, you can import them all as sources and browse them as if they were just one.
+                Of course, you can choose which sources to use or not, depending on what you are doing.
+            </p>
+            <p>
+                Another one is <strong id="find-path">finding a path between two tables following relations</strong>.
+                Sometimes, following relations is not enough when tables have several steps between them, and you don't know which path to follow to join them.
+                The find path feature will do this exploration for you and report all possible paths, you just have to choose the right one 🎉<br>
+                Two things about that.
+                First, your <strong>relations need to be declared</strong>. Azimutt build them from foreign keys but can't guess what is not in the schema (<em title="one day we could propose to monitor database requests to find relations based on used joins.">for now</em>).
+                If some are missing, declare them manually in Azimutt (or use the <a href={Routes.website_path(@conn, :use_cases_show, "analyze")}>analyze feature</a> to help you find missing ones).
+                Second, you will have <strong>tons of paths</strong> (every time I'm surprised). Use <em>find path settings</em> to ignore some tables and/or columns to keep only meaningful ones (for example the <code>created_by</code> columns or your <code>audit</code> table are rarely relevant).
+            </p>
+            <p>
+                But clearly the <em>biggest one</em> is the <strong>data exploration</strong>. And we are just staring with it.
+                Exploring your database schema is already a big deal, but being able to seamlessly explore actual data is an awesome addition to it.<br>
+                When you use a database connection source, Azimutt is able to query your database to extract the schema. Also, when you are exploring Azimutt can show you sample data and statistics to better understand what is inside:
+            </p>
+            <img src="/images/use-cases/data-samples-and-stats.png" alt="Data samples and stats" class="w-full rounded-lg">
+            <p>
+                Currently on table details Azimutt shows the row count and a sample value for each column (from different rows to get non-empty values as much as possible).
+                On column details, Azimutt shows the values with most occurrences, the column cardinality and the null percentage.
+                That's already super insightful but read next section to learn how we plan to improve it far beyond.
+            </p>
+
+            <h2 id="what-s-the-promised-future-we-can-only-dream-of-today">What's the promised future we can only dream of today?</h2>
+            <p>
+                The one thing I still miss on schema exploration is the <strong>query diagram</strong>.
+                If you have a complex SELECT, put it in Azimutt, and it will draw a diagram with used table and columns.
+                I think it will help a lot, understanding big queries.
+                Azimutt could also suggest to add missing relations if some JOINs are done between columns with no existing relation.
+            </p>
+            <p>
+                Extending diagrams beyond relational databases is also another possible evolution.
+                For this, Azimutt would only need <strong>nested columns</strong> to handle JSON columns in relational databases but also document databases as well as REST APIs (using OpenAPI specification).
+                We don't have the use case for now but it would be interesting to investigate.
+            </p>
+            <p>
+                Of course, the huge improvement that will surely come at some point is the <strong id="extended-data-exploration">extended data exploration</strong>.
+                We want to seamlessly bridge the gap between schema and data exploration, making accessing data easy and contextual.
+                Here are a few ideas we already have but will probably extend much more with time:
+            </p>
+            <ul role="list">
+                <li><strong>Search in data</strong>: the search will also give data results and open then in a data explorer.</li>
+                <li><strong>Data explorer</strong>: run any query you want, with some useful ones already predefined.</li>
+                <li><strong>Data navigation</strong>: when showing a column with relation, allow to open matching data with a single click.</li>
+                <li><strong>Query log analysis</strong>: fetching queries executed in the database and look for missing relations or indexes.</li>
+            </ul>
+            <p>
+                I don't know how you feel about this, but I'm personally very excited to see this coming live.
+                Helping you to explore and understand your database is the core focus of Azimutt.
+                If you see anything we may have missed or could improve, a specific use case, a feature or some UX improvement, <a href="https://github.com/azimuttapp/azimutt/issues" target="_blank" rel="noopener noreferrer">please reach out</a> to discuss how to achieve it best.
+            </p>
+        </div>
+    </div>
+</div>
+<%= render "_footer.html", conn: @conn %>

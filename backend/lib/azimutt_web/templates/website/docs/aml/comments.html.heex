@@ -1,0 +1,36 @@
+<%= render "docs/_header.html", conn: @conn, page: @page %>
+
+<%= doc_prose do %>
+    <p class="lead">AML comments are used to note things in the AML source without taking them into account in the parsing result.</p>
+
+    <p>There are only line comments starting with the <code>#</code> character, everything after will be ignored.</p>
+    <p>They can be helpful to visually identify sections, add beloved TODOs or explain why you did some things without impacting your database schema.</p>
+    <p>Here is an example:</p>
+    <pre><code class="hljs aml"># this is a comment
+#
+# Auth schema
+#
+
+users
+  id uuid pk # all ids should be uuid, please!
+  name varchar
+  details json # TODO: specify the schema here!
+
+#
+# Social schema
+#
+# posts are blog posts, for SEO ^^
+
+posts
+  id uuid pk
+  author -> users(id) # don't define relation types, they will be inherited from their linked column
+
+# TODO: add social media entities
+</code></pre>
+    <p>
+        The only place they are not supported is, of course,
+        inside <a href={"#{Routes.website_path(@conn, :doc, ["aml", "documentation"])}#multiline-documentation"}>multiline documentation</a>.
+    </p>
+<% end %>
+
+<%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

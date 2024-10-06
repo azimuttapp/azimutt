@@ -1,0 +1,40 @@
+<%= render "docs/_header.html", conn: @conn, page: @page %>
+
+<%= doc_prose do %>
+    <p class="lead">
+        Azimutt goal is to make databases way more accessible for everyone who want or need to understand them.
+        For that we have built several tools, the biggest one being the <a href="#azimutt-explorer">explorer</a>,
+        but there is also other interesting ones like the <a href="#azimutt-cli">CLI</a> and <a href="#azimutt-converters">converters</a>.
+    </p>
+
+    <%= render "docs/_h2.html", title: "Azimutt explorer" %>
+    <p>If you are here, you probably already know it:</p>
+    <img src={Routes.static_path(@conn, "/images/doc/azimutt-explorer.png")} alt="Azimutt explorer">
+    <p>It's the main Azimutt product, allowing you to explore or design your databases. The documentation after is mainly about it.</p>
+
+    <%= render "docs/_h2.html", title: "Gateway" %>
+    <p>
+        The Gateway is the central piece allowing Azimutt to connect to any database.
+        It's a simple Node.js server with all the databases connector allowing Azimutt editor frontend to access databases.
+        It can be launched locally using <code>npx azimutt@latest gateway</code>, hosted in your infrastructure or using the Azimutt one if your database is accessible over internet.
+    </p>
+
+    <%= render "docs/_h2.html", title: "Azimutt CLI" %>
+    <p>The Azimutt CLI is a <a href="https://www.npmjs.com/package/azimutt" target="_blank">npm package</a> useful to perform several tasks:</p>
+    <img src={Routes.static_path(@conn, "/images/doc/azimutt-cli.png")} alt="Azimutt CLI">
+    <p>
+        Here are the main ones it can be used for:
+        <ul>
+            <li>Launch the Gateway locally (you just need <em>npm</em>)</li>
+            <li>Export your database schema (to check what's included before uploading it to Azimutt explorer)</li>
+            <li>Analyze your database</li>
+            <li>More to come soon...</li>
+        </ul>
+    </p>
+
+    <%= render "docs/_h2.html", title: "Azimutt converters" %>
+    <p>Azimutt is doing a lot of work around database schemas. We took this opportunity to build these <a href={Routes.website_path(@conn, :convert, "aml", "postgres")}>standalone converters</a> to be easily accessible:</p>
+    <img src={Routes.static_path(@conn, "/images/doc/converter-aml-to-postgresql.png")} alt="Azimutt converter from AML to PostgreSQL">
+<% end %>
+
+<%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

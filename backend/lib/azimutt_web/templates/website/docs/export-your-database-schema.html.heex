@@ -1,0 +1,77 @@
+<%= render "docs/_header.html", conn: @conn, page: @page %>
+
+<%= doc_prose do %>
+    <p class="lead">
+        There is a lot of ways to get your database schema, and depending on your setup they are more or less convenient.
+    </p>
+
+    <ul>
+        <li><a href="#from-databases">From databases</a>
+            <ul>
+                <li><a href="#postgresql">PostgreSQL</a></li>
+                <li><a href="#mysql">MySQL</a></li>
+                <li><a href="#mariadb">MariaDB</a></li>
+                <li><a href="#sql-server">SQL Server</a></li>
+                <li><a href="#oracle">Oracle</a></li>
+            </ul>
+        </li>
+        <li><a href="#from-tools">From tools</a>
+            <ul>
+                <li><a href="#phpmyadmin">phpMyAdmin</a></li>
+                <li><a href="#datagrip">DataGrip</a></li>
+                <li><a href="#dbeaver">DBeaver</a></li>
+            </ul>
+        </li>
+        <li><a href="#from-frameworks">From frameworks</a>
+            <ul>
+                <li><a href="#rails-active-record">Rails / Active Record</a></li>
+                <li><a href="#symfony-doctrine">Symfony / Doctrine</a></li>
+                <li><a href="#phoenix-ecto">Phoenix / Ecto</a></li>
+            </ul>
+        </li>
+    </ul>
+
+    <%= render "docs/_h2.html", title: "From databases" %>
+
+    <%= render "docs/_h3.html", title: "PostgreSQL" %>
+    <p>
+        Use <a href="https://www.postgresql.org/docs/current/app-pgdump.html" target="_blank" rel="noopener noreferrer">pg_dump</a>:
+        <pre><code class="hljs shell">pg_dump --dbname=postgres://postgres:postgres@localhost:5432/my_db --table='public.*' --schema-only > my_db-$(date +%d-%m-%y).sql</code></pre>
+    </p>
+
+    <%= render "docs/_h3.html", title: "MySQL" %>
+    <p>Work In Progress 😅</p>
+
+    <%= render "docs/_h3.html", title: "MariaDB" %>
+    <p>Work In Progress 😅</p>
+
+    <%= render "docs/_h3.html", title: "SQL Server" %>
+    <p>Work In Progress 😅</p>
+
+    <%= render "docs/_h3.html", title: "Oracle" %>
+    <p>Work In Progress 😅</p>
+
+    <%= render "docs/_h2.html", title: "From tools" %>
+
+    <%= render "docs/_h3.html", title: "phpMyAdmin" %>
+    <p>Work In Progress 😅</p>
+
+    <%= render "docs/_h3.html", title: "DataGrip" %>
+    <p>Work In Progress 😅</p>
+
+    <%= render "docs/_h3.html", title: "DBeaver" %>
+    <p>Work In Progress 😅</p>
+
+    <%= render "docs/_h2.html", title: "From frameworks" %>
+
+    <%= render "docs/_h3.html", title: "Rails / Active Record" %>
+    <p>Work In Progress 😅</p>
+
+    <%= render "docs/_h3.html", title: "Symfony / Doctrine" %>
+    <p>Work In Progress 😅</p>
+
+    <%= render "docs/_h3.html", title: "Phoenix / Ecto" %>
+    <p>Work In Progress 😅</p>
+<% end %>
+
+<%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

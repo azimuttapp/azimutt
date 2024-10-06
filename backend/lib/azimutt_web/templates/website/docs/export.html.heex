@@ -1,0 +1,10 @@
+<%= render "docs/_header.html", conn: @conn, page: @page %>
+
+<%= doc_prose do %>
+    <p class="lead">Work In Progress 😅</p>
+
+    <%= render "docs/_h2.html", title: "Full project" %>
+    <%= render "docs/_h2.html", title: "Schema" %>
+<% end %>
+
+<%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

@@ -59,7 +59,7 @@ First, it has its own [home page](/aml) 😎
 
 [![AML landing page]({{base_link}}/landing.png)](/aml)
 
-Then, in the language, not much changed. Look at the [migration guide](https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/migration.md) but in short:
+Then, in the language, not much changed. Look at the [migration guide](https://azimutt.app/docs/aml/migration) but in short:
 
 - relation keyword changed from `fk` to `ref`
 - attribute ref changed from `table.column` to `table(column)`
@@ -67,28 +67,28 @@ Then, in the language, not much changed. Look at the [migration guide](https://g
 
 This brings more consistency to the language. The biggest improvements were addition enabling new use cases and more flexibility:
 
-- [relation cardinality](https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/relation.md#many-to-one)
+- [relation cardinality](https://azimutt.app/docs/aml/relations#many-to-one)
   - `rel posts(author) -> users(id)` (many-to-one)
   - `rel profiles(id) -- users(id)` (one-to-one)
   - `rel projects(id) <> users(id)` (many-to-many)
-- [composite relations](https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/relation.md#composite-relation)
+- [composite relations](https://azimutt.app/docs/aml/relations#composite-relation)
   - `rel member_rights(user_id, org_id) -> members(user_id, org_id)`
-- [polymorphic relations](https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/relation.md#polymorphic-relation)
+- [polymorphic relations](https://azimutt.app/docs/aml/relations#polymorphic-relation)
   - `rel comments(item_id) -item_kind=Post> posts(id)`
-- [properties](https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/properties.md)
+- [properties](https://azimutt.app/docs/aml/properties)
   - `admins {color: gray, owner: teamA, tags: [pii, private]}` (entity)
   - `  id bigint pk {autoIncrement, hidden}` (attribute)
   - `rel projects(owner) -> users(id) {onDelete: cascade}` (relation)
-- [types](https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/type.md)
+- [types](https://azimutt.app/docs/aml/types)
   - `type id` (anonymous)
   - `type label varchar(50)` (alias)
   - `type status (draft, public, private)` (enum)
   - `type position {x int, y int}` (struct)
   - ``type age `range (0..150)` `` (custom)
-- [namespaces](https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/namespace.md)
+- [namespaces](https://azimutt.app/docs/aml/namespaces)
   - `namespace my_schema` (everything after will have this schema)
 
-Have a look at the [full documentation](https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/README.md) to get exhaustive view about this new version.
+Have a look at the [full documentation](https://azimutt.app/docs/aml) to get exhaustive view about this new version.
 
 If you want to see how it looks like at scale, you can check this [800 lines schema](https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/demos/ecommerce/source_00_design.md) from the [e-commerce demo](https://azimutt.app/45f571a6-d9b8-4752-8a13-93ac0d2b7984/c00d0c45-8db2-46b7-9b51-eba661640c3c?token=9a59ccbb-7a58-4c88-9dfc-692de6177be9).
 

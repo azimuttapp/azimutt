@@ -1,0 +1,246 @@
+<%= render "docs/_header.html", conn: @conn, page: @page %>
+
+<%= doc_prose do %>
+    <p class="lead">
+        Relations are edges in <a href="https://wikipedia.org/wiki/Entity%E2%80%93relationship_model" target="_blank" rel="noopener noreferrer">Entity-Relationship model</a>.
+        In relational databases, they can be modeled with <strong>foreign keys</strong>, but not necessarily.
+    </p>
+
+    <p>In AML, they can be defined either as an <a href={"#{Routes.website_path(@conn, :doc, ["aml", "entities"])}#index-and-constraint"}>attribute option</a>:</p>
+    <pre><code class="hljs aml">users
+  id uuid pk
+
+roles
+  id uuid pk
+  created_by uuid -> users(id)
+
+user_roles
+  user_id uuid pk -> users(id)
+  role_id uuid pk -> roles(id)
+</code></pre>
+    <p>Or standalone:</p>
+    <pre><code class="hljs aml">users
+  id uuid pk
+
+roles
+  id uuid pk
+  created_by uuid
+
+user_roles
+  user_id uuid pk
+  role_id uuid pk
+
+rel roles(created_by) -> users(id)
+rel user_roles(user_id) -> users(id)
+rel user_roles(role_id) -> roles(id)
+</code></pre>
+    <p>If the target entity has a <strong>single attribute primary key</strong>, the target attribute can be omitted (will be assigned to the primary key).</p>
+    <pre><code class="hljs aml">users
+  id uuid pk
+
+roles
+  id uuid pk
+  created_by uuid
+
+user_roles
+  user_id uuid pk -> users
+  role_id uuid pk -> roles
+
+rel roles(created_by) -> users
+</code></pre>
+    <p>Also, if omitted, the attribute type will be defined using the targeted attribute, so this is equivalent to the previous definition:</p>
+    <pre><code class="hljs aml">users
+  id uuid pk
+
+roles
+  id uuid pk
+  created_by
+
+user_roles
+  user_id pk -> users
+  role_id pk -> roles
+
+rel roles(created_by) -> users
+</code></pre>
+
+    <%= render "docs/_h2.html", title: "Many to One" %>
+    <p>Relations defined with <code>-></code> are <strong>many-to-one</strong> relations: several rows can target a single one.</p>
+
+    <%= render "docs/_h2.html", title: "One to One" %>
+    <p>
+        Relation with <strong>one-to-one</strong> cardinality can be defined using the <code>--</code> symbol.
+        If neither side of the relation has a unique index, AML compiler will issue a warning as the logical definition doesn't match the physical one.
+    </p>
+    <pre><code class="hljs aml">users
+  id uuid pk
+
+profiles
+  id uuid pk -- users(id)
+</code></pre>
+    <p>Or as standalone:</p>
+    <pre><code class="hljs aml">users
+  id uuid pk
+
+profiles
+  id uuid pk
+
+rel profiles(id) -- users(id)
+</code></pre>
+    <p>You can ignore attribute specification when there is single attribute primary key:</p>
+    <pre><code class="hljs aml">rel profiles -- users
+</code></pre>
+    <p>Also, a different implementation could be:</p>
+    <pre><code class="hljs aml">users
+  id uuid pk
+
+profiles
+  id uuid pk
+  user_id uuid unique -- users
+</code></pre>
+
+    <%= render "docs/_h2.html", title: "Many to Many" %>
+    <p>Relations with <strong>many-to-many</strong> cardinality are usually implemented with a join entity having two many-to-one relations like:</p>
+    <pre><code class="hljs aml">users
+  id uuid pk
+
+projects
+  id uuid pk
+
+user_projects
+  user_id pk -> users
+  project_id pk -> project
+</code></pre>
+    <p>If you don't care about the join entity, you can define it logically in AML with:</p>
+    <pre><code class="hljs aml">users
+  id uuid pk
+
+projects
+  id uuid pk
+
+rel projects(id) &lt;> users(id)
+</code></pre>
+    <p>And even without defining the attribute as there is single attribute primary keys:</p>
+    <pre><code class="hljs aml">rel projects &lt;> users
+</code></pre>
+
+    <%= render "docs/_h2.html", title: "Nested attributes" %>
+    <p>Relations can connect nested attributes as well:</p>
+    <pre><code class="hljs aml">users
+  id uuid pk
+  details
+    twitter_id varchar
+
+companies
+  id uuid pk
+
+events
+  id uuid pk
+  details json
+    company json
+      id uuid -> companies(id)
+
+tweets
+  id uuid pk
+  profile varchar -> users(details.twitter_id)
+</code></pre>
+    <p>Of course, this also works with standalone relations:</p>
+    <pre><code class="hljs aml">users
+  id uuid pk
+  details
+    twitter_id varchar
+
+companies
+  id uuid pk
+
+events
+  id uuid pk
+  details json
+    company json
+      id uuid
+
+tweets
+  id uuid pk
+  profile varchar
+
+rel events(details.company.id) -> companies(id)
+rel tweets(profile) -> users(details.twitter_id)
+</code></pre>
+
+    <%= render "docs/_h2.html", title: "Composite relation" %>
+    <p>If you have a composite primary key, you may also want composite foreign keys. You can easily define them by listing all the attributes:</p>
+    <pre><code class="hljs aml">users
+  id uuid pk
+
+projects
+  id uuid
+
+user_projects
+  user_id pk -> users
+  project_id pk -> projects
+
+user_project_rights
+  user_id pk
+  project_id pk
+  access project_right(read, write)=read
+
+rel user_project_rights(user_id, project_id) -> user_projects(user_id, project_id)
+</code></pre>
+    <p>This kind of relation can only be defined using standalone relation.</p>
+
+    <%= render "docs/_h2.html", title: "Polymorphic relation" %>
+    <p>Polymorphic relations are used to target different entities depending on the value of another attribute.</p>
+    <p>For example, if you want to make a comment system in your app and be able to comment on different entities, you can either create one comment entity for each entity, like:</p>
+    <pre><code class="hljs aml">posts
+  id uuid pk
+  title varchar
+
+pages
+  id uuid pk
+  title varchar
+
+post_comments
+  id uuid pk
+  post_id -> posts
+  content text
+
+page_comments
+  id uuid pk
+  page_id -> pages
+  content text
+</code></pre>
+    <p>But this can become painful as the number of commentable entities grows, to keep everything consistent or to get all the comments from a user.</p>
+    <p>Instead, you can create a single comment entity targeting different entities depending on another attribute value (discriminator):</p>
+    <pre><code class="hljs aml">posts
+  id uuid pk
+  title varchar
+
+pages
+  id uuid pk
+  title varchar
+
+comments
+  id uuid pk
+  item_kind comment_kind(posts, pages)
+  item_id uuid
+  content text
+
+rel comments(item_id) -item_kind=posts> posts(id)
+rel comments(item_id) -item_kind=pages> pages(id)
+</code></pre>
+    <p>We could even make nested comments with:</p>
+    <pre><code class="hljs aml">rel comments(item_id) -item_kind=comments> comments(id)
+</code></pre>
+    <p>Just make sure all your target entities have the same primary key type (used for the <code>item_id</code> attribute).</p>
+    <p>The value in the <code>item_kind</code> attribute is not always the table name, some ORMs use the model name instead, so it could be <code>Post</code> instead of <code>posts</code>.</p>
+
+    <%= render "docs/_h2.html", title: "Metadata" %>
+    <p>
+        Relations can also have <a href={Routes.website_path(@conn, :doc, ["aml", "properties"])}>custom properties</a>
+        and <a href={Routes.website_path(@conn, :doc, ["aml", "documentation"])}>documentation</a>:
+    </p>
+    <pre><code class="hljs aml">rel projects(created_by) -> users(id) {onDelete: cascade, ignore} | the user creating the project
+</code></pre>
+    <p>But this works only for standalone definition, when inline, properties and documentation will be assigned to the attribute ^^</p>
+<% end %>
+
+<%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

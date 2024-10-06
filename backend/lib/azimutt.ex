@@ -327,4 +327,90 @@ defmodule Azimutt do
       %{id: "amlv1", name: "AMLv1", parse: true, generate: true}
     ]
   end
+
+  def doc_pages do
+    # path must be unique and not change as they are used for urls (SEO) and template names.
+    [
+      %{path: ["what-is-azimutt"], name: "What is Azimutt?"},
+      %{
+        path: ["getting-started"],
+        name: "Getting started",
+        children: [
+          %{path: ["create-your-project"], name: "Create your project", children: [%{path: ["export-your-database-schema"], name: "Export your database schema"}]},
+          %{
+            path: ["schema-exploration"],
+            name: "Schema exploration",
+            children: [
+              %{path: ["search"], name: "Search"},
+              %{path: ["follow-relations"], name: "Follow relations"},
+              %{path: ["find-path"], name: "Find path"}
+            ]
+          },
+          %{path: ["schema-documentation"], name: "Schema documentation"},
+          %{
+            path: ["database-design"],
+            name: "Database design",
+            children: [
+              %{
+                path: ["aml"],
+                name: "AML",
+                children: [
+                  %{path: ["aml", "entities"], name: "Entities"},
+                  %{path: ["aml", "relations"], name: "Relations"},
+                  %{path: ["aml", "types"], name: "Types"},
+                  %{path: ["aml", "namespaces"], name: "Namespaces"},
+                  %{path: ["aml", "identifiers"], name: "Identifiers"},
+                  %{path: ["aml", "properties"], name: "Properties"},
+                  %{path: ["aml", "documentation"], name: "Documentation"},
+                  %{path: ["aml", "comments"], name: "Comments"},
+                  %{
+                    path: ["aml", "migration"],
+                    name: "Migration from v1",
+                    children: [
+                      %{path: ["aml", "v1"], name: "AML v1 (legacy)"}
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      %{
+        path: ["main-features"],
+        name: "Main features",
+        children: [
+          %{path: ["layouts"], name: "Layouts"},
+          %{path: ["sources"], name: "Sources"},
+          %{path: ["data-exploration"], name: "Data exploration"},
+          %{path: ["database-analysis"], name: "Database analysis"},
+          %{path: ["keyboard-shortcuts"], name: "Keyboard shortcuts"},
+          %{path: ["collaboration"], name: "Collaboration"},
+          %{path: ["export"], name: "Export"},
+          %{path: ["project-settings"], name: "Project settings"},
+          %{path: ["api"], name: "API"}
+        ]
+      },
+      %{
+        path: ["other-tools"],
+        name: "Other tools",
+        children: [
+          %{path: ["cli"], name: "CLI"},
+          %{path: ["converters"], name: "Converters"}
+        ]
+      },
+      %{path: ["installation"], name: "Installation"},
+      %{path: ["data-privacy"], name: "Data privacy", details: "how Azimutt keep your data safe"}
+    ]
+  end
+
+  def doc_pages_flat, do: doc_pages() |> flatten_pages()
+
+  defp flatten_pages(pages, parents \\ []) do
+    pages
+    |> Enum.flat_map(fn page ->
+      children = if page[:children], do: page.children |> flatten_pages(parents ++ [page]), else: []
+      [page |> Map.put(:parents, parents) | children]
+    end)
+  end
 end

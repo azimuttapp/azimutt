@@ -1,0 +1,50 @@
+<%= render "docs/_header.html", conn: @conn, page: @page %>
+
+<%= doc_prose do %>
+    <p class="lead">
+        Working with databases is a <strong>strong responsibility</strong>.
+        We do everything possible to keep your data and secrets safe.
+        In fact, coming from Doctolib, it was a major requirement and Azimutt was built from the ground up with this in mind, and we improved with any given feedback.
+        If you see any possible improvement let us know.
+    </p>
+    <%= render "docs/_h2.html", title: "Architecture" %>
+    <p>
+        Azimutt architecture is heavily frontend focused in order to keep almost all your data on your computer, and even Azimutt can't assess it.
+        In its early days, there wasn't even a server 🙃
+    </p>
+    <p>
+        All the business data are stored in a project, which is a JSON object with 3 main parts: the sources (with their schemas), the layouts (with everything shown inside) and the schema documentation.
+    </p>
+    <p>
+        When you create a project, it lives in "draft" status, either in-memory or saved in your browser IndexedDB.<br>
+        When you save a project for the first time, you are asked if you want to save it locally (keeping it in your browser IndexedDB) or remotely (storing it in the server object store).
+    </p>
+    <p>
+        All the processing (parsing files) is made in the browser, nothing is sent to any server.<br>
+        For the database connection, it's different as browsers can't connect to databases, that's why we added the Gateway component and made it easy to launch it locally, keeping again everything local to the user machine.
+    </p>
+    <p>
+        Here is an overview of the architecture:
+        <img src={Routes.static_path(@conn, "/images/doc/azimutt-architecture.png")} alt="Azimutt architecture">
+    </p>
+
+    <%= render "docs/_h2.html", title: "Database URIs" %>
+    <p>
+        Database URIs are, of course, the most sensitive data handled by Azimutt. That's why we have a special treatment for them, allowing you to choose where to store them:
+        <ul>
+            <li><strong>In the browser</strong> (default): stored encrypted separately in the browser IndexedDB. Only you can access it, and you won't have to enter it every time.</li>
+            <li><strong>In the project</strong>: anyone having access to the project can access it. Useful to share less sensitive URIs with co-workers, like development databases.</li>
+            <li><strong>In memory</strong>: not stored anywhere, just kept in memory. This is the safest, but you will have to enter it at each reload (~ working session).</li>
+        </ul>
+    </p>
+
+    <%= render "docs/_h2.html", title: "Hosting" %>
+    <p>
+        With all this, even using our cloud service is quite safe.<br>
+        Still, if you prefer having Azimutt on-premise, have a look to
+        <a href={Routes.website_path(@conn, :doc, ["installation"])}>installation</a> section or
+        <a href={"mailto:#{Azimutt.config(:contact_email)}?subject=#{URI.encode("Azimutt on-premise installation")}"} target="_blank" rel="noopener noreferrer">contact us</a>.
+    </p>
+<% end %>
+
+<%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

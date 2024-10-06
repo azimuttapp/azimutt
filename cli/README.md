@@ -1,16 +1,16 @@
 <p align="center">
     <a href="https://azimutt.app" target="_blank" rel="noopener">
         <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="assets/logo-white.png">
-          <source media="(prefers-color-scheme: light)" srcset="assets/logo.png">
-          <img alt="Azimutt logo" src="assets/logo.png" width="500">
+          <source media="(prefers-color-scheme: dark)" srcset="../backend/priv/static/images/logos/azimutt-cli-white.png">
+          <source media="(prefers-color-scheme: light)" srcset="../backend/priv/static/images/logos/azimutt-cli.png">
+          <img alt="Azimutt logo" src="../backend/priv/static/images/logos/azimutt-cli.png" width="500">
         </picture>
     </a>
 </p>
 
 <p align="center">
   <a href="https://azimutt.app" target="_blank" rel="noopener">Home page</a> •
-  <a href="https://www.npmjs.com/package/azimutt" target="_blank" rel="noopener">npm package</a>
+  <a href="https://www.npmjs.com/package/azimutt" target="_blank" rel="noopener noreferrer">npm package</a>
 </p>
 
 Azimutt CLI ease your work with databases 😎

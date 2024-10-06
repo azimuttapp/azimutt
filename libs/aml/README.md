@@ -1,17 +1,17 @@
 <p align="center">
     <a href="https://azimutt.app/aml" target="_blank" rel="noopener">
         <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-white.png">
-          <source media="(prefers-color-scheme: light)" srcset="docs/assets/logo.png">
-          <img alt="Azimutt logo" src="docs/assets/logo.png" width="500">
+          <source media="(prefers-color-scheme: dark)" srcset="../../backend/priv/static/images/logos/aml-white.png">
+          <source media="(prefers-color-scheme: light)" srcset="../../backend/priv/static/images/logos/aml.png">
+          <img alt="Azimutt logo" src="../../backend/priv/static/images/logos/aml.png" width="500">
         </picture>
     </a>
 </p>
 
 <p align="center">
   <a href="https://azimutt.app/aml" target="_blank" rel="noopener">Home page</a> •
-  <a href="./docs/README.md" target="_blank" rel="noopener">Documentation</a> •
-  <a href="https://www.npmjs.com/package/@azimutt/aml" target="_blank" rel="noopener">npm package</a>
+  <a href="https://azimutt.app/docs/aml" target="_blank" rel="noopener">Documentation</a> •
+  <a href="https://www.npmjs.com/package/@azimutt/aml" target="_blank" rel="noopener noreferrer">npm package</a>
 </p>
 
 **AML** (Azimutt Markup Language) is the **easiest language to design databases**.  
@@ -22,11 +22,11 @@ Made to be fast to learn and write.
 
 - **Structured text** is WAY better than GUI: portable, copy/paste, find/replace, versioning, column edition...
 - It's **simpler, faster to write and less error-prone than SQL** or other database schema DSLs
-- **Made for humans**: readable, flexible, can hold [custom properties](./docs/properties.md)
+- **Made for humans**: readable, flexible, can hold [custom properties](https://azimutt.app/docs/aml/properties)
 - **Database agnostic**: hold concepts, not specific syntax, can be [converted to other dialects](https://azimutt.app/converters/aml)
 - **Free** as 🕊️ but also 🍺
 
-In short, it's perfect for fast prototyping and brainstorming. To know more, have a look at the [AML documentation](./docs/README.md).
+In short, it's perfect for fast prototyping and brainstorming. To know more, have a look at the [AML documentation](https://azimutt.app/docs/aml).
 
 
 ## Example

@@ -22,4 +22,15 @@ defmodule AzimuttWeb.WebsiteView do
     end)
     |> Enumx.one()
   end
+
+  # components with nested block
+
+  def doc_prose(assigns \\ %{}, do: block), do: render_template("docs/_prose.html", assigns, block)
+  def doc_info(assigns \\ %{}, do: block), do: render_template("docs/_info.html", assigns, block)
+  def doc_warning(assigns \\ %{}, do: block), do: render_template("docs/_warning.html", assigns, block)
+
+  defp render_template(template, assigns, block) do
+    assigns = assigns |> Map.new() |> Map.put(:inner_content, block)
+    AzimuttWeb.WebsiteView.render(template, assigns)
+  end
 end

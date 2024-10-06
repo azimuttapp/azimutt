@@ -1,0 +1,5 @@
+<ul role="list">
+    <%= for page <- @pages do %>
+        <%= render "docs/_menu-item.html", conn: @conn, item: page, nesting: 0 %>
+    <% end %>
+</ul>

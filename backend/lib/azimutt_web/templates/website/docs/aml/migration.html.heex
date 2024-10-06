@@ -1,0 +1,107 @@
+<%= render "docs/_header.html", conn: @conn, page: @page %>
+
+<%= doc_prose do %>
+    <p class="lead">
+        This new version of AML is coming 2 years after <a href={Routes.website_path(@conn, :doc, ["aml", "v1"])}>the first one</a>
+        (<a href={Routes.blog_path(@conn, :show, "aml-a-language-to-define-your-database-schema")}>post</a> & <a href="https://github.com/azimuttapp/azimutt/pull/98" target="_blank" rel="noopener noreferrer">PR</a> ^^).
+        During this time, we discovered a lot of new use cases and some shortcomings (such as composite foreign keys).
+    </p>
+    <p>
+        This new iteration fixes the issues, improve consistency and add nice features such as
+        <a href={Routes.website_path(@conn, :doc, ["aml", "namespaces"])}>namespace</a>,
+        <a href={Routes.website_path(@conn, :doc, ["aml", "properties"])}>properties</a>,
+        <a href={"#{Routes.website_path(@conn, :doc, ["aml", "entities"])}#nested-attribute"}>nested attributes</a>,
+        <a href={"#{Routes.website_path(@conn, :doc, ["aml", "relations"])}#polymorphic-relation"}>polymorphic relations</a> and more.
+    </p>
+    <p>We made it retro-compatible, so you only have to fix the issued warnings (or use our <a href={Routes.website_path(@conn, :convert, "amlv1", "aml")}>migration tool</a> ^^).</p>
+
+    <%= render "docs/_h2.html", title: "Semantic changes" %>
+    <p>AMLv1 was built with relational databases in mind, too much in fact. So we had <strong>tables</strong>, <strong>columns</strong> and <strong>foreign keys</strong>.</p>
+    <p>We wanted to make this new iteration AML more generic to better embrace the diversity of databases as well as other types of modeling, so we renamed:</p>
+    <ul>
+        <li><strong>table</strong> to <strong>entity</strong></li>
+        <li><strong>column</strong> to <strong>attribute</strong></li>
+        <li><strong>foreign key</strong> to <strong>relation</strong></li>
+    </ul>
+    <p>As AML doesn't have a lot of keywords, it almost changes nothing in its syntax, except for foreign keys.</p>
+
+    <%= render "docs/_h2.html", title: "Breaking changes" %>
+    <%= render "docs/_h3.html", title: "Standalone relation: change `fk` to `rel`" %>
+    <p>In AMLv1, you could define standalone relations like this:</p>
+    <pre><code class="hljs amlv1">fk events.created_by -> users.id
+</code></pre>
+    <p>Now, you will define this with the <code>rel</code> keyword:</p>
+    <pre><code class="hljs aml">rel events(created_by) -> users(id)
+</code></pre>
+    <p><strong>Why</strong>:</p>
+    <ul>
+        <li>this is to align with semantic changes described above, some relations are not foreign keys, so it makes more sense like this</li>
+    </ul>
+
+    <%= render "docs/_h3.html", title: "Inline relation: change `fk` to `->`" %>
+    <p>In AMLv1, you could define relations inline with the attribute such as:</p>
+    <pre><code class="hljs amlv1">posts
+  id uuid pk
+  author uuid fk users.id
+</code></pre>
+    <p>Now, it needs to be changed to:</p>
+    <pre><code class="hljs aml">posts
+  id uuid pk
+  author uuid -> users(id)
+</code></pre>
+    <p><strong>Why</strong>:</p>
+    <ul>
+        <li>
+            we introduced <a href={"#{Routes.website_path(@conn, :doc, ["aml", "relations"])}#one-to-one"}>relation kinds</a>:
+            <strong>one-to-one</strong> (<code>--</code>), <strong>many-to-one</strong> (<code>-></code>) and <strong>many-to-many</strong> (<code>&lt;></code>),
+            it fits well with the many-to-one <code>-></code> and would have been harder to keep obvious with the <code>fk</code> keyword
+        </li>
+        <li>
+            we introduced <a href={"#{Routes.website_path(@conn, :doc, ["aml", "relations"])}#polymorphic-relation"}>polymorphic relations</a>,
+            the <code>-></code> giving the opportunity to specify the kind column inside the relation link: <code>rel events(item_id) -item_kind=User> users(id)</code>,
+            which would have been harder to keep simple with the <code>fk</code> keyword
+        </li>
+        <li>
+            we semantically moved from <strong>foreign keys</strong> to <strong>relations</strong> as some relations are not materialized by foreign keys.
+            This is the case on document databases but also on relational databases for polymorphic relations or by the choice of developers (performance reasons or other).
+        </li>
+        <li>it's a closer definition to the standalone definition of relations, the end is identical: <code>-> users(id)</code></li>
+    </ul>
+
+    <%= render "docs/_h3.html", title: "Attribute ref: change from `table.column` to `table(column)`" %>
+    <p>In AMLv1, column references are defined with a <code>.</code> between the table and the column:</p>
+    <pre><code class="hljs amlv1">fk events.created_by -> users.id
+</code></pre>
+    <p>Now, we use <code>()</code> instead to separate the entity from the attribute(s):</p>
+    <pre><code class="hljs aml">rel events(created_by) -> users(id)
+</code></pre>
+    <p><strong>Why</strong>:</p>
+    <ul>
+        <li>
+            we introduced <a href={"#{Routes.website_path(@conn, :doc, ["aml", "relations"])}#composite-relation"}>composite relations</a>:
+            several columns pointing at several other columns, with the previous notation it was not clear how to specify them, now it's obvious:
+            <code>rel events(user_id, role_id) -> user_roles(user_id, role_id)</code>
+        </li>
+        <li>
+            the support of <a href={"#{Routes.website_path(@conn, :doc, ["aml", "entities"])}#nested-attribute"}>nested attributes</a> was introduced later
+            with a specific separator (<code>:</code>) to avoid confusion between <code>schema.table.column</code> and <code>table.column.nested</code>,
+            the syntax was <code>table.column:nested</code>, this was ugly and with this change we can fix this 😎
+        </li>
+        <li>it's closer to the SQL syntax, which should make a lot of people more at home</li>
+    </ul>
+
+    <%= render "docs/_h3.html", title: "Nested attribute: change `:` to `.`" %>
+    <p>In AMLv1, nested columns could be referenced like this:</p>
+    <pre><code class="hljs amlv1">fk events.details:user_id -> users.id
+</code></pre>
+    <p>I guess almost nobody used it as it was not properly documented, and you couldn't create nested columns with AMLv1 (they have to come from a database source).</p>
+    <p>Now, you can simply use the <code>.</code>, thanks to the attribute ref change with the <code>()</code> (no more confusion):</p>
+    <pre><code class="hljs aml">rel events(details.user_id) -> users(id)
+</code></pre>
+    <p><strong>Why</strong>:</p>
+    <ul>
+        <li>the previous syntax was an ugly hack to introduce unplanned feature, we took this new version as an opportunity to fix it ^^</li>
+    </ul>
+<% end %>
+
+<%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

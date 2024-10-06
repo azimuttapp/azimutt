@@ -8,7 +8,7 @@ amlHome =
 
 amlDocs : String
 amlDocs =
-    "https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/README.md"
+    "/docs/aml"
 
 
 amlEditor : String

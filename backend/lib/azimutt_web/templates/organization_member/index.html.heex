@@ -66,7 +66,7 @@
             <%= if !user_rights[@plan.id] do %>
                 <p class="mt-2 text-sm text-gray-500">
                     <%= user_rights.name %> are available on <%= AzimuttWeb.LayoutView.plan_badge_for(user_rights) %>,
-                    <a href={"mailto:#{Azimutt.config(:contact_email)}"} target="_blank" rel="noopener" class="underline">contact us</a> for any question.
+                    <a href={"mailto:#{Azimutt.config(:contact_email)}"} target="_blank" rel="noopener noreferrer" class="underline">contact us</a> for any question.
                 </p>
             <% end %>
         <% end %>

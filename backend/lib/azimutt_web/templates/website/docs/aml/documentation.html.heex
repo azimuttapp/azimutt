@@ -1,0 +1,72 @@
+<%= render "docs/_header.html", conn: @conn, page: @page %>
+
+<%= doc_prose do %>
+    <p class="lead">
+        Documentation can be added to objects to add textual context to them.
+        It complements well the <a href={Routes.website_path(@conn, :doc, ["aml", "properties"])}>custom properties</a> with a more people oriented context,
+        it will be rendered with <a href="https://wikipedia.org/wiki/Markdown" target="_blank" rel="noopener noreferrer">Markdown syntax</a> in
+        <a href={Routes.website_path(@conn, :index)}>Azimutt</a>.
+    </p>
+
+    <p>To use it, just add a <code>|</code> at the end of the object definition, here is an example:</p>
+    <pre><code class="hljs aml">users | store users
+</code></pre>
+    <p>
+        It can be used on: <a href={Routes.website_path(@conn, :doc, ["aml", "entities"])}>entities</a>,
+        <a href={"#{Routes.website_path(@conn, :doc, ["aml", "entities"])}#attribute"}>attributes</a>,
+        <a href={Routes.website_path(@conn, :doc, ["aml", "relations"])}>relations</a> and
+        <a href={Routes.website_path(@conn, :doc, ["aml", "types"])}>types</a>.
+    </p>
+    <p>Here are examples:</p>
+    <pre><code class="hljs aml">type post_status (draft, published, archived) | post lifecycle
+
+public.users | storing all users
+  id uuid pk
+  name varchar
+  email varchar unique | auth identifier
+
+posts
+  id uuid
+  status post_status
+  title varchar
+  content text
+  author uuid
+
+rel posts(author) -> public.users(id) | link post author
+</code></pre>
+
+    <%= render "docs/_h2.html", title: "Multiline documentation" %>
+    <p>If you want longer documentation, you can use multiline documentation with <code>|||</code>.</p>
+    <p>Here is the same example as above:</p>
+    <pre><code class="hljs aml">type post_status (draft, published, archived) |||
+  post
+  lifecycle
+|||
+
+public.users |||
+  storing
+  all users
+|||
+  id uuid pk
+  name varchar
+  email varchar unique |||
+    auth
+    identifier
+  |||
+
+posts
+  id uuid
+  status post_status
+  title varchar
+  content text
+  author uuid
+
+rel posts(author) -> public.users(id) |||
+  link
+  post author
+|||
+</code></pre>
+    <p>The common indentation to every line will be removed to keep your code and documentation clean 😉</p>
+<% end %>
+
+<%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

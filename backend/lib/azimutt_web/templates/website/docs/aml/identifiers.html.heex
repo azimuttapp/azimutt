@@ -1,0 +1,24 @@
+<%= render "docs/_header.html", conn: @conn, page: @page %>
+
+<%= doc_prose do %>
+    <p class="lead">
+        Identifiers are names for objects. You can find them everywhere, for <a href={Routes.website_path(@conn, :doc, ["aml", "entities"])}>entities</a>,
+        <a href={"#{Routes.website_path(@conn, :doc, ["aml", "entities"])}#attribute"}>attributes</a>, <a href={Routes.website_path(@conn, :doc, ["aml", "namespaces"])}>namespaces</a>,
+        <a href={Routes.website_path(@conn, :doc, ["aml", "relations"])}>relations</a> and <a href={Routes.website_path(@conn, :doc, ["aml", "types"])}>types</a>...
+    </p>
+
+    <p>
+        They are composed of word characters, so any <a href="https://wikipedia.org/wiki/Snake_case" target="_blank" rel="noopener noreferrer">snake_case</a>
+        or <a href="https://wikipedia.org/wiki/Camel_case" target="_blank" rel="noopener noreferrer">CamelCase</a> notation will be fine.
+    </p>
+    <p>Here is their specific regex: <code>\b[a-zA-Z_][a-zA-Z0-9_#]*\b</code>.</p>
+    <p>If you need to include other characters, such as spaces or special ones, you can escape them using <code>"</code>.</p>
+    <p>Here are valid identifiers:</p>
+    <ul>
+        <li><code>posts</code></li>
+        <li><code>post_authors</code></li>
+        <li><code>"user events"</code></li>
+    </ul>
+<% end %>
+
+<%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

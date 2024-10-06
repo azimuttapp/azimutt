@@ -12,8 +12,8 @@
 </p>
 <p align="center">
   <a href="https://azimutt.app" target="_blank" rel="noopener">azimutt.app</a> •
-  <a href="https://github.com/orgs/azimuttapp/projects/5" target="_blank" rel="noopener">roadmap</a> •
-  <a href="https://twitter.com/azimuttapp" target="_blank" rel="noopener">@azimuttapp</a>
+  <a href="https://github.com/orgs/azimuttapp/projects/5" target="_blank" rel="noopener noreferrer">roadmap</a> •
+  <a href="https://twitter.com/azimuttapp" target="_blank" rel="noopener noreferrer">@azimuttapp</a>
 </p>
 <p align="center">
     <a href="https://www.producthunt.com/posts/azimutt?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-azimutt" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=390699&theme=light" alt="Azimutt - Easily explore and analyze your database with your team | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
@@ -22,7 +22,7 @@
 
 Azimutt is a full-stack database exploration tool, from modern ERD made for real world databases (big & messy), to fast data navigation, but also documentation everywhere and whole database analysis.
 
-[![Azimutt screenshot](docs/_assets/azimutt.png)](https://azimutt.app/45f571a6-d9b8-4752-8a13-93ac0d2b7984/c00d0c45-8db2-46b7-9b51-eba661640c3c?token=59166798-32de-4f46-a1b4-0f7327a91336)
+[![Azimutt screenshot](assets/azimutt-screenshot.png)](https://azimutt.app/45f571a6-d9b8-4752-8a13-93ac0d2b7984/c00d0c45-8db2-46b7-9b51-eba661640c3c?token=59166798-32de-4f46-a1b4-0f7327a91336)
 
 **Why building Azimutt?**
 
@@ -36,9 +36,7 @@ So we decided to built it 💪
 
 Azimutt started as a schema exploration tool for databases with hundreds of tables, but now it has grown a lot:
 
-[![Azimutt roadmap](docs/_assets/roadmap.png)](https://mm.tt/map/2434161843?t=N2yWZj1pc1)
-
-- Design your schema using [AML](libs/aml/README.md) for a fast diagramming
+- Design your schema using [AML](https://azimutt.app/aml) for a fast diagramming
 - Explore your database schema using search everywhere, display only useful tables/columns and follow relations
 - Query your data like never before, follow foreign keys and display entities in diagram
 - Document using table/column notes and tags and layouts and memos for use cases, features or team scopes

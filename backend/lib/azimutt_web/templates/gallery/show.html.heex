@@ -27,7 +27,7 @@
     </div>
 
     <div class="relative mx-auto my-8 max-w-md sm:flex sm:justify-center">
-        <a href={@sample.website} target="_blank" rel="noopener" class="bg-white hover:bg-gray-50 text-indigo-600 flex w-full items-center justify-center rounded-md shadow border border-transparent px-8 py-3 text-base font-medium md:py-4 md:px-10 md:text-lg">Visit site</a>
+        <a href={@sample.website} target="_blank" rel="noopener noreferrer" class="bg-white hover:bg-gray-50 text-indigo-600 flex w-full items-center justify-center rounded-md shadow border border-transparent px-8 py-3 text-base font-medium md:py-4 md:px-10 md:text-lg">Visit site</a>
         <!-- FIXME: allow to import a project with its url or its id -->
         <a href={"#{Routes.elm_path(@conn, :new)}?sample=#{@sample.slug}"} class="bg-indigo-600 hover:bg-indigo-700 text-white mt-3 sm:mt-0 sm:ml-3 flex w-full items-center justify-center rounded-md shadow border border-transparent px-8 py-3 text-base font-medium md:py-4 md:px-10 md:text-lg">Try it out</a>
     </div>

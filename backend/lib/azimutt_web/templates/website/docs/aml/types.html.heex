@@ -1,0 +1,69 @@
+<%= render "docs/_header.html", conn: @conn, page: @page %>
+
+<%= doc_prose do %>
+    <p class="lead">Custom types can be helpful for better semantics, consistency, constraints or even structure data.</p>
+
+    <p>Defining and using a type in AML is straightforward:</p>
+    <pre><code class="hljs aml">type bug_status
+
+bugs
+  id uuid pk
+  status bug_status
+</code></pre>
+    <p>This type has a name but nothing else, so except semantics, the status attribute doesn't have a concrete type defined.</p>
+    <p>For such usage, they don't need to be defined standalone as attribute types can handle anything, so this is also perfectly fine:</p>
+    <pre><code class="hljs aml">bugs
+  id uuid pk
+  status bug_status
+</code></pre>
+
+    <%= render "docs/_h2.html", title: "Alias" %>
+    <p>To add some semantics and have a concrete type, a type can map to another one, like a type alias:</p>
+    <pre><code class="hljs aml">type bug_status varchar
+</code></pre>
+    <p>For course, this can also work recursively ^^</p>
+    <pre><code class="hljs aml">type issue_status bug_status
+</code></pre>
+
+    <%= render "docs/_h2.html", title: "Enum" %>
+    <p>Defining enums can be really helpful to make the schema clearer. They can be defined inline in the attribute definition:</p>
+    <pre><code class="hljs aml">bugs
+  id uuid pk
+  status bug_status(new, "in progress", done)
+</code></pre>
+    <p>Or standalone:</p>
+    <pre><code class="hljs aml">type bug_status (new, "in progress", done)
+</code></pre>
+    <p>When used in several entities, it's recommended to define them standalone.</p>
+
+    <%= render "docs/_h2.html", title: "Struct" %>
+    <p>Types can also hold a struct, this can be seen a bit similar to nested attributes, but it's a different and reusable perspective. </p>
+    <pre><code class="hljs aml">type bug_status {internal varchar, public varchar}
+</code></pre>
+
+    <%= render "docs/_h2.html", title: "Custom" %>
+    <p>Types can also hold custom definitions like:</p>
+    <pre><code class="hljs aml">type bug_status `range(subtype = float8, subtype_diff = float8mi)`
+</code></pre>
+    <p>This is useful to have database specific types not handled otherwise.</p>
+
+    <%= render "docs/_h2.html", title: "Namespace" %>
+    <p>
+        Like <a href={Routes.website_path(@conn, :doc, ["aml", "entities"])}>entities</a>,
+        types are defined within a <a href={Routes.website_path(@conn, :doc, ["aml", "namespaces"])}>namespace</a>
+        and inherit the defined <a href={"#{Routes.website_path(@conn, :doc, ["aml", "namespaces"])}#namespace-directive"}>default namespace</a>:
+    </p>
+    <pre><code class="hljs aml">type reporting.public.bug_status varchar
+</code></pre>
+
+    <%= render "docs/_h2.html", title: "Metadata" %>
+    <p>
+        Types can also have <a href={Routes.website_path(@conn, :doc, ["aml", "properties"])}>custom properties</a>
+        and <a href={Routes.website_path(@conn, :doc, ["aml", "documentation"])}>documentation</a>:
+    </p>
+    <pre><code class="hljs aml">type bug_status varchar {private, tags: [seo]} | defining a post status
+</code></pre>
+    <p>But this works only for standalone definition, when inline, properties and documentation will be assigned to the attribute ^^</p>
+<% end %>
+
+<%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

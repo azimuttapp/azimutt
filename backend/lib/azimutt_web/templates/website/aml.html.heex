@@ -1,5 +1,5 @@
 <%
-  aml_doc = "https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/README.md"
+  aml_doc = Routes.website_path(@conn, :doc, ["aml"])
   aml_npm = "https://www.npmjs.com/package/@azimutt/aml"
   aml_converter = Routes.website_path(@conn, :converter, "aml")
   aml_azimutt = Routes.elm_path(@conn, :create)
@@ -10,15 +10,15 @@
         <div class="px-6 lg:px-0 lg:pt-4">
             <div class="mx-auto max-w-2xl">
                 <div class="max-w-lg">
-                    <img class="h-32" src={Routes.static_path(@conn, "/images/aml-by-azimutt.png")} alt="AML by Azimutt" />
+                    <img class="h-32" src={Routes.static_path(@conn, "/images/logos/aml.png")} alt="AML by Azimutt" />
                     <h1 class="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">The easiest DSL for database schemas</h1>
                     <p class="mt-6 text-lg leading-8 text-gray-600">
                         If you ever designed a database schema on a whiteboard,<br>
                         AML is made for you ❤️. It's <b>fast to learn and write</b>, and can be translated to other dialects.
                     </p>
                     <div class="mt-10 flex items-center gap-x-6">
-                        <a href={aml_doc} target="_blank" rel="noopener" class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Documentation</a>
-                        <a href={aml_npm} target="_blank" rel="noopener" class="text-sm font-semibold leading-6 text-gray-900">Get on npm <span aria-hidden="true">→</span></a>
+                        <a href={aml_doc} class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Documentation</a>
+                        <a href={aml_npm} target="_blank" rel="noopener noreferrer" class="text-sm font-semibold leading-6 text-gray-900">Get on npm <span aria-hidden="true">→</span></a>
                     </div>
                 </div>
             </div>
@@ -139,7 +139,7 @@ COMMENT ON COLUMN posts.content IS 'in markdown';</code></pre>
                     <dd class="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
                         <p class="flex-auto">If you are designing your database schema, this is the best option to write AML fast and see your schema in a visual way (needs paid plan, use free trial 😉).</p>
                         <p class="mt-6">
-                            <a href={aml_azimutt} target="_blank" rel="noopener" class="text-sm font-semibold leading-6 text-indigo-600">Use Azimutt design <span aria-hidden="true">→</span></a>
+                            <a href={aml_azimutt} target="_blank" rel="noopener noreferrer" class="text-sm font-semibold leading-6 text-indigo-600">Use Azimutt design <span aria-hidden="true">→</span></a>
                         </p>
                     </dd>
                 </div>
@@ -151,7 +151,7 @@ COMMENT ON COLUMN posts.content IS 'in markdown';</code></pre>
                     <dd class="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
                         <p class="flex-auto">The Azimutt CLI is a toolbox to work with databases, and now you can also convert dialects from one to another with a single command.</p>
                         <p class="mt-6">
-                            <a href={cli_convert} target="_blank" rel="noopener" class="text-sm font-semibold leading-6 text-indigo-600">View command <span aria-hidden="true">→</span></a>
+                            <a href={cli_convert} target="_blank" rel="noopener noreferrer" class="text-sm font-semibold leading-6 text-indigo-600">View command <span aria-hidden="true">→</span></a>
                         </p>
                     </dd>
                 </div>
@@ -163,7 +163,7 @@ COMMENT ON COLUMN posts.content IS 'in markdown';</code></pre>
                     <dd class="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
                         <p class="flex-auto">Integrate AML in your own projects, include it as a dependency and start parsing/generating it easily. Feel free to contribute if you like 🙏</p>
                         <p class="mt-6">
-                            <a href={aml_npm} target="_blank" rel="noopener" class="text-sm font-semibold leading-6 text-indigo-600">Get on npm <span aria-hidden="true">→</span></a>
+                            <a href={aml_npm} target="_blank" rel="noopener noreferrer" class="text-sm font-semibold leading-6 text-indigo-600">Get on npm <span aria-hidden="true">→</span></a>
                         </p>
                     </dd>
                 </div>
@@ -176,14 +176,14 @@ COMMENT ON COLUMN posts.content IS 'in markdown';</code></pre>
         <h2 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">Try it live</h2>
         <p class="mt-6 text-lg leading-8 text-gray-600">
             Here is a playground to try it and see how it's converted in JSON.
-            As a reminder, here is the <a href={aml_doc} target="_blank" rel="noopener" class="underline">AML documentation</a>, but try it on your own first 😉
+            As a reminder, here is the <a href={aml_doc} target="_blank" rel="noopener noreferrer" class="underline">AML documentation</a>, but try it on your own first 😉
         </p>
     </div>
     <div class="mt-10 mx-auto flex flex-col md:flex-row space-y-8 md:space-y-0 md:space-x-8 justify-center w-full max-w-7xl">
         <div id="monaco-editor-left" class="relative w-full md:w-1/2 h-96 border border-gray-300 rounded-lg overflow-hidden"></div>
         <div id="monaco-editor-right" class="relative w-full md:w-1/2 h-96 border border-gray-300 rounded-lg overflow-hidden"></div>
     </div>
-    <%= render "_converter-editors-script.html", left: %{id: "monaco-editor-left", lang: "aml"}, right: %{id: "monaco-editor-right", lang: "json"} %>
+    <%= render "converters/_editors-script.html", left: %{id: "monaco-editor-left", lang: "aml"}, right: %{id: "monaco-editor-right", lang: "json"} %>
 </div>
 
 <div class="py-24">
