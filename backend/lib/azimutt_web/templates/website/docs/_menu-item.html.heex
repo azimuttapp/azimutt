@@ -1,6 +1,6 @@
 <li>
-    <%= if @item[:slug] do %>
-        <a href={Routes.website_path(@conn, :doc, @item.slug)}><%= @item.name %></a>
+    <%= if @item[:path] do %>
+        <a href={Routes.website_path(@conn, :doc, @item.path)}><%= @item.name %></a>
     <% else %>
         <span class="font-semibold"><%= @item.name %></span>
     <% end %>
@@ -8,7 +8,7 @@
     <%= if @item[:children] do %>
         <ul role="list">
             <%= for child <- @item.children do %>
-                <%= render "docs/_menu-item.html", conn: @conn, item: child %>
+                <%= render "docs/_menu-item.html", conn: @conn, item: child, nesting: @nesting + 1 %>
             <% end %>
         </ul>
     <% end %>

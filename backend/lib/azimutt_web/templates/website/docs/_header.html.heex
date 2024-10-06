@@ -15,11 +15,11 @@
                 <%= for parent <- @page.parents do %>
                 <li class="flex items-center">
                     <Icon.slash kind="outline" class="h-5 w-5 flex-shrink-0 text-gray-300" />
-                    <a href={Routes.website_path(@conn, :doc, parent.slug)} class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700" aria-current="page"><%= parent.name %></a>
+                    <a href={Routes.website_path(@conn, :doc, parent.path)} class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700" aria-current="page"><%= parent.name %></a>
                 </li>
                 <% end %>
             </ol>
         </nav>
-        <h1 class="mt-3 mb-0 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl"><%= @page.name %></h1>
+        <h1 class="mt-3 mb-6 text-4xl font-extrabold text-gray-900"><%= @page.name %></h1>
     </div>
 </div>

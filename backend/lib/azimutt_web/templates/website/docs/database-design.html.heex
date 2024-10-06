@@ -3,7 +3,7 @@
 <%= doc_prose do %>
     <p class="lead">In Azimutt, database design is made through a dedicated language called <a href={Routes.website_path(@conn, :aml)}>AML</a>.</p>
     <p>Here is how it looks:</p>
-    <pre><code class="aml">users
+    <pre><code class="hljs aml">users
   id uuid pk
   name varchar
   email varchar unique
@@ -14,20 +14,15 @@ posts
   title varchar
   content text | in markdown
   created_at timestamp=`now()`
-  created_by uuid -> users(id) # inline relation</code></pre>
-    <p>
-        We believe it's really the best UX any tool can offer as it allows you to type as fast as you can, use copy/paste, find/replace, code generation, versioning and more...
-    </p>
+  created_by uuid -> users(id) # inline relation
+</code></pre>
+    <p>We believe it's really the best UX any tool can offer as it allows you to type as fast as you can, use copy/paste, find/replace, code generation, versioning and more...</p>
     <p>
         To use it in Azimutt, just create a new source and select AML:
         <img src={Routes.static_path(@conn, "/images/doc/new-source-aml.png")} alt="New source AML">
     </p>
-    <p>
-        You can also <a href={Routes.website_path(@conn, :convert, "aml", "json")} target="_blank" rel="noopener noreferrer">try it live with a powerful editor</a> in the converters.
-    </p>
-    <p>
-        For more details, have a look to <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/README.md" target="_blank" rel="noopener noreferrer">full specification</a>.
-    </p>
+    <p>You can also <a href={Routes.website_path(@conn, :convert, "aml", "json")} target="_blank" rel="noopener noreferrer">try it live with a powerful editor</a> in the converters.</p>
+    <p>Now, let's have a look to full specification:</p>
 <% end %>
 
 <%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

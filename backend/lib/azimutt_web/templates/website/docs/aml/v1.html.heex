@@ -1,0 +1,330 @@
+<%= render "docs/_header.html", conn: @conn, page: @page %>
+
+<%= doc_prose do %>
+    <%= doc_warning do %>
+        This is the <strong>legacy</strong> documentation for reference!
+        Look at the <a href={Routes.website_path(@conn, :doc, ["aml"])} class="underline font-medium hover:text-yellow-600">current one</a> to learn AML!
+    <% end %>
+    <p class="lead">AML is a text language allowing you to define your database schema in the quickest and most intuitive way.</p>
+
+    <p>
+        It was built with the minimal boilerplate to be fast to write, but also to limit the learning curve and possible mistakes.
+        It's, of course, the language used in <a href={Routes.website_path(@conn, :index)}>Azimutt</a> to define or extend your schema
+        (along with other data sources like SQL code, database connection or even JSON).
+    </p>
+    <p>Here is a typical example of what it looks like:</p>
+    <pre><code class="hljs amlv1">users | store every user # AML comment
+  id uuid pk
+  login varchar(30) unique
+  role user_role(guest, member, admin)=guest
+  email varchar nullable
+  group_id fk groups.id
+  created timestamp="now()" # /!\ breaking change: you need " with new version!
+</code></pre>
+    <p>As you can see, almost all characters are your own content, no ceremony.</p>
+    <p>
+        Now let's dig more into it and see all the features...<br>
+        If you want to try them live, just <a href={"#{Routes.elm_path(@conn, :create)}?aml"}>create an empty project</a> on Azimutt.
+    </p>
+    <ul>
+        <li><a href="#tables">Tables</a></li>
+        <li><a href="#columns">Columns</a></li>
+        <li><a href="#relations">Relations</a></li>
+        <li><a href="#comments">Comments</a></li>
+        <li><a href="#philosophy-conventions">Philosophy & Conventions</a></li>
+        <li><a href="#full-example">Full example</a></li>
+    </ul>
+
+    <%= render "docs/_h2.html", title: "🔖 Tables" %>
+    <p>Defining a table is the most common thing you will do with AML, and it's as simple as writing its name:</p>
+    <pre><code class="hljs amlv1">my_table_name
+</code></pre>
+    <p>
+        This name should be without space or dot but to allow them you can use <code>"</code>.<br>
+        You can prefix your table name with its schema name followed by a dot if you want, the same rules apply to it (no space or dot, or use <code>"</code>).<br>
+        Finally, you can add a <code>*</code> at the end of the table name to mark it as a <em>view</em> instead of a table.
+    </p>
+    <p>Here are some examples of tables definitions:</p>
+<pre><code class="hljs amlv1">users
+
+public.users
+
+"user table"
+
+"users.sql"
+
+users_view*
+
+"demo 2"."users 2"
+</code></pre>
+    <p>As you can see, it's possible to define one table per line and with as little as one word, it's quite convenient to quickly write what you have in mind!</p>
+
+    <%= render "docs/_h2.html", title: "🔖 Columns" %>
+    <p>
+        Tables are great, but without columns, they are a bit poor...<br>
+        A column can be defined as simple as its name with a 2 space indentation:
+    </p>
+    <pre><code class="hljs amlv1">users
+  id
+</code></pre>
+    <p>
+        Here you are, you just defined a <code>users</code> table with an <code>id</code> column 🎉<br>
+        It's very convenient to write very fast all the tables and columns you have in mind.
+        As for the table and schema names, if you need space or dot inside, you can use <code>"</code> around it.
+    </p>
+    <p>Of course, you may want to provide additional details on columns, here is its full structure:</p>
+    <pre><code class="hljs amlv1">users
+  col_name col_type nullable pk unique index check fk table.column | notes # comment
+</code></pre>
+    <p>Every part being optional except the name. Some parts may have additional options. Let's detail them...</p>
+    <ul>
+        <li><a href="#column-type">Column type</a></li>
+        <li><a href="#column-modifiers">Column modifiers</a></li>
+        <li><a href="#column-relation">Column relation</a></li>
+    </ul>
+
+    <%= render "docs/_h3.html", title: "Column type" %>
+    <p>
+        There is no SQL validation for it, you can write anything you want and define meaningful types names to help understanding your schema.
+        Of course, the same rule applies, if you need spaces or dots inside, you will need to use <code>"</code> around.
+    </p>
+    <p>
+        If the type has a <em>default value</em>, you can write it just after an <code>=</code> sign (ex: <code>int=0</code>).<br>
+        If the type has <em>enumerable values</em>, you can write them in parentheses (ex: <code>role(guest, admin)</code>).
+    </p>
+    <p>Here are some valid examples:</p>
+    <ul>
+        <li><code>int</code>: one of the most basic type ^^</li>
+        <li><code>"character varying"</code>: a type with space in it</li>
+        <li><code>varchar(12)</code>: a type with a precision (not treated as enum if only one or two values which are integers)</li>
+        <li><code>decimal(5, 2)</code>: another kind of precision</li>
+        <li><code>varchar=y</code>: a default value</li>
+        <li><code>state(active,disabled)</code>: an enum</li>
+        <li><code>role(guest, admin)=guest</code>: an enum with a default value</li>
+    </ul>
+
+    <%= render "docs/_h3.html", title: "Column modifiers" %>
+    <p>As seen in the <a href="#columns">Columns</a> section, a column can have several modifiers.</p>
+    <p>
+        <code>nullable</code> is a simple flag, telling the column can contain <code>null</code> values.
+        <strong>In AML, by default columns are not nullable</strong>, this is the opposite of SQL, but much more convenient and quick to write, as most of your columns should not be nullable.
+    </p>
+    <p><code>pk</code> means <em>primary key</em>, use it to identify a column as a table primary key. You can use this flag in several columns to create a composite primary key.</p>
+    <p>
+        <code>index</code>, <code>unique</code> and <code>check</code> have a similar behavior.
+        You can use them as flag to express the column property, but you can also give them a name using the <code>=</code> sign (ex: <code>unique=user_slug</code>).
+        This name will be shown in the UI but also will allow to create a constraint on several columns sharing the same constraint name.
+    </p>
+    <p>For the <code>check</code> constraint, you can use this name (or label) to define the condition.</p>
+    <p>Here are some examples:</p>
+    <pre><code class="hljs amlv1">users
+  id uuid pk
+  first_name varchar unique=name
+  last_name varchar unique=name check="LEN(last_name) > 3"
+  bio text nullable
+
+credentials
+  provider_id varchar pk
+  provider_key varchar pk
+  user_id fk users.id
+</code></pre>
+
+    <%= render "docs/_h3.html", title: "Column relation" %>
+    <p>
+        Some columns can reference another column, eventually using a SQL foreign key.
+        In AML, this can be done with the <code>fk</code> keyword (shortcut for <em>foreign key</em> 😉) in the column definition
+        or as a standalone instruction (see <a href="#relations">Relations</a>).<br>
+        This relation means a column references another one, and thus can be used in a join clause. But it does not necessarily imply there is a real foreign key in the database.
+    </p>
+    <p>
+        To define a relation in the column definition, just add the <code>fk</code> keyword with a column reference after like this: <code>fk table.column</code>,
+        or with the table schema: <code>fk schema.table.column</code>.
+    </p>
+    <p>
+        In the case of <a href="https://devdojo.com/tnylea/understanding-polymorphic-relationships" target="_blank" rel="noopener noreferrer">polymorphic relations</a>,
+        you can define several relations starting from a column, but the additional ones should be defined using standalone instructions (see <a href="#relations">Relations</a>).<br>
+        <em>For better consistency, it's recommended to only use standalone relations to define polymorphic relations even if not required by the language.</em>
+    </p>
+    <p>
+        For <a href="https://www.ibm.com/docs/en/informix-servers/14.10?topic=format-defining-composite-primary-foreign-keys" target="_blank" rel="noopener noreferrer">composite relations</a> (involving several columns),
+        they are <strong>not supported</strong> yet in AML or Azimutt.
+        This is a planned evolution but no timeline has been decided as many other important features are still to come. If you need them, please reach out, so we can plan them.
+    </p>
+
+    <%= render "docs/_h2.html", title: "🔖 Relations" %>
+    <p>
+        As seen before, relations can be defined <a href="#column-relation">inside the column definition</a>, and it's often the most efficient way to do so.
+        But, sometimes, is useful or needed to define them as a standalone instruction.
+    </p>
+    <p>Here is how to do it:</p>
+    <pre><code class="hljs amlv1">fk projects.owner -> users.id
+</code></pre>
+    <p>The standalone relation instruction should start with the <code>fk</code> keyword and then have two column references separated by a simple arrow (<code>-></code>).</p>
+    <p>
+        This is useful to define multiple relations from a column (in case of polymorphic relations)
+        or define relations between columns that are not defined in AML (useful to declare relations that were not found in SQL or database sources because they didn't have a foreign key).
+    </p>
+    <p>Here is an example:</p>
+    <pre><code class="hljs amlv1">requests
+  id uuid
+  kind varchar
+  item_type varchar
+  item_id integer
+
+fk requests.item_id -> users.id
+fk requests.item_id -> talks.id
+fk requests.item_id -> logins.id
+</code></pre>
+
+    <%= render "docs/_h2.html", title: "🔖 Comments" %>
+    <p>
+        Having comments on tables and relations can be a great help for people to understand how the database works.
+        In AML you can define a <em>SQL comment</em> using the <code>|</code> symbol at the end of your table or column definition. It will be visible directly inside the UI.
+    </p>
+    <p>For example:</p>
+    <pre><code class="hljs amlv1">users | store all our users
+  id | column to uniquely identify a user
+</code></pre>
+    <p>This is the only special part of AML that doesn't need <code>"</code> to contain spaces and dots.</p>
+    <p>
+        There is also <em>AML comments</em> you can use to write explanations you don't want to show in the interface.
+        They are useful to explain why you wrote what you wrote ^^.
+        Such comments are defined with the <code>#</code> symbol and should be at the end of the line (everything after is ignored).<br>
+        SQL and AML comments can be combined in the same line but the AML one should <strong>always</strong> be after.
+    </p>
+    <p>Let's see an example:</p>
+    <pre><code class="hljs amlv1"># the user table
+
+users | store ALL users
+  id | unique identifier # not sure if I should put `uuid` or `int`
+  name varchar # which size?
+  created_at timestamp="now()" | never update this column
+</code></pre>
+
+    <%= render "docs/_h2.html", title: "🔖 Philosophy & Conventions" %>
+    <p>
+        In order to be the fastest to write, AML have very few keywords and symbols, and they are all very short and preferred in lower case for fluid typing.<br>
+        Still, if you want to highlight the difference between keywords and your content (names, types, doc...), you can write AML keywords in upper case to ease reading.<br>
+        But it's strongly encouraged to be consistent.
+    </p>
+    <p>
+        As said in introduction, AML is built to be very intuitive and fast to learn and write.
+        If you see possible improvements on the syntax or even features,
+        please don't hesitate to <a href="https://github.com/azimuttapp/azimutt/issues" target="_blank" rel="noopener noreferrer">post an issue</a>, so we could improve it for everyone ❤️<br>
+        If you like it or want to give feedback, we will be very pleased to hear about you.
+        Please get in touch with us on Twitter: <a href="https://twitter.com/azimuttapp" target="_blank" rel="noopener noreferrer">@azimuttapp</a>.
+    </p>
+
+    <%= render "docs/_h2.html", title: "🔖 Full example" %>
+    <p>Now everything has been explained, let's write a meaningful example to give you a larger view of what it looks like to use AML as schema definition.</p>
+    <p>Let's define a hypothetical e-commerce shop:</p>
+    <p><img src={Routes.static_path(@conn, "/images/doc/e-commerce-using-aml.png")} alt="e-commerce schema defined using AML"></p>
+    <pre><code class="hljs amlv1">#
+# Identity domain
+#
+
+users
+  id uuid pk
+  slug varchar unique | user identifier in urls
+  role user_role(customer, staff, admin)
+  name varchar
+  avatar url
+  email varchar unique
+  email_validated timestamp nullable
+  phone varchar unique
+  phone_validated timestamp nullable
+  bio text nullable
+  company varchar nullable
+  locale locale(en, fr)
+  created_at timestamp
+  updated_at timestamp
+  last_login timestamp
+
+credentials
+  provider_id provider(google, facebook, twitter, email) pk
+  provider_key varchar pk | user id in provider system
+  hasher hash_method(md5, sha1, sha256)
+  password_hash varchar
+  password_salt varchar
+  user_id uuid fk users.id
+
+social_profiles
+  user_id uuid fk users.id
+  platform social_platform(facebook, twitter, instagram, slack, github)
+  platform_user varchar
+  created_at timestamp
+
+#
+# Catalog domain
+#
+
+categories
+  id uuid pk
+  slug varchar unique | category identifier in urls
+  name varchar
+  description text
+  tags "varchar[]" # breaking change: " are now required for array types
+  parent_category uuid fk categories.id
+  created_at timestamp
+  updated_at timestamp
+
+products
+  id uuid pk
+  category_id uuid nullable fk categories.id
+  title varchar
+  picture varchar
+  summary text
+  description text
+  price number | in Euro
+  discount_type discount_type(none, percent, amount)
+  discount_value number
+  tags "varchar[]"
+  created_at timestamp
+  updated_at timestamp
+
+reviews
+  id uuid pk
+  user_id uuid fk users.id
+  product_id uuid fk products.id
+  rating int index | between 1 and 5
+  comment text
+  created_at timestamp
+
+#
+# Cart domain
+#
+
+carts
+  id uuid pk
+  status cart_status(active, ordered, abandonned)
+  created_at timestamp=now
+  created_by uuid fk users.id
+  updated_at timestamp
+
+cart_items
+  cart_id uuid pk fk carts.id
+  product_id uuid pk fk products.id
+  price number
+  quantity int check="quantity > 0" | should be > 0
+  created_at timestamp
+
+#
+# Order domain
+#
+
+orders
+  id uuid pk
+  user_id uuid fk users.id
+  created_at timestamp
+
+order_lines
+  id uuid pk
+  order_id uuid fk orders.id
+  product_id uuid fk products.id | used as reference and for re-order by copy data at order time as they should not change
+  price number | in Euro
+  quantity int check="quantity > 0" | should be > 0
+</code></pre>
+    <p>Hope you enjoyed AML, happy hacking on <a href={Routes.website_path(@conn, :index)}>Azimutt</a>!</p>
+<% end %>
+
+<%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

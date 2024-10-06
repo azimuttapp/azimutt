@@ -1,0 +1,70 @@
+<%= render "docs/_header.html", conn: @conn, page: @page %>
+
+<%= doc_prose do %>
+    <p class="lead">
+        Custom properties are key/value pairs defined on objects to add some flexible context or documentation beside the schema.
+        They are a good complement to <a href={Routes.website_path(@conn, :doc, ["aml", "documentation"])}>textual documentation</a>, being less expressive but more structured.
+    </p>
+
+    <p>Here is an example: <code>{color: red, pii}</code></p>
+    <p>Keys are <a href={Routes.website_path(@conn, :doc, ["aml", "identifiers"])}>identifiers</a> and values can have several forms:</p>
+    <ul>
+        <li>boolean, ex: <code>{pii: true}</code></li>
+        <li>number, ex: <code>{size: 12}</code></li>
+        <li>identifier, ex: <code>{color: red}</code></li>
+        <li>array, ex: <code>{tags: [pii, sensitive]}</code></li>
+        <li>omitted, ex: <code>{autoIncrement}</code></li>
+    </ul>
+    <p>You can use any key/value pair, they will be kept in the model.</p>
+    <p>Some specific keys are standardized for certain objects and can be interpreted by generators or in <a href={Routes.website_path(@conn, :index)}>Azimutt</a>, see below.</p>
+
+    <%= render "docs/_h2.html", title: "Entity properties" %>
+    <p>Here are the standardized properties for <a href={Routes.website_path(@conn, :doc, ["aml", "entities"])}>entities</a>:</p>
+    <ul>
+        <li><code>view</code>, define the entity as a view, use it to define the view query<ul><li>ex: <code>{view: "SELECT * FROM users"}</code></li></ul></li>
+        <li><code>color</code>, to define the entity default color for Azimutt layouts, values: red, orange, amber, yellow, lime, green, emerald, teal, cyan, sky, blue, indigo, violet, purple, fuchsia, pink, rose, gray<ul><li>ex: <code>{color: red}</code></li></ul></li>
+        <li><code>tags</code>, to define tags for the entity<ul><li>ex: <code>{tags: [pii, "owner:team1"]}</code></li></ul></li>
+    </ul>
+    <p>Here is an example:</p>
+    <pre><code class="hljs aml">users {color: red, tags: [pii, deprecated]}
+</code></pre>
+    <p>Some others are considered but not handled yet:</p>
+    <ul>
+        <li><code>icon</code>, show an icon in the entity header, values: email, folder, home, user, users...<ul><li>ex: <code>{icon: user}</code></li></ul></li>
+        <li><code>position</code>, define the default position when added to a layout, the value should be an array with two numbers, left and top<ul><li>ex: <code>{position: [15, 10]}</code></li></ul></li>
+        <li><code>notes</code>, define default notes for the entity (similar to doc but saved in Azimutt)<ul><li>ex: <code>{notes: "stored in Azimutt"}</code></li></ul></li>
+        <li><code>deprecated</code>, will be added to tags in Azimutt<ul><li>ex: <code>{deprecated}</code></li></ul></li>
+    </ul>
+
+    <%= render "docs/_h2.html", title: "Entity attribute properties" %>
+    <p>Here are the standardized properties for <a href={"#{Routes.website_path(@conn, :doc, ["aml", "entities"])}#attribute"}>entity attributes</a>:</p>
+    <ul>
+        <li><code>autoIncrement</code>, for primary keys with auto-increment, ex: <code>{autoIncrement}</code></li>
+        <li><code>hidden</code>, to make the column not visible by default on layouts, ex: <code>{hidden}</code></li>
+        <li><code>tags</code>, to define default tags for the attribute, ex: <code>{tags: [pii]}</code></li>
+    </ul>
+    <p>Here is an example:</p>
+    <pre><code class="hljs aml">users
+  id {autoIncrement, tags: [pii]}
+</code></pre>
+    <p>Some others are considered but not handled yet:</p>
+    <ul>
+        <li><code>notes</code>, define default notes for the entity (similar to doc but saved in Azimutt)<ul><li>ex: <code>{notes: "stored in Azimutt"}</code></li></ul></li>
+        <li><code>deprecated</code>, will be added to tags in Azimutt<ul><li>ex: <code>{deprecated}</code></li></ul></li>
+    </ul>
+
+    <%= render "docs/_h2.html", title: "Relation properties" %>
+    <p>Here are the standardized properties for <a href={Routes.website_path(@conn, :doc, ["aml", "relations"])}>relations</a>:</p>
+    <ul>
+        <li><code>onUpdate</code>, values should be in: no action, set null, set default, cascade, restrict</li>
+        <li><code>onDelete</code>, values should be in: no action, set null, set default, cascade, restrict</li>
+    </ul>
+    <p>An example with all the properties:</p>
+    <pre><code class="hljs aml">rel posts(author) -> users(id) {onUpdate: "no action", onDelete: cascade}
+</code></pre>
+
+    <%= render "docs/_h2.html", title: "Type properties" %>
+    <p>None for now</p>
+<% end %>
+
+<%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

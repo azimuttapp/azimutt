@@ -42,7 +42,7 @@
     <p>
         With all this, even using our cloud service is quite safe.<br>
         Still, if you prefer having Azimutt on-premise, have a look to
-        <a href={Routes.website_path(@conn, :doc, "installation")}>installation</a> section or
+        <a href={Routes.website_path(@conn, :doc, ["installation"])}>installation</a> section or
         <a href={"mailto:#{Azimutt.config(:contact_email)}?subject=#{URI.encode("Azimutt on-premise installation")}"} target="_blank" rel="noopener noreferrer">contact us</a>.
     </p>
 <% end %>

@@ -49,13 +49,14 @@ defmodule AzimuttWeb.WebsiteController do
   def portal_subscribed(conn, _params), do: conn |> render("portal-subscribed.html")
 
   def docs(conn, _params),
-    do: conn |> render("docs/index.html", page: %{slug: "index", name: "Azimutt Documentation", children: Azimutt.doc_pages(), parents: []}, prev: nil, next: nil)
+    do: conn |> render("docs/index.html", page: %{path: [], name: "Azimutt Documentation", children: Azimutt.doc_pages(), parents: []}, prev: nil, next: nil)
 
-  def doc(conn, %{"slug" => slug}) do
+  def doc(conn, %{"path" => path}) do
+    slug = path |> Enum.join("/")
     pages = Azimutt.doc_pages_flat()
 
     pages
-    |> Enum.find_index(fn p -> p.slug == slug end)
+    |> Enum.find_index(fn p -> Enum.join(p.path, "/") == slug end)
     |> Result.from_nillable()
     |> Result.map(fn index ->
       conn |> render("docs/#{slug}.html", page: pages |> Enum.at(index), prev: if(index > 0, do: pages |> Enum.at(index - 1), else: nil), next: pages |> Enum.at(index + 1))

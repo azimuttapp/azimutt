@@ -17,7 +17,7 @@
             <li>Extract statistics, showing table size and # rows, column most common values and index size...</li>
             <li>(soon) Query history when available to infer relations and table similarity</li>
         </ul>
-        Also, with a database connection, you will be able to ise the <a href={Routes.website_path(@conn, :doc, "data-privacy")}>Data exploration</a> feature of Azimutt. Quite awesome if you ask me 😉
+        Also, with a database connection, you will be able to ise the <a href={Routes.website_path(@conn, :doc, ["data-privacy"])}>Data exploration</a> feature of Azimutt. Quite awesome if you ask me 😉
     </p>
     <p>
         For more details, you can have a look at the connectors to see exactly what and how its being done, here are the scripts for
@@ -28,7 +28,7 @@
     </p>
     <%= doc_warning do %>
         Your database URI is <strong>not</strong> sent to Azimutt server, just the Gateway.
-        For more details, see <a href={Routes.website_path(@conn, :doc, "data-privacy")} class="underline font-medium hover:text-yellow-600">Data privacy</a> section.
+        For more details, see <a href={Routes.website_path(@conn, :doc, ["data-privacy"])} class="underline font-medium hover:text-yellow-600">Data privacy</a> section.
     <% end %>
 
     <%= render "docs/_h2.html", title: "From SQL" %>
@@ -37,7 +37,7 @@
         You can do it safely as nothing will be sent to Azimutt servers, the parsing is made on the frontend and your schema is shown with no business data being sent to Azimutt server.
     </p>
     <p>
-        Here is some additional documentation if you need help <a href={Routes.website_path(@conn, :doc, "export-your-database-schema")}>exporting your database schema</a>.
+        Here is some additional documentation if you need help <a href={Routes.website_path(@conn, :doc, ["export-your-database-schema"])}>exporting your database schema</a>.
     </p>
 
     <%= render "docs/_h2.html", title: "From JSON" %>

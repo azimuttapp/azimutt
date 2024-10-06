@@ -55,7 +55,7 @@ defmodule AzimuttWeb.Router do
     get("/converters/:from", WebsiteController, :converter)
     get("/converters/:from/to/:to", WebsiteController, :convert)
     get("/docs", WebsiteController, :docs)
-    get("/docs/:slug", WebsiteController, :doc)
+    get("/docs/*path", WebsiteController, :doc)
     get("/last", WebsiteController, :last)
     get("/use-cases", WebsiteController, :use_cases_index)
     get("/use-cases/:use_case_id", WebsiteController, :use_cases_show)

@@ -1,0 +1,70 @@
+<%= render "docs/_header.html", conn: @conn, page: @page %>
+
+<%= doc_prose do %>
+    <p class="lead">
+        Objects of the database, such as <a href={Routes.website_path(@conn, :doc, ["aml", "entities"])}>entities</a>,
+        <a href={Routes.website_path(@conn, :doc, ["aml", "relations"])}>relations</a> or <a href={Routes.website_path(@conn, :doc, ["aml", "types"])}>types</a>,
+        can be grouped under hierarchical layers to organize them.
+    </p>
+
+    <p>In AML there are 3 hierarchical levels defined with <a href={Routes.website_path(@conn, :doc, ["aml", "identifiers"])}>identifiers</a>, from top to bottom:</p>
+    <ul>
+        <li><strong>database</strong></li>
+        <li><strong>catalog</strong></li>
+        <li><strong>schema</strong></li>
+    </ul>
+    <p>They are made to match most of the DBMS structures, which have hierarchical levels.</p>
+    <p>Each level is optional. When defining a database object, they can be added in front of it, from the lower to the higher.</p>
+    <p>Here are some examples:</p>
+    <pre><code class="hljs aml">users # defines the users entity with no hierarchical level
+
+public.users # defines the users entity inside the public schema
+
+core.public.users # defines the users entity inside the public schema and core catalog
+
+analytics.core.public.users # defines the users entity inside the public schema, core catalog and analytics database
+
+analytics...users # defines the users entity inside the analytics database
+</code></pre>
+    <p>This can be done anywhere, for example in relations:</p>
+    <pre><code class="hljs aml">rel public.posts(user_id) -> auth.users(id)
+</code></pre>
+
+    <%= render "docs/_h3.html", title: "Namespace directive" %>
+    <p>As it can be painful to repeat everywhere the same namespace, you can use the namespace directive to define one as default for every following object:</p>
+    <pre><code class="hljs aml">namespace core.public
+
+users # defines the `users` entity inside the `core` catalog and `public` schema
+</code></pre>
+    <p>Even with a default namespace defined, you can override it by specifying it explicitly:</p>
+    <pre><code class="hljs aml">namespace core.public
+
+dto.users # defines the `users` entity inside the `core` catalog but in the `dto` schema instead of the `public` one
+</code></pre>
+    <p>Finally, you can override the default namespace with a new one, for example:</p>
+    <pre><code class="hljs aml">namespace auth
+
+users # defines the `users` entity inside the `auth` schema
+
+namespace seo # override the previous default namespace
+
+posts # defines the `posts` entity inside the `seo` schema
+</code></pre>
+    <p>The new defined namespace fully overrides the previous one, for all levels:</p>
+    <pre><code class="hljs aml">namespace core.public
+namespace seo
+
+posts # defines the `posts` entity inside the `seo` schema (not inside the `core` catalog)
+</code></pre>
+    <p>Having an empty namespace removes the current namespace:</p>
+    <pre><code class="hljs aml">namespace public
+
+users # the users entity in inside the public schema
+
+namespace
+
+posts # the posts entity has no hierarchical level (not in the public schema)
+</code></pre>
+<% end %>
+
+<%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

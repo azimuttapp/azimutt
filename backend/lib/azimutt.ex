@@ -329,52 +329,78 @@ defmodule Azimutt do
   end
 
   def doc_pages do
-    # slugs must be unique and not change as they are used for urls (SEO) and template names.
+    # path must be unique and not change as they are used for urls (SEO) and template names.
     [
-      %{slug: "what-is-azimutt", name: "What is Azimutt?"},
+      %{path: ["what-is-azimutt"], name: "What is Azimutt?"},
       %{
-        slug: "getting-started",
+        path: ["getting-started"],
         name: "Getting started",
         children: [
-          %{slug: "create-your-project", name: "Create your project", children: [%{slug: "export-your-database-schema", name: "Export your database schema"}]},
+          %{path: ["create-your-project"], name: "Create your project", children: [%{path: ["export-your-database-schema"], name: "Export your database schema"}]},
           %{
-            slug: "schema-exploration",
+            path: ["schema-exploration"],
             name: "Schema exploration",
             children: [
-              %{slug: "search", name: "Search"},
-              %{slug: "follow-relations", name: "Follow relations"},
-              %{slug: "find-path", name: "Find path"}
+              %{path: ["search"], name: "Search"},
+              %{path: ["follow-relations"], name: "Follow relations"},
+              %{path: ["find-path"], name: "Find path"}
             ]
           },
-          %{slug: "schema-documentation", name: "Schema documentation"},
-          %{slug: "database-design", name: "Database design"}
+          %{path: ["schema-documentation"], name: "Schema documentation"},
+          %{
+            path: ["database-design"],
+            name: "Database design",
+            children: [
+              %{
+                path: ["aml"],
+                name: "AML",
+                children: [
+                  %{path: ["aml", "entities"], name: "Entities"},
+                  %{path: ["aml", "relations"], name: "Relations"},
+                  %{path: ["aml", "types"], name: "Types"},
+                  %{path: ["aml", "namespaces"], name: "Namespaces"},
+                  %{path: ["aml", "identifiers"], name: "Identifiers"},
+                  %{path: ["aml", "properties"], name: "Properties"},
+                  %{path: ["aml", "documentation"], name: "Documentation"},
+                  %{path: ["aml", "comments"], name: "Comments"},
+                  %{
+                    path: ["aml", "migration"],
+                    name: "Migration from v1",
+                    children: [
+                      %{path: ["aml", "v1"], name: "AML v1 (legacy)"}
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
         ]
       },
       %{
-        slug: "main-features",
+        path: ["main-features"],
         name: "Main features",
         children: [
-          %{slug: "layouts", name: "Layouts"},
-          %{slug: "sources", name: "Sources"},
-          %{slug: "data-exploration", name: "Data exploration"},
-          %{slug: "database-analysis", name: "Database analysis"},
-          %{slug: "keyboard-shortcuts", name: "Keyboard shortcuts"},
-          %{slug: "collaboration", name: "Collaboration"},
-          %{slug: "export", name: "Export"},
-          %{slug: "project-settings", name: "Project settings"},
-          %{slug: "api", name: "API"}
+          %{path: ["layouts"], name: "Layouts"},
+          %{path: ["sources"], name: "Sources"},
+          %{path: ["data-exploration"], name: "Data exploration"},
+          %{path: ["database-analysis"], name: "Database analysis"},
+          %{path: ["keyboard-shortcuts"], name: "Keyboard shortcuts"},
+          %{path: ["collaboration"], name: "Collaboration"},
+          %{path: ["export"], name: "Export"},
+          %{path: ["project-settings"], name: "Project settings"},
+          %{path: ["api"], name: "API"}
         ]
       },
       %{
-        slug: "other-tools",
+        path: ["other-tools"],
         name: "Other tools",
         children: [
-          %{slug: "cli", name: "CLI"},
-          %{slug: "converters", name: "Converters"}
+          %{path: ["cli"], name: "CLI"},
+          %{path: ["converters"], name: "Converters"}
         ]
       },
-      %{slug: "installation", name: "Installation"},
-      %{slug: "data-privacy", name: "Data privacy", details: "how Azimutt keep your data safe"}
+      %{path: ["installation"], name: "Installation"},
+      %{path: ["data-privacy"], name: "Data privacy", details: "how Azimutt keep your data safe"}
     ]
   end
 

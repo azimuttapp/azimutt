@@ -24,7 +24,7 @@
             <p>
                 When working on database design, the most important thing is to <strong>let ideas flow</strong> and be able to sketch things quickly without a tool in the way.
                 Most of the time I start with <em>pen and paper</em>, writing just table names and key information. It allows me to have a rough idea of the business domain I'm working with, which is the first step.
-                But fast enough, either some modifications are needed or I need more space than I anticipated. This is usually when I switch to either just a <strong>text editor</strong> to note things freely or an online <strong>drawing tool</strong> such as <a href="https://excalidraw.com" target="_blank" rel="noopener">excalidraw</a>.
+                But fast enough, either some modifications are needed or I need more space than I anticipated. This is usually when I switch to either just a <strong>text editor</strong> to note things freely or an online <strong>drawing tool</strong> such as <a href="https://excalidraw.com" target="_blank" rel="noopener noreferrer">excalidraw</a>.
             </p>
             <p>
                 It can seem strange but <em>I don't use data modeling tools like ERDs</em> because their UI is too strict and make me lose a lot of time with all the buttons, input texts and selects.
@@ -60,10 +60,7 @@ user_roles
             </ul>
 
             <h2 id="what-does-it-look-like-for-real">What does it look like for real?</h2>
-            <p>
-                Here is the <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/aml/docs/README.md" target="_blank" rel="noopener">full AML specification</a>
-                but look at this sample to learn it fast:
-            </p>
+            <p>Here is the <a href={Routes.website_path(@conn, :aml)}>AML page</a> but look at this sample to learn it fast:</p>
             <pre><code class="hljs aml"># Identity domain
 
 users
@@ -188,7 +185,7 @@ order_lines
                 <li><code>cre</code> column could suggest <code>created_at timestamp</code> from other tables.</li>
             </ul>
             <p>
-                So far, all feedback were amazed, you <a href="/create?empty" target="_blank" rel="noopener">absolutely have to try it</a> the next time you need to think about your database design.
+                So far, all feedback were amazed, you <a href={"#{Routes.elm_path(@conn, :create)}?aml"} target="_blank" rel="noopener">absolutely have to try it</a> the next time you need to think about your database design.
             </p>
         </div>
     </div>

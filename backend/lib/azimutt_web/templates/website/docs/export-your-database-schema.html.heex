@@ -36,7 +36,7 @@
     <%= render "docs/_h3.html", title: "PostgreSQL" %>
     <p>
         Use <a href="https://www.postgresql.org/docs/current/app-pgdump.html" target="_blank" rel="noopener noreferrer">pg_dump</a>:
-        <pre><code class="shell">pg_dump --dbname=postgres://postgres:postgres@localhost:5432/my_db --table='public.*' --schema-only > my_db-$(date +%d-%m-%y).sql</code></pre>
+        <pre><code class="hljs shell">pg_dump --dbname=postgres://postgres:postgres@localhost:5432/my_db --table='public.*' --schema-only > my_db-$(date +%d-%m-%y).sql</code></pre>
     </p>
 
     <%= render "docs/_h3.html", title: "MySQL" %>

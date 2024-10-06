@@ -39,7 +39,7 @@
             <p>
                 On other topics (<a href={Routes.website_path(@conn, :use_cases_show, "design")}>design</a>, <a href={Routes.website_path(@conn, :use_cases_show, "explore")}>exploration</a> and <a href={Routes.website_path(@conn, :use_cases_show, "document")}>documentation</a>),
                 it's easy to explain how Azimutt is doing an amazing job as the purpose is clear, and we think Azimutt answers it pretty well.
-                Here it's very different, finding great heuristics is not trivial. Especially for the general case, but it doesn't prevent us from trying, and you to <a href="https://github.com/azimuttapp/azimutt/issues" target="_blank" rel="noopener">give feedback and suggest ideas</a> 💪
+                Here it's very different, finding great heuristics is not trivial. Especially for the general case, but it doesn't prevent us from trying, and you to <a href="https://github.com/azimuttapp/azimutt/issues" target="_blank" rel="noopener noreferrer">give feedback and suggest ideas</a> 💪
             </p>
             <p>
                 From experience, scaling things often comes with better quality, more automation and standardization.
@@ -50,11 +50,11 @@
                 <li><strong>Missing primary key</strong>: it's uncommon not to define a primary key for a table, so if a table don't have one, make sure it's really expected, or fix it.</li>
                 <li><strong>Missing foreign keys</strong>: this one is checked using columns name convention (split column name in words and look for a table + column that match several consecutive words). It can be done on purpose but even here, you will <a href={"#{Routes.website_path(@conn, :use_cases_show, "explore")}#find-path"}>want to add the relation</a> in Azimutt.</li>
                 <li><strong>Inconsistent types</strong>: if you have several columns with the same name (in different tables), they probably represent the same thing and so have the same type (ex: if you have <code>email</code> columns with <code>varchar(56)</code> and <code>varchar(128)</code> you could want to homogenize them).</li>
-                <li><strong>Too big tables</strong>: regardless of your design, tables with many columns (> 30) are probably storing a <a href="https://linearb.io/blog/what-is-a-god-class" target="_blank" rel="noopener">god object</a> and <a href="/blog/why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them">should be avoided</a> most of the time.</li>
+                <li><strong>Too big tables</strong>: regardless of your design, tables with many columns (> 30) are probably storing a <a href="https://linearb.io/blog/what-is-a-god-class" target="_blank" rel="noopener noreferrer">god object</a> and <a href="/blog/why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them">should be avoided</a> most of the time.</li>
             </ul>
             <p>
                 This is a beginning, and we will expand them as we find more smells but also with users feedback.
-                If you think a database analyzer can be useful, <a href="https://github.com/azimuttapp/azimutt/issues" target="_blank" rel="noopener">tell us</a> what you expect from it and let's see if we can integrate it into Azimutt.
+                If you think a database analyzer can be useful, <a href="https://github.com/azimuttapp/azimutt/issues" target="_blank" rel="noopener noreferrer">tell us</a> what you expect from it and let's see if we can integrate it into Azimutt.
             </p>
             <p>One more thing...</p>
             <p>

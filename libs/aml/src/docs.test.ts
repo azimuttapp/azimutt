@@ -5,27 +5,23 @@ import {generateAml, parseAml} from "./index";
 
 describe('AML docs', () => {
     const project = 'libs/aml'
-    const amlDocs = './docs'
-    const amlPaths: string[] = fs.readdirSync(amlDocs, {recursive: true})
-        .map(path => pathJoin(amlDocs, path as string))
-        .concat(['./README.md', './docs/v1/README.md', '../../demos/ecommerce/source_00_design.md', '../../demos/ecommerce/source_10_additional_relations.md'])
-        .filter(path => path.endsWith('.md'))
+    const amlPaths: string[] = ['./README.md', '../../demos/ecommerce/source_00_design.md', '../../demos/ecommerce/source_10_additional_relations.md']
+        .concat(listFiles('../../backend/lib/azimutt_web/templates/website/docs'))
+        .filter(path => path.endsWith('.md') || path.endsWith('.aml') || path.endsWith('.html') || path.endsWith('.html.heex'))
     const amlFiles: {[path: string]: string} = Object.fromEntries(amlPaths.map(path => [path, fs.readFileSync(path, 'utf8')]))
 
     test('parse and generate AML snippets', () => {
         Object.entries(amlFiles).map(([path, content]) => {
-            (path.indexOf('../demos/') !== -1 ? [content] : (content.match(/```aml(v1)?\n[^]*?\n```/gm) || [])).forEach((snippet, index) => {
-                const aml = snippet.replace(/^```aml(v1)?\n/, '').replace(/```$/, '')
-                const version = snippet.startsWith('```amlv1\n') ? ' v1' : ''
-                const res = parseAml(aml).mapError(errors => errors.filter(e => e.level === 'error'))
+            getAmlSnippets(path, content).forEach(({snippet, version}, index) => {
+                const res = parseAml(snippet).mapError(errors => errors.filter(e => e.level === 'error'))
                 if ((res.errors || []).length > 0) {
-                    console.log(`File ${path}, snippet ${index + 1}${version ? ` (${version})` : ''}:\n${aml}`)
+                    console.log(`File ${path}, snippet ${index + 1}${version ? ` (${version})` : ''}:\n${snippet}`)
                     expect(res.errors).toEqual([])
                 }
                 const gen = generateAml(res.result || {}, !!version)
-                if (gen !== aml) {
+                if (gen !== snippet) {
                     console.log(`File ${path}, snippet ${index + 1}${version ? ` (${version})` : ''}`)
-                    expect(gen).toEqual(aml)
+                    expect(gen).toEqual(snippet)
                 }
             })
         })
@@ -67,6 +63,24 @@ describe('AML docs', () => {
         }
     })
 })
+
+function listFiles(dir: string): string[] {
+    return fs.readdirSync(dir, {recursive: true}).map(path => pathJoin(dir, path as string))
+}
+
+function getAmlSnippets(path: string, content: string): {snippet: string, version?: string}[] {
+    if (path.indexOf('/demos/') !== -1) return [{snippet: content}] // files in demos are fully AML
+    if (path.endsWith('.aml')) return [{snippet: content}] // aml file
+    if (path.endsWith('.md')) return (content.match(/```aml(v1)?[^]*?```/gm) || []).map(snippet => ({
+        snippet: snippet.replace(/^```aml(v1)?\n/, '').replace(/```$/, ''),
+        version: snippet.startsWith('```amlv1\n') ? 'v1' : undefined
+    }))
+    if (path.endsWith('.html') || path.endsWith('.html.heex')) return (content.match(/<pre><code class="hljs aml(v1)?">[^]*?<\/code><\/pre>/gm) || []).map(snippet => ({
+        snippet: snippet.replace(/^<pre><code class="hljs aml(v1)?">/, '').replace(/<\/code><\/pre>$/, '').replaceAll('&lt;', '<'),
+        version: snippet.startsWith('<pre><code class="hljs amlv1">') ? 'v1' : undefined
+    }))
+    return []
+}
 
 function getLinks(markdown: string): string[] {
     const linkRegex = /\[[^\]]*?]\([^)]*?\)/g
