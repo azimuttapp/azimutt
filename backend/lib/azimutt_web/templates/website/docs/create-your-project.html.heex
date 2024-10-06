@@ -17,7 +17,8 @@
             <li>Extract statistics, showing table size and # rows, column most common values and index size...</li>
             <li>(soon) Query history when available to infer relations and table similarity</li>
         </ul>
-        Also, with a database connection, you will be able to ise the <a href={Routes.website_path(@conn, :doc, ["data-privacy"])}>Data exploration</a> feature of Azimutt. Quite awesome if you ask me 😉
+        Also, with a database connection, you will be able to use the <a href={Routes.website_path(@conn, :doc, ["data-exploration"])}>Data exploration</a> feature of Azimutt.
+        Quite awesome if you ask me 😉
     </p>
     <p>
         For more details, you can have a look at the connectors to see exactly what and how its being done, here are the scripts for
@@ -33,18 +34,67 @@
 
     <%= render "docs/_h2.html", title: "From SQL" %>
     <p>
-        If you just want to explore your database schema, you can upload its structure as SQL statements (CREATE TABLE and others).
-        You can do it safely as nothing will be sent to Azimutt servers, the parsing is made on the frontend and your schema is shown with no business data being sent to Azimutt server.
+        If you just want to explore your database schema, you can upload it as SQL statements (CREATE TABLE, CREATE INDEX, COMMENTS and others).
+        You can do it safely as <strong>nothing will be sent to Azimutt servers</strong>,
+        the parsing is made on the frontend and your schema is shown with no business data being sent to Azimutt server.
+        <img src={Routes.static_path(@conn, "/images/doc/new-project-sql.png")} alt="New Azimutt project with SQL file">
     </p>
     <p>
         Here is some additional documentation if you need help <a href={Routes.website_path(@conn, :doc, ["export-your-database-schema"])}>exporting your database schema</a>.
     </p>
 
+    <%= render "docs/_h2.html", title: "From Prisma" %>
+    <p>
+        <a href="https://www.prisma.io" target="_blank" rel="noopener noreferrer" class="underline">Prisma</a> is a Node.jS and TypeScript ORM
+        that use its own <a href="https://www.prisma.io/docs/orm/prisma-schema" target="_blank" rel="noopener noreferrer" class="underline">schema syntax</a>.
+        Same as SQL, you can import the file in Azimutt, local or remote.
+    </p>
+
     <%= render "docs/_h2.html", title: "From JSON" %>
-    <p>Work In Progress 😅</p>
+    <p>
+        If you have a database that is not supported yet by Azimutt,
+        you can <a href="https://github.com/azimuttapp/azimutt/issues" target="_blank" rel="noopener noreferrer">create an issue</a> (or vote on the existing one),
+        send a Pull Request (look at <a href="https://github.com/azimuttapp/azimutt/tree/main/libs" target="_blank" rel="noopener noreferrer">other connectors</a>) or
+        extract its schema on your own and <a href={"#{Routes.elm_path(@conn, :new)}?json"} target="_blank" rel="noopener noreferrer">import it as JSON</a> in Azimutt.
+        You just have to format it according to the JSON Schema below the import section.
+        <img src={Routes.static_path(@conn, "/images/doc/new-project-json.png")} alt="New Azimutt project with JSON file">
+    </p>
+
+    <%= render "docs/_h2.html", title: "Empty" %>
+    <p>
+        If you are looking to design your database, and not explore an existing one.<br>
+        You can <a href={"#{Routes.elm_path(@conn, :create)}?aml"} target="_blank" rel="noopener noreferrer">create an empty project</a>
+        and use <a href={Routes.website_path(@conn, :aml)}>AML</a> to design it.<br>
+        You can always add other sources from any kind after with the Azimutt <a href={"#{Routes.website_path(@conn, :doc, ["sources"])}#multi-sources"}>multi-source feature</a>.
+    </p>
+
+    <%= render "docs/_h2.html", title: "Import project" %>
+    <p>
+        As Azimutt projects are "just a structured JSON", it's easy to <a href={"#{Routes.website_path(@conn, :doc, ["export"])}#full-project"}>export</a> and import them.
+        This can be useful to version it in your code repository, share it with someone else without an Azimutt account
+        or move it from an organization to another (if you started with your personal organization and want to move to your company one for example).
+        <img src={Routes.static_path(@conn, "/images/doc/new-project-import.png")} alt="Import Azimutt project">
+    </p>
+
+    <%= render "docs/_h2.html", title: "From sample" %>
+    <p>
+        If you just want to try Azimutt, you can explore our
+        <a href="https://azimutt.app/45f571a6-d9b8-4752-8a13-93ac0d2b7984/c00d0c45-8db2-46b7-9b51-eba661640c3c?token=9a59ccbb-7a58-4c88-9dfc-692de6177be9" target="_blank" rel="noopener noreferrer">e-commerce demo</a>
+        (77 tables over 9 databases), there is even instructions to
+        <a href="https://github.com/azimuttapp/azimutt/blob/main/demos/ecommerce/README.md" target="_blank" rel="noopener noreferrer">set up the databases with Docker</a> and explore their data.<br>
+        You can also look at our <a href={Routes.gallery_path(@conn, :index)} target="_blank" rel="noopener noreferrer">inspiration gallery</a>
+        and <a href={"#{Routes.elm_path(@conn, :new)}?sample"} target="_blank" rel="noopener noreferrer">use them as a starting point for your own project</a>:
+        <img src={Routes.static_path(@conn, "/images/doc/new-project-sample.png")} alt="Azimutt sample projects">
+    </p>
 
     <%= render "docs/_h2.html", title: "Save your project" %>
-    <p>Work In Progress 😅</p>
+    <p>
+        When you create a project, no matter the way, it's created as a <strong>draft project</strong>, temporarily saved in your browser, and it don't even require an Azimutt account.
+        To keep it for future use, you need to save it, and choose if you prefer to keep it stored in your browser or in the server.
+        For that, you need an Azimutt account to keep, at least, your project reference.
+        If you want more details about what is shared and when, read our <a href={Routes.website_path(@conn, :doc, ["data-privacy"])}>data privacy documentation</a>.
+        <img src={Routes.static_path(@conn, "/images/doc/project-save.png")} alt="Saving Azimutt project">
+    </p>
 <% end %>
 
 <%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

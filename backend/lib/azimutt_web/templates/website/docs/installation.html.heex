@@ -1,7 +1,34 @@
 <%= render "docs/_header.html", conn: @conn, page: @page %>
 
 <%= doc_prose do %>
-    <p class="lead">Work In Progress 😅</p>
+    <p class="lead">Azimutt is Open-Source and you can install it on your servers. By default, you will have all the freemium capabilities.</p>
+
+    <%= render "docs/_h2.html", title: "Docker" %>
+    <p>
+        For each commit on main we build a Docker image.
+        You can deploy it with <a href="https://github.com/azimuttapp/azimutt/blob/main/INSTALL.md" target="_blank" rel="noopener noreferrer">this guide</a>.
+    </p>
+
+    <%= render "docs/_h2.html", title: "Kubernetes" %>
+    <p>
+        There is also <a href="https://github.com/azimuttapp/azimutt/blob/main/charts/azimutt/README.md" target="_blank" rel="noopener noreferrer">Helm Chart</a> to deploy it with Kubernetes.
+    </p>
+
+    <%= render "docs/_h2.html", title: "Heroku" %>
+    <p>
+        You can also <a href="https://github.com/azimuttapp/azimutt/tree/main#deploy-on-heroku" target="_blank" rel="noopener noreferrer">deploy it on Heroku</a> with a pre-made recipe.
+    </p>
+
+    <%= render "docs/_h2.html", title: "Coolify" %>
+    <p>
+        Still work in progress but anytime you will be able to deploy Azimutt to <a href="https://coolify.io" target="_blank" rel="noopener noreferrer">Coolify</a>
+        (<a href="https://github.com/coollabsio/coolify/pull/2695" target="_blank" rel="noopener noreferrer">PR</a>).
+    </p>
+
+    <p class="lead">
+        For any question or help, don't hesitate to
+        <a href={"mailto:#{Azimutt.config(:contact_email)}?subject=#{URI.encode("Azimutt on-premise installation")}"} target="_blank" rel="noopener noreferrer">reach out</a>.
+    </p>
 <% end %>
 
 <%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

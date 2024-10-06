@@ -51,8 +51,8 @@
         </div>
       </div>
     </div>
-    <a href={Routes.website_path(@conn, :pricing)} class={"inline-block #{link_style}"}>Pricing</a>
     <a href={Routes.website_path(@conn, :docs)} class={"inline-block #{link_style}"}>Docs</a>
+    <a href={Routes.website_path(@conn, :pricing)} class={"inline-block #{link_style}"}>Pricing</a>
     <a href={Routes.blog_path(@conn, :index)} class={"inline-block #{link_style}"}>Blog</a>
     <a href={Routes.gallery_path(@conn, :index)} class={"inline-block #{link_style}"}>Inspirations</a>
     <a href={Routes.website_path(@conn, :aml)} class={"inline-block #{link_style}"}>AML</a>
@@ -74,8 +74,8 @@
       <a href={Routes.website_path(@conn, :use_cases_show, use_case.id)} class={link_style}><%= use_case.name %> your database</a>
     <% end %>
     <a href={Routes.website_path(@conn, :features_index)} class={link_style}>Features</a>
-    <a href={Routes.website_path(@conn, :pricing)} class={link_style}>Pricing</a>
     <a href={Routes.website_path(@conn, :docs)} class={link_style}>Docs</a>
+    <a href={Routes.website_path(@conn, :pricing)} class={link_style}>Pricing</a>
     <a href={Routes.blog_path(@conn, :index)} class={link_style}>Blog</a>
     <a href={Routes.gallery_path(@conn, :index)} class={link_style}>Inspirations</a>
     <a href={Routes.website_path(@conn, :aml)} class={link_style}>AML</a>

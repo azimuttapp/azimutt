@@ -22,7 +22,7 @@
 
   <url><loc><%= Routes.website_url(@conn, :docs) %></loc><lastmod>2024-10-07</lastmod></url>
   <%= for doc <- Azimutt.doc_pages_flat() do %>
-  <url><loc><%= Routes.website_url(@conn, :doc, doc.slug) %></loc><lastmod>2024-10-07</lastmod></url>
+  <url><loc><%= Routes.website_url(@conn, :doc, doc.path) %></loc><lastmod>2024-10-07</lastmod></url>
   <% end %>
 
   <%= if length(@articles) > 0 do %>
