@@ -12,7 +12,7 @@
         member = org_id && assigns[:current_user] && assigns[:current_user].members |> Enum.find(fn m -> m.organization_id == org_id end)
         plan = member && Azimutt.Organizations.get_organization_plan(member.organization, assigns[:current_user]) |> Azimutt.Utils.Result.or_else(nil)
         org_gateway = plan && Azimutt.features().gateway_custom[plan] && member.organization.gateway
-        cc_gateway = member.organization.clever_cloud_resource && "https://azimutt-gateway.services.clever-cloud.com"
+        cc_gateway = member && member.organization.clever_cloud_resource && "https://azimutt-gateway.services.clever-cloud.com"
         %>
         <script>
             window.env = '<%= Azimutt.config(:environment) %>'
