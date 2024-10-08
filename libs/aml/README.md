@@ -87,6 +87,7 @@ You can have both, a `result` and some `errors` as there is syntax recovery and 
 This package also offer a few more features:
 
 ```typescript
+function generateDot(database: Database) {} // generate a DOT graph
 function generateMermaid(database: Database) {} // generate a Mermaid erDiagram
 function generateMarkdown(database: Database) {} // generate markdown documentation
 function generateJsonDatabase(database: Database): string {} // generate nice JSON (similar to `JSON.stringify(db, null, 2), but more compact)

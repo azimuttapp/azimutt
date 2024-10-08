@@ -28,6 +28,9 @@
     <% @converter == "prisma" -> %>
         A <a href="https://www.prisma.io" target="_blank" rel="noopener noreferrer" class="underline">Node.jS and TypeScript ORM</a> that use a <a href="https://www.prisma.io/docs/orm/prisma-schema" target="_blank" rel="noopener noreferrer" class="underline">dedicated schema syntax</a> to define its data model.
         It can convert this schema to several databases and pull or push it to them.
+    <% @converter == "dot" -> %>
+        <a href="https://graphviz.org" target="_blank" rel="noopener noreferrer" class="underline">Graphviz</a> is an open source graph visualization software with a language, named DOT, to define the diagrams.
+        It has many visualization options and plugins.
     <% @converter == "mermaid" -> %>
         It's a <a href="https://mermaid.js.org" target="_blank" rel="noopener noreferrer" class="underline">Markdown-inspired text definitions</a> that generate flowcharts diagrams.
         It can be used to generate Entity-Relationship diagrams, and even has a <a href="https://mermaid.live" target="_blank" rel="noopener noreferrer" class="underline">Live Editor</a>.

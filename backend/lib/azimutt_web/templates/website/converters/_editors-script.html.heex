@@ -1,4 +1,4 @@
-<script src="https://cdn.jsdelivr.net/npm/@azimutt/aml@0.1.5/out/bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@azimutt/aml@0.1.6/out/bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@azimutt/parser-sql@0.1.1/out/bundle.min.js"></script>
 <!--<script src="/elm/aml.min.js"></script>-->
 <!--<script src="/elm/sql.min.js"></script>-->
@@ -86,23 +86,33 @@
         function monacoLang(lang) {
             if (lang === 'amlv1') return 'aml'
             if (lang === 'postgres') return 'pgsql'
+            if (lang === 'dot') return 'plaintext'
             if (lang === 'mermaid') return 'plaintext'
             return lang
         }
         function parse(lang, content) {
-            if (lang === 'aml') return aml.parseAml(content)
-            if (lang === 'amlv1') return aml.parseAml(content).mapError(errs => errs.filter(e => e.kind !== 'LegacySyntax'))
-            if (lang === 'json') return aml.parseJsonDatabase(content)
-            return {errors: [{message: 'Unsupported source dialect: ' + lang, kind: 'UnsupportedDialect', level: 'error', offset: {start: 0, end: 100}, position: {start: {line: 1, column: 1}, end: {line: 10, column: 10}}}]}
+            try {
+                if (lang === 'aml') return aml.parseAml(content)
+                if (lang === 'amlv1') return aml.parseAml(content).mapError(errs => errs.filter(e => e.kind !== 'LegacySyntax'))
+                if (lang === 'json') return aml.parseJsonDatabase(content)
+                return {errors: [{message: 'Unsupported source dialect: ' + lang, kind: 'UnsupportedDialect', level: 'error', offset: {start: 0, end: 100}, position: {start: {line: 1, column: 1}, end: {line: 10, column: 10}}}]}
+            } catch (e) {
+                return {errors: [{message: 'Failed to parse ' + lang + (e && e.message ? ': ' + e.message : ''), kind: 'DialectError', level: 'error', offset: {start: 0, end: 100}, position: {start: {line: 1, column: 1}, end: {line: 10, column: 10}}}]}
+            }
         }
         function format(lang, db) {
-            if (lang === 'aml') return aml.generateAml(db)
-            if (lang === 'amlv1') return aml.generateAml(db, true)
-            if (lang === 'json') return aml.generateJsonDatabase(db)
-            if (lang === 'postgres') return sql.generateSql(db, 'postgres')
-            if (lang === 'mermaid') return aml.generateMermaid(db)
-            if (lang === 'markdown') return aml.generateMarkdown(db)
-            return 'Unsupported destination dialect: ' + lang
+            try {
+                if (lang === 'aml') return aml.generateAml(db)
+                if (lang === 'amlv1') return aml.generateAml(db, true)
+                if (lang === 'json') return aml.generateJsonDatabase(db)
+                if (lang === 'postgres') return sql.generateSql(db, 'postgres')
+                if (lang === 'dot') return aml.generateDot(db)
+                if (lang === 'mermaid') return aml.generateMermaid(db)
+                if (lang === 'markdown') return aml.generateMarkdown(db)
+                return 'Unsupported destination dialect: ' + lang
+            } catch (e) {
+                return 'Failed to generate ' + lang + (e && e.message ? ': ' + e.message : '')
+            }
         }
         function getDefaultValue(lang) {
             // default value from: `value` query param, or url hash, or local storage, or hardcoded

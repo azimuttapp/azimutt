@@ -136,8 +136,8 @@ defmodule Azimutt do
       project_share: %{name: "Sharing project", free: false, solo: false, team: false, enterprise: true, pro: true, description: "Use private links & embed to share with guest."},
       api: %{name: "API access", free: false, solo: false, team: false, enterprise: true, pro: true, description: "Fetch and update sources and documentation programmatically."},
       sso: %{name: "SSO", free: false, solo: false, team: false, enterprise: true, pro: false, description: "Soon..."},
-      user_rights: %{name: "User rights", free: false, solo: false, team: false, enterprise: true, pro: false, description: "Soon... Have read-only users in your organization."},
-      gateway_custom: %{name: "Custom gateway", free: false, solo: false, team: false, enterprise: true, pro: false, description: "Soon... Securely connect to your databases."},
+      user_rights: %{name: "User rights", free: false, solo: false, team: false, enterprise: true, pro: false},
+      gateway_custom: %{name: "Custom gateway", free: false, solo: false, team: false, enterprise: true, pro: false},
       billing: %{name: "Flexible billing", free: false, solo: false, team: false, enterprise: true, pro: false},
       support_on_premise: %{name: "On-premise support", free: false, solo: false, team: false, enterprise: true, pro: false},
       support_enterprise: %{name: "Enterprise support", free: false, solo: false, team: false, enterprise: true, pro: false, description: "Priority email, answer within 48h."},
@@ -321,6 +321,7 @@ defmodule Azimutt do
       %{id: "mongodb", name: "MongoDB", parse: false, generate: false},
       %{id: "mariadb", name: "MariaDB", parse: false, generate: false},
       %{id: "prisma", name: "Prisma", parse: false, generate: false},
+      %{id: "dot", name: "DOT", parse: false, generate: true},
       %{id: "mermaid", name: "Mermaid", parse: false, generate: true},
       %{id: "quicksql", name: "Quick SQL", parse: false, generate: false},
       %{id: "markdown", name: "Markdown", parse: false, generate: true},
@@ -399,8 +400,8 @@ defmodule Azimutt do
           %{path: ["converters"], name: "Converters"}
         ]
       },
-      %{path: ["installation"], name: "Installation"},
-      %{path: ["data-privacy"], name: "Data privacy", details: "how Azimutt keep your data safe"}
+      %{path: ["data-privacy"], name: "Data privacy", details: "how Azimutt keep your data safe"},
+      %{path: ["installation"], name: "Installation"}
     ]
   end
 

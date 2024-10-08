@@ -1,0 +1,9 @@
+<%= cond do %>
+    <% @converter == "aml" || @converter == "amlv1" -> %>
+        <br><br>Have any issue?
+        You can <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/aml/src/amlParser.ts" target="_blank" rel="noopener noreferrer" class="underline">update it here</a>.
+    <% @converter == "json" -> %>
+        <br><br>The JSON format is defined here,
+        you can <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/models/src/database.ts" target="_blank" rel="noopener noreferrer" class="underline">suggest improvements</a>.
+    <% true -> %>
+<% end %>

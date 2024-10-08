@@ -1,0 +1,117 @@
+digraph {
+    node [shape=none, margin=0]
+
+    users [label=<
+        <table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+            <tr><td bgcolor="lightblue" colspan="3">users</td></tr>
+            <tr><td align="left">id</td><td align="left">uid</td><td align="left">pk</td></tr>
+            <tr><td align="left">first_name</td><td align="left">varchar</td><td align="left">unique</td></tr>
+            <tr><td align="left">last_name</td><td align="left">varchar</td><td align="left">unique</td></tr>
+            <tr><td align="left">email</td><td align="left">varchar</td><td align="left">unique</td></tr>
+            <tr><td align="left">is_admin</td><td align="left">bool</td><td align="left"></td></tr>
+        </table>
+    >]
+
+    "cms.posts" [label=<
+        <table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+            <tr><td bgcolor="lightblue" colspan="3">cms.posts</td></tr>
+            <tr><td align="left">id</td><td align="left">int</td><td align="left">pk</td></tr>
+            <tr><td align="left">title</td><td align="left">varchar(100)</td><td align="left">unique</td></tr>
+            <tr><td align="left">status</td><td align="left">post_status</td><td align="left"></td></tr>
+            <tr><td align="left">content</td><td align="left">varchar</td><td align="left"></td></tr>
+            <tr><td align="left">settings</td><td align="left">json</td><td align="left"></td></tr>
+            <tr><td align="left">created_at</td><td align="left">timestamp with time zone</td><td align="left"></td></tr>
+            <tr><td align="left">created_by</td><td align="left">int</td><td align="left">fk</td></tr>
+        </table>
+    >]
+    "cms.posts" -> users [label=settings.publish_by]
+    "cms.posts" -> users [label=created_by]
+
+    post_members [label=<
+        <table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+            <tr><td bgcolor="lightblue" colspan="3">post_members</td></tr>
+            <tr><td align="left">post_id</td><td align="left">uuid</td><td align="left">pk, fk</td></tr>
+            <tr><td align="left">user_id</td><td align="left">int</td><td align="left">pk, fk</td></tr>
+            <tr><td align="left">role</td><td align="left">varchar(10)</td><td align="left"></td></tr>
+        </table>
+    >]
+    post_members -> "cms.posts" [label=post_id]
+    post_members -> users [label=user_id]
+
+    "legacy schema.post member details" [label=<
+        <table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+            <tr><td bgcolor="lightblue" colspan="3">legacy schema.post member details</td></tr>
+            <tr><td align="left">post_id</td><td align="left">uuid</td><td align="left">pk, fk</td></tr>
+            <tr><td align="left">user_id</td><td align="left">int</td><td align="left">pk, fk</td></tr>
+            <tr><td align="left">index</td><td align="left">int</td><td align="left"></td></tr>
+            <tr><td align="left">added by</td><td align="left">int</td><td align="left">fk</td></tr>
+        </table>
+    >]
+    "legacy schema.post member details" -> users [label=added by]
+    "legacy schema.post member details" -> post_members [label=post_id,user_id]
+
+    comments [label=<
+        <table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+            <tr><td bgcolor="lightblue" colspan="3">comments</td></tr>
+            <tr><td align="left">id</td><td align="left">uuid</td><td align="left">pk</td></tr>
+            <tr><td align="left">item_kind</td><td align="left">comment_item</td><td align="left">index</td></tr>
+            <tr><td align="left">item_id</td><td align="left">int</td><td align="left">fk, index</td></tr>
+            <tr><td align="left">content</td><td align="left">unknown</td><td align="left"></td></tr>
+            <tr><td align="left">created_by</td><td align="left">unknown</td><td align="left">fk</td></tr>
+        </table>
+    >]
+    comments -> users [label=created_by]
+    comments -> users [label=item_id]
+    comments -> "cms.posts" [label=item_id]
+
+    "db1.web.public.legacy_slug" [label=<
+        <table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+            <tr><td bgcolor="lightblue" colspan="3">db1.web.public.legacy_slug</td></tr>
+            <tr><td align="left">old_slug</td><td align="left">slug</td><td align="left"></td></tr>
+            <tr><td align="left">new_slug</td><td align="left">slug</td><td align="left"></td></tr>
+            <tr><td align="left">cur_slug</td><td align="left">varchar</td><td align="left">fk</td></tr>
+        </table>
+    >]
+    "db1.web.public.legacy_slug" -> "cms.posts" [label=cur_slug]
+
+    organizations [label=<
+        <table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+            <tr><td bgcolor="lightblue" colspan="3">organizations</td></tr>
+            <tr><td align="left">id</td><td align="left">int</td><td align="left">pk, fk</td></tr>
+            <tr><td align="left">name</td><td align="left">varchar(50)</td><td align="left"></td></tr>
+            <tr><td align="left">content</td><td align="left">box</td><td align="left"></td></tr>
+        </table>
+    >]
+    organizations -> users [label=id]
+
+    "identity...profiles" [label=<
+        <table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+            <tr><td bgcolor="lightblue" colspan="3">identity...profiles</td></tr>
+            <tr><td align="left">id</td><td align="left">int</td><td align="left">pk, fk</td></tr>
+        </table>
+    >]
+    "identity...profiles" -> users [label=id]
+
+    admins [label=<
+        <table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+            <tr><td bgcolor="lightblue" colspan="3">admins</td></tr>
+            <tr><td align="left">id</td><td align="left">unknown</td><td align="left"></td></tr>
+            <tr><td align="left">first_name</td><td align="left">unknown</td><td align="left"></td></tr>
+            <tr><td align="left">last_name</td><td align="left">unknown</td><td align="left"></td></tr>
+            <tr><td align="left">email</td><td align="left">unknown</td><td align="left"></td></tr>
+        </table>
+    >]
+
+    guests [label=<
+        <table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+            <tr><td bgcolor="lightblue" colspan="3">guests</td></tr>
+        </table>
+    >]
+
+    "social..social_accounts" [label=<
+        <table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+            <tr><td bgcolor="lightblue" colspan="3">social..social_accounts</td></tr>
+        </table>
+    >]
+    "social..social_accounts" -> users
+}
