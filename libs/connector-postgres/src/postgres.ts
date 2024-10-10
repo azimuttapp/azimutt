@@ -602,7 +602,7 @@ function buildRelation(r: RawRelation, columnsByIndex: Record<EntityId, { [i: nu
     const srcId = entityRefToId(src)
     const refId = entityRefToId(ref)
     const srcAttrs: AttributePath[] = r.table_columns.map(src => columnsByIndex[srcId] && columnsByIndex[srcId][src] ? [columnsByIndex[srcId][src]] : undefined).filter(isNotUndefined)
-    const refAttrs: AttributePath[] = r.target_columns.map(ref => columnsByIndex[refId] && columnsByIndex[refId][ref] ? [columnsByIndex[srcId][ref]] : undefined).filter(isNotUndefined)
+    const refAttrs: AttributePath[] = r.target_columns.map(ref => columnsByIndex[refId] && columnsByIndex[refId][ref] ? [columnsByIndex[refId][ref]] : undefined).filter(isNotUndefined)
     const rel = {
         name: r.constraint_name,
         origin: undefined, // 'fk' when not specified

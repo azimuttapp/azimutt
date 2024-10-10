@@ -1,5 +1,6 @@
 import {
-    Attribute, AttributePath,
+    Attribute,
+    AttributePath,
     attributePathSame,
     Database,
     Entity,

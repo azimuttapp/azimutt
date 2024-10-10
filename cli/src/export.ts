@@ -4,7 +4,7 @@ import {Connector, databaseToLegacy, DatabaseUrlParsed, parseDatabaseUrl} from "
 import {getConnector, track} from "@azimutt/gateway";
 import {FileFormat, FilePath, fileWriteJson} from "./utils/file.js";
 import {logger} from "./utils/logger.js";
-import {version} from "./version";
+import {version} from "./version.js";
 
 export type Opts = {
     database: string | undefined

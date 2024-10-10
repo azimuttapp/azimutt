@@ -37,7 +37,7 @@
                                     </h1>
                                     <p class="mt-3 text-base text-gray-300 sm:mt-5 sm:text-xl lg:text-lg xl:text-xl">
                                         Welcome to <span class="font-bold">Azimutt</span>! Your Add-on has been well provisioned.<br>
-                                        You are almost setup to <span class="italic font-bold">explore and document your database</span>, just connect it now 👇️
+                                        You are almost setup to <span class="italic font-bold">explore and document your database</span>, just connect it now with Clever Cloud gateway 👇️
                                     </p>
                                     <div class="mt-10 sm:mt-12">
                                         <%= form_for @conn, Routes.elm_path(@conn, :org_create, @resource.organization.id), [method: :post, class: "sm:mx-auto sm:max-w-xl lg:mx-0"], fn _ -> %>
@@ -56,7 +56,7 @@
                                                 To get your database URI, open any SQL database dashboard in <a href={CleverCloud.org_url(@resource.owner_id)} target="_blank" rel="noopener noreferrer" class="font-medium text-white underline">your organization</a><br>
                                                 and look for the "Connection URI".<br>
                                                 It looks like: <span class="italic whitespace-nowrap">protocol://user:password@host:port/db</span> (see <a href="/images/clever_cloud_db_uri.png" target="_blank" rel="noopener noreferrer" class="underline">screenshot</a>)<br>
-                                                Learn more about <a href={Routes.website_path(@conn, :index)} target="_blank" rel="noopener noreferrer" class="font-medium text-white underline">Azimutt</a>, or <a href={"mailto:#{Azimutt.config(:support_email)}?subject=#{URI.encode("Help connecting Clever Cloud Add-on")}&body=#{URI.encode("Hi,\n\nI'm looking to connect Azimutt Add-on on Clever Cloud but ...\n\nHere are my infos:\n- organization id: #{@resource.owner_id}\n- addon id: #{@resource.addon_id}\n")}"} target="_blank" rel="noopener noreferrer" class="font-medium text-white underline">contact us</a> for support.
+                                                <a href={Routes.website_path(@conn, :docs)} target="_blank" rel="noopener noreferrer" class="font-medium text-white underline">Learn more about Azimutt</a>, or <a href={"mailto:#{Azimutt.config(:support_email)}?subject=#{URI.encode("Help connecting Clever Cloud Add-on")}&body=#{URI.encode("Hi,\n\nI'm looking to connect Azimutt Add-on on Clever Cloud but ...\n\nHere are my infos:\n- organization id: #{@resource.owner_id}\n- addon id: #{@resource.addon_id}\n")}"} target="_blank" rel="noopener noreferrer" class="font-medium text-white underline">contact us</a> for support.
                                             </p>
                                         <% end %>
                                     </div>

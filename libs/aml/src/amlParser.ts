@@ -65,7 +65,7 @@ import {badIndent, legacy} from "./errors";
 const WhiteSpace = createToken({name: 'WhiteSpace', pattern: /[ \t]+/})
 const Identifier = createToken({ name: 'Identifier', pattern: /\b[a-zA-Z_][a-zA-Z0-9_#]*\b|"([^\\"]|\\\\|\\"|\\n)*"/ })
 const Expression = createToken({ name: 'Expression', pattern: /`[^`]+`/ })
-const Doc = createToken({ name: 'Doc', pattern: /\|(\s+"([^\\"]|\\\\|\\")*"|(\\#|[^#\n])*)/ })
+const Doc = createToken({ name: 'Doc', pattern: /\|(\s+"([^\\"]|\\\\|\\")*"|([^ ]#|[^#\n])*)/ }) // # is included in doc if not preceded by a space
 const DocMultiline = createToken({ name: 'DocMultiline', pattern: /\|\|\|[^]*?\|\|\|/, line_breaks: true })
 const Comment = createToken({ name: 'Comment', pattern: /#[^\n]*/ })
 
@@ -418,7 +418,8 @@ class AmlParser extends EmbeddedActionsParser {
                         SEP: Comma,
                         DEF: () => {
                             $.OPTION3(() => $.CONSUME(WhiteSpace))
-                            values.push($.SUBRULE($.attributeValueRule))
+                            const value = $.SUBRULE($.attributeValueRule)
+                            if (value) values.push(value) // can be undefined on invalid input :/
                             $.OPTION4(() => $.CONSUME2(WhiteSpace))
                         }
                     })
@@ -561,7 +562,7 @@ class AmlParser extends EmbeddedActionsParser {
             const attrs: AttributeAstFlat[] = []
             $.MANY(() => {
                 const attr = $.SUBRULE($.attributeRule)
-                if (attr.name?.value) attrs.push(attr) // name can be '' on invalid input :/
+                if (attr?.name?.value) attrs.push(attr) // name can be '' on invalid input :/
             })
             return removeEmpty({statement: 'Entity' as const, name: entity, view: view ? tokenInfo(view) : undefined, ...namespace, alias, ...extra, attrs: nestAttributes(attrs)})
         })

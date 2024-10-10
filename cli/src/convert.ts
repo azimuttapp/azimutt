@@ -12,7 +12,7 @@ import {
 import {track} from "@azimutt/gateway";
 import {fileRead, fileWrite} from "./utils/file.js";
 import {logger} from "./utils/logger.js";
-import {version} from "./version";
+import {version} from "./version.js";
 
 export type Opts = {
     from: string

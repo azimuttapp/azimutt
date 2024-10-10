@@ -1,7 +1,16 @@
 import {describe, expect, test} from "@jest/globals";
 import {ConnectorSchemaOpts, DatabaseUrlParsed, parseDatabaseUrl} from "@azimutt/models";
 import {connect} from "./connect";
-import {getBlockSize, getColumns, getDatabase, getDistinctValues, getSchema, getTables, getTypes} from "./postgres";
+import {
+    getBlockSize,
+    getColumns,
+    getDatabase,
+    getDistinctValues,
+    getRelations,
+    getSchema,
+    getTables,
+    getTypes
+} from "./postgres";
 import {application, logger} from "./constants.test";
 
 describe('postgres', () => {
@@ -32,6 +41,11 @@ describe('postgres', () => {
         const columns = await connect(application, url, getColumns(opts), opts)
         console.log(`${columns.length} columns`, columns)
         expect(columns.length).toEqual(28)
+    })
+    test.skip('getRelations', async () => {
+        const relations = await connect(application, url, getRelations(opts), opts)
+        console.log(`${relations.length} relations`, relations)
+        expect(relations.length).toEqual(0)
     })
     test.skip('getTypes', async () => {
         const types = await connect(application, url, getTypes(opts), opts)
