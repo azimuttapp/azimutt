@@ -1,5 +1,5 @@
 defmodule AzimuttWeb.Endpoint do
-  use Sentry.PlugCapture
+  if System.get_env("SENTRY") == "true", do: use(Sentry.PlugCapture)
   use Phoenix.Endpoint, otp_app: :azimutt
 
   # The session will be stored in the cookie and signed,
@@ -59,11 +59,9 @@ defmodule AzimuttWeb.Endpoint do
     pass: ["*/*"],
     json_decoder: Phoenix.json_library()
 
-  plug Sentry.PlugContext
-
+  if System.get_env("SENTRY") == "true", do: plug(Sentry.PlugContext)
   plug Plug.MethodOverride
   plug Plug.Head
   plug Plug.Session, @session_options
   plug AzimuttWeb.Router
-  use Sentry.PlugCapture
 end
