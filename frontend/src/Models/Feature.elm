@@ -1,14 +1,16 @@
 module Models.Feature exposing (ai, aml, analysis, colors, dataExploration, layoutTables, projectDbs, projectDoc, projectExport, projectLayouts, projectShare, projects, schemaExport)
 
+-- MUST stay in sync with backend/lib/azimutt.ex
+
 
 ai : { name : String, default : Bool }
 ai =
     { name = "ai", default = False }
 
 
-aml : { name : String, default : Bool }
+aml : { name : String, default : Int }
 aml =
-    { name = "aml", default = False }
+    { name = "aml", default = 10 }
 
 
 analysis : { name : String, preview : String, snapshot : String, trends : String, limit : Int, default : Bool }

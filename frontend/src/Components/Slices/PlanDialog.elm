@@ -1,4 +1,4 @@
-module Components.Slices.PlanDialog exposing (ColorsModel, ColorsMsg(..), DocState, SharedDocState, aiDisabledAlert, amlDisabledAlert, analysisResults, analysisWarning, colorsInit, colorsModalBody, colorsUpdate, doc, docInit, layoutTablesModalBody, layoutsModalBody, layoutsWarning, privateLinkWarning, projectExportWarning, projectsNoSaveAlert, projectsTooManyAlert, schemaExportWarning)
+module Components.Slices.PlanDialog exposing (ColorsModel, ColorsMsg(..), DocState, SharedDocState, aiDisabledAlert, amlDisabledAlert, amlWriteError, analysisResults, analysisWarning, colorsInit, colorsModalBody, colorsUpdate, doc, docInit, layoutTablesModalBody, layoutsModalBody, layoutsWarning, privateLinkWarning, projectExportWarning, projectsNoSaveAlert, projectsTooManyAlert, schemaExportWarning)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon)
@@ -78,6 +78,15 @@ amlDisabledAlert project =
             ]
         ]
         [ subscribeButtonSecondary project color feature Icon.Puzzle "Do some magic" ]
+
+
+amlWriteError : ProjectRef -> String
+amlWriteError project =
+    "AML is limited to "
+        ++ (project.organization |> Maybe.andThen (.plan >> .aml) |> Maybe.withDefault Feature.aml.default |> String.fromInt)
+        ++ " tables in "
+        ++ planName project
+        ++ ", use Solo free trial to continue"
 
 
 aiDisabledAlert : ProjectRef -> Html msg

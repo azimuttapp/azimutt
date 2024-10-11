@@ -573,7 +573,7 @@ export interface LegacyPlan {
     name: string
     data_exploration: boolean
     colors: boolean
-    aml: boolean
+    aml: number | null
     schema_export: boolean
     ai: boolean
     analysis: string
@@ -592,7 +592,7 @@ export const LegacyPlan = z.object({
     name: z.string(),
     data_exploration: z.boolean(),
     colors: z.boolean(),
-    aml: z.boolean(),
+    aml: z.number().nullable(),
     schema_export: z.boolean(),
     ai: z.boolean(),
     analysis: z.string(),

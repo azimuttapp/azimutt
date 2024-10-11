@@ -1,4 +1,4 @@
-module Models.Organization exposing (Organization, canAnalyse, canChangeColor, canCreateLayout, canExportProject, canExportSchema, canSaveProject, canShareProject, canShowTables, canUseAi, canUseAml, decode, encode, isLastLayout, one, zero)
+module Models.Organization exposing (Organization, canAnalyse, canChangeColor, canCreateLayout, canExportProject, canExportSchema, canSaveProject, canShareProject, canShowTables, canUseAi, canUseAml, canWriteAml, decode, encode, isLastLayout, one, zero)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -37,8 +37,15 @@ canChangeColor projectRef =
 
 
 canUseAml : { x | organization : Maybe Organization } -> Bool
-canUseAml projectRef =
-    projectRef.organization |> Maybe.mapOrElse (.plan >> .aml) Feature.aml.default
+canUseAml _ =
+    -- now AML is always accessible, it's limited in term of number of tables, see `canWriteAml`
+    -- projectRef.organization |> Maybe.mapOrElse (.plan >> .aml) Feature.aml.default
+    True
+
+
+canWriteAml : Int -> { x | organization : Maybe Organization } -> Bool
+canWriteAml tables projectRef =
+    projectRef.organization |> Maybe.mapOrElse (.plan >> .aml >> Maybe.all (\max -> tables <= max)) (tables <= Feature.aml.default)
 
 
 canUseAi : { x | organization : Maybe Organization } -> Bool

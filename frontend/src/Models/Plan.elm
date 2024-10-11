@@ -13,7 +13,7 @@ type alias Plan =
     , name : String
     , dataExploration : Bool -- TODO: add limitation (not done because available on all plans for now)
     , colors : Bool
-    , aml : Bool
+    , aml : Maybe Int
     , schemaExport : Bool
     , ai : Bool
     , analysis : String
@@ -35,7 +35,7 @@ encode value =
         , ( "name", value.name |> Encode.string )
         , ( Feature.dataExploration.name, value.dataExploration |> Encode.bool )
         , ( Feature.colors.name, value.colors |> Encode.bool )
-        , ( Feature.aml.name, value.aml |> Encode.bool )
+        , ( Feature.aml.name, value.aml |> Encode.maybe Encode.int )
         , ( Feature.schemaExport.name, value.schemaExport |> Encode.bool )
         , ( Feature.ai.name, value.ai |> Encode.bool )
         , ( Feature.analysis.name, value.analysis |> Encode.string )
@@ -57,7 +57,7 @@ decode =
         (Decode.field "name" Decode.string)
         (Decode.field Feature.dataExploration.name Decode.bool)
         (Decode.field Feature.colors.name Decode.bool)
-        (Decode.field Feature.aml.name Decode.bool)
+        (Decode.maybeField Feature.aml.name Decode.int)
         (Decode.field Feature.schemaExport.name Decode.bool)
         (Decode.field Feature.ai.name Decode.bool)
         (Decode.field Feature.analysis.name Decode.string)
@@ -77,7 +77,7 @@ docSample =
     , name = "Sample plan"
     , dataExploration = True
     , colors = True
-    , aml = True
+    , aml = Just 10
     , schemaExport = True
     , ai = True
     , analysis = "trends"

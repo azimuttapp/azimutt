@@ -16,7 +16,7 @@
             <%= render "_streak_step.html", step: 5, value: @value, color: "yellow", color_next: "red" %>
             <%= cond do %>
                 <% @value <= 6 -> %>
-                    <%= render "_streak_step.html", step: 6, value: @value, color: "red", reward: %{icon: "📝", label: "Day 6: unlock DB design with AML"} %>
+                    <%= render "_streak_step.html", step: 6, value: @value, color: "red", reward: %{icon: "📝", label: "Day 6: unlock unlimited DB design with AML"} %>
                 <% @value <= 10 -> %>
                     <%= render "_streak_step.html", step: 10, value: @value, color: "red", reward: %{icon: "🪄", label: "Day 10: unlock AI features"} %>
                 <% @value <= 15 -> %>

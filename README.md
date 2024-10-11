@@ -20,7 +20,8 @@
     <a href="https://azimutt.app/slack" target="_blank"><img src="assets/slack-join.svg" alt="Join us on Slack" style="width: 216px; height: 54px;" width="216" height="54"></a>
 </p>
 
-Azimutt is a full-stack database exploration tool, from modern ERD made for real world databases (big & messy), to fast data navigation, but also documentation everywhere and whole database analysis.
+Azimutt is a **full-stack database exploration tool**.  
+From modern ERD made for real world databases (big & messy), to fast data navigation, but also documentation everywhere and whole database analysis.
 
 [![Azimutt screenshot](assets/azimutt-screenshot.png)](https://azimutt.app/45f571a6-d9b8-4752-8a13-93ac0d2b7984/c00d0c45-8db2-46b7-9b51-eba661640c3c?token=59166798-32de-4f46-a1b4-0f7327a91336)
 
@@ -28,25 +29,47 @@ Azimutt is a full-stack database exploration tool, from modern ERD made for real
 
 Databases existed for more than 40 years and despite a lot of tool around them, we couldn't find any providing a great exploration experience.
 
-- **Database clients** focus on querying experience, with auto-completion and table/column lists but no visual help
-- **ERDs** have a great diagram UI but fall short when schema is growing (real-world use cases)
-- **Data catalogs** are focused on data governance and lineage for data teams, miss relational db for developers
+- **ERDs** have a great diagram UI, but fall short when schema is growing (real-world use cases)
+- **Data catalogs** are focused on data governance and lineage, missing relational db knowledge
+- **Database clients** focus on querying with auto-completion and table/column lists, but no visual help
 
-So we decided to built it 💪
+So we decided to build the missing tool 💪
 
-Azimutt started as a schema exploration tool for databases with hundreds of tables, but now it has grown a lot:
+We started with schema exploration for databases with hundreds of tables, but now, it has grown a lot:
 
-- Design your schema using [AML](https://azimutt.app/aml) for a fast diagramming
-- Explore your database schema using search everywhere, display only useful tables/columns and follow relations
-- Query your data like never before, follow foreign keys and display entities in diagram
-- Document using table/column notes and tags and layouts and memos for use cases, features or team scopes
-- Analyze it to discover inconsistencies and best practices to apply
+- **Design** your schema using [AML](https://azimutt.app/aml) for a fast diagramming
+- **Explore** your schema using search everywhere, display only useful tables/columns and follow relations
+- **Query** your data like never before, follow foreign keys and display entities in diagram
+- **Document** using table/column notes and tags, layouts and memos for use cases, features or team scopes
+- **Analyze** it to discover inconsistencies and best practices to apply
 
-Azimutt goal is to be your ultimate tool to understand your database.
+Azimutt goal is to be your **ultimate tool to understand your database**.
 
-## Self hosted
+
+## Azimutt badge
+
+You can load any public SQL file in Azimutt with just an url parameter.
+So if you have a SQL file in your repo, like [structure.sql](./backend/priv/repo/structure.sql), you can add a button allowing your visitors to quickly explore it:
+
+```markdown
+[![explore database with Azimutt](https://img.shields.io/badge/PostgreSQL-browse_online-gray?labelColor=4169E1&logo=postgresql&logoColor=fff&style=flat)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql)
+```
+
+Here are some examples:
+
+[![explore database with Azimutt](https://img.shields.io/badge/PostgreSQL-browse_online-gray?labelColor=4169E1&logo=postgresql&logoColor=fff&style=flat)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql)
+[![explore database with Azimutt](https://img.shields.io/badge/MySQL-browse_online-gray?labelColor=4479A1&logo=mysql&logoColor=fff&style=flat)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql)
+[![explore database with Azimutt](https://img.shields.io/badge/MariaDB-browse_online-gray?labelColor=003545&logo=mariadb&logoColor=fff&style=flat)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql)
+
+Or use our custom button image:
+
+[![explore database with Azimutt](https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/assets/azimutt-button.png)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql)
+
+
+## Self-hosted
 
 You can use our [Docker image](https://github.com/azimuttapp/azimutt/pkgs/container/azimutt) to easily deploy it. Here is the [full guide](INSTALL.md).
+
 
 ## Deploy on Heroku
 
@@ -70,15 +93,17 @@ heroku config:set S3_KEY_ID=$(heroku config:get S3_ROOT_ACCESS_KEY)
 heroku config:set S3_KEY_SECRET=$(heroku config:get S3_ROOT_SECRET_KEY)
 ```
 
-Finally you will need to create the `azimutt` bucket on Stackhero:
+Finally, you will need to create the `azimutt` bucket on Stackhero:
 
 - connect to Stackhero from your Heroku dashboard
 - use values of `S3_ROOT_ACCESS_KEY` and `S3_ROOT_SECRET_KEY` to log in
 - create a bucket named `azimutt`
 
+
 ## Deploy on Kubernetes
 
 Please read this [guide](./charts/azimutt/README.md)
+
 
 ## Local development
 
@@ -101,6 +126,7 @@ Other things:
 - API documentation is accessible at [`/api/v1/swagger`](http://localhost:4000/api/v1/swagger)
 - You can use `pnpm --filter "azimutt-editor" run book` to start Elm design system & components, and access it with [localhost:4002](http://localhost:4002)
 
+
 ### command semantics
 
 We have a lot of projects with a lot of commands, here is how they are structured:
@@ -116,9 +142,11 @@ We have a lot of projects with a lot of commands, here is how they are structure
 - `build:docker` same as `build` but in the docker image (paths are different 😕)
 - `update` bumps library versions
 
+
 ### Development commands
 
 - `pnpm --filter "azimutt-editor" run book` to launch the Elm design system
+
 
 ### Setup Stripe
 
@@ -129,6 +157,7 @@ We have a lot of projects with a lot of commands, here is how they are structure
 - Copy your webhook signing secret to `STRIPE_WEBHOOK_SIGNING_SECRET` variable in your `.env` file (looks like `whsec_...`)
 - Go to [your Stripe dashboard](https://dashboard.stripe.com/test/apikeys) to obtain your API Key and copy it into `STRIPE_API_KEY` in your `.env` file (looks like: `sk_test_...`)
 
+
 #### Payments
 
 When testing interactively, use a card number, such as `4242 4242 4242 4242`. Enter the card number in the Dashboard or in any payment form.
@@ -138,12 +167,14 @@ Use any value you like for other form fields.
 
 See more in the [stripe testing documentation](https://stripe.com/docs/testing)
 
+
 ## Stack
 
 - [Production](https://azimutt.app) & [Staging](https://azimutt.dev)
 - [Error logs](https://sentry.io/organizations/azimuttapp/issues/?project=6635088) with [Sentry](https://sentry.io)
 - Design using [TailwindCSS Framework](https://tailwindcss.com)
 - [Credo](http://credo-ci.org) for static code analysis (automatically run with pre-commit)
+
 
 ## License
 

@@ -108,11 +108,22 @@ update now projectRef msg model =
             (model.erd |> Maybe.andThen (.sources >> List.findBy .id id))
                 |> Maybe.map
                     (\source ->
+                        let
+                            editorError : String -> ParserError
+                            editorError message =
+                                { message = message, kind = "EditorError", level = ParserError.Error, offset = { start = 0, end = 0 }, position = { start = { line = 1, column = 1 }, end = { line = 1, column = 1 } } }
+                        in
                         if source.id /= id then
-                            ( model |> mapAmlSidebarM (setErrors [ { message = "Source has changed", kind = "EditorError", level = ParserError.Error, offset = { start = 0, end = 0 }, position = { start = { line = 1, column = 1 }, end = { line = 1, column = 1 } } } ]), Extra.none )
+                            ( model |> mapAmlSidebarM (setErrors [ editorError "Source has changed" ]), Extra.none )
 
                         else if String.length (Source.contentStr source) /= length then
-                            ( model |> mapAmlSidebarM (setErrors [ { message = "AML has changed", kind = "EditorError", level = ParserError.Error, offset = { start = 0, end = 0 }, position = { start = { line = 1, column = 1 }, end = { line = 1, column = 1 } } } ]), Extra.none )
+                            ( model |> mapAmlSidebarM (setErrors [ editorError "AML has changed" ]), Extra.none )
+
+                        else if errors |> List.any (\e -> e.level == ParserError.Error) then
+                            ( model |> mapAmlSidebarM (setErrors errors), Extra.none )
+
+                        else if schema |> Maybe.any (\s -> projectRef |> Organization.canWriteAml (List.length s.tables) |> not) then
+                            ( model |> mapAmlSidebarM (setErrors [ projectRef |> PlanDialog.amlWriteError |> editorError ]), Extra.none )
 
                         else
                             schema |> Maybe.map (\s -> model |> updateSource now source s errors |> setDirty) |> Maybe.withDefault ( model |> mapAmlSidebarM (setErrors errors), Extra.none )

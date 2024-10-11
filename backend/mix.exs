@@ -102,6 +102,10 @@ defmodule Azimutt.MixProject do
       setup: ["deps.get", "ecto.setup"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
+      # generate structure.sql on migration
+      "db.migrate": ["ecto.migrate", "ecto.dump"],
+      # generate structure.sql on rollback
+      "db.rollback": ["ecto.rollback", "ecto.dump"],
       seeds: "run priv/repo/seeds.exs",
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.deploy": [

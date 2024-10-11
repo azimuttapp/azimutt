@@ -26,7 +26,7 @@ describe('legacyProject', () => {
         name: 'Free plan',
         data_exploration: true,
         colors: true,
-        aml: true,
+        aml: 10,
         schema_export: true,
         ai: true,
         analysis: "snapshot",

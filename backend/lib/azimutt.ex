@@ -103,13 +103,14 @@ defmodule Azimutt do
   def active_plans, do: [plans().free, plans().solo, plans().team, plans().enterprise]
 
   def features do
+    # MUST stay in sync with frontend/src/Models/Feature.elm
     %{
       # Database features
       schema_exploration: %{name: "Schema exploration", free: true, solo: true, team: true, enterprise: true, pro: true},
       data_exploration: %{name: "Data exploration", free: true, solo: true, team: true, enterprise: true, pro: true},
-      colors: %{name: "Custom colors", free: false, solo: true, team: true, enterprise: true, pro: true},
       # TODO: rename `aml` to `db_design`
-      aml: %{name: "Database design (AML)", free: false, solo: true, team: true, enterprise: true, pro: true},
+      aml: %{name: "Database design", free: 10, solo: nil, team: nil, enterprise: nil, pro: nil, description: "Allowed tables in AML"},
+      colors: %{name: "Custom colors", free: false, solo: true, team: true, enterprise: true, pro: true},
       # saved_queries: %{name: "Saved queries", free: false, solo: false, team: false, enterprise: true, pro: true, description: "Soon... Save and share useful queries."},
       # dashboard: %{name: "Dashboard", free: false, solo: false, team: false, enterprise: true, pro: true, description: "Soon... Visually see query results."},
       # db_stat_history: %{name: "Stats history", free: false, solo: false, team: false, enterprise: true, pro: true, description: "Soon... Keep evolutions of database stats."},
@@ -150,7 +151,7 @@ defmodule Azimutt do
   def streak do
     [
       %{goal: 4, feature: :colors, limit: true},
-      %{goal: 6, feature: :aml, limit: true},
+      %{goal: 6, feature: :aml, limit: nil},
       %{goal: 10, feature: :ai, limit: true},
       %{goal: 15, feature: :project_layouts, limit: nil},
       %{goal: 25, feature: :schema_export, limit: true},
