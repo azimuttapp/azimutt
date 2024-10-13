@@ -158,7 +158,7 @@ export const completion = (opts: {} = {}): CompletionItemProvider => ({ // auto-
         if (res = relationSrcWrittenMatch(before)) {
             const [srcId] = res
             // TODO: sort target attributes in the same order then src if possible
-            suggestRelationRef(suggestions, position, getEntities(), attributesRefFromId(srcId).attributes.length, '-> ')
+            suggestRelationRef(suggestions, position, getEntities(), attributesRefFromId(srcId).attrs.length, '-> ')
         }
         if (res = entityPropsKeyMatch(before)) {
             if (!res.includes('view')) suggestions.push(suggestSnippet('view', 'view: "${1:query}"', CompletionItemKind.Property, position))

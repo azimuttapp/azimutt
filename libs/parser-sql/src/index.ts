@@ -1,6 +1,6 @@
 import {DatabaseSchema as schemaJsonDatabase, generateJsonDatabase, parseJsonDatabase} from "@azimutt/models";
 import packageJson from "../package.json";
-import {generateSql, parseSql} from "./sql";
+import {generateSql, generateSqlDiff, parseSql} from "./sql";
 
 const monaco = {}
 const version = packageJson.version
@@ -8,7 +8,7 @@ const version = packageJson.version
 // make it available locally: `npm run build:browser && cp out/bundle.min.js ../../backend/priv/static/elm/sql.min.js && cp out/bundle.min.js.map ../../backend/priv/static/elm/sql.min.js.map`
 // update `backend/lib/azimutt_web/templates/website/_converter-editors-script.html.heex` to use local files
 export * from "@azimutt/models"
-export {parseSql, generateSql, parseJsonDatabase, generateJsonDatabase, schemaJsonDatabase, monaco, version}
+export {parseSql, generateSql, generateSqlDiff, parseJsonDatabase, generateJsonDatabase, schemaJsonDatabase, monaco, version}
 
 /*
   Parser:

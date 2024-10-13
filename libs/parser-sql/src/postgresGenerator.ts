@@ -1,5 +1,6 @@
 import {equalDeep, indexBy, joinLast} from "@azimutt/utils";
 import {
+    ArrayDiff,
     Attribute,
     AttributeDiff,
     AttributePath,
@@ -7,6 +8,7 @@ import {
     AttributeType,
     AttributeValue,
     Check,
+    CheckDiff,
     Database,
     DatabaseDiff,
     Entity,
@@ -15,10 +17,14 @@ import {
     entityRefSame,
     entityToRef,
     Index,
+    IndexDiff,
     namespace,
     Namespace,
+    OptValueDiff,
     PrimaryKey,
     Relation,
+    RelationDiff,
+    relationToId,
     Type,
     TypeDiff,
     TypeId,
@@ -42,19 +48,22 @@ export function generatePostgres(database: Database): string {
 }
 
 export function generatePostgresDiff(diff: DatabaseDiff): string {
-    // TODO: rename types? (search in deleted if some created are identical except the name)
     const createdTypes = diff.types?.created?.map(genType) || []
     const updatedTypes = diff.types?.updated?.map(genTypeAlter) || []
     const deletedTypes = diff.types?.deleted?.map(genTypeDrop) || []
     const types = createdTypes.concat(updatedTypes, deletedTypes).join('')
 
-    // TODO: rename entities? (search in deleted if some created are identical except the name)
     const createdEntities = diff.entities?.created?.map(e => genEntity(e, [], {})) || []
     const updatedEntities = diff.entities?.updated?.map(e => genEntityAlter(e, [], {})) || []
     const deletedEntities = diff.entities?.deleted?.map(genEntityDrop) || []
     const entities = createdEntities.concat(updatedEntities, deletedEntities).join('\n')
 
-    return [types, entities].filter(v => !!v).join('\n')
+    const createdRelations = diff.relations?.created?.map(r => genRelation(r)) || []
+    const updatedRelations = diff.relations?.updated?.flatMap(r => genRelationAlter(r)) || []
+    const deletedRelations = diff.relations?.deleted?.map(genRelationDrop) || []
+    const relations = createdRelations.concat(updatedRelations, deletedRelations).join('\n')
+
+    return [types, entities, relations].filter(v => !!v).join('\n')
 }
 
 function genNamespace(n: Namespace): string {
@@ -74,7 +83,7 @@ function genEntity(e: Entity, relations: Relation[], typesById: Record<TypeId, T
 function genTable(e: Entity, relations: Relation[], typesById: Record<TypeId, Type>): string {
     const comment = e.extra?.comment ? `-- ${e.extra.comment}\n` : ''
     const attrs = (e.attrs || []).map(a => genAttribute(a, e.pk, e.indexes || [], e.checks || [], relations, typesById))
-    const pk = e.pk && e.pk.attrs.length > 1 ? [{value: `${e.pk.name ? `CONSTRAINT ${genIdentifier(e.pk.name)} ` : ''}PRIMARY KEY (${e.pk.attrs.map(genAttributePath).join(', ')})`}] : []
+    const pk = e.pk && e.pk.attrs.length > 1 ? [{value: `${genConstraintName(e.pk.name)}PRIMARY KEY (${e.pk.attrs.map(genAttributePath).join(', ')})`}] : []
     const indexes = (e.indexes || []).filter(i => !i.unique).map(i => genIndexCommand(i, e)).join('')
     const uniques = (e.indexes || []).filter(i => i.unique && i.attrs.length > 1).map(genUniqueEntity) // TODO: also unique on a single column when there is several
     const checks = (e.checks || []).filter(c => c.attrs.length > 1).map(genCheckEntity) // TODO: also check on a single column when there is several
@@ -107,7 +116,7 @@ function genAttribute(a: Attribute, pk: PrimaryKey | undefined, indexes: Index[]
     const [type, typeComment] = genAttributeType(a.type, typesById)
     const notNull = a.null || (pk?.attrs.find(aa => attributePathSame(aa, [a.name]))) ? '' : ' NOT NULL'
     const df = a.default ? ` DEFAULT ${genAttributeValue(a.default)}` : ''
-    const primaryKey = pk && pk.attrs.length === 1 && attributePathSame(pk.attrs[0], [a.name]) ? ` ${pk.name ? `CONSTRAINT ${genIdentifier(pk.name)} ` : ''}PRIMARY KEY` : ''
+    const primaryKey = pk && pk.attrs.length === 1 && attributePathSame(pk.attrs[0], [a.name]) ? ` ${genConstraintName(pk.name)}PRIMARY KEY` : ''
     const attrUniques = indexes.filter(u => u.unique && u.attrs.length === 1 && attributePathSame(u.attrs[0], [a.name]))
     const unique = attrUniques.length === 1 ? ' UNIQUE' : ''
     const attrChecks = checks.filter(c => c.attrs.length === 1 && attributePathSame(c.attrs[0], [a.name]))
@@ -135,24 +144,18 @@ function genIndexCommand(i: Index, e: Entity) {
 }
 
 function genUniqueEntity(u: Index): TableInner {
-    const name = u.name ? `CONSTRAINT ${genIdentifier(u.name)} ` : ''
-    return {value: `${name}UNIQUE (${u.attrs.map(genAttributePath).join(', ')})`}
+    return {value: `${genConstraintName(u.name)}UNIQUE (${u.attrs.map(genAttributePath).join(', ')})`}
 }
 
 function genCheckInline(c: Check): [string, string] {
-    return c.predicate ? [` ${c.name ? `CONSTRAINT ${c.name} ` : ''}CHECK (${c.predicate})`, ''] : ['', 'check constraint but no predicate']
+    return c.predicate ? [` ${genConstraintName(c.name)}CHECK (${c.predicate})`, ''] : ['', 'check constraint but no predicate']
 }
 
 function genCheckEntity(c: Check): TableInner {
-    const name = c.name ? `CONSTRAINT ${genIdentifier(c.name)} ` : ''
-    return {value: `${name}CHECK (${c.predicate})`}
+    return {value: `${genConstraintName(c.name)}CHECK (${c.predicate})`}
 }
 
 function genEntityAlter(e: EntityDiff, relations: Relation[], typesById: Record<TypeId, Type>): string {
-    // TODO: rename table
-    // TODO: add, remove, update, rename columns
-    // TODO: create, delete, update, rename pk, indexes & checks
-    // TODO: set comments
     if (e.kind && e.kind.after !== e.kind.before) {
         // drop & create
         return `TODO ${e.kind.before || 'table'} -> ${e.kind.after || 'table'}`
@@ -163,28 +166,140 @@ function genEntityAlter(e: EntityDiff, relations: Relation[], typesById: Record<
     }
 }
 
-function genTableAlter(e: EntityDiff, relations: Relation[], typesById: Record<TypeId, Type>): string { // see https://www.postgresql.org/docs/current/sql-altertable.html
-    // table:
-    // ALTER TABLE table_name SET SCHEMA new_schema_name;
-    // ALTER TABLE table_name RENAME TO new_table_name;
-    // columns:
-    // OK ALTER TABLE table_name ADD column_name column_type column_constraint;
-    // OK ALTER TABLE table_name DROP column_name;
-    // OK ALTER TABLE table_name ALTER column_name TYPE column_type;
-    // OK ALTER TABLE table_name RENAME column_name TO new_column_name;
-    // OK ALTER TABLE table_name ALTER column_name SET NOT NULL;
-    // OK ALTER TABLE table_name ALTER column_name DROP NOT NULL;
-    // OK ALTER TABLE table_name ALTER column_name SET DEFAULT column_default;
-    // OK ALTER TABLE table_name ALTER column_name DROP DEFAULT;
-    // constraints:
-    // ??? ALTER TABLE table_name ADD table_constraint;
-    // ??? ALTER TABLE table_name DROP CONSTRAINT constraint_name;
-    // ??? ALTER TABLE table_name ALTER CONSTRAINT constraint_name;
-    // ALTER TABLE table_name RENAME CONSTRAINT constraint_name TO new_constraint_name;
+function genTableAlter(e: EntityDiff, relations: Relation[], typesById: Record<TypeId, Type>): string {
+    // see https://www.postgresql.org/docs/current/sql-altertable.html
+    const res: string[] = []
+    if (e.rename) {
+        if (e.rename.before === undefined && e.rename.after) {
+            res.push(`ALTER TABLE <missing old name> RENAME TO ${genIdentifier(e.rename.after)};\n`)
+        } else if (e.rename.before && e.rename.after === undefined) {
+            res.push(`ALTER TABLE ${genIdentifier(e.rename.before)} RENAME TO <missing new name>;\n`)
+        } else if (e.rename.before && e.rename.after) {
+            res.push(`ALTER TABLE ${genIdentifier(e.rename.before)} RENAME TO ${genIdentifier(e.rename.after)};\n`)
+        }
+    }
     return [
+        res,
         genEntityAlterAttributes(e, relations, typesById),
+        e.pk ? genEntityAlertPrimaryKey(e, e.pk) : [],
+        e.indexes ? genEntityAlterIndexes(e, e.indexes) : [],
+        e.checks ? genEntityAlterChecks(e, e.checks) : [],
         e.doc ? [genComment('TABLE', genEntityIdentifier(e), e.doc.after)] : [],
     ].flat().join('')
+}
+
+function genEntityAlertPrimaryKey(e: EntityDiff, pk: OptValueDiff<PrimaryKey>): string[] {
+    if (pk.before === undefined && pk.after) {
+        return [`ALTER TABLE ${genEntityIdentifier(e)} ADD ${genConstraintName(pk.after.name)}PRIMARY KEY (${pk.after.attrs.map(genAttributePathIndex).join(', ')});\n`]
+    } else if (pk.before && pk.after === undefined) {
+        if (pk.before.name) {
+            return [`ALTER TABLE ${genEntityIdentifier(e)} DROP CONSTRAINT ${genIdentifier(pk.before.name)};\n`]
+        } else {
+            return [`-- ALTER TABLE ${genEntityIdentifier(e)} DROP CONSTRAINT -- missing primary key name\n`]
+        }
+    } else {
+        if (pk.before && pk.before.name) {
+            return [`-- ALTER TABLE ${genEntityIdentifier(e)} ALTER ${genConstraintName(pk.before.name)}-- missing props\n`]
+        } else {
+            return [`-- ALTER TABLE ${genEntityIdentifier(e)} ALTER CONSTRAINT -- missing primary key name and props\n`]
+        }
+    }
+}
+
+function genEntityAlterIndexes(e: EntityDiff, indexes: ArrayDiff<Index, IndexDiff>): string[] {
+    return ([] as string[]).concat(
+        (indexes.created || []).map(i => genIndexCreate(e, i)),
+        (indexes.deleted || []).map(i => genIndexDrop(e, i)),
+        (indexes.updated || []).flatMap(i => genIndexAlter(e, i)),
+    )
+}
+
+function genIndexCreate(e: EntityDiff, i: Index): string {
+    // see https://www.postgresql.org/docs/current/sql-createindex.html
+    // see https://www.postgresql.org/docs/current/indexes-partial.html
+    const def = i.definition ? i.definition : i.attrs.map(genAttributePathIndex).join(', ')
+    const ref = i.name ? genIdentifier(i.name) : `<missing name for index on ${genEntityIdentifier(e)} (${i.attrs.map(genAttributePathIndex).join(', ')})>`
+    const doc = i.doc ? genCommentIndex(i.name, ref, i.doc) : ''
+    return `CREATE ${i.unique ? 'UNIQUE ' : ''}INDEX ${i.name ? genIdentifier(i.name) + ' ' : ''}ON ${genEntityIdentifier(e)} (${def})${i.partial ? ` WHERE ${i.partial}` : ''};\n${doc}`
+}
+
+function genIndexDrop(e: EntityDiff, i: Index): string {
+    // see https://www.postgresql.org/docs/current/sql-dropindex.html
+    if (i.name) {
+        return `DROP INDEX ${i.name};\n`
+    } else {
+        return `-- DROP INDEX -- missing name for ${genEntityIdentifier(e)} (${i.attrs.map(genAttributePathIndex).join(', ')});\n`
+    }
+}
+
+function genIndexAlter(e: EntityDiff, i: IndexDiff): string[] {
+    // see https://www.postgresql.org/docs/current/sql-alterindex.html
+    const res: string[] = []
+    const name = i.name || i.rename?.after || i.rename?.before
+    const ref = name ? genIdentifier(name) : `<missing name for index on ${genEntityIdentifier(e)} (${i.attrs.map(genAttributePathIndex).join(', ')})>`
+    if (i.rename) {
+        if (i.rename.before === undefined && i.rename.after) {
+            res.push(`-- ALTER INDEX <missing old name> RENAME TO ${genIdentifier(i.rename.after)};\n`)
+        } else if (i.rename.before && i.rename.after === undefined) {
+            res.push(`-- ALTER INDEX ${genIdentifier(i.rename.before)} RENAME TO <missing new name>;\n`)
+        } else if (i.rename.before && i.rename.after) {
+            res.push(`ALTER INDEX ${genIdentifier(i.rename.before)} RENAME TO ${genIdentifier(i.rename.after)};\n`)
+        }
+    }
+    if (i.unique) res.push(`-- ALTER INDEX ${ref} -- can't ${i.unique.after ? 'set' : 'drop'} UNIQUE on PostgreSQL\n`)
+    if (i.partial) res.push(`-- ALTER INDEX ${ref} -- can't update index partial clause to (${i.partial.after}) on PostgreSQL\n`)
+    if (i.definition) res.push(`-- ALTER INDEX ${ref} -- can't update index definition to (${i.definition.after}) on PostgreSQL\n`)
+    if (i.doc) res.push(genCommentIndex(name, ref, i.doc.after))
+    return res
+}
+
+function genCommentIndex(name: string | undefined, ref: string, doc: string | undefined): string {
+    return (name ? '' : '-- ') + genComment('INDEX', ref, doc)
+}
+
+function genEntityAlterChecks(e: EntityDiff, checks: ArrayDiff<Check, CheckDiff>): string[] {
+    return ([] as string[]).concat(
+        (checks.created || []).map(c => genCheckCreate(e, c)),
+        (checks.deleted || []).map(c => genCheckDrop(e, c)),
+        (checks.updated || []).flatMap(c => genCheckAlter(e, c)),
+    )
+}
+
+function genCheckCreate(e: EntityDiff, c: Check): string {
+    // see https://www.postgresql.org/docs/current/sql-altertable.html
+    const doc = c.doc ? genCommentCheck(c.name, c.name ? genIdentifier(c.name) : '<missing check name>', e, c.doc) : ''
+    return `ALTER TABLE ${genEntityIdentifier(e)} ADD ${genConstraintName(c.name)}CHECK (${c.predicate});\n${doc}`
+}
+
+function genCheckDrop(e: EntityDiff, c: Check): string {
+    // see https://www.postgresql.org/docs/current/sql-altertable.html
+    if (c.name) {
+        return `ALTER TABLE ${genEntityIdentifier(e)} DROP CONSTRAINT ${genIdentifier(c.name)};\n`
+    } else {
+        return `-- ALTER TABLE ${genEntityIdentifier(e)} DROP CONSTRAINT -- missing name for check (${c.predicate})\n`
+    }
+}
+
+function genCheckAlter(e: EntityDiff, c: CheckDiff): string[] {
+    const res: string[] = []
+    const name = c.name || c.rename?.after || c.rename?.before
+    const ref = name ? genIdentifier(name) : `<missing name for check>`
+    if (c.rename) {
+        if (c.rename.before === undefined && c.rename.after) {
+            res.push(`-- ALTER TABLE ${genEntityIdentifier(e)} RENAME CONSTRAINT <missing old name> TO ${genIdentifier(c.rename.after)};\n`)
+        } else if (c.rename.before && c.rename.after === undefined) {
+            res.push(`-- ALTER TABLE ${genEntityIdentifier(e)} RENAME ${genConstraintName(c.rename.before)}TO <missing new name>;\n`)
+        } else if (c.rename.before && c.rename.after) {
+            res.push(`ALTER TABLE ${genEntityIdentifier(e)} RENAME ${genConstraintName(c.rename.before)}TO ${genIdentifier(c.rename.after)};\n`)
+        }
+    }
+    if (c.predicate) res.push(`-- ALTER TABLE ${genEntityIdentifier(e)} ALTER CONSTRAINT ${ref} -- can't update check predicate to (${c.predicate.after}) on PostgreSQL\n`)
+    if (c.doc) res.push(genCommentCheck(name, ref, e, c.doc.after))
+    return res
+}
+
+function genCommentCheck(name: string | undefined, ref: string, e: Namespace & { name: string }, value: string | undefined): string {
+    return (name ? '' : '-- ') + `COMMENT ON CONSTRAINT ${ref} ON ${genEntityIdentifier(e)} IS ${value ? genString(value) : 'NULL'};\n`
 }
 
 function genViewAlter(e: EntityDiff): string { // see https://www.postgresql.org/docs/current/sql-alterview.html
@@ -228,11 +343,40 @@ function genRelationInline(relation: Relation): [string, string] {
 }
 
 function genRelationEntity(relation: Relation): TableInner {
-    const name = relation.name ? `CONSTRAINT ${genIdentifier(relation.name)} ` : ''
     const src = relation.src.attrs.map(genAttributePath).join(', ')
     const refTable = `${genNamespace(relation.ref)}${genIdentifier(relation.ref.entity)}`
     const refAttrs = relation.ref.attrs.map(genAttributePath).join(', ')
-    return {value: `${name}FOREIGN KEY (${src}) REFERENCES ${refTable}(${refAttrs})`}
+    return {value: `${genConstraintName(relation.name)}FOREIGN KEY (${src}) REFERENCES ${refTable}(${refAttrs})`}
+}
+
+function genRelation(relation: Relation): string {
+    return `ALTER TABLE ${genEntityRef(relation.src)} ADD FOREIGN KEY (${relation.src.attrs.map(genAttributePath).join(', ')}) REFERENCES ${genEntityRef(relation.ref)}(${relation.ref.attrs.map(genAttributePath).join(', ')});\n`
+}
+
+function genRelationAlter(relation: RelationDiff): string[] {
+    const res: string[] = []
+    if (relation.rename) {
+        if (relation.rename.before === undefined && relation.rename.after) {
+            res.push(`-- ALTER TABLE ${genEntityRef(relation.src)} RENAME CONSTRAINT <missing old name> TO ${genIdentifier(relation.rename.after)};\n`)
+        } else if (relation.rename.before && relation.rename.after === undefined) {
+            res.push(`-- ALTER TABLE ${genEntityRef(relation.src)} RENAME CONSTRAINT ${genIdentifier(relation.rename.before)} TO <missing new name>;\n`)
+        } else if (relation.rename.before && relation.rename.after) {
+            res.push(`ALTER TABLE ${genEntityRef(relation.src)} RENAME CONSTRAINT ${genIdentifier(relation.rename.before)} TO ${genIdentifier(relation.rename.after)};\n`)
+        }
+    }
+    return res
+}
+
+function genRelationDrop(relation: Relation): string {
+    if (relation.name) {
+        return `ALTER TABLE ${genEntityRef(relation.src)} DROP CONSTRAINT ${genIdentifier(relation.name)};\n`
+    } else {
+        return `-- ALTER TABLE ${genEntityRef(relation.src)} DROP CONSTRAINT -- missing name for ${relationToId(relation)}\n`
+    }
+}
+
+function genConstraintName(name: string | undefined): string {
+    return name ? `CONSTRAINT ${genIdentifier(name)} ` : ''
 }
 
 function genTypeIdentifier(t: Namespace & { name: string }): string {
@@ -255,15 +399,29 @@ function genTypeContent(t: Type): string {
 
 function genTypeAlter(t: TypeDiff): string { // see https://www.postgresql.org/docs/current/sql-altertype.html
     return [
-        getTypeAlterAlias(t),
+        genTypeRename(t),
+        genTypeAlterAlias(t),
         genTypeAlterEnum(t),
-        getTypeAlterStruct(t),
-        getTypeAlterCustom(t),
+        genTypeAlterStruct(t),
+        genTypeAlterCustom(t),
         t.doc ? [genComment('TYPE', genTypeIdentifier(t), t.doc.after)] : [],
     ].flat().join('')
 }
 
-function getTypeAlterAlias(t: TypeDiff): string[] {
+function genTypeRename(t: TypeDiff): string[] {
+    if (t.rename) {
+        if (t.rename.before === undefined && t.rename.after) {
+            return [`-- ALTER TYPE <missing old name> RENAME TO ${genIdentifier(t.rename.after)};\n`]
+        } else if (t.rename.before && t.rename.after === undefined) {
+            return [`-- ALTER TYPE ${genIdentifier(t.rename.before)} RENAME TO <missing new name>;\n`]
+        } else if (t.rename.before && t.rename.after) {
+            return [`ALTER TYPE ${genIdentifier(t.rename.before)} RENAME TO ${genIdentifier(t.rename.after)};\n`]
+        }
+    }
+    return []
+}
+
+function genTypeAlterAlias(t: TypeDiff): string[] {
     if (t.alias?.after) {
         if (t.alias.before) { // was already an alias
             return [`-- ALTER TYPE ${genTypeIdentifier(t)} AS ${t.alias.after}; -- type alias not supported on PostgreSQL\n`]
@@ -286,7 +444,7 @@ function genTypeAlterEnum(t: TypeDiff): string[] {
     return []
 }
 
-function getTypeAlterStruct(t: TypeDiff): string[] {
+function genTypeAlterStruct(t: TypeDiff): string[] {
     if (t.attrs) {
         if (t.alias || t.values || t.values || t.definition) { // was not a struct
             return [genTypeDrop(t), genType({...namespace(t), name: t.name, attrs: t.attrs.created})]
@@ -306,7 +464,7 @@ function getTypeAlterStruct(t: TypeDiff): string[] {
     return []
 }
 
-function getTypeAlterCustom(t: TypeDiff): string[] {
+function genTypeAlterCustom(t: TypeDiff): string[] {
     if (t.definition?.after) { // can't update custom types, so drop & create
         return [genTypeDrop(t), genType({...namespace(t), name: t.name, definition: t.definition.after})]
     }
@@ -333,7 +491,7 @@ function genCommentType(t: Type): string {
     return t.doc ? genComment('TYPE', genTypeIdentifier(t), t.doc) : ''
 }
 
-function genComment(kind: 'TABLE' | 'VIEW' | 'COLUMN' | 'TYPE', identifier: string, value: string | undefined): string {
+function genComment(kind: 'TABLE' | 'VIEW' | 'COLUMN' | 'INDEX' | 'TYPE', identifier: string, value: string | undefined): string {
     return `COMMENT ON ${kind} ${identifier} IS ${value ? genString(value) : 'NULL'};\n`
 }
 

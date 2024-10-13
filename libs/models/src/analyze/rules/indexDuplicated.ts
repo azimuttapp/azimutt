@@ -42,13 +42,13 @@ export const indexDuplicatedRule: Rule<CustomRuleConf> = {
     conf: {level: RuleLevel.enum.high},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {
-        const refIgnores: AttributesRef[] = reference.map(r => r.entity && Array.isArray(r.extra?.index?.attrs) ? {...r.entity, attributes: r.extra.index.attrs} : undefined).filter(isNotUndefined)
+        const refIgnores: AttributesRef[] = reference.map(r => r.entity && Array.isArray(r.extra?.index?.attrs) ? {...r.entity, attrs: r.extra.index.attrs} : undefined).filter(isNotUndefined)
         const ignores: AttributesRef[] = refIgnores.concat(conf.ignores?.map(attributesRefFromId) || [])
         return (db.entities || []).flatMap(getDuplicatedIndexes)
-            .filter(idx => !ignores.some(i => attributesRefSame(i, {...entityToRef(idx.entity), attributes: idx.index.attrs})))
+            .filter(idx => !ignores.some(i => attributesRefSame(i, {...entityToRef(idx.entity), attrs: idx.index.attrs})))
             .map(i => {
                 const entity = entityToRef(i.entity)
-                const indexName = `${i.index.name ? i.index.name + ' ' : ''}on ${attributesRefToId({...entity, attributes: i.index.attrs})}`
+                const indexName = `${i.index.name ? i.index.name + ' ' : ''}on ${attributesRefToId({...entity, attrs: i.index.attrs})}`
                 const message = `Index ${indexName} can be deleted, it's covered by: ${i.coveredBy.map(by => `${by.name || ''}(${by.attrs.map(attributePathToId).join(', ')})`).join(', ')}.`
                 const {stats, extra, ...index} = i.index
                 const coveredBy = i.coveredBy.map(({stats, extra, ...index}) => index)

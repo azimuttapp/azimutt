@@ -88,6 +88,7 @@ program.command('diff')
     .description('Compare the schema of two databases')
     .argument('<url_old>', 'the old database url, including credentials')
     .argument('<url_new>', 'the new database url, including credentials')
+    .option('-f, --format <format>', 'Output format: json, postgres', 'json')
     .option('--debug', 'Add debug logs and show the full stacktrace instead of a shorter error')
     .action((urlOld, urlNew, args) => exec(launchDiff(urlOld, urlNew, args, logger), args))
 

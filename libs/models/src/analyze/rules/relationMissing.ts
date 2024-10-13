@@ -63,7 +63,7 @@ export const relationMissingRule: Rule<CustomRuleConf> = {
                 ruleId,
                 ruleName,
                 ruleLevel: conf.level,
-                message: `Create a relation from ${attributesRefToId({...r.src, attributes: r.src.attrs})} to ${attributesRefToId({...r.ref, attributes: r.ref.attrs})}.`,
+                message: `Create a relation from ${attributesRefToId({...r.src, attrs: r.src.attrs})} to ${attributesRefToId({...r.ref, attrs: r.ref.attrs})}.`,
                 entity: relationLinkToEntityRef(r.src),
                 attribute: r.src.attrs[0],
                 extra: {relation: r}

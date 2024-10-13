@@ -112,16 +112,16 @@ export const attributeRefFromId = (id: AttributeId): AttributeRef => {
 export const attributeRefToEntity = ({attribute, ...ref}: AttributeRef): EntityRef => ref
 export const attributeRefSame = (a: AttributeRef, b: AttributeRef): boolean => entityRefSame(a, b) && attributePathSame(a.attribute, b.attribute)
 
-export const attributesRefToId = (ref: AttributesRef): AttributeId => `${entityRefToId(ref)}(${ref.attributes.map(attributePathToId).join(', ')})`
+export const attributesRefToId = (ref: AttributesRef): AttributeId => `${entityRefToId(ref)}(${ref.attrs.map(attributePathToId).join(', ')})`
 
 export const attributesRefFromId = (id: AttributeId): AttributesRef => {
     const [, entityId, attributeId] = id.match(/^([^(]*)\(([^)]*)\)$/) || []
     const entity = entityRefFromId(entityId || id)
-    const attributes = (attributeId || '').split(',').map(a => attributePathFromId(a.trim()))
-    return {...entity, attributes}
+    const attrs = (attributeId || '').split(',').map(a => attributePathFromId(a.trim()))
+    return {...entity, attrs}
 }
 
-export const attributesRefSame = (a: AttributesRef, b: AttributesRef): boolean => entityRefSame(a, b) && arraySame(a.attributes, b.attributes, attributePathSame)
+export const attributesRefSame = (a: AttributesRef, b: AttributesRef): boolean => entityRefSame(a, b) && arraySame(a.attrs, b.attrs, attributePathSame)
 
 export const constraintRefToId = (ref: ConstraintRef): ConstraintId => `${entityRefToId(ref)}(${ref.constraint})`
 
@@ -197,7 +197,7 @@ export const typeToRef = (t: Type): TypeRef => removeUndefined({...namespace(t),
 export const typeToId = (t: Type): TypeId => typeRefToId(typeToRef(t))
 
 export const relationLinkToEntityRef = (l: RelationLink): EntityRef => removeUndefined({...namespace(l), entity: l.entity})
-export const relationLinkToAttributeRef = (l: RelationLink): AttributesRef => ({...relationLinkToEntityRef(l), attributes: l.attrs})
+export const relationLinkToAttributeRef = (l: RelationLink): AttributesRef => ({...relationLinkToEntityRef(l), attrs: l.attrs})
 export const relationToRef = (r: Relation): RelationRef => ({src: relationLinkToAttributeRef(r.src), ref: relationLinkToAttributeRef(r.ref)})
 export const relationToId = (r: Relation): RelationId => relationRefToId(relationToRef(r))
 

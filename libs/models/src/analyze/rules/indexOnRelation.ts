@@ -52,17 +52,17 @@ export const indexOnRelationRule: Rule<CustomRuleConf> = {
     conf: {level: RuleLevel.enum.medium},
     zConf: CustomRuleConf,
     analyze(conf: CustomRuleConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportViolation[]): RuleViolation[] {
-        const refIgnores: AttributesRef[] = reference.map(r => r.entity && Array.isArray(r.extra?.indexAttrs) ? {...r.entity, attributes: r.extra.indexAttrs} : undefined).filter(isNotUndefined)
+        const refIgnores: AttributesRef[] = reference.map(r => r.entity && Array.isArray(r.extra?.indexAttrs) ? {...r.entity, attrs: r.extra.indexAttrs} : undefined).filter(isNotUndefined)
         const ignores: AttributesRef[] = refIgnores.concat(conf.ignores?.map(attributesRefFromId) || [])
         const entities: Record<EntityId, Entity> = indexBy(db.entities || [], entityToId)
         return (db.relations || [])
             .flatMap(r => getMissingIndexOnRelation(r, entities))
-            .filter(idx => !ignores.some(i => attributesRefSame(i, {...idx.ref, attributes: idx.ref.attrs})))
+            .filter(idx => !ignores.some(i => attributesRefSame(i, {...idx.ref, attrs: idx.ref.attrs})))
             .map(i => ({
                 ruleId,
                 ruleName,
                 ruleLevel: conf.level,
-                message: `Create an index on ${attributesRefToId({...i.ref, attributes: i.ref.attrs})} to improve ${relationToId(i.relation)} relation.`,
+                message: `Create an index on ${attributesRefToId({...i.ref, attrs: i.ref.attrs})} to improve ${relationToId(i.relation)} relation.`,
                 entity: relationLinkToEntityRef(i.ref),
                 attribute: i.ref.attrs[0],
                 extra: {indexAttrs: i.ref.attrs, relation: i.relation}

@@ -145,34 +145,34 @@ describe('databaseUtils', () => {
     })
     test('parse & format AttributesRef', () => {
         const samples: { id: AttributesId; ref: AttributesRef }[] = [
-            {id: 'users(id)', ref: {entity: 'users', attributes: [['id']]}},
-            {id: 'users(id, name)', ref: {entity: 'users', attributes: [['id'], ['name']]}},
-            {id: 'users(details.org)', ref: {entity: 'users', attributes: [['details', 'org']]}},
+            {id: 'users(id)', ref: {entity: 'users', attrs: [['id']]}},
+            {id: 'users(id, name)', ref: {entity: 'users', attrs: [['id'], ['name']]}},
+            {id: 'users(details.org)', ref: {entity: 'users', attrs: [['details', 'org']]}},
         ]
         samples.map(({id, ref}) => {
             expect(attributesRefFromId(id)).toEqual(ref)
             expect(attributesRefToId(ref)).toEqual(id)
         })
         const badSamples: { sourceId: AttributesId; ref: AttributesRef; targetId: AttributesId }[] = [
-            {sourceId: 'users', ref: {entity: 'users', attributes: [['']]}, targetId: 'users()'},
+            {sourceId: 'users', ref: {entity: 'users', attrs: [['']]}, targetId: 'users()'},
         ]
         badSamples.map(({sourceId, ref, targetId}) => {
             expect(attributesRefFromId(sourceId)).toEqual(ref)
             expect(attributesRefFromId(targetId)).toEqual(ref)
             expect(attributesRefToId(ref)).toEqual(targetId)
         })
-        expect(attributesRefFromId('*(created_by)')).toEqual({entity: '*', attributes: [['created_by']]}) // wildcard
-        expect(attributesRefFromId('"*"(created_by)')).toEqual({entity: '*', attributes: [['created_by']]}) // wildcard
-        expect(attributesRefFromId("'*'(created_by)")).toEqual({entity: '*', attributes: [['created_by']]}) // wildcard
-        expect(attributesRefToId({entity: '*', attributes: [['created_by']]})).toEqual('"*"(created_by)') // wildcard
+        expect(attributesRefFromId('*(created_by)')).toEqual({entity: '*', attrs: [['created_by']]}) // wildcard
+        expect(attributesRefFromId('"*"(created_by)')).toEqual({entity: '*', attrs: [['created_by']]}) // wildcard
+        expect(attributesRefFromId("'*'(created_by)")).toEqual({entity: '*', attrs: [['created_by']]}) // wildcard
+        expect(attributesRefToId({entity: '*', attrs: [['created_by']]})).toEqual('"*"(created_by)') // wildcard
     })
     test('attributesRefSame', () => {
-        expect(attributesRefSame({entity: 'users', attributes: [['id']]}, {entity: 'users', attributes: [['id']]})).toBeTruthy()
-        expect(attributesRefSame({entity: 'users', attributes: [['id'], ['name']]}, {entity: 'users', attributes: [['id'], ['name']]})).toBeTruthy()
-        expect(attributesRefSame({entity: 'users', attributes: [['id']]}, {entity: 'users', attributes: [['id', 'name']]})).toBeFalsy()
-        expect(attributesRefSame({entity: 'users', attributes: [['id']]}, {entity: 'users', attributes: [['name']]})).toBeFalsy()
-        expect(attributesRefSame({entity: '*', attributes: [['created_by']]}, {entity: 'users', attributes: [['created_by']]})).toBeTruthy() // wildcard
-        expect(attributesRefSame({entity: 'users', attributes: [['*']]}, {entity: 'users', attributes: [['created_by']]})).toBeTruthy() // wildcard
+        expect(attributesRefSame({entity: 'users', attrs: [['id']]}, {entity: 'users', attrs: [['id']]})).toBeTruthy()
+        expect(attributesRefSame({entity: 'users', attrs: [['id'], ['name']]}, {entity: 'users', attrs: [['id'], ['name']]})).toBeTruthy()
+        expect(attributesRefSame({entity: 'users', attrs: [['id']]}, {entity: 'users', attrs: [['id', 'name']]})).toBeFalsy()
+        expect(attributesRefSame({entity: 'users', attrs: [['id']]}, {entity: 'users', attrs: [['name']]})).toBeFalsy()
+        expect(attributesRefSame({entity: '*', attrs: [['created_by']]}, {entity: 'users', attrs: [['created_by']]})).toBeTruthy() // wildcard
+        expect(attributesRefSame({entity: 'users', attrs: [['*']]}, {entity: 'users', attrs: [['created_by']]})).toBeTruthy() // wildcard
     })
     test('parse AttributeType', () => {
         // PostgreSQL: https://www.postgresql.org/docs/current/datatype.html

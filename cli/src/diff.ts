@@ -1,23 +1,21 @@
 import {Diff, Logger, minusFieldsDeep, pluralizeL, removeUndefined} from "@azimutt/utils";
 import {
-    Attribute,
     attributePathToId,
     Connector,
     Database,
     databaseDiff,
-    DatabaseDiff,
     DatabaseUrlParsed,
-    entityToId,
     Index,
-    parseDatabaseUrl,
-    relationToId,
-    typeToId
+    parseDatabaseUrl
 } from "@azimutt/models";
+// import {generateSqlDiff} from "@azimutt/parser-sql";
 import {getConnector, track} from "@azimutt/gateway";
 import {version} from "./version.js";
 import {loggerNoOp} from "./utils/logger.js";
 
-export type Opts = {}
+export type Opts = {
+    format: 'json' | 'postgres'
+}
 
 export async function launchDiff(leftUrl: string, rightUrl: string, opts: Opts, logger: Logger): Promise<void> {
     const leftUrlDb: DatabaseUrlParsed = parseDatabaseUrl(leftUrl)
@@ -27,7 +25,7 @@ export async function launchDiff(leftUrl: string, rightUrl: string, opts: Opts, 
     const rightConnector: Connector | undefined = getConnector(rightUrlDb)
     if (!rightConnector) return Promise.reject(`Invalid connector for ${rightUrlDb.kind ? `${rightUrlDb.kind} db` : `unknown db (${rightUrlDb.full})`} on the right`)
 
-    logger.log('Launching diff between db...')
+    logger.log('Launching db diff...')
     const app = 'azimutt-cli-diff'
     const leftDb: Database = await leftConnector.getSchema(app, leftUrlDb, {logger: loggerNoOp})
     const rightDb: Database = await rightConnector.getSchema(app, rightUrlDb, {logger: loggerNoOp})
@@ -38,11 +36,16 @@ export async function launchDiff(leftUrl: string, rightUrl: string, opts: Opts, 
     }), 'cli').then(() => {})
 
     logger.log('')
-    logger.log(`Left  db: found ${pluralizeL(leftDb.entities || [], 'entity')}, ${pluralizeL(leftDb.relations || [], 'relation')} and ${pluralizeL(leftDb.types || [], 'type')}.`)
-    logger.log(`Right db: found ${pluralizeL(rightDb.entities || [], 'entity')}, ${pluralizeL(rightDb.relations || [], 'relation')} and ${pluralizeL(rightDb.types || [], 'type')}.`)
+    logger.log(`Before: ${pluralizeL(leftDb.entities || [], 'entity')}, ${pluralizeL(leftDb.relations || [], 'relation')} and ${pluralizeL(leftDb.types || [], 'type')}.`)
+    logger.log(`After : ${pluralizeL(rightDb.entities || [], 'entity')}, ${pluralizeL(rightDb.relations || [], 'relation')} and ${pluralizeL(rightDb.types || [], 'type')}.`)
     logger.log('')
 
     const diff = databaseDiff(leftDb, rightDb)
+    /*if (opts.format === 'postgres') {
+        logger.log(generateSqlDiff(diff, opts.format))
+    } else {
+        logger.log(JSON.stringify(diff, null, 2))
+    }*/
     logger.log('\nWork In Progress...\n')
     /*const lines = showDatabaseDiff(diff)
     lines.forEach(l => logger.log(l))
