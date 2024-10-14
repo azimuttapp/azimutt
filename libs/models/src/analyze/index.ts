@@ -108,6 +108,7 @@ export function analyzeDatabase(conf: RulesConf, now: Timestamp, db: Database, q
     // TODO: single column indexes on low cardinality column => suggest bitmap index instead
     // TODO: warn queries sans where clause ^^
     // TODO: locks using https://www.postgresql.org/docs/current/view-pg-locks.html
+    // TODO: no "SELECT *" query
     const rules = ruleNames.length > 0 ? analyzeRules.filter(r => ruleNames.indexOf(r.id) !== -1 || ruleNames.indexOf(r.name) !== -1) : analyzeRules
     return Object.fromEntries(rules.map(r => {
         const ruleConf = Object.assign({}, r.conf, conf.rules?.[r.id])

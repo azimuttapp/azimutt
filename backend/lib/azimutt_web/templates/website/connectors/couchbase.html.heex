@@ -1,0 +1,49 @@
+<%= render "connectors/_header.html", conn: @conn, connector: @connector %>
+
+<%= connector_article conn: @conn, title: @seo.title, features: [
+    %{name: "Collections", available: true},
+    %{name: "Statistics", available: false},
+    %{name: "Query history", available: false},
+    %{name: "Query data", available: true}
+] do %>
+    <p class="lead">
+        <a href="https://www.couchbase.com" target="_blank" rel="noopener noreferrer">Couchbase</a> is a high-performance NoSQL database
+        that combines the flexibility of document-oriented storage with the power of a distributed architecture.
+        With features like memory-first architecture, integrated caching, and SQL-like querying with N1QL,
+        Couchbase provides a flexible and efficient solution for modern, data-driven applications that demand speed and reliability.
+    </p>
+    <%= render "connectors/_promo.html" %>
+    <p>
+        As a document-oriented database, Couchbase has no formal schema,
+        so the <a href="https://github.com/azimuttapp/azimutt/tree/main/libs/connector-couchbase" target="_blank" rel="noopener noreferrer">Couchbase connector</a>
+        has to iterate over all buckets, scopes and collections to fetch a sample of documents and infer their schema.<br>
+        If collections have an implicit schema, it works really well. If they don't, well, it reflects that also 😬<br>
+        You can check what it does by looking at the <code>getSchema</code> function in the
+        <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/connector-couchbase/src/couchbase.ts" target="_blank" rel="noopener noreferrer">src/couchbase.ts</a> file.
+    </p>
+    <p>
+        If you stored different entities inside the same collection, using a field to identify them, the Couchbase connector is able to create several entities out of one collection.
+        You just have to specify the field name in the `discriminator` attribute in your database url.
+    </p>
+    <p>
+        Couchbase has no foreign keys defined in the database. Still you can reference entities by storing their ids.
+        If you do, and follow a naming convention, Azimutt is able to <a href={Routes.website_path(@conn, :doc, ["infer-relations"])}>suggest missing relations</a>, making the exploration experience a lot better.
+        If not, you can still add them manually in Azimutt using <a href={Routes.website_path(@conn, :aml)}>AML</a>, this is not a fun work, but it's a good documentation investment ^^
+    </p>
+
+    <%= render "docs/_h3.html", title: "How to use it" %>
+    <p>The Couchbase connector is already included in the Azimutt Gateway, so you just have to:</p>
+    <ul>
+        <li>Launch the Gateway, if needed (for the local one use <code>npx azimutt@latest gateway</code>)</li>
+        <li><a href={"#{Routes.elm_path(@conn, :new)}?database"}>Create a new project</a> or add a source to an existing one</li>
+        <li>Fill your Couchbase database url (ex: <code>couchbases://user:pass@ej137.couchbase.com</code>)</li>
+    </ul>
+    <img src={Routes.static_path(@conn, "/images/connectors/azimutt-project-new.png")} alt="Azimutt create project" />
+    <p>Here are <a href={Routes.website_path(@conn, :doc, ["data-privacy"])}>more details</a> about how Azimutt secure your data and especially your database url.</p>
+    <p>
+        Here is an example of what you can do using Azimutt:
+        <img src={Routes.static_path(@conn, "/images/connectors/azimutt-diagram.png")} alt="Azimutt diagram" />
+    </p>
+<% end %>
+
+<%= render "connectors/_footer.html", conn: @conn, connector: @connector %>

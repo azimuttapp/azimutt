@@ -1,0 +1,38 @@
+<%= render "connectors/_header.html", conn: @conn, connector: @connector %>
+
+<%= connector_article conn: @conn, title: @seo.title, features: [
+    %{name: "Tables", available: true},
+    %{name: "Relations", available: true},
+    %{name: "Statistics", available: false},
+    %{name: "Query history", available: false},
+    %{name: "Query data", available: true}
+] do %>
+    <p class="lead">
+        <a href="https://www.snowflake.com" target="_blank" rel="noopener noreferrer">Snowflake</a> is a cloud-native data platform built for data warehousing, analytics, and seamless data sharing.
+        Unlike traditional databases, Snowflake is designed to take full advantage of cloud infrastructure, offering scalability, flexibility, and ease of use.
+        Snowflake’s unique architecture separates storage from compute, allowing users to scale resources independently for optimal performance and cost efficiency.
+    </p>
+    <%= render "connectors/_promo.html" %>
+    <p>
+        Azimutt is full Open Source, you can check the <a href="https://github.com/azimuttapp/azimutt/tree/main/libs/connector-snowflake" target="_blank" rel="noopener noreferrer">Snowflake connector</a>
+        on GitHub, if you want to have a look, and even suggest improvements.<br>
+        The part you will be interested in is the <code>getSchema</code> function in
+        <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/connector-snowflake/src/snowflake.ts" target="_blank" rel="noopener noreferrer">src/snowflake.ts</a>.
+    </p>
+
+    <%= render "docs/_h3.html", title: "How to use it" %>
+    <p>The Snowflake connector is baked in the Azimutt Gateway, to use it, just:</p>
+    <ul>
+        <li>Launch your Gateway, if needed (for the local one use <code>npx azimutt@latest gateway</code>)</li>
+        <li><a href={"#{Routes.elm_path(@conn, :new)}?database"}>Create a new project</a> or add a source to an existing one</li>
+        <li>Fill your Snowflake database url (ex: <code>snowflake://user:pass@your_account.snowflakecomputing.com?db=your_db</code>)</li>
+    </ul>
+    <img src={Routes.static_path(@conn, "/images/connectors/azimutt-project-new.png")} alt="Azimutt create project" />
+    <p>Here are <a href={Routes.website_path(@conn, :doc, ["data-privacy"])}>more details</a> about how Azimutt secure your data and especially your database url.</p>
+    <p>
+        Here is an example of what you can achieve with Azimutt:
+        <img src={Routes.static_path(@conn, "/images/connectors/azimutt-diagram.png")} alt="Azimutt diagram" />
+    </p>
+<% end %>
+
+<%= render "connectors/_footer.html", conn: @conn, connector: @connector %>

@@ -1,0 +1,52 @@
+<%= render "connectors/_header.html", conn: @conn, connector: @connector %>
+
+<%= connector_article conn: @conn, title: @seo.title, features: [
+    %{name: "Tables", available: true},
+    %{name: "Relations", available: true},
+    %{name: "Types", available: true},
+    %{name: "Statistics", available: true},
+    %{name: "Query history", available: true},
+    %{name: "Triggers", available: false},
+    %{name: "Procedures", available: false},
+    %{name: "Query data", available: true},
+] do %>
+    <p class="lead">
+        <a href="https://www.postgresql.org" target="_blank" rel="noopener noreferrer">PostgreSQL</a> is a powerful, open-source relational database
+        that is widely used for its reliability, scalability, and advanced features.
+        Known for being highly SQL-compliant, it supports both structured and unstructured data, making it ideal for a wide range of applications, from web development to data analytics.
+        Its robust architecture allows developers to extend its functionality, plus, its active community ensures continuous improvement and support.
+    </p>
+    <%= render "connectors/_promo.html" %>
+    <p>The PostgreSQL connector is full-featured and can do everything available in Azimutt 😎</p>
+    <p>
+        Azimutt being Open Source, you can find the
+        <a href="https://github.com/azimuttapp/azimutt/tree/main/libs/connector-postgres" target="_blank" rel="noopener noreferrer">PostgreSQL connector</a>
+        on GitHub if you are interested in looking what it does or improving it.<br>
+        The most interesting part being the <code>getSchema</code> function in
+        <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/connector-postgres/src/postgres.ts" target="_blank" rel="noopener noreferrer">src/postgres.ts</a>.
+    </p>
+    <p>In addition to PostgreSQL schema extraction it makes inference for:</p>
+    <ul>
+        <li><strong>Polymorphic relations</strong></li>
+        <li><strong>JSON column schema</strong></li>
+    </ul>
+
+    <%= render "docs/_h3.html", title: "How to use it" %>
+    <p>The PostgreSQL connector is baked into the Gateway, to use it you just have to:</p>
+    <ul>
+        <li>Launch your Gateway, if needed (for the local one use <code>npx azimutt@latest gateway</code>)</li>
+        <li><a href={"#{Routes.elm_path(@conn, :new)}?database"}>Create a new project</a> or add a source to an existing one</li>
+        <li>Fill your PostgreSQL database url (ex: <code>postgresql://user:pass@localhost/your_db</code>)</li>
+    </ul>
+    <img src={Routes.static_path(@conn, "/images/connectors/azimutt-project-new.png")} alt="Azimutt create project" />
+    <p>Here are <a href={Routes.website_path(@conn, :doc, ["data-privacy"])}>more details</a> about how Azimutt secure your data and especially your database url.</p>
+    <p>If you don't have a PostgreSQL database right away, you can <a href="https://hub.docker.com/_/postgres" target="_blank" rel="noopener noreferrer">use Docker to create one</a> with:</p>
+    <pre><code>docker run --name postgres_sample -p 5433:5432 -e POSTGRES_PASSWORD=postgres postgres:latest</code></pre>
+    <p>And use this <a href="https://github.com/azimuttapp/azimutt/tree/main/libs/connector-postgres#local-setup" target="_blank" rel="noopener noreferrer">sample script</a> to populate it.</p>
+    <p>
+        Here is what you can do with Azimutt:
+        <img src={Routes.static_path(@conn, "/images/connectors/azimutt-diagram.png")} alt="Azimutt diagram" />
+    </p>
+<% end %>
+
+<%= render "connectors/_footer.html", conn: @conn, connector: @connector %>

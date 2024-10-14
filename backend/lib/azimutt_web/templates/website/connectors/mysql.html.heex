@@ -1,0 +1,50 @@
+<%= render "connectors/_header.html", conn: @conn, connector: @connector %>
+
+<%= connector_article conn: @conn, title: @seo.title, features: [
+    %{name: "Tables", available: true},
+    %{name: "Relations", available: true},
+    %{name: "Statistics", available: true},
+    %{name: "Query history", available: false},
+    %{name: "Triggers", available: false},
+    %{name: "Procedures", available: false},
+    %{name: "Query data", available: true},
+] do %>
+    <p class="lead">
+        <a href="https://www.mysql.com" target="_blank" rel="noopener noreferrer">MySQL</a> is the world’s most popular open-source relational database,
+        widely used for web development and other applications requiring a reliable and high-performance data storage.
+        Known for its ease of use, MySQL is often the go-to choice for developers building websites, blogs, and e-commerce platforms.
+        With features like replication, clustering, and robust security, MySQL provides scalability and stability for applications of any size.
+    </p>
+    <%= render "connectors/_promo.html" %>
+    <p>
+        You can find the <a href="https://github.com/azimuttapp/azimutt/tree/main/libs/connector-mysql" target="_blank" rel="noopener noreferrer">MySQL connector</a>
+        on the Azimutt GitHub repository if you are interested in looking what it does or improving it.<br>
+        If so, you will most probably want to have a look at the
+        <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/connector-mysql/src/mysql.ts" target="_blank" rel="noopener noreferrer">src/mysql.ts</a>
+        <code>getSchema</code> function, which does exactly what you think 😉
+    </p>
+    <p>In addition to MySQL schema extraction it also infers:</p>
+    <ul>
+        <li><strong>Polymorphic relations</strong></li>
+        <li><strong>JSON column schema</strong></li>
+    </ul>
+
+    <%= render "docs/_h3.html", title: "How to use it" %>
+    <p>The MySQL connector is baked into the Gateway, to use it you just have to:</p>
+    <ul>
+        <li>Launch your Gateway, if needed (for the local one use <code>npx azimutt@latest gateway</code>)</li>
+        <li><a href={"#{Routes.elm_path(@conn, :new)}?database"}>Create a new project</a> or add a source to an existing one</li>
+        <li>Fill your MySQL database url (ex: <code>mysql://user:pass@localhost:3306/your_db</code>)</li>
+    </ul>
+    <img src={Routes.static_path(@conn, "/images/connectors/azimutt-project-new.png")} alt="Azimutt create project" />
+    <p>Here are <a href={Routes.website_path(@conn, :doc, ["data-privacy"])}>more details</a> about how Azimutt secure your data and especially your database url.</p>
+    <p>If you don't have a MySQL database right away, you can <a href="https://hub.docker.com/_/mysql" target="_blank" rel="noopener noreferrer">use Docker to create one</a> with:</p>
+    <pre><code>docker run --name mysql_sample -p 3306:3306 -e MYSQL_ROOT_PASSWORD=mysql -e MYSQL_USER=azimutt -e MYSQL_PASSWORD=azimutt -e MYSQL_DATABASE=mysql_sample mysql:latest</code></pre>
+    <p>And use this <a href="https://github.com/azimuttapp/azimutt/tree/main/libs/connector-mysql#local-setup" target="_blank" rel="noopener noreferrer">sample script</a> to populate it.</p>
+    <p>
+        Here is what you can do with Azimutt:
+        <img src={Routes.static_path(@conn, "/images/connectors/azimutt-diagram.png")} alt="Azimutt diagram" />
+    </p>
+<% end %>
+
+<%= render "connectors/_footer.html", conn: @conn, connector: @connector %>

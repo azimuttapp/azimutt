@@ -37,7 +37,7 @@ defmodule AzimuttWeb.LayoutView do
 
   # ratio: 2:1, ex: 1200x600
   def og_image(%{assigns: %{seo: %{image: image}}}), do: image
-  def og_image(conn), do: Routes.static_url(conn, "/images/open-graph.png")
+  def og_image(conn), do: Routes.static_url(conn, "/images/og/azimutt.jpg")
 
   def twitter_card(%{assigns: %{seo: %{card: card}}}), do: card
   def twitter_card(_conn), do: "summary_large_image"

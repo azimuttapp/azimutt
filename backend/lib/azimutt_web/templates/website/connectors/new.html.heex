@@ -1,0 +1,36 @@
+<% connector = %{id: "new", name: "New connector", color: "#fff"} %>
+<%= render "connectors/_header.html", conn: @conn, connector: connector %>
+
+<%= connector_article conn: @conn, title: "New connector", features: [] do %>
+    <p class="lead">Missing a database connector?</p>
+    <p>
+        Azimutt is modular and database connectors are not even embed in the service but in the gateway, remember, you should launch it with <code>npx azimutt@latest gateway</code>.<br>
+        This is just the <a href={Routes.website_path(@conn, :doc, ["cli"])}>CLI</a>
+        published on <a href="https://www.npmjs.com/package/azimutt" target="_blank" rel="noopener noreferrer">npm</a>
+        and launching the <a href={Routes.website_path(@conn, :doc, ["gateway"])}>gateway</a>.
+        But of course, you can clone the repo, launch the gateway from the code and add your own connector.
+    </p>
+    <%= render "docs/_h3.html", title: "Asking for a new connector" %>
+    <p>
+        We regularly make new connectors, depending on customer or community requests.<br>
+        If you need one not existing yet, check for the
+        <a href="https://github.com/azimuttapp/azimutt/labels/new-connector" target="_blank" rel="noopener noreferrer">already required ones</a>
+        and add your voice (reaction & comment), so we know about their popularity.<br>
+        If not requested yet, create an issue so others can add their voice to yours.
+    </p>
+    <%= render "docs/_h3.html", title: "Creating your connector" %>
+    <p>
+        If you need a connector fast and are willing to invest a bit of time, you can make it on your own, and either keep it for you or contribute to the community by submitting a PR.<br>
+        The hardest part is always finding a way to extract the schema. Most of the time it's done thought system table (<code>INFORMATION_SCHEMA</code> or more specific ones),
+        but sometimes it's pure inference when the database has no explicit schema like <a href={Routes.website_path(@conn, :connector, "mongodb")}>MongoDB</a>
+        or <a href={Routes.website_path(@conn, :connector, "couchbase")}>Couchbase</a>.<br>
+        Once you know how to extract the schema, you just need to create a new project and implement the <code>getSchema: (application: string, url: DatabaseUrlParsed): Promise&lt;Database></code> function.
+        You can look ath the <a href="https://github.com/azimuttapp/azimutt/tree/main/libs/connector-postgres" target="_blank" rel="noopener noreferrer">PostgreSQL</a>
+        or <a href="https://github.com/azimuttapp/azimutt/tree/main/libs/connector-mongodb" target="_blank" rel="noopener noreferrer">MongoDB</a> connector as inspiration.
+    </p>
+    <p>
+        In any way, don't hesitate to <a href={"mailto:#{Azimutt.config(:contact_email)}"} target="_blank" rel="noopener noreferrer">reach out</a> for any question.
+    </p>
+<% end %>
+
+<%= render "connectors/_footer.html", conn: @conn, connector: connector %>

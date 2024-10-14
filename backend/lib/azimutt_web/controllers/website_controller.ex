@@ -26,7 +26,41 @@ defmodule AzimuttWeb.WebsiteController do
     end
   end
 
-  def aml(conn, _params), do: conn |> render("aml.html")
+  def aml(conn, _params) do
+    render(conn, "aml.html",
+      seo: %{
+        title: "AML - The easiest DSL for database schemas",
+        description: "If you ever designed a database schema on a whiteboard, AML is made for you ❤️. It's fast to learn and write, and can be translated to other dialects.",
+        image: Routes.url(conn) <> "/images/og/aml.jpg"
+      }
+    )
+  end
+
+  def connectors(conn, _params) do
+    render(conn, "connectors/index.html",
+      seo: %{
+        title: "Discover all the connectors for Azimutt",
+        description:
+          "Azimutt is a database exploration and documentation tool made to help you understand and manage any database. We already have the mainstream ones, and we keep extending the integrations.",
+        image: Routes.url(conn) <> "/images/og/connectors.jpg"
+      }
+    )
+  end
+
+  def connector_new(conn, _params), do: conn |> render("connectors/new.html")
+
+  def connector(conn, %{"id" => id}) do
+    Azimutt.connectors()
+    |> Enum.find(fn c -> c.id == id end)
+    |> Result.from_nillable()
+    |> Result.map(fn connector ->
+      render(conn, "connectors/#{connector.id}.html",
+        connector: connector,
+        seo: %{title: "Explore #{connector.name} with Azimutt"}
+      )
+    end)
+  end
+
   def converters(conn, _params), do: conn |> render("converters/index.html")
 
   def converter(conn, %{"from" => from}) do

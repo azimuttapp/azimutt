@@ -1,0 +1,47 @@
+<%= render "connectors/_header.html", conn: @conn, connector: @connector %>
+
+<%= connector_article conn: @conn, title: @seo.title, features: [
+    %{name: "Tables", available: true},
+    %{name: "Relations", available: true},
+    %{name: "Statistics", available: false},
+    %{name: "Query history", available: false},
+    %{name: "Triggers", available: false},
+    %{name: "Procedures", available: false},
+    %{name: "Query data", available: true},
+] do %>
+    <p class="lead">
+        <a href="https://www.microsoft.com/sql-server/sql-server-downloads" target="_blank" rel="noopener noreferrer">SQL Server</a> is a powerful,
+        enterprise-level relational database developed by Microsoft, used for handling large-scale business applications and data analytics.
+        Known for its seamless integration with other Microsoft tools, such as Azure, Excel, and Power BI,
+        SQL Server provides a robust solution for both transactional processing and business intelligence.
+        It offers high availability, built-in security features, and advanced analytics capabilities.
+    </p>
+    <%= render "connectors/_promo.html" %>
+    <p>
+        You can access the <a href="https://github.com/azimuttapp/azimutt/tree/main/libs/connector-sqlserver" target="_blank" rel="noopener noreferrer">SQL Server connector</a>
+        on GitHub, have a look and even suggest improvements.<br>
+        The most interesting part is the <code>getSchema</code> function in
+        <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/connector-sqlserver/src/sqlserver.ts" target="_blank" rel="noopener noreferrer">src/sqlserver.ts</a>
+        that fetch the SQL Server schema and make it accessible to Azimutt.
+    </p>
+    <p>Moreover, it also infers <strong>JSON column schema</strong> when found columns with JSON inside.</p>
+
+    <%= render "docs/_h3.html", title: "How to use it" %>
+    <p>The SQL Server connector is already included in the Gateway, you can use it simply by:</p>
+    <ul>
+        <li>Launching the Gateway, if needed (for the local one use <code>npx azimutt@latest gateway</code>)</li>
+        <li><a href={"#{Routes.elm_path(@conn, :new)}?database"}>Create a new project</a> or add a source to an existing one</li>
+        <li>Fill your SQL Server database url (ex: <code>sqlserver://user:pass@localhost:1433/your_db</code> or <code>Server=localhost,1433;User Id=user;Password=pass;Database=your_db</code>)</li>
+    </ul>
+    <img src={Routes.static_path(@conn, "/images/connectors/azimutt-project-new.png")} alt="Azimutt create project" />
+    <p>Here are <a href={Routes.website_path(@conn, :doc, ["data-privacy"])}>more details</a> about how Azimutt secure your data and especially your database url.</p>
+    <p>If you don't have a SQL Server database available, you can <a href="https://hub.docker.com/r/microsoft/mssql-server" target="_blank" rel="noopener noreferrer">create one with Docker</a>:</p>
+    <pre><code>docker run --name mssql_sample -p 1433:1433 -e ACCEPT_EULA=Y -e MSSQL_SA_PASSWORD=azimutt_42 -e MSSQL_PID=Evaluation mcr.microsoft.com/mssql/server:2022-latest</code></pre>
+    <p>And use this <a href="https://github.com/azimuttapp/azimutt/tree/main/libs/connector-sqlserver#local-setup" target="_blank" rel="noopener noreferrer">sample script</a> to populate it.</p>
+    <p>
+        Here is what you can do with Azimutt:
+        <img src={Routes.static_path(@conn, "/images/connectors/azimutt-diagram.png")} alt="Azimutt diagram" />
+    </p>
+<% end %>
+
+<%= render "connectors/_footer.html", conn: @conn, connector: @connector %>

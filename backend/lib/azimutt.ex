@@ -310,6 +310,20 @@ defmodule Azimutt do
     ]
   end
 
+  def connectors do
+    [
+      %{id: "postgres", name: "PostgreSQL", color: "#699eca"},
+      %{id: "mysql", name: "MySQL", color: "#00758f"},
+      %{id: "mariadb", name: "MariaDB", color: "#444b5e"},
+      %{id: "sqlserver", name: "SQL Server", color: "#ededee"},
+      %{id: "oracle", name: "Oracle", color: "#e61d18"},
+      %{id: "mongodb", name: "MongoDB", color: "#20a854"},
+      %{id: "couchbase", name: "Couchbase", color: "#ed2226"},
+      %{id: "bigquery", name: "BigQuery", color: "#4386fa"},
+      %{id: "snowflake", name: "Snowflake", color: "#29b5e8"}
+    ]
+  end
+
   def converters do
     [
       %{id: "aml", name: "AML", parse: true, generate: true},
@@ -394,10 +408,18 @@ defmodule Azimutt do
         ]
       },
       %{
+        path: ["internals"],
+        name: "Inside Azimutt",
+        children: [
+          %{path: ["infer-relations"], name: "Inferring relations"}
+        ]
+      },
+      %{
         path: ["other-tools"],
         name: "Other tools",
         children: [
           %{path: ["cli"], name: "CLI"},
+          %{path: ["gateway"], name: "Gateway"},
           %{path: ["converters"], name: "Converters"}
         ]
       },

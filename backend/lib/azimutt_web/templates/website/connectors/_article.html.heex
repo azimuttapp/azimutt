@@ -1,0 +1,24 @@
+<div class="max-w-3xl mx-auto px-6 pt-6 lg:px-8">
+    <a href={Routes.website_path(@conn, :connectors)} class="text-lg font-semibold leading-8 tracking-tight text-indigo-600 hover:underline">← All connectors</a>
+    <h1 class="mt-3 mb-6 text-4xl font-extrabold text-gray-900"><%= @title %></h1>
+    <article class="max-w-3xl prose prose-a:text-indigo-600 prose-img:rounded-xl prose-img:my-3">
+        <%= if !Enum.empty?(@features) do %>
+            <p>
+                <%= for feature <- @features do %>
+                    <%= if feature.available do %>
+                        <span class="shrink-0 mr-1 mb-1 inline-flex items-center gap-x-1 rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                            <%= feature.name %>
+                            <Icon.check_badge kind="outline" class="h-5 w-5 stroke-green-700/50" />
+                        </span>
+                    <% else %>
+                        <span class="shrink-0 mr-1 mb-1 inline-flex items-center gap-x-1 rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20">
+                            <%= feature.name %>
+                            <Icon.x_circle kind="outline" class="h-5 w-5 stroke-red-700/50" />
+                        </span>
+                    <% end %>
+                <% end %>
+            </p>
+        <% end %>
+        <%= @inner_content %>
+    </article>
+</div>

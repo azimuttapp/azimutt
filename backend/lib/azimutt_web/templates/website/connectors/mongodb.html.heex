@@ -1,0 +1,52 @@
+<%= render "connectors/_header.html", conn: @conn, connector: @connector %>
+
+<%= connector_article conn: @conn, title: @seo.title, features: [
+    %{name: "Collections", available: true},
+    %{name: "Statistics", available: false},
+    %{name: "Query history", available: false},
+    %{name: "Query data", available: true}
+] do %>
+    <p class="lead">
+        <a href="https://www.mongodb.com" target="_blank" rel="noopener noreferrer">MongoDB</a> is a popular NoSQL database designed for applications
+        that need flexible, scalable, and high-performance storage.
+        Unlike traditional relational databases, MongoDB stores data in a document-oriented format using JSON-like structures, making it ideal for handling unstructured data.
+        With built-in features like sharding, replication, and high availability, MongoDB provides a powerful solution for managing large datasets in dynamic environments.
+    </p>
+    <%= render "connectors/_promo.html" %>
+    <p>
+        As MongoDB has no formal schema, the <a href="https://github.com/azimuttapp/azimutt/tree/main/libs/connector-mongodb" target="_blank" rel="noopener noreferrer">MongoDB connector</a>
+        iterate over all collections and fetch a sample of documents on each to infer its schema.<br>
+        If collections have an implicit schema, it works really well. If they don't, well, it reflects that also 😬<br>
+        You can look at what it does by looking at the <code>getSchema</code> function in the
+        <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/connector-mongodb/src/mongodb.ts" target="_blank" rel="noopener noreferrer">src/mongodb.ts</a> file.
+    </p>
+    <p>Azimutt not only handles flat tables but also has nested fields, making it quite good for JSON-like structure like in MongoDB.</p>
+    <p>
+        If you stored several entities in the same collection using a field to identify them,
+        the MongoDB connector is able to create several entities out of one collection if you specify this field name in the `discriminator` attribute in your database url.
+    </p>
+    <p>
+        MongoDB has no foreign keys in the database. Still you can reference entities by storing their ids.
+        If you do, and follow a naming convention, Azimutt will <a href={Routes.website_path(@conn, :doc, ["infer-relations"])}>suggest missing relations</a>, improving a lot the exploration experience.
+        If not, you can still add them manually in Azimutt using <a href={Routes.website_path(@conn, :aml)}>AML</a>, this is not a fun work, but it's a good documentation investment ^^
+    </p>
+
+    <%= render "docs/_h3.html", title: "How to use it" %>
+    <p>Using the MongoDB connector in Azimutt is quite easy:</p>
+    <ul>
+        <li>Launch the Gateway, if needed (for the local one use <code>npx azimutt@latest gateway</code>)</li>
+        <li><a href={"#{Routes.elm_path(@conn, :new)}?database"}>Create a new project</a> or add a source to an existing one</li>
+        <li>Fill your MongoDB database url (ex: <code>mongodb://user:pass@localhost:27017/your_db</code>)</li>
+    </ul>
+    <img src={Routes.static_path(@conn, "/images/connectors/azimutt-project-new.png")} alt="Azimutt create project" />
+    <p>Here are <a href={Routes.website_path(@conn, :doc, ["data-privacy"])}>more details</a> about how Azimutt secure your data and especially your database url.</p>
+    <p>If you don't have a MongoDB database, you can <a href="https://hub.docker.com/_/mongo" target="_blank" rel="noopener noreferrer">launch one with Docker</a>:</p>
+    <pre><code>docker run --name mongo_sample -p 27017:27017 mongo:latest</code></pre>
+    <p>And here is a <a href="https://github.com/azimuttapp/azimutt/tree/main/libs/connector-mongodb#local-setup" target="_blank" rel="noopener noreferrer">sample script</a> to populate it.</p>
+    <p>
+        Here is what you can do with Azimutt:
+        <img src={Routes.static_path(@conn, "/images/connectors/azimutt-diagram.png")} alt="Azimutt diagram" />
+    </p>
+<% end %>
+
+<%= render "connectors/_footer.html", conn: @conn, connector: @connector %>

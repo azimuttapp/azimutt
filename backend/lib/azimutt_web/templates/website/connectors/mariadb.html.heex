@@ -1,0 +1,50 @@
+<%= render "connectors/_header.html", conn: @conn, connector: @connector %>
+
+<%= connector_article conn: @conn, title: @seo.title, features: [
+    %{name: "Tables", available: true},
+    %{name: "Relations", available: true},
+    %{name: "Statistics", available: true},
+    %{name: "Query history", available: false},
+    %{name: "Triggers", available: false},
+    %{name: "Procedures", available: false},
+    %{name: "Query data", available: true},
+] do %>
+    <p class="lead">
+        <a href="https://www.mysql.com" target="_blank" rel="noopener noreferrer">MariaDB</a> is an open-source database that
+        started as a fork of <a href={Routes.website_path(@conn, :connector, "mysql")}>MySQL</a>, offering enhanced performance, security, and scalability.
+        MariaDB maintains full compatibility with MySQL while introducing advanced features, such as improved storage engines and better query optimization.
+        It’s highly flexible, supporting various storage formats and workloads, making it a reliable choice for developers looking to build scalable, secure applications.
+    </p>
+    <%= render "connectors/_promo.html" %>
+    <p>
+        The <a href="https://github.com/azimuttapp/azimutt/tree/main/libs/connector-mariadb" target="_blank" rel="noopener noreferrer">MariaDB connector</a>
+        is available on Azimutt GitHub repository (Open Source FTW 🤘), you can have a look at it and even suggest improvements.<br>
+        In this case, you will be interested in the <code>getSchema</code> function in
+        <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/connector-mariadb/src/mariadb.ts" target="_blank" rel="noopener noreferrer">src/mariadb.ts</a>
+        that makes everything necessary to extract the MariaDB schema.
+    </p>
+    <p>Beyond the schema extraction, the MariaDB connector also infers:</p>
+    <ul>
+        <li><strong>Polymorphic relations</strong></li>
+        <li><strong>JSON column schema</strong></li>
+    </ul>
+
+    <%= render "docs/_h3.html", title: "How to use it" %>
+    <p>The Gateway already integrates the MariaDB connector, you just have to follow these steps to use it:</p>
+    <ul>
+        <li>Launch your Gateway, if needed (for the local one use <code>npx azimutt@latest gateway</code>)</li>
+        <li><a href={"#{Routes.elm_path(@conn, :new)}?database"}>Create a new project</a> or add a source to an existing one</li>
+        <li>Fill your MariaDB database url (ex: <code>mariadb://user:pass@localhost:3306/your_db</code>)</li>
+    </ul>
+    <img src={Routes.static_path(@conn, "/images/connectors/azimutt-project-new.png")} alt="Azimutt create project" />
+    <p>Here are <a href={Routes.website_path(@conn, :doc, ["data-privacy"])}>more details</a> about how Azimutt secure your data and especially your database url.</p>
+    <p>If you don't have a MariaDB database right away, you can <a href="https://hub.docker.com/_/mariadb" target="_blank" rel="noopener noreferrer">use Docker to create one</a> with:</p>
+    <pre><code>docker run --name mariadb_sample -p 3307:3306 -e MARIADB_ROOT_PASSWORD=mariadb -e MARIADB_USER=azimutt -e MARIADB_PASSWORD=azimutt -e MARIADB_DATABASE=mariadb_sample mariadb:latest</code></pre>
+    <p>And use this <a href="https://github.com/azimuttapp/azimutt/tree/main/libs/connector-mariadb#local-setup" target="_blank" rel="noopener noreferrer">sample script</a> to populate it.</p>
+    <p>
+        Here is what you can do with Azimutt:
+        <img src={Routes.static_path(@conn, "/images/connectors/azimutt-diagram.png")} alt="Azimutt diagram" />
+    </p>
+<% end %>
+
+<%= render "connectors/_footer.html", conn: @conn, connector: @connector %>

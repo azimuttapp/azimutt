@@ -1,0 +1,12 @@
+<div class="relative p-6 rounded-xl bg-white border border-gray-200 hover:border-indigo-500 hover:shadow hover:shadow-indigo-500/50">
+    <img class="h-12" src={Routes.static_path(@conn, "/images/connectors/#{@connector.id}-icon.svg")} alt={"#{@connector.name} logo"}>
+    <div class="mt-4">
+        <h3 class="text-base font-semibold leading-6 text-gray-900">
+            <a href={Routes.website_path(@conn, :connector, @connector.id)} class="focus:outline-none">
+                <span class="absolute inset-0" aria-hidden="true"></span>
+                <%= @connector.name %>
+            </a>
+        </h3>
+        <p class="mt-2 text-sm text-gray-500"><%= render "connectors/_description-short.html", conn: @conn, connector: @connector %></p>
+    </div>
+</div>

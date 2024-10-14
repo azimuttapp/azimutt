@@ -1,0 +1,51 @@
+<%= render "connectors/_header.html", conn: @conn, connector: @connector %>
+
+<%= connector_article conn: @conn, title: @seo.title, features: [
+    %{name: "Tables", available: true},
+    %{name: "Relations", available: true},
+    %{name: "Types", available: true},
+    %{name: "Statistics", available: true},
+    %{name: "Query history", available: false},
+    %{name: "Triggers", available: false},
+    %{name: "Procedures", available: false},
+    %{name: "Query data", available: true},
+] do %>
+    <p class="lead">
+        <a href="https://www.oracle.com/database" target="_blank" rel="noopener noreferrer">Oracle</a> is a powerful, enterprise-grade relational database
+        designed for handling mission-critical applications and large-scale data.
+        Known for its exceptional performance, scalability, and advanced security, it has features like real-time data processing and multi-model data support,
+        providing businesses a robust solution to efficiently manage and analyze large volumes of data while ensuring security and compliance.
+    </p>
+    <%= render "connectors/_promo.html" %>
+    <p>
+        The <a href="https://github.com/azimuttapp/azimutt/tree/main/libs/connector-oracle" target="_blank" rel="noopener noreferrer">Oracle connector</a>
+        is available on Azimutt GitHub. Feel free to have a look and even suggest improvements.<br>
+        The heart of its behavior is the <code>getSchema</code> in
+        <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/connector-oracle/src/oracle.ts" target="_blank" rel="noopener noreferrer">src/oracle.ts</a> file.
+        It gets the Oracle schema.
+    </p>
+    <p>Not only it gets the database schema, but it also infers:</p>
+    <ul>
+        <li><strong>Polymorphic relations</strong></li>
+        <li><strong>JSON column schema</strong></li>
+    </ul>
+
+    <%= render "docs/_h3.html", title: "How to use it" %>
+    <p>Using the Oracle connector in Azimutt is really easy:</p>
+    <ul>
+        <li>Launch the Gateway, if needed (for the local one use <code>npx azimutt@latest gateway</code>)</li>
+        <li><a href={"#{Routes.elm_path(@conn, :new)}?database"}>Create a new project</a> or add a source to an existing one</li>
+        <li>Fill your Oracle database url (ex: <code>oracle:thin:user/pass@localhost:1521/FREE</code>)</li>
+    </ul>
+    <img src={Routes.static_path(@conn, "/images/connectors/azimutt-project-new.png")} alt="Azimutt create project" />
+    <p>Here are <a href={Routes.website_path(@conn, :doc, ["data-privacy"])}>more details</a> about how Azimutt secure your data and especially your database url.</p>
+    <p>If you miss an Oracle database, you can launch <a href="https://container-registry.oracle.com/ords/ocr/ba/database" target="_blank" rel="noopener noreferrer">a free one with Docker</a>:</p>
+    <pre><code>docker run --name oracle_sample -p 1521:1521 -e ORACLE_PWD=oracle container-registry.oracle.com/database/free:23.4.0.0-lite</code></pre>
+    <p>You can use this <a href="https://github.com/azimuttapp/azimutt/tree/main/libs/connector-oracle#local-setup" target="_blank" rel="noopener noreferrer">sample script</a> to populate it.</p>
+    <p>
+        Here is what you can do with Azimutt:
+        <img src={Routes.static_path(@conn, "/images/connectors/azimutt-diagram.png")} alt="Azimutt diagram" />
+    </p>
+<% end %>
+
+<%= render "connectors/_footer.html", conn: @conn, connector: @connector %>

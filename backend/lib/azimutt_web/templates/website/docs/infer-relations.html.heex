@@ -1,0 +1,74 @@
+<%= render "docs/_header.html", conn: @conn, page: @page %>
+
+<%= doc_prose do %>
+    <p class="lead">
+        Databases relations are not always defined in the database schema,
+        sometimes because the database engine doesn't support them (MongoDB, Couchbase...),
+        sometimes because the developers decided or forgot to create them (performance?).
+    </p>
+    <p>
+        Still they are very important to understand the data model and help a lot for the database exploration,
+        so you can add them on Azimutt (using <a href={Routes.website_path(@conn, :aml)}>AML</a>), even if they are not enforced by your database.
+    </p>
+    <p>
+        To help with that, Azimutt will do its best to identify them and suggest them.
+        But it will never add they on its own, as false-positive may be very misleading.
+        Here is how it does:
+    </p>
+
+    <%= render "docs/_h2.html", title: "Naming conventions" %>
+    <p>
+        It's quite common that attributes storing a reference to another entity reference the entity primary key (often <code>id</code>) and are named with the entity name and attribute name.<br>
+        For example, a <code>project_id</code> attribute will likely reference the <code>id</code> attribute of the <code>projects</code> entity.
+    </p>
+    <p>
+        Azimutt is smart enough to handle different naming styles (camel case, snake case...), pluralization and even added prefixes/suffixes.<br>
+        So attributes like <code>previous_project_id</code> and <code>ProjectIds</code>
+        will match entities named <code>projects</code>, <code>Project</code> or even <code>legacy_projects</code> having attributes like <code>id</code> or <code>project_id</code>.<br>
+        Of course, attributes like <code>author</code>, <code>owner</code> or <code>admin</code> will hardly be identified.
+        Azimutt has a special case for attributes ending by <code>by</code>, like <code>created_by</code>, it will look for tables like <code>users</code> or <code>accounts</code>.<br>
+        Here is the
+        <a href="https://github.com/azimuttapp/azimutt/blob/main/frontend/src/PagesComponents/Organization_/Project_/Views/Modals/SchemaAnalysis/RelationMissing.elm" target="_blank" rel="noopener noreferrer">code</a>
+        and <a href="https://github.com/azimuttapp/azimutt/blob/main/frontend/tests/PagesComponents/Organization_/Project_/Views/Modals/SchemaAnalysis/RelationMissingTest.elm" target="_blank" rel="noopener noreferrer">tests</a>
+        for the Explorer (Elm), and the
+        <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/models/src/analyze/rules/relationMissing.ts" target="_blank" rel="noopener noreferrer">code</a>
+        and <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/models/src/analyze/rules/relationMissing.test.ts" target="_blank" rel="noopener noreferrer">test</a>
+        for the Analyzer (TypeScript).
+    </p>
+    <p>Let us know if you have a naming convention not well-supported, we will be happy to add it. You can even submit a PR 😉 (tests are the most important part).</p>
+
+    <%= render "docs/_h2.html", title: "Join clauses" %>
+    <%= doc_warning do %>
+      Not implemented yet!
+    <% end %>
+    <p>
+        As naming conventions are not always followed, another way to find relations is by inspecting database queries.
+        In the case of relational databases, a JOIN clause may hint for a relation.
+        That's why accessing historical queries is important but Azimutt could also offer you to import the queries you could have gathered by any means.
+    </p>
+    <p>Let us know if this is crucial for you, so we can prioritize it over other features.</p>
+
+    <%= render "docs/_h2.html", title: "Unique ids" %>
+    <%= doc_warning do %>
+        Not implemented yet!
+    <% end %>
+    <p>
+        For databases without joins and which don't follow clear naming conventions, like MongoDB or Couchbase, documenting relations is still a big issue.
+        After several discussions, it should be possible to infer relations using unique ids (like UUIDs or MongoDB ObjectId).<br>
+        First, we have to identify these columns (database type or pattern in most common values), then we can look for them in all tables with a single attribute primary key having the same type.<br>
+        Then, if there is a match, thanks to unique ids, it's very likely a relation.
+    </p>
+    <p>
+        For example, if the <code>author</code> column contains UUIDs, we can look in all other tables if a specific id is found in their primary key.
+        When it's found, for example in the <code>users</code> entity, this relation will be suggestion.<br>
+        As this can be heavy for large databases, this process will be launched on demand and for specific fields.
+    </p>
+    <p>What do you think about it? Will it help you? Let us know, so we can prioritize it over other features.</p>
+
+    <p class="lead">
+        If you have any other idea to automatically identify relations, especially on schemaless environments,
+        let us know, and we will happily evaluate and implement them on usage.
+    </p>
+<% end %>
+
+<%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

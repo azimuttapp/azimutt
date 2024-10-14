@@ -1,0 +1,13 @@
+<div class="mx-auto max-w-5xl px-6 lg:px-8">
+    <div class="border-b border-gray-200 mb-10">
+        <h2 id="connectors" class="text-xl font-semibold leading-6 text-gray-900 pt-10">Other connectors you may want to check:</h2>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+        <%= for connector <- Azimutt.connectors() |> Enum.filter(fn c -> c.id != @connector.id end) |> Enum.shuffle() |> Enum.take(3) do %>
+        <%= render "connectors/_card.html", conn: @conn, connector: connector %>
+        <% end %>
+    </div>
+</div>
+
+<%= render "_footer.html", conn: @conn %>
