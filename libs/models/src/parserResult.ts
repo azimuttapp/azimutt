@@ -61,7 +61,7 @@ export const tokenPosition = (offsetStart: number, offsetEnd: number, positionSt
     ({offset: {start: offsetStart, end: offsetEnd}, position: {start: {line: positionStartLine, column: positionStartColumn}, end: {line: positionEndLine, column: positionEndColumn}}})
 
 export const mergePositions = (positions: (TokenPosition | undefined)[]): TokenPosition => {
-    const pos: TokenPosition[] = positions.filter(isNotUndefined)
+    const pos: TokenPosition[] = positions.filter(isNotUndefined).filter(p => !!p.offset)
     return ({
         offset: {start: posStart(pos.map(p => p.offset.start)), end: posEnd(pos.map(p => p.offset.end))},
         position: {
