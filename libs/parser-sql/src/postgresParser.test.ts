@@ -57,6 +57,18 @@ describe('postgresParser', () => {
                 where: {condition: {left: {column: {kind: 'Identifier', value: 'id'}}, operator: {kind: '='}, right: {kind: 'Integer', value: 1}}}
             }]}})
         })
+        test('strange', () => {
+            expect(parsePostgresAst("SELECT pg_catalog.set_config('search_path', '', false);")).toEqual({result: {statements: [{
+                statement: 'Select',
+                select: {...token(0, 5), expressions: [{
+                    kind: 'Function',
+                    schema: identifier('pg_catalog', 0, 0),
+                    function: identifier('set_config', 0, 0),
+                    parameters: [string('search_path', 0, 0), string('', 0, 0), boolean(false, 0, 0)]
+                }]},
+                ...token(0, 22)
+            }]}})
+        })
     })
     describe('createTableStatement', () => {
         test('simplest', () => {
