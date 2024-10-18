@@ -18,7 +18,6 @@ describe('postgresParser', () => {
     // INSERT INTO
     // UPDATE
     // DELETE
-    // COMMENT ON
     test('empty', () => {
         expect(parsePostgresAst('')).toEqual({result: {statements: []}})
     })
@@ -103,7 +102,7 @@ describe('postgresParser', () => {
         test('simplest', () => {
             expect(parsePostgresAst('DROP TABLE users;')).toEqual({result: {statements: [{
                 statement: 'Drop',
-                kind: {kind: 'Table', ...token(0, 9)},
+                object: {kind: 'Table', ...token(0, 9)},
                 entities: [{table: identifier('users', 11, 15)}],
                 ...token(0, 16)
             }]}})
@@ -111,7 +110,7 @@ describe('postgresParser', () => {
         test('complex', () => {
             expect(parsePostgresAst('DROP INDEX CONCURRENTLY IF EXISTS users_idx, posts_idx CASCADE;')).toEqual({result: {statements: [{
                 statement: 'Drop',
-                kind: {kind: 'Index', ...token(0, 9)},
+                object: {kind: 'Index', ...token(0, 9)},
                 concurrently: token(11, 22),
                 ifExists: token(24, 32),
                 entities: [{table: identifier('users_idx', 34, 42)}, {table: identifier('posts_idx', 45, 53)}],
@@ -125,6 +124,49 @@ describe('postgresParser', () => {
             expect(parsePostgresAst('DROP MATERIALIZED VIEW users;').errors || []).toEqual([])
             expect(parsePostgresAst('DROP INDEX users_idx;').errors || []).toEqual([])
             expect(parsePostgresAst('DROP TYPE users;').errors || []).toEqual([])
+        })
+    })
+    describe('commentStatement', () => {
+        test('simplest', () => {
+            expect(parsePostgresAst("COMMENT ON SCHEMA public IS 'Main schema';")).toEqual({result: {statements: [{
+                statement: 'Comment',
+                object: {kind: 'Schema', ...token(0, 16)},
+                entity: identifier('public', 18, 23),
+                comment: string('Main schema', 28, 40),
+                ...token(0, 41)
+            }]}})
+        })
+        test('table', () => {
+            expect(parsePostgresAst("COMMENT ON TABLE public.users IS 'List users';")).toEqual({result: {statements: [{
+                statement: 'Comment',
+                object: {kind: 'Table', ...token(0, 15)},
+                schema: identifier('public', 17, 22),
+                entity: identifier('users', 24, 28),
+                comment: string('List users', 33, 44),
+                ...token(0, 45)
+            }]}})
+        })
+        test('column', () => {
+            expect(parsePostgresAst("COMMENT ON COLUMN public.users.name IS 'user name';")).toEqual({result: {statements: [{
+                statement: 'Comment',
+                object: {kind: 'Column', ...token(0, 16)},
+                schema: identifier('public', 18, 23),
+                parent: identifier('users', 25, 29),
+                entity: identifier('name', 31, 34),
+                comment: string('user name', 39, 49),
+                ...token(0, 50)
+            }]}})
+        })
+        test('constraint', () => {
+            expect(parsePostgresAst("COMMENT ON CONSTRAINT users_pk ON public.users IS 'users pk';")).toEqual({result: {statements: [{
+                statement: 'Comment',
+                object: {kind: 'Constraint', ...token(0, 20)},
+                entity: identifier('users_pk', 22, 29),
+                schema: identifier('public', 34, 39),
+                parent: identifier('users', 41, 45),
+                comment: string('users pk', 50, 59),
+                ...token(0, 60)
+            }]}})
         })
     })
     describe('setStatement', () => {

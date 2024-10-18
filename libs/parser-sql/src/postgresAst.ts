@@ -10,11 +10,12 @@ import {ParserErrorLevel, TokenPosition} from "@azimutt/models";
 
 // statements
 export type StatementsAst = { statements: StatementAst[] }
-export type StatementAst = SelectStatementAst | CreateTableStatementAst | DropStatementAst
+export type StatementAst = SelectStatementAst | CreateTableStatementAst | DropStatementAst | CommentStatementAst | SetStatementAst
 export type SelectStatementAst = { statement: 'Select', select: SelectClauseAst, from?: FromClauseAst, where?: WhereClauseAst } & TokenInfo
 export type CreateTableStatementAst = { statement: 'CreateTable', name: TableAst, columns: TableColumnAst[], constraints?: TableConstraintAst[] }
-export type DropStatementAst = { statement: 'Drop', kind: { kind: 'Table' | 'View' | 'MaterializedView' | 'Index' | 'Type' } & TokenInfo, entities: TableAst[], concurrently?: TokenInfo, ifExists?: TokenInfo, mode?: { kind: 'Cascade' | 'Restrict' } & TokenInfo } & TokenInfo
-export type SetStatementAst = { statement: 'Set', scope?: { kind: 'Session' | 'Local' } & TokenInfo, parameter: IdentifierAst, equal: { kind: '=' | 'To' } & TokenInfo, value: SetValueAst } & TokenInfo
+export type DropStatementAst = { statement: 'Drop', object: { kind: DropObject } & TokenInfo, entities: TableAst[], concurrently?: TokenInfo, ifExists?: TokenInfo, mode?: { kind: DropMode } & TokenInfo } & TokenInfo
+export type CommentStatementAst = { statement: 'Comment', object: { kind: CommentObject } & TokenInfo, schema?: IdentifierAst, parent?: IdentifierAst, entity: IdentifierAst, comment: StringAst | NullAst } & TokenInfo
+export type SetStatementAst = { statement: 'Set', scope?: { kind: SetScope } & TokenInfo, parameter: IdentifierAst, equal: { kind: SetAssign } & TokenInfo, value: SetValueAst } & TokenInfo
 
 // clauses
 export type SelectClauseAst = { expressions: SelectClauseExprAst[] } & TokenInfo
@@ -36,17 +37,18 @@ export type TableCheckAst = { kind: 'Check', predicate: ConditionAst } & Constra
 export type TableFkAst = { kind: 'ForeignKey', columns: IdentifierAst[], ref: {schema?: IdentifierAst, table: IdentifierAst, columns?: IdentifierAst[]} & TokenInfo, onUpdate?: ForeignKeyActionAst & TokenInfo, onDelete?: ForeignKeyActionAst & TokenInfo } & ConstraintCommonAst
 export type ConstraintCommonAst = { constraint?: ConstraintNameAst } & TokenInfo
 export type ConstraintNameAst = { name: IdentifierAst } & TokenInfo
-export type ForeignKeyActionAst = {action: {kind: 'NoAction' | 'Restrict' | 'Cascade' | 'SetNull' | 'SetDefault'} & TokenInfo, columns?: IdentifierAst[]}
+export type ForeignKeyActionAst = {action: {kind: ForeignKeyAction} & TokenInfo, columns?: IdentifierAst[]}
 export type SetValueAst = IdentifierAst | LiteralAst | (IdentifierAst | LiteralAst)[] | { kind: 'Default' } & TokenInfo
 
 // basic parts
 export type AliasAst = { name: IdentifierAst } & TokenInfo
 export type ConditionAst = { left: ExpressionAst, operator: OperatorAst, right: ExpressionAst }
-export type OperatorAst = { kind: '=' | '<' | '>' | 'Like' } & TokenInfo
+export type OperatorAst = { kind: Operator } & TokenInfo
 export type ExpressionAst = LiteralAst | ColumnAst | FunctionAst
-export type LiteralAst = StringAst | IntegerAst | DecimalAst | BooleanAst
+export type LiteralAst = StringAst | IntegerAst | DecimalAst | BooleanAst | NullAst
 export type TableAst = {schema?: IdentifierAst, table: IdentifierAst}
 export type ColumnAst = {schema?: IdentifierAst, table?: IdentifierAst, column: IdentifierAst}
+export type ColumnWithTableAst = {schema?: IdentifierAst, table: IdentifierAst, column: IdentifierAst}
 export type FunctionAst = {schema?: IdentifierAst, function: IdentifierAst, parameters: ExpressionAst[]}
 
 // elements
@@ -55,7 +57,18 @@ export type StringAst = { kind: 'String', value: string } & TokenInfo
 export type DecimalAst = { kind: 'Decimal', value: number } & TokenInfo
 export type IntegerAst = { kind: 'Integer', value: number } & TokenInfo
 export type BooleanAst = { kind: 'Boolean', value: boolean } & TokenInfo
-export type CommentAst = { kind: 'line' | 'block' | 'doc', value: string } & TokenInfo // special case
+export type NullAst = { kind: 'Null' } & TokenInfo
+export type CommentAst = { kind: CommentKind, value: string } & TokenInfo // special case
+
+// enums
+export type Operator = '=' | '<' | '>' | 'Like'
+export type ForeignKeyAction = 'NoAction' | 'Restrict' | 'Cascade' | 'SetNull' | 'SetDefault'
+export type DropObject = 'Table' | 'View' | 'MaterializedView' | 'Index' | 'Type'
+export type DropMode = 'Cascade' | 'Restrict'
+export type CommentObject = 'Column' | 'Constraint' | 'Database' | 'Extension' | 'Index' | 'MaterializedView' | 'Schema' | 'Table' | 'Type' | 'View'
+export type SetScope = 'Session' | 'Local'
+export type SetAssign = '=' | 'To'
+export type CommentKind = 'line' | 'block' | 'doc'
 
 // helpers
 export type TokenInfo = TokenPosition & { issues?: TokenIssue[] }
