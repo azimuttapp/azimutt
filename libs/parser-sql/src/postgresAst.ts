@@ -10,7 +10,8 @@ import {ParserErrorLevel, TokenPosition} from "@azimutt/models";
 
 // statements
 export type StatementsAst = { statements: StatementAst[] }
-export type StatementAst = CommentStatementAst | CreateExtensionStatementAst | CreateTableStatementAst | DropStatementAst | SelectStatementAst | SetStatementAst
+export type StatementAst = AlterTableStatementAst | CommentStatementAst | CreateExtensionStatementAst | CreateTableStatementAst | CreateTypeStatementAst | DropStatementAst | SelectStatementAst | SetStatementAst
+export type AlterTableStatementAst = { statement: 'AlterTable', ifExists?: TokenInfo, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, action: AlterTableActionAst } & TokenInfo
 export type CommentStatementAst = { statement: 'Comment', object: { kind: CommentObject } & TokenInfo, schema?: IdentifierAst, parent?: IdentifierAst, entity: IdentifierAst, comment: StringAst | NullAst } & TokenInfo
 export type CreateExtensionStatementAst = { statement: 'CreateExtension', ifNotExists?: TokenInfo, name: IdentifierAst, with?: TokenInfo, schema?: {name: IdentifierAst} & TokenInfo, version?: {number: StringAst | IdentifierAst} & TokenInfo, cascade?: TokenInfo } & TokenInfo
 export type CreateTableStatementAst = { statement: 'CreateTable', schema?: IdentifierAst, table: IdentifierAst, columns: TableColumnAst[], constraints?: TableConstraintAst[] } & TokenInfo
@@ -24,6 +25,11 @@ export type SelectClauseAst = { expressions: SelectClauseExprAst[] } & TokenInfo
 export type SelectClauseExprAst = ExpressionAst & { alias?: AliasAst }
 export type FromClauseAst = { table: IdentifierAst, alias?: AliasAst } & TokenInfo
 export type WhereClauseAst = { condition: ConditionAst } & TokenInfo
+export type AlterTableActionAst = AddColumnAst | AddConstraintAst | DropColumnAst | DropConstraintAst
+export type AddColumnAst = { kind: 'AddColumn', ifNotExists?: TokenInfo, column: TableColumnAst } & TokenInfo
+export type AddConstraintAst = { kind: 'AddConstraint', constraint: TableConstraintAst } & TokenInfo
+export type DropColumnAst = { kind: 'DropColumn', ifExists?: TokenInfo, column: IdentifierAst } & TokenInfo
+export type DropConstraintAst = { kind: 'DropConstraint', ifExists?: TokenInfo, constraint: IdentifierAst } & TokenInfo
 export type TypeColumnAst = { name: IdentifierAst, type: ColumnTypeAst, collation?: {name: IdentifierAst} & TokenInfo }
 export type TableColumnAst = { name: IdentifierAst, type: ColumnTypeAst, constraints?: TableColumnConstraintAst[] }
 export type TableColumnConstraintAst = TableColumnNullableAst | TableColumnDefaultAst | TableColumnPkAst | TableColumnUniqueAst | TableColumnCheckAst | TableColumnFkAst

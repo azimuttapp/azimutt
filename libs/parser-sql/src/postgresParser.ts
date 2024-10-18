@@ -11,10 +11,11 @@ import {isNotUndefined, removeEmpty, removeUndefined} from "@azimutt/utils";
 import {mergePositions, ParserError, ParserErrorLevel, ParserResult, TokenPosition} from "@azimutt/models";
 import {
     AliasAst,
+    AlterTableStatementAst,
     BooleanAst,
     ColumnRefAst,
-    ColumnTypeAst,
     ColumnRefWithTableAst,
+    ColumnTypeAst,
     CommentAst,
     CommentStatementAst,
     ConditionAst,
@@ -40,7 +41,6 @@ import {
     StatementAst,
     StatementsAst,
     StringAst,
-    TableRefAst,
     TableColumnAst,
     TableColumnCheckAst,
     TableColumnConstraintAst,
@@ -52,6 +52,7 @@ import {
     TableConstraintAst,
     TableFkAst,
     TablePkAst,
+    TableRefAst,
     TableUniqueAst,
     TokenInfo,
     TokenIssue,
@@ -69,6 +70,8 @@ const Decimal = createToken({name: 'Decimal', pattern: /-?\d+\.\d+/})
 const Integer = createToken({name: 'Integer', pattern: /0|-?[1-9]\d*/, longer_alt: Decimal})
 const valueTokens: TokenType[] = [Integer, Decimal, String, Identifier, LineComment, BlockComment]
 
+const Add = createToken({name: 'Add', pattern: /\bADD\b/i, longer_alt: Identifier})
+const Alter = createToken({name: 'Alter', pattern: /\bALTER\b/i, longer_alt: Identifier})
 const And = createToken({name: 'And', pattern: /\bAND\b/i, longer_alt: Identifier})
 const As = createToken({name: 'As', pattern: /\bAS\b/i, longer_alt: Identifier})
 const Cascade = createToken({name: 'Cascade', pattern: /\bCASCADE\b/i, longer_alt: Identifier})
@@ -107,6 +110,7 @@ const Not = createToken({name: 'Not', pattern: /\bNOT\b/i, longer_alt: Identifie
 const Null = createToken({name: 'Null', pattern: /\bNULL\b/i, longer_alt: Identifier})
 const Offset = createToken({name: 'Offset', pattern: /\bOFFSET\b/i, longer_alt: Identifier})
 const On = createToken({name: 'On', pattern: /\bON\b/i, longer_alt: Identifier})
+const Only = createToken({name: 'Only', pattern: /\bONLY\b/i, longer_alt: Identifier})
 const Or = createToken({name: 'Or', pattern: /\bOR\b/i, longer_alt: Identifier})
 const OrderBy = createToken({name: 'OrderBy', pattern: /\bORDER\s+BY\b/i})
 const PrimaryKey = createToken({name: 'PrimaryKey', pattern: /\bPRIMARY\s+KEY\b/i})
@@ -131,8 +135,8 @@ const Where = createToken({name: 'Where', pattern: /\bWHERE\b/i, longer_alt: Ide
 const Window = createToken({name: 'Window', pattern: /\bWINDOW\b/i, longer_alt: Identifier})
 const With = createToken({name: 'With', pattern: /\bWITH\b/i, longer_alt: Identifier})
 const keywordTokens: TokenType[] = [
-    And, As, Cascade, Check, Collate, Column, Comment, Concurrently, Constraint, Create, Default, Database, Delete, Distinct, Domain, Drop, Enum, Exists, Extension,
-    False, Fetch, ForeignKey, From, GroupBy, Having, If, Is, Index, Join, Like, Limit, Local, MaterializedView, NoAction, Not, Null, Offset, On, Or, OrderBy,
+    Add, Alter, And, As, Cascade, Check, Collate, Column, Comment, Concurrently, Constraint, Create, Default, Database, Delete, Distinct, Domain, Drop, Enum, Exists, Extension,
+    False, Fetch, ForeignKey, From, GroupBy, Having, If, Is, Index, Join, Like, Limit, Local, MaterializedView, NoAction, Not, Null, Offset, On, Only, Or, OrderBy,
     PrimaryKey, References, Restrict, Schema, Select, Session, SetDefault, SetNull, Set, Table, To, True, Type, Union, Unique, Update, Version, View, Where, Window, With
 ]
 
@@ -161,6 +165,7 @@ class PostgresParser extends EmbeddedActionsParser {
     statementsRule: () => StatementsAst
     // statements
     statementRule: () => StatementAst
+    alterTableStatementRule: () => AlterTableStatementAst
     commentStatementRule: () => CommentStatementAst
     createExtensionStatementRule: () => CreateExtensionStatementAst
     createTableStatementRule: () => CreateTableStatementAst
@@ -210,6 +215,7 @@ class PostgresParser extends EmbeddedActionsParser {
         })
 
         this.statementRule = $.RULE<() => StatementAst>('statementRule', () => $.OR([
+            { ALT: () => $.SUBRULE($.alterTableStatementRule) },
             { ALT: () => $.SUBRULE($.commentStatementRule) },
             { ALT: () => $.SUBRULE($.createExtensionStatementRule) },
             { ALT: () => $.SUBRULE($.createTableStatementRule) },
@@ -218,6 +224,23 @@ class PostgresParser extends EmbeddedActionsParser {
             { ALT: () => $.SUBRULE($.selectStatementRule) },
             { ALT: () => $.SUBRULE($.setStatementRule) },
         ]))
+
+        this.alterTableStatementRule = $.RULE<() => AlterTableStatementAst>('alterTableStatementRule', () => {
+            // https://www.postgresql.org/docs/current/sql-altertable.html
+            const start = $.CONSUME(Alter)
+            $.CONSUME(Table)
+            const ifExists = $.SUBRULE(ifExistsRule)
+            const only = $.OPTION(() => tokenInfo($.CONSUME(Only)))
+            const table = $.SUBRULE($.tableRefRule)
+            const action = $.OR([
+                {ALT: () => removeUndefined({kind: 'AddColumn' as const, ...tokenInfo2($.CONSUME(Add), $.OPTION2(() => $.CONSUME(Column))), ifNotExists: $.SUBRULE(ifNotExistsRule), column: $.SUBRULE($.tableColumnRule)})},
+                {ALT: () => removeUndefined({kind: 'AddConstraint' as const, ...tokenInfo($.CONSUME2(Add)), constraint: $.SUBRULE($.tableConstraintRule)})},
+                {ALT: () => removeUndefined({kind: 'DropColumn' as const, ...tokenInfo2($.CONSUME(Drop), $.OPTION3(() => $.CONSUME2(Column))), ifExists: $.SUBRULE2(ifExistsRule), column: $.SUBRULE($.identifierRule)})},
+                {ALT: () => removeUndefined({kind: 'DropConstraint' as const, ...tokenInfo2($.CONSUME2(Drop), $.CONSUME(Constraint)), ifExists: $.SUBRULE3(ifExistsRule), constraint: $.SUBRULE2($.identifierRule)})},
+            ])
+            const end = $.CONSUME(Semicolon)
+            return removeUndefined({statement: 'AlterTable' as const, ifExists, only, ...table, action, ...tokenInfo2(start, end)})
+        })
 
         this.commentStatementRule = $.RULE<() => CommentStatementAst>('commentStatementRule', () => {
             // https://www.postgresql.org/docs/current/sql-comment.html
@@ -263,12 +286,12 @@ class PostgresParser extends EmbeddedActionsParser {
             // https://www.postgresql.org/docs/current/sql-createextension.html
             const start = $.CONSUME(Create)
             $.CONSUME(Extension)
-            const ifNotExists = $.OPTION(() => tokenInfo3($.CONSUME(If), $.CONSUME(Not), $.CONSUME(Exists)))
+            const ifNotExists = $.SUBRULE(ifNotExistsRule)
             const name = $.SUBRULE($.identifierRule)
-            const withh = $.OPTION2(() => tokenInfo($.CONSUME(With)))
-            const schema = $.OPTION3(() => ({...tokenInfo($.CONSUME(Schema)), name: $.SUBRULE2($.identifierRule)}))
-            const version = $.OPTION4(() => ({...tokenInfo($.CONSUME(Version)), number: $.OR([{ALT: () => $.SUBRULE($.stringRule)}, {ALT: () => $.SUBRULE3($.identifierRule)}])}))
-            const cascade = $.OPTION5(() => tokenInfo($.CONSUME(Cascade)))
+            const withh = $.OPTION(() => tokenInfo($.CONSUME(With)))
+            const schema = $.OPTION2(() => ({...tokenInfo($.CONSUME(Schema)), name: $.SUBRULE2($.identifierRule)}))
+            const version = $.OPTION3(() => ({...tokenInfo($.CONSUME(Version)), number: $.OR([{ALT: () => $.SUBRULE($.stringRule)}, {ALT: () => $.SUBRULE3($.identifierRule)}])}))
+            const cascade = $.OPTION4(() => tokenInfo($.CONSUME(Cascade)))
             const end = $.CONSUME(Semicolon)
             return removeUndefined({statement: 'CreateExtension' as const, ifNotExists, name, with: withh, schema, version, cascade, ...tokenInfo2(start, end)})
         })
@@ -335,10 +358,10 @@ class PostgresParser extends EmbeddedActionsParser {
                 {ALT: () => ({kind: 'View' as const, ...tokenInfo2(start, $.CONSUME(View))})}, // https://www.postgresql.org/docs/current/sql-dropview.html
             ])
             const concurrently = $.OPTION(() => tokenInfo($.CONSUME(Concurrently)))
-            const ifExists = $.OPTION2(() => tokenInfo2($.CONSUME(If), $.CONSUME(Exists)))
+            const ifExists = $.SUBRULE(ifExistsRule)
             const entities: TableRefAst[] = []
             $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => entities.push($.SUBRULE($.tableRefRule))})
-            const mode = $.OPTION3(() => $.OR2([
+            const mode = $.OPTION2(() => $.OR2([
                 {ALT: () => ({kind: 'Cascade' as const, ...tokenInfo($.CONSUME(Cascade))})},
                 {ALT: () => ({kind: 'Restrict' as const, ...tokenInfo($.CONSUME(Restrict))})},
             ]))
@@ -525,6 +548,9 @@ class PostgresParser extends EmbeddedActionsParser {
             $.CONSUME(ParenRight)
             return columns.filter(isNotUndefined)
         })
+
+        const ifExistsRule = $.RULE<() => TokenInfo | undefined>('ifExistsRule', () => $.OPTION(() => tokenInfo2($.CONSUME(If), $.CONSUME(Exists))))
+        const ifNotExistsRule = $.RULE<() => TokenInfo | undefined>('ifNotExistsRule', () => $.OPTION(() => tokenInfo3($.CONSUME(If), $.CONSUME(Not), $.CONSUME(Exists))))
 
         // basic parts
 
@@ -757,12 +783,12 @@ function tokenInfo(token: IToken, issues?: TokenIssue[]): TokenInfo {
     return removeEmpty({...tokenPosition(token), issues})
 }
 
-function tokenInfo2(start: IToken, end: IToken, issues?: TokenIssue[]): TokenInfo {
-    return removeEmpty({...mergePositions([tokenPosition(start), tokenPosition(end)]), issues})
+function tokenInfo2(start: IToken, end: IToken | undefined, issues?: TokenIssue[]): TokenInfo {
+    return removeEmpty({...mergePositions([tokenPosition(start), end ? tokenPosition(end) : undefined]), issues})
 }
 
-function tokenInfo3(start: IToken, _middle: IToken, end: IToken, issues?: TokenIssue[]): TokenInfo {
-    return removeEmpty({...mergePositions([tokenPosition(start), tokenPosition(end)]), issues})
+function tokenInfo3(start: IToken, middle: IToken | undefined, end: IToken | undefined, issues?: TokenIssue[]): TokenInfo {
+    return removeEmpty({...mergePositions([tokenPosition(start), middle ? tokenPosition(middle) : undefined, end ? tokenPosition(end) : undefined]), issues})
 }
 
 function tokenPosition(token: IToken): TokenPosition {

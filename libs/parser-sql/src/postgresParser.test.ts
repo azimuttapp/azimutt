@@ -36,6 +36,51 @@ describe('postgresParser', () => {
         const parsed = parsePostgresAst(sql, {strict: true})
         expect(parsed.errors || []).toEqual([])
     })
+    describe('alterTableStatement', () => {
+        test('full', () => {
+            expect(parsePostgresAst('ALTER TABLE IF EXISTS ONLY public.users ADD CONSTRAINT users_pk PRIMARY KEY (id);')).toEqual({result: {statements: [{
+                statement: 'AlterTable',
+                ifExists: token(12, 20),
+                only: token(22, 25),
+                schema: identifier('public', 27, 32),
+                table: identifier('users', 34, 38),
+                action: {kind: 'AddConstraint', ...token(40, 42), constraint: {kind: 'PrimaryKey', constraint: {...token(44, 53), name: identifier('users_pk', 55, 62)}, ...token(64, 74), columns: [identifier('id', 77, 78)]}},
+                ...token(0, 80)
+            }]}})
+        })
+        test('add column', () => {
+            expect(parsePostgresAst('ALTER TABLE users ADD author int;')).toEqual({result: {statements: [{
+                statement: 'AlterTable',
+                table: identifier('users', 12, 16),
+                action: {kind: 'AddColumn', ...token(18, 20), column: {name: identifier('author', 22, 27), type: {name: {value: 'int', ...token(29, 31)}, ...token(29, 31)}}},
+                ...token(0, 32)
+            }]}})
+        })
+        test('drop column', () => {
+            expect(parsePostgresAst('ALTER TABLE users DROP author;')).toEqual({result: {statements: [{
+                statement: 'AlterTable',
+                table: identifier('users', 12, 16),
+                action: {kind: 'DropColumn', ...token(18, 21), column: identifier('author', 23, 28)},
+                ...token(0, 29)
+            }]}})
+        })
+        test('add primaryKey', () => {
+            expect(parsePostgresAst('ALTER TABLE users ADD PRIMARY KEY (id);')).toEqual({result: {statements: [{
+                statement: 'AlterTable',
+                table: identifier('users', 12, 16),
+                action: {kind: 'AddConstraint', ...token(18, 20), constraint: {kind: 'PrimaryKey', ...token(22, 32), columns: [identifier('id', 35, 36)]}},
+                ...token(0, 38)
+            }]}})
+        })
+        test('drop primaryKey', () => {
+            expect(parsePostgresAst('ALTER TABLE users DROP CONSTRAINT users_pk;')).toEqual({result: {statements: [{
+                statement: 'AlterTable',
+                table: identifier('users', 12, 16),
+                action: {kind: 'DropConstraint', ...token(18, 32), constraint: identifier('users_pk', 34, 41)},
+                ...token(0, 42)
+            }]}})
+        })
+    })
     describe('commentStatement', () => {
         test('simplest', () => {
             expect(parsePostgresAst("COMMENT ON SCHEMA public IS 'Main schema';")).toEqual({result: {statements: [{
