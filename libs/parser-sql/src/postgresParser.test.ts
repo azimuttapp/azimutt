@@ -14,8 +14,7 @@ import {
 import {parsePostgresAst, parseRule} from "./postgresParser";
 
 describe('postgresParser', () => {
-    // CREATE VIEW/MATERIALIZED VIEW/INDEX
-    // INSERT INTO
+    // CREATE VIEW/MATERIALIZED VIEW
     // UPDATE
     // DELETE
     test('empty', () => {
@@ -31,7 +30,7 @@ describe('postgresParser', () => {
         const parsed = parsePostgresAst(sql, {strict: true})
         expect(parsed.errors || []).toEqual([])
     })
-    test.skip('structure', () => {
+    test('structure', () => {
         const sql = fs.readFileSync('../../backend/priv/repo/structure.sql', 'utf8')
         const parsed = parsePostgresAst(sql, {strict: true})
         expect(parsed.errors || []).toEqual([])
@@ -39,7 +38,7 @@ describe('postgresParser', () => {
     describe('alterTableStatement', () => {
         test('full', () => {
             expect(parsePostgresAst('ALTER TABLE IF EXISTS ONLY public.users ADD CONSTRAINT users_pk PRIMARY KEY (id);')).toEqual({result: {statements: [{
-                statement: 'AlterTable',
+                kind: 'AlterTable',
                 ifExists: token(12, 20),
                 only: token(22, 25),
                 schema: identifier('public', 27, 32),
@@ -50,7 +49,7 @@ describe('postgresParser', () => {
         })
         test('add column', () => {
             expect(parsePostgresAst('ALTER TABLE users ADD author int;')).toEqual({result: {statements: [{
-                statement: 'AlterTable',
+                kind: 'AlterTable',
                 table: identifier('users', 12, 16),
                 action: {kind: 'AddColumn', ...token(18, 20), column: {name: identifier('author', 22, 27), type: {name: {value: 'int', ...token(29, 31)}, ...token(29, 31)}}},
                 ...token(0, 32)
@@ -58,7 +57,7 @@ describe('postgresParser', () => {
         })
         test('drop column', () => {
             expect(parsePostgresAst('ALTER TABLE users DROP author;')).toEqual({result: {statements: [{
-                statement: 'AlterTable',
+                kind: 'AlterTable',
                 table: identifier('users', 12, 16),
                 action: {kind: 'DropColumn', ...token(18, 21), column: identifier('author', 23, 28)},
                 ...token(0, 29)
@@ -66,7 +65,7 @@ describe('postgresParser', () => {
         })
         test('add primaryKey', () => {
             expect(parsePostgresAst('ALTER TABLE users ADD PRIMARY KEY (id);')).toEqual({result: {statements: [{
-                statement: 'AlterTable',
+                kind: 'AlterTable',
                 table: identifier('users', 12, 16),
                 action: {kind: 'AddConstraint', ...token(18, 20), constraint: {kind: 'PrimaryKey', ...token(22, 32), columns: [identifier('id', 35, 36)]}},
                 ...token(0, 38)
@@ -74,7 +73,7 @@ describe('postgresParser', () => {
         })
         test('drop primaryKey', () => {
             expect(parsePostgresAst('ALTER TABLE users DROP CONSTRAINT users_pk;')).toEqual({result: {statements: [{
-                statement: 'AlterTable',
+                kind: 'AlterTable',
                 table: identifier('users', 12, 16),
                 action: {kind: 'DropConstraint', ...token(18, 32), constraint: identifier('users_pk', 34, 41)},
                 ...token(0, 42)
@@ -84,7 +83,7 @@ describe('postgresParser', () => {
     describe('commentStatement', () => {
         test('simplest', () => {
             expect(parsePostgresAst("COMMENT ON SCHEMA public IS 'Main schema';")).toEqual({result: {statements: [{
-                statement: 'Comment',
+                kind: 'Comment',
                 object: {kind: 'Schema', ...token(0, 16)},
                 entity: identifier('public', 18, 23),
                 comment: string('Main schema', 28, 40),
@@ -93,7 +92,7 @@ describe('postgresParser', () => {
         })
         test('table', () => {
             expect(parsePostgresAst("COMMENT ON TABLE public.users IS 'List users';")).toEqual({result: {statements: [{
-                statement: 'Comment',
+                kind: 'Comment',
                 object: {kind: 'Table', ...token(0, 15)},
                 schema: identifier('public', 17, 22),
                 entity: identifier('users', 24, 28),
@@ -103,7 +102,7 @@ describe('postgresParser', () => {
         })
         test('column', () => {
             expect(parsePostgresAst("COMMENT ON COLUMN public.users.name IS 'user name';")).toEqual({result: {statements: [{
-                statement: 'Comment',
+                kind: 'Comment',
                 object: {kind: 'Column', ...token(0, 16)},
                 schema: identifier('public', 18, 23),
                 parent: identifier('users', 25, 29),
@@ -114,7 +113,7 @@ describe('postgresParser', () => {
         })
         test('constraint', () => {
             expect(parsePostgresAst("COMMENT ON CONSTRAINT users_pk ON public.users IS 'users pk';")).toEqual({result: {statements: [{
-                statement: 'Comment',
+                kind: 'Comment',
                 object: {kind: 'Constraint', ...token(0, 20)},
                 entity: identifier('users_pk', 22, 29),
                 schema: identifier('public', 34, 39),
@@ -127,14 +126,14 @@ describe('postgresParser', () => {
     describe('createExtensionStatement', () => {
         test('simplest', () => {
             expect(parsePostgresAst('CREATE EXTENSION citext;')).toEqual({result: {statements: [{
-                statement: 'CreateExtension',
+                kind: 'CreateExtension',
                 name: identifier('citext', 17, 22),
                 ...token(0, 23)
             }]}})
         })
         test('full', () => {
             expect(parsePostgresAst("CREATE EXTENSION IF NOT EXISTS citext WITH SCHEMA public VERSION '1.0' CASCADE;")).toEqual({result: {statements: [{
-                statement: 'CreateExtension',
+                kind: 'CreateExtension',
                 ifNotExists: token(17, 29),
                 name: identifier('citext', 31, 36),
                 with: token(38, 41),
@@ -148,7 +147,7 @@ describe('postgresParser', () => {
     describe('createIndexStatement', () => {
         test('simplest', () => {
             expect(parsePostgresAst('CREATE INDEX ON users (name);')).toEqual({result: {statements: [{
-                statement: 'CreateIndex',
+                kind: 'CreateIndex',
                 table: identifier('users', 16, 20),
                 columns: [{column: identifier('name', 23, 26)}],
                 ...token(0, 28)
@@ -161,7 +160,7 @@ describe('postgresParser', () => {
                 // TODO: ' INCLUDE (email) NULLS NOT DISTINCT WITH (fastupdate = off) TABLESPACE indexspace WHERE deleted_at IS NULL' +
                 ' INCLUDE (email);'
             )).toEqual({result: {statements: [{
-                statement: 'CreateIndex',
+                kind: 'CreateIndex',
                 unique: token(7, 12),
                 concurrently: token(20, 31),
                 ifNotExists: token(33, 45),
@@ -186,7 +185,7 @@ describe('postgresParser', () => {
     describe('createTableStatement', () => {
         test('simplest', () => {
             expect(parsePostgresAst('CREATE TABLE users (id int PRIMARY KEY, name VARCHAR);')).toEqual({result: {statements: [{
-                statement: 'CreateTable',
+                kind: 'CreateTable',
                 table: identifier('users', 13, 17),
                 columns: [
                     {name: identifier('id', 20, 21), type: {name: {value: 'int', ...token(23, 25)}, ...token(23, 25)}, constraints: [{kind: 'PrimaryKey', ...token(27, 37)}]},
@@ -197,7 +196,7 @@ describe('postgresParser', () => {
         })
         test('with constraints', () => {
             expect(parsePostgresAst('CREATE TABLE users (id int, role VARCHAR, CONSTRAINT users_pk PRIMARY KEY (id), FOREIGN KEY (role) REFERENCES roles (name));')).toEqual({result: {statements: [{
-                statement: 'CreateTable',
+                kind: 'CreateTable',
                 table: identifier('users', 13, 17),
                 columns: [
                     {name: identifier('id', 20, 21), type: {name: {value: 'int', ...token(23, 25)}, ...token(23, 25)}},
@@ -216,14 +215,14 @@ describe('postgresParser', () => {
     describe('createTypeStatement', () => {
         test('simplest', () => {
             expect(parsePostgresAst('CREATE TYPE position;')).toEqual({result: {statements: [{
-                statement: 'CreateType',
+                kind: 'CreateType',
                 type: identifier('position', 12, 19),
                 ...token(0, 20)
             }]}})
         })
         test('struct', () => {
             expect(parsePostgresAst('CREATE TYPE layout_position AS (x int, y int COLLATE "fr_FR");')).toEqual({result: {statements: [{
-                statement: 'CreateType',
+                kind: 'CreateType',
                 type: identifier('layout_position', 12, 26),
                 struct: {...token(28, 29), attrs: [
                     {name: identifier('x', 32, 32), type: {name: {value: 'int', ...token(34, 36)}, ...token(34, 36)}},
@@ -234,7 +233,7 @@ describe('postgresParser', () => {
         })
         test('enum', () => {
             expect(parsePostgresAst("CREATE TYPE public.bug_status AS ENUM ('open', 'closed');")).toEqual({result: {statements: [{
-                statement: 'CreateType',
+                kind: 'CreateType',
                 schema: identifier('public', 12, 17),
                 type: identifier('bug_status', 19, 28),
                 enum: {...token(30, 36), values: [string('open', 39, 44), string('closed', 47, 54)]},
@@ -245,7 +244,7 @@ describe('postgresParser', () => {
     describe('dropStatement', () => {
         test('simplest', () => {
             expect(parsePostgresAst('DROP TABLE users;')).toEqual({result: {statements: [{
-                statement: 'Drop',
+                kind: 'Drop',
                 object: {kind: 'Table', ...token(0, 9)},
                 entities: [{table: identifier('users', 11, 15)}],
                 ...token(0, 16)
@@ -253,7 +252,7 @@ describe('postgresParser', () => {
         })
         test('complex', () => {
             expect(parsePostgresAst('DROP INDEX CONCURRENTLY IF EXISTS users_idx, posts_idx CASCADE;')).toEqual({result: {statements: [{
-                statement: 'Drop',
+                kind: 'Drop',
                 object: {kind: 'Index', ...token(0, 9)},
                 concurrently: token(11, 22),
                 ifExists: token(24, 32),
@@ -270,10 +269,32 @@ describe('postgresParser', () => {
             expect(parsePostgresAst('DROP TYPE users;').errors || []).toEqual([])
         })
     })
+    describe('insertIntoStatement', () => {
+        test('simplest', () => {
+            expect(parsePostgresAst("INSERT INTO users VALUES (1, 'loic');")).toEqual({result: {statements: [{
+                kind: 'InsertInto',
+                table: identifier('users', 12, 16),
+                values: [[integer(1, 26, 26), string('loic', 29, 34)]],
+                ...token(0, 36)
+            }]}})
+        })
+        test('full', () => {
+            expect(parsePostgresAst("INSERT INTO users (id, name) VALUES (1, 'loic'), (DEFAULT, 'lou') RETURNING id;")).toEqual({result: {statements: [{
+                kind: 'InsertInto',
+                table: identifier('users', 12, 16),
+                columns: [identifier('id', 19, 20), identifier('name', 23, 26)],
+                values: [[integer(1, 37, 37), string('loic', 40, 45)], [{kind: 'Default', ...token(50, 56)}, string('lou', 59, 63)]],
+                returning: {...token(66, 74), expressions: [{column: identifier('id', 76, 77)}]},
+                ...token(0, 78)
+            }]}})
+        })
+        // TODO: `INSERT INTO films SELECT * FROM tmp_films WHERE date_prod < '2004-05-07';`
+        // TODO: `ON CONFLICT (did) DO UPDATE SET dname = EXCLUDED.dname`
+    })
     describe('selectStatement', () => {
         test('simplest', () => {
             expect(parsePostgresAst('SELECT name FROM users;')).toEqual({result: {statements: [{
-                statement: 'Select',
+                kind: 'Select',
                 select: {...token(0, 5), expressions: [{column: identifier('name', 7, 10)}]},
                 from: {...token(12, 15), table: identifier('users', 17, 21)},
                 ...token(0, 22)
@@ -281,7 +302,7 @@ describe('postgresParser', () => {
         })
         test('complex', () => {
             expect(removeTokens(parsePostgresAst('SELECT id, first_name AS name FROM users WHERE id = 1;'))).toEqual({result: {statements: [{
-                statement: 'Select',
+                kind: 'Select',
                 select: {expressions: [
                     {column: {kind: 'Identifier', value: 'id'}},
                     {column: {kind: 'Identifier', value: 'first_name'}, alias: {name: {kind: 'Identifier', value: 'name'}}}
@@ -292,7 +313,7 @@ describe('postgresParser', () => {
         })
         test('strange', () => {
             expect(parsePostgresAst("SELECT pg_catalog.set_config('search_path', '', false);")).toEqual({result: {statements: [{
-                statement: 'Select',
+                kind: 'Select',
                 select: {...token(0, 5), expressions: [{
                     schema: identifier('pg_catalog', 7, 16),
                     function: identifier('set_config', 18, 27),
@@ -305,17 +326,17 @@ describe('postgresParser', () => {
     describe('setStatement', () => {
         test('simplest', () => {
             expect(parsePostgresAst('SET lock_timeout = 0;')).toEqual({result: {statements: [
-                {statement: 'Set', ...token(0, 20), parameter: identifier('lock_timeout', 4, 15), equal: {kind: '=', ...token(17, 17)}, value: integer(0, 19, 19)}
+                {kind: 'Set', ...token(0, 20), parameter: identifier('lock_timeout', 4, 15), equal: {kind: '=', ...token(17, 17)}, value: integer(0, 19, 19)}
             ]}})
         })
         test('complex', () => {
             expect(parsePostgresAst('SET SESSION search_path TO my_schema, public;')).toEqual({result: {statements: [
-                {statement: 'Set', ...token(0, 44), scope: {kind: 'Session', ...token(4, 10)}, parameter: identifier('search_path', 12, 22), equal: {kind: 'To', ...token(24, 25)}, value: [identifier('my_schema', 27, 35), identifier('public', 38, 43)]}
+                {kind: 'Set', ...token(0, 44), scope: {kind: 'Session', ...token(4, 10)}, parameter: identifier('search_path', 12, 22), equal: {kind: 'To', ...token(24, 25)}, value: [identifier('my_schema', 27, 35), identifier('public', 38, 43)]}
             ]}})
         })
         test('on', () => {
             expect(parsePostgresAst('SET standard_conforming_strings = on;')).toEqual({result: {statements: [
-                {statement: 'Set', ...token(0, 36), parameter: identifier('standard_conforming_strings', 4, 30), equal: {kind: '=', ...token(32, 32)}, value: identifier('on', 34, 35)}
+                {kind: 'Set', ...token(0, 36), parameter: identifier('standard_conforming_strings', 4, 30), equal: {kind: '=', ...token(32, 32)}, value: identifier('on', 34, 35)}
             ]}})
         })
     })
@@ -479,14 +500,6 @@ describe('postgresParser', () => {
                 expect(parseRule(p => p.columnRefRule(), 'public.users.id')).toEqual({result: {schema: identifier('public', 0, 5), table: identifier('users', 7, 11), column: identifier('id', 13, 14)}})
             })
         })
-        describe('columnNameRule', () => {
-            test('normal', () => {
-                expect(parseRule(p => p.columnNameRule(), 'id')).toEqual({result: identifier('id', 0, 1)})
-            })
-            test('special', () => {
-                expect(parseRule(p => p.columnNameRule(), 'version')).toEqual({result: identifier('version', 0, 6)})
-            })
-        })
         describe('columnTypeRule', () => {
             test('simplest', () => {
                 expect(parseRule(p => p.columnTypeRule(), 'int')).toEqual({result: {name: {value: 'int', ...token(0, 2)}, ...token(0, 2)}})
@@ -545,8 +558,11 @@ describe('postgresParser', () => {
             test('not empty', () => {
                 expect(parseRule(p => p.identifierRule(), '""')).toEqual({errors: [
                     {kind: 'LexingError', level: 'error', message: 'unexpected character: ->"<- at offset: 0, skipped 2 characters.', ...token(0, 2)},
-                    {kind: 'MismatchedTokenException', level: 'error', message: "Expecting token of type --> Identifier <-- but found --> '' <--", ...token(-1, -1, -1, -1, -1, -1)}
+                    {kind: 'NoViableAltException', level: 'error', message: "Expecting: one of these possible Token sequences:\n  1. [Identifier]\n  2. [Version]\nbut found: ''", ...token(-1, -1, -1, -1, -1, -1)}
                 ]})
+            })
+            test('special', () => {
+                expect(parseRule(p => p.identifierRule(), 'version')).toEqual({result: identifier('version', 0, 6)})
             })
         })
         describe('stringRule', () => {
