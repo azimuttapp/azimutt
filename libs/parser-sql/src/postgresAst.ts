@@ -10,10 +10,11 @@ import {ParserErrorLevel, TokenPosition} from "@azimutt/models";
 
 // statements
 export type StatementsAst = { statements: StatementAst[] }
-export type StatementAst = AlterTableStatementAst | CommentStatementAst | CreateExtensionStatementAst | CreateTableStatementAst | CreateTypeStatementAst | DropStatementAst | SelectStatementAst | SetStatementAst
+export type StatementAst = AlterTableStatementAst | CommentStatementAst | CreateExtensionStatementAst | CreateIndexStatementAst | CreateTableStatementAst | CreateTypeStatementAst | DropStatementAst | SelectStatementAst | SetStatementAst
 export type AlterTableStatementAst = { statement: 'AlterTable', ifExists?: TokenInfo, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, action: AlterTableActionAst } & TokenInfo
 export type CommentStatementAst = { statement: 'Comment', object: { kind: CommentObject } & TokenInfo, schema?: IdentifierAst, parent?: IdentifierAst, entity: IdentifierAst, comment: StringAst | NullAst } & TokenInfo
 export type CreateExtensionStatementAst = { statement: 'CreateExtension', ifNotExists?: TokenInfo, name: IdentifierAst, with?: TokenInfo, schema?: {name: IdentifierAst} & TokenInfo, version?: {number: StringAst | IdentifierAst} & TokenInfo, cascade?: TokenInfo } & TokenInfo
+export type CreateIndexStatementAst = { statement: 'CreateIndex', unique?: TokenInfo, concurrently?: TokenInfo, ifNotExists?: TokenInfo, index?: IdentifierAst, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, using?: {method: IdentifierAst} & TokenInfo, columns: IndexColumnAst[], include?: {columns: IdentifierAst[]} & TokenInfo, where?: {predicate: ExpressionAst} & TokenInfo } & TokenInfo
 export type CreateTableStatementAst = { statement: 'CreateTable', schema?: IdentifierAst, table: IdentifierAst, columns: TableColumnAst[], constraints?: TableConstraintAst[] } & TokenInfo
 export type CreateTypeStatementAst = { statement: 'CreateType', schema?: IdentifierAst, type: IdentifierAst, struct?: {attrs: TypeColumnAst[]} & TokenInfo, enum?: {values: StringAst[]} & TokenInfo } & TokenInfo
 export type DropStatementAst = { statement: 'Drop', object: { kind: DropObject } & TokenInfo, entities: TableRefAst[], concurrently?: TokenInfo, ifExists?: TokenInfo, mode?: { kind: DropMode } & TokenInfo } & TokenInfo
@@ -31,6 +32,7 @@ export type AddConstraintAst = { kind: 'AddConstraint', constraint: TableConstra
 export type DropColumnAst = { kind: 'DropColumn', ifExists?: TokenInfo, column: IdentifierAst } & TokenInfo
 export type DropConstraintAst = { kind: 'DropConstraint', ifExists?: TokenInfo, constraint: IdentifierAst } & TokenInfo
 export type TypeColumnAst = { name: IdentifierAst, type: ColumnTypeAst, collation?: {name: IdentifierAst} & TokenInfo }
+export type IndexColumnAst = ExpressionAst & {collation?: {name: IdentifierAst} & TokenInfo, order?: {kind: SortOrder} & TokenInfo, nulls?: {kind: SortNulls} & TokenInfo}
 export type TableColumnAst = { name: IdentifierAst, type: ColumnTypeAst, constraints?: TableColumnConstraintAst[] }
 export type TableColumnConstraintAst = TableColumnNullableAst | TableColumnDefaultAst | TableColumnPkAst | TableColumnUniqueAst | TableColumnCheckAst | TableColumnFkAst
 export type TableColumnNullableAst = { kind: 'Nullable', value: boolean } & ConstraintCommonAst
@@ -76,6 +78,8 @@ export type ForeignKeyAction = 'NoAction' | 'Restrict' | 'Cascade' | 'SetNull' |
 export type DropObject = 'Table' | 'View' | 'MaterializedView' | 'Index' | 'Type'
 export type DropMode = 'Cascade' | 'Restrict'
 export type CommentObject = 'Column' | 'Constraint' | 'Database' | 'Extension' | 'Index' | 'MaterializedView' | 'Schema' | 'Table' | 'Type' | 'View'
+export type SortOrder = 'Asc' | 'Desc'
+export type SortNulls = 'First' | 'Last'
 export type SetScope = 'Session' | 'Local'
 export type SetAssign = '=' | 'To'
 export type CommentKind = 'line' | 'block' | 'doc'

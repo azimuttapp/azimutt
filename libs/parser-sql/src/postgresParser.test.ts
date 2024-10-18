@@ -145,6 +145,44 @@ describe('postgresParser', () => {
             }]}})
         })
     })
+    describe('createIndexStatement', () => {
+        test('simplest', () => {
+            expect(parsePostgresAst('CREATE INDEX ON users (name);')).toEqual({result: {statements: [{
+                statement: 'CreateIndex',
+                table: identifier('users', 16, 20),
+                columns: [{column: identifier('name', 23, 26)}],
+                ...token(0, 28)
+            }]}})
+        })
+        test('full', () => {
+            expect(parsePostgresAst('CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS users_name_idx ON ONLY public.users USING btree' +
+                // TODO: ' ((lower(first_name)) COLLATE "de_DE" ASC NULLS LAST)' +
+                ' ( lower(first_name)  COLLATE "de_DE" ASC NULLS LAST)' +
+                // TODO: ' INCLUDE (email) NULLS NOT DISTINCT WITH (fastupdate = off) TABLESPACE indexspace WHERE deleted_at IS NULL' +
+                ' INCLUDE (email);'
+            )).toEqual({result: {statements: [{
+                statement: 'CreateIndex',
+                unique: token(7, 12),
+                concurrently: token(20, 31),
+                ifNotExists: token(33, 45),
+                index: identifier('users_name_idx', 47, 60),
+                only: token(65, 68),
+                schema: identifier('public', 70, 75),
+                table: identifier('users', 77, 81),
+                using: {...token(83, 87), method: identifier('btree', 89, 93)},
+                columns: [{
+                    function: identifier('lower', 97, 101),
+                    parameters: [{column: identifier('first_name', 103, 112)}],
+                    collation: {...token(116, 122), name: {...identifier('de_DE', 124, 130), quoted: true}},
+                    order: {kind: 'Asc', ...token(132, 134)},
+                    nulls: {kind: 'Last', ...token(136, 145)}
+                }],
+                include: {...token(148, 154), columns: [identifier('email', 157, 161)]},
+                // where: {...token(0, 0), predicate: {???}}
+                ...token(0, 163)
+            }]}})
+        })
+    })
     describe('createTableStatement', () => {
         test('simplest', () => {
             expect(parsePostgresAst('CREATE TABLE users (id int PRIMARY KEY, name VARCHAR);')).toEqual({result: {statements: [{
