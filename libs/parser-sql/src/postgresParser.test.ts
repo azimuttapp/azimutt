@@ -377,23 +377,31 @@ describe('postgresParser', () => {
                     .toEqual({result: {...string('owner', 0, 6), cast: {...token(7, 8), type: {name: {value: 'character varying', ...token(9, 25)}, ...token(9, 25)}}}})
             })
         })
-        describe('tableRule', () => {
+        describe('tableRefRule', () => {
             test('table only', () => {
-                expect(parseRule(p => p.tableRule(), 'users')).toEqual({result: {table: identifier('users', 0, 4)}})
+                expect(parseRule(p => p.tableRefRule(), 'users')).toEqual({result: {table: identifier('users', 0, 4)}})
             })
             test('table and schema', () => {
-                expect(parseRule(p => p.tableRule(), 'public.users')).toEqual({result: {schema: identifier('public', 0, 5), table: identifier('users', 7, 11)}})
+                expect(parseRule(p => p.tableRefRule(), 'public.users')).toEqual({result: {schema: identifier('public', 0, 5), table: identifier('users', 7, 11)}})
             })
         })
-        describe('columnRule', () => {
+        describe('columnRefRule', () => {
             test('column only', () => {
-                expect(parseRule(p => p.columnRule(), 'id')).toEqual({result: {column: identifier('id', 0, 1)}})
+                expect(parseRule(p => p.columnRefRule(), 'id')).toEqual({result: {column: identifier('id', 0, 1)}})
             })
             test('column and table', () => {
-                expect(parseRule(p => p.columnRule(), 'users.id')).toEqual({result: {table: identifier('users', 0, 4), column: identifier('id', 6, 7)}})
+                expect(parseRule(p => p.columnRefRule(), 'users.id')).toEqual({result: {table: identifier('users', 0, 4), column: identifier('id', 6, 7)}})
             })
             test('column, table and schema', () => {
-                expect(parseRule(p => p.columnRule(), 'public.users.id')).toEqual({result: {schema: identifier('public', 0, 5), table: identifier('users', 7, 11), column: identifier('id', 13, 14)}})
+                expect(parseRule(p => p.columnRefRule(), 'public.users.id')).toEqual({result: {schema: identifier('public', 0, 5), table: identifier('users', 7, 11), column: identifier('id', 13, 14)}})
+            })
+        })
+        describe('columnNameRule', () => {
+            test('normal', () => {
+                expect(parseRule(p => p.columnNameRule(), 'id')).toEqual({result: identifier('id', 0, 1)})
+            })
+            test('special', () => {
+                expect(parseRule(p => p.columnNameRule(), 'version')).toEqual({result: identifier('version', 0, 6)})
             })
         })
         describe('columnTypeRule', () => {
@@ -406,6 +414,9 @@ describe('postgresParser', () => {
             test('with args', () => {
                 expect(parseRule(p => p.columnTypeRule(), 'character(255)')).toEqual({result: {name: {value: 'character(255)', ...token(0, 13)}, args: [integer(255, 10, 12)], ...token(0, 13)}})
                 expect(parseRule(p => p.columnTypeRule(), 'NUMERIC(2, -3)')).toEqual({result: {name: {value: 'NUMERIC(2, -3)', ...token(0, 13)}, args: [integer(2, 8, 8), integer(-3, 11, 12)], ...token(0, 13)}})
+            })
+            test('array', () => {
+                expect(parseRule(p => p.columnTypeRule(), 'int[]')).toEqual({result: {name: {value: 'int[]', ...token(0, 4)}, array: token(3, 4), ...token(0, 4)}})
             })
             test('with time zone', () => {
                 expect(parseRule(p => p.columnTypeRule(), 'timestamp with time zone')).toEqual({result: {name: {value: 'timestamp with time zone', ...token(0, 23)}, ...token(0, 23)}})

@@ -15,7 +15,7 @@ export type CommentStatementAst = { statement: 'Comment', object: { kind: Commen
 export type CreateExtensionStatementAst = { statement: 'CreateExtension', ifNotExists?: TokenInfo, name: IdentifierAst, with?: TokenInfo, schema?: {name: IdentifierAst} & TokenInfo, version?: {number: StringAst | IdentifierAst} & TokenInfo, cascade?: TokenInfo } & TokenInfo
 export type CreateTableStatementAst = { statement: 'CreateTable', schema?: IdentifierAst, table: IdentifierAst, columns: TableColumnAst[], constraints?: TableConstraintAst[] } & TokenInfo
 export type CreateTypeStatementAst = { statement: 'CreateType', schema?: IdentifierAst, type: IdentifierAst, struct?: {attrs: TypeColumnAst[]} & TokenInfo, enum?: {values: StringAst[]} & TokenInfo } & TokenInfo
-export type DropStatementAst = { statement: 'Drop', object: { kind: DropObject } & TokenInfo, entities: TableAst[], concurrently?: TokenInfo, ifExists?: TokenInfo, mode?: { kind: DropMode } & TokenInfo } & TokenInfo
+export type DropStatementAst = { statement: 'Drop', object: { kind: DropObject } & TokenInfo, entities: TableRefAst[], concurrently?: TokenInfo, ifExists?: TokenInfo, mode?: { kind: DropMode } & TokenInfo } & TokenInfo
 export type SelectStatementAst = { statement: 'Select', select: SelectClauseAst, from?: FromClauseAst, where?: WhereClauseAst } & TokenInfo
 export type SetStatementAst = { statement: 'Set', scope?: { kind: SetScope } & TokenInfo, parameter: IdentifierAst, equal: { kind: SetAssign } & TokenInfo, value: SetValueAst } & TokenInfo
 
@@ -40,7 +40,7 @@ export type TableCheckAst = { kind: 'Check', predicate: ConditionAst } & Constra
 export type TableFkAst = { kind: 'ForeignKey', columns: IdentifierAst[], ref: {schema?: IdentifierAst, table: IdentifierAst, columns?: IdentifierAst[]} & TokenInfo, onUpdate?: ForeignKeyActionAst & TokenInfo, onDelete?: ForeignKeyActionAst & TokenInfo } & ConstraintCommonAst
 export type ConstraintCommonAst = { constraint?: ConstraintNameAst } & TokenInfo
 export type ConstraintNameAst = { name: IdentifierAst } & TokenInfo
-export type ColumnTypeAst = {schema?: IdentifierAst, name: {value: string} & TokenInfo, args?: IntegerAst[]} & TokenInfo
+export type ColumnTypeAst = {schema?: IdentifierAst, name: {value: string} & TokenInfo, args?: IntegerAst[], array?: TokenInfo} & TokenInfo
 export type ForeignKeyActionAst = {action: {kind: ForeignKeyAction} & TokenInfo, columns?: IdentifierAst[]}
 export type SetValueAst = IdentifierAst | LiteralAst | (IdentifierAst | LiteralAst)[] | { kind: 'Default' } & TokenInfo
 
@@ -48,11 +48,11 @@ export type SetValueAst = IdentifierAst | LiteralAst | (IdentifierAst | LiteralA
 export type AliasAst = { name: IdentifierAst } & TokenInfo
 export type ConditionAst = { left: ExpressionAst, operator: OperatorAst, right: ExpressionAst }
 export type OperatorAst = { kind: Operator } & TokenInfo
-export type ExpressionAst = (LiteralAst | ColumnAst | FunctionAst) & { cast?: { type: ColumnTypeAst } & TokenInfo }
+export type ExpressionAst = (LiteralAst | ColumnRefAst | FunctionAst) & { cast?: { type: ColumnTypeAst } & TokenInfo }
 export type LiteralAst = StringAst | IntegerAst | DecimalAst | BooleanAst | NullAst
-export type TableAst = {schema?: IdentifierAst, table: IdentifierAst}
-export type ColumnAst = {schema?: IdentifierAst, table?: IdentifierAst, column: IdentifierAst}
-export type ColumnWithTableAst = {schema?: IdentifierAst, table: IdentifierAst, column: IdentifierAst}
+export type TableRefAst = {schema?: IdentifierAst, table: IdentifierAst}
+export type ColumnRefAst = {schema?: IdentifierAst, table?: IdentifierAst, column: IdentifierAst}
+export type ColumnRefWithTableAst = {schema?: IdentifierAst, table: IdentifierAst, column: IdentifierAst}
 export type FunctionAst = {schema?: IdentifierAst, function: IdentifierAst, parameters: ExpressionAst[]}
 
 // elements
