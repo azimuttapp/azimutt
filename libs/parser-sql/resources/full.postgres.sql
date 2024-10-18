@@ -16,7 +16,7 @@ COMMENT ON TYPE slug IS 'anonymous type';
 -- CREATE TYPE uid AS int; -- type alias not supported on PostgreSQL
 CREATE TYPE cms.post_status AS ENUM ('draft', 'published', 'archived');
 CREATE TYPE position AS (x int, y int);
-CREATE TYPE box (INTERNALLENGTH = 16, INPUT = lower, OUTPUT = lower);
+CREATE TYPE box (INPUT = lower, OUTPUT = lower, INTERNALLENGTH = 16);
 
 --
 -- Full Schema AML

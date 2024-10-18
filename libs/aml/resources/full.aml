@@ -79,7 +79,7 @@ type slug | anonymous type
 type uid int {tags: [generic]} # alias type
 type cms.post_status (draft, published, archived) # enum type
 type position {x int, y int} # struct type
-type box `(INTERNALLENGTH = 16, INPUT = lower, OUTPUT = lower)` # custom type
+type box `(INPUT = lower, OUTPUT = lower, INTERNALLENGTH = 16)` # custom type
 
 namespace social.
 

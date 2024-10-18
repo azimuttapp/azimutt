@@ -366,32 +366,12 @@ class PostgresParser extends EmbeddedActionsParser {
             const start = $.CONSUME(Create)
             $.CONSUME(Type)
             const table = $.SUBRULE($.tableRefRule)
-            const content = $.OPTION(() => {
-                const as = $.CONSUME(As)
-                return $.OR([
-                    {ALT: () => {
-                        $.CONSUME(ParenLeft)
-                        const attrs: TypeColumnAst[] = []
-                        $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => attrs.push(removeUndefined({
-                            name: $.SUBRULE($.identifierRule),
-                            type: $.SUBRULE($.columnTypeRule),
-                            collation: $.OPTION2(() => ({...tokenInfo($.CONSUME(Collate)), name: $.SUBRULE2($.identifierRule)}))
-                        }))})
-                        $.CONSUME(ParenRight)
-                        return {struct: {...tokenInfo(as), attrs: attrs.filter(isNotUndefined)}}
-                    }},
-                    {ALT: () => {
-                        const token = tokenInfo2(as, $.CONSUME(Enum))
-                        $.CONSUME2(ParenLeft)
-                        const values: StringAst[] = []
-                        $.AT_LEAST_ONE_SEP2({SEP: Comma, DEF: () => values.push($.SUBRULE($.stringRule))})
-                        $.CONSUME2(ParenRight)
-                        return {enum: {...token, values: values.filter(isNotUndefined)}}
-                    }},
-                    // TODO: RANGE
-                    // TODO: function
-                ])
-            })
+            const content = $.OPTION(() => $.OR([
+                {ALT: () => ({struct: {...tokenInfo($.CONSUME(As)), attrs: $.SUBRULE(createTypeStructAttrs)}})},
+                {ALT: () => ({enum: {...tokenInfo2($.CONSUME2(As), $.CONSUME(Enum)), values: $.SUBRULE(createTypeEnumValues)}})},
+                // TODO: RANGE
+                {ALT: () => ({base: $.SUBRULE(createTypeBase)})}
+            ]))
             const end = $.CONSUME(Semicolon)
             return removeEmpty({kind: 'CreateType' as const, schema: table.schema, type: table.table, ...content, ...tokenInfo2(start, end)})
         })
@@ -619,6 +599,37 @@ class PostgresParser extends EmbeddedActionsParser {
             const onDelete = $.OPTION4(() => ({...tokenInfo2($.CONSUME2(On), $.CONSUME(Delete)), ...$.SUBRULE2(foreignKeyActionsRule)}))
             const ref = {...tokenInfo(refToken), ...refTable, columns: refColumns}
             return removeUndefined({kind: 'ForeignKey' as const, ...tokenInfo(token), columns, ref, onUpdate, onDelete, constraint})
+        })
+
+        const createTypeStructAttrs = $.RULE<() => TypeColumnAst[]>('createTypeStructAttrs', () => {
+            $.CONSUME(ParenLeft)
+            const attrs: TypeColumnAst[] = []
+            $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => attrs.push(removeUndefined({
+                name: $.SUBRULE($.identifierRule),
+                type: $.SUBRULE($.columnTypeRule),
+                collation: $.OPTION(() => ({...tokenInfo($.CONSUME(Collate)), name: $.SUBRULE2($.identifierRule)}))
+            }))})
+            $.CONSUME(ParenRight)
+            return attrs.filter(isNotUndefined)
+        })
+        const createTypeEnumValues = $.RULE<() => StringAst[]>('createTypeEnumValues', () => {
+            $.CONSUME(ParenLeft)
+            const values: StringAst[] = []
+            $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => values.push($.SUBRULE($.stringRule))})
+            $.CONSUME(ParenRight)
+            return values
+        })
+        const createTypeBase = $.RULE<() => {name: IdentifierAst, value: ExpressionAst}[]>('createTypeBase', () => {
+            $.CONSUME(ParenLeft)
+            const params: {name: IdentifierAst, value: ExpressionAst}[] = []
+            $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => {
+                const name = $.SUBRULE($.identifierRule)
+                $.CONSUME(Equal)
+                const value = $.SUBRULE($.expressionRule)
+                params.push({name, value})
+            }})
+            $.CONSUME(ParenRight)
+            return params
         })
 
         const constraintNameRule = $.RULE<() => ConstraintNameAst>('constraintNameRule', () => {

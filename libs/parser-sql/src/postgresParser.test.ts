@@ -240,6 +240,19 @@ describe('postgresParser', () => {
                 ...token(0, 56)
             }]}})
         })
+        // TODO: range
+        test('base', () => {
+            expect(parsePostgresAst("CREATE TYPE box (INPUT = my_box_in_function, OUTPUT = my_box_out_function, INTERNALLENGTH = 16);")).toEqual({result: {statements: [{
+                kind: 'CreateType',
+                type: identifier('box', 12, 14),
+                base: [
+                    {name: identifier('INPUT', 17, 21), value: {column: identifier('my_box_in_function', 25, 42)}}, // FIXME: expressions should be different here (identifier instead of column)
+                    {name: identifier('OUTPUT', 45, 50), value: {column: identifier('my_box_out_function', 54, 72)}},
+                    {name: identifier('INTERNALLENGTH', 75, 88), value: integer(16, 92, 93)},
+                ],
+                ...token(0, 95)
+            }]}})
+        })
     })
     describe('dropStatement', () => {
         test('simplest', () => {
