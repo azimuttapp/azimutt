@@ -14,6 +14,11 @@ import {
 import {parsePostgresAst, parseRule} from "./postgresParser";
 
 describe('postgresParser', () => {
+    // CREATE VIEW/MATERIALIZED VIEW/INDEX/TYPE
+    // INSERT INTO
+    // UPDATE
+    // DELETE
+    // COMMENT ON
     test('empty', () => {
         expect(parsePostgresAst('')).toEqual({result: {statements: []}})
     })
@@ -32,11 +37,6 @@ describe('postgresParser', () => {
         const parsed = parsePostgresAst(sql, {strict: true})
         expect(parsed.errors || []).toEqual([])
     })
-    // CREATE TABLE/VIEW/MATERIALIZED VIEW/INDEX/TYPE
-    // INSERT INTO
-    // UPDATE
-    // DELETE
-    // COMMENT ON
     describe('selectStatement', () => {
         test('simplest', () => {
             expect(parsePostgresAst('SELECT name FROM users;')).toEqual({result: {statements: [{
@@ -61,12 +61,11 @@ describe('postgresParser', () => {
             expect(parsePostgresAst("SELECT pg_catalog.set_config('search_path', '', false);")).toEqual({result: {statements: [{
                 statement: 'Select',
                 select: {...token(0, 5), expressions: [{
-                    kind: 'Function',
-                    schema: identifier('pg_catalog', 0, 0),
-                    function: identifier('set_config', 0, 0),
-                    parameters: [string('search_path', 0, 0), string('', 0, 0), boolean(false, 0, 0)]
+                    schema: identifier('pg_catalog', 7, 16),
+                    function: identifier('set_config', 18, 27),
+                    parameters: [string('search_path', 29, 41), string('', 44, 45), boolean(false, 48, 52)]
                 }]},
-                ...token(0, 22)
+                ...token(0, 54)
             }]}})
         })
     })
@@ -97,8 +96,8 @@ describe('postgresParser', () => {
                 ...token(0, 123)
             }]}})
         })
-        // CREATE TABLE IF NOT EXISTS users (id int);
-        // CREATE UNLOGGED TABLE users (id int);
+        // TODO: CREATE TABLE IF NOT EXISTS users (id int);
+        // TODO: CREATE UNLOGGED TABLE users (id int);
     })
     describe('dropStatement', () => {
         test('simplest', () => {
@@ -148,9 +147,9 @@ describe('postgresParser', () => {
                     expressions: [{column: identifier('name', 7, 10)}],
                 }})
             })
-            // SELECT e.*, u.name AS user_name, lower(u.email), "public"."Event"."id"
-            // SELECT count(*)
-            // SELECT count(distinct e.created_by) FILTER (WHERE u.created_at + interval '#{period}' < e.created_at) AS not_new_users
+            // TODO: SELECT e.*, u.name AS user_name, lower(u.email), "public"."Event"."id"
+            // TODO: SELECT count(*)
+            // TODO: SELECT count(distinct e.created_by) FILTER (WHERE u.created_at + interval '#{period}' < e.created_at) AS not_new_users
         })
         describe('fromClause', () => {
             test('simplest', () => {
@@ -163,7 +162,7 @@ describe('postgresParser', () => {
                     alias: {...token(13, 14), name: identifier('u', 16, 16)},
                 }})
             })
-            // FROM (SELECT * FROM ...)
+            // TODO: FROM (SELECT * FROM ...)
         })
         describe('whereClause', () => {
             test('simplest', () => {
@@ -172,7 +171,7 @@ describe('postgresParser', () => {
                     condition: {left: {column: identifier('id', 6, 7)}, operator: operator('=', 9, 9), right: integer(1, 11, 11)},
                 }})
             })
-            // WHERE "id" = $1 OR (email LIKE '%@azimutt.app' AND role = 'admin')
+            // TODO: WHERE "id" = $1 OR (email LIKE '%@azimutt.app' AND role = 'admin')
         })
         describe('tableColumnRule', () => {
             test('simplest', () => {
@@ -259,8 +258,8 @@ describe('postgresParser', () => {
             test('simplest', () => {
                 expect(parseRule(p => p.conditionRule(), 'id = 1')).toEqual({result: {left: {column: identifier('id', 0, 1)}, operator: operator('=', 3, 3), right: integer(1, 5, 5)}})
             })
-            // title <> ''
-            // role IN ('author', 'editor')
+            // TODO: title <> ''
+            // TODO: role IN ('author', 'editor')
         })
         describe('expressionRule', () => {
             test('literal', () => {
@@ -268,6 +267,13 @@ describe('postgresParser', () => {
             })
             test('column', () => {
                 expect(parseRule(p => p.expressionRule(), 'id')).toEqual({result: {column: identifier('id', 0, 1)}})
+            })
+            test('function', () => {
+                expect(parseRule(p => p.expressionRule(), "pg_catalog.set_config('search_path', '', false)")).toEqual({result: {
+                    schema: identifier('pg_catalog', 0, 9),
+                    function: identifier('set_config', 11, 20),
+                    parameters: [string('search_path', 22, 34), string('', 37, 38), boolean(false, 41, 45)]
+                }})
             })
         })
         describe('tableRule', () => {
@@ -326,8 +332,17 @@ describe('postgresParser', () => {
             test('basic', () => {
                 expect(parseRule(p => p.stringRule(), "'value'")).toEqual({result: string('value', 0, 6)})
             })
+            test('empty', () => {
+                expect(parseRule(p => p.stringRule(), "''")).toEqual({result: string('', 0, 1)})
+            })
             test('escape quote', () => {
                 expect(parseRule(p => p.stringRule(), "'l''id'")).toEqual({result: string("l'id", 0, 6)})
+            })
+            test('escaped start & end', () => {
+                expect(parseRule(p => p.stringRule(), "'''id'''")).toEqual({result: string("'id'", 0, 7)})
+            })
+            test('only escaped quote', () => {
+                expect(parseRule(p => p.stringRule(), "''''")).toEqual({result: string("'", 0, 3)})
             })
         })
         describe('integerRule', () => {

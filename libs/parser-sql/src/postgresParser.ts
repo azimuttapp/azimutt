@@ -22,6 +22,7 @@ import {
     ExpressionAst,
     ForeignKeyActionAst,
     FromClauseAst,
+    FunctionAst,
     IdentifierAst,
     IntegerAst,
     LiteralAst,
@@ -56,7 +57,7 @@ const BlockComment = createToken({name: 'BlockComment', pattern: /\/\*[^]*?\*\//
 const WhiteSpace = createToken({name: 'WhiteSpace', pattern: /\s+/, group: Lexer.SKIPPED})
 
 const Identifier = createToken({name: 'Identifier', pattern: /\b[a-zA-Z_]\w*\b|"([^\\"]|\\\\|\\")+"/})
-const String = createToken({name: 'String', pattern: /'([^\\']|'')+'/})
+const String = createToken({name: 'String', pattern: /'([^\\']|'')*'/})
 const Decimal = createToken({name: 'Decimal', pattern: /\d+\.\d+/})
 const Integer = createToken({name: 'Integer', pattern: /0|[1-9]\d*/, longer_alt: Decimal})
 const valueTokens: TokenType[] = [Integer, Decimal, String, Identifier, LineComment, BlockComment]
@@ -155,6 +156,7 @@ class PostgresParser extends EmbeddedActionsParser {
     conditionRule: () => ConditionAst
     operatorRule: () => OperatorAst
     expressionRule: () => ExpressionAst
+    functionRule: () => FunctionAst
     tableRule: () => TableAst
     columnRule: () => ColumnAst
     literalRule: () => LiteralAst
@@ -435,9 +437,33 @@ class PostgresParser extends EmbeddedActionsParser {
         ]))
 
         this.expressionRule = $.RULE<() => ExpressionAst>('expressionRule', () => $.OR([
-            { ALT: () => $.SUBRULE($.columnRule) },
             { ALT: () => $.SUBRULE($.literalRule) },
+            { ALT: () => {
+                // extract "table" prefix from `$.functionRule` and `$.columnRule`
+                const prefix = $.SUBRULE($.tableRule)
+                return $.OR2([
+                    {ALT: () => removeUndefined({schema: prefix.schema, function: prefix.table, parameters: $.SUBRULE(functionParamsRule)})},
+                    {ALT: () => {
+                        const third = $.OPTION(() => {$.CONSUME(Dot); return $.SUBRULE($.identifierRule)})
+                        const [column, table, schema] = [third, prefix.table, prefix.schema].filter(isNotUndefined)
+                        return removeUndefined({schema, table, column})
+                    }},
+                ])
+            }},
         ]))
+
+        const functionParamsRule = $.RULE<() => ExpressionAst[]>('functionParamsRule', () => {
+            $.CONSUME(ParenLeft)
+            const parameters: ExpressionAst[] = []
+            $.MANY_SEP({SEP: Comma, DEF: () => parameters.push($.SUBRULE($.expressionRule))})
+            $.CONSUME(ParenRight)
+            return parameters.filter(isNotUndefined)
+        })
+        this.functionRule = $.RULE<() => FunctionAst>('functionRule', () => {
+            const table = $.SUBRULE($.tableRule)
+            const parameters = $.SUBRULE(functionParamsRule)
+            return removeUndefined({schema: table.schema, function: table.table, parameters})
+        })
 
         this.tableRule = $.RULE<() => TableAst>('tableRule', () => {
             const first = $.SUBRULE($.identifierRule)
@@ -446,7 +472,7 @@ class PostgresParser extends EmbeddedActionsParser {
                 return $.SUBRULE2($.identifierRule)
             })
             const [table, schema] = [second, first].filter(isNotUndefined)
-            return removeUndefined({table, schema})
+            return removeUndefined({schema, table})
         })
 
         this.columnRule = $.RULE<() => ColumnAst>('columnRule', () => {
@@ -460,7 +486,7 @@ class PostgresParser extends EmbeddedActionsParser {
                 return $.SUBRULE3($.identifierRule)
             })
             const [column, table, schema] = [third, second, first].filter(isNotUndefined)
-            return removeUndefined({column, table, schema})
+            return removeUndefined({schema, table, column})
         })
 
         this.literalRule = $.RULE<() => LiteralAst>('literalRule', () => $.OR([

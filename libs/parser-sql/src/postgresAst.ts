@@ -43,10 +43,11 @@ export type SetValueAst = IdentifierAst | LiteralAst | (IdentifierAst | LiteralA
 export type AliasAst = { name: IdentifierAst } & TokenInfo
 export type ConditionAst = { left: ExpressionAst, operator: OperatorAst, right: ExpressionAst }
 export type OperatorAst = { kind: '=' | '<' | '>' | 'Like' } & TokenInfo
-export type ExpressionAst = LiteralAst | ColumnAst
-export type TableAst = {table: IdentifierAst, schema?: IdentifierAst}
-export type ColumnAst = {column: IdentifierAst, table?: IdentifierAst, schema?: IdentifierAst}
+export type ExpressionAst = LiteralAst | ColumnAst | FunctionAst
 export type LiteralAst = StringAst | IntegerAst | DecimalAst | BooleanAst
+export type TableAst = {schema?: IdentifierAst, table: IdentifierAst}
+export type ColumnAst = {schema?: IdentifierAst, table?: IdentifierAst, column: IdentifierAst}
+export type FunctionAst = {schema?: IdentifierAst, function: IdentifierAst, parameters: ExpressionAst[]}
 
 // elements
 export type IdentifierAst = { kind: 'Identifier', value: string, quoted?: boolean } & TokenInfo
