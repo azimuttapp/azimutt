@@ -139,6 +139,7 @@ const keywordTokens: TokenType[] = [
 const Asterisk = createToken({ name: 'Asterisk', pattern: /\*/ })
 const BracketLeft = createToken({ name: 'BracketLeft', pattern: /\[/ })
 const BracketRight = createToken({ name: 'BracketRight', pattern: /]/ })
+const Colon = createToken({name: 'Colon', pattern: /:/})
 const Comma = createToken({name: 'Comma', pattern: /,/})
 const CurlyLeft = createToken({ name: 'CurlyLeft', pattern: /\{/ })
 const CurlyRight = createToken({ name: 'CurlyRight', pattern: /}/ })
@@ -149,7 +150,7 @@ const LowerThan = createToken({name: 'LowerThan', pattern: /</})
 const ParenLeft = createToken({ name: 'ParenLeft', pattern: /\(/ })
 const ParenRight = createToken({ name: 'ParenRight', pattern: /\)/ })
 const Semicolon = createToken({name: 'Semicolon', pattern: /;/})
-const charTokens: TokenType[] = [Asterisk, BracketLeft, BracketRight, Comma, CurlyLeft, CurlyRight, Dot, Equal, GreaterThan, LowerThan, ParenLeft, ParenRight, Semicolon]
+const charTokens: TokenType[] = [Asterisk, BracketLeft, BracketRight, Colon, Comma, CurlyLeft, CurlyRight, Dot, Equal, GreaterThan, LowerThan, ParenLeft, ParenRight, Semicolon]
 
 const allTokens: TokenType[] = [WhiteSpace, ...keywordTokens, ...charTokens, ...valueTokens]
 
@@ -432,7 +433,7 @@ class PostgresParser extends EmbeddedActionsParser {
         const tableColumnDefaultRule = $.RULE<() => TableColumnDefaultAst>('tableColumnDefaultRule', () => {
             const constraint = $.OPTION(() => $.SUBRULE(constraintNameRule))
             const token = $.CONSUME(Default)
-            const expression = $.SUBRULE($.expressionRule) // TODO: handle type conversion (DEFAULT 'none'::character varying)
+            const expression = $.SUBRULE($.expressionRule)
             return removeUndefined({kind: 'Default' as const, expression, constraint, ...tokenInfo(token)})
         })
         const tableColumnPkRule = $.RULE<() => TableColumnPkAst>('tableColumnPkRule', () => {
@@ -546,21 +547,29 @@ class PostgresParser extends EmbeddedActionsParser {
             {ALT: () => ({kind: 'Like' as const, ...tokenInfo($.CONSUME(Like))})},
         ]))
 
-        this.expressionRule = $.RULE<() => ExpressionAst>('expressionRule', () => $.OR([
-            { ALT: () => $.SUBRULE($.literalRule) },
-            { ALT: () => {
-                // extract "table" prefix from `$.functionRule` and `$.columnRule`
-                const prefix = $.SUBRULE($.tableRule)
-                return $.OR2([
-                    {ALT: () => removeUndefined({schema: prefix.schema, function: prefix.table, parameters: $.SUBRULE(functionParamsRule)})},
-                    {ALT: () => {
-                        const third = $.OPTION(() => {$.CONSUME(Dot); return $.SUBRULE($.identifierRule)})
-                        const [column, table, schema] = [third, prefix.table, prefix.schema].filter(isNotUndefined)
-                        return removeUndefined({schema, table, column})
-                    }},
-                ])
-            }},
-        ]))
+        this.expressionRule = $.RULE<() => ExpressionAst>('expressionRule', () => {
+            const expr = $.OR([
+                { ALT: () => $.SUBRULE($.literalRule) },
+                { ALT: () => {
+                    // extract "table" prefix from `$.functionRule` and `$.columnRule`
+                    const prefix = $.SUBRULE($.tableRule)
+                    return $.OR2([
+                        {ALT: () => removeUndefined({schema: prefix.schema, function: prefix.table, parameters: $.SUBRULE(functionParamsRule)})},
+                        {ALT: () => {
+                            const third = $.OPTION(() => {$.CONSUME(Dot); return $.SUBRULE($.identifierRule)})
+                            const [column, table, schema] = [third, prefix.table, prefix.schema].filter(isNotUndefined)
+                            return removeUndefined({schema, table, column})
+                        }},
+                    ])
+                }},
+            ])
+            const cast = $.OPTION2(() => {
+                const token = tokenInfo2($.CONSUME(Colon), $.CONSUME2(Colon))
+                const type = $.SUBRULE($.columnTypeRule)
+                return {...token, type}
+            })
+            return removeUndefined({...expr, cast})
+        })
 
         const functionParamsRule = $.RULE<() => ExpressionAst[]>('functionParamsRule', () => {
             $.CONSUME(ParenLeft)
@@ -617,23 +626,26 @@ class PostgresParser extends EmbeddedActionsParser {
                 $.CONSUME(Dot)
                 return s
             })
-            const parts: IdentifierAst[] = []
+            const parts: {name: IdentifierAst, args?: IntegerAst[], last?: TokenInfo}[] = []
             $.AT_LEAST_ONE({DEF: () => parts.push($.OR([
-                {ALT: () => $.SUBRULE2($.identifierRule)},
-                {ALT: () => toIdentifier($.CONSUME(With))}, // needed for `with time zone`
+                {ALT: () => {
+                    const name = $.SUBRULE2($.identifierRule)
+                    const params = $.OPTION2(() => {
+                        $.CONSUME(ParenLeft)
+                        const values: IntegerAst[] = []
+                        $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => values.push($.SUBRULE($.integerRule))})
+                        const last = tokenInfo($.CONSUME(ParenRight))
+                        return {values, last}
+                    })
+                    return {name, args: params?.values, last: params?.last}
+                }},
+                {ALT: () => ({name: toIdentifier($.CONSUME(With))})}, // needed for `with time zone`
             ]))})
-            const params = $.OPTION2(() => {
-                const left = tokenInfo($.CONSUME(ParenLeft))
-                const values: IntegerAst[] = []
-                $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => values.push($.SUBRULE($.integerRule))})
-                const right = tokenInfo($.CONSUME(ParenRight))
-                return {left, values, right}
-            })
             const name = {
-                value: parts.filter(isNotUndefined).map(p => p.value).join(' ') + (params && params.values ? `(${params.values.map(v => v.value).join(', ')})` : ''),
-                ...mergePositions([...parts, params?.right])
+                value: parts.filter(isNotUndefined).map(p => p.name?.value + (p.args ? `(${p.args.map(v => v.value).join(', ')})` : '')).join(' '),
+                ...mergePositions(parts.flatMap(p => [p.name, p.last]))
             }
-            return removeUndefined({schema, name, args: params?.values, ...mergePositions([schema, name])})
+            return removeEmpty({schema, name, args: parts.flatMap(p => p.args || []), ...mergePositions([schema, name])})
         })
 
         this.literalRule = $.RULE<() => LiteralAst>('literalRule', () => $.OR([

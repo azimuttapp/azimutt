@@ -372,6 +372,10 @@ describe('postgresParser', () => {
                     parameters: [string('search_path', 22, 34), string('', 37, 38), boolean(false, 41, 45)]
                 }})
             })
+            test('cast', () => {
+                expect(parseRule(p => p.expressionRule(), "'owner'::character varying"))
+                    .toEqual({result: {...string('owner', 0, 6), cast: {...token(7, 8), type: {name: {value: 'character varying', ...token(9, 25)}, ...token(9, 25)}}}})
+            })
         })
         describe('tableRule', () => {
             test('table only', () => {
@@ -406,6 +410,10 @@ describe('postgresParser', () => {
             test('with time zone', () => {
                 expect(parseRule(p => p.columnTypeRule(), 'timestamp with time zone')).toEqual({result: {name: {value: 'timestamp with time zone', ...token(0, 23)}, ...token(0, 23)}})
                 expect(parseRule(p => p.columnTypeRule(), 'timestamp without time zone')).toEqual({result: {name: {value: 'timestamp without time zone', ...token(0, 26)}, ...token(0, 26)}})
+            })
+            test('with time zone and args', () => {
+                expect(parseRule(p => p.columnTypeRule(), 'timestamp(0) without time zone'))
+                    .toEqual({result: {name: {value: 'timestamp(0) without time zone', ...token(0, 29)}, args: [integer(0, 10, 10)], ...token(0, 29)}})
             })
             test('with schema', () => {
                 expect(parseRule(p => p.columnTypeRule(), 'public.citext')).toEqual({result: {schema: identifier('public', 0, 5), name: {value: 'citext', ...token(7, 12)}, ...token(0, 12)}})
