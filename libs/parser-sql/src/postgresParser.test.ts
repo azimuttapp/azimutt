@@ -14,7 +14,7 @@ import {
 import {parsePostgresAst, parseRule} from "./postgresParser";
 
 describe('postgresParser', () => {
-    // CREATE VIEW/MATERIALIZED VIEW/INDEX/TYPE
+    // CREATE VIEW/MATERIALIZED VIEW/INDEX
     // INSERT INTO
     // UPDATE
     // DELETE
@@ -104,7 +104,7 @@ describe('postgresParser', () => {
         test('simplest', () => {
             expect(parsePostgresAst('CREATE TABLE users (id int PRIMARY KEY, name VARCHAR);')).toEqual({result: {statements: [{
                 statement: 'CreateTable',
-                name: {table: identifier('users', 13, 17)},
+                table: identifier('users', 13, 17),
                 columns: [
                     {name: identifier('id', 20, 21), type: identifier('int', 23, 25), constraints: [{kind: 'PrimaryKey', ...token(27, 37)}]},
                     {name: identifier('name', 40, 43), type: identifier('VARCHAR', 45, 51)},
@@ -115,7 +115,7 @@ describe('postgresParser', () => {
         test('with constraints', () => {
             expect(parsePostgresAst('CREATE TABLE users (id int, role VARCHAR, CONSTRAINT users_pk PRIMARY KEY (id), FOREIGN KEY (role) REFERENCES roles (name));')).toEqual({result: {statements: [{
                 statement: 'CreateTable',
-                name: {table: identifier('users', 13, 17)},
+                table: identifier('users', 13, 17),
                 columns: [
                     {name: identifier('id', 20, 21), type: identifier('int', 23, 25)},
                     {name: identifier('role', 28, 31), type: identifier('VARCHAR', 33, 39)},
@@ -129,6 +129,35 @@ describe('postgresParser', () => {
         })
         // TODO: CREATE TABLE IF NOT EXISTS users (id int);
         // TODO: CREATE UNLOGGED TABLE users (id int);
+    })
+    describe('createTypeStatement', () => {
+        test('simplest', () => {
+            expect(parsePostgresAst('CREATE TYPE position;')).toEqual({result: {statements: [{
+                statement: 'CreateType',
+                type: identifier('position', 12, 19),
+                ...token(0, 20)
+            }]}})
+        })
+        test('struct', () => {
+            expect(parsePostgresAst('CREATE TYPE layout_position AS (x int, y int COLLATE "fr_FR");')).toEqual({result: {statements: [{
+                statement: 'CreateType',
+                type: identifier('layout_position', 12, 26),
+                struct: {...token(28, 29), attrs: [
+                    {name: identifier('x', 32, 32), type: identifier('int', 34, 36)},
+                    {name: identifier('y', 39, 39), type: identifier('int', 41, 43), collation: {...token(45, 51), name: {...identifier('fr_FR', 53, 59), quoted: true}}}
+                ]},
+                ...token(0, 61)
+            }]}})
+        })
+        test('enum', () => {
+            expect(parsePostgresAst("CREATE TYPE public.bug_status AS ENUM ('open', 'closed');")).toEqual({result: {statements: [{
+                statement: 'CreateType',
+                schema: identifier('public', 12, 17),
+                type: identifier('bug_status', 19, 28),
+                enum: {...token(30, 36), values: [string('open', 39, 44), string('closed', 47, 54)]},
+                ...token(0, 56)
+            }]}})
+        })
     })
     describe('dropStatement', () => {
         test('simplest', () => {
