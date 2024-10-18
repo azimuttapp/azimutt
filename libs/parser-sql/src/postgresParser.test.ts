@@ -106,8 +106,8 @@ describe('postgresParser', () => {
                 statement: 'CreateTable',
                 table: identifier('users', 13, 17),
                 columns: [
-                    {name: identifier('id', 20, 21), type: identifier('int', 23, 25), constraints: [{kind: 'PrimaryKey', ...token(27, 37)}]},
-                    {name: identifier('name', 40, 43), type: identifier('VARCHAR', 45, 51)},
+                    {name: identifier('id', 20, 21), type: {name: {value: 'int', ...token(23, 25)}, ...token(23, 25)}, constraints: [{kind: 'PrimaryKey', ...token(27, 37)}]},
+                    {name: identifier('name', 40, 43), type: {name: {value: 'VARCHAR', ...token(45, 51)}, ...token(45, 51)}},
                 ],
                 ...token(0, 53)
             }]}})
@@ -117,8 +117,8 @@ describe('postgresParser', () => {
                 statement: 'CreateTable',
                 table: identifier('users', 13, 17),
                 columns: [
-                    {name: identifier('id', 20, 21), type: identifier('int', 23, 25)},
-                    {name: identifier('role', 28, 31), type: identifier('VARCHAR', 33, 39)},
+                    {name: identifier('id', 20, 21), type: {name: {value: 'int', ...token(23, 25)}, ...token(23, 25)}},
+                    {name: identifier('role', 28, 31), type: {name: {value: 'VARCHAR', ...token(33, 39)}, ...token(33, 39)}},
                 ],
                 constraints: [
                     {kind: 'PrimaryKey', constraint: {...token(42, 51), name: identifier('users_pk', 53, 60)}, ...token(62, 72), columns: [identifier('id', 75, 76)]},
@@ -143,8 +143,8 @@ describe('postgresParser', () => {
                 statement: 'CreateType',
                 type: identifier('layout_position', 12, 26),
                 struct: {...token(28, 29), attrs: [
-                    {name: identifier('x', 32, 32), type: identifier('int', 34, 36)},
-                    {name: identifier('y', 39, 39), type: identifier('int', 41, 43), collation: {...token(45, 51), name: {...identifier('fr_FR', 53, 59), quoted: true}}}
+                    {name: identifier('x', 32, 32), type: {name: {value: 'int', ...token(34, 36)}, ...token(34, 36)}},
+                    {name: identifier('y', 39, 39), type: {name: {value: 'int', ...token(41, 43)}, ...token(41, 43)}, collation: {...token(45, 51), name: {...identifier('fr_FR', 53, 59), quoted: true}}}
                 ]},
                 ...token(0, 61)
             }]}})
@@ -230,6 +230,11 @@ describe('postgresParser', () => {
                 {statement: 'Set', ...token(0, 44), scope: {kind: 'Session', ...token(4, 10)}, parameter: identifier('search_path', 12, 22), equal: {kind: 'To', ...token(24, 25)}, value: [identifier('my_schema', 27, 35), identifier('public', 38, 43)]}
             ]}})
         })
+        test('on', () => {
+            expect(parsePostgresAst('SET standard_conforming_strings = on;')).toEqual({result: {statements: [
+                {statement: 'Set', ...token(0, 36), parameter: identifier('standard_conforming_strings', 4, 30), equal: {kind: '=', ...token(32, 32)}, value: identifier('on', 34, 35)}
+            ]}})
+        })
     })
     describe('clauses', () => {
         describe('selectClause', () => {
@@ -267,33 +272,33 @@ describe('postgresParser', () => {
         })
         describe('tableColumnRule', () => {
             test('simplest', () => {
-                expect(parseRule(p => p.tableColumnRule(), 'id int')).toEqual({result: {name: identifier('id', 0, 1), type: identifier('int', 3, 5),}})
+                expect(parseRule(p => p.tableColumnRule(), 'id int')).toEqual({result: {name: identifier('id', 0, 1), type: {name: {value: 'int', ...token(3, 5)}, ...token(3, 5)}}})
             })
             test('not null & default', () => {
                 expect(parseRule(p => p.tableColumnRule(), "role varchar NOT NULL DEFAULT 'guest'")).toEqual({result: {
                     name: identifier('role', 0, 3),
-                    type: identifier('varchar', 5, 11),
+                    type: {name: {value: 'varchar', ...token(5, 11)}, ...token(5, 11)},
                     constraints: [{kind: 'Nullable', value: false, ...token(13, 20)}, {kind: 'Default', ...token(22, 28), expression: string('guest', 30, 36)}],
                 }})
                 // TODO: `DEFAULT 'owner'::character varying`
             })
             test('primaryKey', () => {
-                expect(parseRule(p => p.tableColumnRule(), 'id int PRIMARY KEY')).toEqual({result: {name: identifier('id', 0, 1), type: identifier('int', 3, 5), constraints: [
+                expect(parseRule(p => p.tableColumnRule(), 'id int PRIMARY KEY')).toEqual({result: {name: identifier('id', 0, 1), type: {name: {value: 'int', ...token(3, 5)}, ...token(3, 5)}, constraints: [
                     {kind: 'PrimaryKey', ...token(7, 17)}
                 ]}})
             })
             test('unique', () => {
-                expect(parseRule(p => p.tableColumnRule(), "email varchar UNIQUE")).toEqual({result: {name: identifier('email', 0, 4), type: identifier('varchar', 6, 12), constraints: [
+                expect(parseRule(p => p.tableColumnRule(), "email varchar UNIQUE")).toEqual({result: {name: identifier('email', 0, 4), type: {name: {value: 'varchar', ...token(6, 12)}, ...token(6, 12)}, constraints: [
                     {kind: 'Unique', ...token(14, 19)}
                 ]}})
             })
             test('check', () => {
-                expect(parseRule(p => p.tableColumnRule(), "email varchar CHECK (email LIKE '%@%')")).toEqual({result: {name: identifier('email', 0, 4), type: identifier('varchar', 6, 12), constraints: [
+                expect(parseRule(p => p.tableColumnRule(), "email varchar CHECK (email LIKE '%@%')")).toEqual({result: {name: identifier('email', 0, 4), type: {name: {value: 'varchar', ...token(6, 12)}, ...token(6, 12)}, constraints: [
                     {kind: 'Check', ...token(14, 18), predicate: {left: {column: identifier('email', 21, 25)}, operator: operator('Like', 27, 30), right: string('%@%', 32, 36)}}
                 ]}})
             })
             test('foreignKey', () => {
-                expect(parseRule(p => p.tableColumnRule(), "author uuid REFERENCES users(id) ON DELETE SET NULL (id)")).toEqual({result: {name: identifier('author', 0, 5), type: identifier('uuid', 7, 10), constraints: [{
+                expect(parseRule(p => p.tableColumnRule(), "author uuid REFERENCES users(id) ON DELETE SET NULL (id)")).toEqual({result: {name: identifier('author', 0, 5), type: {name: {value: 'uuid', ...token(7, 10)}, ...token(7, 10)}, constraints: [{
                     kind: 'ForeignKey',
                     ...token(12, 21),
                     table: identifier('users', 23, 27),
@@ -310,7 +315,7 @@ describe('postgresParser', () => {
                     "CONSTRAINT users_email_chk CHECK (email LIKE '%@%') " +
                     "CONSTRAINT users_email_fk REFERENCES public.emails(id)")).toEqual({result: {
                         name: identifier('email', 0, 4),
-                        type: identifier('varchar', 6, 12),
+                        type: {name: {value: 'varchar', ...token(6, 12)}, ...token(6, 12)},
                         constraints: [
                             {kind: 'Nullable', constraint: {...token(14, 23), name: identifier('users_email_nn', 25, 38)}, ...token(40, 47), value: false},
                             {kind: 'Default', constraint: {...token(49, 58), name: identifier('users_email_def', 60, 74)}, ...token(76, 82), expression: string('anon@mail.com', 84, 98)},
@@ -387,15 +392,37 @@ describe('postgresParser', () => {
                 expect(parseRule(p => p.columnRule(), 'public.users.id')).toEqual({result: {schema: identifier('public', 0, 5), table: identifier('users', 7, 11), column: identifier('id', 13, 14)}})
             })
         })
+        describe('columnTypeRule', () => {
+            test('simplest', () => {
+                expect(parseRule(p => p.columnTypeRule(), 'int')).toEqual({result: {name: {value: 'int', ...token(0, 2)}, ...token(0, 2)}})
+            })
+            test('with space', () => {
+                expect(parseRule(p => p.columnTypeRule(), 'character varying')).toEqual({result: {name: {value: 'character varying', ...token(0, 16)}, ...token(0, 16)}})
+            })
+            test('with args', () => {
+                expect(parseRule(p => p.columnTypeRule(), 'character(255)')).toEqual({result: {name: {value: 'character(255)', ...token(0, 13)}, args: [integer(255, 10, 12)], ...token(0, 13)}})
+                expect(parseRule(p => p.columnTypeRule(), 'NUMERIC(2, -3)')).toEqual({result: {name: {value: 'NUMERIC(2, -3)', ...token(0, 13)}, args: [integer(2, 8, 8), integer(-3, 11, 12)], ...token(0, 13)}})
+            })
+            test('with time zone', () => {
+                expect(parseRule(p => p.columnTypeRule(), 'timestamp with time zone')).toEqual({result: {name: {value: 'timestamp with time zone', ...token(0, 23)}, ...token(0, 23)}})
+                expect(parseRule(p => p.columnTypeRule(), 'timestamp without time zone')).toEqual({result: {name: {value: 'timestamp without time zone', ...token(0, 26)}, ...token(0, 26)}})
+            })
+            test('with schema', () => {
+                expect(parseRule(p => p.columnTypeRule(), 'public.citext')).toEqual({result: {schema: identifier('public', 0, 5), name: {value: 'citext', ...token(7, 12)}, ...token(0, 12)}})
+            })
+            // TODO: intervals
+        })
         describe('literalRule', () => {
             test('string', () => {
                 expect(parseRule(p => p.literalRule(), "'id'")).toEqual({result: {kind: 'String', value: 'id', ...token(0, 3)}})
             })
             test('decimal', () => {
                 expect(parseRule(p => p.literalRule(), "3.14")).toEqual({result: {kind: 'Decimal', value: 3.14, ...token(0, 3)}})
+                expect(parseRule(p => p.literalRule(), "-3.14")).toEqual({result: {kind: 'Decimal', value: -3.14, ...token(0, 4)}})
             })
             test('integer', () => {
                 expect(parseRule(p => p.literalRule(), "3")).toEqual({result: {kind: 'Integer', value: 3, ...token(0, 0)}})
+                expect(parseRule(p => p.literalRule(), "-3")).toEqual({result: {kind: 'Integer', value: -3, ...token(0, 1)}})
             })
             test('boolean', () => {
                 expect(parseRule(p => p.literalRule(), "true")).toEqual({result: {kind: 'Boolean', value: true, ...token(0, 3)}})

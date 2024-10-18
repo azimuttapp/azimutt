@@ -65,8 +65,8 @@ const WhiteSpace = createToken({name: 'WhiteSpace', pattern: /\s+/, group: Lexer
 
 const Identifier = createToken({name: 'Identifier', pattern: /\b[a-zA-Z_]\w*\b|"([^\\"]|\\\\|\\")+"/})
 const String = createToken({name: 'String', pattern: /'([^\\']|'')*'/})
-const Decimal = createToken({name: 'Decimal', pattern: /\d+\.\d+/})
-const Integer = createToken({name: 'Integer', pattern: /0|[1-9]\d*/, longer_alt: Decimal})
+const Decimal = createToken({name: 'Decimal', pattern: /-?\d+\.\d+/})
+const Integer = createToken({name: 'Integer', pattern: /0|-?[1-9]\d*/, longer_alt: Decimal})
 const valueTokens: TokenType[] = [Integer, Decimal, String, Identifier, LineComment, BlockComment]
 
 const And = createToken({name: 'And', pattern: /\bAND\b/i, longer_alt: Identifier})
@@ -372,7 +372,7 @@ class PostgresParser extends EmbeddedActionsParser {
                     $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => values.push($.OR4([
                         {ALT: () => $.SUBRULE2($.literalRule)},
                         {ALT: () => $.SUBRULE3($.identifierRule)},
-                        {ALT: () => {const on = $.CONSUME(On); return {kind: 'Identifier', value: on.image, ...tokenInfo(on)}}}, // special case
+                        {ALT: () => toIdentifier($.CONSUME(On))}, // special case, `on` being a valid identifier here
                     ]))})
                     return values.length === 1 ? values[0] : values
                 }},
@@ -612,7 +612,28 @@ class PostgresParser extends EmbeddedActionsParser {
         })
 
         this.columnTypeRule = $.RULE<() => ColumnTypeAst>('columnTypeRule', () => {
-            return $.SUBRULE($.identifierRule) // TODO: handle types with space (timestamp without time zone), numbers (character varying(255)) and schema (public.citext)
+            const schema = $.OPTION(() => {
+                const s = $.SUBRULE($.identifierRule)
+                $.CONSUME(Dot)
+                return s
+            })
+            const parts: IdentifierAst[] = []
+            $.AT_LEAST_ONE({DEF: () => parts.push($.OR([
+                {ALT: () => $.SUBRULE2($.identifierRule)},
+                {ALT: () => toIdentifier($.CONSUME(With))}, // needed for `with time zone`
+            ]))})
+            const params = $.OPTION2(() => {
+                const left = tokenInfo($.CONSUME(ParenLeft))
+                const values: IntegerAst[] = []
+                $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => values.push($.SUBRULE($.integerRule))})
+                const right = tokenInfo($.CONSUME(ParenRight))
+                return {left, values, right}
+            })
+            const name = {
+                value: parts.filter(isNotUndefined).map(p => p.value).join(' ') + (params && params.values ? `(${params.values.map(v => v.value).join(', ')})` : ''),
+                ...mergePositions([...parts, params?.right])
+            }
+            return removeUndefined({schema, name, args: params?.values, ...mergePositions([schema, name])})
         })
 
         this.literalRule = $.RULE<() => LiteralAst>('literalRule', () => $.OR([
@@ -707,6 +728,10 @@ function formatLexerError(err: ILexingError): ParserError {
 
 function formatParserError(err: IRecognitionException): ParserError {
     return {message: err.message, kind: err.name, level: ParserErrorLevel.enum.error, ...tokenInfo(err.token)}
+}
+
+function toIdentifier(token: IToken): IdentifierAst {
+    return {kind: 'Identifier', value: token.image, ...tokenInfo(token)}
 }
 
 function tokenInfo(token: IToken, issues?: TokenIssue[]): TokenInfo {

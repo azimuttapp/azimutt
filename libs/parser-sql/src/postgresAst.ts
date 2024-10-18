@@ -40,7 +40,7 @@ export type TableCheckAst = { kind: 'Check', predicate: ConditionAst } & Constra
 export type TableFkAst = { kind: 'ForeignKey', columns: IdentifierAst[], ref: {schema?: IdentifierAst, table: IdentifierAst, columns?: IdentifierAst[]} & TokenInfo, onUpdate?: ForeignKeyActionAst & TokenInfo, onDelete?: ForeignKeyActionAst & TokenInfo } & ConstraintCommonAst
 export type ConstraintCommonAst = { constraint?: ConstraintNameAst } & TokenInfo
 export type ConstraintNameAst = { name: IdentifierAst } & TokenInfo
-export type ColumnTypeAst = IdentifierAst
+export type ColumnTypeAst = {schema?: IdentifierAst, name: {value: string} & TokenInfo, args?: IntegerAst[]} & TokenInfo
 export type ForeignKeyActionAst = {action: {kind: ForeignKeyAction} & TokenInfo, columns?: IdentifierAst[]}
 export type SetValueAst = IdentifierAst | LiteralAst | (IdentifierAst | LiteralAst)[] | { kind: 'Default' } & TokenInfo
 
