@@ -18,6 +18,7 @@ import {
     CommentStatementAst,
     ConditionAst,
     ConstraintNameAst,
+    CreateExtensionStatementAst,
     CreateTableStatementAst,
     DecimalAst,
     DropStatementAst,
@@ -80,6 +81,7 @@ const Delete = createToken({name: 'Delete', pattern: /\bDELETE\b/i, longer_alt: 
 const Distinct = createToken({name: 'Distinct', pattern: /\bDISTINCT\b/i, longer_alt: Identifier})
 const Domain = createToken({name: 'Domain', pattern: /\bDOMAIN\b/i, longer_alt: Identifier})
 const Drop = createToken({name: 'Drop', pattern: /\bDROP\b/i, longer_alt: Identifier})
+const Exists = createToken({name: 'Exists', pattern: /\bEXISTS\b/i, longer_alt: Identifier})
 const Extension = createToken({name: 'Extension', pattern: /\bEXTENSION\b/i, longer_alt: Identifier})
 const False = createToken({name: 'False', pattern: /\bFALSE\b/i, longer_alt: Identifier})
 const Fetch = createToken({name: 'Fetch', pattern: /\bFETCH\b/i, longer_alt: Identifier})
@@ -87,8 +89,8 @@ const ForeignKey = createToken({name: 'ForeignKey', pattern: /\bFOREIGN\s+KEY\b/
 const From = createToken({name: 'From', pattern: /\bFROM\b/i, longer_alt: Identifier})
 const GroupBy = createToken({name: 'GroupBy', pattern: /\bGROUP\s+BY\b/i})
 const Having = createToken({name: 'Having', pattern: /\bHAVING\b/i, longer_alt: Identifier})
+const If = createToken({name: 'If', pattern: /\bIF\b/i, longer_alt: Identifier})
 const Is = createToken({name: 'Is', pattern: /\bIS\b/i, longer_alt: Identifier})
-const IfExists = createToken({name: 'IfExists', pattern: /\bIF\s+EXISTS\b/i})
 const Index = createToken({name: 'Index', pattern: /\bINDEX\b/i, longer_alt: Identifier})
 const Join = createToken({name: 'Join', pattern: /\bJOIN\b/i, longer_alt: Identifier})
 const Like = createToken({name: 'Like', pattern: /\bLIKE\b/i, longer_alt: Identifier})
@@ -118,13 +120,15 @@ const Type = createToken({name: 'Type', pattern: /\bTYPE\b/i, longer_alt: Identi
 const Union = createToken({name: 'Union', pattern: /\bUNION\b/i, longer_alt: Identifier})
 const Unique = createToken({name: 'Unique', pattern: /\bUNIQUE\b/i, longer_alt: Identifier})
 const Update = createToken({name: 'Update', pattern: /\bUPDATE\b/i, longer_alt: Identifier})
+const Version = createToken({name: 'Version', pattern: /\bVERSION\b/i, longer_alt: Identifier})
 const View = createToken({name: 'View', pattern: /\bVIEW\b/i, longer_alt: Identifier})
 const Where = createToken({name: 'Where', pattern: /\bWHERE\b/i, longer_alt: Identifier})
 const Window = createToken({name: 'Window', pattern: /\bWINDOW\b/i, longer_alt: Identifier})
+const With = createToken({name: 'With', pattern: /\bWITH\b/i, longer_alt: Identifier})
 const keywordTokens: TokenType[] = [
-    And, As, Cascade, Check, Column, Comment, Concurrently, Constraint, Create, Default, Database, Delete, Distinct, Domain, Drop, Extension, False, Fetch, ForeignKey, From,
-    GroupBy, Having, Is, IfExists, Index, Join, Like, Limit, Local, MaterializedView, NoAction, Not, Null, Offset, On, Or, OrderBy,
-    PrimaryKey, References, Restrict, Schema, Select, Session, SetDefault, SetNull, Set, Table, To, True, Type, Union, Unique, Update, View, Where, Window
+    And, As, Cascade, Check, Column, Comment, Concurrently, Constraint, Create, Default, Database, Delete, Distinct, Domain, Drop, Exists, Extension, False, Fetch, ForeignKey, From,
+    GroupBy, Having, If, Is, Index, Join, Like, Limit, Local, MaterializedView, NoAction, Not, Null, Offset, On, Or, OrderBy,
+    PrimaryKey, References, Restrict, Schema, Select, Session, SetDefault, SetNull, Set, Table, To, True, Type, Union, Unique, Update, Version, View, Where, Window, With
 ]
 
 const Asterisk = createToken({ name: 'Asterisk', pattern: /\*/ })
@@ -151,10 +155,11 @@ class PostgresParser extends EmbeddedActionsParser {
     statementsRule: () => StatementsAst
     // statements
     statementRule: () => StatementAst
-    selectStatementRule: () => SelectStatementAst
+    commentStatementRule: () => CommentStatementAst
+    createExtensionStatementRule: () => CreateExtensionStatementAst
     createTableStatementRule: () => CreateTableStatementAst
     dropStatementRule: () => DropStatementAst
-    commentStatementRule: () => CommentStatementAst
+    selectStatementRule: () => SelectStatementAst
     setStatementRule: () => SetStatementAst
     // clauses
     selectClauseRule: () => SelectClauseAst
@@ -196,81 +201,29 @@ class PostgresParser extends EmbeddedActionsParser {
         })
 
         this.statementRule = $.RULE<() => StatementAst>('statementRule', () => $.OR([
-            { ALT: () => $.SUBRULE($.selectStatementRule) },
+            { ALT: () => $.SUBRULE($.commentStatementRule) },
+            { ALT: () => $.SUBRULE($.createExtensionStatementRule) },
             { ALT: () => $.SUBRULE($.createTableStatementRule) },
             { ALT: () => $.SUBRULE($.dropStatementRule) },
-            { ALT: () => $.SUBRULE($.commentStatementRule) },
+            { ALT: () => $.SUBRULE($.selectStatementRule) },
             { ALT: () => $.SUBRULE($.setStatementRule) },
         ]))
 
-        // https://www.postgresql.org/docs/current/sql-select.html
-        this.selectStatementRule = $.RULE<() => SelectStatementAst>('selectStatementRule', () => {
-            const select = $.SUBRULE($.selectClauseRule)
-            const from = $.OPTION(() => $.SUBRULE($.fromClauseRule))
-            const where = $.OPTION2(() => $.SUBRULE($.whereClauseRule))
-            const token = $.CONSUME(Semicolon)
-            return removeUndefined({statement: 'Select' as const, select, from, where, ...mergePositions([select, tokenInfo(token)])})
-        })
-
-        // https://www.postgresql.org/docs/current/sql-createtable.html
-        this.createTableStatementRule = $.RULE<() => CreateTableStatementAst>('createTableStatementRule', () => {
-            const create = $.CONSUME(Create)
-            $.CONSUME(Table)
-            const name = $.SUBRULE($.tableRule)
-            $.CONSUME(ParenLeft)
-            const columns: TableColumnAst[] = []
-            const constraints: TableConstraintAst[] = []
-            $.MANY_SEP({SEP: Comma, DEF: () => $.OR([
-                { ALT: () => columns.push($.SUBRULE($.tableColumnRule)) },
-                { ALT: () => constraints.push($.SUBRULE($.tableConstraintRule)) },
-            ])})
-            $.CONSUME(ParenRight)
-            const token = $.CONSUME(Semicolon)
-            return removeEmpty({ statement: 'CreateTable' as const, name, columns: columns.filter(isNotUndefined), constraints: constraints.filter(isNotUndefined), ...tokensInfo(create, token) })
-        })
-
-        this.dropStatementRule = $.RULE<() => DropStatementAst>('dropStatementRule', () => {
-            const drop = $.CONSUME(Drop)
-            const object = $.OR([
-                {ALT: () => ({kind: 'Index' as const, ...tokensInfo(drop, $.CONSUME(Index))})}, // https://www.postgresql.org/docs/current/sql-dropindex.html
-                {ALT: () => ({kind: 'MaterializedView' as const, ...tokensInfo(drop, $.CONSUME(MaterializedView))})}, // https://www.postgresql.org/docs/current/sql-dropmaterializedview.html
-                {ALT: () => ({kind: 'Table' as const, ...tokensInfo(drop, $.CONSUME(Table))})}, // https://www.postgresql.org/docs/current/sql-droptable.html
-                {ALT: () => ({kind: 'Type' as const, ...tokensInfo(drop, $.CONSUME(Type))})}, // https://www.postgresql.org/docs/current/sql-droptype.html
-                {ALT: () => ({kind: 'View' as const, ...tokensInfo(drop, $.CONSUME(View))})}, // https://www.postgresql.org/docs/current/sql-dropview.html
-            ])
-            const concurrently = $.OPTION(() => tokenInfo($.CONSUME(Concurrently)))
-            const ifExists = $.OPTION2(() => tokenInfo($.CONSUME(IfExists)))
-            const entities: TableAst[] = []
-            $.AT_LEAST_ONE_SEP({
-                SEP: Comma,
-                DEF: () => {
-                    const entity = $.SUBRULE($.tableRule)
-                    entity && entities.push(entity)
-                }
-            })
-            const mode = $.OPTION3(() => $.OR2([
-                {ALT: () => ({kind: 'Cascade' as const, ...tokenInfo($.CONSUME(Cascade))})},
-                {ALT: () => ({kind: 'Restrict' as const, ...tokenInfo($.CONSUME(Restrict))})},
-            ]))
-            const token = $.CONSUME(Semicolon)
-            return removeUndefined({statement: 'Drop' as const, object, entities, concurrently, ifExists, mode, ...tokensInfo(drop, token)})
-        })
-
-        // https://www.postgresql.org/docs/current/sql-comment.html
         this.commentStatementRule = $.RULE<() => CommentStatementAst>('commentStatementRule', () => {
+            // https://www.postgresql.org/docs/current/sql-comment.html
             const start = $.CONSUME(Comment)
             $.CONSUME(On)
             const {object, schema, parent, entity} = $.OR([
-                {ALT: () => ({object: {kind: 'Column' as const, ...tokensInfo(start, $.CONSUME(Column))}, ...$.SUBRULE(commentColumnRule)})},
-                {ALT: () => ({object: {kind: 'Constraint' as const, ...tokensInfo(start, $.CONSUME(Constraint))}, ...$.SUBRULE(commentConstraintRule)})},
-                {ALT: () => ({object: {kind: 'Database' as const, ...tokensInfo(start, $.CONSUME(Database))}, ...$.SUBRULE(commentObjectDefaultRule)})},
-                {ALT: () => ({object: {kind: 'Extension' as const, ...tokensInfo(start, $.CONSUME(Extension))}, ...$.SUBRULE2(commentObjectDefaultRule)})},
-                {ALT: () => ({object: {kind: 'Index' as const, ...tokensInfo(start, $.CONSUME(Index))}, ...$.SUBRULE3(commentObjectDefaultRule)})},
-                {ALT: () => ({object: {kind: 'MaterializedView' as const, ...tokensInfo(start, $.CONSUME(MaterializedView))}, ...$.SUBRULE4(commentObjectDefaultRule)})},
-                {ALT: () => ({object: {kind: 'Schema' as const, ...tokensInfo(start, $.CONSUME(Schema))}, ...$.SUBRULE5(commentObjectDefaultRule)})},
-                {ALT: () => ({object: {kind: 'Table' as const, ...tokensInfo(start, $.CONSUME(Table))}, ...$.SUBRULE6(commentObjectDefaultRule)})},
-                {ALT: () => ({object: {kind: 'Type' as const, ...tokensInfo(start, $.CONSUME(Type))}, ...$.SUBRULE7(commentObjectDefaultRule)})},
-                {ALT: () => ({object: {kind: 'View' as const, ...tokensInfo(start, $.CONSUME(View))}, ...$.SUBRULE8(commentObjectDefaultRule)})},
+                {ALT: () => ({object: {kind: 'Column' as const, ...tokenInfo2(start, $.CONSUME(Column))}, ...$.SUBRULE(commentColumnRule)})},
+                {ALT: () => ({object: {kind: 'Constraint' as const, ...tokenInfo2(start, $.CONSUME(Constraint))}, ...$.SUBRULE(commentConstraintRule)})},
+                {ALT: () => ({object: {kind: 'Database' as const, ...tokenInfo2(start, $.CONSUME(Database))}, ...$.SUBRULE(commentObjectDefaultRule)})},
+                {ALT: () => ({object: {kind: 'Extension' as const, ...tokenInfo2(start, $.CONSUME(Extension))}, ...$.SUBRULE2(commentObjectDefaultRule)})},
+                {ALT: () => ({object: {kind: 'Index' as const, ...tokenInfo2(start, $.CONSUME(Index))}, ...$.SUBRULE3(commentObjectDefaultRule)})},
+                {ALT: () => ({object: {kind: 'MaterializedView' as const, ...tokenInfo2(start, $.CONSUME(MaterializedView))}, ...$.SUBRULE4(commentObjectDefaultRule)})},
+                {ALT: () => ({object: {kind: 'Schema' as const, ...tokenInfo2(start, $.CONSUME(Schema))}, ...$.SUBRULE5(commentObjectDefaultRule)})},
+                {ALT: () => ({object: {kind: 'Table' as const, ...tokenInfo2(start, $.CONSUME(Table))}, ...$.SUBRULE6(commentObjectDefaultRule)})},
+                {ALT: () => ({object: {kind: 'Type' as const, ...tokenInfo2(start, $.CONSUME(Type))}, ...$.SUBRULE7(commentObjectDefaultRule)})},
+                {ALT: () => ({object: {kind: 'View' as const, ...tokenInfo2(start, $.CONSUME(View))}, ...$.SUBRULE8(commentObjectDefaultRule)})},
             ])
             $.CONSUME(Is)
             const comment = $.OR2([
@@ -278,7 +231,7 @@ class PostgresParser extends EmbeddedActionsParser {
                 {ALT: () => $.SUBRULE($.nullRule)},
             ])
             const end = $.CONSUME(Semicolon)
-            return removeUndefined({statement: 'Comment' as const, object, schema, parent, entity, comment, ...tokensInfo(start, end)})
+            return removeUndefined({statement: 'Comment' as const, object, schema, parent, entity, comment, ...tokenInfo2(start, end)})
         })
         const commentObjectDefaultRule = $.RULE<() => {schema?: IdentifierAst, entity: IdentifierAst}>('commentObjectDefaultRule', () => {
             const table = $.SUBRULE($.tableRule)
@@ -293,12 +246,79 @@ class PostgresParser extends EmbeddedActionsParser {
             $.CONSUME(On)
             $.OPTION(() => $.CONSUME(Domain))
             const parent = $.SUBRULE($.tableRule)
-            return {schema: parent.schema, parent: parent.table, entity}
+            return {entity, schema: parent.schema, parent: parent.table}
         })
 
-        // https://www.postgresql.org/docs/current/sql-set.html
+        this.createExtensionStatementRule = $.RULE<() => CreateExtensionStatementAst>('createExtensionStatementRule', () => {
+            // https://www.postgresql.org/docs/current/sql-createextension.html
+            const start = $.CONSUME(Create)
+            $.CONSUME(Extension)
+            const ifNotExists = $.OPTION(() => tokenInfo3($.CONSUME(If), $.CONSUME(Not), $.CONSUME(Exists)))
+            const name = $.SUBRULE($.identifierRule)
+            const withh = $.OPTION2(() => tokenInfo($.CONSUME(With)))
+            const schema = $.OPTION3(() => ({...tokenInfo($.CONSUME(Schema)), name: $.SUBRULE2($.identifierRule)}))
+            const version = $.OPTION4(() => ({...tokenInfo($.CONSUME(Version)), number: $.OR([{ALT: () => $.SUBRULE($.stringRule)}, {ALT: () => $.SUBRULE3($.identifierRule)}])}))
+            const cascade = $.OPTION5(() => tokenInfo($.CONSUME(Cascade)))
+            const end = $.CONSUME(Semicolon)
+            return removeUndefined({statement: 'CreateExtension' as const, ifNotExists, name, with: withh, schema, version, cascade, ...tokenInfo2(start, end)})
+        })
+
+        this.createTableStatementRule = $.RULE<() => CreateTableStatementAst>('createTableStatementRule', () => {
+            // https://www.postgresql.org/docs/current/sql-createtable.html
+            const start = $.CONSUME(Create)
+            $.CONSUME(Table)
+            const name = $.SUBRULE($.tableRule)
+            $.CONSUME(ParenLeft)
+            const columns: TableColumnAst[] = []
+            const constraints: TableConstraintAst[] = []
+            $.MANY_SEP({SEP: Comma, DEF: () => $.OR([
+                { ALT: () => columns.push($.SUBRULE($.tableColumnRule)) },
+                { ALT: () => constraints.push($.SUBRULE($.tableConstraintRule)) },
+            ])})
+            $.CONSUME(ParenRight)
+            const end = $.CONSUME(Semicolon)
+            return removeEmpty({statement: 'CreateTable' as const, name, columns: columns.filter(isNotUndefined), constraints: constraints.filter(isNotUndefined), ...tokenInfo2(start, end)})
+        })
+
+        this.dropStatementRule = $.RULE<() => DropStatementAst>('dropStatementRule', () => {
+            const start = $.CONSUME(Drop)
+            const object = $.OR([
+                {ALT: () => ({kind: 'Index' as const, ...tokenInfo2(start, $.CONSUME(Index))})}, // https://www.postgresql.org/docs/current/sql-dropindex.html
+                {ALT: () => ({kind: 'MaterializedView' as const, ...tokenInfo2(start, $.CONSUME(MaterializedView))})}, // https://www.postgresql.org/docs/current/sql-dropmaterializedview.html
+                {ALT: () => ({kind: 'Table' as const, ...tokenInfo2(start, $.CONSUME(Table))})}, // https://www.postgresql.org/docs/current/sql-droptable.html
+                {ALT: () => ({kind: 'Type' as const, ...tokenInfo2(start, $.CONSUME(Type))})}, // https://www.postgresql.org/docs/current/sql-droptype.html
+                {ALT: () => ({kind: 'View' as const, ...tokenInfo2(start, $.CONSUME(View))})}, // https://www.postgresql.org/docs/current/sql-dropview.html
+            ])
+            const concurrently = $.OPTION(() => tokenInfo($.CONSUME(Concurrently)))
+            const ifExists = $.OPTION2(() => tokenInfo2($.CONSUME(If), $.CONSUME(Exists)))
+            const entities: TableAst[] = []
+            $.AT_LEAST_ONE_SEP({
+                SEP: Comma,
+                DEF: () => {
+                    const entity = $.SUBRULE($.tableRule)
+                    entity && entities.push(entity)
+                }
+            })
+            const mode = $.OPTION3(() => $.OR2([
+                {ALT: () => ({kind: 'Cascade' as const, ...tokenInfo($.CONSUME(Cascade))})},
+                {ALT: () => ({kind: 'Restrict' as const, ...tokenInfo($.CONSUME(Restrict))})},
+            ]))
+            const end = $.CONSUME(Semicolon)
+            return removeUndefined({statement: 'Drop' as const, object, entities, concurrently, ifExists, mode, ...tokenInfo2(start, end)})
+        })
+
+        this.selectStatementRule = $.RULE<() => SelectStatementAst>('selectStatementRule', () => {
+            // https://www.postgresql.org/docs/current/sql-select.html
+            const select = $.SUBRULE($.selectClauseRule)
+            const from = $.OPTION(() => $.SUBRULE($.fromClauseRule))
+            const where = $.OPTION2(() => $.SUBRULE($.whereClauseRule))
+            const end = $.CONSUME(Semicolon)
+            return removeUndefined({statement: 'Select' as const, select, from, where, ...mergePositions([select, tokenInfo(end)])})
+        })
+
         this.setStatementRule = $.RULE<() => SetStatementAst>('setStatementRule', () => {
-            const set = $.CONSUME(Set)
+            // https://www.postgresql.org/docs/current/sql-set.html
+            const start = $.CONSUME(Set)
             const scope = $.OPTION(() => $.OR([
                 {ALT: () => ({kind: 'Session' as const, ...tokenInfo($.CONSUME(Session))})},
                 {ALT: () => ({kind: 'Local' as const, ...tokenInfo($.CONSUME(Local))})},
@@ -320,8 +340,8 @@ class PostgresParser extends EmbeddedActionsParser {
                     return values.length === 1 ? values[0] : values
                 }},
             ])
-            const token = $.CONSUME(Semicolon)
-            return removeUndefined({statement: 'Set' as const, scope, parameter, equal, value, ...tokensInfo(set, token)})
+            const end = $.CONSUME(Semicolon)
+            return removeUndefined({statement: 'Set' as const, scope, parameter, equal, value, ...tokenInfo2(start, end)})
         })
 
         // clauses
@@ -372,7 +392,7 @@ class PostgresParser extends EmbeddedActionsParser {
             const not = $.OPTION2(() => $.CONSUME(Not))
             const nullable = $.CONSUME(Null)
             const value = !not
-            const token = not ? tokensInfo(not, nullable) : tokenInfo(nullable)
+            const token = not ? tokenInfo2(not, nullable) : tokenInfo(nullable)
             return removeUndefined({kind: 'Nullable' as const, value, constraint, ...token})
         })
         const tableColumnDefaultRule = $.RULE<() => TableColumnDefaultAst>('tableColumnDefaultRule', () => {
@@ -409,8 +429,8 @@ class PostgresParser extends EmbeddedActionsParser {
                 $.CONSUME(ParenRight)
                 return column
             })
-            const onUpdate = $.OPTION3(() => ({...tokensInfo($.CONSUME(On), $.CONSUME(Update)), ...$.SUBRULE(foreignKeyActionsRule)}))
-            const onDelete = $.OPTION4(() => ({...tokensInfo($.CONSUME2(On), $.CONSUME(Delete)), ...$.SUBRULE2(foreignKeyActionsRule)}))
+            const onUpdate = $.OPTION3(() => ({...tokenInfo2($.CONSUME(On), $.CONSUME(Update)), ...$.SUBRULE(foreignKeyActionsRule)}))
+            const onDelete = $.OPTION4(() => ({...tokenInfo2($.CONSUME2(On), $.CONSUME(Delete)), ...$.SUBRULE2(foreignKeyActionsRule)}))
             return removeUndefined({kind: 'ForeignKey' as const, ...table, column, onUpdate, onDelete, constraint, ...tokenInfo(token)})
         })
 
@@ -440,8 +460,8 @@ class PostgresParser extends EmbeddedActionsParser {
             const refToken = $.CONSUME(References)
             const refTable = $.SUBRULE($.tableRule)
             const refColumns = $.OPTION2(() => $.SUBRULE2(columnNamesRule))
-            const onUpdate = $.OPTION3(() => ({...tokensInfo($.CONSUME(On), $.CONSUME(Update)), ...$.SUBRULE(foreignKeyActionsRule)}))
-            const onDelete = $.OPTION4(() => ({...tokensInfo($.CONSUME2(On), $.CONSUME(Delete)), ...$.SUBRULE2(foreignKeyActionsRule)}))
+            const onUpdate = $.OPTION3(() => ({...tokenInfo2($.CONSUME(On), $.CONSUME(Update)), ...$.SUBRULE(foreignKeyActionsRule)}))
+            const onDelete = $.OPTION4(() => ({...tokenInfo2($.CONSUME2(On), $.CONSUME(Delete)), ...$.SUBRULE2(foreignKeyActionsRule)}))
             const ref = {...tokenInfo(refToken), ...refTable, columns: refColumns}
             return removeUndefined({kind: 'ForeignKey' as const, ...tokenInfo(token), columns, ref, onUpdate, onDelete, constraint})
         })
@@ -655,7 +675,11 @@ function tokenInfo(token: IToken, issues?: TokenIssue[]): TokenInfo {
     return removeEmpty({...tokenPosition(token), issues})
 }
 
-function tokensInfo(start: IToken, end: IToken, issues?: TokenIssue[]): TokenInfo {
+function tokenInfo2(start: IToken, end: IToken, issues?: TokenIssue[]): TokenInfo {
+    return removeEmpty({...mergePositions([tokenPosition(start), tokenPosition(end)]), issues})
+}
+
+function tokenInfo3(start: IToken, _middle: IToken, end: IToken, issues?: TokenIssue[]): TokenInfo {
     return removeEmpty({...mergePositions([tokenPosition(start), tokenPosition(end)]), issues})
 }
 

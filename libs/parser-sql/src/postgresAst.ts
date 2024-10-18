@@ -10,11 +10,12 @@ import {ParserErrorLevel, TokenPosition} from "@azimutt/models";
 
 // statements
 export type StatementsAst = { statements: StatementAst[] }
-export type StatementAst = SelectStatementAst | CreateTableStatementAst | DropStatementAst | CommentStatementAst | SetStatementAst
-export type SelectStatementAst = { statement: 'Select', select: SelectClauseAst, from?: FromClauseAst, where?: WhereClauseAst } & TokenInfo
+export type StatementAst = CommentStatementAst | CreateExtensionStatementAst | CreateTableStatementAst | DropStatementAst | SelectStatementAst | SetStatementAst
+export type CommentStatementAst = { statement: 'Comment', object: { kind: CommentObject } & TokenInfo, schema?: IdentifierAst, parent?: IdentifierAst, entity: IdentifierAst, comment: StringAst | NullAst } & TokenInfo
+export type CreateExtensionStatementAst = { statement: 'CreateExtension', ifNotExists?: TokenInfo, name: IdentifierAst, with?: TokenInfo, schema?: {name: IdentifierAst} & TokenInfo, version?: {number: StringAst | IdentifierAst} & TokenInfo, cascade?: TokenInfo } & TokenInfo
 export type CreateTableStatementAst = { statement: 'CreateTable', name: TableAst, columns: TableColumnAst[], constraints?: TableConstraintAst[] }
 export type DropStatementAst = { statement: 'Drop', object: { kind: DropObject } & TokenInfo, entities: TableAst[], concurrently?: TokenInfo, ifExists?: TokenInfo, mode?: { kind: DropMode } & TokenInfo } & TokenInfo
-export type CommentStatementAst = { statement: 'Comment', object: { kind: CommentObject } & TokenInfo, schema?: IdentifierAst, parent?: IdentifierAst, entity: IdentifierAst, comment: StringAst | NullAst } & TokenInfo
+export type SelectStatementAst = { statement: 'Select', select: SelectClauseAst, from?: FromClauseAst, where?: WhereClauseAst } & TokenInfo
 export type SetStatementAst = { statement: 'Set', scope?: { kind: SetScope } & TokenInfo, parameter: IdentifierAst, equal: { kind: SetAssign } & TokenInfo, value: SetValueAst } & TokenInfo
 
 // clauses

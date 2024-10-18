@@ -36,35 +36,67 @@ describe('postgresParser', () => {
         const parsed = parsePostgresAst(sql, {strict: true})
         expect(parsed.errors || []).toEqual([])
     })
-    describe('selectStatement', () => {
+    describe('commentStatement', () => {
         test('simplest', () => {
-            expect(parsePostgresAst('SELECT name FROM users;')).toEqual({result: {statements: [{
-                statement: 'Select',
-                select: {...token(0, 5), expressions: [{column: identifier('name', 7, 10)}]},
-                from: {...token(12, 15), table: identifier('users', 17, 21)},
-                ...token(0, 22)
+            expect(parsePostgresAst("COMMENT ON SCHEMA public IS 'Main schema';")).toEqual({result: {statements: [{
+                statement: 'Comment',
+                object: {kind: 'Schema', ...token(0, 16)},
+                entity: identifier('public', 18, 23),
+                comment: string('Main schema', 28, 40),
+                ...token(0, 41)
             }]}})
         })
-        test('complex', () => {
-            expect(removeTokens(parsePostgresAst('SELECT id, first_name AS name FROM users WHERE id = 1;'))).toEqual({result: {statements: [{
-                statement: 'Select',
-                select: {expressions: [
-                    {column: {kind: 'Identifier', value: 'id'}},
-                    {column: {kind: 'Identifier', value: 'first_name'}, alias: {name: {kind: 'Identifier', value: 'name'}}}
-                ]},
-                from: {table: {kind: 'Identifier', value: 'users'}},
-                where: {condition: {left: {column: {kind: 'Identifier', value: 'id'}}, operator: {kind: '='}, right: {kind: 'Integer', value: 1}}}
+        test('table', () => {
+            expect(parsePostgresAst("COMMENT ON TABLE public.users IS 'List users';")).toEqual({result: {statements: [{
+                statement: 'Comment',
+                object: {kind: 'Table', ...token(0, 15)},
+                schema: identifier('public', 17, 22),
+                entity: identifier('users', 24, 28),
+                comment: string('List users', 33, 44),
+                ...token(0, 45)
             }]}})
         })
-        test('strange', () => {
-            expect(parsePostgresAst("SELECT pg_catalog.set_config('search_path', '', false);")).toEqual({result: {statements: [{
-                statement: 'Select',
-                select: {...token(0, 5), expressions: [{
-                    schema: identifier('pg_catalog', 7, 16),
-                    function: identifier('set_config', 18, 27),
-                    parameters: [string('search_path', 29, 41), string('', 44, 45), boolean(false, 48, 52)]
-                }]},
-                ...token(0, 54)
+        test('column', () => {
+            expect(parsePostgresAst("COMMENT ON COLUMN public.users.name IS 'user name';")).toEqual({result: {statements: [{
+                statement: 'Comment',
+                object: {kind: 'Column', ...token(0, 16)},
+                schema: identifier('public', 18, 23),
+                parent: identifier('users', 25, 29),
+                entity: identifier('name', 31, 34),
+                comment: string('user name', 39, 49),
+                ...token(0, 50)
+            }]}})
+        })
+        test('constraint', () => {
+            expect(parsePostgresAst("COMMENT ON CONSTRAINT users_pk ON public.users IS 'users pk';")).toEqual({result: {statements: [{
+                statement: 'Comment',
+                object: {kind: 'Constraint', ...token(0, 20)},
+                entity: identifier('users_pk', 22, 29),
+                schema: identifier('public', 34, 39),
+                parent: identifier('users', 41, 45),
+                comment: string('users pk', 50, 59),
+                ...token(0, 60)
+            }]}})
+        })
+    })
+    describe('createExtensionStatement', () => {
+        test('simplest', () => {
+            expect(parsePostgresAst('CREATE EXTENSION citext;')).toEqual({result: {statements: [{
+                statement: 'CreateExtension',
+                name: identifier('citext', 17, 22),
+                ...token(0, 23)
+            }]}})
+        })
+        test('full', () => {
+            expect(parsePostgresAst("CREATE EXTENSION IF NOT EXISTS citext WITH SCHEMA public VERSION '1.0' CASCADE;")).toEqual({result: {statements: [{
+                statement: 'CreateExtension',
+                ifNotExists: token(17, 29),
+                name: identifier('citext', 31, 36),
+                with: token(38, 41),
+                schema: {...token(43, 48), name: identifier('public', 50, 55)},
+                version: {...token(57, 63), number: string('1.0', 65, 69)},
+                cascade: token(71, 77),
+                ...token(0, 78)
             }]}})
         })
     })
@@ -126,46 +158,35 @@ describe('postgresParser', () => {
             expect(parsePostgresAst('DROP TYPE users;').errors || []).toEqual([])
         })
     })
-    describe('commentStatement', () => {
+    describe('selectStatement', () => {
         test('simplest', () => {
-            expect(parsePostgresAst("COMMENT ON SCHEMA public IS 'Main schema';")).toEqual({result: {statements: [{
-                statement: 'Comment',
-                object: {kind: 'Schema', ...token(0, 16)},
-                entity: identifier('public', 18, 23),
-                comment: string('Main schema', 28, 40),
-                ...token(0, 41)
+            expect(parsePostgresAst('SELECT name FROM users;')).toEqual({result: {statements: [{
+                statement: 'Select',
+                select: {...token(0, 5), expressions: [{column: identifier('name', 7, 10)}]},
+                from: {...token(12, 15), table: identifier('users', 17, 21)},
+                ...token(0, 22)
             }]}})
         })
-        test('table', () => {
-            expect(parsePostgresAst("COMMENT ON TABLE public.users IS 'List users';")).toEqual({result: {statements: [{
-                statement: 'Comment',
-                object: {kind: 'Table', ...token(0, 15)},
-                schema: identifier('public', 17, 22),
-                entity: identifier('users', 24, 28),
-                comment: string('List users', 33, 44),
-                ...token(0, 45)
+        test('complex', () => {
+            expect(removeTokens(parsePostgresAst('SELECT id, first_name AS name FROM users WHERE id = 1;'))).toEqual({result: {statements: [{
+                statement: 'Select',
+                select: {expressions: [
+                    {column: {kind: 'Identifier', value: 'id'}},
+                    {column: {kind: 'Identifier', value: 'first_name'}, alias: {name: {kind: 'Identifier', value: 'name'}}}
+                ]},
+                from: {table: {kind: 'Identifier', value: 'users'}},
+                where: {condition: {left: {column: {kind: 'Identifier', value: 'id'}}, operator: {kind: '='}, right: {kind: 'Integer', value: 1}}}
             }]}})
         })
-        test('column', () => {
-            expect(parsePostgresAst("COMMENT ON COLUMN public.users.name IS 'user name';")).toEqual({result: {statements: [{
-                statement: 'Comment',
-                object: {kind: 'Column', ...token(0, 16)},
-                schema: identifier('public', 18, 23),
-                parent: identifier('users', 25, 29),
-                entity: identifier('name', 31, 34),
-                comment: string('user name', 39, 49),
-                ...token(0, 50)
-            }]}})
-        })
-        test('constraint', () => {
-            expect(parsePostgresAst("COMMENT ON CONSTRAINT users_pk ON public.users IS 'users pk';")).toEqual({result: {statements: [{
-                statement: 'Comment',
-                object: {kind: 'Constraint', ...token(0, 20)},
-                entity: identifier('users_pk', 22, 29),
-                schema: identifier('public', 34, 39),
-                parent: identifier('users', 41, 45),
-                comment: string('users pk', 50, 59),
-                ...token(0, 60)
+        test('strange', () => {
+            expect(parsePostgresAst("SELECT pg_catalog.set_config('search_path', '', false);")).toEqual({result: {statements: [{
+                statement: 'Select',
+                select: {...token(0, 5), expressions: [{
+                    schema: identifier('pg_catalog', 7, 16),
+                    function: identifier('set_config', 18, 27),
+                    parameters: [string('search_path', 29, 41), string('', 44, 45), boolean(false, 48, 52)]
+                }]},
+                ...token(0, 54)
             }]}})
         })
     })
