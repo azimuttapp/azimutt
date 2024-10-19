@@ -37,6 +37,7 @@ import {
     NullAst,
     ObjectNameAst,
     OperatorAst,
+    ParameterAst,
     SelectClauseAst,
     SelectClauseExprAst,
     SelectStatementAst,
@@ -163,6 +164,7 @@ const Comma = createToken({name: 'Comma', pattern: /,/})
 const CurlyLeft = createToken({name: 'CurlyLeft', pattern: /\{/})
 const CurlyRight = createToken({name: 'CurlyRight', pattern: /}/})
 const Dash = createToken({name: 'Dash', pattern: /-/, longer_alt: LineComment})
+const Dollar = createToken({name: 'Dollar', pattern: /\$/})
 const Dot = createToken({name: 'Dot', pattern: /\./})
 const Equal = createToken({name: 'Equal', pattern: /=/})
 const Exclamation = createToken({name: 'Exclamation', pattern: /!/})
@@ -174,11 +176,12 @@ const ParenRight = createToken({name: 'ParenRight', pattern: /\)/})
 const Percent = createToken({name: 'Percent', pattern: /%/})
 const Pipe = createToken({name: 'Pipe', pattern: /\|/})
 const Plus = createToken({name: 'Plus', pattern: /\+/})
+const QuestionMark = createToken({name: 'QuestionMark', pattern: /\?/})
 const Semicolon = createToken({name: 'Semicolon', pattern: /;/})
 const Slash = createToken({name: 'Slash', pattern: /\//, longer_alt: BlockComment})
 const charTokens: TokenType[] = [
-    Amp, Asterisk, BracketLeft, BracketRight, Caret, Colon, Comma, CurlyLeft, CurlyRight, Dash, Dot, Equal, Exclamation,
-    GreaterThan, Hash, LowerThan, ParenLeft, ParenRight, Percent, Pipe, Plus, Semicolon, Slash
+    Amp, Asterisk, BracketLeft, BracketRight, Caret, Colon, Comma, CurlyLeft, CurlyRight, Dash, Dollar, Dot, Equal, Exclamation,
+    GreaterThan, Hash, LowerThan, ParenLeft, ParenRight, Percent, Pipe, Plus, QuestionMark, Semicolon, Slash
 ]
 
 const allTokens: TokenType[] = [WhiteSpace, ...keywordTokens, ...charTokens, ...valueTokens]
@@ -213,6 +216,7 @@ class PostgresParser extends EmbeddedActionsParser {
     columnTypeRule: () => ColumnTypeAst
     literalRule: () => LiteralAst
     // elements
+    parameterRule: () => ParameterAst
     identifierRule: () => IdentifierAst
     stringRule: () => StringAst
     integerRule: () => IntegerAst
@@ -679,10 +683,39 @@ class PostgresParser extends EmbeddedActionsParser {
             return {...tokenInfo(token), name}
         })
 
-        this.expressionRule = $.RULE<() => ExpressionAst>('expressionRule', () => {
+        this.expressionRule = $.RULE<() => ExpressionAst>('expressionRule', () => $.SUBRULE(orExpressionRule)) // Start with OR expressions (lowest precedence)
+        const orExpressionRule = $.RULE<() => ExpressionAst>('orExpressionRule', () => {
+            let expr = $.SUBRULE(andExpressionRule) // AND has higher precedence than OR
+            $.MANY(() => {
+                const op = {kind: 'Or' as const, ...tokenInfo($.CONSUME(Or))}
+                const right = $.SUBRULE2(andExpressionRule)
+                expr = {kind: 'Operation', left: expr, op, right}
+            })
+            return expr
+        })
+        const andExpressionRule = $.RULE<() => ExpressionAst>('andExpressionRule', () => {
+            let expr = $.SUBRULE(operatorExpressionRule) // operator has higher precedence than AND
+            $.MANY(() => {
+                const op = {kind: 'And' as const, ...tokenInfo($.CONSUME(And))}
+                const right = $.SUBRULE2(operatorExpressionRule)
+                expr = {kind: 'Operation', left: expr, op, right}
+            })
+            return expr
+        })
+        const operatorExpressionRule = $.RULE<() => ExpressionAst>('operatorExpressionRule', () => {
+            let expr = $.SUBRULE(atomicExpressionRule) // atomic has the highest precedence
+            $.OPTION(() => {
+                const op = $.SUBRULE(operatorRule)
+                const right = $.SUBRULE2(atomicExpressionRule)
+                expr = {kind: 'Operation', left: expr, op, right}
+            })
+            return expr
+        })
+        const atomicExpressionRule = $.RULE<() => ExpressionAst>('atomicExpressionRule', () => {
             const expr = $.OR([
                 {ALT: () => $.SUBRULE(groupRule)},
                 {ALT: () => $.SUBRULE($.literalRule)},
+                {ALT: () => $.SUBRULE($.parameterRule)},
                 {ALT: () => ({kind: 'Wildcard', ...tokenInfo($.CONSUME(Asterisk))})},
                 {ALT: () => {
                     const first = $.SUBRULE($.identifierRule)
@@ -707,22 +740,17 @@ class PostgresParser extends EmbeddedActionsParser {
                                     return nest2 ? nest2 : removeEmpty({kind: 'Column', table: first, column: second, json: $.SUBRULE2(columnJsonRule)})
                                 }}
                             ])
-                        }},
+                        }}
                     ]))
                     return nest ? nest : removeEmpty({kind: 'Column', column: first, json: $.SUBRULE(columnJsonRule)})
-                }},
+                }}
             ])
-            const operation = $.OPTION3(() => {
-                const op = $.SUBRULE(operatorRule)
-                const right = $.SUBRULE($.expressionRule)
-                return {kind: 'Operation', left: expr, op, right}
-            })
-            const cast = $.OPTION4(() => {
+            const cast = $.OPTION3(() => {
                 const token = tokenInfo2($.CONSUME(Colon), $.CONSUME2(Colon))
                 const type = $.SUBRULE($.columnTypeRule)
                 return {...token, type}
             })
-            return operation ? removeUndefined({...operation, cast}) : removeUndefined({...expr, cast})
+            return removeUndefined({...expr, cast})
         })
         const groupRule = $.RULE<() => GroupAst>('groupRule', () => {
             $.CONSUME(ParenLeft)
@@ -743,8 +771,6 @@ class PostgresParser extends EmbeddedActionsParser {
             {ALT: () => ({kind: '#' as const, ...tokenInfo($.CONSUME(Hash))})},
             {ALT: () => ({kind: '=' as const, ...tokenInfo($.CONSUME(Equal))})},
             {ALT: () => ({kind: '!=' as const, ...tokenInfo2($.CONSUME(Exclamation), $.CONSUME2(Equal))})},
-            {ALT: () => ({kind: 'Or' as const, ...tokenInfo($.CONSUME(Or))})},
-            {ALT: () => ({kind: 'And' as const, ...tokenInfo($.CONSUME(And))})},
             {ALT: () => ({kind: 'Like' as const, ...tokenInfo($.CONSUME(Like))})},
             // {ALT: () => ({kind: 'NotLike' as const, ...tokenInfo2($.CONSUME(Not), $.CONSUME2(Like))})},
             {ALT: () => {
@@ -835,6 +861,15 @@ class PostgresParser extends EmbeddedActionsParser {
         ]))
 
         // elements
+
+        this.parameterRule = $.RULE<() => ParameterAst>('parameterRule', () => $.OR([
+            {ALT: () => ({kind: 'Parameter', value: '?', ...tokenInfo($.CONSUME(QuestionMark))})},
+            {ALT: () => {
+                const d = $.CONSUME(Dollar)
+                const i = $.CONSUME(Integer)
+                return {kind: 'Parameter', value: `${d.image}${i.image}`, index: parseInt(i.image), ...tokenInfo2(d, i)}
+            }}
+        ]))
 
         this.identifierRule = $.RULE<() => IdentifierAst>('identifierRule', () => $.OR([
             {ALT: () => {

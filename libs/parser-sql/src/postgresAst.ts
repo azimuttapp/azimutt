@@ -56,7 +56,7 @@ export type SetValueAst = IdentifierAst | LiteralAst | (IdentifierAst | LiteralA
 // basic parts
 export type AliasAst = { name: IdentifierAst } & TokenInfo
 export type ObjectNameAst = { schema?: IdentifierAst, name: IdentifierAst }
-export type ExpressionAst = (LiteralAst | ColumnAst | WildcardAst | FunctionAst | GroupAst | OperationAst) & { cast?: { type: ColumnTypeAst } & TokenInfo }
+export type ExpressionAst = (LiteralAst | ParameterAst | ColumnAst | WildcardAst | FunctionAst | GroupAst | OperationAst) & { cast?: { type: ColumnTypeAst } & TokenInfo }
 export type LiteralAst = StringAst | IntegerAst | DecimalAst | BooleanAst | NullAst
 export type ColumnAst = { kind: 'Column', schema?: IdentifierAst, table?: IdentifierAst, column: IdentifierAst, json?: ColumnJsonAst[] }
 export type ColumnJsonAst = { kind: JsonOp, field: StringAst } & TokenInfo
@@ -67,6 +67,7 @@ export type OperationAst = { kind: 'Operation', left: ExpressionAst, op: Operato
 export type OperatorAst = { kind: Operator } & TokenInfo
 
 // elements
+export type ParameterAst = { kind: 'Parameter', value: string, index?: number } & TokenInfo
 export type IdentifierAst = { kind: 'Identifier', value: string, quoted?: boolean } & TokenInfo
 export type StringAst = { kind: 'String', value: string } & TokenInfo
 export type DecimalAst = { kind: 'Decimal', value: number } & TokenInfo

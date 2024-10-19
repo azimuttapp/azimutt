@@ -8,6 +8,7 @@ import {
     IntegerAst,
     NullAst,
     OperatorAst,
+    ParameterAst,
     StringAst,
     TokenInfo,
     TokenIssue
@@ -156,8 +157,7 @@ describe('postgresParser', () => {
         })
         test('full', () => {
             expect(parsePostgresAst('CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS users_name_idx ON ONLY public.users USING btree' +
-                // TODO: ' ((lower(first_name)) COLLATE "de_DE" ASC NULLS LAST)' +
-                ' ( lower(first_name)  COLLATE "de_DE" ASC NULLS LAST)' +
+                ' ((lower(first_name)) COLLATE "de_DE" ASC NULLS LAST)' +
                 // TODO: ' INCLUDE (email) NULLS NOT DISTINCT WITH (fastupdate = off) TABLESPACE indexspace WHERE deleted_at IS NULL' +
                 ' INCLUDE (email);'
             )).toEqual({result: {statements: [{
@@ -171,9 +171,7 @@ describe('postgresParser', () => {
                 table: identifier('users', 77, 81),
                 using: {...token(83, 87), method: identifier('btree', 89, 93)},
                 columns: [{
-                    kind: 'Function',
-                    function: identifier('lower', 97, 101),
-                    parameters: [{kind: 'Column', column: identifier('first_name', 103, 112)}],
+                    kind: 'Group', expression: {kind: 'Function', function: identifier('lower', 97, 101), parameters: [{kind: 'Column', column: identifier('first_name', 103, 112)}]},
                     collation: {...token(116, 122), name: {...identifier('de_DE', 124, 130), quoted: true}},
                     order: {kind: 'Asc', ...token(132, 134)},
                     nulls: {kind: 'Last', ...token(136, 145)}
@@ -365,9 +363,15 @@ describe('postgresParser', () => {
                     expressions: [{kind: 'Column', column: identifier('name', 7, 10)}],
                 }})
             })
-            // TODO: SELECT e.*, u.name AS user_name, lower(u.email), "public"."Event"."id"
-            // TODO: SELECT count(*)
-            // TODO: SELECT count(distinct e.created_by) FILTER (WHERE u.created_at + interval '#{period}' < e.created_at) AS not_new_users
+            test('complex', () => {
+                expect(parseRule(p => p.selectClauseRule(), 'SELECT e.*, u.name AS user_name, lower(u.email), "public"."Event"."id"')).toEqual({result: {...token(0, 5), expressions: [
+                    {kind: 'Wildcard', table: identifier('e', 7, 7), ...token(9, 9)},
+                    {kind: 'Column', table: identifier('u', 12, 12), column: identifier('name', 14, 17), alias: {...token(19, 20), name: identifier('user_name', 22, 30)}},
+                    {kind: 'Function', function: identifier('lower', 33, 37), parameters: [{kind: 'Column', table: identifier('u', 39, 39), column: identifier('email', 41, 45)}]},
+                    {kind: 'Column', schema: {...identifier('public', 49, 56), quoted: true}, table: {...identifier('Event', 58, 64), quoted: true}, column: {...identifier('id', 66, 69), quoted: true}}
+                ]}})
+            })
+            // TODO: SELECT count(*), count(distinct e.created_by) FILTER (WHERE u.created_at + interval '#{period}' < e.created_at) AS not_new_users
         })
         describe('fromClause', () => {
             test('simplest', () => {
@@ -389,37 +393,22 @@ describe('postgresParser', () => {
                     predicate: {kind: 'Operation', left: {kind: 'Column', column: identifier('id', 6, 7)}, op: operator('=', 9, 9), right: integer(1, 11, 11)},
                 }})
             })
-            /* TODO: test('complex', () => {
+            test('complex', () => {
                 expect(parseRule(p => p.whereClauseRule(), "WHERE \"id\" = $1 OR (email LIKE '%@azimutt.app' AND role = 'admin')")).toEqual({result: {...token(0, 4), predicate: {
                     kind: 'Operation',
-                    left: {kind: 'Column', column: {...identifier('id', 6, 9), quoted: true}},
-                    op: operator('=', 11, 11),
+                    left: {kind: 'Operation', left: {kind: 'Column', column: {...identifier('id', 6, 9), quoted: true}}, op: operator('=', 11, 11), right: parameter(1, 13, 14)},
+                    op: operator('Or', 16, 17),
                     right: {
-                        kind: 'Operation',
-                        left: integer(1, 14, 14),
-                        op: operator('Or', 16, 17),
-                        right: {
-                            kind: 'Group',
-                            expression: {
-                                kind: 'Operation',
-                                left: {kind: 'Column', column: identifier('email', 20, 24)},
-                                op: operator('Like', 26, 29),
-                                right: {
-                                    kind: 'Operation',
-                                    left: string('%@azimutt.app', 31, 45),
-                                    op: operator('And', 47, 49),
-                                    right: {
-                                        kind: 'Operation',
-                                        left: {kind: 'Column', column: identifier('role', 51, 54)},
-                                        op: operator('=', 56, 56),
-                                        right: string('admin', 58, 64)
-                                    }
-                                }
-                            }
+                        kind: 'Group',
+                        expression: {
+                            kind: 'Operation',
+                            left: {kind: 'Operation', left: {kind: 'Column', column: identifier('email', 20, 24)}, op: operator('Like', 26, 29), right: string('%@azimutt.app', 31, 45)},
+                            op: operator('And', 47, 49),
+                            right: {kind: 'Operation', left: {kind: 'Column', column: identifier('role', 51, 54)}, op: operator('=', 56, 56), right: string('admin', 58, 64)}
                         }
-                    }}
-                }})
-            })*/
+                    }}}
+                })
+            })
         })
         describe('tableColumnRule', () => {
             test('simplest', () => {
@@ -542,6 +531,10 @@ describe('postgresParser', () => {
                     parameters: [string('search_path', 22, 34), string('', 37, 38), boolean(false, 41, 45)]
                 }})
             })
+            test('parameter', () => {
+                expect(parseRule(p => p.expressionRule(), '?')).toEqual({result: parameter(0, 0, 0)})
+                expect(parseRule(p => p.expressionRule(), '$1')).toEqual({result: parameter(1, 0, 1)})
+            })
             test('group', () => {
                 expect(parseRule(p => p.expressionRule(), '(1)')).toEqual({result: {kind: 'Group', expression: integer(1, 1, 1)}})
             })
@@ -590,6 +583,18 @@ describe('postgresParser', () => {
             test('cast', () => {
                 expect(parseRule(p => p.expressionRule(), "'owner'::character varying"))
                     .toEqual({result: {...string('owner', 0, 6), cast: {...token(7, 8), type: {name: {value: 'character varying', ...token(9, 25)}, ...token(9, 25)}}}})
+            })
+            test('complex', () => {
+                const id = (value: string) => ({kind: 'Identifier', value})
+                const int = (value: number) => ({kind: 'Integer', value})
+                const col = (column: string) => ({kind: 'Column', column: id(column)})
+                const p = (value: string) => ({kind: 'Parameter', value})
+                const op = (left: any, kind: string, right: any) => ({kind: 'Operation', left, op: {kind}, right})
+                const g = (expression: any) => ({kind: 'Group', expression})
+                expect(removeTokens(parseRule(p => p.expressionRule(), 'id'))).toEqual({result: col('id')})
+                expect(removeTokens(parseRule(p => p.expressionRule(), 'id = 0'))).toEqual({result: op(col('id'), '=', int(0))})
+                expect(removeTokens(parseRule(p => p.expressionRule(), 'id = 0 OR id = ?'))).toEqual({result: op(op(col('id'), '=', int(0)), 'Or', op(col('id'), '=', p('?')))})
+                expect(removeTokens(parseRule(p => p.expressionRule(), '(id = 0) OR (id = ?)'))).toEqual({result: op(g(op(col('id'), '=', int(0))), 'Or', g(op(col('id'), '=', p('?'))))})
             })
         })
         describe('objectNameRule', () => {
@@ -645,6 +650,14 @@ describe('postgresParser', () => {
         })
     })
     describe('elements', () => {
+        describe('parameterRule', () => {
+            test('anonymous', () => {
+                expect(parseRule(p => p.parameterRule(), '?')).toEqual({result: {kind: 'Parameter', value: '?', ...token(0, 0)}})
+            })
+            test('indexed', () => {
+                expect(parseRule(p => p.parameterRule(), '$1')).toEqual({result: {kind: 'Parameter', value: '$1', index: 1, ...token(0, 1)}})
+            })
+        })
         describe('identifierRule', () => {
             test('basic', () => {
                 expect(parseRule(p => p.identifierRule(), 'id')).toEqual({result: identifier('id', 0, 1)})
@@ -731,6 +744,10 @@ function boolean(value: boolean, start: number, end: number, startLine?: number,
 
 function nulll(start: number, end: number, startLine?: number, startColumn?: number, endLine?: number, endColumn?: number): NullAst {
     return {kind: 'Null', ...token(start, end, startLine, startColumn, endLine, endColumn)}
+}
+
+function parameter(index: number, start: number, end: number, startLine?: number, startColumn?: number, endLine?: number, endColumn?: number): ParameterAst {
+    return {kind: 'Parameter', value: index ? `$${index}` : '?', index: index ? index : undefined, ...token(start, end, startLine, startColumn, endLine, endColumn)}
 }
 
 function operator(kind: OperatorAst['kind'], start: number, end: number, startLine?: number, startColumn?: number, endLine?: number, endColumn?: number): OperatorAst {
