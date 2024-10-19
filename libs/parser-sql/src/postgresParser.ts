@@ -33,6 +33,7 @@ import {
     InsertIntoStatementAst,
     IntegerAst,
     JsonOp,
+    ListAst,
     LiteralAst,
     NullAst,
     ObjectNameAst,
@@ -68,7 +69,7 @@ const BlockComment = createToken({name: 'BlockComment', pattern: /\/\*[^]*?\*\//
 const WhiteSpace = createToken({name: 'WhiteSpace', pattern: /\s+/, group: Lexer.SKIPPED})
 
 const Identifier = createToken({name: 'Identifier', pattern: /\b[a-zA-Z_]\w*\b|"([^\\"]|\\\\|\\")+"/})
-const String = createToken({name: 'String', pattern: /'([^\\']|'')*'/})
+const String = createToken({name: 'String', pattern: /E?'([^']|'')*'/i})
 const Decimal = createToken({name: 'Decimal', pattern: /\d+\.\d+/})
 const Integer = createToken({name: 'Integer', pattern: /0|[1-9]\d*/, longer_alt: Decimal})
 const valueTokens: TokenType[] = [Integer, Decimal, String, Identifier, LineComment, BlockComment]
@@ -104,6 +105,7 @@ const From = createToken({name: 'From', pattern: /\bFROM\b/i, longer_alt: Identi
 const GroupBy = createToken({name: 'GroupBy', pattern: /\bGROUP\s+BY\b/i})
 const Having = createToken({name: 'Having', pattern: /\bHAVING\b/i, longer_alt: Identifier})
 const If = createToken({name: 'If', pattern: /\bIF\b/i, longer_alt: Identifier})
+const In = createToken({name: 'In', pattern: /\bIN\b/i, longer_alt: Identifier})
 const Include = createToken({name: 'Include', pattern: /\bINCLUDE\b/i, longer_alt: Identifier})
 const Index = createToken({name: 'Index', pattern: /\bINDEX\b/i, longer_alt: Identifier})
 const InsertInto = createToken({name: 'InsertInto', pattern: /\bINSERT\s+INTO\b/i})
@@ -149,7 +151,7 @@ const Window = createToken({name: 'Window', pattern: /\bWINDOW\b/i, longer_alt: 
 const With = createToken({name: 'With', pattern: /\bWITH\b/i, longer_alt: Identifier})
 const keywordTokens: TokenType[] = [
     Add, Alter, And, As, Asc, Cascade, Check, Collate, Column, Comment, Concurrently, Constraint, Create, Default, Database, Delete, Desc, Distinct, Domain, Drop,
-    Enum, Exists, Extension, False, Fetch, First, ForeignKey, From, GroupBy, Having, If, Include, Index, InsertInto, Is, Join, Last, Like, Limit, Local,
+    Enum, Exists, Extension, False, Fetch, First, ForeignKey, From, GroupBy, Having, If, In, Include, Index, InsertInto, Is, Join, Last, Like, Limit, Local,
     MaterializedView, NoAction, Not, Null, Nulls, Offset, On, Only, Or, OrderBy, PrimaryKey, References, Restrict, Returning, Schema, Select, Session, SetDefault, SetNull, Set,
     Table, To, True, Type, Union, Unique, Update, Using, Values, Version, View, Where, Window, With
 ]
@@ -179,9 +181,10 @@ const Plus = createToken({name: 'Plus', pattern: /\+/})
 const QuestionMark = createToken({name: 'QuestionMark', pattern: /\?/})
 const Semicolon = createToken({name: 'Semicolon', pattern: /;/})
 const Slash = createToken({name: 'Slash', pattern: /\//, longer_alt: BlockComment})
+const Tilde = createToken({name: 'Tilde', pattern: /~/})
 const charTokens: TokenType[] = [
     Amp, Asterisk, BracketLeft, BracketRight, Caret, Colon, Comma, CurlyLeft, CurlyRight, Dash, Dollar, Dot, Equal, Exclamation,
-    GreaterThan, Hash, LowerThan, ParenLeft, ParenRight, Percent, Pipe, Plus, QuestionMark, Semicolon, Slash
+    GreaterThan, Hash, LowerThan, ParenLeft, ParenRight, Percent, Pipe, Plus, QuestionMark, Semicolon, Slash, Tilde
 ]
 
 const allTokens: TokenType[] = [WhiteSpace, ...keywordTokens, ...charTokens, ...valueTokens]
@@ -549,7 +552,7 @@ class PostgresParser extends EmbeddedActionsParser {
         const tableColumnDefaultRule = $.RULE<() => TableColumnDefaultAst>('tableColumnDefaultRule', () => {
             const constraint = $.OPTION(() => $.SUBRULE(constraintNameRule))
             const token = $.CONSUME(Default)
-            const expression = $.SUBRULE($.expressionRule)
+            const expression = $.SUBRULE(atomicExpressionRule)
             return removeUndefined({kind: 'Default' as const, expression, constraint, ...tokenInfo(token)})
         })
         const tableColumnPkRule = $.RULE<() => TableColumnPkAst>('tableColumnPkRule', () => {
@@ -706,8 +709,13 @@ class PostgresParser extends EmbeddedActionsParser {
             let expr = $.SUBRULE(atomicExpressionRule) // atomic has the highest precedence
             $.OPTION(() => {
                 const op = $.SUBRULE(operatorRule)
-                const right = $.SUBRULE2(atomicExpressionRule)
-                expr = {kind: 'Operation', left: expr, op, right}
+                if (['In', 'NotIn'].includes(op?.kind)) {
+                    const right = $.SUBRULE(listRule)
+                    expr = {kind: 'Operation', left: expr, op, right}
+                } else {
+                    const right = $.SUBRULE2(atomicExpressionRule)
+                    expr = {kind: 'Operation', left: expr, op, right}
+                }
             })
             return expr
         })
@@ -752,12 +760,6 @@ class PostgresParser extends EmbeddedActionsParser {
             })
             return removeUndefined({...expr, cast})
         })
-        const groupRule = $.RULE<() => GroupAst>('groupRule', () => {
-            $.CONSUME(ParenLeft)
-            const expression = $.SUBRULE($.expressionRule)
-            $.CONSUME(ParenRight)
-            return {kind: 'Group', expression}
-        })
         const operatorRule = $.RULE<() => OperatorAst>('operatorRule', () => $.OR([
             // https://www.postgresql.org/docs/current/functions.html
             {ALT: () => ({kind: '+' as const, ...tokenInfo($.CONSUME(Plus))})},
@@ -767,16 +769,14 @@ class PostgresParser extends EmbeddedActionsParser {
             {ALT: () => ({kind: '%' as const, ...tokenInfo($.CONSUME(Percent))})},
             {ALT: () => ({kind: '^' as const, ...tokenInfo($.CONSUME(Caret))})},
             {ALT: () => ({kind: '&' as const, ...tokenInfo($.CONSUME(Amp))})},
-            {ALT: () => ({kind: '|' as const, ...tokenInfo($.CONSUME(Pipe))})},
             {ALT: () => ({kind: '#' as const, ...tokenInfo($.CONSUME(Hash))})},
             {ALT: () => ({kind: '=' as const, ...tokenInfo($.CONSUME(Equal))})},
-            {ALT: () => ({kind: '!=' as const, ...tokenInfo2($.CONSUME(Exclamation), $.CONSUME2(Equal))})},
             {ALT: () => ({kind: 'Like' as const, ...tokenInfo($.CONSUME(Like))})},
-            // {ALT: () => ({kind: 'NotLike' as const, ...tokenInfo2($.CONSUME(Not), $.CONSUME2(Like))})},
+            {ALT: () => ({kind: 'In' as const, ...tokenInfo($.CONSUME(In))})},
             {ALT: () => {
                 const lt = $.CONSUME(LowerThan)
                 const res = $.OPTION(() => $.OR2([
-                    {ALT: () => ({kind: '<=' as const, ...tokenInfo2(lt, $.CONSUME3(Equal))})},
+                    {ALT: () => ({kind: '<=' as const, ...tokenInfo2(lt, $.CONSUME2(Equal))})},
                     {ALT: () => ({kind: '<<' as const, ...tokenInfo2(lt, $.CONSUME2(LowerThan))})},
                     {ALT: () => ({kind: '<>' as const, ...tokenInfo2(lt, $.CONSUME(GreaterThan))})},
                 ]))
@@ -785,12 +785,53 @@ class PostgresParser extends EmbeddedActionsParser {
             {ALT: () => {
                 const gt = $.CONSUME2(GreaterThan)
                 const res = $.OPTION2(() => $.OR3([
-                    {ALT: () => ({kind: '>=' as const, ...tokenInfo2(gt, $.CONSUME4(Equal))})},
+                    {ALT: () => ({kind: '>=' as const, ...tokenInfo2(gt, $.CONSUME3(Equal))})},
                     {ALT: () => ({kind: '>>' as const, ...tokenInfo2(gt, $.CONSUME3(GreaterThan))})},
                 ]))
                 return res ? res : {kind: '>' as const, ...tokenInfo(gt)}
             }},
+            {ALT: () => {
+                const pipe = $.CONSUME(Pipe)
+                const res = $.OPTION3(() => ({kind: '||' as const, ...tokenInfo2(pipe, $.CONSUME2(Pipe))}))
+                return res ? res : {kind: '|' as const, ...tokenInfo(pipe)}
+            }},
+            {ALT: () => {
+                const tilde = $.CONSUME(Tilde)
+                const res = $.OPTION4(() => ({kind: '~*' as const, ...tokenInfo2(tilde, $.CONSUME2(Asterisk))}))
+                return res ? res : {kind: '~' as const, ...tokenInfo(tilde)}
+            }},
+            {ALT: () => {
+                const exclamation = $.CONSUME(Exclamation)
+                return $.OR4([
+                    {ALT: () => ({kind: '!=' as const, ...tokenInfo2(exclamation, $.CONSUME4(Equal))})},
+                    {ALT: () => {
+                        const tilde = $.CONSUME2(Tilde)
+                        const res = $.OPTION5(() => ({kind: '!~*' as const, ...tokenInfo3(exclamation, tilde, $.CONSUME3(Asterisk))}))
+                        return res ? res : {kind: '!~' as const, ...tokenInfo2(exclamation, tilde)}
+                    }}
+                ])
+            }},
+            {ALT: () => {
+                const not = $.CONSUME2(Not)
+                return $.OPTION6(() => $.OR5([
+                    {ALT: () => ({kind: 'NotLike' as const, ...tokenInfo2(not, $.CONSUME2(Like))})},
+                    {ALT: () => ({kind: 'NotIn' as const, ...tokenInfo2(not, $.CONSUME2(In))})},
+                ]))
+            }},
         ]))
+        const groupRule = $.RULE<() => GroupAst>('groupRule', () => {
+            $.CONSUME(ParenLeft)
+            const expression = $.SUBRULE($.expressionRule)
+            $.CONSUME(ParenRight)
+            return {kind: 'Group', expression}
+        })
+        const listRule = $.RULE<() => ListAst>('listRule', () => {
+            $.CONSUME(ParenLeft)
+            const items: LiteralAst[] = []
+            $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => items.push($.SUBRULE($.literalRule))})
+            $.CONSUME(ParenRight)
+            return {kind: 'List', items}
+        })
         const columnJsonRule = $.RULE<() => ColumnJsonAst[]>('columnJsonRule', () => {
             const res: ColumnJsonAst[] = []
             $.MANY({DEF: () => {
@@ -880,12 +921,18 @@ class PostgresParser extends EmbeddedActionsParser {
                     return {kind: 'Identifier', value: token.image, ...tokenInfo(token)}
                 }
             }},
+            {ALT: () => toIdentifier($.CONSUME(Index))}, // allowed as identifier
             {ALT: () => toIdentifier($.CONSUME(Version))}, // allowed as identifier
         ]))
 
         this.stringRule = $.RULE<() => StringAst>('stringRule', () => {
             const token = $.CONSUME(String)
-            return {kind: 'String', value: token.image.slice(1, -1).replaceAll(/''/g, "'"), ...tokenInfo(token)}
+            if (token.image.match(/^E/i)) {
+                // https://www.postgresql.org/docs/current/sql-syntax-lexical.html
+                return {kind: 'String', value: token.image.slice(2, -1).replaceAll(/''/g, "'"), escaped: true, ...tokenInfo(token)}
+            } else {
+                return {kind: 'String', value: token.image.slice(1, -1).replaceAll(/''/g, "'"), ...tokenInfo(token)}
+            }
         })
 
         this.integerRule = $.RULE<() => IntegerAst>('integerRule', () => {

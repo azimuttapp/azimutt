@@ -56,7 +56,7 @@ export type SetValueAst = IdentifierAst | LiteralAst | (IdentifierAst | LiteralA
 // basic parts
 export type AliasAst = { name: IdentifierAst } & TokenInfo
 export type ObjectNameAst = { schema?: IdentifierAst, name: IdentifierAst }
-export type ExpressionAst = (LiteralAst | ParameterAst | ColumnAst | WildcardAst | FunctionAst | GroupAst | OperationAst) & { cast?: { type: ColumnTypeAst } & TokenInfo }
+export type ExpressionAst = (LiteralAst | ParameterAst | ColumnAst | WildcardAst | FunctionAst | GroupAst | OperationAst | ListAst) & { cast?: { type: ColumnTypeAst } & TokenInfo }
 export type LiteralAst = StringAst | IntegerAst | DecimalAst | BooleanAst | NullAst
 export type ColumnAst = { kind: 'Column', schema?: IdentifierAst, table?: IdentifierAst, column: IdentifierAst, json?: ColumnJsonAst[] }
 export type ColumnJsonAst = { kind: JsonOp, field: StringAst } & TokenInfo
@@ -65,11 +65,12 @@ export type GroupAst = { kind: 'Group', expression: ExpressionAst }
 export type WildcardAst = { kind: 'Wildcard', schema?: IdentifierAst, table?: IdentifierAst } & TokenInfo
 export type OperationAst = { kind: 'Operation', left: ExpressionAst, op: OperatorAst, right: ExpressionAst }
 export type OperatorAst = { kind: Operator } & TokenInfo
+export type ListAst = { kind: 'List', items: LiteralAst[] }
 
 // elements
 export type ParameterAst = { kind: 'Parameter', value: string, index?: number } & TokenInfo
 export type IdentifierAst = { kind: 'Identifier', value: string, quoted?: boolean } & TokenInfo
-export type StringAst = { kind: 'String', value: string } & TokenInfo
+export type StringAst = { kind: 'String', value: string, escaped?: boolean } & TokenInfo
 export type DecimalAst = { kind: 'Decimal', value: number } & TokenInfo
 export type IntegerAst = { kind: 'Integer', value: number } & TokenInfo
 export type BooleanAst = { kind: 'Boolean', value: boolean } & TokenInfo
@@ -77,7 +78,7 @@ export type NullAst = { kind: 'Null' } & TokenInfo
 export type CommentAst = { kind: CommentKind, value: string } & TokenInfo // special case
 
 // enums
-export type Operator = '+' | '-' | '*' | '/' | '%' | '^' | '&' | '|' | '#' | '<<' | '>>' | '=' | '<' | '>' | '<=' | '>=' | '<>' | '!=' | 'Or' | 'And' | 'Like' | 'NotLike'
+export type Operator = '+' | '-' | '*' | '/' | '%' | '^' | '&' | '|' | '#' | '<<' | '>>' | '=' | '<' | '>' | '<=' | '>=' | '<>' | '!=' | '||' | '~' | '~*' | '!~' | '!~*' | 'Like' | 'NotLike' | 'In' | 'NotIn' | 'Or' | 'And'
 export type JsonOp = '->' | '->>'
 export type ForeignKeyAction = 'NoAction' | 'Restrict' | 'Cascade' | 'SetNull' | 'SetDefault'
 export type DropObject = 'Table' | 'View' | 'MaterializedView' | 'Index' | 'Type'

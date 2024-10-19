@@ -6,6 +6,8 @@ import {
     DecimalAst,
     IdentifierAst,
     IntegerAst,
+    ListAst,
+    LiteralAst,
     NullAst,
     OperatorAst,
     ParameterAst,
@@ -557,18 +559,17 @@ describe('postgresParser', () => {
                 expect(parseRule(p => p.expressionRule(), 'id >= 1')).toEqual({result: {kind: 'Operation', left: {kind: 'Column', column: identifier('id', 0, 1)}, op: operator('>=', 3, 4), right: integer(1, 6, 6)}})
                 expect(parseRule(p => p.expressionRule(), 'id <> 1')).toEqual({result: {kind: 'Operation', left: {kind: 'Column', column: identifier('id', 0, 1)}, op: operator('<>', 3, 4), right: integer(1, 6, 6)}})
                 expect(parseRule(p => p.expressionRule(), 'id != 1')).toEqual({result: {kind: 'Operation', left: {kind: 'Column', column: identifier('id', 0, 1)}, op: operator('!=', 3, 4), right: integer(1, 6, 6)}})
+                expect(parseRule(p => p.expressionRule(), "'a' || 'b'")).toEqual({result: {kind: 'Operation', left: string('a', 0, 2), op: operator('||', 4, 5), right: string('b', 7, 9)}})
+                expect(parseRule(p => p.expressionRule(), "'a' ~ 'b'")).toEqual({result: {kind: 'Operation', left: string('a', 0, 2), op: operator('~', 4, 4), right: string('b', 6, 8)}})
+                expect(parseRule(p => p.expressionRule(), "'a' ~* 'b'")).toEqual({result: {kind: 'Operation', left: string('a', 0, 2), op: operator('~*', 4, 5), right: string('b', 7, 9)}})
+                expect(parseRule(p => p.expressionRule(), "'a' !~ 'b'")).toEqual({result: {kind: 'Operation', left: string('a', 0, 2), op: operator('!~', 4, 5), right: string('b', 7, 9)}})
+                expect(parseRule(p => p.expressionRule(), "'a' !~* 'b'")).toEqual({result: {kind: 'Operation', left: string('a', 0, 2), op: operator('!~*', 4, 6), right: string('b', 8, 10)}})
+                expect(parseRule(p => p.expressionRule(), "name LIKE 'a_%'")).toEqual({result: {kind: 'Operation', left: {kind: 'Column', column: identifier('name', 0, 3)}, op: operator('Like', 5, 8), right: string('a_%', 10, 14)}})
+                expect(parseRule(p => p.expressionRule(), "name NOT LIKE 'a_%'")).toEqual({result: {kind: 'Operation', left: {kind: 'Column', column: identifier('name', 0, 3)}, op: operator('NotLike', 5, 12), right: string('a_%', 14, 18)}})
+                expect(parseRule(p => p.expressionRule(), "role IN ('author', 'editor')")).toEqual({result: {kind: 'Operation', left: {kind: 'Column', column: identifier('role', 0, 3)}, op: operator('In', 5, 6), right: list([string('author', 9, 16), string('editor', 19, 26)])}})
+                expect(parseRule(p => p.expressionRule(), "role NOT IN ('author', 'editor')")).toEqual({result: {kind: 'Operation', left: {kind: 'Column', column: identifier('role', 0, 3)}, op: operator('NotIn', 5, 10), right: list([string('author', 13, 20), string('editor', 23, 30)])}})
                 expect(parseRule(p => p.expressionRule(), 'true OR true')).toEqual({result: {kind: 'Operation', left: boolean(true, 0, 3), op: operator('Or', 5, 6), right: boolean(true, 8, 11)}})
                 expect(parseRule(p => p.expressionRule(), 'true AND true')).toEqual({result: {kind: 'Operation', left: boolean(true, 0, 3), op: operator('And', 5, 7), right: boolean(true, 9, 12)}})
-                expect(parseRule(p => p.expressionRule(), "name LIKE 'a_%'")).toEqual({result: {kind: 'Operation', left: {kind: 'Column', column: identifier('name', 0, 3)}, op: operator('Like', 5, 8), right: string('a_%', 10, 14)}})
-                // expect(parseRule(p => p.expressionRule(), "name NOT LIKE 'a_%'")).toEqual({result: {kind: 'Operation', left: {kind: 'Column', column: identifier('name', 0, 3)}, op: operator('NotLike', 5, 12), right: string('a_%', 14, 18)}})
-                // TODO:
-                // expect(parseRule(p => p.expressionRule(), "'a' || 'b'")).toEqual({result: {kind: 'Operation', left: string('a', 0, 2), op: operator('||', 4, 5), right: string('b', 7, 7)}})
-                // expect(parseRule(p => p.expressionRule(), "'a' ~ 'b'")).toEqual({result: {kind: 'Operation', left: string('a', 0, 2), op: operator('~', 4, 4), right: string('b', 6, 6)}})
-                // expect(parseRule(p => p.expressionRule(), "'a' ~* 'b'")).toEqual({result: {kind: 'Operation', left: string('a', 0, 2), op: operator('~*', 4, 5), right: string('b', 7, 7)}})
-                // expect(parseRule(p => p.expressionRule(), "'a' !~ 'b'")).toEqual({result: {kind: 'Operation', left: string('a', 0, 2), op: operator('!~', 4, 5), right: string('b', 7, 7)}})
-                // expect(parseRule(p => p.expressionRule(), "'a' !~* 'b'")).toEqual({result: {kind: 'Operation', left: string('a', 0, 2), op: operator('!~*', 4, 6), right: string('b', 8, 8)}})
-                // expect(parseRule(p => p.expressionRule(), "role IN ('author', 'editor')")).toEqual({result: {kind: 'Operation', left: {kind: 'Column', column: identifier('role', 0, 3)}, op: operator('In', 5, 6), right: boolean(true, 9, 12)}})
-                // expect(parseRule(p => p.expressionRule(), "role NOT IN ('author', 'editor')")).toEqual({result: {kind: 'Operation', left: {kind: 'Column', column: identifier('role', 0, 3)}, op: operator('NotIn', 5, 6), right: boolean(true, 9, 12)}})
                 // TODO: and many more... ^^
             })
             /*test('unary operation', () => {
@@ -671,7 +672,7 @@ describe('postgresParser', () => {
             test('not empty', () => {
                 expect(parseRule(p => p.identifierRule(), '""')).toEqual({errors: [
                     {kind: 'LexingError', level: 'error', message: 'unexpected character: ->"<- at offset: 0, skipped 2 characters.', ...token(0, 2)},
-                    {kind: 'NoViableAltException', level: 'error', message: "Expecting: one of these possible Token sequences:\n  1. [Identifier]\n  2. [Version]\nbut found: ''", ...token(-1, -1, -1, -1, -1, -1)}
+                    {kind: 'NoViableAltException', level: 'error', message: "Expecting: one of these possible Token sequences:\n  1. [Identifier]\n  2. [Index]\n  3. [Version]\nbut found: ''", ...token(-1, -1, -1, -1, -1, -1)}
                 ]})
             })
             test('special', () => {
@@ -688,11 +689,14 @@ describe('postgresParser', () => {
             test('escape quote', () => {
                 expect(parseRule(p => p.stringRule(), "'l''id'")).toEqual({result: string("l'id", 0, 6)})
             })
-            test('escaped start & end', () => {
+            test('escape quote start & end', () => {
                 expect(parseRule(p => p.stringRule(), "'''id'''")).toEqual({result: string("'id'", 0, 7)})
             })
-            test('only escaped quote', () => {
+            test('escape quote quote', () => {
                 expect(parseRule(p => p.stringRule(), "''''")).toEqual({result: string("'", 0, 3)})
+            })
+            test('escaped', () => {
+                expect(parseRule(p => p.stringRule(), "E'value\\nmulti\\nline'")).toEqual({result: {...string('value\\nmulti\\nline', 0, 20), escaped: true}})
             })
         })
         describe('integerRule', () => {
@@ -748,6 +752,10 @@ function nulll(start: number, end: number, startLine?: number, startColumn?: num
 
 function parameter(index: number, start: number, end: number, startLine?: number, startColumn?: number, endLine?: number, endColumn?: number): ParameterAst {
     return {kind: 'Parameter', value: index ? `$${index}` : '?', index: index ? index : undefined, ...token(start, end, startLine, startColumn, endLine, endColumn)}
+}
+
+function list(items: LiteralAst[]): ListAst {
+    return {kind: 'List', items}
 }
 
 function operator(kind: OperatorAst['kind'], start: number, end: number, startLine?: number, startColumn?: number, endLine?: number, endColumn?: number): OperatorAst {
