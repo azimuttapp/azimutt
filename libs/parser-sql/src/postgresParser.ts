@@ -22,6 +22,7 @@ import {
     CreateIndexStatementAst,
     CreateTableStatementAst,
     CreateTypeStatementAst,
+    CreateViewStatementAst,
     DecimalAst,
     DropStatementAst,
     ExpressionAst,
@@ -42,6 +43,7 @@ import {
     SelectClauseAst,
     SelectClauseExprAst,
     SelectStatementAst,
+    SelectStatementInnerAst,
     SetStatementAst,
     StatementAst,
     StatementsAst,
@@ -126,7 +128,9 @@ const Only = createToken({name: 'Only', pattern: /\bONLY\b/i, longer_alt: Identi
 const Or = createToken({name: 'Or', pattern: /\bOR\b/i, longer_alt: Identifier})
 const OrderBy = createToken({name: 'OrderBy', pattern: /\bORDER\s+BY\b/i})
 const PrimaryKey = createToken({name: 'PrimaryKey', pattern: /\bPRIMARY\s+KEY\b/i})
+const Recursive = createToken({name: 'Recursive', pattern: /\bRECURSIVE\b/i, longer_alt: Identifier})
 const References = createToken({name: 'References', pattern: /\bREFERENCES\b/i, longer_alt: Identifier})
+const Replace = createToken({name: 'Replace', pattern: /\bREPLACE\b/i, longer_alt: Identifier})
 const Restrict = createToken({name: 'Restrict', pattern: /\bRESTRICT\b/i, longer_alt: Identifier})
 const Returning = createToken({name: 'Returning', pattern: /\bRETURNING\b/i, longer_alt: Identifier})
 const Schema = createToken({name: 'Schema', pattern: /\bSCHEMA\b/i, longer_alt: Identifier})
@@ -136,6 +140,8 @@ const SetDefault = createToken({name: 'SetDefault', pattern: /\bSET\s+DEFAULT\b/
 const SetNull = createToken({name: 'SetNull', pattern: /\bSET\s+NULL\b/i})
 const Set = createToken({name: 'Set', pattern: /\bSET\b/i, longer_alt: Identifier})
 const Table = createToken({name: 'Table', pattern: /\bTABLE\b/i, longer_alt: Identifier})
+const Temp = createToken({name: 'Temp', pattern: /\bTEMP\b/i, longer_alt: Identifier})
+const Temporary = createToken({name: 'Temporary', pattern: /\bTEMPORARY\b/i, longer_alt: Identifier})
 const To = createToken({name: 'To', pattern: /\bTO\b/i, longer_alt: Identifier})
 const True = createToken({name: 'True', pattern: /\bTRUE\b/i, longer_alt: Identifier})
 const Type = createToken({name: 'Type', pattern: /\bTYPE\b/i, longer_alt: Identifier})
@@ -152,8 +158,8 @@ const With = createToken({name: 'With', pattern: /\bWITH\b/i, longer_alt: Identi
 const keywordTokens: TokenType[] = [
     Add, Alter, And, As, Asc, Cascade, Check, Collate, Column, Comment, Concurrently, Constraint, Create, Default, Database, Delete, Desc, Distinct, Domain, Drop,
     Enum, Exists, Extension, False, Fetch, First, ForeignKey, From, GroupBy, Having, If, In, Include, Index, InsertInto, Is, Join, Last, Like, Limit, Local,
-    MaterializedView, NoAction, Not, Null, Nulls, Offset, On, Only, Or, OrderBy, PrimaryKey, References, Restrict, Returning, Schema, Select, Session, SetDefault, SetNull, Set,
-    Table, To, True, Type, Union, Unique, Update, Using, Values, Version, View, Where, Window, With
+    MaterializedView, NoAction, Not, Null, Nulls, Offset, On, Only, Or, OrderBy, PrimaryKey, Recursive, References, Replace, Restrict, Returning,
+    Schema, Select, Session, SetDefault, SetNull, Set, Table, Temp, Temporary, To, True, Type, Union, Unique, Update, Using, Values, Version, View, Where, Window, With
 ]
 
 const Amp = createToken({name: 'Amp', pattern: /&/})
@@ -202,6 +208,7 @@ class PostgresParser extends EmbeddedActionsParser {
     createIndexStatementRule: () => CreateIndexStatementAst
     createTableStatementRule: () => CreateTableStatementAst
     createTypeStatementRule: () => CreateTypeStatementAst
+    createViewStatementRule: () => CreateViewStatementAst
     dropStatementRule: () => DropStatementAst
     insertIntoStatementRule: () => InsertIntoStatementAst
     selectStatementRule: () => SelectStatementAst
@@ -249,6 +256,7 @@ class PostgresParser extends EmbeddedActionsParser {
             {ALT: () => $.SUBRULE($.createIndexStatementRule)},
             {ALT: () => $.SUBRULE($.createTableStatementRule)},
             {ALT: () => $.SUBRULE($.createTypeStatementRule)},
+            {ALT: () => $.SUBRULE($.createViewStatementRule)},
             {ALT: () => $.SUBRULE($.dropStatementRule)},
             {ALT: () => $.SUBRULE($.insertIntoStatementRule)},
             {ALT: () => $.SUBRULE($.selectStatementRule)},
@@ -395,6 +403,26 @@ class PostgresParser extends EmbeddedActionsParser {
             return removeEmpty({kind: 'CreateType' as const, schema: object.schema, type: object.name, ...content, ...tokenInfo2(start, end)})
         })
 
+        this.createViewStatementRule = $.RULE<() => CreateViewStatementAst>('createViewStatementRule', () => {
+            // https://www.postgresql.org/docs/current/sql-createview.html
+            const start = $.CONSUME(Create)
+            const replace = $.OPTION(() => tokenInfo2($.CONSUME(Or), $.CONSUME(Replace)))
+            const temporary = $.OPTION2(() => $.OR([{ALT: () => tokenInfo($.CONSUME(Temp))}, {ALT: () => tokenInfo($.CONSUME(Temporary))}]))
+            const recursive = $.OPTION3(() => tokenInfo($.CONSUME(Recursive)))
+            $.CONSUME(View)
+            const object = $.SUBRULE($.objectNameRule)
+            const columns: IdentifierAst[] = []
+            $.OPTION4(() => {
+                $.CONSUME(ParenLeft)
+                $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => columns.push($.SUBRULE($.identifierRule))})
+                $.CONSUME(ParenRight)
+            })
+            $.CONSUME(As)
+            const query = $.SUBRULE(selectStatementInnerRule)
+            const end = $.CONSUME(Semicolon)
+            return removeEmpty({kind: 'CreateView' as const, replace, temporary, recursive, schema: object.schema, view: object.name, columns, query, ...tokenInfo2(start, end)})
+        })
+
         this.dropStatementRule = $.RULE<() => DropStatementAst>('dropStatementRule', () => {
             const start = $.CONSUME(Drop)
             const object = $.OR([
@@ -441,21 +469,25 @@ class PostgresParser extends EmbeddedActionsParser {
             }})
             const returning = $.OPTION2(() => {
                 const token = $.CONSUME(Returning)
-                const expressions: SelectClauseExprAst[] = []
-                $.AT_LEAST_ONE_SEP4({SEP: Comma, DEF: () => expressions.push($.SUBRULE(selectClauseColumnRule))})
-                return {...tokenInfo(token), expressions}
+                const columns: SelectClauseExprAst[] = []
+                $.AT_LEAST_ONE_SEP4({SEP: Comma, DEF: () => columns.push($.SUBRULE(selectClauseColumnRule))})
+                return {...tokenInfo(token), columns}
             })
             const end = $.CONSUME(Semicolon)
             return removeUndefined({kind: 'InsertInto' as const, schema: object.schema, table: object.name, columns, values, returning, ...tokenInfo2(start, end)})
         })
 
         this.selectStatementRule = $.RULE<() => SelectStatementAst>('selectStatementRule', () => {
+            const inner = $.SUBRULE(selectStatementInnerRule)
+            const end = $.CONSUME(Semicolon)
+            return removeUndefined({kind: 'Select' as const, ...inner, ...mergePositions([inner.select, tokenInfo(end)])})
+        })
+        const selectStatementInnerRule = $.RULE<() => SelectStatementInnerAst>('selectStatementInnerRule', () => {
             // https://www.postgresql.org/docs/current/sql-select.html
             const select = $.SUBRULE($.selectClauseRule)
             const from = $.OPTION(() => $.SUBRULE($.fromClauseRule))
             const where = $.OPTION2(() => $.SUBRULE($.whereClauseRule))
-            const end = $.CONSUME(Semicolon)
-            return removeUndefined({kind: 'Select' as const, select, from, where, ...mergePositions([select, tokenInfo(end)])})
+            return removeUndefined({select, from, where})
         })
 
         this.setStatementRule = $.RULE<() => SetStatementAst>('setStatementRule', () => {
@@ -490,9 +522,9 @@ class PostgresParser extends EmbeddedActionsParser {
 
         this.selectClauseRule = $.RULE<() => SelectClauseAst>('selectClauseRule', () => {
             const token = $.CONSUME(Select)
-            const expressions: SelectClauseExprAst[] = []
-            $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => expressions.push($.SUBRULE(selectClauseColumnRule))})
-            return {...tokenInfo(token), expressions}
+            const columns: SelectClauseExprAst[] = []
+            $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => columns.push($.SUBRULE(selectClauseColumnRule))})
+            return {...tokenInfo(token), columns}
         })
         const selectClauseColumnRule = $.RULE<() => SelectClauseExprAst>('selectClauseColumnRule', () => {
             const expression = $.SUBRULE($.expressionRule)

@@ -18,7 +18,7 @@ import {
 import {parsePostgresAst, parseRule} from "./postgresParser";
 
 describe('postgresParser', () => {
-    // CREATE VIEW/MATERIALIZED VIEW
+    // CREATE MATERIALIZED VIEW
     // UPDATE
     // DELETE
     test('empty', () => {
@@ -34,7 +34,7 @@ describe('postgresParser', () => {
         const parsed = parsePostgresAst(sql, {strict: true})
         expect(parsed.errors || []).toEqual([])
     })
-    test.skip('full', () => {
+    test('full', () => {
         const sql = fs.readFileSync('./resources/full.postgres.sql', 'utf8')
         const parsed = parsePostgresAst(sql, {strict: true})
         expect(parsed.errors || []).toEqual([])
@@ -257,6 +257,36 @@ describe('postgresParser', () => {
             }]}})
         })
     })
+    describe('createViewStatementRule', () => {
+        test('simplest', () => {
+            expect(parsePostgresAst("CREATE VIEW admins AS SELECT * FROM users WHERE role = 'admin';")).toEqual({result: {statements: [{
+                kind: 'CreateView',
+                view: identifier('admins', 12, 17),
+                query: {
+                    select: {...token(22, 27), columns: [{kind: 'Wildcard', ...token(29, 29)}]},
+                    from: {...token(31, 34), table: identifier('users', 36, 40)},
+                    where: {...token(42, 46), predicate: {kind: 'Operation', left: {kind: 'Column', column: identifier('role', 48, 51)}, op: {kind: '=', ...token(53, 53)}, right: string('admin', 55, 61)}},
+                },
+                ...token(0, 62)
+            }]}})
+        })
+        test('full', () => {
+            expect(parsePostgresAst("CREATE OR REPLACE TEMP RECURSIVE VIEW admins (id, name) AS SELECT * FROM users WHERE role = 'admin';")).toEqual({result: {statements: [{
+                kind: 'CreateView',
+                replace: token(7, 16),
+                temporary: token(18, 21),
+                recursive: token(23, 31),
+                view: identifier('admins', 38, 43),
+                columns: [identifier('id', 46, 47), identifier('name', 50, 53)],
+                query: {
+                    select: {...token(59, 64), columns: [{kind: 'Wildcard', ...token(66, 66)}]},
+                    from: {...token(68, 71), table: identifier('users', 73, 77)},
+                    where: {...token(79, 83), predicate: {kind: 'Operation', left: {kind: 'Column', column: identifier('role', 85, 88)}, op: {kind: '=', ...token(90, 90)}, right: string('admin', 92, 98)}},
+                },
+                ...token(0, 99)
+            }]}})
+        })
+    })
     describe('dropStatement', () => {
         test('simplest', () => {
             expect(parsePostgresAst('DROP TABLE users;')).toEqual({result: {statements: [{
@@ -300,7 +330,7 @@ describe('postgresParser', () => {
                 table: identifier('users', 12, 16),
                 columns: [identifier('id', 19, 20), identifier('name', 23, 26)],
                 values: [[integer(1, 37, 37), string('loic', 40, 45)], [{kind: 'Default', ...token(50, 56)}, string('lou', 59, 63)]],
-                returning: {...token(66, 74), expressions: [{kind: 'Column', column: identifier('id', 76, 77)}]},
+                returning: {...token(66, 74), columns: [{kind: 'Column', column: identifier('id', 76, 77)}]},
                 ...token(0, 78)
             }]}})
         })
@@ -311,7 +341,7 @@ describe('postgresParser', () => {
         test('simplest', () => {
             expect(parsePostgresAst('SELECT name FROM users;')).toEqual({result: {statements: [{
                 kind: 'Select',
-                select: {...token(0, 5), expressions: [{kind: 'Column', column: identifier('name', 7, 10)}]},
+                select: {...token(0, 5), columns: [{kind: 'Column', column: identifier('name', 7, 10)}]},
                 from: {...token(12, 15), table: identifier('users', 17, 21)},
                 ...token(0, 22)
             }]}})
@@ -319,7 +349,7 @@ describe('postgresParser', () => {
         test('complex', () => {
             expect(removeTokens(parsePostgresAst('SELECT id, first_name AS name FROM users WHERE id = 1;'))).toEqual({result: {statements: [{
                 kind: 'Select',
-                select: {expressions: [
+                select: {columns: [
                     {kind: 'Column', column: {kind: 'Identifier', value: 'id'}},
                     {kind: 'Column', column: {kind: 'Identifier', value: 'first_name'}, alias: {name: {kind: 'Identifier', value: 'name'}}}
                 ]},
@@ -330,7 +360,7 @@ describe('postgresParser', () => {
         test('strange', () => {
             expect(parsePostgresAst("SELECT pg_catalog.set_config('search_path', '', false);")).toEqual({result: {statements: [{
                 kind: 'Select',
-                select: {...token(0, 5), expressions: [{
+                select: {...token(0, 5), columns: [{
                     kind: 'Function',
                     schema: identifier('pg_catalog', 7, 16),
                     function: identifier('set_config', 18, 27),
@@ -362,11 +392,11 @@ describe('postgresParser', () => {
             test('simplest', () => {
                 expect(parseRule(p => p.selectClauseRule(), 'SELECT name')).toEqual({result: {
                     ...token(0, 5),
-                    expressions: [{kind: 'Column', column: identifier('name', 7, 10)}],
+                    columns: [{kind: 'Column', column: identifier('name', 7, 10)}],
                 }})
             })
             test('complex', () => {
-                expect(parseRule(p => p.selectClauseRule(), 'SELECT e.*, u.name AS user_name, lower(u.email), "public"."Event"."id"')).toEqual({result: {...token(0, 5), expressions: [
+                expect(parseRule(p => p.selectClauseRule(), 'SELECT e.*, u.name AS user_name, lower(u.email), "public"."Event"."id"')).toEqual({result: {...token(0, 5), columns: [
                     {kind: 'Wildcard', table: identifier('e', 7, 7), ...token(9, 9)},
                     {kind: 'Column', table: identifier('u', 12, 12), column: identifier('name', 14, 17), alias: {...token(19, 20), name: identifier('user_name', 22, 30)}},
                     {kind: 'Function', function: identifier('lower', 33, 37), parameters: [{kind: 'Column', table: identifier('u', 39, 39), column: identifier('email', 41, 45)}]},
