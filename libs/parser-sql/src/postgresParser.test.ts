@@ -6,6 +6,7 @@ import {
     DecimalAst,
     IdentifierAst,
     IntegerAst,
+    NullAst,
     OperatorAst,
     StringAst,
     TokenInfo,
@@ -25,13 +26,13 @@ describe('postgresParser', () => {
         const parsed = parsePostgresAst(sql, {strict: true})
         expect(parsed.errors || []).toEqual([])
     })
-    test.skip('full', () => {
-        const sql = fs.readFileSync('./resources/full.postgres.sql', 'utf8')
+    test('structure', () => {
+        const sql = fs.readFileSync('../../backend/priv/repo/structure.sql', 'utf8')
         const parsed = parsePostgresAst(sql, {strict: true})
         expect(parsed.errors || []).toEqual([])
     })
-    test('structure', () => {
-        const sql = fs.readFileSync('../../backend/priv/repo/structure.sql', 'utf8')
+    test.skip('full', () => {
+        const sql = fs.readFileSync('./resources/full.postgres.sql', 'utf8')
         const parsed = parsePostgresAst(sql, {strict: true})
         expect(parsed.errors || []).toEqual([])
     })
@@ -149,7 +150,7 @@ describe('postgresParser', () => {
             expect(parsePostgresAst('CREATE INDEX ON users (name);')).toEqual({result: {statements: [{
                 kind: 'CreateIndex',
                 table: identifier('users', 16, 20),
-                columns: [{column: identifier('name', 23, 26)}],
+                columns: [{kind: 'Column', column: identifier('name', 23, 26)}],
                 ...token(0, 28)
             }]}})
         })
@@ -170,8 +171,9 @@ describe('postgresParser', () => {
                 table: identifier('users', 77, 81),
                 using: {...token(83, 87), method: identifier('btree', 89, 93)},
                 columns: [{
+                    kind: 'Function',
                     function: identifier('lower', 97, 101),
-                    parameters: [{column: identifier('first_name', 103, 112)}],
+                    parameters: [{kind: 'Column', column: identifier('first_name', 103, 112)}],
                     collation: {...token(116, 122), name: {...identifier('de_DE', 124, 130), quoted: true}},
                     order: {kind: 'Asc', ...token(132, 134)},
                     nulls: {kind: 'Last', ...token(136, 145)}
@@ -246,8 +248,9 @@ describe('postgresParser', () => {
                 kind: 'CreateType',
                 type: identifier('box', 12, 14),
                 base: [
-                    {name: identifier('INPUT', 17, 21), value: {column: identifier('my_box_in_function', 25, 42)}}, // FIXME: expressions should be different here (identifier instead of column)
-                    {name: identifier('OUTPUT', 45, 50), value: {column: identifier('my_box_out_function', 54, 72)}},
+                    // FIXME: expressions should be different here (identifier instead of column), or better, each parameter should have its own kind of value...
+                    {name: identifier('INPUT', 17, 21), value: {kind: 'Column', column: identifier('my_box_in_function', 25, 42)}},
+                    {name: identifier('OUTPUT', 45, 50), value: {kind: 'Column', column: identifier('my_box_out_function', 54, 72)}},
                     {name: identifier('INTERNALLENGTH', 75, 88), value: integer(16, 92, 93)},
                 ],
                 ...token(0, 95)
@@ -259,7 +262,7 @@ describe('postgresParser', () => {
             expect(parsePostgresAst('DROP TABLE users;')).toEqual({result: {statements: [{
                 kind: 'Drop',
                 object: {kind: 'Table', ...token(0, 9)},
-                entities: [{table: identifier('users', 11, 15)}],
+                entities: [{name: identifier('users', 11, 15)}],
                 ...token(0, 16)
             }]}})
         })
@@ -269,7 +272,7 @@ describe('postgresParser', () => {
                 object: {kind: 'Index', ...token(0, 9)},
                 concurrently: token(11, 22),
                 ifExists: token(24, 32),
-                entities: [{table: identifier('users_idx', 34, 42)}, {table: identifier('posts_idx', 45, 53)}],
+                entities: [{name: identifier('users_idx', 34, 42)}, {name: identifier('posts_idx', 45, 53)}],
                 mode: {kind: 'Cascade', ...token(55, 61)},
                 ...token(0, 62)
             }]}})
@@ -297,7 +300,7 @@ describe('postgresParser', () => {
                 table: identifier('users', 12, 16),
                 columns: [identifier('id', 19, 20), identifier('name', 23, 26)],
                 values: [[integer(1, 37, 37), string('loic', 40, 45)], [{kind: 'Default', ...token(50, 56)}, string('lou', 59, 63)]],
-                returning: {...token(66, 74), expressions: [{column: identifier('id', 76, 77)}]},
+                returning: {...token(66, 74), expressions: [{kind: 'Column', column: identifier('id', 76, 77)}]},
                 ...token(0, 78)
             }]}})
         })
@@ -308,7 +311,7 @@ describe('postgresParser', () => {
         test('simplest', () => {
             expect(parsePostgresAst('SELECT name FROM users;')).toEqual({result: {statements: [{
                 kind: 'Select',
-                select: {...token(0, 5), expressions: [{column: identifier('name', 7, 10)}]},
+                select: {...token(0, 5), expressions: [{kind: 'Column', column: identifier('name', 7, 10)}]},
                 from: {...token(12, 15), table: identifier('users', 17, 21)},
                 ...token(0, 22)
             }]}})
@@ -317,17 +320,18 @@ describe('postgresParser', () => {
             expect(removeTokens(parsePostgresAst('SELECT id, first_name AS name FROM users WHERE id = 1;'))).toEqual({result: {statements: [{
                 kind: 'Select',
                 select: {expressions: [
-                    {column: {kind: 'Identifier', value: 'id'}},
-                    {column: {kind: 'Identifier', value: 'first_name'}, alias: {name: {kind: 'Identifier', value: 'name'}}}
+                    {kind: 'Column', column: {kind: 'Identifier', value: 'id'}},
+                    {kind: 'Column', column: {kind: 'Identifier', value: 'first_name'}, alias: {name: {kind: 'Identifier', value: 'name'}}}
                 ]},
                 from: {table: {kind: 'Identifier', value: 'users'}},
-                where: {condition: {left: {column: {kind: 'Identifier', value: 'id'}}, operator: {kind: '='}, right: {kind: 'Integer', value: 1}}}
+                where: {predicate: {kind: 'Operation', left: {kind: 'Column', column: {kind: 'Identifier', value: 'id'}}, op: {kind: '='}, right: {kind: 'Integer', value: 1}}}
             }]}})
         })
         test('strange', () => {
             expect(parsePostgresAst("SELECT pg_catalog.set_config('search_path', '', false);")).toEqual({result: {statements: [{
                 kind: 'Select',
                 select: {...token(0, 5), expressions: [{
+                    kind: 'Function',
                     schema: identifier('pg_catalog', 7, 16),
                     function: identifier('set_config', 18, 27),
                     parameters: [string('search_path', 29, 41), string('', 44, 45), boolean(false, 48, 52)]
@@ -358,7 +362,7 @@ describe('postgresParser', () => {
             test('simplest', () => {
                 expect(parseRule(p => p.selectClauseRule(), 'SELECT name')).toEqual({result: {
                     ...token(0, 5),
-                    expressions: [{column: identifier('name', 7, 10)}],
+                    expressions: [{kind: 'Column', column: identifier('name', 7, 10)}],
                 }})
             })
             // TODO: SELECT e.*, u.name AS user_name, lower(u.email), "public"."Event"."id"
@@ -382,10 +386,40 @@ describe('postgresParser', () => {
             test('simplest', () => {
                 expect(parseRule(p => p.whereClauseRule(), 'WHERE id = 1')).toEqual({result: {
                     ...token(0, 4),
-                    condition: {left: {column: identifier('id', 6, 7)}, operator: operator('=', 9, 9), right: integer(1, 11, 11)},
+                    predicate: {kind: 'Operation', left: {kind: 'Column', column: identifier('id', 6, 7)}, op: operator('=', 9, 9), right: integer(1, 11, 11)},
                 }})
             })
-            // TODO: WHERE "id" = $1 OR (email LIKE '%@azimutt.app' AND role = 'admin')
+            /* TODO: test('complex', () => {
+                expect(parseRule(p => p.whereClauseRule(), "WHERE \"id\" = $1 OR (email LIKE '%@azimutt.app' AND role = 'admin')")).toEqual({result: {...token(0, 4), predicate: {
+                    kind: 'Operation',
+                    left: {kind: 'Column', column: {...identifier('id', 6, 9), quoted: true}},
+                    op: operator('=', 11, 11),
+                    right: {
+                        kind: 'Operation',
+                        left: integer(1, 14, 14),
+                        op: operator('Or', 16, 17),
+                        right: {
+                            kind: 'Group',
+                            expression: {
+                                kind: 'Operation',
+                                left: {kind: 'Column', column: identifier('email', 20, 24)},
+                                op: operator('Like', 26, 29),
+                                right: {
+                                    kind: 'Operation',
+                                    left: string('%@azimutt.app', 31, 45),
+                                    op: operator('And', 47, 49),
+                                    right: {
+                                        kind: 'Operation',
+                                        left: {kind: 'Column', column: identifier('role', 51, 54)},
+                                        op: operator('=', 56, 56),
+                                        right: string('admin', 58, 64)
+                                    }
+                                }
+                            }
+                        }
+                    }}
+                }})
+            })*/
         })
         describe('tableColumnRule', () => {
             test('simplest', () => {
@@ -397,7 +431,16 @@ describe('postgresParser', () => {
                     type: {name: {value: 'varchar', ...token(5, 11)}, ...token(5, 11)},
                     constraints: [{kind: 'Nullable', value: false, ...token(13, 20)}, {kind: 'Default', ...token(22, 28), expression: string('guest', 30, 36)}],
                 }})
-                // TODO: `DEFAULT 'owner'::character varying`
+                expect(parseRule(p => p.tableColumnRule(), "role int DEFAULT 0 NOT NULL")).toEqual({result: {
+                    name: identifier('role', 0, 3),
+                    type: {name: {value: 'int', ...token(5, 7)}, ...token(5, 7)},
+                    constraints: [{kind: 'Default', ...token(9, 15), expression: integer(0, 17, 17)}, {kind: 'Nullable', value: false, ...token(19, 26)}],
+                }})
+                expect(parseRule(p => p.tableColumnRule(), "role varchar DEFAULT 'guest'::character varying")).toEqual({result: {
+                    name: identifier('role', 0, 3),
+                    type: {name: {value: 'varchar', ...token(5, 11)}, ...token(5, 11)},
+                    constraints: [{kind: 'Default', ...token(13, 19), expression: {...string('guest', 21, 27), cast: {...token(28, 29), type: {name: {value: 'character varying', ...token(30, 46)}, ...token(30, 46)}}}}],
+                }})
             })
             test('primaryKey', () => {
                 expect(parseRule(p => p.tableColumnRule(), 'id int PRIMARY KEY')).toEqual({result: {name: identifier('id', 0, 1), type: {name: {value: 'int', ...token(3, 5)}, ...token(3, 5)}, constraints: [
@@ -411,7 +454,7 @@ describe('postgresParser', () => {
             })
             test('check', () => {
                 expect(parseRule(p => p.tableColumnRule(), "email varchar CHECK (email LIKE '%@%')")).toEqual({result: {name: identifier('email', 0, 4), type: {name: {value: 'varchar', ...token(6, 12)}, ...token(6, 12)}, constraints: [
-                    {kind: 'Check', ...token(14, 18), predicate: {left: {column: identifier('email', 21, 25)}, operator: operator('Like', 27, 30), right: string('%@%', 32, 36)}}
+                    {kind: 'Check', ...token(14, 18), predicate: {kind: 'Operation', left: {kind: 'Column', column: identifier('email', 21, 25)}, op: operator('Like', 27, 30), right: string('%@%', 32, 36)}}
                 ]}})
             })
             test('foreignKey', () => {
@@ -438,7 +481,7 @@ describe('postgresParser', () => {
                             {kind: 'Default', constraint: {...token(49, 58), name: identifier('users_email_def', 60, 74)}, ...token(76, 82), expression: string('anon@mail.com', 84, 98)},
                             {kind: 'PrimaryKey', constraint: {...token(100, 109), name: identifier('users_pk', 111, 118)}, ...token(120, 130)},
                             {kind: 'Unique', constraint: {...token(132, 141), name: identifier('users_email_uniq', 143, 158)}, ...token(160, 165)},
-                            {kind: 'Check', constraint: {...token(167, 176), name: identifier('users_email_chk', 178, 192)}, ...token(194, 198), predicate: {left: {column: identifier('email', 201, 205)}, operator: operator('Like', 207, 210), right: string('%@%', 212, 216)}},
+                            {kind: 'Check', constraint: {...token(167, 176), name: identifier('users_email_chk', 178, 192)}, ...token(194, 198), predicate: {kind: 'Operation', left: {kind: 'Column', column: identifier('email', 201, 205)}, op: operator('Like', 207, 210), right: string('%@%', 212, 216)}},
                             {kind: 'ForeignKey', constraint: {...token(219, 228), name: identifier('users_email_fk', 230, 243)}, ...token(245, 254), schema: identifier('public', 256, 261), table: identifier('emails', 263, 268), column: identifier('id', 270, 271)},
                         ]
                     }})
@@ -468,49 +511,93 @@ describe('postgresParser', () => {
         })
     })
     describe('basic parts', () => {
-        describe('conditionRule', () => {
-            test('simplest', () => {
-                expect(parseRule(p => p.conditionRule(), 'id = 1')).toEqual({result: {left: {column: identifier('id', 0, 1)}, operator: operator('=', 3, 3), right: integer(1, 5, 5)}})
-            })
-            // TODO: title <> ''
-            // TODO: role IN ('author', 'editor')
-        })
         describe('expressionRule', () => {
             test('literal', () => {
+                expect(parseRule(p => p.expressionRule(), "'str'")).toEqual({result: string('str', 0, 4)})
                 expect(parseRule(p => p.expressionRule(), '1')).toEqual({result: integer(1, 0, 0)})
+                expect(parseRule(p => p.expressionRule(), '1.2')).toEqual({result: decimal(1.2, 0, 2)})
+                expect(parseRule(p => p.expressionRule(), 'true')).toEqual({result: boolean(true, 0, 3)})
+                expect(parseRule(p => p.expressionRule(), 'null')).toEqual({result: nulll(0, 3)})
             })
             test('column', () => {
-                expect(parseRule(p => p.expressionRule(), 'id')).toEqual({result: {column: identifier('id', 0, 1)}})
+                expect(parseRule(p => p.expressionRule(), 'id')).toEqual({result: {kind: 'Column', column: identifier('id', 0, 1)}})
+                expect(parseRule(p => p.expressionRule(), 'users.id')).toEqual({result: {kind: 'Column', table: identifier('users', 0, 4), column: identifier('id', 6, 7)}})
+                expect(parseRule(p => p.expressionRule(), 'public.users.id')).toEqual({result: {kind: 'Column', schema: identifier('public', 0, 5), table: identifier('users', 7, 11), column: identifier('id', 13, 14)}})
+                expect(parseRule(p => p.expressionRule(), "settings->'category'->>'id'")).toEqual({result: {kind: 'Column', column: identifier('settings', 0, 7), json: [
+                    {kind: '->', ...token(8, 9), field: string('category', 10, 19)},
+                    {kind: '->>', ...token(20, 22), field: string('id', 23, 26)},
+                ]}})
+            })
+            test('wildcard', () => {
+                expect(parseRule(p => p.expressionRule(), '*')).toEqual({result: {kind: 'Wildcard', ...token(0, 0)}})
+                expect(parseRule(p => p.expressionRule(), 'users.*')).toEqual({result: {kind: 'Wildcard', table: identifier('users', 0, 4), ...token(6, 6)}})
+                expect(parseRule(p => p.expressionRule(), 'public.users.*')).toEqual({result: {kind: 'Wildcard', schema: identifier('public', 0, 5), table: identifier('users', 7, 11), ...token(13, 13)}})
             })
             test('function', () => {
+                expect(parseRule(p => p.expressionRule(), 'max(price)')).toEqual({result: {kind: 'Function', function: identifier('max', 0, 2), parameters: [{kind: 'Column', column: identifier('price', 4, 8)}]}})
                 expect(parseRule(p => p.expressionRule(), "pg_catalog.set_config('search_path', '', false)")).toEqual({result: {
+                    kind: 'Function',
                     schema: identifier('pg_catalog', 0, 9),
                     function: identifier('set_config', 11, 20),
                     parameters: [string('search_path', 22, 34), string('', 37, 38), boolean(false, 41, 45)]
                 }})
             })
+            test('group', () => {
+                expect(parseRule(p => p.expressionRule(), '(1)')).toEqual({result: {kind: 'Group', expression: integer(1, 1, 1)}})
+            })
+            test('operation', () => {
+                expect(parseRule(p => p.expressionRule(), '1 + 1')).toEqual({result: {kind: 'Operation', left: integer(1, 0, 0), op: operator('+', 2, 2), right: integer(1, 4, 4)}})
+                expect(parseRule(p => p.expressionRule(), '1 - 1')).toEqual({result: {kind: 'Operation', left: integer(1, 0, 0), op: operator('-', 2, 2), right: integer(1, 4, 4)}})
+                expect(parseRule(p => p.expressionRule(), '1 * 1')).toEqual({result: {kind: 'Operation', left: integer(1, 0, 0), op: operator('*', 2, 2), right: integer(1, 4, 4)}})
+                expect(parseRule(p => p.expressionRule(), '1 / 1')).toEqual({result: {kind: 'Operation', left: integer(1, 0, 0), op: operator('/', 2, 2), right: integer(1, 4, 4)}})
+                expect(parseRule(p => p.expressionRule(), '1 % 1')).toEqual({result: {kind: 'Operation', left: integer(1, 0, 0), op: operator('%', 2, 2), right: integer(1, 4, 4)}})
+                expect(parseRule(p => p.expressionRule(), '1 ^ 1')).toEqual({result: {kind: 'Operation', left: integer(1, 0, 0), op: operator('^', 2, 2), right: integer(1, 4, 4)}})
+                expect(parseRule(p => p.expressionRule(), '1 & 1')).toEqual({result: {kind: 'Operation', left: integer(1, 0, 0), op: operator('&', 2, 2), right: integer(1, 4, 4)}})
+                expect(parseRule(p => p.expressionRule(), '1 | 1')).toEqual({result: {kind: 'Operation', left: integer(1, 0, 0), op: operator('|', 2, 2), right: integer(1, 4, 4)}})
+                expect(parseRule(p => p.expressionRule(), '1 # 1')).toEqual({result: {kind: 'Operation', left: integer(1, 0, 0), op: operator('#', 2, 2), right: integer(1, 4, 4)}})
+                expect(parseRule(p => p.expressionRule(), '1 << 1')).toEqual({result: {kind: 'Operation', left: integer(1, 0, 0), op: operator('<<', 2, 3), right: integer(1, 5, 5)}})
+                expect(parseRule(p => p.expressionRule(), '1 >> 1')).toEqual({result: {kind: 'Operation', left: integer(1, 0, 0), op: operator('>>', 2, 3), right: integer(1, 5, 5)}})
+                expect(parseRule(p => p.expressionRule(), 'id = 1')).toEqual({result: {kind: 'Operation', left: {kind: 'Column', column: identifier('id', 0, 1)}, op: operator('=', 3, 3), right: integer(1, 5, 5)}})
+                expect(parseRule(p => p.expressionRule(), 'id < 1')).toEqual({result: {kind: 'Operation', left: {kind: 'Column', column: identifier('id', 0, 1)}, op: operator('<', 3, 3), right: integer(1, 5, 5)}})
+                expect(parseRule(p => p.expressionRule(), 'id > 1')).toEqual({result: {kind: 'Operation', left: {kind: 'Column', column: identifier('id', 0, 1)}, op: operator('>', 3, 3), right: integer(1, 5, 5)}})
+                expect(parseRule(p => p.expressionRule(), 'id <= 1')).toEqual({result: {kind: 'Operation', left: {kind: 'Column', column: identifier('id', 0, 1)}, op: operator('<=', 3, 4), right: integer(1, 6, 6)}})
+                expect(parseRule(p => p.expressionRule(), 'id >= 1')).toEqual({result: {kind: 'Operation', left: {kind: 'Column', column: identifier('id', 0, 1)}, op: operator('>=', 3, 4), right: integer(1, 6, 6)}})
+                expect(parseRule(p => p.expressionRule(), 'id <> 1')).toEqual({result: {kind: 'Operation', left: {kind: 'Column', column: identifier('id', 0, 1)}, op: operator('<>', 3, 4), right: integer(1, 6, 6)}})
+                expect(parseRule(p => p.expressionRule(), 'id != 1')).toEqual({result: {kind: 'Operation', left: {kind: 'Column', column: identifier('id', 0, 1)}, op: operator('!=', 3, 4), right: integer(1, 6, 6)}})
+                expect(parseRule(p => p.expressionRule(), 'true OR true')).toEqual({result: {kind: 'Operation', left: boolean(true, 0, 3), op: operator('Or', 5, 6), right: boolean(true, 8, 11)}})
+                expect(parseRule(p => p.expressionRule(), 'true AND true')).toEqual({result: {kind: 'Operation', left: boolean(true, 0, 3), op: operator('And', 5, 7), right: boolean(true, 9, 12)}})
+                expect(parseRule(p => p.expressionRule(), "name LIKE 'a_%'")).toEqual({result: {kind: 'Operation', left: {kind: 'Column', column: identifier('name', 0, 3)}, op: operator('Like', 5, 8), right: string('a_%', 10, 14)}})
+                // expect(parseRule(p => p.expressionRule(), "name NOT LIKE 'a_%'")).toEqual({result: {kind: 'Operation', left: {kind: 'Column', column: identifier('name', 0, 3)}, op: operator('NotLike', 5, 12), right: string('a_%', 14, 18)}})
+                // TODO:
+                // expect(parseRule(p => p.expressionRule(), "'a' || 'b'")).toEqual({result: {kind: 'Operation', left: string('a', 0, 2), op: operator('||', 4, 5), right: string('b', 7, 7)}})
+                // expect(parseRule(p => p.expressionRule(), "'a' ~ 'b'")).toEqual({result: {kind: 'Operation', left: string('a', 0, 2), op: operator('~', 4, 4), right: string('b', 6, 6)}})
+                // expect(parseRule(p => p.expressionRule(), "'a' ~* 'b'")).toEqual({result: {kind: 'Operation', left: string('a', 0, 2), op: operator('~*', 4, 5), right: string('b', 7, 7)}})
+                // expect(parseRule(p => p.expressionRule(), "'a' !~ 'b'")).toEqual({result: {kind: 'Operation', left: string('a', 0, 2), op: operator('!~', 4, 5), right: string('b', 7, 7)}})
+                // expect(parseRule(p => p.expressionRule(), "'a' !~* 'b'")).toEqual({result: {kind: 'Operation', left: string('a', 0, 2), op: operator('!~*', 4, 6), right: string('b', 8, 8)}})
+                // expect(parseRule(p => p.expressionRule(), "role IN ('author', 'editor')")).toEqual({result: {kind: 'Operation', left: {kind: 'Column', column: identifier('role', 0, 3)}, op: operator('In', 5, 6), right: boolean(true, 9, 12)}})
+                // expect(parseRule(p => p.expressionRule(), "role NOT IN ('author', 'editor')")).toEqual({result: {kind: 'Operation', left: {kind: 'Column', column: identifier('role', 0, 3)}, op: operator('NotIn', 5, 6), right: boolean(true, 9, 12)}})
+                // TODO: and many more... ^^
+            })
+            /*test('unary operation', () => {
+                // TODO
+                expect(parseRule(p => p.expressionRule(), '~1')).toEqual({result: {kind: 'UnaryOp', op: operator('~', 0, 0), expression: integer(1, 1, 1)}})
+                expect(parseRule(p => p.expressionRule(), 'NOT true')).toEqual({result: {kind: 'UnaryOp', op: operator('Not', 0, 2), expression: boolean(true, 4, 7)}})
+                expect(parseRule(p => p.expressionRule(), 'id ISNULL')).toEqual({result: {kind: 'UnaryOp', op: operator('IsNull', 3, 9), expression: {kind: 'Column', column: identifier('id', 0, 1)}}})
+                expect(parseRule(p => p.expressionRule(), 'id IS NULL')).toEqual({result: {kind: 'UnaryOp', op: operator('IsNull', 3, 10), expression: {kind: 'Column', column: identifier('id', 0, 1)}}})
+                expect(parseRule(p => p.expressionRule(), 'id NOTNULL')).toEqual({result: {kind: 'UnaryOp', op: operator('IsNotNull', 3, 14), expression: {kind: 'Column', column: identifier('id', 0, 1)}}})
+                expect(parseRule(p => p.expressionRule(), 'id IS NOT NULL')).toEqual({result: {kind: 'UnaryOp', op: operator('IsNotNull', 3, 10), expression: {kind: 'Column', column: identifier('id', 0, 1)}}})
+            })*/
             test('cast', () => {
                 expect(parseRule(p => p.expressionRule(), "'owner'::character varying"))
                     .toEqual({result: {...string('owner', 0, 6), cast: {...token(7, 8), type: {name: {value: 'character varying', ...token(9, 25)}, ...token(9, 25)}}}})
             })
         })
-        describe('tableRefRule', () => {
-            test('table only', () => {
-                expect(parseRule(p => p.tableRefRule(), 'users')).toEqual({result: {table: identifier('users', 0, 4)}})
+        describe('objectNameRule', () => {
+            test('object only', () => {
+                expect(parseRule(p => p.objectNameRule(), 'users')).toEqual({result: {name: identifier('users', 0, 4)}})
             })
-            test('table and schema', () => {
-                expect(parseRule(p => p.tableRefRule(), 'public.users')).toEqual({result: {schema: identifier('public', 0, 5), table: identifier('users', 7, 11)}})
-            })
-        })
-        describe('columnRefRule', () => {
-            test('column only', () => {
-                expect(parseRule(p => p.columnRefRule(), 'id')).toEqual({result: {column: identifier('id', 0, 1)}})
-            })
-            test('column and table', () => {
-                expect(parseRule(p => p.columnRefRule(), 'users.id')).toEqual({result: {table: identifier('users', 0, 4), column: identifier('id', 6, 7)}})
-            })
-            test('column, table and schema', () => {
-                expect(parseRule(p => p.columnRefRule(), 'public.users.id')).toEqual({result: {schema: identifier('public', 0, 5), table: identifier('users', 7, 11), column: identifier('id', 13, 14)}})
+            test('object and schema', () => {
+                expect(parseRule(p => p.objectNameRule(), 'public.users')).toEqual({result: {schema: identifier('public', 0, 5), name: identifier('users', 7, 11)}})
             })
         })
         describe('columnTypeRule', () => {
@@ -545,15 +632,15 @@ describe('postgresParser', () => {
                 expect(parseRule(p => p.literalRule(), "'id'")).toEqual({result: {kind: 'String', value: 'id', ...token(0, 3)}})
             })
             test('decimal', () => {
-                expect(parseRule(p => p.literalRule(), "3.14")).toEqual({result: {kind: 'Decimal', value: 3.14, ...token(0, 3)}})
-                expect(parseRule(p => p.literalRule(), "-3.14")).toEqual({result: {kind: 'Decimal', value: -3.14, ...token(0, 4)}})
+                expect(parseRule(p => p.literalRule(), '3.14')).toEqual({result: {kind: 'Decimal', value: 3.14, ...token(0, 3)}})
+                expect(parseRule(p => p.literalRule(), '-3.14')).toEqual({result: {kind: 'Decimal', value: -3.14, ...token(0, 4)}})
             })
             test('integer', () => {
-                expect(parseRule(p => p.literalRule(), "3")).toEqual({result: {kind: 'Integer', value: 3, ...token(0, 0)}})
-                expect(parseRule(p => p.literalRule(), "-3")).toEqual({result: {kind: 'Integer', value: -3, ...token(0, 1)}})
+                expect(parseRule(p => p.literalRule(), '3')).toEqual({result: {kind: 'Integer', value: 3, ...token(0, 0)}})
+                expect(parseRule(p => p.literalRule(), '-3')).toEqual({result: {kind: 'Integer', value: -3, ...token(0, 1)}})
             })
             test('boolean', () => {
-                expect(parseRule(p => p.literalRule(), "true")).toEqual({result: {kind: 'Boolean', value: true, ...token(0, 3)}})
+                expect(parseRule(p => p.literalRule(), 'true')).toEqual({result: {kind: 'Boolean', value: true, ...token(0, 3)}})
             })
         })
     })
@@ -640,6 +727,10 @@ function decimal(value: number, start: number, end: number, startLine?: number, 
 
 function boolean(value: boolean, start: number, end: number, startLine?: number, startColumn?: number, endLine?: number, endColumn?: number): BooleanAst {
     return {kind: 'Boolean', value, ...token(start, end, startLine, startColumn, endLine, endColumn)}
+}
+
+function nulll(start: number, end: number, startLine?: number, startColumn?: number, endLine?: number, endColumn?: number): NullAst {
+    return {kind: 'Null', ...token(start, end, startLine, startColumn, endLine, endColumn)}
 }
 
 function operator(kind: OperatorAst['kind'], start: number, end: number, startLine?: number, startColumn?: number, endLine?: number, endColumn?: number): OperatorAst {
