@@ -24,6 +24,7 @@ import {
     CreateTypeStatementAst,
     CreateViewStatementAst,
     DecimalAst,
+    DeleteStatementAst,
     DropStatementAst,
     ExpressionAst,
     ForeignKeyActionAst,
@@ -226,6 +227,7 @@ class PostgresParser extends EmbeddedActionsParser {
     createTableStatementRule: () => CreateTableStatementAst
     createTypeStatementRule: () => CreateTypeStatementAst
     createViewStatementRule: () => CreateViewStatementAst
+    deleteStatementRule: () => DeleteStatementAst
     dropStatementRule: () => DropStatementAst
     insertIntoStatementRule: () => InsertIntoStatementAst
     selectStatementRule: () => SelectStatementAst
@@ -274,6 +276,7 @@ class PostgresParser extends EmbeddedActionsParser {
             {ALT: () => $.SUBRULE($.createTableStatementRule)},
             {ALT: () => $.SUBRULE($.createTypeStatementRule)},
             {ALT: () => $.SUBRULE($.createViewStatementRule)},
+            {ALT: () => $.SUBRULE($.deleteStatementRule)},
             {ALT: () => $.SUBRULE($.dropStatementRule)},
             {ALT: () => $.SUBRULE($.insertIntoStatementRule)},
             {ALT: () => $.SUBRULE($.selectStatementRule)},
@@ -440,6 +443,20 @@ class PostgresParser extends EmbeddedActionsParser {
             return removeEmpty({kind: 'CreateView' as const, replace, temporary, recursive, schema: object.schema, view: object.name, columns, query, ...tokenInfo2(start, end)})
         })
 
+        this.deleteStatementRule = $.RULE<() => DeleteStatementAst>('deleteStatementRule', () => {
+            const start = $.CONSUME(Delete)
+            $.CONSUME(From)
+            const only = $.OPTION(() => tokenInfo($.CONSUME(Only)))
+            const object = $.SUBRULE($.objectNameRule)
+            const descendants = $.OPTION2(() => tokenInfo($.CONSUME(Asterisk)))
+            const alias = $.OPTION3(() => $.SUBRULE($.aliasRule))
+            const using = $.OPTION4(() => ({...tokenInfo($.CONSUME(Using)), ...$.SUBRULE(fromItemRule)}))
+            const where = $.OPTION5(() => $.SUBRULE($.whereClauseRule))
+            const returning = $.OPTION6(() => $.SUBRULE(returningClauseRule))
+            const end = $.CONSUME(Semicolon)
+            return removeUndefined({kind: 'Delete' as const, only, schema: object.schema, table: object.name, descendants, alias, using, where, returning, ...tokenInfo2(start, end)})
+        })
+
         this.dropStatementRule = $.RULE<() => DropStatementAst>('dropStatementRule', () => {
             const start = $.CONSUME(Drop)
             const object = $.OR([
@@ -484,14 +501,15 @@ class PostgresParser extends EmbeddedActionsParser {
                 $.CONSUME2(ParenRight)
                 values.push(row)
             }})
-            const returning = $.OPTION2(() => {
-                const token = $.CONSUME(Returning)
-                const columns: SelectClauseExprAst[] = []
-                $.AT_LEAST_ONE_SEP4({SEP: Comma, DEF: () => columns.push($.SUBRULE(selectClauseColumnRule))})
-                return {...tokenInfo(token), columns}
-            })
+            const returning = $.OPTION2(() => $.SUBRULE(returningClauseRule))
             const end = $.CONSUME(Semicolon)
             return removeUndefined({kind: 'InsertInto' as const, schema: object.schema, table: object.name, columns, values, returning, ...tokenInfo2(start, end)})
+        })
+        const returningClauseRule = $.RULE<() => SelectClauseAst>('returningClauseRule', () => {
+            const token = $.CONSUME(Returning)
+            const columns: SelectClauseExprAst[] = []
+            $.AT_LEAST_ONE_SEP4({SEP: Comma, DEF: () => columns.push($.SUBRULE(selectClauseColumnRule))})
+            return {...tokenInfo(token), columns}
         })
 
         this.selectStatementRule = $.RULE<() => SelectStatementAst>('selectStatementRule', () => {
@@ -523,10 +541,10 @@ class PostgresParser extends EmbeddedActionsParser {
                 {ALT: () => ({kind: 'Local' as const, ...tokenInfo($.CONSUME(Local))})},
             ]))
             const parameter = $.SUBRULE($.identifierRule)
-            const equal = $.OR2([
+            const equal = $.OPTION2(() => $.OR2([
                 {ALT: () => ({kind: '=' as const, ...tokenInfo($.CONSUME(Equal))})},
                 {ALT: () => ({kind: 'To' as const, ...tokenInfo($.CONSUME(To))})},
-            ])
+            ]))
             const value = $.OR3([
                 {ALT: () => ({kind: 'Default' as const, ...tokenInfo($.CONSUME(Default))})},
                 {ALT: () => {

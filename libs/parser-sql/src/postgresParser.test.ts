@@ -274,6 +274,38 @@ describe('postgresParser', () => {
             }]}})
         })
     })
+    describe('delete', () => {
+        test('simplest', () => {
+            expect(parsePostgresAst('DELETE FROM films;')).toEqual({result: {statements: [{
+                ...kind('Delete', 0, 17),
+                table: identifier('films', 12),
+            }]}})
+        })
+        test('complex', () => {
+            expect(parsePostgresAst("DELETE FROM ONLY public.tasks * t WHERE t.status = 'DONE' RETURNING *;")).toEqual({result: {statements: [{
+                ...kind('Delete', 0, 69),
+                only: token(12, 15),
+                schema: identifier('public', 17),
+                table: identifier('tasks', 24),
+                descendants: token(30, 30),
+                alias: alias('t', 32),
+                where: {...token(34, 38), predicate: operation(column('status', 40, 't'), op('=', 49), string('DONE', 51))},
+                returning: {...token(58, 66), columns: [kind('Wildcard', 68, 68)]}
+            }]}})
+        })
+        test('using', () => {
+            expect(parsePostgresAst("DELETE FROM films USING producers WHERE producer_id = producers.id AND producers.name = 'foo';")).toEqual({result: {statements: [{
+                ...kind('Delete', 0, 93),
+                table: identifier('films', 12),
+                using: {...kind('Table', 18, 22), table: identifier('producers', 24)},
+                where: {...token(34, 38), predicate: operation(
+                    operation(column('producer_id', 40), op('=', 52), column('id', 54, 'producers')),
+                    op('And', 67),
+                    operation(column('name', 71, 'producers'), op('=', 86), string('foo', 88))
+                )}
+            }]}})
+        })
+    })
     describe('drop', () => {
         test('simplest', () => {
             expect(parsePostgresAst('DROP TABLE users;')).toEqual({result: {statements: [{
@@ -415,6 +447,11 @@ describe('postgresParser', () => {
         test('complex', () => {
             expect(parsePostgresAst('SET SESSION search_path TO my_schema, public;')).toEqual({result: {statements: [
                 {...kind('Set', 0, 44), scope: kind('Session', 4), parameter: identifier('search_path', 12), equal: kind('To', 24), value: [identifier('my_schema', 27), identifier('public', 38)]}
+            ]}})
+        })
+        test('no equal', () => {
+            expect(parsePostgresAst("SET ROLE 'admin';")).toEqual({result: {statements: [
+                {...kind('Set', 0, 16), parameter: identifier('ROLE', 4), value: string('admin', 9)}
             ]}})
         })
         test('on', () => {
@@ -623,6 +660,7 @@ describe('postgresParser', () => {
                 expect(parseRule(p => p.expressionRule(), "name NOT LIKE 'a_%'")).toEqual({result: operation(column('name', 0), op('NotLike', 5, 12), string('a_%', 14))})
                 expect(parseRule(p => p.expressionRule(), "role IN ('author', 'editor')")).toEqual({result: operation(column('role', 0), op('In', 5), list([string('author', 9), string('editor', 19)]))})
                 expect(parseRule(p => p.expressionRule(), "role NOT IN ('author', 'editor')")).toEqual({result: operation(column('role', 0), op('NotIn', 5, 10), list([string('author', 13), string('editor', 23)]))})
+                // TODO: expect(parseRule(p => p.expressionRule(), "role IN (SELECT id FROM roles)")).toEqual({result: operation(column('role', 0), op('In', 5), list([string('author', 9), string('editor', 19)]))})
                 expect(parseRule(p => p.expressionRule(), 'true OR true')).toEqual({result: operation(boolean(true, 0), op('Or', 5), boolean(true, 8))})
                 expect(parseRule(p => p.expressionRule(), 'true AND true')).toEqual({result: operation(boolean(true, 0), op('And', 5), boolean(true, 9))})
                 // TODO: and many more... ^^

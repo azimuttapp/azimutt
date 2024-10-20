@@ -11,7 +11,7 @@ import {ParserErrorLevel, TokenPosition} from "@azimutt/models";
 // statements
 export type StatementsAst = { statements: StatementAst[] }
 export type StatementAst = AlterTableStatementAst | CommentOnStatementAst | CreateExtensionStatementAst | CreateIndexStatementAst | CreateTableStatementAst
-    | CreateTypeStatementAst | CreateViewStatementAst | DropStatementAst | InsertIntoStatementAst | SelectStatementAst | SetStatementAst
+    | CreateTypeStatementAst | CreateViewStatementAst | DeleteStatementAst | DropStatementAst | InsertIntoStatementAst | SelectStatementAst | SetStatementAst
 export type AlterTableStatementAst = { kind: 'AlterTable', ifExists?: TokenInfo, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, action: AlterTableActionAst } & TokenInfo
 export type CommentOnStatementAst = { kind: 'CommentOn', object: { kind: CommentObject } & TokenInfo, schema?: IdentifierAst, parent?: IdentifierAst, entity: IdentifierAst, comment: StringAst | NullAst } & TokenInfo
 export type CreateExtensionStatementAst = { kind: 'CreateExtension', ifNotExists?: TokenInfo, name: IdentifierAst, with?: TokenInfo, schema?: {name: IdentifierAst} & TokenInfo, version?: {number: StringAst | IdentifierAst} & TokenInfo, cascade?: TokenInfo } & TokenInfo
@@ -19,10 +19,11 @@ export type CreateIndexStatementAst = { kind: 'CreateIndex', unique?: TokenInfo,
 export type CreateTableStatementAst = { kind: 'CreateTable', schema?: IdentifierAst, table: IdentifierAst, columns: TableColumnAst[], constraints?: TableConstraintAst[] } & TokenInfo
 export type CreateTypeStatementAst = { kind: 'CreateType', schema?: IdentifierAst, type: IdentifierAst, struct?: {attrs: TypeColumnAst[]} & TokenInfo, enum?: {values: StringAst[]} & TokenInfo, base?: {name: IdentifierAst, value: ExpressionAst}[] } & TokenInfo
 export type CreateViewStatementAst = { kind: 'CreateView', replace?: TokenInfo, temporary?: TokenInfo, recursive?: TokenInfo, schema?: IdentifierAst, view: IdentifierAst, columns?: IdentifierAst[], query: SelectStatementInnerAst } & TokenInfo
+export type DeleteStatementAst = { kind: 'Delete', only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, descendants?: TokenInfo, alias?: AliasAst, using?: FromItemAst & TokenInfo, where?: WhereClauseAst, returning?: SelectClauseAst } & TokenInfo
 export type DropStatementAst = { kind: 'Drop', object: { kind: DropObject } & TokenInfo, entities: ObjectNameAst[], concurrently?: TokenInfo, ifExists?: TokenInfo, mode?: { kind: DropMode } & TokenInfo } & TokenInfo
 export type InsertIntoStatementAst = { kind: 'InsertInto', schema?: IdentifierAst, table: IdentifierAst, columns?: IdentifierAst[], values: (ExpressionAst | { kind: 'Default' } & TokenInfo)[][], returning?: SelectClauseAst } & TokenInfo
 export type SelectStatementAst = { kind: 'Select' } & SelectStatementInnerAst & TokenInfo
-export type SetStatementAst = { kind: 'Set', scope?: { kind: SetScope } & TokenInfo, parameter: IdentifierAst, equal: { kind: SetAssign } & TokenInfo, value: SetValueAst } & TokenInfo
+export type SetStatementAst = { kind: 'Set', scope?: { kind: SetScope } & TokenInfo, parameter: IdentifierAst, equal?: { kind: SetAssign } & TokenInfo, value: SetValueAst } & TokenInfo
 
 // clauses
 export type SelectStatementInnerAst = { select: SelectClauseAst, from?: FromClauseAst, where?: WhereClauseAst, groupBy?: GroupByClauseAst, having?: HavingClauseAst, orderBy?: OrderByClauseAst }
