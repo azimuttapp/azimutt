@@ -10,10 +10,10 @@ import {ParserErrorLevel, TokenPosition} from "@azimutt/models";
 
 // statements
 export type StatementsAst = { statements: StatementAst[] }
-export type StatementAst = AlterTableStatementAst | CommentStatementAst | CreateExtensionStatementAst | CreateIndexStatementAst | CreateTableStatementAst
+export type StatementAst = AlterTableStatementAst | CommentOnStatementAst | CreateExtensionStatementAst | CreateIndexStatementAst | CreateTableStatementAst
     | CreateTypeStatementAst | CreateViewStatementAst | DropStatementAst | InsertIntoStatementAst | SelectStatementAst | SetStatementAst
 export type AlterTableStatementAst = { kind: 'AlterTable', ifExists?: TokenInfo, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, action: AlterTableActionAst } & TokenInfo
-export type CommentStatementAst = { kind: 'Comment', object: { kind: CommentObject } & TokenInfo, schema?: IdentifierAst, parent?: IdentifierAst, entity: IdentifierAst, comment: StringAst | NullAst } & TokenInfo
+export type CommentOnStatementAst = { kind: 'CommentOn', object: { kind: CommentObject } & TokenInfo, schema?: IdentifierAst, parent?: IdentifierAst, entity: IdentifierAst, comment: StringAst | NullAst } & TokenInfo
 export type CreateExtensionStatementAst = { kind: 'CreateExtension', ifNotExists?: TokenInfo, name: IdentifierAst, with?: TokenInfo, schema?: {name: IdentifierAst} & TokenInfo, version?: {number: StringAst | IdentifierAst} & TokenInfo, cascade?: TokenInfo } & TokenInfo
 export type CreateIndexStatementAst = { kind: 'CreateIndex', unique?: TokenInfo, concurrently?: TokenInfo, ifNotExists?: TokenInfo, index?: IdentifierAst, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, using?: {method: IdentifierAst} & TokenInfo, columns: IndexColumnAst[], include?: {columns: IdentifierAst[]} & TokenInfo, where?: {predicate: ExpressionAst} & TokenInfo } & TokenInfo
 export type CreateTableStatementAst = { kind: 'CreateTable', schema?: IdentifierAst, table: IdentifierAst, columns: TableColumnAst[], constraints?: TableConstraintAst[] } & TokenInfo
@@ -25,18 +25,28 @@ export type SelectStatementAst = { kind: 'Select' } & SelectStatementInnerAst & 
 export type SetStatementAst = { kind: 'Set', scope?: { kind: SetScope } & TokenInfo, parameter: IdentifierAst, equal: { kind: SetAssign } & TokenInfo, value: SetValueAst } & TokenInfo
 
 // clauses
-export type SelectStatementInnerAst = { select: SelectClauseAst, from?: FromClauseAst, where?: WhereClauseAst }
+export type SelectStatementInnerAst = { select: SelectClauseAst, from?: FromClauseAst, where?: WhereClauseAst, groupBy?: GroupByClauseAst, having?: HavingClauseAst, orderBy?: OrderByClauseAst }
 export type SelectClauseAst = { columns: SelectClauseExprAst[] } & TokenInfo
 export type SelectClauseExprAst = ExpressionAst & { alias?: AliasAst }
-export type FromClauseAst = { table: IdentifierAst, alias?: AliasAst } & TokenInfo
+export type FromClauseAst = FromItemAst & { joins?: FromJoinAst[] }
+export type FromItemAst = (FromTableAst | FromQueryAst) & { alias?: AliasAst }
+export type FromTableAst = { kind: 'Table', schema?: IdentifierAst, table: IdentifierAst }
+export type FromQueryAst = { kind: 'Query' } & SelectStatementInnerAst
+export type FromJoinAst = { kind: JoinKind, from: FromItemAst, on: FromJoinOnAst | FromJoinUsingAst | FromJoinNaturalAst, alias?: AliasAst } & TokenInfo
+export type FromJoinOnAst = {kind: 'On', predicate: ExpressionAst} & TokenInfo
+export type FromJoinUsingAst = {kind: 'Using', columns: IdentifierAst[]} & TokenInfo
+export type FromJoinNaturalAst = {kind: 'Natural'} & TokenInfo
 export type WhereClauseAst = { predicate: ExpressionAst } & TokenInfo
+export type GroupByClauseAst = { mode: { kind: 'All' | 'Distinct' } & TokenInfo, expressions: ExpressionAst[] } & TokenInfo
+export type HavingClauseAst = { predicate: ExpressionAst } & TokenInfo
+export type OrderByClauseAst = { expressions: (ExpressionAst & {order?: SortOrderAst, nulls?: SortNullsAst})[] } & TokenInfo
 export type AlterTableActionAst = AddColumnAst | AddConstraintAst | DropColumnAst | DropConstraintAst
 export type AddColumnAst = { kind: 'AddColumn', ifNotExists?: TokenInfo, column: TableColumnAst } & TokenInfo
 export type AddConstraintAst = { kind: 'AddConstraint', constraint: TableConstraintAst } & TokenInfo
 export type DropColumnAst = { kind: 'DropColumn', ifExists?: TokenInfo, column: IdentifierAst } & TokenInfo
 export type DropConstraintAst = { kind: 'DropConstraint', ifExists?: TokenInfo, constraint: IdentifierAst } & TokenInfo
 export type TypeColumnAst = { name: IdentifierAst, type: ColumnTypeAst, collation?: {name: IdentifierAst} & TokenInfo }
-export type IndexColumnAst = ExpressionAst & {collation?: {name: IdentifierAst} & TokenInfo, order?: {kind: SortOrder} & TokenInfo, nulls?: {kind: SortNulls} & TokenInfo}
+export type IndexColumnAst = ExpressionAst & {collation?: {name: IdentifierAst} & TokenInfo, order?: SortOrderAst, nulls?: SortNullsAst}
 export type TableColumnAst = { name: IdentifierAst, type: ColumnTypeAst, constraints?: TableColumnConstraintAst[] }
 export type TableColumnConstraintAst = TableColumnNullableAst | TableColumnDefaultAst | TableColumnPkAst | TableColumnUniqueAst | TableColumnCheckAst | TableColumnFkAst
 export type TableColumnNullableAst = { kind: 'Nullable', value: boolean } & ConstraintCommonAst
@@ -57,7 +67,7 @@ export type ForeignKeyActionAst = {action: {kind: ForeignKeyAction} & TokenInfo,
 export type SetValueAst = IdentifierAst | LiteralAst | (IdentifierAst | LiteralAst)[] | { kind: 'Default' } & TokenInfo
 
 // basic parts
-export type AliasAst = { name: IdentifierAst } & TokenInfo
+export type AliasAst = { name: IdentifierAst } & Partial<TokenInfo>
 export type ObjectNameAst = { schema?: IdentifierAst, name: IdentifierAst }
 export type ExpressionAst = (LiteralAst | ParameterAst | ColumnAst | WildcardAst | FunctionAst | GroupAst | OperationAst | ListAst) & { cast?: { type: ColumnTypeAst } & TokenInfo }
 export type LiteralAst = StringAst | IntegerAst | DecimalAst | BooleanAst | NullAst
@@ -69,6 +79,8 @@ export type WildcardAst = { kind: 'Wildcard', schema?: IdentifierAst, table?: Id
 export type OperationAst = { kind: 'Operation', left: ExpressionAst, op: OperatorAst, right: ExpressionAst }
 export type OperatorAst = { kind: Operator } & TokenInfo
 export type ListAst = { kind: 'List', items: LiteralAst[] }
+export type SortOrderAst = {kind: SortOrder} & TokenInfo
+export type SortNullsAst = {kind: SortNulls} & TokenInfo
 
 // elements
 export type ParameterAst = { kind: 'Parameter', value: string, index?: number } & TokenInfo
@@ -87,6 +99,7 @@ export type ForeignKeyAction = 'NoAction' | 'Restrict' | 'Cascade' | 'SetNull' |
 export type DropObject = 'Table' | 'View' | 'MaterializedView' | 'Index' | 'Type'
 export type DropMode = 'Cascade' | 'Restrict'
 export type CommentObject = 'Column' | 'Constraint' | 'Database' | 'Extension' | 'Index' | 'MaterializedView' | 'Schema' | 'Table' | 'Type' | 'View'
+export type JoinKind = 'Inner' | 'Left' | 'Right' | 'Full' | 'Cross'
 export type SortOrder = 'Asc' | 'Desc'
 export type SortNulls = 'First' | 'Last'
 export type SetScope = 'Session' | 'Local'
