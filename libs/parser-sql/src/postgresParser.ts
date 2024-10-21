@@ -27,6 +27,7 @@ import {
     DeleteStatementAst,
     DropStatementAst,
     ExpressionAst,
+    FetchClauseAst,
     ForeignKeyActionAst,
     FromClauseAst,
     FromItemAst,
@@ -41,10 +42,12 @@ import {
     InsertIntoStatementAst,
     IntegerAst,
     JsonOp,
+    LimitClauseAst,
     ListAst,
     LiteralAst,
     NullAst,
     ObjectNameAst,
+    OffsetClauseAst,
     OperatorAst,
     OrderByClauseAst,
     ParameterAst,
@@ -117,6 +120,7 @@ const First = createToken({name: 'First', pattern: /\bFIRST\b/i, longer_alt: Ide
 const ForeignKey = createToken({name: 'ForeignKey', pattern: /\bFOREIGN\s+KEY\b/i})
 const From = createToken({name: 'From', pattern: /\bFROM\b/i, longer_alt: Identifier})
 const Full = createToken({name: 'Full', pattern: /\bFULL\b/i, longer_alt: Identifier})
+const Global = createToken({name: 'Global', pattern: /\bGLOBAL\b/i, longer_alt: Identifier})
 const GroupBy = createToken({name: 'GroupBy', pattern: /\bGROUP\s+BY\b/i})
 const Having = createToken({name: 'Having', pattern: /\bHAVING\b/i, longer_alt: Identifier})
 const If = createToken({name: 'If', pattern: /\bIF\b/i, longer_alt: Identifier})
@@ -134,6 +138,7 @@ const Limit = createToken({name: 'Limit', pattern: /\bLIMIT\b/i, longer_alt: Ide
 const Local = createToken({name: 'Local', pattern: /\bLOCAL\b/i, longer_alt: Identifier})
 const MaterializedView = createToken({name: 'MaterializedView', pattern: /\bMATERIALIZED\s+VIEW\b/i})
 const Natural = createToken({name: 'Natural', pattern: /\bNATURAL\b/i, longer_alt: Identifier})
+const Next = createToken({name: 'Next', pattern: /\bNEXT\b/i, longer_alt: Identifier})
 const NoAction = createToken({name: 'NoAction', pattern: /\bNO\s+ACTION\b/i})
 const Not = createToken({name: 'Not', pattern: /\bNOT\b/i, longer_alt: Identifier})
 const Null = createToken({name: 'Null', pattern: /\bNULL\b/i, longer_alt: Identifier})
@@ -151,6 +156,8 @@ const Replace = createToken({name: 'Replace', pattern: /\bREPLACE\b/i, longer_al
 const Restrict = createToken({name: 'Restrict', pattern: /\bRESTRICT\b/i, longer_alt: Identifier})
 const Returning = createToken({name: 'Returning', pattern: /\bRETURNING\b/i, longer_alt: Identifier})
 const Right = createToken({name: 'Right', pattern: /\bRIGHT\b/i, longer_alt: Identifier})
+const Row = createToken({name: 'Row', pattern: /\bROW\b/i, longer_alt: Identifier})
+const Rows = createToken({name: 'Rows', pattern: /\bROWS\b/i, longer_alt: Identifier})
 const Schema = createToken({name: 'Schema', pattern: /\bSCHEMA\b/i, longer_alt: Identifier})
 const Select = createToken({name: 'Select', pattern: /\bSELECT\b/i, longer_alt: Identifier})
 const Session = createToken({name: 'Session', pattern: /\bSESSION\b/i, longer_alt: Identifier})
@@ -160,11 +167,13 @@ const Set = createToken({name: 'Set', pattern: /\bSET\b/i, longer_alt: Identifie
 const Table = createToken({name: 'Table', pattern: /\bTABLE\b/i, longer_alt: Identifier})
 const Temp = createToken({name: 'Temp', pattern: /\bTEMP\b/i, longer_alt: Identifier})
 const Temporary = createToken({name: 'Temporary', pattern: /\bTEMPORARY\b/i, longer_alt: Identifier})
+const Ties = createToken({name: 'Ties', pattern: /\bTIES\b/i, longer_alt: Identifier})
 const To = createToken({name: 'To', pattern: /\bTO\b/i, longer_alt: Identifier})
 const True = createToken({name: 'True', pattern: /\bTRUE\b/i, longer_alt: Identifier})
 const Type = createToken({name: 'Type', pattern: /\bTYPE\b/i, longer_alt: Identifier})
 const Union = createToken({name: 'Union', pattern: /\bUNION\b/i, longer_alt: Identifier})
 const Unique = createToken({name: 'Unique', pattern: /\bUNIQUE\b/i, longer_alt: Identifier})
+const Unlogged = createToken({name: 'Unlogged', pattern: /\bUNLOGGED\b/i, longer_alt: Identifier})
 const Update = createToken({name: 'Update', pattern: /\bUPDATE\b/i, longer_alt: Identifier})
 const Using = createToken({name: 'Using', pattern: /\bUSING\b/i, longer_alt: Identifier})
 const Values = createToken({name: 'Values', pattern: /\bVALUES\b/i, longer_alt: Identifier})
@@ -175,9 +184,9 @@ const Window = createToken({name: 'Window', pattern: /\bWINDOW\b/i, longer_alt: 
 const With = createToken({name: 'With', pattern: /\bWITH\b/i, longer_alt: Identifier})
 const keywordTokens: TokenType[] = [
     Add, All, Alter, And, As, Asc, Cascade, Check, Collate, Column, Comment, Concurrently, Constraint, Create, Cross, Database, Default, Delete, Desc, Distinct, Domain, Drop,
-    Enum, Exists, Extension, False, Fetch, First, ForeignKey, From, Full, GroupBy, Having, If, In, Include, Index, Inner, InsertInto, Is, Join, Last, Left, Like, Limit, Local,
-    MaterializedView, Natural, NoAction, Not, Null, Nulls, Offset, On, Only, Or, OrderBy, Outer, PrimaryKey, Recursive, References, Replace, Restrict, Returning, Right,
-    Schema, Select, Session, SetDefault, SetNull, Set, Table, Temp, Temporary, To, True, Type, Union, Unique, Update, Using, Values, Version, View, Where, Window, With
+    Enum, Exists, Extension, False, Fetch, First, ForeignKey, From, Full, Global, GroupBy, Having, If, In, Include, Index, Inner, InsertInto, Is, Join, Last, Left, Like, Limit, Local,
+    MaterializedView, Natural, Next, NoAction, Not, Null, Nulls, Offset, On, Only, Or, OrderBy, Outer, PrimaryKey, Recursive, References, Replace, Restrict, Returning, Right, Row, Rows,
+    Schema, Select, Session, SetDefault, SetNull, Set, Table, Temp, Temporary, Ties, To, True, Type, Union, Unique, Unlogged, Update, Using, Values, Version, View, Where, Window, With
 ]
 
 const Amp = createToken({name: 'Amp', pattern: /&/})
@@ -286,35 +295,35 @@ class PostgresParser extends EmbeddedActionsParser {
         this.alterTableStatementRule = $.RULE<() => AlterTableStatementAst>('alterTableStatementRule', () => {
             // https://www.postgresql.org/docs/current/sql-altertable.html
             const start = $.CONSUME(Alter)
-            $.CONSUME(Table)
+            const token = tokenInfo2(start, $.CONSUME(Table))
             const ifExists = $.SUBRULE(ifExistsRule)
             const only = $.OPTION(() => tokenInfo($.CONSUME(Only)))
             const object = $.SUBRULE($.objectNameRule)
             const action = $.OR([
-                {ALT: () => removeUndefined({kind: 'AddColumn' as const, ...tokenInfo2($.CONSUME(Add), $.OPTION2(() => $.CONSUME(Column))), ifNotExists: $.SUBRULE(ifNotExistsRule), column: $.SUBRULE($.tableColumnRule)})},
-                {ALT: () => removeUndefined({kind: 'AddConstraint' as const, ...tokenInfo($.CONSUME2(Add)), constraint: $.SUBRULE($.tableConstraintRule)})},
-                {ALT: () => removeUndefined({kind: 'DropColumn' as const, ...tokenInfo2($.CONSUME(Drop), $.OPTION3(() => $.CONSUME2(Column))), ifExists: $.SUBRULE2(ifExistsRule), column: $.SUBRULE($.identifierRule)})},
-                {ALT: () => removeUndefined({kind: 'DropConstraint' as const, ...tokenInfo2($.CONSUME2(Drop), $.CONSUME(Constraint)), ifExists: $.SUBRULE3(ifExistsRule), constraint: $.SUBRULE2($.identifierRule)})},
+                {ALT: () => removeUndefined({kind: 'AddColumn' as const, token: tokenInfo2($.CONSUME(Add), $.OPTION2(() => $.CONSUME(Column))), ifNotExists: $.SUBRULE(ifNotExistsRule), column: $.SUBRULE($.tableColumnRule)})},
+                {ALT: () => removeUndefined({kind: 'AddConstraint' as const, token: tokenInfo($.CONSUME2(Add)), constraint: $.SUBRULE($.tableConstraintRule)})},
+                {ALT: () => removeUndefined({kind: 'DropColumn' as const, token: tokenInfo2($.CONSUME(Drop), $.OPTION3(() => $.CONSUME2(Column))), ifExists: $.SUBRULE2(ifExistsRule), column: $.SUBRULE($.identifierRule)})},
+                {ALT: () => removeUndefined({kind: 'DropConstraint' as const, token: tokenInfo2($.CONSUME2(Drop), $.CONSUME(Constraint)), ifExists: $.SUBRULE3(ifExistsRule), constraint: $.SUBRULE2($.identifierRule)})},
             ])
             const end = $.CONSUME(Semicolon)
-            return removeUndefined({kind: 'AlterTable' as const, ifExists, only, schema: object.schema, table: object.name, action, ...tokenInfo2(start, end)})
+            return removeUndefined({kind: 'AlterTable' as const, meta: tokenInfo2(start, end), token, ifExists, only, schema: object.schema, table: object.name, action})
         })
 
         this.commentOnStatementRule = $.RULE<() => CommentOnStatementAst>('commentOnStatementRule', () => {
             // https://www.postgresql.org/docs/current/sql-comment.html
             const start = $.CONSUME(Comment)
-            $.CONSUME(On)
+            const token = tokenInfo2(start, $.CONSUME(On))
             const {object, schema, parent, entity} = $.OR([
-                {ALT: () => ({object: {kind: 'Column' as const, ...tokenInfo2(start, $.CONSUME(Column))}, ...$.SUBRULE(commentColumnRule)})},
-                {ALT: () => ({object: {kind: 'Constraint' as const, ...tokenInfo2(start, $.CONSUME(Constraint))}, ...$.SUBRULE(commentConstraintRule)})},
-                {ALT: () => ({object: {kind: 'Database' as const, ...tokenInfo2(start, $.CONSUME(Database))}, ...$.SUBRULE(commentObjectDefaultRule)})},
-                {ALT: () => ({object: {kind: 'Extension' as const, ...tokenInfo2(start, $.CONSUME(Extension))}, ...$.SUBRULE2(commentObjectDefaultRule)})},
-                {ALT: () => ({object: {kind: 'Index' as const, ...tokenInfo2(start, $.CONSUME(Index))}, ...$.SUBRULE3(commentObjectDefaultRule)})},
-                {ALT: () => ({object: {kind: 'MaterializedView' as const, ...tokenInfo2(start, $.CONSUME(MaterializedView))}, ...$.SUBRULE4(commentObjectDefaultRule)})},
-                {ALT: () => ({object: {kind: 'Schema' as const, ...tokenInfo2(start, $.CONSUME(Schema))}, ...$.SUBRULE5(commentObjectDefaultRule)})},
-                {ALT: () => ({object: {kind: 'Table' as const, ...tokenInfo2(start, $.CONSUME(Table))}, ...$.SUBRULE6(commentObjectDefaultRule)})},
-                {ALT: () => ({object: {kind: 'Type' as const, ...tokenInfo2(start, $.CONSUME(Type))}, ...$.SUBRULE7(commentObjectDefaultRule)})},
-                {ALT: () => ({object: {kind: 'View' as const, ...tokenInfo2(start, $.CONSUME(View))}, ...$.SUBRULE8(commentObjectDefaultRule)})},
+                {ALT: () => ({object: {kind: 'Column' as const, token: tokenInfo($.CONSUME(Column))}, ...$.SUBRULE(commentColumnRule)})},
+                {ALT: () => ({object: {kind: 'Constraint' as const, token: tokenInfo($.CONSUME(Constraint))}, ...$.SUBRULE(commentConstraintRule)})},
+                {ALT: () => ({object: {kind: 'Database' as const, token: tokenInfo($.CONSUME(Database))}, ...$.SUBRULE(commentObjectDefaultRule)})},
+                {ALT: () => ({object: {kind: 'Extension' as const, token: tokenInfo($.CONSUME(Extension))}, ...$.SUBRULE2(commentObjectDefaultRule)})},
+                {ALT: () => ({object: {kind: 'Index' as const, token: tokenInfo($.CONSUME(Index))}, ...$.SUBRULE3(commentObjectDefaultRule)})},
+                {ALT: () => ({object: {kind: 'MaterializedView' as const, token: tokenInfo($.CONSUME(MaterializedView))}, ...$.SUBRULE4(commentObjectDefaultRule)})},
+                {ALT: () => ({object: {kind: 'Schema' as const, token: tokenInfo($.CONSUME(Schema))}, ...$.SUBRULE5(commentObjectDefaultRule)})},
+                {ALT: () => ({object: {kind: 'Table' as const, token: tokenInfo($.CONSUME(Table))}, ...$.SUBRULE6(commentObjectDefaultRule)})},
+                {ALT: () => ({object: {kind: 'Type' as const, token: tokenInfo($.CONSUME(Type))}, ...$.SUBRULE7(commentObjectDefaultRule)})},
+                {ALT: () => ({object: {kind: 'View' as const, token: tokenInfo($.CONSUME(View))}, ...$.SUBRULE8(commentObjectDefaultRule)})},
             ])
             $.CONSUME(Is)
             const comment = $.OR2([
@@ -322,7 +331,7 @@ class PostgresParser extends EmbeddedActionsParser {
                 {ALT: () => $.SUBRULE($.nullRule)},
             ])
             const end = $.CONSUME(Semicolon)
-            return removeUndefined({kind: 'CommentOn' as const, object, schema, parent, entity, comment, ...tokenInfo2(start, end)})
+            return removeUndefined({kind: 'CommentOn' as const, meta: tokenInfo2(start, end), token, object, schema, parent, entity, comment})
         })
         const commentObjectDefaultRule = $.RULE<() => {schema?: IdentifierAst, entity: IdentifierAst}>('commentObjectDefaultRule', () => {
             const object = $.SUBRULE($.objectNameRule)
@@ -349,78 +358,90 @@ class PostgresParser extends EmbeddedActionsParser {
         this.createExtensionStatementRule = $.RULE<() => CreateExtensionStatementAst>('createExtensionStatementRule', () => {
             // https://www.postgresql.org/docs/current/sql-createextension.html
             const start = $.CONSUME(Create)
-            $.CONSUME(Extension)
+            const token = tokenInfo2(start, $.CONSUME(Extension))
             const ifNotExists = $.SUBRULE(ifNotExistsRule)
             const name = $.SUBRULE($.identifierRule)
             const withh = $.OPTION(() => tokenInfo($.CONSUME(With)))
-            const schema = $.OPTION2(() => ({...tokenInfo($.CONSUME(Schema)), name: $.SUBRULE2($.identifierRule)}))
-            const version = $.OPTION3(() => ({...tokenInfo($.CONSUME(Version)), number: $.OR([{ALT: () => $.SUBRULE($.stringRule)}, {ALT: () => $.SUBRULE3($.identifierRule)}])}))
+            const schema = $.OPTION2(() => ({token: tokenInfo($.CONSUME(Schema)), name: $.SUBRULE2($.identifierRule)}))
+            const version = $.OPTION3(() => ({token: tokenInfo($.CONSUME(Version)), number: $.OR([{ALT: () => $.SUBRULE($.stringRule)}, {ALT: () => $.SUBRULE3($.identifierRule)}])}))
             const cascade = $.OPTION4(() => tokenInfo($.CONSUME(Cascade)))
             const end = $.CONSUME(Semicolon)
-            return removeUndefined({kind: 'CreateExtension' as const, ifNotExists, name, with: withh, schema, version, cascade, ...tokenInfo2(start, end)})
+            return removeUndefined({kind: 'CreateExtension' as const, meta: tokenInfo2(start, end), token, ifNotExists, name, with: withh, schema, version, cascade})
         })
 
         this.createIndexStatementRule = $.RULE<() => CreateIndexStatementAst>('createIndexStatementRule', () => {
             // https://www.postgresql.org/docs/current/sql-createindex.html
             const start = $.CONSUME(Create)
             const unique = $.OPTION(() => tokenInfo($.CONSUME(Unique)))
-            $.CONSUME(Index)
+            const token = tokenInfo2(start, $.CONSUME(Index))
             const concurrently = $.OPTION2(() => tokenInfo($.CONSUME(Concurrently)))
             const name = $.OPTION3(() => ({ifNotExists: $.SUBRULE(ifNotExistsRule), index: $.SUBRULE($.identifierRule)}))
             $.CONSUME(On)
             const only = $.OPTION4(() => tokenInfo($.CONSUME(Only)))
             const object = $.SUBRULE($.objectNameRule)
-            const using = $.OPTION5(() => ({...tokenInfo($.CONSUME(Using)), method: $.SUBRULE2($.identifierRule)}))
+            const using = $.OPTION5(() => ({token: tokenInfo($.CONSUME(Using)), method: $.SUBRULE2($.identifierRule)}))
             $.CONSUME(ParenLeft)
             const columns: IndexColumnAst[] = []
             $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => columns.push($.SUBRULE(indexColumnRule))})
             $.CONSUME(ParenRight)
             const include = $.OPTION6(() => {
-                const token = $.CONSUME(Include)
+                const token = tokenInfo($.CONSUME(Include))
                 $.CONSUME2(ParenLeft)
                 const columns: IdentifierAst[] = []
                 $.AT_LEAST_ONE_SEP2({SEP: Comma, DEF: () => columns.push($.SUBRULE3($.identifierRule))})
                 $.CONSUME2(ParenRight)
-                return {...tokenInfo(token), columns}
+                return {token, columns}
             })
             // TODO: NULLS [ NOT ] DISTINCT
             // TODO: WITH (parameters)
             // TODO: TABLESPACE name
-            const where = $.OPTION7(() => ({...tokenInfo($.CONSUME(Where)), predicate: $.SUBRULE($.expressionRule)}))
+            const where = $.OPTION7(() => $.SUBRULE($.whereClauseRule))
             const end = $.CONSUME(Semicolon)
-            return removeUndefined({kind: 'CreateIndex' as const, unique, concurrently, ...name, only, schema: object.schema, table: object.name, using, columns, include, where, ...tokenInfo2(start, end)})
+            return removeUndefined({kind: 'CreateIndex' as const, meta: tokenInfo2(start, end), token, unique, concurrently, ...name, only, schema: object.schema, table: object.name, using, columns, include, where})
         })
 
         this.createTableStatementRule = $.RULE<() => CreateTableStatementAst>('createTableStatementRule', () => {
             // https://www.postgresql.org/docs/current/sql-createtable.html
             const start = $.CONSUME(Create)
-            $.CONSUME(Table)
+            const mode = $.OPTION(() => $.OR([
+                {ALT: () => ({kind: 'Unlogged' as const, token: tokenInfo($.CONSUME(Unlogged))})},
+                {ALT: () => {
+                    const scope = $.OPTION2(() => $.OR2([
+                        {ALT: () => ({kind: 'Global' as const, token: tokenInfo($.CONSUME(Global))})},
+                        {ALT: () => ({kind: 'Local' as const, token: tokenInfo($.CONSUME(Local))})},
+                    ]))
+                    const temporary = $.OR3([{ALT: () => tokenInfo($.CONSUME(Temp))}, {ALT: () => tokenInfo($.CONSUME(Temporary))}])
+                    return removeUndefined({kind: 'Temporary' as const, ...temporary, scope})
+                }}
+            ]))
+            const token = tokenInfo2(start, $.CONSUME(Table))
+            const ifNotExists = $.OPTION3(() => $.SUBRULE(ifNotExistsRule))
             const object = $.SUBRULE($.objectNameRule)
             $.CONSUME(ParenLeft)
             const columns: TableColumnAst[] = []
             const constraints: TableConstraintAst[] = []
-            $.MANY_SEP({SEP: Comma, DEF: () => $.OR([
+            $.MANY_SEP({SEP: Comma, DEF: () => $.OR4([
                 {ALT: () => columns.push($.SUBRULE($.tableColumnRule))},
                 {ALT: () => constraints.push($.SUBRULE($.tableConstraintRule))},
             ])})
             $.CONSUME(ParenRight)
             const end = $.CONSUME(Semicolon)
-            return removeEmpty({kind: 'CreateTable' as const, schema: object.schema, table: object.name, columns: columns.filter(isNotUndefined), constraints: constraints.filter(isNotUndefined), ...tokenInfo2(start, end)})
+            return removeEmpty({kind: 'CreateTable' as const, meta: tokenInfo2(start, end), token, mode, ifNotExists, schema: object.schema, table: object.name, columns: columns.filter(isNotUndefined), constraints: constraints.filter(isNotUndefined)})
         })
 
         this.createTypeStatementRule = $.RULE<() => CreateTypeStatementAst>('createTypeStatementRule', () => {
             // https://www.postgresql.org/docs/current/sql-createtype.html
             const start = $.CONSUME(Create)
-            $.CONSUME(Type)
+            const token = tokenInfo2(start, $.CONSUME(Type))
             const object = $.SUBRULE($.objectNameRule)
             const content = $.OPTION(() => $.OR([
-                {ALT: () => ({struct: {...tokenInfo($.CONSUME(As)), attrs: $.SUBRULE(createTypeStructAttrs)}})},
-                {ALT: () => ({enum: {...tokenInfo2($.CONSUME2(As), $.CONSUME(Enum)), values: $.SUBRULE(createTypeEnumValues)}})},
+                {ALT: () => ({struct: {token: tokenInfo($.CONSUME(As)), attrs: $.SUBRULE(createTypeStructAttrs)}})},
+                {ALT: () => ({enum: {token: tokenInfo2($.CONSUME2(As), $.CONSUME(Enum)), values: $.SUBRULE(createTypeEnumValues)}})},
                 // TODO: RANGE
                 {ALT: () => ({base: $.SUBRULE(createTypeBase)})}
             ]))
             const end = $.CONSUME(Semicolon)
-            return removeEmpty({kind: 'CreateType' as const, schema: object.schema, type: object.name, ...content, ...tokenInfo2(start, end)})
+            return removeEmpty({kind: 'CreateType' as const, meta: tokenInfo2(start, end), token, schema: object.schema, type: object.name, ...content})
         })
 
         this.createViewStatementRule = $.RULE<() => CreateViewStatementAst>('createViewStatementRule', () => {
@@ -429,7 +450,7 @@ class PostgresParser extends EmbeddedActionsParser {
             const replace = $.OPTION(() => tokenInfo2($.CONSUME(Or), $.CONSUME(Replace)))
             const temporary = $.OPTION2(() => $.OR([{ALT: () => tokenInfo($.CONSUME(Temp))}, {ALT: () => tokenInfo($.CONSUME(Temporary))}]))
             const recursive = $.OPTION3(() => tokenInfo($.CONSUME(Recursive)))
-            $.CONSUME(View)
+            const token = tokenInfo2(start, $.CONSUME(View))
             const object = $.SUBRULE($.objectNameRule)
             const columns: IdentifierAst[] = []
             $.OPTION4(() => {
@@ -440,42 +461,42 @@ class PostgresParser extends EmbeddedActionsParser {
             $.CONSUME(As)
             const query = $.SUBRULE(selectStatementInnerRule)
             const end = $.CONSUME(Semicolon)
-            return removeEmpty({kind: 'CreateView' as const, replace, temporary, recursive, schema: object.schema, view: object.name, columns, query, ...tokenInfo2(start, end)})
+            return removeEmpty({kind: 'CreateView' as const, meta: tokenInfo2(start, end), token, replace, temporary, recursive, schema: object.schema, view: object.name, columns, query})
         })
 
         this.deleteStatementRule = $.RULE<() => DeleteStatementAst>('deleteStatementRule', () => {
             const start = $.CONSUME(Delete)
-            $.CONSUME(From)
+            const token = tokenInfo2(start, $.CONSUME(From))
             const only = $.OPTION(() => tokenInfo($.CONSUME(Only)))
             const object = $.SUBRULE($.objectNameRule)
             const descendants = $.OPTION2(() => tokenInfo($.CONSUME(Asterisk)))
             const alias = $.OPTION3(() => $.SUBRULE($.aliasRule))
-            const using = $.OPTION4(() => ({...tokenInfo($.CONSUME(Using)), ...$.SUBRULE(fromItemRule)}))
+            const using = $.OPTION4(() => ({token: tokenInfo($.CONSUME(Using)), ...$.SUBRULE(fromItemRule)}))
             const where = $.OPTION5(() => $.SUBRULE($.whereClauseRule))
             const returning = $.OPTION6(() => $.SUBRULE(returningClauseRule))
             const end = $.CONSUME(Semicolon)
-            return removeUndefined({kind: 'Delete' as const, only, schema: object.schema, table: object.name, descendants, alias, using, where, returning, ...tokenInfo2(start, end)})
+            return removeUndefined({kind: 'Delete' as const, meta: tokenInfo2(start, end), token, only, schema: object.schema, table: object.name, descendants, alias, using, where, returning})
         })
 
         this.dropStatementRule = $.RULE<() => DropStatementAst>('dropStatementRule', () => {
             const start = $.CONSUME(Drop)
-            const object = $.OR([
-                {ALT: () => ({kind: 'Index' as const, ...tokenInfo2(start, $.CONSUME(Index))})}, // https://www.postgresql.org/docs/current/sql-dropindex.html
-                {ALT: () => ({kind: 'MaterializedView' as const, ...tokenInfo2(start, $.CONSUME(MaterializedView))})}, // https://www.postgresql.org/docs/current/sql-dropmaterializedview.html
-                {ALT: () => ({kind: 'Table' as const, ...tokenInfo2(start, $.CONSUME(Table))})}, // https://www.postgresql.org/docs/current/sql-droptable.html
-                {ALT: () => ({kind: 'Type' as const, ...tokenInfo2(start, $.CONSUME(Type))})}, // https://www.postgresql.org/docs/current/sql-droptype.html
-                {ALT: () => ({kind: 'View' as const, ...tokenInfo2(start, $.CONSUME(View))})}, // https://www.postgresql.org/docs/current/sql-dropview.html
+            const {token, object} = $.OR([
+                {ALT: () => ({token: tokenInfo2(start, $.CONSUME(Index)), object: 'Index' as const})}, // https://www.postgresql.org/docs/current/sql-dropindex.html
+                {ALT: () => ({token: tokenInfo2(start, $.CONSUME(MaterializedView)), object: 'MaterializedView' as const})}, // https://www.postgresql.org/docs/current/sql-dropmaterializedview.html
+                {ALT: () => ({token: tokenInfo2(start, $.CONSUME(Table)), object: 'Table' as const})}, // https://www.postgresql.org/docs/current/sql-droptable.html
+                {ALT: () => ({token: tokenInfo2(start, $.CONSUME(Type)), object: 'Type' as const})}, // https://www.postgresql.org/docs/current/sql-droptype.html
+                {ALT: () => ({token: tokenInfo2(start, $.CONSUME(View)), object: 'View' as const})}, // https://www.postgresql.org/docs/current/sql-dropview.html
             ])
             const concurrently = $.OPTION(() => tokenInfo($.CONSUME(Concurrently)))
             const ifExists = $.SUBRULE(ifExistsRule)
             const objects: ObjectNameAst[] = []
             $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => objects.push($.SUBRULE($.objectNameRule))})
             const mode = $.OPTION2(() => $.OR2([
-                {ALT: () => ({kind: 'Cascade' as const, ...tokenInfo($.CONSUME(Cascade))})},
-                {ALT: () => ({kind: 'Restrict' as const, ...tokenInfo($.CONSUME(Restrict))})},
+                {ALT: () => ({token: tokenInfo($.CONSUME(Cascade)), kind: 'Cascade' as const})},
+                {ALT: () => ({token: tokenInfo($.CONSUME(Restrict)), kind: 'Restrict' as const})},
             ]))
             const end = $.CONSUME(Semicolon)
-            return removeUndefined({kind: 'Drop' as const, object, entities: objects.filter(isNotUndefined), concurrently, ifExists, mode, ...tokenInfo2(start, end)})
+            return removeUndefined({kind: 'Drop' as const, meta: tokenInfo2(start, end), token, object, entities: objects.filter(isNotUndefined), concurrently, ifExists, mode})
         })
 
         this.insertIntoStatementRule = $.RULE<() => InsertIntoStatementAst>('insertIntoStatementRule', () => {
@@ -490,32 +511,32 @@ class PostgresParser extends EmbeddedActionsParser {
                 return columns
             })
             $.CONSUME(Values)
-            const values: (ExpressionAst | { kind: 'Default' } & TokenInfo)[][] = []
+            const values: (ExpressionAst | { kind: 'Default', token: TokenInfo })[][] = []
             $.AT_LEAST_ONE_SEP2({SEP: Comma, DEF: () => {
                 const row: ExpressionAst[] = []
                 $.CONSUME2(ParenLeft)
                 $.AT_LEAST_ONE_SEP3({SEP: Comma, DEF: () => row.push($.OR([
                     {ALT: () => $.SUBRULE($.expressionRule)},
-                    {ALT: () => ({kind: 'Default' as const, ...tokenInfo($.CONSUME(Default))})}
+                    {ALT: () => ({kind: 'Default' as const, token: tokenInfo($.CONSUME(Default))})}
                 ]))})
                 $.CONSUME2(ParenRight)
                 values.push(row)
             }})
             const returning = $.OPTION2(() => $.SUBRULE(returningClauseRule))
             const end = $.CONSUME(Semicolon)
-            return removeUndefined({kind: 'InsertInto' as const, schema: object.schema, table: object.name, columns, values, returning, ...tokenInfo2(start, end)})
+            return removeUndefined({kind: 'InsertInto' as const, meta: tokenInfo2(start, end), token: tokenInfo(start), schema: object.schema, table: object.name, columns, values, returning})
         })
         const returningClauseRule = $.RULE<() => SelectClauseAst>('returningClauseRule', () => {
-            const token = $.CONSUME(Returning)
+            const token = tokenInfo($.CONSUME(Returning))
             const columns: SelectClauseExprAst[] = []
             $.AT_LEAST_ONE_SEP4({SEP: Comma, DEF: () => columns.push($.SUBRULE(selectClauseColumnRule))})
-            return {...tokenInfo(token), columns}
+            return {token, columns}
         })
 
         this.selectStatementRule = $.RULE<() => SelectStatementAst>('selectStatementRule', () => {
-            const inner = $.SUBRULE(selectStatementInnerRule)
+            const select = $.SUBRULE(selectStatementInnerRule)
             const end = $.CONSUME(Semicolon)
-            return removeUndefined({kind: 'Select' as const, ...inner, ...mergePositions([inner.select, tokenInfo(end)])})
+            return removeUndefined({kind: 'Select' as const, meta: mergePositions([select.token, tokenInfo(end)]), ...select})
         })
         const selectStatementInnerRule = $.RULE<() => SelectStatementInnerAst>('selectStatementInnerRule', () => {
             // https://www.postgresql.org/docs/current/sql-select.html
@@ -525,28 +546,33 @@ class PostgresParser extends EmbeddedActionsParser {
             const groupBy = $.OPTION3(() => $.SUBRULE(groupByClauseRule))
             const having = $.OPTION4(() => $.SUBRULE(havingClauseRule))
             // WINDOW
-            // union
-            const orderBy = $.OPTION7(() => $.SUBRULE(orderByClauseRule))
-            // LIMIT
-            // OFFSET
-            // FETCH
-            return removeUndefined({select, from, where, groupBy, having, orderBy})
+            // UNION
+            const resultFormat = $.OPTION7(() => $.SUBRULE(selectStatementResultFormatRule))
+            // FOR UPDATE
+            return removeUndefined({...select, from, where, groupBy, having, ...resultFormat})
+        })
+        const selectStatementResultFormatRule = $.RULE<() => {orderBy?: OrderByClauseAst, limit?: LimitClauseAst, offset?: OffsetClauseAst, fetch?: FetchClauseAst}>('selectStatementResultFormatRule', () => {
+            const orderBy = $.OPTION(() => $.SUBRULE(orderByClauseRule))
+            const limit = $.OPTION2(() => $.SUBRULE(limitClauseRule))
+            const offset = $.OPTION3(() => $.SUBRULE(offsetClauseRule))
+            const fetch = $.OPTION4(() => $.SUBRULE(fetchClauseRule))
+            return removeUndefined({orderBy, limit, offset, fetch})
         })
 
         this.setStatementRule = $.RULE<() => SetStatementAst>('setStatementRule', () => {
             // https://www.postgresql.org/docs/current/sql-set.html
             const start = $.CONSUME(Set)
             const scope = $.OPTION(() => $.OR([
-                {ALT: () => ({kind: 'Session' as const, ...tokenInfo($.CONSUME(Session))})},
-                {ALT: () => ({kind: 'Local' as const, ...tokenInfo($.CONSUME(Local))})},
+                {ALT: () => ({kind: 'Session' as const, token: tokenInfo($.CONSUME(Session))})},
+                {ALT: () => ({kind: 'Local' as const, token: tokenInfo($.CONSUME(Local))})},
             ]))
             const parameter = $.SUBRULE($.identifierRule)
             const equal = $.OPTION2(() => $.OR2([
-                {ALT: () => ({kind: '=' as const, ...tokenInfo($.CONSUME(Equal))})},
-                {ALT: () => ({kind: 'To' as const, ...tokenInfo($.CONSUME(To))})},
+                {ALT: () => ({kind: '=' as const, token: tokenInfo($.CONSUME(Equal))})},
+                {ALT: () => ({kind: 'To' as const, token: tokenInfo($.CONSUME(To))})},
             ]))
             const value = $.OR3([
-                {ALT: () => ({kind: 'Default' as const, ...tokenInfo($.CONSUME(Default))})},
+                {ALT: () => ({kind: 'Default' as const, token: tokenInfo($.CONSUME(Default))})},
                 {ALT: () => {
                     const values: (IdentifierAst | LiteralAst)[] = []
                     $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => values.push($.OR4([
@@ -558,16 +584,16 @@ class PostgresParser extends EmbeddedActionsParser {
                 }},
             ])
             const end = $.CONSUME(Semicolon)
-            return removeUndefined({kind: 'Set' as const, scope, parameter, equal, value, ...tokenInfo2(start, end)})
+            return removeUndefined({kind: 'Set' as const, meta: tokenInfo2(start, end), token: tokenInfo(start), scope, parameter, equal, value})
         })
 
         // clauses
 
         this.selectClauseRule = $.RULE<() => SelectClauseAst>('selectClauseRule', () => {
-            const token = $.CONSUME(Select)
+            const token = tokenInfo($.CONSUME(Select))
             const columns: SelectClauseExprAst[] = []
             $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => columns.push($.SUBRULE(selectClauseColumnRule))})
-            return {...tokenInfo(token), columns}
+            return {token, columns}
         })
         const selectClauseColumnRule = $.RULE<() => SelectClauseExprAst>('selectClauseColumnRule', () => {
             const expression = $.SUBRULE($.expressionRule)
@@ -576,11 +602,11 @@ class PostgresParser extends EmbeddedActionsParser {
         })
 
         this.fromClauseRule = $.RULE<() => FromClauseAst>('fromClauseRule', () => {
-            const token = $.CONSUME(From)
+            const token = tokenInfo($.CONSUME(From))
             const item = $.SUBRULE(fromItemRule)
             const joins: FromJoinAst[] = []
             $.MANY({DEF: () => joins.push($.SUBRULE(fromJoinRule))})
-            return removeEmpty({...tokenInfo(token), ...item, joins})
+            return removeEmpty({token, ...item, joins})
         })
         const fromItemRule = $.RULE<() => FromItemAst>('fromItemRule', () => {
             const item = $.OR([
@@ -595,30 +621,31 @@ class PostgresParser extends EmbeddedActionsParser {
             return removeUndefined({kind: 'Table' as const, schema: object.schema, table: object.name})
         })
         const fromQueryRule = $.RULE<() => FromQueryAst>('fromQueryRule', () => {
+            // TODO: can have several parenthesis level, ex: `JOIN ((query1) UNION (query2))`
             $.CONSUME(ParenLeft)
-            const query = $.SUBRULE(selectStatementInnerRule)
+            const select = $.SUBRULE(selectStatementInnerRule)
             $.CONSUME(ParenRight)
-            return {kind: 'Query', ...query}
+            return {kind: 'Select', select}
         })
         const fromJoinRule = $.RULE<() => FromJoinAst>('fromJoinRule', () => {
-            const natural = $.OPTION(() => ({kind: 'Natural', ...tokenInfo($.CONSUME(Natural))}))
+            const natural = $.OPTION(() => ({kind: 'Natural', token: tokenInfo($.CONSUME(Natural))}))
             const join = $.OR([
-                {ALT: () => ({kind: 'Inner' as const, ...tokenInfo2($.OPTION2(() => $.CONSUME(Inner)), $.CONSUME(Join))})},
-                {ALT: () => ({kind: 'Left' as const, ...tokenInfo3($.CONSUME(Left), $.OPTION3(() => $.CONSUME(Outer)), $.CONSUME2(Join))})},
-                {ALT: () => ({kind: 'Right' as const, ...tokenInfo3($.CONSUME(Right), $.OPTION4(() => $.CONSUME2(Outer)), $.CONSUME3(Join))})},
-                {ALT: () => ({kind: 'Full' as const, ...tokenInfo3($.CONSUME(Full), $.OPTION5(() => $.CONSUME3(Outer)), $.CONSUME4(Join))})},
-                {ALT: () => ({kind: 'Cross' as const, ...tokenInfo2($.CONSUME(Cross), $.CONSUME5(Join))})},
+                {ALT: () => ({kind: 'Inner' as const, token: tokenInfo2($.OPTION2(() => $.CONSUME(Inner)), $.CONSUME(Join))})},
+                {ALT: () => ({kind: 'Left' as const, token: tokenInfo3($.CONSUME(Left), $.OPTION3(() => $.CONSUME(Outer)), $.CONSUME2(Join))})},
+                {ALT: () => ({kind: 'Right' as const, token: tokenInfo3($.CONSUME(Right), $.OPTION4(() => $.CONSUME2(Outer)), $.CONSUME3(Join))})},
+                {ALT: () => ({kind: 'Full' as const, token: tokenInfo3($.CONSUME(Full), $.OPTION5(() => $.CONSUME3(Outer)), $.CONSUME4(Join))})},
+                {ALT: () => ({kind: 'Cross' as const, token: tokenInfo2($.CONSUME(Cross), $.CONSUME5(Join))})},
             ])
             const from = $.SUBRULE(fromItemRule)
             const on = $.OPTION6(() => $.OR2([
-                {ALT: () => ({kind: 'On', ...tokenInfo($.CONSUME(On)), predicate: $.SUBRULE($.expressionRule)})},
+                {ALT: () => ({kind: 'On', token: tokenInfo($.CONSUME(On)), predicate: $.SUBRULE($.expressionRule)})},
                 {ALT: () => {
                     const token = tokenInfo($.CONSUME(Using))
                     const columns: IdentifierAst[] = []
                     $.CONSUME(ParenLeft)
                     $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => columns.push($.SUBRULE($.identifierRule))})
                     $.CONSUME(ParenRight)
-                    return {kind: 'Using', ...token, columns: columns.filter(isNotUndefined)}
+                    return {kind: 'Using', token, columns: columns.filter(isNotUndefined)}
                 }},
             ])) || natural
             const alias = $.OPTION7(() => $.SUBRULE($.aliasRule))
@@ -626,25 +653,25 @@ class PostgresParser extends EmbeddedActionsParser {
         })
 
         this.whereClauseRule = $.RULE<() => WhereClauseAst>('whereClauseRule', () => {
-            const token = $.CONSUME(Where)
-            return {...tokenInfo(token), predicate: $.SUBRULE($.expressionRule)}
+            const token = tokenInfo($.CONSUME(Where))
+            return {token, predicate: $.SUBRULE($.expressionRule)}
         })
         const groupByClauseRule = $.RULE<() => GroupByClauseAst>('groupByClauseRule', () => {
-            const token = $.CONSUME(GroupBy)
+            const token = tokenInfo($.CONSUME(GroupBy))
             const mode = $.OPTION(() => $.OR([
-                {ALT: () => ({kind: 'All' as const, ...tokenInfo($.CONSUME(All))})},
-                {ALT: () => ({kind: 'Distinct' as const, ...tokenInfo($.CONSUME(Distinct))})},
+                {ALT: () => ({kind: 'All' as const, token: tokenInfo($.CONSUME(All))})},
+                {ALT: () => ({kind: 'Distinct' as const, token: tokenInfo($.CONSUME(Distinct))})},
             ]))
             const expressions: ExpressionAst[] = []
             $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => expressions.push($.SUBRULE($.expressionRule))})
-            return removeUndefined({...tokenInfo(token), mode, expressions: expressions.filter(isNotUndefined)})
+            return removeUndefined({token, mode, expressions: expressions.filter(isNotUndefined)})
         })
         const havingClauseRule = $.RULE<() => HavingClauseAst>('havingClauseRule', () => {
-            const token = $.CONSUME(Having)
-            return {...tokenInfo(token), predicate: $.SUBRULE($.expressionRule)}
+            const token = tokenInfo($.CONSUME(Having))
+            return {token, predicate: $.SUBRULE($.expressionRule)}
         })
         const orderByClauseRule = $.RULE<() => OrderByClauseAst>('orderByClauseRule', () => {
-            const token = $.CONSUME(OrderBy)
+            const token = tokenInfo($.CONSUME(OrderBy))
             const expressions: (ExpressionAst & {order?: SortOrderAst, nulls?: SortNullsAst})[] = []
             $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => {
                 const expr = $.SUBRULE($.expressionRule)
@@ -652,27 +679,61 @@ class PostgresParser extends EmbeddedActionsParser {
                 const nulls = $.OPTION3(() => $.SUBRULE(sortNullsRule))
                 expr && expressions.push(removeUndefined({...expr, order, nulls}))
             }})
-            return {...tokenInfo(token), expressions}
+            return {token, expressions}
+        })
+        const limitClauseRule = $.RULE<() => LimitClauseAst>('limitClauseRule', () => {
+            const token = tokenInfo($.CONSUME(Limit))
+            const value = $.OR([
+                {ALT: () => $.SUBRULE($.integerRule)},
+                {ALT: () => ({kind: 'All' as const, token: tokenInfo($.CONSUME(All))})},
+            ])
+            return {token, value}
+        })
+        const offsetClauseRule = $.RULE<() => OffsetClauseAst>('offsetClauseRule', () => {
+            const token = tokenInfo($.CONSUME(Offset))
+            const value = $.SUBRULE($.integerRule)
+            const rows = $.OPTION(() => $.OR([
+                {ALT: () => ({kind: 'Row' as const, token: tokenInfo($.CONSUME(Row))})},
+                {ALT: () => ({kind: 'Rows' as const, token: tokenInfo($.CONSUME(Rows))})},
+            ]))
+            return removeUndefined({token, value, rows})
+        })
+        const fetchClauseRule = $.RULE<() => FetchClauseAst>('fetchClauseRule', () => {
+            const token = tokenInfo($.CONSUME(Fetch))
+            const first = $.OR([
+                {ALT: () => ({kind: 'First' as const, token: tokenInfo($.CONSUME(First))})},
+                {ALT: () => ({kind: 'Next' as const, token: tokenInfo($.CONSUME(Next))})},
+            ])
+            const value = $.SUBRULE($.integerRule)
+            const rows = $.OR2([
+                {ALT: () => ({kind: 'Row' as const, token: tokenInfo($.CONSUME(Row))})},
+                {ALT: () => ({kind: 'Rows' as const, token: tokenInfo($.CONSUME(Rows))})},
+            ])
+            const mode = $.OR3([
+                {ALT: () => ({kind: 'Only' as const, token: tokenInfo($.CONSUME(Only))})},
+                {ALT: () => ({kind: 'WithTies' as const, token: tokenInfo2($.CONSUME(With), $.CONSUME(Ties))})},
+            ])
+            return {token, first, value, rows, mode}
         })
 
         const indexColumnRule = $.RULE<() => IndexColumnAst>('indexColumnRule', () => {
             const expr = $.SUBRULE($.expressionRule)
-            const collation = $.OPTION(() => ({...tokenInfo($.CONSUME(Collate)), name: $.SUBRULE3($.identifierRule)}))
+            const collation = $.OPTION(() => ({token: tokenInfo($.CONSUME(Collate)), name: $.SUBRULE3($.identifierRule)}))
             const order = $.OPTION2(() => $.SUBRULE(sortOrderRule))
             const nulls = $.OPTION3(() => $.SUBRULE(sortNullsRule))
             return removeUndefined({...expr, collation, order, nulls})
         })
         const sortOrderRule = $.RULE<() => SortOrderAst>('sortOrderRule', () => {
             return $.OR([
-                {ALT: () => ({kind: 'Asc' as const, ...tokenInfo($.CONSUME(Asc))})},
-                {ALT: () => ({kind: 'Desc' as const, ...tokenInfo($.CONSUME(Desc))})},
+                {ALT: () => ({kind: 'Asc' as const, token: tokenInfo($.CONSUME(Asc))})},
+                {ALT: () => ({kind: 'Desc' as const, token: tokenInfo($.CONSUME(Desc))})},
             ])
         })
         const sortNullsRule = $.RULE<() => SortNullsAst>('sortNullsRule', () => {
             const nulls = $.CONSUME(Nulls)
             return $.OR([
-                {ALT: () => ({kind: 'First' as const, ...tokenInfo2(nulls, $.CONSUME(First))})},
-                {ALT: () => ({kind: 'Last' as const, ...tokenInfo2(nulls, $.CONSUME(Last))})},
+                {ALT: () => ({kind: 'First' as const, token: tokenInfo2(nulls, $.CONSUME(First))})},
+                {ALT: () => ({kind: 'Last' as const, token: tokenInfo2(nulls, $.CONSUME(Last))})},
             ])
         })
 
@@ -695,37 +756,35 @@ class PostgresParser extends EmbeddedActionsParser {
             const constraint = $.OPTION(() => $.SUBRULE(constraintNameRule))
             const not = $.OPTION2(() => $.CONSUME(Not))
             const nullable = $.CONSUME(Null)
-            const value = !not
-            const token = not ? tokenInfo2(not, nullable) : tokenInfo(nullable)
-            return removeUndefined({kind: 'Nullable' as const, value, constraint, ...token})
+            return removeUndefined({kind: 'Nullable' as const, constraint, token: tokenInfo2(not, nullable), value: !not})
         })
         const tableColumnDefaultRule = $.RULE<() => TableColumnDefaultAst>('tableColumnDefaultRule', () => {
             const constraint = $.OPTION(() => $.SUBRULE(constraintNameRule))
-            const token = $.CONSUME(Default)
+            const token = tokenInfo($.CONSUME(Default))
             const expression = $.SUBRULE(atomicExpressionRule)
-            return removeUndefined({kind: 'Default' as const, expression, constraint, ...tokenInfo(token)})
+            return removeUndefined({kind: 'Default' as const, constraint, token, expression})
         })
         const tableColumnPkRule = $.RULE<() => TableColumnPkAst>('tableColumnPkRule', () => {
             const constraint = $.OPTION(() => $.SUBRULE(constraintNameRule))
-            const token = $.CONSUME(PrimaryKey)
-            return removeUndefined({kind: 'PrimaryKey' as const, constraint, ...tokenInfo(token)})
+            const token = tokenInfo($.CONSUME(PrimaryKey))
+            return removeUndefined({kind: 'PrimaryKey' as const, constraint, token})
         })
         const tableColumnUniqueRule = $.RULE<() => TableColumnUniqueAst>('tableColumnUniqueRule', () => {
             const constraint = $.OPTION(() => $.SUBRULE(constraintNameRule))
-            const token = $.CONSUME(Unique)
-            return removeUndefined({kind: 'Unique' as const, constraint, ...tokenInfo(token)})
+            const token = tokenInfo($.CONSUME(Unique))
+            return removeUndefined({kind: 'Unique' as const, constraint, token})
         })
         const tableColumnCheckRule = $.RULE<() => TableColumnCheckAst>('tableColumnCheckRule', () => {
             const constraint = $.OPTION(() => $.SUBRULE(constraintNameRule))
-            const token = $.CONSUME(Check)
+            const token = tokenInfo($.CONSUME(Check))
             $.CONSUME(ParenLeft)
             const predicate = $.SUBRULE($.expressionRule)
             $.CONSUME(ParenRight)
-            return removeUndefined({kind: 'Check' as const, constraint, ...tokenInfo(token), predicate})
+            return removeUndefined({kind: 'Check' as const, constraint, token, predicate})
         })
         const tableColumnFkRule = $.RULE<() => TableColumnFkAst>('tableColumnFkRule', () => {
             const constraint = $.OPTION(() => $.SUBRULE(constraintNameRule))
-            const token = $.CONSUME(References)
+            const token = tokenInfo($.CONSUME(References))
             const object = $.SUBRULE($.objectNameRule)
             const column = $.OPTION2(() => {
                 $.CONSUME(ParenLeft)
@@ -733,9 +792,9 @@ class PostgresParser extends EmbeddedActionsParser {
                 $.CONSUME(ParenRight)
                 return column
             })
-            const onUpdate = $.OPTION3(() => ({...tokenInfo2($.CONSUME(On), $.CONSUME(Update)), ...$.SUBRULE(foreignKeyActionsRule)}))
-            const onDelete = $.OPTION4(() => ({...tokenInfo2($.CONSUME2(On), $.CONSUME(Delete)), ...$.SUBRULE2(foreignKeyActionsRule)}))
-            return removeUndefined({kind: 'ForeignKey' as const, schema: object.schema, table: object.name, column, onUpdate, onDelete, constraint, ...tokenInfo(token)})
+            const onUpdate = $.OPTION3(() => ({token: tokenInfo2($.CONSUME(On), $.CONSUME(Update)), ...$.SUBRULE(foreignKeyActionsRule)}))
+            const onDelete = $.OPTION4(() => ({token: tokenInfo2($.CONSUME2(On), $.CONSUME(Delete)), ...$.SUBRULE2(foreignKeyActionsRule)}))
+            return removeUndefined({kind: 'ForeignKey' as const, constraint, token, schema: object.schema, table: object.name, column, onUpdate, onDelete})
         })
 
         this.tableConstraintRule = $.RULE<() => TableConstraintAst>('tableConstraintRule', () => $.OR([
@@ -746,28 +805,28 @@ class PostgresParser extends EmbeddedActionsParser {
         ]))
         const tablePkRule = $.RULE<() => TablePkAst>('tablePkRule', () => {
             const constraint = $.OPTION(() => $.SUBRULE(constraintNameRule))
-            const token = $.CONSUME(PrimaryKey)
+            const token = tokenInfo($.CONSUME(PrimaryKey))
             const columns = $.SUBRULE(columnNamesRule)
-            return removeUndefined({kind: 'PrimaryKey' as const, constraint, ...tokenInfo(token), columns})
+            return removeUndefined({kind: 'PrimaryKey' as const, constraint, token, columns})
         })
         const tableUniqueRule = $.RULE<() => TableUniqueAst>('tableUniqueRule', () => {
             const constraint = $.OPTION(() => $.SUBRULE(constraintNameRule))
-            const token = $.CONSUME(Unique)
+            const token = tokenInfo($.CONSUME(Unique))
             const columns = $.SUBRULE(columnNamesRule)
-            return removeUndefined({kind: 'Unique' as const, constraint, ...tokenInfo(token), columns})
+            return removeUndefined({kind: 'Unique' as const, constraint, token, columns})
         })
         const tableCheckRule = tableColumnCheckRule // exactly the same ^^
         const tableFkRule = $.RULE<() => TableFkAst>('tableFkRule', () => {
             const constraint = $.OPTION(() => $.SUBRULE(constraintNameRule))
-            const token = $.CONSUME(ForeignKey)
+            const token = tokenInfo($.CONSUME(ForeignKey))
             const columns = $.SUBRULE(columnNamesRule)
             const refToken = $.CONSUME(References)
             const refTable = $.SUBRULE($.objectNameRule)
             const refColumns = $.OPTION2(() => $.SUBRULE2(columnNamesRule))
-            const onUpdate = $.OPTION3(() => ({...tokenInfo2($.CONSUME(On), $.CONSUME(Update)), ...$.SUBRULE(foreignKeyActionsRule)}))
-            const onDelete = $.OPTION4(() => ({...tokenInfo2($.CONSUME2(On), $.CONSUME(Delete)), ...$.SUBRULE2(foreignKeyActionsRule)}))
-            const ref = removeUndefined({...tokenInfo(refToken), schema: refTable.schema, table: refTable.name, columns: refColumns})
-            return removeUndefined({kind: 'ForeignKey' as const, ...tokenInfo(token), columns, ref, onUpdate, onDelete, constraint})
+            const onUpdate = $.OPTION3(() => ({token: tokenInfo2($.CONSUME(On), $.CONSUME(Update)), ...$.SUBRULE(foreignKeyActionsRule)}))
+            const onDelete = $.OPTION4(() => ({token: tokenInfo2($.CONSUME2(On), $.CONSUME(Delete)), ...$.SUBRULE2(foreignKeyActionsRule)}))
+            const ref = removeUndefined({token: tokenInfo(refToken), schema: refTable.schema, table: refTable.name, columns: refColumns})
+            return removeUndefined({kind: 'ForeignKey' as const, constraint, token, columns, ref, onUpdate, onDelete})
         })
 
         const createTypeStructAttrs = $.RULE<() => TypeColumnAst[]>('createTypeStructAttrs', () => {
@@ -776,7 +835,7 @@ class PostgresParser extends EmbeddedActionsParser {
             $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => attrs.push(removeUndefined({
                 name: $.SUBRULE($.identifierRule),
                 type: $.SUBRULE($.columnTypeRule),
-                collation: $.OPTION(() => ({...tokenInfo($.CONSUME(Collate)), name: $.SUBRULE2($.identifierRule)}))
+                collation: $.OPTION(() => ({token: tokenInfo($.CONSUME(Collate)), name: $.SUBRULE2($.identifierRule)}))
             }))})
             $.CONSUME(ParenRight)
             return attrs.filter(isNotUndefined)
@@ -801,21 +860,17 @@ class PostgresParser extends EmbeddedActionsParser {
             return params
         })
 
-        const constraintNameRule = $.RULE<() => ConstraintNameAst>('constraintNameRule', () => {
-            const token = $.CONSUME(Constraint)
-            const name = $.SUBRULE($.identifierRule)
-            return {...tokenInfo(token), name}
-        })
+        const constraintNameRule = $.RULE<() => ConstraintNameAst>('constraintNameRule', () => ({token: tokenInfo($.CONSUME(Constraint)), name: $.SUBRULE($.identifierRule)}))
         const foreignKeyActionsRule = $.RULE<() => ForeignKeyActionAst>('foreignKeyActionsRule', () => {
-            const res = $.OR([
-                {ALT: () => ({action: {kind: 'NoAction' as const, ...tokenInfo($.CONSUME(NoAction))}})},
-                {ALT: () => ({action: {kind: 'Restrict' as const, ...tokenInfo($.CONSUME(Restrict))}})},
-                {ALT: () => ({action: {kind: 'Cascade' as const, ...tokenInfo($.CONSUME(Cascade))}})},
-                {ALT: () => ({action: {kind: 'SetNull' as const, ...tokenInfo($.CONSUME(SetNull))}})},
-                {ALT: () => ({action: {kind: 'SetDefault' as const, ...tokenInfo($.CONSUME(SetDefault))}})},
+            const action = $.OR([
+                {ALT: () => ({kind: 'NoAction' as const, token: tokenInfo($.CONSUME(NoAction))})},
+                {ALT: () => ({kind: 'Restrict' as const, token: tokenInfo($.CONSUME(Restrict))})},
+                {ALT: () => ({kind: 'Cascade' as const, token: tokenInfo($.CONSUME(Cascade))})},
+                {ALT: () => ({kind: 'SetNull' as const, token: tokenInfo($.CONSUME(SetNull))})},
+                {ALT: () => ({kind: 'SetDefault' as const, token: tokenInfo($.CONSUME(SetDefault))})},
             ])
             const columns = $.OPTION(() => $.SUBRULE(columnNamesRule))
-            return removeEmpty({...res, columns})
+            return removeEmpty({action, columns})
         })
         const columnNamesRule = $.RULE<() => IdentifierAst[]>('columnNamesRule', () => {
             $.CONSUME(ParenLeft)
@@ -831,16 +886,16 @@ class PostgresParser extends EmbeddedActionsParser {
         // basic parts
 
         this.aliasRule = $.RULE<() => AliasAst>('aliasRule', () => {
-            const token = $.OPTION(() => tokenInfo($.CONSUME(As))) || {}
+            const token = $.OPTION(() => tokenInfo($.CONSUME(As)))
             const name = $.SUBRULE($.identifierRule)
-            return {...token, name}
+            return removeUndefined({token, name})
         })
 
         this.expressionRule = $.RULE<() => ExpressionAst>('expressionRule', () => $.SUBRULE(orExpressionRule)) // Start with OR expressions (lowest precedence)
         const orExpressionRule = $.RULE<() => ExpressionAst>('orExpressionRule', () => {
             let expr = $.SUBRULE(andExpressionRule) // AND has higher precedence than OR
             $.MANY(() => {
-                const op = {kind: 'Or' as const, ...tokenInfo($.CONSUME(Or))}
+                const op = {kind: 'Or' as const, token: tokenInfo($.CONSUME(Or))}
                 const right = $.SUBRULE2(andExpressionRule)
                 expr = {kind: 'Operation', left: expr, op, right}
             })
@@ -849,7 +904,7 @@ class PostgresParser extends EmbeddedActionsParser {
         const andExpressionRule = $.RULE<() => ExpressionAst>('andExpressionRule', () => {
             let expr = $.SUBRULE(operatorExpressionRule) // operator has higher precedence than AND
             $.MANY(() => {
-                const op = {kind: 'And' as const, ...tokenInfo($.CONSUME(And))}
+                const op = {kind: 'And' as const, token: tokenInfo($.CONSUME(And))}
                 const right = $.SUBRULE2(operatorExpressionRule)
                 expr = {kind: 'Operation', left: expr, op, right}
             })
@@ -874,7 +929,7 @@ class PostgresParser extends EmbeddedActionsParser {
                 {ALT: () => $.SUBRULE(groupRule)},
                 {ALT: () => $.SUBRULE($.literalRule)},
                 {ALT: () => $.SUBRULE($.parameterRule)},
-                {ALT: () => ({kind: 'Wildcard', ...tokenInfo($.CONSUME(Asterisk))})},
+                {ALT: () => ({kind: 'Wildcard', token: tokenInfo($.CONSUME(Asterisk))})},
                 {ALT: () => {
                     const first = $.SUBRULE($.identifierRule)
                     const nest = $.OPTION(() => $.OR2([
@@ -882,7 +937,7 @@ class PostgresParser extends EmbeddedActionsParser {
                         {ALT: () => {
                             $.CONSUME(Dot)
                             return $.OR3([
-                                {ALT: () => ({kind: 'Wildcard', table: first, ...tokenInfo($.CONSUME2(Asterisk))})},
+                                {ALT: () => ({kind: 'Wildcard', table: first, token: tokenInfo($.CONSUME2(Asterisk))})},
                                 {ALT: () => {
                                     const second = $.SUBRULE2($.identifierRule)
                                     const nest2 = $.OPTION2(() => $.OR4([
@@ -890,7 +945,7 @@ class PostgresParser extends EmbeddedActionsParser {
                                         {ALT: () => {
                                             $.CONSUME2(Dot)
                                             return $.OR5([
-                                                {ALT: () => ({kind: 'Wildcard', schema: first, table: second, ...tokenInfo($.CONSUME3(Asterisk))})},
+                                                {ALT: () => ({kind: 'Wildcard', schema: first, table: second, token: tokenInfo($.CONSUME3(Asterisk))})},
                                                 {ALT: () => removeEmpty({kind: 'Column', schema: first, table: second, column: $.SUBRULE3($.identifierRule), json: $.SUBRULE3(columnJsonRule)})},
                                             ])
                                         }}
@@ -903,69 +958,65 @@ class PostgresParser extends EmbeddedActionsParser {
                     return nest ? nest : removeEmpty({kind: 'Column', column: first, json: $.SUBRULE(columnJsonRule)})
                 }}
             ])
-            const cast = $.OPTION3(() => {
-                const token = tokenInfo2($.CONSUME(Colon), $.CONSUME2(Colon))
-                const type = $.SUBRULE($.columnTypeRule)
-                return {...token, type}
-            })
+            const cast = $.OPTION3(() => ({token: tokenInfo2($.CONSUME(Colon), $.CONSUME2(Colon)), type: $.SUBRULE($.columnTypeRule)}))
             return removeUndefined({...expr, cast})
         })
         const operatorRule = $.RULE<() => OperatorAst>('operatorRule', () => $.OR([
             // https://www.postgresql.org/docs/current/functions.html
-            {ALT: () => ({kind: '+' as const, ...tokenInfo($.CONSUME(Plus))})},
-            {ALT: () => ({kind: '-' as const, ...tokenInfo($.CONSUME(Dash))})},
-            {ALT: () => ({kind: '*' as const, ...tokenInfo($.CONSUME(Asterisk))})},
-            {ALT: () => ({kind: '/' as const, ...tokenInfo($.CONSUME(Slash))})},
-            {ALT: () => ({kind: '%' as const, ...tokenInfo($.CONSUME(Percent))})},
-            {ALT: () => ({kind: '^' as const, ...tokenInfo($.CONSUME(Caret))})},
-            {ALT: () => ({kind: '&' as const, ...tokenInfo($.CONSUME(Amp))})},
-            {ALT: () => ({kind: '#' as const, ...tokenInfo($.CONSUME(Hash))})},
-            {ALT: () => ({kind: '=' as const, ...tokenInfo($.CONSUME(Equal))})},
-            {ALT: () => ({kind: 'Like' as const, ...tokenInfo($.CONSUME(Like))})},
-            {ALT: () => ({kind: 'In' as const, ...tokenInfo($.CONSUME(In))})},
+            {ALT: () => ({kind: '+' as const, token: tokenInfo($.CONSUME(Plus))})},
+            {ALT: () => ({kind: '-' as const, token: tokenInfo($.CONSUME(Dash))})},
+            {ALT: () => ({kind: '*' as const, token: tokenInfo($.CONSUME(Asterisk))})},
+            {ALT: () => ({kind: '/' as const, token: tokenInfo($.CONSUME(Slash))})},
+            {ALT: () => ({kind: '%' as const, token: tokenInfo($.CONSUME(Percent))})},
+            {ALT: () => ({kind: '^' as const, token: tokenInfo($.CONSUME(Caret))})},
+            {ALT: () => ({kind: '&' as const, token: tokenInfo($.CONSUME(Amp))})},
+            {ALT: () => ({kind: '#' as const, token: tokenInfo($.CONSUME(Hash))})},
+            {ALT: () => ({kind: '=' as const, token: tokenInfo($.CONSUME(Equal))})},
+            {ALT: () => ({kind: 'Like' as const, token: tokenInfo($.CONSUME(Like))})},
+            {ALT: () => ({kind: 'In' as const, token: tokenInfo($.CONSUME(In))})},
             {ALT: () => {
                 const lt = $.CONSUME(LowerThan)
                 const res = $.OPTION(() => $.OR2([
-                    {ALT: () => ({kind: '<=' as const, ...tokenInfo2(lt, $.CONSUME2(Equal))})},
-                    {ALT: () => ({kind: '<<' as const, ...tokenInfo2(lt, $.CONSUME2(LowerThan))})},
-                    {ALT: () => ({kind: '<>' as const, ...tokenInfo2(lt, $.CONSUME(GreaterThan))})},
+                    {ALT: () => ({kind: '<=' as const, token: tokenInfo2(lt, $.CONSUME2(Equal))})},
+                    {ALT: () => ({kind: '<<' as const, token: tokenInfo2(lt, $.CONSUME2(LowerThan))})},
+                    {ALT: () => ({kind: '<>' as const, token: tokenInfo2(lt, $.CONSUME(GreaterThan))})},
                 ]))
-                return res ? res : {kind: '<' as const, ...tokenInfo(lt)}
+                return res ? res : {kind: '<' as const, token: tokenInfo(lt)}
             }},
             {ALT: () => {
                 const gt = $.CONSUME2(GreaterThan)
                 const res = $.OPTION2(() => $.OR3([
-                    {ALT: () => ({kind: '>=' as const, ...tokenInfo2(gt, $.CONSUME3(Equal))})},
-                    {ALT: () => ({kind: '>>' as const, ...tokenInfo2(gt, $.CONSUME3(GreaterThan))})},
+                    {ALT: () => ({kind: '>=' as const, token: tokenInfo2(gt, $.CONSUME3(Equal))})},
+                    {ALT: () => ({kind: '>>' as const, token: tokenInfo2(gt, $.CONSUME3(GreaterThan))})},
                 ]))
-                return res ? res : {kind: '>' as const, ...tokenInfo(gt)}
+                return res ? res : {kind: '>' as const, token: tokenInfo(gt)}
             }},
             {ALT: () => {
                 const pipe = $.CONSUME(Pipe)
-                const res = $.OPTION3(() => ({kind: '||' as const, ...tokenInfo2(pipe, $.CONSUME2(Pipe))}))
-                return res ? res : {kind: '|' as const, ...tokenInfo(pipe)}
+                const res = $.OPTION3(() => ({kind: '||' as const, token: tokenInfo2(pipe, $.CONSUME2(Pipe))}))
+                return res ? res : {kind: '|' as const, token: tokenInfo(pipe)}
             }},
             {ALT: () => {
                 const tilde = $.CONSUME(Tilde)
-                const res = $.OPTION4(() => ({kind: '~*' as const, ...tokenInfo2(tilde, $.CONSUME2(Asterisk))}))
-                return res ? res : {kind: '~' as const, ...tokenInfo(tilde)}
+                const res = $.OPTION4(() => ({kind: '~*' as const, token: tokenInfo2(tilde, $.CONSUME2(Asterisk))}))
+                return res ? res : {kind: '~' as const, token: tokenInfo(tilde)}
             }},
             {ALT: () => {
                 const exclamation = $.CONSUME(Exclamation)
                 return $.OR4([
-                    {ALT: () => ({kind: '!=' as const, ...tokenInfo2(exclamation, $.CONSUME4(Equal))})},
+                    {ALT: () => ({kind: '!=' as const, token: tokenInfo2(exclamation, $.CONSUME4(Equal))})},
                     {ALT: () => {
                         const tilde = $.CONSUME2(Tilde)
-                        const res = $.OPTION5(() => ({kind: '!~*' as const, ...tokenInfo3(exclamation, tilde, $.CONSUME3(Asterisk))}))
-                        return res ? res : {kind: '!~' as const, ...tokenInfo2(exclamation, tilde)}
+                        const res = $.OPTION5(() => ({kind: '!~*' as const, token: tokenInfo3(exclamation, tilde, $.CONSUME3(Asterisk))}))
+                        return res ? res : {kind: '!~' as const, token: tokenInfo2(exclamation, tilde)}
                     }}
                 ])
             }},
             {ALT: () => {
                 const not = $.CONSUME2(Not)
                 return $.OPTION6(() => $.OR5([
-                    {ALT: () => ({kind: 'NotLike' as const, ...tokenInfo2(not, $.CONSUME2(Like))})},
-                    {ALT: () => ({kind: 'NotIn' as const, ...tokenInfo2(not, $.CONSUME2(In))})},
+                    {ALT: () => ({kind: 'NotLike' as const, token: tokenInfo2(not, $.CONSUME2(Like))})},
+                    {ALT: () => ({kind: 'NotIn' as const, token: tokenInfo2(not, $.CONSUME2(In))})},
                 ]))
             }},
         ]))
@@ -991,11 +1042,11 @@ class PostgresParser extends EmbeddedActionsParser {
             }})
             return res
         })
-        const jsonOpRule = $.RULE<() => {kind: JsonOp} & TokenInfo>('jsonOpRule', () => {
+        const jsonOpRule = $.RULE<() => { kind: JsonOp, token: TokenInfo }>('jsonOpRule', () => {
             const dash = $.CONSUME(Dash)
             const gt = $.CONSUME(GreaterThan)
             const gt2 = $.OPTION(() => $.CONSUME2(GreaterThan))
-            return gt2 ? {kind: '->>' as const, ...tokenInfo3(dash, gt, gt2)} : {kind: '->' as const, ...tokenInfo2(dash, gt)}
+            return gt2 ? {kind: '->>' as const, token: tokenInfo3(dash, gt, gt2)} : {kind: '->' as const, token: tokenInfo2(dash, gt)}
         })
         const functionParamsRule = $.RULE<() => ExpressionAst[]>('functionParamsRule', () => {
             $.CONSUME(ParenLeft)
@@ -1037,10 +1088,10 @@ class PostgresParser extends EmbeddedActionsParser {
             ]))})
             const array = $.OPTION3(() => tokenInfo2($.CONSUME(BracketLeft), $.CONSUME(BracketRight)))
             const name = {
-                value: parts.filter(isNotUndefined).map(p => p.name?.value + (p.args ? `(${p.args.map(v => v.value).join(', ')})` : '')).join(' ') + (array ? '[]' : ''),
-                ...mergePositions(parts.flatMap(p => [p.name, p.last]).concat([array]))
+                token: mergePositions(parts.flatMap(p => [p.name?.token, p.last]).concat([array])),
+                value: parts.filter(isNotUndefined).map(p => p.name?.value + (p.args ? `(${p.args.map(v => v.value).join(', ')})` : '')).join(' ') + (array ? '[]' : '')
             }
-            return removeEmpty({schema, name, args: parts.flatMap(p => p.args || []), array, ...mergePositions([schema, name])})
+            return removeEmpty({schema, name, args: parts.flatMap(p => p.args || []), array, token: mergePositions([schema?.token, name.token])})
         })
 
         this.literalRule = $.RULE<() => LiteralAst>('literalRule', () => $.OR([
@@ -1054,11 +1105,11 @@ class PostgresParser extends EmbeddedActionsParser {
         // elements
 
         this.parameterRule = $.RULE<() => ParameterAst>('parameterRule', () => $.OR([
-            {ALT: () => ({kind: 'Parameter', value: '?', ...tokenInfo($.CONSUME(QuestionMark))})},
+            {ALT: () => ({kind: 'Parameter', value: '?', token: tokenInfo($.CONSUME(QuestionMark))})},
             {ALT: () => {
                 const d = $.CONSUME(Dollar)
                 const i = $.CONSUME(Integer)
-                return {kind: 'Parameter', value: `${d.image}${i.image}`, index: parseInt(i.image), ...tokenInfo2(d, i)}
+                return {kind: 'Parameter', value: `${d.image}${i.image}`, index: parseInt(i.image), token: tokenInfo2(d, i)}
             }}
         ]))
 
@@ -1066,9 +1117,9 @@ class PostgresParser extends EmbeddedActionsParser {
             {ALT: () => {
                 const token = $.CONSUME(Identifier)
                 if (token.image.startsWith('"') && token.image.endsWith('"')) {
-                    return {kind: 'Identifier', value: token.image.slice(1, -1).replaceAll(/\\"/g, '"'), quoted: true, ...tokenInfo(token)}
+                    return {kind: 'Identifier', token: tokenInfo(token), value: token.image.slice(1, -1).replaceAll(/\\"/g, '"'), quoted: true}
                 } else {
-                    return {kind: 'Identifier', value: token.image, ...tokenInfo(token)}
+                    return {kind: 'Identifier', token: tokenInfo(token), value: token.image}
                 }
             }},
             {ALT: () => toIdentifier($.CONSUME(Index))}, // allowed as identifier
@@ -1079,35 +1130,32 @@ class PostgresParser extends EmbeddedActionsParser {
             const token = $.CONSUME(String)
             if (token.image.match(/^E/i)) {
                 // https://www.postgresql.org/docs/current/sql-syntax-lexical.html
-                return {kind: 'String', value: token.image.slice(2, -1).replaceAll(/''/g, "'"), escaped: true, ...tokenInfo(token)}
+                return {kind: 'String', token: tokenInfo(token), value: token.image.slice(2, -1).replaceAll(/''/g, "'"), escaped: true}
             } else {
-                return {kind: 'String', value: token.image.slice(1, -1).replaceAll(/''/g, "'"), ...tokenInfo(token)}
+                return {kind: 'String', token: tokenInfo(token), value: token.image.slice(1, -1).replaceAll(/''/g, "'")}
             }
         })
 
         this.integerRule = $.RULE<() => IntegerAst>('integerRule', () => {
             const neg = $.OPTION(() => $.CONSUME(Dash))
             const token = $.CONSUME(Integer)
-            return neg ? {kind: 'Integer', value: parseInt(neg.image + token.image), ...tokenInfo2(neg, token)} :
-                {kind: 'Integer', value: parseInt(token.image), ...tokenInfo(token)}
+            return neg ? {kind: 'Integer', token: tokenInfo2(neg, token), value: parseInt(neg.image + token.image)} :
+                {kind: 'Integer', token: tokenInfo(token), value: parseInt(token.image)}
         })
 
         this.decimalRule = $.RULE<() => DecimalAst>('decimalRule', () => {
             const neg = $.OPTION(() => $.CONSUME(Dash))
             const token = $.CONSUME(Decimal)
-            return neg ? {kind: 'Decimal', value: parseFloat(neg.image + token.image), ...tokenInfo2(neg, token)} :
-                {kind: 'Decimal', value: parseFloat(token.image), ...tokenInfo(token)}
+            return neg ? {kind: 'Decimal', token: tokenInfo2(neg, token), value: parseFloat(neg.image + token.image)} :
+                {kind: 'Decimal', token: tokenInfo(token), value: parseFloat(token.image)}
         })
 
         this.booleanRule = $.RULE<() => BooleanAst>('booleanRule', () => $.OR([
-            {ALT: () => ({kind: 'Boolean', value: true, ...tokenInfo($.CONSUME(True))})},
-            {ALT: () => ({kind: 'Boolean', value: false, ...tokenInfo($.CONSUME(False))})},
+            {ALT: () => ({kind: 'Boolean', token: tokenInfo($.CONSUME(True)), value: true})},
+            {ALT: () => ({kind: 'Boolean', token: tokenInfo($.CONSUME(False)), value: false})},
         ]))
 
-        this.nullRule = $.RULE<() => NullAst>('nullRule', () => {
-            const token = $.CONSUME(Null)
-            return {kind: 'Null', ...tokenInfo(token)}
-        })
+        this.nullRule = $.RULE<() => NullAst>('nullRule', () => ({kind: 'Null', token: tokenInfo($.CONSUME(Null))}))
 
         this.performSelfAnalysis()
     }
@@ -1134,11 +1182,11 @@ export function parsePostgresAst(input: string, opts: { strict?: boolean } = {st
 
 function buildComment(token: IToken): CommentAst {
     if (token.tokenType.name === 'LineComment') {
-        return {kind: 'line', value: token.image.slice(2).trim(), ...tokenInfo(token)}
+        return {kind: 'line', token: tokenInfo(token), value: token.image.slice(2).trim()}
     } else if (token.image.startsWith('/*\n *') && token.image.endsWith('\n */')) {
-        return {kind: 'doc', value: token.image.slice(3, -4).split('\n').map(line => line.startsWith(' *') ? line.slice(2).trim() : line.trim()).join('\n'), ...tokenInfo(token)}
+        return {kind: 'doc', token: tokenInfo(token), value: token.image.slice(3, -4).split('\n').map(line => line.startsWith(' *') ? line.slice(2).trim() : line.trim()).join('\n')}
     } else {
-        return {kind: 'block', value: token.image.slice(2, -2).trim(), ...tokenInfo(token)}
+        return {kind: 'block', token: tokenInfo(token), value: token.image.slice(2, -2).trim()}
     }
 }
 
@@ -1160,7 +1208,7 @@ function formatParserError(err: IRecognitionException): ParserError {
 }
 
 function toIdentifier(token: IToken): IdentifierAst {
-    return {kind: 'Identifier', value: token.image, ...tokenInfo(token)}
+    return {kind: 'Identifier', token: tokenInfo(token), value: token.image}
 }
 
 function tokenInfo(token: IToken, issues?: TokenIssue[]): TokenInfo {
