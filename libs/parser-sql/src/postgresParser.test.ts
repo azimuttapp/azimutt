@@ -436,6 +436,39 @@ describe('postgresParser', () => {
                 where: {token: token(38, 42), predicate: operation(column('id', 44), op('=', 47), integer(1, 49))}
             }]}})
         })
+        test('union', () => {
+            expect(parsePostgresAst('SELECT name FROM users UNION ALL SELECT name FROM organizations;')).toEqual({result: {statements: [{
+                ...stmt('Select', 0, 5, 63),
+                columns: [column('name', 7)],
+                from: {token: token(12, 15), kind: 'Table', table: identifier('users', 17)},
+                union: {...kind('Union', 23), mode: kind('All', 29), select: {
+                    token: token(33, 38),
+                    columns: [column('name', 40)],
+                    from: {token: token(45, 48), kind: 'Table', table: identifier('organizations', 50)},
+                }}
+            }]}})
+        })
+        test('flexible parenthesis', () => {
+            expect(parsePostgresAst('(SELECT * FROM ((SELECT name FROM users) UNION (SELECT name FROM organizations)));')).toEqual({result: {statements: [{
+                ...stmt('Select', 1, 6, 81),
+                columns: [kind('Wildcard', 8, 8)],
+                from: {token: token(10, 13), kind: 'Select', select: {
+                    token: token(17, 22),
+                    columns: [column('name', 24)],
+                    from: {token: token(29, 32), kind: 'Table', table: identifier('users', 34)},
+                    union: {...kind('Union', 41), select: {
+                        token: token(48, 53),
+                        columns: [column('name', 55)],
+                        from: {token: token(60, 63), kind: 'Table', table: identifier('organizations', 65)},
+                    }}
+                }}
+            }]}})
+            expect(parsePostgresAst('(SELECT * FROM users WHERE role=0 ORDER BY id LIMIT 1 OFFSET 0 FETCH FIRST 1 ROW ONLY);').errors).toEqual(undefined)
+            // expect(parsePostgresAst('(SELECT * FROM users WHERE role=0 ORDER BY id LIMIT 1 OFFSET 0) FETCH FIRST 1 ROW ONLY;').errors).toEqual(undefined)
+            // expect(parsePostgresAst('(SELECT * FROM users WHERE role=0 ORDER BY id LIMIT 1) OFFSET 0 FETCH FIRST 1 ROW ONLY;').errors).toEqual(undefined)
+            // expect(parsePostgresAst('(SELECT * FROM users WHERE role=0 ORDER BY id) LIMIT 1 OFFSET 0 FETCH FIRST 1 ROW ONLY;').errors).toEqual(undefined)
+            // expect(parsePostgresAst('(SELECT * FROM users WHERE role=0) ORDER BY id LIMIT 1 OFFSET 0 FETCH FIRST 1 ROW ONLY;').errors).toEqual(undefined)
+        })
         test.skip('common table expression', () => {
             expect(parsePostgresAst('WITH t AS (SELECT random() as x FROM generate_series(1, 3)) SELECT * FROM t UNION ALL SELECT * FROM t;')).toEqual({result: {statements: []}})
             expect(removeTokens(parsePostgresAst("WITH RECURSIVE employee_recursive(distance, employee_name, manager_name) AS (\n" +

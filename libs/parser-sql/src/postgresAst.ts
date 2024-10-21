@@ -27,7 +27,9 @@ export type SetStatementAst = { kind: 'Set', token: TokenInfo, scope?: { kind: S
 
 // clauses
 export type CreateTableModeAst = ({ kind: 'Unlogged', token: TokenInfo }) | ({ kind: 'Temporary', token: TokenInfo, scope?: { kind: 'Local' | 'Global', token: TokenInfo } })
-export type SelectStatementInnerAst = SelectClauseAst & { from?: FromClauseAst, where?: WhereClauseAst, groupBy?: GroupByClauseAst, having?: HavingClauseAst, orderBy?: OrderByClauseAst, limit?: LimitClauseAst, offset?: OffsetClauseAst, fetch?: FetchClauseAst }
+export type SelectStatementInnerAst = SelectStatementMainAst & SelectStatementResultAst
+export type SelectStatementMainAst = SelectClauseAst & { from?: FromClauseAst, where?: WhereClauseAst, groupBy?: GroupByClauseAst, having?: HavingClauseAst }
+export type SelectStatementResultAst = { union?: UnionClauseAst, orderBy?: OrderByClauseAst, limit?: LimitClauseAst, offset?: OffsetClauseAst, fetch?: FetchClauseAst }
 export type SelectClauseAst = { token: TokenInfo, columns: SelectClauseExprAst[] }
 export type SelectClauseExprAst = ExpressionAst & { alias?: AliasAst }
 export type FromClauseAst = FromItemAst & { token: TokenInfo, joins?: FromJoinAst[] }
@@ -41,10 +43,11 @@ export type FromJoinNaturalAst = { kind: 'Natural', token: TokenInfo }
 export type WhereClauseAst = { token: TokenInfo, predicate: ExpressionAst }
 export type GroupByClauseAst = { token: TokenInfo, mode: { kind: 'All' | 'Distinct', token: TokenInfo }, expressions: ExpressionAst[] }
 export type HavingClauseAst = { token: TokenInfo, predicate: ExpressionAst }
+export type UnionClauseAst = { kind: 'Union' | 'Intersect' | 'Except', token: TokenInfo, mode: { kind: 'All' | 'Distinct', token: TokenInfo }, select: SelectStatementInnerAst } // TODO: VALUES also allowed
 export type OrderByClauseAst = { token: TokenInfo, expressions: (ExpressionAst & { order?: SortOrderAst, nulls?: SortNullsAst })[] }
-export type LimitClauseAst = { token: TokenInfo, value: IntegerAst | ({ kind: 'All', token: TokenInfo }) }
-export type OffsetClauseAst = { token: TokenInfo, value: IntegerAst, rows?: { kind: 'Rows' | 'Row', token: TokenInfo } }
-export type FetchClauseAst = { token: TokenInfo, first: { kind: 'First' | 'Next', token: TokenInfo }, value: IntegerAst, rows: { kind: 'Rows' | 'Row', token: TokenInfo }, mode: { kind: 'Only' | 'WithTies', token: TokenInfo } }
+export type LimitClauseAst = { token: TokenInfo, value: IntegerAst | ParameterAst | ({ kind: 'All', token: TokenInfo }) }
+export type OffsetClauseAst = { token: TokenInfo, value: IntegerAst | ParameterAst, rows?: { kind: 'Rows' | 'Row', token: TokenInfo } }
+export type FetchClauseAst = { token: TokenInfo, first: { kind: 'First' | 'Next', token: TokenInfo }, value: IntegerAst | ParameterAst, rows: { kind: 'Rows' | 'Row', token: TokenInfo }, mode: { kind: 'Only' | 'WithTies', token: TokenInfo } }
 export type AlterTableActionAst = AddColumnAst | AddConstraintAst | DropColumnAst | DropConstraintAst
 export type AddColumnAst = { kind: 'AddColumn', token: TokenInfo, ifNotExists?: TokenInfo, column: TableColumnAst }
 export type AddConstraintAst = { kind: 'AddConstraint', token: TokenInfo, constraint: TableConstraintAst }

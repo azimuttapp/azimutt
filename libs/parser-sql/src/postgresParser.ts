@@ -55,6 +55,8 @@ import {
     SelectClauseExprAst,
     SelectStatementAst,
     SelectStatementInnerAst,
+    SelectStatementMainAst,
+    SelectStatementResultAst,
     SetStatementAst,
     SortNullsAst,
     SortOrderAst,
@@ -76,6 +78,7 @@ import {
     TokenInfo,
     TokenIssue,
     TypeColumnAst,
+    UnionClauseAst,
     WhereClauseAst
 } from "./postgresAst";
 
@@ -112,6 +115,7 @@ const Distinct = createToken({name: 'Distinct', pattern: /\bDISTINCT\b/i, longer
 const Domain = createToken({name: 'Domain', pattern: /\bDOMAIN\b/i, longer_alt: Identifier})
 const Drop = createToken({name: 'Drop', pattern: /\bDROP\b/i, longer_alt: Identifier})
 const Enum = createToken({name: 'Enum', pattern: /\bENUM\b/i, longer_alt: Identifier})
+const Except = createToken({name: 'Except', pattern: /\bEXCEPT\b/i, longer_alt: Identifier})
 const Exists = createToken({name: 'Exists', pattern: /\bEXISTS\b/i, longer_alt: Identifier})
 const Extension = createToken({name: 'Extension', pattern: /\bEXTENSION\b/i, longer_alt: Identifier})
 const False = createToken({name: 'False', pattern: /\bFALSE\b/i, longer_alt: Identifier})
@@ -129,6 +133,7 @@ const Include = createToken({name: 'Include', pattern: /\bINCLUDE\b/i, longer_al
 const Index = createToken({name: 'Index', pattern: /\bINDEX\b/i, longer_alt: Identifier})
 const Inner = createToken({name: 'Inner', pattern: /\bINNER\b/i, longer_alt: Identifier})
 const InsertInto = createToken({name: 'InsertInto', pattern: /\bINSERT\s+INTO\b/i})
+const Intersect = createToken({name: 'Intersect', pattern: /\bINTERSECT\b/i, longer_alt: Identifier})
 const Is = createToken({name: 'Is', pattern: /\bIS\b/i, longer_alt: Identifier})
 const Join = createToken({name: 'Join', pattern: /\bJOIN\b/i, longer_alt: Identifier})
 const Last = createToken({name: 'Last', pattern: /\bLAST\b/i, longer_alt: Identifier})
@@ -183,10 +188,12 @@ const Where = createToken({name: 'Where', pattern: /\bWHERE\b/i, longer_alt: Ide
 const Window = createToken({name: 'Window', pattern: /\bWINDOW\b/i, longer_alt: Identifier})
 const With = createToken({name: 'With', pattern: /\bWITH\b/i, longer_alt: Identifier})
 const keywordTokens: TokenType[] = [
-    Add, All, Alter, And, As, Asc, Cascade, Check, Collate, Column, Comment, Concurrently, Constraint, Create, Cross, Database, Default, Delete, Desc, Distinct, Domain, Drop,
-    Enum, Exists, Extension, False, Fetch, First, ForeignKey, From, Full, Global, GroupBy, Having, If, In, Include, Index, Inner, InsertInto, Is, Join, Last, Left, Like, Limit, Local,
-    MaterializedView, Natural, Next, NoAction, Not, Null, Nulls, Offset, On, Only, Or, OrderBy, Outer, PrimaryKey, Recursive, References, Replace, Restrict, Returning, Right, Row, Rows,
-    Schema, Select, Session, SetDefault, SetNull, Set, Table, Temp, Temporary, Ties, To, True, Type, Union, Unique, Unlogged, Update, Using, Values, Version, View, Where, Window, With
+    Add, All, Alter, And, As, Asc, Cascade, Check, Collate, Column, Comment, Concurrently, Constraint, Create, Cross,
+    Database, Default, Delete, Desc, Distinct, Domain, Drop, Enum, Except, Exists, Extension, False, Fetch, First, ForeignKey, From, Full,
+    Global, GroupBy, Having, If, In, Include, Index, Inner, InsertInto, Intersect, Is, Join, Last, Left, Like, Limit, Local,
+    MaterializedView, Natural, Next, NoAction, Not, Null, Nulls, Offset, On, Only, Or, OrderBy, Outer, PrimaryKey,
+    Recursive, References, Replace, Restrict, Returning, Right, Row, Rows, Schema, Select, Session, SetDefault, SetNull, Set,
+    Table, Temp, Temporary, Ties, To, True, Type, Union, Unique, Unlogged, Update, Using, Values, Version, View, Where, Window, With
 ]
 
 const Amp = createToken({name: 'Amp', pattern: /&/})
@@ -538,25 +545,55 @@ class PostgresParser extends EmbeddedActionsParser {
             const end = $.CONSUME(Semicolon)
             return removeUndefined({kind: 'Select' as const, meta: mergePositions([select.token, tokenInfo(end)]), ...select})
         })
-        const selectStatementInnerRule = $.RULE<() => SelectStatementInnerAst>('selectStatementInnerRule', () => {
+        const selectStatementInnerRule = $.RULE<() => SelectStatementInnerAst>('selectStatementInnerRule', (): SelectStatementInnerAst => {
             // https://www.postgresql.org/docs/current/sql-select.html
+            return $.OR([
+                {ALT: () => {
+                    const main = $.SUBRULE(selectStatementMainRule)
+                    const result = $.SUBRULE(selectStatementResultRule)
+                    return removeUndefined({...main, ...result})
+                }},
+                {ALT: () => { // allow additional parenthesis
+                    $.CONSUME(ParenLeft)
+                    const main = $.SUBRULE2(selectStatementMainRule)
+                    return $.OR2([
+                        {ALT: () => { // close parenthesis before union
+                            $.CONSUME(ParenRight)
+                            const union = $.SUBRULE(unionClauseRule)
+                            const orderBy = $.OPTION2(() => $.SUBRULE(orderByClauseRule))
+                            const limit = $.OPTION3(() => $.SUBRULE(limitClauseRule))
+                            const offset = $.OPTION4(() => $.SUBRULE(offsetClauseRule))
+                            const fetch = $.OPTION5(() => $.SUBRULE(fetchClauseRule))
+                            return removeUndefined({...main, union, orderBy, limit, offset, fetch})
+                        }},
+                        // TODO: close parenthesis before orderBy
+                        // TODO: close parenthesis before limit
+                        // TODO: close parenthesis before offset
+                        // TODO: close parenthesis before fetch
+                        {ALT: () => { // close parenthesis at the end
+                            const result = $.SUBRULE2(selectStatementResultRule)
+                            $.CONSUME2(ParenRight)
+                            return removeUndefined({...main, ...result})
+                        }},
+                    ])
+                }},
+            ])
+        })
+        const selectStatementMainRule = $.RULE<() => SelectStatementMainAst>('selectStatementMainRule', (): SelectStatementInnerAst => {
             const select = $.SUBRULE($.selectClauseRule)
             const from = $.OPTION(() => $.SUBRULE($.fromClauseRule))
             const where = $.OPTION2(() => $.SUBRULE($.whereClauseRule))
             const groupBy = $.OPTION3(() => $.SUBRULE(groupByClauseRule))
             const having = $.OPTION4(() => $.SUBRULE(havingClauseRule))
-            // WINDOW
-            // UNION
-            const resultFormat = $.OPTION7(() => $.SUBRULE(selectStatementResultFormatRule))
-            // FOR UPDATE
-            return removeUndefined({...select, from, where, groupBy, having, ...resultFormat})
+            return removeUndefined({...select, from, where, groupBy, having})
         })
-        const selectStatementResultFormatRule = $.RULE<() => {orderBy?: OrderByClauseAst, limit?: LimitClauseAst, offset?: OffsetClauseAst, fetch?: FetchClauseAst}>('selectStatementResultFormatRule', () => {
-            const orderBy = $.OPTION(() => $.SUBRULE(orderByClauseRule))
-            const limit = $.OPTION2(() => $.SUBRULE(limitClauseRule))
-            const offset = $.OPTION3(() => $.SUBRULE(offsetClauseRule))
-            const fetch = $.OPTION4(() => $.SUBRULE(fetchClauseRule))
-            return removeUndefined({orderBy, limit, offset, fetch})
+        const selectStatementResultRule = $.RULE<() => SelectStatementResultAst>('selectStatementResultRule', () => {
+            const union = $.OPTION(() => $.SUBRULE3(unionClauseRule))
+            const orderBy = $.OPTION2(() => $.SUBRULE(orderByClauseRule))
+            const limit = $.OPTION3(() => $.SUBRULE(limitClauseRule))
+            const offset = $.OPTION4(() => $.SUBRULE(offsetClauseRule))
+            const fetch = $.OPTION5(() => $.SUBRULE(fetchClauseRule))
+            return removeUndefined({union, orderBy, limit, offset, fetch})
         })
 
         this.setStatementRule = $.RULE<() => SetStatementAst>('setStatementRule', () => {
@@ -621,7 +658,6 @@ class PostgresParser extends EmbeddedActionsParser {
             return removeUndefined({kind: 'Table' as const, schema: object.schema, table: object.name})
         })
         const fromQueryRule = $.RULE<() => FromQueryAst>('fromQueryRule', () => {
-            // TODO: can have several parenthesis level, ex: `JOIN ((query1) UNION (query2))`
             $.CONSUME(ParenLeft)
             const select = $.SUBRULE(selectStatementInnerRule)
             $.CONSUME(ParenRight)
@@ -629,7 +665,7 @@ class PostgresParser extends EmbeddedActionsParser {
         })
         const fromJoinRule = $.RULE<() => FromJoinAst>('fromJoinRule', () => {
             const natural = $.OPTION(() => ({kind: 'Natural', token: tokenInfo($.CONSUME(Natural))}))
-            const join = $.OR([
+            const {kind, token} = $.OR([
                 {ALT: () => ({kind: 'Inner' as const, token: tokenInfo2($.OPTION2(() => $.CONSUME(Inner)), $.CONSUME(Join))})},
                 {ALT: () => ({kind: 'Left' as const, token: tokenInfo3($.CONSUME(Left), $.OPTION3(() => $.CONSUME(Outer)), $.CONSUME2(Join))})},
                 {ALT: () => ({kind: 'Right' as const, token: tokenInfo3($.CONSUME(Right), $.OPTION4(() => $.CONSUME2(Outer)), $.CONSUME3(Join))})},
@@ -649,7 +685,7 @@ class PostgresParser extends EmbeddedActionsParser {
                 }},
             ])) || natural
             const alias = $.OPTION7(() => $.SUBRULE($.aliasRule))
-            return removeUndefined({...join, from, on, alias})
+            return removeUndefined({kind, token, from, on, alias})
         })
 
         this.whereClauseRule = $.RULE<() => WhereClauseAst>('whereClauseRule', () => {
@@ -670,6 +706,19 @@ class PostgresParser extends EmbeddedActionsParser {
             const token = tokenInfo($.CONSUME(Having))
             return {token, predicate: $.SUBRULE($.expressionRule)}
         })
+        const unionClauseRule = $.RULE<() => UnionClauseAst>('unionClauseRule', () => {
+            const {kind, token} = $.OR([
+                {ALT: () => ({kind: 'Union' as const, token: tokenInfo($.CONSUME(Union))})},
+                {ALT: () => ({kind: 'Intersect' as const, token: tokenInfo($.CONSUME(Intersect))})},
+                {ALT: () => ({kind: 'Except' as const, token: tokenInfo($.CONSUME(Except))})},
+            ])
+            const mode = $.OPTION(() => $.OR2([
+                {ALT: () => ({kind: 'All' as const, token: tokenInfo($.CONSUME(All))})},
+                {ALT: () => ({kind: 'Distinct' as const, token: tokenInfo($.CONSUME(Distinct))})},
+            ]))
+            const select = $.SUBRULE(selectStatementInnerRule)
+            return removeUndefined({kind, token, mode, select})
+        })
         const orderByClauseRule = $.RULE<() => OrderByClauseAst>('orderByClauseRule', () => {
             const token = tokenInfo($.CONSUME(OrderBy))
             const expressions: (ExpressionAst & {order?: SortOrderAst, nulls?: SortNullsAst})[] = []
@@ -685,14 +734,18 @@ class PostgresParser extends EmbeddedActionsParser {
             const token = tokenInfo($.CONSUME(Limit))
             const value = $.OR([
                 {ALT: () => $.SUBRULE($.integerRule)},
+                {ALT: () => $.SUBRULE($.parameterRule)},
                 {ALT: () => ({kind: 'All' as const, token: tokenInfo($.CONSUME(All))})},
             ])
             return {token, value}
         })
         const offsetClauseRule = $.RULE<() => OffsetClauseAst>('offsetClauseRule', () => {
             const token = tokenInfo($.CONSUME(Offset))
-            const value = $.SUBRULE($.integerRule)
-            const rows = $.OPTION(() => $.OR([
+            const value = $.OR([
+                {ALT: () => $.SUBRULE($.integerRule)},
+                {ALT: () => $.SUBRULE($.parameterRule)},
+            ])
+            const rows = $.OPTION(() => $.OR2([
                 {ALT: () => ({kind: 'Row' as const, token: tokenInfo($.CONSUME(Row))})},
                 {ALT: () => ({kind: 'Rows' as const, token: tokenInfo($.CONSUME(Rows))})},
             ]))
@@ -704,12 +757,15 @@ class PostgresParser extends EmbeddedActionsParser {
                 {ALT: () => ({kind: 'First' as const, token: tokenInfo($.CONSUME(First))})},
                 {ALT: () => ({kind: 'Next' as const, token: tokenInfo($.CONSUME(Next))})},
             ])
-            const value = $.SUBRULE($.integerRule)
-            const rows = $.OR2([
+            const value = $.OR2([
+                {ALT: () => $.SUBRULE($.integerRule)},
+                {ALT: () => $.SUBRULE($.parameterRule)},
+            ])
+            const rows = $.OR3([
                 {ALT: () => ({kind: 'Row' as const, token: tokenInfo($.CONSUME(Row))})},
                 {ALT: () => ({kind: 'Rows' as const, token: tokenInfo($.CONSUME(Rows))})},
             ])
-            const mode = $.OR3([
+            const mode = $.OR4([
                 {ALT: () => ({kind: 'Only' as const, token: tokenInfo($.CONSUME(Only))})},
                 {ALT: () => ({kind: 'WithTies' as const, token: tokenInfo2($.CONSUME(With), $.CONSUME(Ties))})},
             ])
