@@ -52,6 +52,36 @@ describe('postgresParser', () => {
         const parsed = parsePostgresAst(sql, {strict: true})
         expect(parsed.errors || []).toEqual([])
     })
+    test.skip('statements', () => {
+        const sql = fs.readFileSync('./resources/pg_statements.sql', 'utf8')
+        const parsed = parsePostgresAst(sql, {strict: true})
+        expect(parsed.errors || []).toEqual([])
+        // TODO:12 `(information_schema._pg_expandarray(i.indkey)).n`
+        // TODO:51 `SELECT * FROM table JOIN ((SELECT * FROM t1 ORDER BY c LIMIT1) UNION (SELECT * FROM t2 ORDER BY c LIMIT1))` (also: 336, 350, 491, 726, 1492, 1983, 2200, 2211, 2304, 2400)
+        // TODO:321 `SHOW TRANSACTION ISOLATION LEVEL;` (also: 1694)
+        // TODO:326 `SELECT ... FROM (VALUES ($2, ($3)::text), ($4, ($5)::text)) as v(key, val)` (also: 1169)
+        // TODO:396 `INSERT INTO ... ON CONFLICT DO NOTHING` (also: 996)
+        // TODO:425 `SELECT count(distinct to_char(e.created_at, $2)) FROM` (also: 451, 960, 1041, 1178, 1217, 1218, 1765, 2181)
+        // TODO:430 `WHERE e.created_at > NOW() - INTERVAL $3` (also: 502, 713, 962, 1046, 1221, 1767, 2186)
+        // TODO:482 `c.contype IN ($2, $3) AND cn.nspname NOT IN ($4, $5)` (also: 532, 551, 1276, 2344)
+        // TODO:563 `COMMIT;` (also: 1118)
+        // TODO:801 `BEGIN;`
+        // TODO:814 `SELECT row_number() OVER (PARTITION BY a.attrelid ORDER BY a.attnum) AS attnum`
+        // TODO:847 `select (current_schemas($3))[s.r] as nspname` (also: 1057)
+        // TODO:940 `SELECT $1 || queryid || $2 as q`
+        // TODO:1218 `count(distinct e.created_by) FILTER (WHERE u.created_at + interval $2 < e.created_at)`
+        // TODO:1242 `SELECT datname AS database, current_schema() AS schema` (also: 1560)
+        // TODO:1265 `SELECT c.reltuples AS rows` (also: 2418)
+        // TODO:1362 `(u0."created_at" > $3::timestamp + (-($4)::numeric * interval $5))`
+        // TODO:1415 `SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;` (also: 1934)
+        // TODO:1451 `SHOW block_size;` (also: 1825)
+        // TODO:1639 `SELECT CASE con.confupdtype WHEN $3 THEN $4 ELSE $15 END AS UPDATE_RULE`
+        // TODO:1862 `SELECT ("public"."Event"."details" #>> array [$1]::text[])::text AS "details → source"` (also: 1962)
+        // TODO:2010 `SELECT CASE n.nspname ~ $2 OR n.nspname = $3 WHEN $4 THEN CASE ELSE $51 END AS TABLE_TYPE`
+        // TODO:2155 `ARRAY(SELECT a.atttypid)`
+        // TODO:2238 `SELECT null_frac AS nulls`
+        // TODO:2380 `SELECT split_part(details ->> $1, $2, $3) as email_domain`
+    })
     describe('alterTable', () => {
         test('full', () => {
             expect(parsePostgresAst('ALTER TABLE IF EXISTS ONLY public.users ADD CONSTRAINT users_pk PRIMARY KEY (id);')).toEqual({result: {statements: [{
@@ -505,6 +535,21 @@ describe('postgresParser', () => {
             expect(parsePostgresAst('SET standard_conforming_strings = on;')).toEqual({result: {statements: [
                 {...stmt('Set', 0, 2, 36), parameter: identifier('standard_conforming_strings', 4), equal: kind('=', 32), value: identifier('on', 34)}
             ]}})
+        })
+    })
+    describe('update', () => {
+        test('simplest', () => {
+            expect(parsePostgresAst("UPDATE films SET kind = 'Dramatic' WHERE kind = 'Drama';")).toEqual({result: {statements: [{
+                ...stmt('Update', 0, 5, 55),
+                table: identifier('films', 7),
+                columns: [ { column: identifier('kind', 17), value: string('Dramatic', 24) } ],
+                where: {token: token(35, 39), predicate: {kind: 'Operation', left: column('kind', 41), op: op('=', 46), right: string('Drama', 48)}}
+            }]}})
+            // UPDATE weather SET temp_lo = temp_lo + 1, prcp = DEFAULT WHERE city = 'San Francisco' RETURNING temp_lo;
+            // UPDATE weather SET (temp_lo, prcp) = (temp_lo+1, DEFAULT) WHERE city = 'San Francisco';
+            // UPDATE employees SET sales_count = sales_count + 1 FROM accounts WHERE accounts.name = 'Acme' AND employees.id = accounts.sales_person;
+            // UPDATE employees SET sales_count = sales_count + 1 WHERE id = (SELECT sales_person FROM accounts WHERE name = 'Acme');
+            // UPDATE accounts SET (first_name, last_name) = (SELECT first_name, last_name FROM employees WHERE employees.id = accounts.sales_person);
         })
     })
     describe('clauses', () => {

@@ -10,8 +10,8 @@ import {ParserErrorLevel, TokenPosition} from "@azimutt/models";
 
 // statements
 export type StatementsAst = { statements: StatementAst[] }
-export type StatementAst = (AlterTableStatementAst | CommentOnStatementAst | CreateExtensionStatementAst | CreateIndexStatementAst | CreateTableStatementAst
-    | CreateTypeStatementAst | CreateViewStatementAst | DeleteStatementAst | DropStatementAst | InsertIntoStatementAst | SelectStatementAst | SetStatementAst) & { meta: TokenInfo }
+export type StatementAst = { meta: TokenInfo } & (AlterTableStatementAst | CommentOnStatementAst | CreateExtensionStatementAst | CreateIndexStatementAst | CreateTableStatementAst |
+    CreateTypeStatementAst | CreateViewStatementAst | DeleteStatementAst | DropStatementAst | InsertIntoStatementAst | SelectStatementAst | SetStatementAst | UpdateStatementAst)
 export type AlterTableStatementAst = { kind: 'AlterTable', token: TokenInfo, ifExists?: TokenInfo, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, action: AlterTableActionAst }
 export type CommentOnStatementAst = { kind: 'CommentOn', token: TokenInfo, object: { token: TokenInfo, kind: CommentObject }, schema?: IdentifierAst, parent?: IdentifierAst, entity: IdentifierAst, comment: StringAst | NullAst }
 export type CreateExtensionStatementAst = { kind: 'CreateExtension', token: TokenInfo, ifNotExists?: TokenInfo, name: IdentifierAst, with?: TokenInfo, schema?: { token: TokenInfo, name: IdentifierAst }, version?: { token: TokenInfo, number: StringAst | IdentifierAst }, cascade?: TokenInfo }
@@ -24,9 +24,11 @@ export type DropStatementAst = { kind: 'Drop', token: TokenInfo, object: DropObj
 export type InsertIntoStatementAst = { kind: 'InsertInto', token: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, columns?: IdentifierAst[], values: (ExpressionAst | { kind: 'Default', token: TokenInfo })[][], returning?: SelectClauseAst }
 export type SelectStatementAst = { kind: 'Select' } & SelectStatementInnerAst
 export type SetStatementAst = { kind: 'Set', token: TokenInfo, scope?: { kind: SetScope, token: TokenInfo }, parameter: IdentifierAst, equal?: { kind: SetAssign, token: TokenInfo }, value: SetValueAst }
+export type UpdateStatementAst = { kind: 'Update', token: TokenInfo, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, descendants?: TokenInfo, alias?: AliasAst, columns: UpdateColumnAst[], where?: WhereClauseAst, returning?: SelectClauseAst }
 
 // clauses
 export type CreateTableModeAst = ({ kind: 'Unlogged', token: TokenInfo }) | ({ kind: 'Temporary', token: TokenInfo, scope?: { kind: 'Local' | 'Global', token: TokenInfo } })
+export type UpdateColumnAst = { column: IdentifierAst, value: ExpressionAst | { kind: 'Default', token: TokenInfo } }
 export type SelectStatementInnerAst = SelectStatementMainAst & SelectStatementResultAst
 export type SelectStatementMainAst = SelectClauseAst & { from?: FromClauseAst, where?: WhereClauseAst, groupBy?: GroupByClauseAst, having?: HavingClauseAst }
 export type SelectStatementResultAst = { union?: UnionClauseAst, orderBy?: OrderByClauseAst, limit?: LimitClauseAst, offset?: OffsetClauseAst, fetch?: FetchClauseAst }

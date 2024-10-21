@@ -81,6 +81,8 @@ import {
     TokenIssue,
     TypeColumnAst,
     UnionClauseAst,
+    UpdateColumnAst,
+    UpdateStatementAst,
     WhereClauseAst
 } from "./postgresAst";
 
@@ -252,6 +254,7 @@ class PostgresParser extends EmbeddedActionsParser {
     insertIntoStatementRule: () => InsertIntoStatementAst
     selectStatementRule: () => SelectStatementAst
     setStatementRule: () => SetStatementAst
+    updateStatementRule: () => UpdateStatementAst
     // clauses
     selectClauseRule: () => SelectClauseAst
     fromClauseRule: () => FromClauseAst
@@ -301,6 +304,7 @@ class PostgresParser extends EmbeddedActionsParser {
             {ALT: () => $.SUBRULE($.insertIntoStatementRule)},
             {ALT: () => $.SUBRULE($.selectStatementRule)},
             {ALT: () => $.SUBRULE($.setStatementRule)},
+            {ALT: () => $.SUBRULE($.updateStatementRule)},
         ]))
 
         this.alterTableStatementRule = $.RULE<() => AlterTableStatementAst>('alterTableStatementRule', () => {
@@ -626,6 +630,30 @@ class PostgresParser extends EmbeddedActionsParser {
             ])
             const end = $.CONSUME(Semicolon)
             return removeUndefined({kind: 'Set' as const, meta: tokenInfo2(start, end), token: tokenInfo(start), scope, parameter, equal, value})
+        })
+
+        this.updateStatementRule = $.RULE<() => UpdateStatementAst>('updateStatementRule', () => {
+            // https://www.postgresql.org/docs/current/sql-update.html
+            const start = $.CONSUME(Update)
+            const only = $.OPTION(() => tokenInfo($.CONSUME(Only)))
+            const object = $.SUBRULE($.objectNameRule)
+            const descendants = $.OPTION2(() => tokenInfo($.CONSUME(Asterisk)))
+            const alias = $.OPTION3(() => $.SUBRULE($.aliasRule))
+            $.CONSUME(Set)
+            const columns: UpdateColumnAst[] = []
+            $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => {
+                const column = $.SUBRULE($.identifierRule)
+                $.CONSUME(Equal)
+                const value = $.OR([
+                    {ALT: () => $.SUBRULE($.expressionRule)},
+                    {ALT: () => ({kind: 'Default' as const, token: tokenInfo($.CONSUME(Default))})}
+                ])
+                columns.push({column, value})
+            }})
+            const where = $.OPTION5(() => $.SUBRULE($.whereClauseRule))
+            const returning = $.OPTION6(() => $.SUBRULE(returningClauseRule))
+            const end = $.CONSUME(Semicolon)
+            return removeUndefined({kind: 'Update' as const, meta: tokenInfo2(start, end), token: tokenInfo(start), only, schema: object.schema, table: object.name, descendants, alias, columns, where, returning})
         })
 
         // clauses
