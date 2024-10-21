@@ -49,6 +49,8 @@ import {
     ObjectNameAst,
     OffsetClauseAst,
     OperatorAst,
+    OperatorLeftAst,
+    OperatorRightAst,
     OrderByClauseAst,
     ParameterAst,
     SelectClauseAst,
@@ -135,6 +137,7 @@ const Inner = createToken({name: 'Inner', pattern: /\bINNER\b/i, longer_alt: Ide
 const InsertInto = createToken({name: 'InsertInto', pattern: /\bINSERT\s+INTO\b/i})
 const Intersect = createToken({name: 'Intersect', pattern: /\bINTERSECT\b/i, longer_alt: Identifier})
 const Is = createToken({name: 'Is', pattern: /\bIS\b/i, longer_alt: Identifier})
+const IsNull = createToken({name: 'IsNull', pattern: /\bISNULL\b/i, longer_alt: Identifier})
 const Join = createToken({name: 'Join', pattern: /\bJOIN\b/i, longer_alt: Identifier})
 const Last = createToken({name: 'Last', pattern: /\bLAST\b/i, longer_alt: Identifier})
 const Left = createToken({name: 'Left', pattern: /\bLEFT\b/i, longer_alt: Identifier})
@@ -146,6 +149,7 @@ const Natural = createToken({name: 'Natural', pattern: /\bNATURAL\b/i, longer_al
 const Next = createToken({name: 'Next', pattern: /\bNEXT\b/i, longer_alt: Identifier})
 const NoAction = createToken({name: 'NoAction', pattern: /\bNO\s+ACTION\b/i})
 const Not = createToken({name: 'Not', pattern: /\bNOT\b/i, longer_alt: Identifier})
+const NotNull = createToken({name: 'NotNull', pattern: /\bNOTNULL\b/i, longer_alt: Identifier})
 const Null = createToken({name: 'Null', pattern: /\bNULL\b/i, longer_alt: Identifier})
 const Nulls = createToken({name: 'Nulls', pattern: /\bNULLS\b/i, longer_alt: Identifier})
 const Offset = createToken({name: 'Offset', pattern: /\bOFFSET\b/i, longer_alt: Identifier})
@@ -190,8 +194,8 @@ const With = createToken({name: 'With', pattern: /\bWITH\b/i, longer_alt: Identi
 const keywordTokens: TokenType[] = [
     Add, All, Alter, And, As, Asc, Cascade, Check, Collate, Column, Comment, Concurrently, Constraint, Create, Cross,
     Database, Default, Delete, Desc, Distinct, Domain, Drop, Enum, Except, Exists, Extension, False, Fetch, First, ForeignKey, From, Full,
-    Global, GroupBy, Having, If, In, Include, Index, Inner, InsertInto, Intersect, Is, Join, Last, Left, Like, Limit, Local,
-    MaterializedView, Natural, Next, NoAction, Not, Null, Nulls, Offset, On, Only, Or, OrderBy, Outer, PrimaryKey,
+    Global, GroupBy, Having, If, In, Include, Index, Inner, InsertInto, Intersect, Is, IsNull, Join, Last, Left, Like, Limit, Local,
+    MaterializedView, Natural, Next, NoAction, Not, NotNull, Null, Nulls, Offset, On, Only, Or, OrderBy, Outer, PrimaryKey,
     Recursive, References, Replace, Restrict, Returning, Right, Row, Rows, Schema, Select, Session, SetDefault, SetNull, Set,
     Table, Temp, Temporary, Ties, To, True, Type, Union, Unique, Unlogged, Update, Using, Values, Version, View, Where, Window, With
 ]
@@ -967,19 +971,31 @@ class PostgresParser extends EmbeddedActionsParser {
             return expr
         })
         const operatorExpressionRule = $.RULE<() => ExpressionAst>('operatorExpressionRule', () => {
-            let expr = $.SUBRULE(atomicExpressionRule) // atomic has the highest precedence
+            let expr = $.SUBRULE(unaryExpressionRule) // unary has higher precedence than other operators
             $.OPTION(() => {
                 const op = $.SUBRULE(operatorRule)
                 if (['In', 'NotIn'].includes(op?.kind)) {
                     const right = $.SUBRULE(listRule)
                     expr = {kind: 'Operation', left: expr, op, right}
                 } else {
-                    const right = $.SUBRULE2(atomicExpressionRule)
+                    const right = $.SUBRULE2(unaryExpressionRule)
                     expr = {kind: 'Operation', left: expr, op, right}
                 }
             })
             return expr
         })
+        const unaryExpressionRule = $.RULE<() => ExpressionAst>('unaryExpressionRule', () => $.OR([
+            {ALT: () => {
+                const opLeft = $.SUBRULE(operatorLeftRule)
+                const expr = $.SUBRULE(atomicExpressionRule) // atomic has the highest precedence
+                return {kind: 'OperationLeft', op: opLeft, right: expr}
+            }},
+            {ALT: () => {
+                const expr = $.SUBRULE2(atomicExpressionRule) // atomic has the highest precedence
+                const opRight = $.OPTION(() => $.SUBRULE(operatorRightRule))
+                return opRight ? {kind: 'OperationRight', left: expr, op: opRight} : expr
+            }},
+        ]))
         const atomicExpressionRule = $.RULE<() => ExpressionAst>('atomicExpressionRule', () => {
             const expr = $.OR([
                 {ALT: () => $.SUBRULE(groupRule)},
@@ -1028,8 +1044,9 @@ class PostgresParser extends EmbeddedActionsParser {
             {ALT: () => ({kind: '&' as const, token: tokenInfo($.CONSUME(Amp))})},
             {ALT: () => ({kind: '#' as const, token: tokenInfo($.CONSUME(Hash))})},
             {ALT: () => ({kind: '=' as const, token: tokenInfo($.CONSUME(Equal))})},
-            {ALT: () => ({kind: 'Like' as const, token: tokenInfo($.CONSUME(Like))})},
+            {ALT: () => ({kind: 'Is' as const, token: tokenInfo($.CONSUME(Is))})},
             {ALT: () => ({kind: 'In' as const, token: tokenInfo($.CONSUME(In))})},
+            {ALT: () => ({kind: 'Like' as const, token: tokenInfo($.CONSUME(Like))})},
             {ALT: () => {
                 const lt = $.CONSUME(LowerThan)
                 const res = $.OPTION(() => $.OR2([
@@ -1075,6 +1092,14 @@ class PostgresParser extends EmbeddedActionsParser {
                     {ALT: () => ({kind: 'NotIn' as const, token: tokenInfo2(not, $.CONSUME2(In))})},
                 ]))
             }},
+        ]))
+        const operatorLeftRule = $.RULE<() => OperatorLeftAst>('operatorLeftRule', () => $.OR([
+            {ALT: () => ({kind: 'Not' as const, token: tokenInfo($.CONSUME(Not))})},
+            {ALT: () => ({kind: '~' as const, token: tokenInfo($.CONSUME(Tilde))})},
+        ]))
+        const operatorRightRule = $.RULE<() => OperatorRightAst>('operatorRightRule', () => $.OR([
+            {ALT: () => ({kind: 'IsNull' as const, token: tokenInfo($.CONSUME(IsNull))})},
+            {ALT: () => ({kind: 'NotNull' as const, token: tokenInfo($.CONSUME(NotNull))})},
         ]))
         const groupRule = $.RULE<() => GroupAst>('groupRule', () => {
             $.CONSUME(ParenLeft)

@@ -77,7 +77,7 @@ export type SetValueAst = IdentifierAst | LiteralAst | (IdentifierAst | LiteralA
 // basic parts
 export type AliasAst = { token?: TokenInfo, name: IdentifierAst }
 export type ObjectNameAst = { schema?: IdentifierAst, name: IdentifierAst }
-export type ExpressionAst = (LiteralAst | ParameterAst | ColumnAst | WildcardAst | FunctionAst | GroupAst | OperationAst | ListAst) & { cast?: { token: TokenInfo, type: ColumnTypeAst } }
+export type ExpressionAst = (LiteralAst | ParameterAst | ColumnAst | WildcardAst | FunctionAst | GroupAst | OperationAst | OperationLeftAst | OperationRightAst | ListAst) & { cast?: { token: TokenInfo, type: ColumnTypeAst } }
 export type LiteralAst = StringAst | IntegerAst | DecimalAst | BooleanAst | NullAst
 export type ColumnAst = { kind: 'Column', schema?: IdentifierAst, table?: IdentifierAst, column: IdentifierAst, json?: ColumnJsonAst[] }
 export type ColumnJsonAst = { kind: JsonOp, token: TokenInfo, field: StringAst }
@@ -86,6 +86,10 @@ export type GroupAst = { kind: 'Group', expression: ExpressionAst }
 export type WildcardAst = { kind: 'Wildcard', token: TokenInfo, schema?: IdentifierAst, table?: IdentifierAst }
 export type OperationAst = { kind: 'Operation', left: ExpressionAst, op: OperatorAst, right: ExpressionAst }
 export type OperatorAst = { kind: Operator, token: TokenInfo }
+export type OperationLeftAst = { kind: 'OperationLeft', op: OperatorLeftAst, right: ExpressionAst }
+export type OperatorLeftAst = { kind: OperatorLeft, token: TokenInfo }
+export type OperationRightAst = { kind: 'OperationRight', left: ExpressionAst, op: OperatorRightAst }
+export type OperatorRightAst = { kind: OperatorRight, token: TokenInfo }
 export type ListAst = { kind: 'List', items: LiteralAst[] }
 export type SortOrderAst = { kind: SortOrder, token: TokenInfo }
 export type SortNullsAst = { kind: SortNulls, token: TokenInfo }
@@ -101,7 +105,9 @@ export type NullAst = { kind: 'Null', token: TokenInfo }
 export type CommentAst = { kind: CommentKind, token: TokenInfo, value: string } // special case
 
 // enums
-export type Operator = '+' | '-' | '*' | '/' | '%' | '^' | '&' | '|' | '#' | '<<' | '>>' | '=' | '<' | '>' | '<=' | '>=' | '<>' | '!=' | '||' | '~' | '~*' | '!~' | '!~*' | 'Like' | 'NotLike' | 'In' | 'NotIn' | 'Or' | 'And'
+export type Operator = '+' | '-' | '*' | '/' | '%' | '^' | '&' | '|' | '#' | '<<' | '>>' | '=' | '<' | '>' | '<=' | '>=' | '<>' | '!=' | '||' | '~' | '~*' | '!~' | '!~*' | 'Is' | 'Like' | 'NotLike' | 'In' | 'NotIn' | 'Or' | 'And'
+export type OperatorLeft = 'Not' | '~'
+export type OperatorRight = 'IsNull' | 'NotNull'
 export type JsonOp = '->' | '->>'
 export type ForeignKeyAction = 'NoAction' | 'Restrict' | 'Cascade' | 'SetNull' | 'SetDefault'
 export type DropObject = 'Table' | 'View' | 'MaterializedView' | 'Index' | 'Type'

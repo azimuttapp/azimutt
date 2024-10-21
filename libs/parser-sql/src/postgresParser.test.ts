@@ -15,8 +15,14 @@ import {
     LiteralAst,
     NullAst,
     OperationAst,
+    OperationLeftAst,
+    OperationRightAst,
     Operator,
     OperatorAst,
+    OperatorLeft,
+    OperatorLeftAst,
+    OperatorRight,
+    OperatorRightAst,
     ParameterAst,
     StringAst,
     TokenInfo,
@@ -698,6 +704,7 @@ describe('postgresParser', () => {
                 expect(parseRule(p => p.expressionRule(), "'a' ~* 'b'")).toEqual({result: operation(string('a', 0), op('~*', 4), string('b', 7))})
                 expect(parseRule(p => p.expressionRule(), "'a' !~ 'b'")).toEqual({result: operation(string('a', 0), op('!~', 4), string('b', 7))})
                 expect(parseRule(p => p.expressionRule(), "'a' !~* 'b'")).toEqual({result: operation(string('a', 0), op('!~*', 4), string('b', 8))})
+                expect(parseRule(p => p.expressionRule(), "name IS NULL")).toEqual({result: operation(column('name', 0), op('Is', 5), null_(8))})
                 expect(parseRule(p => p.expressionRule(), "name LIKE 'a_%'")).toEqual({result: operation(column('name', 0), op('Like', 5), string('a_%', 10))})
                 expect(parseRule(p => p.expressionRule(), "name NOT LIKE 'a_%'")).toEqual({result: operation(column('name', 0), op('NotLike', 5, 12), string('a_%', 14))})
                 expect(parseRule(p => p.expressionRule(), "role IN ('author', 'editor')")).toEqual({result: operation(column('role', 0), op('In', 5), list([string('author', 9), string('editor', 19)]))})
@@ -707,15 +714,17 @@ describe('postgresParser', () => {
                 expect(parseRule(p => p.expressionRule(), 'true AND true')).toEqual({result: operation(boolean(true, 0), op('And', 5), boolean(true, 9))})
                 // TODO: and many more... ^^
             })
-            /*test('unary operation', () => {
-                // TODO
-                expect(parseRule(p => p.expressionRule(), '~1')).toEqual({result: {kind: 'UnaryOp', op: operator('~', 0), expression: integer(1, 1)}})
-                expect(parseRule(p => p.expressionRule(), 'NOT true')).toEqual({result: {kind: 'UnaryOp', op: operator('Not', 0), expression: boolean(true, 4)}})
-                expect(parseRule(p => p.expressionRule(), 'id ISNULL')).toEqual({result: {kind: 'UnaryOp', op: operator('IsNull', 3), expression: column('id', 0)}})
-                expect(parseRule(p => p.expressionRule(), 'id IS NULL')).toEqual({result: {kind: 'UnaryOp', op: operator('IsNull', 3, 10), expression: column('id', 0)}})
-                expect(parseRule(p => p.expressionRule(), 'id NOTNULL')).toEqual({result: {kind: 'UnaryOp', op: operator('IsNotNull', 3, 14), expression: column('id', 0)}})
-                expect(parseRule(p => p.expressionRule(), 'id IS NOT NULL')).toEqual({result: {kind: 'UnaryOp', op: operator('IsNotNull', 3, 10), expression: column('id', 0)}})
-            })*/
+            test('left operation', () => {
+                expect(parseRule(p => p.expressionRule(), 'NOT NULL')).toEqual({result: operationLeft(opLeft('Not', 0), null_(4))})
+                expect(parseRule(p => p.expressionRule(), '~1')).toEqual({result: operationLeft(opLeft('~', 0), integer(1, 1))})
+            })
+            test('right operation', () => {
+                expect(parseRule(p => p.expressionRule(), 'id ISNULL')).toEqual({result: operationRight(column('id', 0), opRight('IsNull', 3))})
+                expect(parseRule(p => p.expressionRule(), 'id NOTNULL')).toEqual({result: operationRight(column('id', 0), opRight('NotNull', 3))})
+            })
+            test('mixed operation', () => {
+                expect(parseRule(p => p.expressionRule(), 'name IS NOT NULL')).toEqual({result: operation(column('name', 0), op('Is', 5), operationLeft(opLeft('Not', 8), null_(12)))})
+            })
             test('cast', () => {
                 expect(parseRule(p => p.expressionRule(), "'owner'::character varying"))
                     .toEqual({result: {...string('owner', 0), cast: {token: token(7, 8), type: {name: {value: 'character varying', token: token(9, 25)}, token: token(9, 25)}}}})
@@ -867,6 +876,22 @@ function op(kind: Operator, start: number, end?: number): OperatorAst {
 
 function operation(left: ExpressionAst, op: OperatorAst, right: ExpressionAst): OperationAst {
     return {kind: 'Operation', left, op, right}
+}
+
+function opLeft(kind: OperatorLeft, start: number, end?: number): OperatorLeftAst {
+    return {kind, token: token(start, end === undefined ? start + kind.length - 1 : end)}
+}
+
+function operationLeft(op: OperatorLeftAst, right: ExpressionAst): OperationLeftAst {
+    return {kind: 'OperationLeft', op, right}
+}
+
+function opRight(kind: OperatorRight, start: number, end?: number): OperatorRightAst {
+    return {kind, token: token(start, end === undefined ? start + kind.length - 1 : end)}
+}
+
+function operationRight(left: ExpressionAst, op: OperatorRightAst): OperationRightAst {
+    return {kind: 'OperationRight', left, op}
 }
 
 function group(expression: ExpressionAst): GroupAst {
