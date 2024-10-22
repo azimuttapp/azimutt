@@ -118,150 +118,303 @@ const allTokens: TokenType[] = [WhiteSpace, NewLine, ...charTokens, ...keywordTo
 const defaultPos: number = -1 // used when error position is undefined
 
 class AmlParser extends EmbeddedActionsParser {
-    // common
-    nullRule: () => NullToken
-    decimalRule: () => DecimalToken
-    integerRule: () => IntegerToken
-    booleanRule: () => BooleanToken
-    expressionRule: () => ExpressionToken
-    identifierRule: () => IdentifierToken
-    docRule: () => DocToken
-    commentRule: () => CommentToken
-    propertiesRule: () => PropertiesAst
-    extraRule: () => ExtraAst
+    // top level
+    amlRule: () => AmlAst
+    // statements
+    statementRule: () => StatementAst
+    namespaceStatementRule: () => NamespaceStatement
+    entityRule: () => EntityStatement
+    relationRule: () => RelationStatement
+    typeRule: () => TypeStatement
+    emptyStatementRule: () => EmptyStatement
+    // clauses
+    attributeRule: () => AttributeAstFlat
+    // basic parts
     entityRefRule: () => EntityRefAst
-    attributePathRule: () => AttributePathAst
     attributeRefRule: () => AttributeRefAst
     attributeRefCompositeRule: () => AttributeRefCompositeAst
+    attributePathRule: () => AttributePathAst
     attributeValueRule: () => AttributeValueAst
-
-    // namespace
-    namespaceStatementRule: () => NamespaceStatement
-
-    // entity
-    attributeRule: () => AttributeAstFlat
-    entityRule: () => EntityStatement
-
-    // relation
-    relationRule: () => RelationStatement
-
-    // type
-    typeRule: () => TypeStatement
-
-    // general
-    emptyStatementRule: () => EmptyStatement
-    statementRule: () => StatementAst
-    amlRule: () => AmlAst
+    extraRule: () => ExtraAst
+    propertiesRule: () => PropertiesAst
+    docRule: () => DocToken
+    commentRule: () => CommentToken
+    // elements
+    expressionRule: () => ExpressionToken
+    identifierRule: () => IdentifierToken
+    integerRule: () => IntegerToken
+    decimalRule: () => DecimalToken
+    booleanRule: () => BooleanToken
+    nullRule: () => NullToken
 
     constructor(tokens: TokenType[], recovery: boolean) {
         super(tokens, {recoveryEnabled: recovery})
         const $ = this
 
-        // common rules
-        const whitespaceRule = $.RULE<() => IToken | undefined>('whitespaceRule', () => $.OPTION(() => $.CONSUME(WhiteSpace)))
-        this.nullRule = $.RULE<() => NullToken>('nullRule', () => ({token: 'Null', ...tokenInfo($.CONSUME(Null))}))
+        // statements
 
-        this.decimalRule = $.RULE<() => DecimalToken>('decimalRule', () => {
-            const neg = $.OPTION(() => $.CONSUME(Dash))
-            const token = $.CONSUME(Decimal)
-            return neg ? {token: 'Decimal', ...tokenInfo2(neg, token), value: parseFloat(neg.image + token.image)} :
-                {token: 'Decimal', ...tokenInfo(token), value: parseFloat(token.image)}
+        this.amlRule = $.RULE<() => AmlAst>('amlRule', () => {
+            let stmts: StatementAst[] = []
+            $.MANY(() => stmts.push($.SUBRULE($.statementRule)))
+            return stmts.filter(isNotUndefined) // can be undefined on invalid input :/
         })
 
-        this.integerRule = $.RULE<() => IntegerToken>('integerRule', () => {
-            const neg = $.OPTION(() => $.CONSUME(Dash))
-            const token = $.CONSUME(Integer)
-            return neg ? {token: 'Integer', ...tokenInfo2(neg, token), value: parseInt(neg.image + token.image)} :
-                {token: 'Integer', ...tokenInfo(token), value: parseInt(token.image)}
-        })
-
-        this.booleanRule = $.RULE<() => BooleanToken>('booleanRule', () => $.OR([
-            {ALT: () => ({token: 'Boolean', value: true, ...tokenInfo($.CONSUME(True))})},
-            {ALT: () => ({token: 'Boolean', value: false, ...tokenInfo($.CONSUME(False))})},
+        this.statementRule = $.RULE<() => StatementAst>('statementRule', () => $.OR([
+            {ALT: () => $.SUBRULE($.namespaceStatementRule)},
+            {ALT: () => $.SUBRULE($.entityRule)},
+            {ALT: () => $.SUBRULE($.relationRule)},
+            {ALT: () => $.SUBRULE($.typeRule)},
+            {ALT: () => $.SUBRULE($.emptyStatementRule)},
         ]))
 
-        this.expressionRule = $.RULE<() => ExpressionToken>('expressionRule', () => {
-            const token = $.CONSUME(Expression)
-            return {token: 'Expression', value: token.image.slice(1, -1), ...tokenPosition(token)}
+        this.namespaceStatementRule = $.RULE<() => NamespaceStatement>('namespaceStatementRule', () => {
+            const keyword = $.CONSUME(Namespace)
+            $.SUBRULE(whitespaceRule)
+            const namespace = $.OPTION(() => $.SUBRULE(namespaceRule)) || {}
+            const extra = $.SUBRULE($.extraRule)
+            $.CONSUME(NewLine)
+            return {statement: 'Namespace', line: keyword.startLine || defaultPos, ...namespace, ...extra}
         })
 
-        this.identifierRule = $.RULE<() => IdentifierToken>('identifierRule', () => {
-            const token = $.CONSUME(Identifier)
-            if (token.image.startsWith('"') && token.image.endsWith('"')) {
-                return {token: 'Identifier', value: token.image.slice(1, -1).replaceAll(/\\"/g, '"'), ...tokenPosition(token), quoted: true}
+        this.entityRule = $.RULE<() => EntityStatement>('entityRule', () => {
+            const {entity, ...namespace} = $.SUBRULE($.entityRefRule)
+            const view = $.OPTION(() => $.CONSUME(Asterisk))
+            $.SUBRULE(whitespaceRule)
+            const alias = $.OPTION2(() => {
+                $.CONSUME(As)
+                $.CONSUME(WhiteSpace)
+                return $.SUBRULE($.identifierRule)
+            })
+            $.SUBRULE2(whitespaceRule)
+            const extra = $.SUBRULE($.extraRule)
+            $.CONSUME(NewLine)
+            const attrs: AttributeAstFlat[] = []
+            $.MANY(() => {
+                const attr = $.SUBRULE($.attributeRule)
+                if (attr?.name?.value) attrs.push(attr) // name can be '' on invalid input :/
+            })
+            return removeEmpty({statement: 'Entity' as const, name: entity, view: view ? tokenInfo(view) : undefined, ...namespace, alias, ...extra, attrs: nestAttributes(attrs)})
+        })
+
+        this.emptyStatementRule = $.RULE<() => EmptyStatement>('emptyStatementRule', () => {
+            $.SUBRULE(whitespaceRule)
+            const comment = $.OPTION(() => $.SUBRULE($.commentRule))
+            $.CONSUME(NewLine)
+            return removeUndefined({statement: 'Empty' as const, comment})
+        })
+
+        this.relationRule = $.RULE<() => RelationStatement>('relationRule', () => {
+            const warning = $.OR([
+                {ALT: () => {$.CONSUME(Relation); return undefined}},
+                {ALT: () => tokenInfoLegacy($.CONSUME(ForeignKey), '"fk" is legacy, replace it with "rel"')}
+            ])
+            $.CONSUME(WhiteSpace)
+            const src = $.SUBRULE($.attributeRefCompositeRule)
+            $.SUBRULE(whitespaceRule)
+            const {ref, srcCardinality, refCardinality, polymorphic} = $.SUBRULE(attributeRelationRule) || {} // returns undefined on invalid input :/
+            $.SUBRULE2(whitespaceRule)
+            const extra = $.SUBRULE($.extraRule)
+            $.CONSUME(NewLine)
+            return removeUndefined({statement: 'Relation' as const, src, ref, srcCardinality, refCardinality, polymorphic, ...extra, warning})
+        })
+
+        this.typeRule = $.RULE<() => TypeStatement>('typeRule', () => {
+            $.CONSUME(Type)
+            $.CONSUME(WhiteSpace)
+            const {entity, ...namespace} = $.SUBRULE(this.entityRefRule) || {} // returns undefined on invalid input :/
+            $.SUBRULE(whitespaceRule)
+            const content = $.OPTION(() => $.OR([
+                {ALT: () => $.SUBRULE(typeEnumRule)},
+                {ALT: () => $.SUBRULE(typeStructRule)},
+                {ALT: () => $.SUBRULE(typeCustomRule)},
+                {ALT: () => $.SUBRULE(typeAliasRule)},
+            ]))
+            $.SUBRULE2(whitespaceRule)
+            const extra = $.SUBRULE($.extraRule)
+            $.CONSUME(NewLine)
+            /* if (content === undefined) {
+                const attrs: AttributeAstFlat[] = []
+                // FIXME: $.MANY fails with `TypeError: Cannot read properties of undefined (reading 'call')` at recognizer_engine.ts:517:30 (manyInternalLogic), before calling the callback, no idea why :/
+                $.MANY(() => attrs.push($.SUBRULE($.attributeRule)))
+                if (attrs.length > 0) content = {kind: 'struct', attrs: nestAttributes(attrs)}
+            } */
+            return {statement: 'Type', ...namespace, name: entity, content, ...extra}
+        })
+
+        // clauses
+
+        this.attributeRule = $.RULE<() => AttributeAstFlat>('attributeRule', () => {
+            const spaces = $.CONSUME(WhiteSpace)
+            const depth = Math.round(spaces.image.split('').reduce((i, c) => c === '\t' ? i + 1 : i + 0.5, 0)) - 1
+            const nesting = {...tokenInfo(spaces), depth}
+            const attr = $.SUBRULE(attributeInnerRule)
+            $.SUBRULE(whitespaceRule)
+            const relation = $.OPTION(() => $.SUBRULE(attributeRelationRule))
+            $.SUBRULE2(whitespaceRule)
+            const extra = $.SUBRULE($.extraRule)
+            $.CONSUME(NewLine)
+            return removeUndefined({...attr, nesting, relation, ...extra})
+        })
+        const attributeInnerRule = $.RULE<() => AttributeAstFlat>('attributeInnerRule', () => {
+            const name = $.SUBRULE($.identifierRule)
+            $.SUBRULE(whitespaceRule)
+            const {type, enumValues, defaultValue} = $.SUBRULE(attributeTypeRule) || {} // returns undefined on invalid input :/
+            $.SUBRULE2(whitespaceRule)
+            const nullable = $.OPTION(() => $.CONSUME(Nullable))
+            $.SUBRULE3(whitespaceRule)
+            const constraints = $.SUBRULE(attributeConstraintsRule)
+            const nesting = {depth: 0, offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}} // unused placeholder
+            return removeUndefined({nesting, name, type, enumValues, defaultValue, nullable: nullable ? tokenInfo(nullable) : undefined, ...constraints})
+        }, {resyncEnabled: true})
+        const attributeTypeRule = $.RULE<() => AttributeTypeAst>('attributeTypeRule', () => {
+            const res = $.OPTION(() => {
+                const type = $.SUBRULE($.identifierRule)
+                const enumValues = $.OPTION2(() => {
+                    $.CONSUME(ParenLeft)
+                    const values: AttributeValueAst[] = []
+                    $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => {
+                        $.SUBRULE(whitespaceRule)
+                        values.push($.SUBRULE($.attributeValueRule))
+                        $.SUBRULE2(whitespaceRule)
+                    }})
+                    $.CONSUME(ParenRight)
+                    return values.filter(isNotUndefined) // can be undefined on invalid input :/
+                })
+                const defaultValue = $.OPTION3(() => {
+                    $.CONSUME(Equal)
+                    return $.SUBRULE2($.attributeValueRule)
+                })
+                return {type, enumValues, defaultValue}
+            })
+            return {type: res?.type, enumValues: res?.enumValues, defaultValue: res?.defaultValue}
+        })
+        const attributeConstraintsRule = $.RULE<() => AttributeConstraintsAst>('attributeConstraintsRule', () => {
+            const primaryKey = $.OPTION(() => $.SUBRULE(attributePkRule))
+            $.SUBRULE(whitespaceRule)
+            const unique = $.OPTION2(() => $.SUBRULE(attributeUniqueRule))
+            $.SUBRULE2(whitespaceRule)
+            const index = $.OPTION3(() => $.SUBRULE(attributeIndexRule))
+            $.SUBRULE3(whitespaceRule)
+            const check = $.OPTION4(() => $.SUBRULE(attributeCheckRule))
+            return removeUndefined({primaryKey, index, unique, check})
+        })
+        const attributePkRule = $.RULE<() => AttributeConstraintAst>('attributePkRule', () => {
+            const token = $.CONSUME(PrimaryKey)
+            $.SUBRULE(whitespaceRule)
+            const name = $.OPTION(() => {
+                $.CONSUME(Equal)
+                $.SUBRULE2(whitespaceRule)
+                const res = $.SUBRULE($.identifierRule)
+                $.SUBRULE3(whitespaceRule)
+                return res
+            })
+            return removeUndefined({keyword: tokenInfo(token), name})
+        })
+        const attributeIndexRule = $.RULE<() => AttributeConstraintAst>('attributeIndexRule', () => {
+            const token = $.CONSUME(Index)
+            $.SUBRULE(whitespaceRule)
+            const name = $.OPTION(() => {
+                $.CONSUME(Equal)
+                $.SUBRULE2(whitespaceRule)
+                const res = $.SUBRULE($.identifierRule)
+                $.SUBRULE3(whitespaceRule)
+                return res
+            })
+            return removeUndefined({keyword: tokenInfo(token), name})
+        })
+        const attributeUniqueRule = $.RULE<() => AttributeConstraintAst>('attributeUniqueRule', () => {
+            const token = $.CONSUME(Unique)
+            $.SUBRULE(whitespaceRule)
+            const name = $.OPTION(() => {
+                $.CONSUME(Equal)
+                $.SUBRULE2(whitespaceRule)
+                const res = $.SUBRULE($.identifierRule)
+                $.SUBRULE3(whitespaceRule)
+                return res
+            })
+            return removeUndefined({keyword: tokenInfo(token), name})
+        })
+        const attributeCheckRule = $.RULE<() => AttributeCheckAst>('attributeCheckRule', () => {
+            const token = $.CONSUME(Check)
+            $.SUBRULE(whitespaceRule)
+            const predicate = $.OPTION(() => {
+                $.CONSUME(ParenLeft)
+                const res = $.SUBRULE($.expressionRule)
+                $.CONSUME(ParenRight)
+                $.SUBRULE2(whitespaceRule)
+                return res
+            })
+            const name = $.OPTION2(() => {
+                $.CONSUME(Equal)
+                $.SUBRULE3(whitespaceRule)
+                const res = $.SUBRULE($.identifierRule)
+                $.SUBRULE4(whitespaceRule)
+                return res
+            })
+            if (!predicate && name && [' ', '<', '>', '=', 'IN'].some(c => name.value.includes(c))) {
+                // no definition and a name that look like a predicate => switch to the legacy syntax (predicate was in the name)
+                const def = {...positionStartAdd(name, -1), token: 'Expression' as const, issues: [legacy(`"=${name.value}" is the legacy way, use expression instead "(\`${name.value}\`)"`)]}
+                return removeUndefined({keyword: tokenInfo(token), predicate: def})
             } else {
-                return {token: 'Identifier', value: token.image, ...tokenPosition(token)}
+                return removeUndefined({keyword: tokenInfo(token), predicate, name})
             }
         })
-
-        this.docRule = $.RULE<() => DocToken>('docRule', () => $.OR([
-            {ALT: () => {
-                const token = $.CONSUME(DocMultiline)
-                return {token: 'Doc', value: stripIndent(token.image.slice(3, -3)), ...tokenPosition(token), multiLine: true}
-            }},
-            {ALT: () => {
-                const token = $.CONSUME(Doc)
-                return {token: 'Doc', value: removeQuotes(token.image.slice(1).trim().replaceAll(/\\#/g, '#')), ...tokenPosition(token)}
-            }}
-        ]))
-
-        this.commentRule = $.RULE<() => CommentToken>('commentRule', () => {
-            const token = $.CONSUME(Comment)
-            return {token: 'Comment', value: token.image.slice(1).trim(), ...tokenPosition(token)}
-        })
-
-        const propertyValueRule = $.RULE<() => PropertyValueAst>('propertyValueRule', () => $.OR([
-            {ALT: () => $.SUBRULE($.nullRule)},
-            {ALT: () => $.SUBRULE($.decimalRule)},
-            {ALT: () => $.SUBRULE($.integerRule)},
-            {ALT: () => $.SUBRULE($.booleanRule)},
-            {ALT: () => $.SUBRULE($.expressionRule)},
-            {ALT: () => $.SUBRULE($.identifierRule)},
-            {ALT: () => {
-                $.CONSUME(BracketLeft)
-                const values: PropertyValueAst[] = []
-                $.MANY_SEP({SEP: Comma, DEF: () => {
-                    $.SUBRULE(whitespaceRule)
-                    values.push($.SUBRULE(propertyValueRule))
-                    $.SUBRULE2(whitespaceRule)
-                }})
-                $.CONSUME(BracketRight)
-                return values.filter(isNotUndefined) // can be undefined on invalid input :/
-            }},
-        ]))
-        const propertyRule = $.RULE<() => PropertyAst>('propertyRule', () => {
-            const key = $.SUBRULE($.identifierRule)
+        const attributeRelationRule = $.RULE<() => AttributeRelationAst>('attributeRelationRule', () => {
+            const {srcCardinality, refCardinality, polymorphic, warning} = $.OR([
+                {ALT: () => {
+                    const refCardinality = $.SUBRULE(relationCardinalityRule)
+                    const polymorphic = $.OPTION(() => $.SUBRULE(relationPolymorphicRule))
+                    const srcCardinality = $.SUBRULE2(relationCardinalityRule)
+                    return {srcCardinality, refCardinality, polymorphic, warning: undefined}
+                }},
+                {ALT: () => {
+                    const warning = tokenInfoLegacy($.CONSUME(ForeignKey), '"fk" is legacy, replace it with "->"')
+                    return {srcCardinality: 'n' as const, refCardinality: '1' as const, polymorphic: undefined, warning}
+                }}
+            ])
             $.SUBRULE(whitespaceRule)
-            const value = $.OPTION(() => {
-                const sep = $.OR([
-                    {ALT: () => tokenInfo($.CONSUME(Colon))},
-                    {ALT: () => tokenInfoLegacy($.CONSUME(Equal), '"=" is legacy, replace it with ":"')},
-                ])
-                $.SUBRULE2(whitespaceRule)
-                return {sep, value: $.SUBRULE(propertyValueRule)}
-            })
-            return {key, ...value}
+            const ref = $.SUBRULE2($.attributeRefCompositeRule)
+            return removeUndefined({ref, srcCardinality, refCardinality, polymorphic, warning})
         })
-        this.propertiesRule = $.RULE<() => PropertiesAst>('propertiesRule', () => {
-            $.CONSUME(CurlyLeft)
-            const props: PropertiesAst = []
+
+        const relationCardinalityRule = $.RULE<() => RelationCardinality>('relationCardinalityRule', () => $.OR([
+            {ALT: () => { $.CONSUME(Dash); return '1' }},
+            {ALT: () => { $.CONSUME(LowerThan); return 'n' }},
+            {ALT: () => { $.CONSUME(GreaterThan); return 'n' }},
+        ]))
+        const relationPolymorphicRule = $.RULE<() => RelationPolymorphicAst>('relationPolymorphicRule', () => {
+            const attr = $.SUBRULE($.attributePathRule)
+            $.CONSUME(Equal)
+            const value = $.SUBRULE($.attributeValueRule)
+            return {attr, value}
+        })
+
+        const typeAliasRule = $.RULE<() => TypeAliasAst>('typeAliasRule', () => ({kind: 'alias', name: $.SUBRULE($.identifierRule)}))
+        const typeEnumRule = $.RULE<() => TypeEnumAst>('typeEnumRule', () => {
+            $.CONSUME(ParenLeft)
+            const values: AttributeValueAst[] = []
             $.MANY_SEP({SEP: Comma, DEF: () => {
                 $.SUBRULE(whitespaceRule)
-                props.push($.SUBRULE(propertyRule))
+                values.push($.SUBRULE($.attributeValueRule))
+                $.SUBRULE2(whitespaceRule)
+            }})
+            $.CONSUME(ParenRight)
+            return {kind: 'enum', values}
+        })
+        const typeStructRule = $.RULE<() => TypeStructAst>('typeStructRule', () => {
+            $.CONSUME(CurlyLeft)
+            const attrs: AttributeAstFlat[] = []
+            $.MANY_SEP({SEP: Comma, DEF: () => {
+                $.SUBRULE(whitespaceRule)
+                attrs.push($.SUBRULE(attributeInnerRule))
                 $.SUBRULE2(whitespaceRule)
             }})
             $.CONSUME(CurlyRight)
-            return props.filter(isNotUndefined) // can be undefined on invalid input :/
+            return {kind: 'struct', attrs: nestAttributes(attrs)}
         })
+        const typeCustomRule = $.RULE<() => TypeCustomAst>('typeCustomRule', () => ({kind: 'custom', definition: $.SUBRULE($.expressionRule)}))
 
-        this.extraRule = $.RULE<() => ExtraAst>('extraRule', () => {
-            const properties = $.OPTION(() => $.SUBRULE($.propertiesRule))
-            $.SUBRULE(whitespaceRule)
-            const doc = $.OPTION2(() => $.SUBRULE($.docRule))
-            $.SUBRULE2(whitespaceRule)
-            const comment = $.OPTION3(() => $.SUBRULE($.commentRule))
-            return removeUndefined({properties, doc, comment})
-        })
+        // basic parts
 
         const namespaceRule = $.RULE<() => NamespaceRefAst>('namespaceRule', () => {
             const first = $.SUBRULE($.identifierRule)
@@ -283,25 +436,6 @@ class AmlParser extends EmbeddedActionsParser {
             if (second && third && third.id) return removeUndefined({catalog: first, schema: second.id, entity: third.id})
             if (second && second.id) return removeUndefined({schema: first, entity: second.id})
             return {entity: first}
-        })
-
-        this.attributePathRule = $.RULE<() => AttributePathAst>('attributePathRule', () => {
-            const attr = $.SUBRULE($.identifierRule)
-            const path: IdentifierToken[] = []
-            $.MANY(() => {
-                $.CONSUME(Dot)
-                path.push($.SUBRULE2($.identifierRule))
-            })
-            return removeEmpty({...attr, path})
-        })
-
-        const legacyAttributePathRule = $.RULE<() => IdentifierToken[]>('legacyAttributePathRule', () => {
-            const path: IdentifierToken[] = []
-            $.MANY(() => {
-                $.CONSUME(Colon)
-                path.push($.SUBRULE($.identifierRule))
-            })
-            return path
         })
 
         this.attributeRefRule = $.RULE<() => AttributeRefAst>('attributeRefRule', () => {
@@ -357,6 +491,24 @@ class AmlParser extends EmbeddedActionsParser {
             ])
         })
 
+        this.attributePathRule = $.RULE<() => AttributePathAst>('attributePathRule', () => {
+            const attr = $.SUBRULE($.identifierRule)
+            const path: IdentifierToken[] = []
+            $.MANY(() => {
+                $.CONSUME(Dot)
+                path.push($.SUBRULE2($.identifierRule))
+            })
+            return removeEmpty({...attr, path})
+        })
+        const legacyAttributePathRule = $.RULE<() => IdentifierToken[]>('legacyAttributePathRule', () => {
+            const path: IdentifierToken[] = []
+            $.MANY(() => {
+                $.CONSUME(Colon)
+                path.push($.SUBRULE($.identifierRule))
+            })
+            return path
+        })
+
         this.attributeValueRule = $.RULE<() => AttributeValueAst>('attributeValueRule', () => $.OR([
             {ALT: () => $.SUBRULE($.nullRule)},
             {ALT: () => $.SUBRULE($.integerRule)},
@@ -366,266 +518,111 @@ class AmlParser extends EmbeddedActionsParser {
             {ALT: () => $.SUBRULE($.identifierRule)},
         ]))
 
-        // namespace rules
-        this.namespaceStatementRule = $.RULE<() => NamespaceStatement>('namespaceStatementRule', () => {
-            const keyword = $.CONSUME(Namespace)
+        this.extraRule = $.RULE<() => ExtraAst>('extraRule', () => {
+            const properties = $.OPTION(() => $.SUBRULE($.propertiesRule))
             $.SUBRULE(whitespaceRule)
-            const namespace = $.OPTION(() => $.SUBRULE(namespaceRule)) || {}
-            const extra = $.SUBRULE($.extraRule)
-            $.CONSUME(NewLine)
-            return {statement: 'Namespace', line: keyword.startLine || defaultPos, ...namespace, ...extra}
+            const doc = $.OPTION2(() => $.SUBRULE($.docRule))
+            $.SUBRULE2(whitespaceRule)
+            const comment = $.OPTION3(() => $.SUBRULE($.commentRule))
+            return removeUndefined({properties, doc, comment})
         })
 
-        // entity rules
-        const attributeTypeRule = $.RULE<() => AttributeTypeAst>('attributeTypeRule', () => {
-            const res = $.OPTION(() => {
-                const type = $.SUBRULE($.identifierRule)
-                const enumValues = $.OPTION2(() => {
-                    $.CONSUME(ParenLeft)
-                    const values: AttributeValueAst[] = []
-                    $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => {
-                        $.SUBRULE(whitespaceRule)
-                        values.push($.SUBRULE($.attributeValueRule))
-                        $.SUBRULE2(whitespaceRule)
-                    }})
-                    $.CONSUME(ParenRight)
-                    return values.filter(isNotUndefined) // can be undefined on invalid input :/
-                })
-                const defaultValue = $.OPTION3(() => {
-                    $.CONSUME(Equal)
-                    return $.SUBRULE2($.attributeValueRule)
-                })
-                return {type, enumValues, defaultValue}
-            })
-            return {type: res?.type, enumValues: res?.enumValues, defaultValue: res?.defaultValue}
-        })
-        const attributeConstraintPkRule = $.RULE<() => AttributeConstraintAst>('attributeConstraintPkRule', () => {
-            const token = $.CONSUME(PrimaryKey)
-            $.SUBRULE(whitespaceRule)
-            const name = $.OPTION(() => {
-                $.CONSUME(Equal)
-                $.SUBRULE2(whitespaceRule)
-                const res = $.SUBRULE($.identifierRule)
-                $.SUBRULE3(whitespaceRule)
-                return res
-            })
-            return removeUndefined({keyword: tokenInfo(token), name})
-        })
-        const attributeConstraintIndexRule = $.RULE<() => AttributeConstraintAst>('attributeConstraintIndexRule', () => {
-            const token = $.CONSUME(Index)
-            $.SUBRULE(whitespaceRule)
-            const name = $.OPTION(() => {
-                $.CONSUME(Equal)
-                $.SUBRULE2(whitespaceRule)
-                const res = $.SUBRULE($.identifierRule)
-                $.SUBRULE3(whitespaceRule)
-                return res
-            })
-            return removeUndefined({keyword: tokenInfo(token), name})
-        })
-        const attributeConstraintUniqueRule = $.RULE<() => AttributeConstraintAst>('attributeConstraintUniqueRule', () => {
-            const token = $.CONSUME(Unique)
-            $.SUBRULE(whitespaceRule)
-            const name = $.OPTION(() => {
-                $.CONSUME(Equal)
-                $.SUBRULE2(whitespaceRule)
-                const res = $.SUBRULE($.identifierRule)
-                $.SUBRULE3(whitespaceRule)
-                return res
-            })
-            return removeUndefined({keyword: tokenInfo(token), name})
-        })
-        const attributeConstraintCheckRule = $.RULE<() => AttributeCheckAst>('attributeConstraintCheckRule', () => {
-            const token = $.CONSUME(Check)
-            $.SUBRULE(whitespaceRule)
-            const predicate = $.OPTION(() => {
-                $.CONSUME(ParenLeft)
-                const res = $.SUBRULE($.expressionRule)
-                $.CONSUME(ParenRight)
-                $.SUBRULE2(whitespaceRule)
-                return res
-            })
-            const name = $.OPTION2(() => {
-                $.CONSUME(Equal)
-                $.SUBRULE3(whitespaceRule)
-                const res = $.SUBRULE($.identifierRule)
-                $.SUBRULE4(whitespaceRule)
-                return res
-            })
-            if (!predicate && name && [' ', '<', '>', '=', 'IN'].some(c => name.value.includes(c))) {
-                // no definition and a name that look like a predicate => switch to the legacy syntax (predicate was in the name)
-                const def = {...positionStartAdd(name, -1), token: 'Expression' as const, issues: [legacy(`"=${name.value}" is the legacy way, use expression instead "(\`${name.value}\`)"`)]}
-                return removeUndefined({keyword: tokenInfo(token), predicate: def})
-            } else {
-                return removeUndefined({keyword: tokenInfo(token), predicate, name})
-            }
-        })
-        const attributeConstraintsRule = $.RULE<() => AttributeConstraintsAst>('attributeConstraintsRule', () => {
-            const primaryKey = $.OPTION(() => $.SUBRULE(attributeConstraintPkRule))
-            $.SUBRULE(whitespaceRule)
-            const unique = $.OPTION2(() => $.SUBRULE(attributeConstraintUniqueRule))
-            $.SUBRULE2(whitespaceRule)
-            const index = $.OPTION3(() => $.SUBRULE(attributeConstraintIndexRule))
-            $.SUBRULE3(whitespaceRule)
-            const check = $.OPTION4(() => $.SUBRULE(attributeConstraintCheckRule))
-            return removeUndefined({primaryKey, index, unique, check})
-        })
-        const attributeRelationRule = $.RULE<() => AttributeRelationAst>('attributeRelationRule', () => {
-            const {srcCardinality, refCardinality, polymorphic, warning} = $.OR([
-                {ALT: () => {
-                    const refCardinality = $.SUBRULE(relationCardinalityRule)
-                    const polymorphic = $.OPTION(() => $.SUBRULE(relationPolymorphicRule))
-                    const srcCardinality = $.SUBRULE2(relationCardinalityRule)
-                    return {srcCardinality, refCardinality, polymorphic, warning: undefined}
-                }},
-                {ALT: () => {
-                    const warning = tokenInfoLegacy($.CONSUME(ForeignKey), '"fk" is legacy, replace it with "->"')
-                    return {srcCardinality: 'n' as const, refCardinality: '1' as const, polymorphic: undefined, warning}
-                }}
-            ])
-            $.SUBRULE(whitespaceRule)
-            const ref = $.SUBRULE2($.attributeRefCompositeRule)
-            return removeUndefined({ref, srcCardinality, refCardinality, polymorphic, warning})
-        })
-        const attributeRuleInner = $.RULE<() => AttributeAstFlat>('attributeRuleInner', () => {
-            const name = $.SUBRULE($.identifierRule)
-            $.SUBRULE(whitespaceRule)
-            const {type, enumValues, defaultValue} = $.SUBRULE(attributeTypeRule) || {} // returns undefined on invalid input :/
-            $.SUBRULE2(whitespaceRule)
-            const nullable = $.OPTION(() => $.CONSUME(Nullable))
-            $.SUBRULE3(whitespaceRule)
-            const constraints = $.SUBRULE(attributeConstraintsRule)
-            const nesting = {depth: 0, offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}} // unused placeholder
-            return removeUndefined({nesting, name, type, enumValues, defaultValue, nullable: nullable ? tokenInfo(nullable) : undefined, ...constraints})
-        }, {resyncEnabled: true})
-        this.attributeRule = $.RULE<() => AttributeAstFlat>('attributeRule', () => {
-            const spaces = $.CONSUME(WhiteSpace)
-            const depth = Math.round(spaces.image.split('').reduce((i, c) => c === '\t' ? i + 1 : i + 0.5, 0)) - 1
-            const nesting = {...tokenInfo(spaces), depth}
-            const attr = $.SUBRULE(attributeRuleInner)
-            $.SUBRULE(whitespaceRule)
-            const relation = $.OPTION(() => $.SUBRULE(attributeRelationRule))
-            $.SUBRULE2(whitespaceRule)
-            const extra = $.SUBRULE($.extraRule)
-            $.CONSUME(NewLine)
-            return removeUndefined({...attr, nesting, relation, ...extra})
-        })
-
-        this.entityRule = $.RULE<() => EntityStatement>('entityRule', () => {
-            const {entity, ...namespace} = $.SUBRULE($.entityRefRule)
-            const view = $.OPTION(() => $.CONSUME(Asterisk))
-            $.SUBRULE(whitespaceRule)
-            const alias = $.OPTION2(() => {
-                $.CONSUME(As)
-                $.CONSUME(WhiteSpace)
-                return $.SUBRULE($.identifierRule)
-            })
-            $.SUBRULE2(whitespaceRule)
-            const extra = $.SUBRULE($.extraRule)
-            $.CONSUME(NewLine)
-            const attrs: AttributeAstFlat[] = []
-            $.MANY(() => {
-                const attr = $.SUBRULE($.attributeRule)
-                if (attr?.name?.value) attrs.push(attr) // name can be '' on invalid input :/
-            })
-            return removeEmpty({statement: 'Entity' as const, name: entity, view: view ? tokenInfo(view) : undefined, ...namespace, alias, ...extra, attrs: nestAttributes(attrs)})
-        })
-
-        // relation rules
-        const relationCardinalityRule = $.RULE<() => RelationCardinality>('relationCardinalityRule', () => $.OR([
-            {ALT: () => { $.CONSUME(Dash); return '1' }},
-            {ALT: () => { $.CONSUME(LowerThan); return 'n' }},
-            {ALT: () => { $.CONSUME(GreaterThan); return 'n' }},
-        ]))
-        const relationPolymorphicRule = $.RULE<() => RelationPolymorphicAst>('relationPolymorphicRule', () => {
-            const attr = $.SUBRULE($.attributePathRule)
-            $.CONSUME(Equal)
-            const value = $.SUBRULE($.attributeValueRule)
-            return {attr, value}
-        })
-        this.relationRule = $.RULE<() => RelationStatement>('relationRule', () => {
-            const warning = $.OR([
-                {ALT: () => {$.CONSUME(Relation); return undefined}},
-                {ALT: () => tokenInfoLegacy($.CONSUME(ForeignKey), '"fk" is legacy, replace it with "rel"')}
-            ])
-            $.CONSUME(WhiteSpace)
-            const src = $.SUBRULE($.attributeRefCompositeRule)
-            $.SUBRULE(whitespaceRule)
-            const {ref, srcCardinality, refCardinality, polymorphic} = $.SUBRULE(attributeRelationRule) || {} // returns undefined on invalid input :/
-            $.SUBRULE2(whitespaceRule)
-            const extra = $.SUBRULE($.extraRule)
-            $.CONSUME(NewLine)
-            return removeUndefined({statement: 'Relation' as const, src, ref, srcCardinality, refCardinality, polymorphic, ...extra, warning})
-        })
-
-        // type rules
-        const typeAliasRule = $.RULE<() => TypeAliasAst>('typeAliasRule', () => ({kind: 'alias', name: $.SUBRULE($.identifierRule)}))
-        const typeEnumRule = $.RULE<() => TypeEnumAst>('typeEnumRule', () => {
-            $.CONSUME(ParenLeft)
-            const values: AttributeValueAst[] = []
-            $.MANY_SEP({SEP: Comma, DEF: () => {
-                $.SUBRULE(whitespaceRule)
-                values.push($.SUBRULE($.attributeValueRule))
-                $.SUBRULE2(whitespaceRule)
-            }})
-            $.CONSUME(ParenRight)
-            return {kind: 'enum', values}
-        })
-        const typeStructRule = $.RULE<() => TypeStructAst>('typeStructRule', () => {
+        this.propertiesRule = $.RULE<() => PropertiesAst>('propertiesRule', () => {
             $.CONSUME(CurlyLeft)
-            const attrs: AttributeAstFlat[] = []
+            const props: PropertiesAst = []
             $.MANY_SEP({SEP: Comma, DEF: () => {
                 $.SUBRULE(whitespaceRule)
-                attrs.push($.SUBRULE(attributeRuleInner))
+                props.push($.SUBRULE(propertyRule))
                 $.SUBRULE2(whitespaceRule)
             }})
             $.CONSUME(CurlyRight)
-            return {kind: 'struct', attrs: nestAttributes(attrs)}
+            return props.filter(isNotUndefined) // can be undefined on invalid input :/
         })
-        const typeCustomRule = $.RULE<() => TypeCustomAst>('typeCustomRule', () => ({kind: 'custom', definition: $.SUBRULE($.expressionRule)}))
-        this.typeRule = $.RULE<() => TypeStatement>('typeRule', () => {
-            $.CONSUME(Type)
-            $.CONSUME(WhiteSpace)
-            const {entity, ...namespace} = $.SUBRULE(this.entityRefRule) || {} // returns undefined on invalid input :/
+        const propertyRule = $.RULE<() => PropertyAst>('propertyRule', () => {
+            const key = $.SUBRULE($.identifierRule)
             $.SUBRULE(whitespaceRule)
-            const content = $.OPTION(() => $.OR([
-                {ALT: () => $.SUBRULE(typeEnumRule)},
-                {ALT: () => $.SUBRULE(typeStructRule)},
-                {ALT: () => $.SUBRULE(typeCustomRule)},
-                {ALT: () => $.SUBRULE(typeAliasRule)},
-            ]))
-            $.SUBRULE2(whitespaceRule)
-            const extra = $.SUBRULE($.extraRule)
-            $.CONSUME(NewLine)
-            /* if (content === undefined) {
-                const attrs: AttributeAstFlat[] = []
-                // FIXME: $.MANY fails with `TypeError: Cannot read properties of undefined (reading 'call')` at recognizer_engine.ts:517:30 (manyInternalLogic), before calling the callback, no idea why :/
-                $.MANY(() => attrs.push($.SUBRULE($.attributeRule)))
-                if (attrs.length > 0) content = {kind: 'struct', attrs: nestAttributes(attrs)}
-            } */
-            return {statement: 'Type', ...namespace, name: entity, content, ...extra}
+            const value = $.OPTION(() => {
+                const sep = $.OR([
+                    {ALT: () => tokenInfo($.CONSUME(Colon))},
+                    {ALT: () => tokenInfoLegacy($.CONSUME(Equal), '"=" is legacy, replace it with ":"')},
+                ])
+                $.SUBRULE2(whitespaceRule)
+                return {sep, value: $.SUBRULE(propertyValueRule)}
+            })
+            return {key, ...value}
         })
-        this.emptyStatementRule = $.RULE<() => EmptyStatement>('emptyStatementRule', () => {
-            $.SUBRULE(whitespaceRule)
-            const comment = $.OPTION(() => $.SUBRULE($.commentRule))
-            $.CONSUME(NewLine)
-            return removeUndefined({statement: 'Empty' as const, comment})
-        })
-
-        // general rules
-        this.statementRule = $.RULE<() => StatementAst>('statementRule', () => $.OR([
-            {ALT: () => $.SUBRULE($.namespaceStatementRule)},
-            {ALT: () => $.SUBRULE($.entityRule)},
-            {ALT: () => $.SUBRULE($.relationRule)},
-            {ALT: () => $.SUBRULE($.typeRule)},
-            {ALT: () => $.SUBRULE($.emptyStatementRule)},
+        const propertyValueRule = $.RULE<() => PropertyValueAst>('propertyValueRule', () => $.OR([
+            {ALT: () => $.SUBRULE($.nullRule)},
+            {ALT: () => $.SUBRULE($.decimalRule)},
+            {ALT: () => $.SUBRULE($.integerRule)},
+            {ALT: () => $.SUBRULE($.booleanRule)},
+            {ALT: () => $.SUBRULE($.expressionRule)},
+            {ALT: () => $.SUBRULE($.identifierRule)},
+            {ALT: () => {
+                $.CONSUME(BracketLeft)
+                const values: PropertyValueAst[] = []
+                $.MANY_SEP({SEP: Comma, DEF: () => {
+                    $.SUBRULE(whitespaceRule)
+                    values.push($.SUBRULE(propertyValueRule))
+                    $.SUBRULE2(whitespaceRule)
+                }})
+                $.CONSUME(BracketRight)
+                return values.filter(isNotUndefined) // can be undefined on invalid input :/
+            }},
         ]))
 
-        this.amlRule = $.RULE<() => AmlAst>('amlRule', () => {
-            let stmts: StatementAst[] = []
-            $.MANY(() => stmts.push($.SUBRULE($.statementRule)))
-            return stmts.filter(isNotUndefined) // can be undefined on invalid input :/
+        this.docRule = $.RULE<() => DocToken>('docRule', () => $.OR([
+            {ALT: () => {
+                const token = $.CONSUME(DocMultiline)
+                return {token: 'Doc', value: stripIndent(token.image.slice(3, -3)), ...tokenPosition(token), multiLine: true}
+            }},
+            {ALT: () => {
+                const token = $.CONSUME(Doc)
+                return {token: 'Doc', value: removeQuotes(token.image.slice(1).trim().replaceAll(/\\#/g, '#')), ...tokenPosition(token)}
+            }}
+        ]))
+
+        this.commentRule = $.RULE<() => CommentToken>('commentRule', () => {
+            const token = $.CONSUME(Comment)
+            return {token: 'Comment', value: token.image.slice(1).trim(), ...tokenPosition(token)}
         })
+
+        // elements
+
+        this.expressionRule = $.RULE<() => ExpressionToken>('expressionRule', () => {
+            const token = $.CONSUME(Expression)
+            return {token: 'Expression', value: token.image.slice(1, -1), ...tokenPosition(token)}
+        })
+
+        this.identifierRule = $.RULE<() => IdentifierToken>('identifierRule', () => {
+            const token = $.CONSUME(Identifier)
+            if (token.image.startsWith('"') && token.image.endsWith('"')) {
+                return {token: 'Identifier', value: token.image.slice(1, -1).replaceAll(/\\"/g, '"'), ...tokenPosition(token), quoted: true}
+            } else {
+                return {token: 'Identifier', value: token.image, ...tokenPosition(token)}
+            }
+        })
+
+        this.integerRule = $.RULE<() => IntegerToken>('integerRule', () => {
+            const neg = $.OPTION(() => $.CONSUME(Dash))
+            const token = $.CONSUME(Integer)
+            return neg ? {token: 'Integer', ...tokenInfo2(neg, token), value: parseInt(neg.image + token.image)} : {token: 'Integer', ...tokenInfo(token), value: parseInt(token.image)}
+        })
+
+        this.decimalRule = $.RULE<() => DecimalToken>('decimalRule', () => {
+            const neg = $.OPTION(() => $.CONSUME(Dash))
+            const token = $.CONSUME(Decimal)
+            return neg ? {token: 'Decimal', ...tokenInfo2(neg, token), value: parseFloat(neg.image + token.image)} : {token: 'Decimal', ...tokenInfo(token), value: parseFloat(token.image)}
+        })
+
+        this.booleanRule = $.RULE<() => BooleanToken>('booleanRule', () => $.OR([
+            {ALT: () => ({token: 'Boolean', value: true, ...tokenInfo($.CONSUME(True))})},
+            {ALT: () => ({token: 'Boolean', value: false, ...tokenInfo($.CONSUME(False))})},
+        ]))
+
+        this.nullRule = $.RULE<() => NullToken>('nullRule', () => ({token: 'Null', ...tokenInfo($.CONSUME(Null))}))
+
+        const whitespaceRule = $.RULE<() => IToken | undefined>('whitespaceRule', () => $.OPTION(() => $.CONSUME(WhiteSpace)))
 
         this.performSelfAnalysis()
     }
