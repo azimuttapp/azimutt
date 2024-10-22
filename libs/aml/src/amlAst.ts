@@ -7,52 +7,56 @@ import {
     TokenPosition
 } from "@azimutt/models";
 
+// statements
 export type AmlAst = StatementAst[]
 export type StatementAst = NamespaceStatement | EntityStatement | RelationStatement | TypeStatement | EmptyStatement
-export type NamespaceStatement = { statement: 'Namespace', line: number, schema?: IdentifierToken, catalog?: IdentifierToken, database?: IdentifierToken } & ExtraAst
-export type EntityStatement = { statement: 'Entity', name: IdentifierToken, view?: TokenInfo, alias?: IdentifierToken, attrs?: AttributeAstNested[] } & NamespaceRefAst & ExtraAst
-export type RelationStatement = { statement: 'Relation', src: AttributeRefCompositeAst, ref: AttributeRefCompositeAst, srcCardinality: RelationCardinality, refCardinality: RelationCardinality, polymorphic?: RelationPolymorphicAst } & ExtraAst & { warning?: TokenInfo }
-export type TypeStatement = { statement: 'Type', name: IdentifierToken, content?: TypeContentAst } & NamespaceRefAst & ExtraAst
-export type EmptyStatement = { statement: 'Empty', comment?: CommentToken }
+export type NamespaceStatement = { kind: 'Namespace', line: number, schema?: IdentifierAst, catalog?: IdentifierAst, database?: IdentifierAst } & ExtraAst
+export type EntityStatement = { kind: 'Entity', name: IdentifierAst, view?: TokenInfo, alias?: IdentifierAst, attrs?: AttributeAstNested[] } & NamespaceRefAst & ExtraAst
+export type RelationStatement = { kind: 'Relation', src: AttributeRefCompositeAst, ref: AttributeRefCompositeAst, srcCardinality: RelationCardinality, refCardinality: RelationCardinality, polymorphic?: RelationPolymorphicAst } & ExtraAst & { warning?: TokenInfo }
+export type TypeStatement = { kind: 'Type', name: IdentifierAst, content?: TypeContentAst } & NamespaceRefAst & ExtraAst
+export type EmptyStatement = { kind: 'Empty', comment?: CommentAst }
 
-export type AttributeAstFlat = { nesting: TokenInfo & {depth: number}, name: IdentifierToken, nullable?: TokenInfo } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst
-export type AttributeAstNested = { path: IdentifierToken[], nullable?: TokenInfo } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst & { attrs?: AttributeAstNested[], warning?: TokenInfo }
-export type AttributeTypeAst = { type?: IdentifierToken, enumValues?: AttributeValueAst[], defaultValue?: AttributeValueAst }
+// clauses
+export type AttributeAstFlat = { nesting: {token: TokenInfo, depth: number}, name: IdentifierAst, nullable?: TokenInfo } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst
+export type AttributeAstNested = { path: IdentifierAst[], nullable?: TokenInfo } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst & { attrs?: AttributeAstNested[], warning?: TokenInfo }
+export type AttributeTypeAst = { type?: IdentifierAst, enumValues?: AttributeValueAst[], defaultValue?: AttributeValueAst }
 export type AttributeConstraintsAst = { primaryKey?: AttributeConstraintAst, index?: AttributeConstraintAst, unique?: AttributeConstraintAst, check?: AttributeCheckAst }
-export type AttributeConstraintAst = { keyword: TokenInfo, name?: IdentifierToken }
-export type AttributeCheckAst = AttributeConstraintAst & { predicate?: ExpressionToken }
+export type AttributeConstraintAst = { token: TokenInfo, name?: IdentifierAst }
+export type AttributeCheckAst = AttributeConstraintAst & { predicate?: ExpressionAst }
 export type AttributeRelationAst = { ref: AttributeRefCompositeAst, srcCardinality: RelationCardinality, refCardinality: RelationCardinality, polymorphic?: RelationPolymorphicAst, warning?: TokenInfo }
 
 export type RelationPolymorphicAst = { attr: AttributePathAst, value: AttributeValueAst }
 
 export type TypeContentAst = TypeAliasAst | TypeEnumAst | TypeStructAst | TypeCustomAst
-export type TypeAliasAst = { kind: 'alias', name: IdentifierToken }
+export type TypeAliasAst = { kind: 'alias', name: IdentifierAst }
 export type TypeEnumAst = { kind: 'enum', values: AttributeValueAst[] }
 export type TypeStructAst = { kind: 'struct', attrs: AttributeAstNested[] }
-export type TypeCustomAst = { kind: 'custom', definition: ExpressionToken }
+export type TypeCustomAst = { kind: 'custom', definition: ExpressionAst }
 
-export type NamespaceRefAst = { database?: IdentifierToken, catalog?: IdentifierToken, schema?: IdentifierToken }
-export type EntityRefAst = { entity: IdentifierToken } & NamespaceRefAst
-export type AttributePathAst = IdentifierToken & { path?: IdentifierToken[] }
+// basic parts
+export type NamespaceRefAst = { database?: IdentifierAst, catalog?: IdentifierAst, schema?: IdentifierAst }
+export type EntityRefAst = { entity: IdentifierAst } & NamespaceRefAst
+export type AttributePathAst = IdentifierAst & { path?: IdentifierAst[] }
 export type AttributeRefAst = EntityRefAst & { attr: AttributePathAst, warning?: TokenInfo }
 export type AttributeRefCompositeAst = EntityRefAst & { attrs: AttributePathAst[], warning?: TokenInfo }
-export type AttributeValueAst = NullToken | DecimalToken | IntegerToken | BooleanToken | ExpressionToken | IdentifierToken // TODO: add date
+export type AttributeValueAst = NullAst | DecimalAst | IntegerAst | BooleanAst | ExpressionAst | IdentifierAst // TODO: add date
 
-export type ExtraAst = { properties?: PropertiesAst, doc?: DocToken, comment?: CommentToken }
+export type ExtraAst = { properties?: PropertiesAst, doc?: DocAst, comment?: CommentAst }
 export type PropertiesAst = PropertyAst[]
-export type PropertyAst = { key: IdentifierToken, sep?: TokenInfo, value?: PropertyValueAst }
-export type PropertyValueAst = NullToken | DecimalToken | IntegerToken | BooleanToken | ExpressionToken | IdentifierToken | PropertyValueAst[]
+export type PropertyAst = { key: IdentifierAst, sep?: TokenInfo, value?: PropertyValueAst }
+export type PropertyValueAst = NullAst | DecimalAst | IntegerAst | BooleanAst | ExpressionAst | IdentifierAst | PropertyValueAst[]
+export type DocAst = { kind: 'Doc', token: TokenInfo, value: string, multiLine?: boolean }
 
-// basic tokens
-export type NullToken = { token: 'Null' } & TokenInfo
-export type DecimalToken = { token: 'Decimal', value: number } & TokenInfo
-export type IntegerToken = { token: 'Integer', value: number } & TokenInfo
-export type BooleanToken = { token: 'Boolean', value: boolean } & TokenInfo
-export type ExpressionToken = { token: 'Expression', value: string } & TokenInfo
-export type IdentifierToken = { token: 'Identifier', value: string, quoted?: boolean } & TokenInfo
-export type DocToken = { token: 'Doc', value: string, multiLine?: boolean } & TokenPosition
-export type CommentToken = { token: 'Comment', value: string } & TokenPosition
+// elements
+export type ExpressionAst = { kind: 'Expression', token: TokenInfo, value: string }
+export type IdentifierAst = { kind: 'Identifier', token: TokenInfo, value: string, quoted?: boolean }
+export type IntegerAst = { kind: 'Integer', token: TokenInfo, value: number }
+export type DecimalAst = { kind: 'Decimal', token: TokenInfo, value: number }
+export type BooleanAst = { kind: 'Boolean', token: TokenInfo, value: boolean }
+export type NullAst = { kind: 'Null', token: TokenInfo }
+export type CommentAst = { kind: 'Comment', token: TokenInfo, value: string }
 
+// helpers
 export type TokenInfo = TokenPosition & { issues?: TokenIssue[] }
 export type TokenIssue = { message: string, kind: string, level: ParserErrorLevel }
 

@@ -31,20 +31,20 @@ import {
     AttributeRelationAst,
     AttributeTypeAst,
     AttributeValueAst,
-    BooleanToken,
-    CommentToken,
-    DecimalToken,
-    DocToken,
+    BooleanAst,
+    CommentAst,
+    DecimalAst,
+    DocAst,
     EmptyStatement,
     EntityRefAst,
     EntityStatement,
-    ExpressionToken,
+    ExpressionAst,
     ExtraAst,
-    IdentifierToken,
-    IntegerToken,
+    IdentifierAst,
+    IntegerAst,
     NamespaceRefAst,
     NamespaceStatement,
-    NullToken,
+    NullAst,
     PropertiesAst,
     PropertyAst,
     PropertyValueAst,
@@ -137,15 +137,15 @@ class AmlParser extends EmbeddedActionsParser {
     attributeValueRule: () => AttributeValueAst
     extraRule: () => ExtraAst
     propertiesRule: () => PropertiesAst
-    docRule: () => DocToken
-    commentRule: () => CommentToken
+    docRule: () => DocAst
+    commentRule: () => CommentAst
     // elements
-    expressionRule: () => ExpressionToken
-    identifierRule: () => IdentifierToken
-    integerRule: () => IntegerToken
-    decimalRule: () => DecimalToken
-    booleanRule: () => BooleanToken
-    nullRule: () => NullToken
+    expressionRule: () => ExpressionAst
+    identifierRule: () => IdentifierAst
+    integerRule: () => IntegerAst
+    decimalRule: () => DecimalAst
+    booleanRule: () => BooleanAst
+    nullRule: () => NullAst
 
     constructor(tokens: TokenType[], recovery: boolean) {
         super(tokens, {recoveryEnabled: recovery})
@@ -173,7 +173,7 @@ class AmlParser extends EmbeddedActionsParser {
             const namespace = $.OPTION(() => $.SUBRULE(namespaceRule)) || {}
             const extra = $.SUBRULE($.extraRule)
             $.CONSUME(NewLine)
-            return {statement: 'Namespace', line: keyword.startLine || defaultPos, ...namespace, ...extra}
+            return {kind: 'Namespace', line: keyword.startLine || defaultPos, ...namespace, ...extra}
         })
 
         this.entityRule = $.RULE<() => EntityStatement>('entityRule', () => {
@@ -193,20 +193,13 @@ class AmlParser extends EmbeddedActionsParser {
                 const attr = $.SUBRULE($.attributeRule)
                 if (attr?.name?.value) attrs.push(attr) // name can be '' on invalid input :/
             })
-            return removeEmpty({statement: 'Entity' as const, name: entity, view: view ? tokenInfo(view) : undefined, ...namespace, alias, ...extra, attrs: nestAttributes(attrs)})
-        })
-
-        this.emptyStatementRule = $.RULE<() => EmptyStatement>('emptyStatementRule', () => {
-            $.SUBRULE(whitespaceRule)
-            const comment = $.OPTION(() => $.SUBRULE($.commentRule))
-            $.CONSUME(NewLine)
-            return removeUndefined({statement: 'Empty' as const, comment})
+            return removeEmpty({kind: 'Entity' as const, name: entity, view: view ? tokenInfo(view) : undefined, ...namespace, alias, ...extra, attrs: nestAttributes(attrs)})
         })
 
         this.relationRule = $.RULE<() => RelationStatement>('relationRule', () => {
             const warning = $.OR([
                 {ALT: () => {$.CONSUME(Relation); return undefined}},
-                {ALT: () => tokenInfoLegacy($.CONSUME(ForeignKey), '"fk" is legacy, replace it with "rel"')}
+                {ALT: () => tokenInfo($.CONSUME(ForeignKey), [legacy('"fk" is legacy, replace it with "rel"')])}
             ])
             $.CONSUME(WhiteSpace)
             const src = $.SUBRULE($.attributeRefCompositeRule)
@@ -215,7 +208,7 @@ class AmlParser extends EmbeddedActionsParser {
             $.SUBRULE2(whitespaceRule)
             const extra = $.SUBRULE($.extraRule)
             $.CONSUME(NewLine)
-            return removeUndefined({statement: 'Relation' as const, src, ref, srcCardinality, refCardinality, polymorphic, ...extra, warning})
+            return removeUndefined({kind: 'Relation' as const, src, ref, srcCardinality, refCardinality, polymorphic, ...extra, warning})
         })
 
         this.typeRule = $.RULE<() => TypeStatement>('typeRule', () => {
@@ -238,7 +231,14 @@ class AmlParser extends EmbeddedActionsParser {
                 $.MANY(() => attrs.push($.SUBRULE($.attributeRule)))
                 if (attrs.length > 0) content = {kind: 'struct', attrs: nestAttributes(attrs)}
             } */
-            return {statement: 'Type', ...namespace, name: entity, content, ...extra}
+            return {kind: 'Type', ...namespace, name: entity, content, ...extra}
+        })
+
+        this.emptyStatementRule = $.RULE<() => EmptyStatement>('emptyStatementRule', () => {
+            $.SUBRULE(whitespaceRule)
+            const comment = $.OPTION(() => $.SUBRULE($.commentRule))
+            $.CONSUME(NewLine)
+            return removeUndefined({kind: 'Empty' as const, comment})
         })
 
         // clauses
@@ -246,7 +246,7 @@ class AmlParser extends EmbeddedActionsParser {
         this.attributeRule = $.RULE<() => AttributeAstFlat>('attributeRule', () => {
             const spaces = $.CONSUME(WhiteSpace)
             const depth = Math.round(spaces.image.split('').reduce((i, c) => c === '\t' ? i + 1 : i + 0.5, 0)) - 1
-            const nesting = {...tokenInfo(spaces), depth}
+            const nesting = {token: tokenInfo(spaces), depth}
             const attr = $.SUBRULE(attributeInnerRule)
             $.SUBRULE(whitespaceRule)
             const relation = $.OPTION(() => $.SUBRULE(attributeRelationRule))
@@ -263,7 +263,7 @@ class AmlParser extends EmbeddedActionsParser {
             const nullable = $.OPTION(() => $.CONSUME(Nullable))
             $.SUBRULE3(whitespaceRule)
             const constraints = $.SUBRULE(attributeConstraintsRule)
-            const nesting = {depth: 0, offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}} // unused placeholder
+            const nesting = {token: {offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}, depth: 0} // unused placeholder
             return removeUndefined({nesting, name, type, enumValues, defaultValue, nullable: nullable ? tokenInfo(nullable) : undefined, ...constraints})
         }, {resyncEnabled: true})
         const attributeTypeRule = $.RULE<() => AttributeTypeAst>('attributeTypeRule', () => {
@@ -308,7 +308,7 @@ class AmlParser extends EmbeddedActionsParser {
                 $.SUBRULE3(whitespaceRule)
                 return res
             })
-            return removeUndefined({keyword: tokenInfo(token), name})
+            return removeUndefined({token: tokenInfo(token), name})
         })
         const attributeIndexRule = $.RULE<() => AttributeConstraintAst>('attributeIndexRule', () => {
             const token = $.CONSUME(Index)
@@ -320,7 +320,7 @@ class AmlParser extends EmbeddedActionsParser {
                 $.SUBRULE3(whitespaceRule)
                 return res
             })
-            return removeUndefined({keyword: tokenInfo(token), name})
+            return removeUndefined({token: tokenInfo(token), name})
         })
         const attributeUniqueRule = $.RULE<() => AttributeConstraintAst>('attributeUniqueRule', () => {
             const token = $.CONSUME(Unique)
@@ -332,7 +332,7 @@ class AmlParser extends EmbeddedActionsParser {
                 $.SUBRULE3(whitespaceRule)
                 return res
             })
-            return removeUndefined({keyword: tokenInfo(token), name})
+            return removeUndefined({token: tokenInfo(token), name})
         })
         const attributeCheckRule = $.RULE<() => AttributeCheckAst>('attributeCheckRule', () => {
             const token = $.CONSUME(Check)
@@ -353,10 +353,10 @@ class AmlParser extends EmbeddedActionsParser {
             })
             if (!predicate && name && [' ', '<', '>', '=', 'IN'].some(c => name.value.includes(c))) {
                 // no definition and a name that look like a predicate => switch to the legacy syntax (predicate was in the name)
-                const def = {...positionStartAdd(name, -1), token: 'Expression' as const, issues: [legacy(`"=${name.value}" is the legacy way, use expression instead "(\`${name.value}\`)"`)]}
-                return removeUndefined({keyword: tokenInfo(token), predicate: def})
+                const def: ExpressionAst = {kind: 'Expression' as const, token: {...positionStartAdd(name.token, -1), issues: [legacy(`"=${name.value}" is the legacy way, use expression instead "(\`${name.value}\`)"`)]}, value: name.value}
+                return removeUndefined({token: tokenInfo(token), predicate: def})
             } else {
-                return removeUndefined({keyword: tokenInfo(token), predicate, name})
+                return removeUndefined({token: tokenInfo(token), predicate, name})
             }
         })
         const attributeRelationRule = $.RULE<() => AttributeRelationAst>('attributeRelationRule', () => {
@@ -368,7 +368,7 @@ class AmlParser extends EmbeddedActionsParser {
                     return {srcCardinality, refCardinality, polymorphic, warning: undefined}
                 }},
                 {ALT: () => {
-                    const warning = tokenInfoLegacy($.CONSUME(ForeignKey), '"fk" is legacy, replace it with "->"')
+                    const warning = tokenInfo($.CONSUME(ForeignKey), [legacy('"fk" is legacy, replace it with "->"')])
                     return {srcCardinality: 'n' as const, refCardinality: '1' as const, polymorphic: undefined, warning}
                 }}
             ])
@@ -454,7 +454,7 @@ class AmlParser extends EmbeddedActionsParser {
                     const v1 = `${entity.catalog ? entity.catalog.value + '.' : ''}${entity.schema.value}.${entity.entity.value}${path.map(p => ':' + p.value).join('')}`
                     const v2 = `${entity.catalog ? entity.catalog.value + '.' : ''}${entity.schema.value}(${entity.entity.value}${path.map(p => '.' + p.value).join('')})`
                     const warning: TokenInfo = {
-                        ...mergePositions([entity.catalog, entity.schema, entity.entity, ...path].filter(isNotUndefined)),
+                        ...mergePositions([entity.catalog, entity.schema, entity.entity, ...path].map(v => v?.token).filter(isNotUndefined)),
                         issues: [legacy(`"${v1}" is the legacy way, use "${v2}" instead`)]
                     }
                     return removeUndefined({schema: entity.catalog, entity: entity.schema, attr: removeEmpty({...entity.entity, path}), warning})
@@ -483,7 +483,7 @@ class AmlParser extends EmbeddedActionsParser {
                     const v1 = `${entity.catalog ? entity.catalog.value + '.' : ''}${entity.schema.value}.${entity.entity.value}${path.map(p => ':' + p.value).join('')}`
                     const v2 = `${entity.catalog ? entity.catalog.value + '.' : ''}${entity.schema.value}(${entity.entity.value}${path.map(p => '.' + p.value).join('')})`
                     const warning: TokenInfo = {
-                        ...mergePositions([entity.catalog, entity.schema, entity.entity, ...path].filter(isNotUndefined)),
+                        ...mergePositions([entity.catalog, entity.schema, entity.entity, ...path].map(v => v?.token).filter(isNotUndefined)),
                         issues: [legacy(`"${v1}" is the legacy way, use "${v2}" instead`)]
                     }
                     return removeUndefined({schema: entity.catalog, entity: entity.schema, attrs: [removeEmpty({...entity.entity, path})], warning})
@@ -493,15 +493,15 @@ class AmlParser extends EmbeddedActionsParser {
 
         this.attributePathRule = $.RULE<() => AttributePathAst>('attributePathRule', () => {
             const attr = $.SUBRULE($.identifierRule)
-            const path: IdentifierToken[] = []
+            const path: IdentifierAst[] = []
             $.MANY(() => {
                 $.CONSUME(Dot)
                 path.push($.SUBRULE2($.identifierRule))
             })
             return removeEmpty({...attr, path})
         })
-        const legacyAttributePathRule = $.RULE<() => IdentifierToken[]>('legacyAttributePathRule', () => {
-            const path: IdentifierToken[] = []
+        const legacyAttributePathRule = $.RULE<() => IdentifierAst[]>('legacyAttributePathRule', () => {
+            const path: IdentifierAst[] = []
             $.MANY(() => {
                 $.CONSUME(Colon)
                 path.push($.SUBRULE($.identifierRule))
@@ -544,7 +544,7 @@ class AmlParser extends EmbeddedActionsParser {
             const value = $.OPTION(() => {
                 const sep = $.OR([
                     {ALT: () => tokenInfo($.CONSUME(Colon))},
-                    {ALT: () => tokenInfoLegacy($.CONSUME(Equal), '"=" is legacy, replace it with ":"')},
+                    {ALT: () => tokenInfo($.CONSUME(Equal), [legacy('"=" is legacy, replace it with ":"')])},
                 ])
                 $.SUBRULE2(whitespaceRule)
                 return {sep, value: $.SUBRULE(propertyValueRule)}
@@ -571,56 +571,56 @@ class AmlParser extends EmbeddedActionsParser {
             }},
         ]))
 
-        this.docRule = $.RULE<() => DocToken>('docRule', () => $.OR([
+        this.docRule = $.RULE<() => DocAst>('docRule', () => $.OR([
             {ALT: () => {
                 const token = $.CONSUME(DocMultiline)
-                return {token: 'Doc', value: stripIndent(token.image.slice(3, -3)), ...tokenPosition(token), multiLine: true}
+                return {kind: 'Doc', token: tokenInfo(token), value: stripIndent(token.image.slice(3, -3)), multiLine: true}
             }},
             {ALT: () => {
                 const token = $.CONSUME(Doc)
-                return {token: 'Doc', value: removeQuotes(token.image.slice(1).trim().replaceAll(/\\#/g, '#')), ...tokenPosition(token)}
+                return {kind: 'Doc', token: tokenInfo(token), value: removeQuotes(token.image.slice(1).trim().replaceAll(/\\#/g, '#'))}
             }}
         ]))
 
-        this.commentRule = $.RULE<() => CommentToken>('commentRule', () => {
+        this.commentRule = $.RULE<() => CommentAst>('commentRule', () => {
             const token = $.CONSUME(Comment)
-            return {token: 'Comment', value: token.image.slice(1).trim(), ...tokenPosition(token)}
+            return {kind: 'Comment', token: tokenInfo(token), value: token.image.slice(1).trim()}
         })
 
         // elements
 
-        this.expressionRule = $.RULE<() => ExpressionToken>('expressionRule', () => {
+        this.expressionRule = $.RULE<() => ExpressionAst>('expressionRule', () => {
             const token = $.CONSUME(Expression)
-            return {token: 'Expression', value: token.image.slice(1, -1), ...tokenPosition(token)}
+            return {kind: 'Expression', token: tokenInfo(token), value: token.image.slice(1, -1)}
         })
 
-        this.identifierRule = $.RULE<() => IdentifierToken>('identifierRule', () => {
+        this.identifierRule = $.RULE<() => IdentifierAst>('identifierRule', () => {
             const token = $.CONSUME(Identifier)
             if (token.image.startsWith('"') && token.image.endsWith('"')) {
-                return {token: 'Identifier', value: token.image.slice(1, -1).replaceAll(/\\"/g, '"'), ...tokenPosition(token), quoted: true}
+                return {kind: 'Identifier', token: tokenInfo(token), value: token.image.slice(1, -1).replaceAll(/\\"/g, '"'), quoted: true}
             } else {
-                return {token: 'Identifier', value: token.image, ...tokenPosition(token)}
+                return {kind: 'Identifier', token: tokenInfo(token), value: token.image}
             }
         })
 
-        this.integerRule = $.RULE<() => IntegerToken>('integerRule', () => {
+        this.integerRule = $.RULE<() => IntegerAst>('integerRule', () => {
             const neg = $.OPTION(() => $.CONSUME(Dash))
             const token = $.CONSUME(Integer)
-            return neg ? {token: 'Integer', ...tokenInfo2(neg, token), value: parseInt(neg.image + token.image)} : {token: 'Integer', ...tokenInfo(token), value: parseInt(token.image)}
+            return neg ? {kind: 'Integer', token: tokenInfo2(neg, token), value: parseInt(neg.image + token.image)} : {kind: 'Integer', token: tokenInfo(token), value: parseInt(token.image)}
         })
 
-        this.decimalRule = $.RULE<() => DecimalToken>('decimalRule', () => {
+        this.decimalRule = $.RULE<() => DecimalAst>('decimalRule', () => {
             const neg = $.OPTION(() => $.CONSUME(Dash))
             const token = $.CONSUME(Decimal)
-            return neg ? {token: 'Decimal', ...tokenInfo2(neg, token), value: parseFloat(neg.image + token.image)} : {token: 'Decimal', ...tokenInfo(token), value: parseFloat(token.image)}
+            return neg ? {kind: 'Decimal', token: tokenInfo2(neg, token), value: parseFloat(neg.image + token.image)} : {kind: 'Decimal', token: tokenInfo(token), value: parseFloat(token.image)}
         })
 
-        this.booleanRule = $.RULE<() => BooleanToken>('booleanRule', () => $.OR([
-            {ALT: () => ({token: 'Boolean', value: true, ...tokenInfo($.CONSUME(True))})},
-            {ALT: () => ({token: 'Boolean', value: false, ...tokenInfo($.CONSUME(False))})},
+        this.booleanRule = $.RULE<() => BooleanAst>('booleanRule', () => $.OR([
+            {ALT: () => ({kind: 'Boolean', token: tokenInfo($.CONSUME(True)), value: true})},
+            {ALT: () => ({kind: 'Boolean', token: tokenInfo($.CONSUME(False)), value: false})},
         ]))
 
-        this.nullRule = $.RULE<() => NullToken>('nullRule', () => ({token: 'Null', ...tokenInfo($.CONSUME(Null))}))
+        this.nullRule = $.RULE<() => NullAst>('nullRule', () => ({kind: 'Null', token: tokenInfo($.CONSUME(Null))}))
 
         const whitespaceRule = $.RULE<() => IToken | undefined>('whitespaceRule', () => $.OPTION(() => $.CONSUME(WhiteSpace)))
 
@@ -671,10 +671,6 @@ function tokenInfo2(start: IToken | undefined, end: IToken | undefined, issues?:
     return removeEmpty({...mergePositions([start, end].map(t => t ? tokenPosition(t) : undefined)), issues})
 }
 
-function tokenInfoLegacy(token: IToken, message: string): TokenInfo {
-    return tokenInfo(token, [legacy(message)])
-}
-
 function tokenPosition(token: IToken): TokenPosition {
     return {
         offset: {start: pos(token.startOffset), end: pos(token.endOffset)},
@@ -693,7 +689,7 @@ function pos(value: number | undefined): number {
 
 export function nestAttributes(attributes: AttributeAstFlat[]): AttributeAstNested[] {
     const results: AttributeAstNested[] = []
-    let path: IdentifierToken[] = []
+    let path: IdentifierAst[] = []
     let parents: AttributeAstNested[] = []
     let curNesting = 0
     attributes.forEach(function(attribute) {
@@ -707,7 +703,7 @@ export function nestAttributes(attributes: AttributeAstFlat[]): AttributeAstNest
             results.push(parents[0]) // add top level attrs to results
         } else if (nesting.depth > curNesting) { // deeper: append to `path` & `parents`
             curNesting = curNesting + 1 // go only one level deeper at the time (even if nesting is higher)
-            const warning = nesting.depth > curNesting ? {offset: nesting.offset, position: nesting.position, issues: [...nesting.issues || [], badIndent(curNesting, nesting.depth)]} : undefined
+            const warning = nesting.depth > curNesting ? {...nesting.token, issues: [...nesting.token.issues || [], badIndent(curNesting, nesting.depth)]} : undefined
             path = [...path, name]
             parents = [...parents, removeUndefined({path, ...values, warning})]
             parents[parents.length - 2].attrs = [...(parents[parents.length - 2].attrs || []), parents[parents.length - 1]] // add to parent
