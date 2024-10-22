@@ -12,26 +12,29 @@ export type AmlAst = StatementAst[]
 export type StatementAst = NamespaceStatement | EntityStatement | RelationStatement | TypeStatement | EmptyStatement
 export type NamespaceStatement = { kind: 'Namespace', line: number, schema?: IdentifierAst, catalog?: IdentifierAst, database?: IdentifierAst } & ExtraAst
 export type EntityStatement = { kind: 'Entity', name: IdentifierAst, view?: TokenInfo, alias?: IdentifierAst, attrs?: AttributeAstNested[] } & NamespaceRefAst & ExtraAst
-export type RelationStatement = { kind: 'Relation', src: AttributeRefCompositeAst, ref: AttributeRefCompositeAst, srcCardinality: RelationCardinality, refCardinality: RelationCardinality, polymorphic?: RelationPolymorphicAst } & ExtraAst & { warning?: TokenInfo }
+export type RelationStatement = { kind: 'Relation', src: AttributeRefCompositeAst, srcCardinality: RelationCardinalityAst, polymorphic?: RelationPolymorphicAst, refCardinality: RelationCardinalityAst, ref: AttributeRefCompositeAst } & ExtraAst & { warning?: TokenInfo }
 export type TypeStatement = { kind: 'Type', name: IdentifierAst, content?: TypeContentAst } & NamespaceRefAst & ExtraAst
 export type EmptyStatement = { kind: 'Empty', comment?: CommentAst }
 
 // clauses
-export type AttributeAstFlat = { nesting: {token: TokenInfo, depth: number}, name: IdentifierAst, nullable?: TokenInfo } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst
-export type AttributeAstNested = { path: IdentifierAst[], nullable?: TokenInfo } & AttributeTypeAst & AttributeConstraintsAst & { relation?: AttributeRelationAst } & ExtraAst & { attrs?: AttributeAstNested[], warning?: TokenInfo }
+export type AttributeAstFlat = { nesting: {token: TokenInfo, depth: number}, name: IdentifierAst, nullable?: TokenInfo } & AttributeTypeAst & { constraints?: AttributeConstraintAst[] } & ExtraAst
+export type AttributeAstNested = { path: IdentifierAst[], nullable?: TokenInfo } & AttributeTypeAst & { constraints?: AttributeConstraintAst[] } & ExtraAst & { attrs?: AttributeAstNested[], warning?: TokenInfo }
 export type AttributeTypeAst = { type?: IdentifierAst, enumValues?: AttributeValueAst[], defaultValue?: AttributeValueAst }
-export type AttributeConstraintsAst = { primaryKey?: AttributeConstraintAst, index?: AttributeConstraintAst, unique?: AttributeConstraintAst, check?: AttributeCheckAst }
-export type AttributeConstraintAst = { token: TokenInfo, name?: IdentifierAst }
-export type AttributeCheckAst = AttributeConstraintAst & { predicate?: ExpressionAst }
-export type AttributeRelationAst = { ref: AttributeRefCompositeAst, srcCardinality: RelationCardinality, refCardinality: RelationCardinality, polymorphic?: RelationPolymorphicAst, warning?: TokenInfo }
+export type AttributeConstraintAst = AttributePkAst | AttributeUniqueAst | AttributeIndexAst | AttributeCheckAst | AttributeRelationAst
+export type AttributePkAst = { kind: 'PrimaryKey', token: TokenInfo, name?: IdentifierAst }
+export type AttributeUniqueAst = { kind: 'Unique', token: TokenInfo, name?: IdentifierAst }
+export type AttributeIndexAst = { kind: 'Index', token: TokenInfo, name?: IdentifierAst }
+export type AttributeCheckAst = { kind: 'Check', token: TokenInfo, name?: IdentifierAst, predicate?: ExpressionAst }
+export type AttributeRelationAst = { kind: 'Relation', token: TokenInfo, srcCardinality: RelationCardinalityAst, polymorphic?: RelationPolymorphicAst, refCardinality: RelationCardinalityAst, ref: AttributeRefCompositeAst, warning?: TokenInfo }
 
+export type RelationCardinalityAst = { kind: RelationCardinality, token: TokenInfo }
 export type RelationPolymorphicAst = { attr: AttributePathAst, value: AttributeValueAst }
 
 export type TypeContentAst = TypeAliasAst | TypeEnumAst | TypeStructAst | TypeCustomAst
-export type TypeAliasAst = { kind: 'alias', name: IdentifierAst }
-export type TypeEnumAst = { kind: 'enum', values: AttributeValueAst[] }
-export type TypeStructAst = { kind: 'struct', attrs: AttributeAstNested[] }
-export type TypeCustomAst = { kind: 'custom', definition: ExpressionAst }
+export type TypeAliasAst = { kind: 'Alias', name: IdentifierAst }
+export type TypeEnumAst = { kind: 'Enum', values: AttributeValueAst[] }
+export type TypeStructAst = { kind: 'Struct', attrs: AttributeAstNested[] }
+export type TypeCustomAst = { kind: 'Custom', definition: ExpressionAst }
 
 // basic parts
 export type NamespaceRefAst = { database?: IdentifierAst, catalog?: IdentifierAst, schema?: IdentifierAst }

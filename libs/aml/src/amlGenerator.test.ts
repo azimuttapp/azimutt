@@ -263,7 +263,7 @@ type public.status (pending, wip, done)
                 result: {entities: [users, {name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 4, statement: 2}}], extra: {}}
             })
             expect(parseAmlTest('users\n  id int pk\n\nposts\n  author int -\n')).toEqual({
-                result: {entities: [users, {name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 4, statement: 2}}], extra: {}},
+                result: {entities: [users, {name: 'posts', extra: {line: 4, statement: 2}}], extra: {}},
                 errors: [{message: "Expecting: one of these possible Token sequences:\n  1. [Dash]\n  2. [LowerThan]\n  3. [GreaterThan]\nbut found: '\n'", kind: 'NoViableAltException', level: 'error', ...tokenPosition(39, 39, 5, 15, 5, 15)}]
             })
             expect(parseAmlTest('users\n  id int pk\n\nposts\n  author int ->\n')).toEqual({
@@ -274,7 +274,7 @@ type public.status (pending, wip, done)
                 result: {entities: [users, {name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 4, statement: 2}}], relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {line: 5, statement: 2, natural: 'ref', inline: true}}], extra: {}},
             })
             expect(parseAmlTest('users\n  id int pk\n\nposts\n  author int -> users(\n')).toEqual({
-                result: {entities: [users, {name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 4, statement: 2}}], extra: {}},
+                result: {entities: [users, {name: 'posts', extra: {line: 4, statement: 2}}], extra: {}},
                 errors: [{message: "Expecting: expecting at least one iteration which starts with one of these possible Token sequences::\n  <[WhiteSpace] ,[Identifier]>\nbut found: '\n'", kind: 'EarlyExitException', level: 'error', ...tokenPosition(47, 47, 5, 23, 5, 23)}]
             })
             expect(parseAmlTest('users\n  id int pk\n\nposts\n  author int -> users(id\n')).toEqual({

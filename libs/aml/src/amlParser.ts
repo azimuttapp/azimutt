@@ -14,7 +14,6 @@ import {
     ParserErrorLevel,
     ParserResult,
     positionStartAdd,
-    RelationCardinality,
     removeQuotes,
     TokenPosition
 } from "@azimutt/models";
@@ -24,12 +23,14 @@ import {
     AttributeAstNested,
     AttributeCheckAst,
     AttributeConstraintAst,
-    AttributeConstraintsAst,
+    AttributeIndexAst,
     AttributePathAst,
+    AttributePkAst,
     AttributeRefAst,
     AttributeRefCompositeAst,
     AttributeRelationAst,
     AttributeTypeAst,
+    AttributeUniqueAst,
     AttributeValueAst,
     BooleanAst,
     CommentAst,
@@ -48,6 +49,7 @@ import {
     PropertiesAst,
     PropertyAst,
     PropertyValueAst,
+    RelationCardinalityAst,
     RelationPolymorphicAst,
     RelationStatement,
     StatementAst,
@@ -249,11 +251,9 @@ class AmlParser extends EmbeddedActionsParser {
             const nesting = {token: tokenInfo(spaces), depth}
             const attr = $.SUBRULE(attributeInnerRule)
             $.SUBRULE(whitespaceRule)
-            const relation = $.OPTION(() => $.SUBRULE(attributeRelationRule))
-            $.SUBRULE2(whitespaceRule)
             const extra = $.SUBRULE($.extraRule)
             $.CONSUME(NewLine)
-            return removeUndefined({...attr, nesting, relation, ...extra})
+            return removeUndefined({...attr, nesting, ...extra})
         })
         const attributeInnerRule = $.RULE<() => AttributeAstFlat>('attributeInnerRule', () => {
             const name = $.SUBRULE($.identifierRule)
@@ -262,9 +262,10 @@ class AmlParser extends EmbeddedActionsParser {
             $.SUBRULE2(whitespaceRule)
             const nullable = $.OPTION(() => $.CONSUME(Nullable))
             $.SUBRULE3(whitespaceRule)
-            const constraints = $.SUBRULE(attributeConstraintsRule)
+            const constraints: AttributeConstraintAst[] = []
+            $.MANY({DEF: () => constraints.push($.SUBRULE(attributeConstraintRule))})
             const nesting = {token: {offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}, depth: 0} // unused placeholder
-            return removeUndefined({nesting, name, type, enumValues, defaultValue, nullable: nullable ? tokenInfo(nullable) : undefined, ...constraints})
+            return removeEmpty({nesting, name, type, enumValues, defaultValue, nullable: nullable ? tokenInfo(nullable) : undefined, constraints: constraints.filter(isNotUndefined)})
         }, {resyncEnabled: true})
         const attributeTypeRule = $.RULE<() => AttributeTypeAst>('attributeTypeRule', () => {
             const res = $.OPTION(() => {
@@ -288,51 +289,30 @@ class AmlParser extends EmbeddedActionsParser {
             })
             return {type: res?.type, enumValues: res?.enumValues, defaultValue: res?.defaultValue}
         })
-        const attributeConstraintsRule = $.RULE<() => AttributeConstraintsAst>('attributeConstraintsRule', () => {
-            const primaryKey = $.OPTION(() => $.SUBRULE(attributePkRule))
-            $.SUBRULE(whitespaceRule)
-            const unique = $.OPTION2(() => $.SUBRULE(attributeUniqueRule))
-            $.SUBRULE2(whitespaceRule)
-            const index = $.OPTION3(() => $.SUBRULE(attributeIndexRule))
-            $.SUBRULE3(whitespaceRule)
-            const check = $.OPTION4(() => $.SUBRULE(attributeCheckRule))
-            return removeUndefined({primaryKey, index, unique, check})
-        })
-        const attributePkRule = $.RULE<() => AttributeConstraintAst>('attributePkRule', () => {
+        const attributeConstraintRule = $.RULE<() => AttributeConstraintAst>('attributeConstraintRule', () => $.OR([
+            {ALT: () => $.SUBRULE(attributePkRule)},
+            {ALT: () => $.SUBRULE(attributeUniqueRule)},
+            {ALT: () => $.SUBRULE(attributeIndexRule)},
+            {ALT: () => $.SUBRULE(attributeCheckRule)},
+            {ALT: () => $.SUBRULE(attributeRelationRule)},
+        ]))
+        const attributePkRule = $.RULE<() => AttributePkAst>('attributePkRule', () => {
             const token = $.CONSUME(PrimaryKey)
             $.SUBRULE(whitespaceRule)
-            const name = $.OPTION(() => {
-                $.CONSUME(Equal)
-                $.SUBRULE2(whitespaceRule)
-                const res = $.SUBRULE($.identifierRule)
-                $.SUBRULE3(whitespaceRule)
-                return res
-            })
-            return removeUndefined({token: tokenInfo(token), name})
+            const name = $.SUBRULE(attributeConstraintNameRule)
+            return removeUndefined({kind: 'PrimaryKey' as const, token: tokenInfo(token), name})
         })
-        const attributeIndexRule = $.RULE<() => AttributeConstraintAst>('attributeIndexRule', () => {
-            const token = $.CONSUME(Index)
-            $.SUBRULE(whitespaceRule)
-            const name = $.OPTION(() => {
-                $.CONSUME(Equal)
-                $.SUBRULE2(whitespaceRule)
-                const res = $.SUBRULE($.identifierRule)
-                $.SUBRULE3(whitespaceRule)
-                return res
-            })
-            return removeUndefined({token: tokenInfo(token), name})
-        })
-        const attributeUniqueRule = $.RULE<() => AttributeConstraintAst>('attributeUniqueRule', () => {
+        const attributeUniqueRule = $.RULE<() => AttributeUniqueAst>('attributeUniqueRule', () => {
             const token = $.CONSUME(Unique)
             $.SUBRULE(whitespaceRule)
-            const name = $.OPTION(() => {
-                $.CONSUME(Equal)
-                $.SUBRULE2(whitespaceRule)
-                const res = $.SUBRULE($.identifierRule)
-                $.SUBRULE3(whitespaceRule)
-                return res
-            })
-            return removeUndefined({token: tokenInfo(token), name})
+            const name = $.SUBRULE(attributeConstraintNameRule)
+            return removeUndefined({kind: 'Unique' as const, token: tokenInfo(token), name})
+        })
+        const attributeIndexRule = $.RULE<() => AttributeIndexAst>('attributeIndexRule', () => {
+            const token = $.CONSUME(Index)
+            $.SUBRULE(whitespaceRule)
+            const name = $.SUBRULE(attributeConstraintNameRule)
+            return removeUndefined({kind: 'Index' as const, token: tokenInfo(token), name})
         })
         const attributeCheckRule = $.RULE<() => AttributeCheckAst>('attributeCheckRule', () => {
             const token = $.CONSUME(Check)
@@ -344,43 +324,48 @@ class AmlParser extends EmbeddedActionsParser {
                 $.SUBRULE2(whitespaceRule)
                 return res
             })
-            const name = $.OPTION2(() => {
-                $.CONSUME(Equal)
-                $.SUBRULE3(whitespaceRule)
-                const res = $.SUBRULE($.identifierRule)
-                $.SUBRULE4(whitespaceRule)
-                return res
-            })
+            const name = $.SUBRULE(attributeConstraintNameRule)
             if (!predicate && name && [' ', '<', '>', '=', 'IN'].some(c => name.value.includes(c))) {
                 // no definition and a name that look like a predicate => switch to the legacy syntax (predicate was in the name)
                 const def: ExpressionAst = {kind: 'Expression' as const, token: {...positionStartAdd(name.token, -1), issues: [legacy(`"=${name.value}" is the legacy way, use expression instead "(\`${name.value}\`)"`)]}, value: name.value}
-                return removeUndefined({token: tokenInfo(token), predicate: def})
+                return removeUndefined({kind: 'Check' as const, token: tokenInfo(token), predicate: def})
             } else {
-                return removeUndefined({token: tokenInfo(token), predicate, name})
+                return removeUndefined({kind: 'Check' as const, token: tokenInfo(token), predicate, name})
             }
         })
         const attributeRelationRule = $.RULE<() => AttributeRelationAst>('attributeRelationRule', () => {
-            const {srcCardinality, refCardinality, polymorphic, warning} = $.OR([
+            const {token, srcCardinality, refCardinality, polymorphic, warning} = $.OR([
                 {ALT: () => {
                     const refCardinality = $.SUBRULE(relationCardinalityRule)
                     const polymorphic = $.OPTION(() => $.SUBRULE(relationPolymorphicRule))
                     const srcCardinality = $.SUBRULE2(relationCardinalityRule)
-                    return {srcCardinality, refCardinality, polymorphic, warning: undefined}
+                    const token = mergePositions([refCardinality?.token, srcCardinality?.token])
+                    return {token, refCardinality, polymorphic, srcCardinality, warning: undefined}
                 }},
                 {ALT: () => {
-                    const warning = tokenInfo($.CONSUME(ForeignKey), [legacy('"fk" is legacy, replace it with "->"')])
-                    return {srcCardinality: 'n' as const, refCardinality: '1' as const, polymorphic: undefined, warning}
+                    const token = tokenInfo($.CONSUME(ForeignKey))
+                    return {token, srcCardinality: {kind: 'n' as const, token}, refCardinality: {kind: '1' as const, token}, polymorphic: undefined, warning: {...token, issues: [legacy('"fk" is legacy, replace it with "->"')]}}
                 }}
             ])
             $.SUBRULE(whitespaceRule)
-            const ref = $.SUBRULE2($.attributeRefCompositeRule)
-            return removeUndefined({ref, srcCardinality, refCardinality, polymorphic, warning})
+            const ref = $.SUBRULE($.attributeRefCompositeRule)
+            $.SUBRULE2(whitespaceRule)
+            return removeUndefined({kind: 'Relation' as const, token, srcCardinality, refCardinality, polymorphic, ref, warning})
+        })
+        const attributeConstraintNameRule = $.RULE<() => IdentifierAst | undefined>('attributeConstraintNameRule', () => {
+            return $.OPTION(() => {
+                $.CONSUME(Equal)
+                $.SUBRULE2(whitespaceRule)
+                const res = $.SUBRULE($.identifierRule)
+                $.SUBRULE3(whitespaceRule)
+                return res
+            })
         })
 
-        const relationCardinalityRule = $.RULE<() => RelationCardinality>('relationCardinalityRule', () => $.OR([
-            {ALT: () => { $.CONSUME(Dash); return '1' }},
-            {ALT: () => { $.CONSUME(LowerThan); return 'n' }},
-            {ALT: () => { $.CONSUME(GreaterThan); return 'n' }},
+        const relationCardinalityRule = $.RULE<() => RelationCardinalityAst>('relationCardinalityRule', () => $.OR([
+            {ALT: () => ({kind: '1' as const, token: tokenInfo($.CONSUME(Dash))})},
+            {ALT: () => ({kind: 'n' as const, token: tokenInfo($.CONSUME(LowerThan))})},
+            {ALT: () => ({kind: 'n' as const, token: tokenInfo($.CONSUME(GreaterThan))})},
         ]))
         const relationPolymorphicRule = $.RULE<() => RelationPolymorphicAst>('relationPolymorphicRule', () => {
             const attr = $.SUBRULE($.attributePathRule)
@@ -389,7 +374,7 @@ class AmlParser extends EmbeddedActionsParser {
             return {attr, value}
         })
 
-        const typeAliasRule = $.RULE<() => TypeAliasAst>('typeAliasRule', () => ({kind: 'alias', name: $.SUBRULE($.identifierRule)}))
+        const typeAliasRule = $.RULE<() => TypeAliasAst>('typeAliasRule', () => ({kind: 'Alias', name: $.SUBRULE($.identifierRule)}))
         const typeEnumRule = $.RULE<() => TypeEnumAst>('typeEnumRule', () => {
             $.CONSUME(ParenLeft)
             const values: AttributeValueAst[] = []
@@ -399,7 +384,7 @@ class AmlParser extends EmbeddedActionsParser {
                 $.SUBRULE2(whitespaceRule)
             }})
             $.CONSUME(ParenRight)
-            return {kind: 'enum', values}
+            return {kind: 'Enum', values}
         })
         const typeStructRule = $.RULE<() => TypeStructAst>('typeStructRule', () => {
             $.CONSUME(CurlyLeft)
@@ -410,9 +395,9 @@ class AmlParser extends EmbeddedActionsParser {
                 $.SUBRULE2(whitespaceRule)
             }})
             $.CONSUME(CurlyRight)
-            return {kind: 'struct', attrs: nestAttributes(attrs)}
+            return {kind: 'Struct', attrs: nestAttributes(attrs)}
         })
-        const typeCustomRule = $.RULE<() => TypeCustomAst>('typeCustomRule', () => ({kind: 'custom', definition: $.SUBRULE($.expressionRule)}))
+        const typeCustomRule = $.RULE<() => TypeCustomAst>('typeCustomRule', () => ({kind: 'Custom', definition: $.SUBRULE($.expressionRule)}))
 
         // basic parts
 

@@ -38,8 +38,8 @@ import packageJson from "../package.json";
 import {
     AmlAst,
     AttributeAstNested,
-    AttributeConstraintAst,
     AttributePathAst,
+    AttributePkAst,
     AttributeRelationAst,
     AttributeValueAst,
     EntityRefAst,
@@ -200,10 +200,11 @@ function buildEntity(namespace: Namespace, statement: number, e: EntityStatement
     const validAttrs = (e.attrs || []).filter(a => !a.path.some(p => p === undefined)) // `path` can be `[undefined]` on invalid input :/
     const attrs = validAttrs.map(a => buildAttribute(namespace, statement, a, {...entityNamespace, entity: e.name.value}))
     const flatAttrs = flattenAttributes(validAttrs).filter(a => !a.path.some(p => p === undefined)) // nested attributes can have `path` be `[undefined]` on invalid input :/
-    const pkAttrs = flatAttrs.filter(a => a.primaryKey)
-    const indexes: Index[] = buildIndexes(flatAttrs.map(a => a.index ? {path: a.path, ...a.index} : undefined).filter(isNotUndefined))
-    const uniques: Index[] = buildIndexes(flatAttrs.map(a => a.unique ? {path: a.path, ...a.unique} : undefined).filter(isNotUndefined)).map(u => ({...u, unique: true}))
-    const checks: Check[] = buildIndexes(flatAttrs.map(a => a.check ? {path: a.path, ...a.check} : undefined).filter(isNotUndefined)).map(c => ({...c, predicate: c.predicate || ''}))
+    const constraints = flatAttrs.flatMap(a => (a.constraints || []).map(c => ({path: a.path, ...c})))
+    const pkAttrs: ({ path: IdentifierAst[] } & AttributePkAst)[] = constraints.filter(c => c.kind === 'PrimaryKey')
+    const indexes: Index[] = buildIndexes(constraints.filter(c => c.kind === 'Index').map(c => ({path: c.path, name: c.name})))
+    const uniques: Index[] = buildIndexes(constraints.filter(c => c.kind === 'Unique').map(c => ({path: c.path, name: c.name}))).map(u => ({...u, unique: true}))
+    const checks: Check[] = buildIndexes(constraints.filter(c => c.kind === 'Check').map(c => ({path: c.path, name: c.name, predicate: c.predicate}))).map(c => ({...c, predicate: c.predicate || ''}))
     return {
         entity: removeEmpty({
             ...entityNamespace,
@@ -212,7 +213,7 @@ function buildEntity(namespace: Namespace, statement: number, e: EntityStatement
             def: e.properties?.flatMap(p => p.key.value === 'view' && p.value && !Array.isArray(p.value) && p.value.kind === 'Identifier' ? [p.value.value.replaceAll(/\\n/g, '\n')] : [])[0],
             attrs: attrs.map(a => a.attribute),
             pk: pkAttrs.length > 0 ? removeUndefined({
-                name: pkAttrs.map(a => a.primaryKey?.name?.value).find(isNotUndefined),
+                name: pkAttrs.map(a => a.name?.value).find(isNotUndefined),
                 attrs: pkAttrs.map(a => a.path.map(p => p.value)),
             }) : undefined,
             indexes: uniques.concat(indexes),
@@ -233,7 +234,7 @@ function buildAttribute(namespace: Namespace, statement: number, a: AttributeAst
     const {entity: _, ...entityNamespace} = entity
     const numType = a.enumValues && a.enumValues.length <= 2 && a.enumValues.every(v => v.kind === 'Integer') ? '(' + a.enumValues.map(stringifyAttrValue).join(',') + ')' : '' // types with num parameter (varchar(10), decimal(2,3)...)
     const enumType: InlineType[] = buildTypeInline(entityNamespace, statement, a, numType)
-    const relation: InlineRelation[] = a.relation ? [{namespace, statement, entity, attrs: [a.path.map(p => p.value)], ref: a.relation}] : []
+    const relation: InlineRelation[] = (a.constraints || []).filter(c => c.kind === 'Relation').map(c => ({namespace, statement, entity, attrs: [a.path.map(p => p.value)], ref: c}))
     const validAttrs = (a.attrs || []).filter(aa => !aa.path.some(p => p === undefined)) // `path` can be `[undefined]` on invalid input :/
     const nested = validAttrs.map(aa => buildAttribute(namespace, statement, aa, entity))
     return {
@@ -284,7 +285,7 @@ function flattenAttributes(attributes: AttributeAstNested[]): AttributeAstNested
     })
 }
 
-function buildIndexes(indexes: (AttributeConstraintAst & { path: IdentifierAst[], predicate?: ExpressionAst })[]): {name?: string, attrs: AttributePath[], predicate?: string}[] {
+function buildIndexes(indexes: { path: IdentifierAst[], name?: IdentifierAst, predicate?: ExpressionAst }[]): {name?: string, attrs: AttributePath[], predicate?: string}[] {
     const indexesByName: Record<string, {name: string, path: AttributePath, predicate?: string}[]> = groupBy(indexes.map(i => ({name: i.name?.value || '', path: i.path.map(n => n.value), predicate: i.predicate?.value})), i => i.name)
     const singleIndexes: {name?: string, attrs: AttributePath[], predicate?: string}[] = (indexesByName[''] || []).map(i => removeUndefined({attrs: [i.path], predicate: i.predicate}))
     const compositeIndexes: {name?: string, attrs: AttributePath[], predicate?: string}[] = Object.entries(indexesByName).filter(([k, _]) => k !== '').map(([name, values]) => removeUndefined({name, attrs: values.map(v => v.path), predicate: values.map(v => v.predicate).find(p => !!p)}))
@@ -300,7 +301,7 @@ function buildRelationAttribute(entities: Entity[], aliases: Record<string, Enti
     return buildRelation(entities, aliases, statement, r.ref.entity?.token.position.start.line, srcEntity, undefined, srcAttrs, r, undefined, true)
 }
 
-function buildRelation(entities: Entity[], aliases: Record<string, EntityRef>, statement: number, line: number, srcEntity: EntityRef, srcAlias: string | undefined, srcAttrs: AttributePath[], rel: AttributeRelationAst, extra: ExtraAst | undefined, inline: boolean): Relation | undefined {
+function buildRelation(entities: Entity[], aliases: Record<string, EntityRef>, statement: number, line: number, srcEntity: EntityRef, srcAlias: string | undefined, srcAttrs: AttributePath[], rel: Omit<AttributeRelationAst, 'token'>, extra: ExtraAst | undefined, inline: boolean): Relation | undefined {
     // TODO: report an error instead of just ignoring?
     if (!rel.ref || !rel.ref.entity.value || !rel.ref.attrs || rel.ref.attrs.some(a => a.value === undefined)) return undefined // `ref` can be undefined or with empty entity or undefined attrs on invalid input :/
     const [refEntity, refAlias] = buildEntityRef(rel.ref, {}, aliases) // current namespace not used for relation ref, good idea???
@@ -310,8 +311,8 @@ function buildRelation(entities: Entity[], aliases: Record<string, EntityRef>, s
     return removeUndefined({
         name: undefined,
         origin: undefined,
-        src: removeUndefined({...srcEntity, attrs: srcAttrs2, cardinality: rel.srcCardinality === 'n' ? undefined : rel.srcCardinality}),
-        ref: removeUndefined({...refEntity, attrs: refAttrs, cardinality: rel.refCardinality === '1' ? undefined : rel.refCardinality}),
+        src: removeUndefined({...srcEntity, attrs: srcAttrs2, cardinality: rel.srcCardinality?.kind === 'n' ? undefined : rel.srcCardinality?.kind}),
+        ref: removeUndefined({...refEntity, attrs: refAttrs, cardinality: rel.refCardinality?.kind === '1' ? undefined : rel.refCardinality?.kind}),
         polymorphic: rel.polymorphic ? {attribute: buildAttrPath(rel.polymorphic.attr), value: buildAttrValue(rel.polymorphic.value)} : undefined,
         doc: extra?.doc?.value,
         extra: buildExtra({line, statement, inline: inline ? true : undefined, natural, srcAlias, refAlias, comment: extra?.comment?.value}, extra || {}, []),
@@ -347,10 +348,10 @@ function buildType(namespace: Namespace, statement: number, t: TypeStatement): T
 }
 
 function buildTypeContent(namespace: Namespace, statement: number, t: TypeContentAst, entity: EntityRef): {alias?: string, values?: string[], attrs?: Attribute[], definition?: string} {
-    if (t.kind === 'alias') return {alias: t.name.value}
-    if (t.kind === 'enum') return {values: t.values.map(stringifyAttrValue)}
-    if (t.kind === 'struct') return {attrs: t.attrs.map(a => buildAttribute(namespace, statement, a, entity).attribute)}
-    if (t.kind === 'custom') return {definition: t.definition.value}
+    if (t.kind === 'Alias') return {alias: t.name.value}
+    if (t.kind === 'Enum') return {values: t.values.map(stringifyAttrValue)}
+    if (t.kind === 'Struct') return {attrs: t.attrs.map(a => buildAttribute(namespace, statement, a, entity).attribute)}
+    if (t.kind === 'Custom') return {definition: t.definition.value}
     return isNever(t)
 }
 

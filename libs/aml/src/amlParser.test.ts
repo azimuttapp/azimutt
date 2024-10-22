@@ -1,8 +1,7 @@
 import {describe, expect, test} from "@jest/globals";
-import {removeEmpty, removeFieldsDeep} from "@azimutt/utils";
+import {removeFieldsDeep} from "@azimutt/utils";
 import {tokenPosition} from "@azimutt/models";
 import {
-    AttributeRelationAst,
     BooleanAst,
     CommentAst,
     DecimalAst,
@@ -11,7 +10,6 @@ import {
     IdentifierAst,
     IntegerAst,
     NullAst,
-    TokenInfo,
     TokenIssue
 } from "./amlAst";
 import {nestAttributes, parseAmlAst, parseRule} from "./amlParser";
@@ -33,7 +31,7 @@ users
             attrs: [{
                 path: [identifier('id', 9, 10, 3, 3, 3, 4)],
                 type: identifier('uuid', 12, 15, 3, 3, 6, 9),
-                primaryKey: {token: tokenPosition(17, 18, 3, 11, 3, 12)},
+                constraints: [{kind: 'PrimaryKey', token: tokenPosition(17, 18, 3, 11, 3, 12)}],
             }, {
                 path: [identifier('name', 22, 25, 4, 4, 3, 6)],
                 type: identifier('varchar', 27, 33, 4, 4, 8, 14),
@@ -156,7 +154,7 @@ comments
                 attrs: [{
                     path: [identifier('id', 8, 9, 2, 2, 3, 4)],
                     type: identifier('uuid', 11, 14, 2, 2, 6, 9),
-                    primaryKey: {token: tokenPosition(16, 17, 2, 11, 2, 12)},
+                    constraints: [{kind: 'PrimaryKey', token: tokenPosition(16, 17, 2, 11, 2, 12)}],
                 }, {
                     path: [identifier('name', 21, 24, 3, 3, 3, 6)],
                     type: identifier('varchar', 26, 32, 3, 3, 8, 14),
@@ -168,7 +166,7 @@ comments
                 attrs: [{
                     path: [identifier('id', 8, 9, 2, 2, 3, 4)],
                     type: identifier('uuid', 11, 14, 2, 2, 6, 9),
-                    primaryKey: {token: tokenPosition(16, 17, 2, 11, 2, 12)},
+                    constraints: [{kind: 'PrimaryKey', token: tokenPosition(16, 17, 2, 11, 2, 12)}],
                 }, {
                     path: [identifier('name', 21, 24, 3, 3, 3, 6)],
                     type: identifier('json', 26, 29, 3, 3, 8, 11),
@@ -277,92 +275,99 @@ comments
                 expect(parseRule(p => p.attributeRule(), '  id pk\n')).toEqual({result: {
                     nesting: {depth: 0, token: tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: identifier('id', 2, 3, 1, 1, 3, 4),
-                    primaryKey: {token: tokenPosition(5, 6, 1, 6, 1, 7)},
+                    constraints: [{kind: 'PrimaryKey', token: tokenPosition(5, 6, 1, 6, 1, 7)}],
                 }})
                 expect(parseRule(p => p.attributeRule(), '  id int pk\n')).toEqual({result: {
                     nesting: {depth: 0, token: tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: identifier('id', 2, 3, 1, 1, 3, 4),
                     type: identifier('int', 5, 7, 1, 1, 6, 8),
-                    primaryKey: {token: tokenPosition(9, 10, 1, 10, 1, 11)},
+                    constraints: [{kind: 'PrimaryKey', token: tokenPosition(9, 10, 1, 10, 1, 11)}],
                 }})
                 expect(parseRule(p => p.attributeRule(), '  id int pk=pk_name\n')).toEqual({result: {
                     nesting: {depth: 0, token: tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: identifier('id', 2, 3, 1, 1, 3, 4),
                     type: identifier('int', 5, 7, 1, 1, 6, 8),
-                    primaryKey: {token: tokenPosition(9, 10, 1, 10, 1, 11), name: identifier('pk_name', 12, 18, 1, 1, 13, 19)},
+                    constraints: [{kind: 'PrimaryKey', token: tokenPosition(9, 10, 1, 10, 1, 11), name: identifier('pk_name', 12, 18, 1, 1, 13, 19)}],
                 }})
             })
             test('index', () => {
                 expect(parseRule(p => p.attributeRule(), '  id index\n')).toEqual({result: {
                     nesting: {depth: 0, token: tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: identifier('id', 2, 3, 1, 1, 3, 4),
-                    index: {token: tokenPosition(5, 9, 1, 6, 1, 10)},
+                    constraints: [{kind: 'Index', token: tokenPosition(5, 9, 1, 6, 1, 10)}],
                 }})
                 expect(parseRule(p => p.attributeRule(), '  id index=id_idx\n')).toEqual({result: {
                     nesting: {depth: 0, token: tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: identifier('id', 2, 3, 1, 1, 3, 4),
-                    index: {token: tokenPosition(5, 9, 1, 6, 1, 10), name: identifier('id_idx', 11, 16, 1, 1, 12, 17)},
+                    constraints: [{kind: 'Index', token: tokenPosition(5, 9, 1, 6, 1, 10), name: identifier('id_idx', 11, 16, 1, 1, 12, 17)}],
                 }})
                 expect(parseRule(p => p.attributeRule(), '  id index = "idx \\" id"\n')).toEqual({result: {
                     nesting: {depth: 0, token: tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: identifier('id', 2, 3, 1, 1, 3, 4),
-                    index: {token: tokenPosition(5, 9, 1, 6, 1, 10), name: {...identifier('idx " id', 13, 23, 1, 1, 14, 24), quoted: true}},
+                    constraints: [{kind: 'Index', token: tokenPosition(5, 9, 1, 6, 1, 10), name: {...identifier('idx " id', 13, 23, 1, 1, 14, 24), quoted: true}}],
                 }})
             })
             test('unique', () => {
                 expect(parseRule(p => p.attributeRule(), '  id unique\n')).toEqual({result: {
                     nesting: {depth: 0, token: tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: identifier('id', 2, 3, 1, 1, 3, 4),
-                    unique: {token: tokenPosition(5, 10, 1, 6, 1, 11)},
+                    constraints: [{kind: 'Unique', token: tokenPosition(5, 10, 1, 6, 1, 11)}],
                 }})
                 expect(parseRule(p => p.attributeRule(), '  id unique=id_uniq\n')).toEqual({result: {
                     nesting: {depth: 0, token: tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: identifier('id', 2, 3, 1, 1, 3, 4),
-                    unique: {token: tokenPosition(5, 10, 1, 6, 1, 11), name: identifier('id_uniq', 12, 18, 1, 1, 13, 19)},
+                    constraints: [{kind: 'Unique', token: tokenPosition(5, 10, 1, 6, 1, 11), name: identifier('id_uniq', 12, 18, 1, 1, 13, 19)}],
                 }})
             })
             test('check', () => {
                 expect(parseRule(p => p.attributeRule(), '  id check\n')).toEqual({result: {
                     nesting: {depth: 0, token: tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: identifier('id', 2, 3, 1, 1, 3, 4),
-                    check: {token: tokenPosition(5, 9, 1, 6, 1, 10)},
+                    constraints: [{kind: 'Check', token: tokenPosition(5, 9, 1, 6, 1, 10)}],
                 }})
                 expect(parseRule(p => p.attributeRule(), '  id check=id_chk\n')).toEqual({result: {
                     nesting: {depth: 0, token: tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: identifier('id', 2, 3, 1, 1, 3, 4),
-                    check: {token: tokenPosition(5, 9, 1, 6, 1, 10), name: identifier('id_chk', 11, 16, 1, 1, 12, 17)},
+                    constraints: [{kind: 'Check', token: tokenPosition(5, 9, 1, 6, 1, 10), name: identifier('id_chk', 11, 16, 1, 1, 12, 17)}],
                 }})
                 expect(parseRule(p => p.attributeRule(), '  id check(`id > 0`)\n')).toEqual({result: {
                     nesting: {depth: 0, token: tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: identifier('id', 2, 3, 1, 1, 3, 4),
-                    check: {token: tokenPosition(5, 9, 1, 6, 1, 10), predicate: expression('id > 0', 11, 18, 1, 1, 12, 19)},
+                    constraints: [{kind: 'Check', token: tokenPosition(5, 9, 1, 6, 1, 10), predicate: expression('id > 0', 11, 18, 1, 1, 12, 19)}],
                 }})
                 expect(parseRule(p => p.attributeRule(), '  id check(`id > 0`)=id_chk\n')).toEqual({result: {
                     nesting: {depth: 0, token: tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: identifier('id', 2, 3, 1, 1, 3, 4),
-                    check: {
+                    constraints: [{
+                        kind: 'Check',
                         token: tokenPosition(5, 9, 1, 6, 1, 10),
                         predicate: expression('id > 0', 11, 18, 1, 1, 12, 19),
                         name: identifier('id_chk', 21, 26, 1, 1, 22, 27)
-                    },
+                    }],
                 }})
             })
             test('relation', () => {
                 expect(parseRule(p => p.attributeRule(), '  user_id -> users(id)\n')).toEqual({result: {
                     nesting: {depth: 0, token: tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: identifier('user_id', 2, 8, 1, 1, 3, 9),
-                    relation: {srcCardinality: 'n', refCardinality: '1', ref: {
-                        entity: identifier('users', 13, 17, 1, 1, 14, 18),
-                        attrs: [identifier('id', 19, 20, 1, 1, 20, 21)],
-                    }}
+                    constraints: [{
+                        kind: 'Relation',
+                        token: tokenPosition(10, 11, 1, 11, 1, 12),
+                        refCardinality: {kind: '1', token: tokenPosition(10, 10, 1, 11, 1, 11)},
+                        srcCardinality: {kind: 'n', token: tokenPosition(11, 11, 1, 12, 1, 12)},
+                        ref: {entity: identifier('users', 13, 17, 1, 1, 14, 18), attrs: [identifier('id', 19, 20, 1, 1, 20, 21)]}
+                    }]
                 }})
                 expect(parseRule(p => p.attributeRule(), '  user_id -> users\n')).toEqual({result: {
                     nesting: {depth: 0, token: tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: identifier('user_id', 2, 8, 1, 1, 3, 9),
-                    relation: {srcCardinality: 'n', refCardinality: '1', ref: {
-                        entity: identifier('users', 13, 17, 1, 1, 14, 18),
-                        attrs: [],
-                    }}
+                    constraints: [{
+                        kind: 'Relation',
+                        token: tokenPosition(10, 11, 1, 11, 1, 12),
+                        refCardinality: {kind: '1', token: tokenPosition(10, 10, 1, 11, 1, 11)},
+                        srcCardinality: {kind: 'n', token: tokenPosition(11, 11, 1, 12, 1, 12)},
+                        ref: {entity: identifier('users', 13, 17, 1, 1, 14, 18), attrs: []}
+                    }]
                 }})
             })
             test('properties', () => {
@@ -386,6 +391,36 @@ comments
                     comment: comment('a comment', 5, 15, 1, 1, 6, 16),
                 }})
             })
+            test('several identical constraints', () => {
+                expect(parseRule(p => p.attributeRule(), '  item_id int nullable index index=idx check(`item_id > 0`) check(`item_id < 0`) -kind=users> public.users(id) -kind=posts> posts(id)\n')).toEqual({result: {
+                    nesting: {token: tokenPosition(0, 1, 1, 1, 1, 2), depth: 0},
+                    name: identifier('item_id', 2),
+                    type: identifier('int', 10),
+                    nullable: tokenPosition(14, 21, 1, 15, 1, 22),
+                    constraints: [
+                        {kind: 'Index', token: tokenPosition(23, 27, 1, 24, 1, 28)},
+                        {kind: 'Index', token: tokenPosition(29, 33, 1, 30, 1, 34), name: identifier('idx', 35)},
+                        {kind: 'Check', token: tokenPosition(39, 43, 1, 40, 1, 44), predicate: expression('item_id > 0', 45, 57, 1, 1, 46, 58)},
+                        {kind: 'Check', token: tokenPosition(60, 64, 1, 61, 1, 65), predicate: expression('item_id < 0', 66, 78, 1, 1, 67, 79)},
+                        {
+                            kind: 'Relation',
+                            token: tokenPosition(81, 92, 1, 82, 1, 93),
+                            refCardinality: {kind: '1', token: tokenPosition(81, 81, 1, 82, 1, 82)},
+                            polymorphic: {attr: identifier('kind', 82), value: identifier('users', 87)},
+                            srcCardinality: {kind: 'n', token: tokenPosition(92, 92, 1, 93, 1, 93)},
+                            ref: {schema: identifier('public', 94), entity: identifier('users', 101), attrs: [identifier('id', 107)]}
+                        },
+                        {
+                            kind: 'Relation',
+                            token: tokenPosition(111, 122, 1, 112, 1, 123),
+                            refCardinality: {kind: '1', token: tokenPosition(111, 111, 1, 112, 1, 112)},
+                            polymorphic: {attr: identifier('kind', 112), value: identifier('posts', 117)},
+                            srcCardinality: {kind: 'n', token: tokenPosition(122, 122, 1, 123, 1, 123)},
+                            ref: {entity: identifier('posts', 124), attrs: [identifier('id', 130)]}
+                        }
+                    ]
+                }})
+            })
             test('all', () => {
                 expect(parseRule(p => p.attributeRule(), '    id int(8, 9, 10)=8 nullable pk unique index=idx check(`id > 0`) -kind=users> public.users(id) { tag : pii , owner:PANDA} | some note # comment\n')).toEqual({result: {
                     nesting: {depth: 1, token: tokenPosition(0, 3, 1, 1, 1, 4)},
@@ -394,16 +429,20 @@ comments
                     enumValues: [integer(8, 11, 11, 1, 1, 12, 12), integer(9, 14, 14, 1, 1, 15, 15), integer(10, 17, 18, 1, 1, 18, 19)],
                     defaultValue: integer(8, 21, 21, 1, 1, 22, 22),
                     nullable: tokenPosition(23, 30, 1, 24, 1, 31),
-                    primaryKey: {token: tokenPosition(32, 33, 1, 33, 1, 34)},
-                    index: {token: tokenPosition(42, 46, 1, 43, 1, 47), name: identifier('idx', 48, 50, 1, 1, 49, 51)},
-                    unique: {token: tokenPosition(35, 40, 1, 36, 1, 41)},
-                    check: {token: tokenPosition(52, 56, 1, 53, 1, 57), predicate: expression('id > 0', 58, 65, 1, 1, 59, 66)},
-                    relation: {
-                        srcCardinality: 'n',
-                        refCardinality: '1',
-                        ref: {schema: identifier('public', 81, 86, 1, 1, 82, 87), entity: identifier('users', 88, 92, 1, 1, 89, 93), attrs: [identifier('id', 94, 95, 1, 1, 95, 96)]},
-                        polymorphic: {attr: identifier('kind', 69, 72, 1, 1, 70, 73), value: identifier('users', 74, 78, 1, 1, 75, 79)}
-                    },
+                    constraints: [
+                        {kind: 'PrimaryKey', token: tokenPosition(32, 33, 1, 33, 1, 34)},
+                        {kind: 'Unique', token: tokenPosition(35, 40, 1, 36, 1, 41)},
+                        {kind: 'Index', token: tokenPosition(42, 46, 1, 43, 1, 47), name: identifier('idx', 48, 50, 1, 1, 49, 51)},
+                        {kind: 'Check', token: tokenPosition(52, 56, 1, 53, 1, 57), predicate: expression('id > 0', 58, 65, 1, 1, 59, 66)},
+                        {
+                            kind: 'Relation',
+                            token: tokenPosition(68, 79, 1, 69, 1, 80),
+                            refCardinality: {kind: '1', token: tokenPosition(68, 68, 1, 69, 1, 69)},
+                            polymorphic: {attr: identifier('kind', 69, 72, 1, 1, 70, 73), value: identifier('users', 74, 78, 1, 1, 75, 79)},
+                            srcCardinality: {kind: 'n', token: tokenPosition(79, 79, 1, 80, 1, 80)},
+                            ref: {schema: identifier('public', 81, 86, 1, 1, 82, 87), entity: identifier('users', 88, 92, 1, 1, 89, 93), attrs: [identifier('id', 94, 95, 1, 1, 95, 96)]},
+                        },
+                    ],
                     properties: [
                         {key: identifier('tag', 100, 102, 1, 1, 101, 103), sep: tokenPosition(104, 104, 1, 105, 1, 105), value: identifier('pii', 106, 108, 1, 1, 107, 109)},
                         {key: identifier('owner', 112, 116, 1, 1, 113, 117), sep: tokenPosition(117, 117, 1, 118, 1, 118), value: identifier('PANDA', 118, 122, 1, 1, 119, 123)},
@@ -421,106 +460,57 @@ comments
         test('basic', () => {
             expect(parseRule(p => p.relationRule(), 'rel groups(owner) -> users(id)\n')).toEqual({result: {
                 kind: 'Relation',
-                srcCardinality: 'n',
-                refCardinality: '1',
-                src: {
-                    entity: identifier('groups', 4, 9, 1, 1, 5, 10),
-                    attrs: [identifier('owner', 11, 15, 1, 1, 12, 16)],
-                },
-                ref: {
-                    entity: identifier('users', 21, 25, 1, 1, 22, 26),
-                    attrs: [identifier('id', 27, 28, 1, 1, 28, 29)],
-                },
+                src: {entity: identifier('groups', 4, 9, 1, 1, 5, 10), attrs: [identifier('owner', 11, 15, 1, 1, 12, 16)]},
+                refCardinality: {kind: '1', token: tokenPosition(18, 18, 1, 19, 1, 19)},
+                srcCardinality: {kind: 'n', token: tokenPosition(19, 19, 1, 20, 1, 20)},
+                ref: {entity: identifier('users', 21, 25, 1, 1, 22, 26), attrs: [identifier('id', 27, 28, 1, 1, 28, 29)]},
             }})
         })
         test('one-to-one', () => {
             expect(parseRule(p => p.relationRule(), 'rel profiles(id) -- users(id)\n')).toEqual({result: {
                 kind: 'Relation',
-                srcCardinality: '1',
-                refCardinality: '1',
-                src: {
-                    entity: identifier('profiles', 4, 11, 1, 1, 5, 12),
-                    attrs: [identifier('id', 13, 14, 1, 1, 14, 15)],
-                },
-                ref: {
-                    entity: identifier('users', 20, 24, 1, 1, 21, 25),
-                    attrs: [identifier('id', 26, 27, 1, 1, 27, 28)],
-                },
+                src: {entity: identifier('profiles', 4, 11, 1, 1, 5, 12), attrs: [identifier('id', 13, 14, 1, 1, 14, 15)]},
+                refCardinality: {kind: '1', token: tokenPosition(17, 17, 1, 18, 1, 18)},
+                srcCardinality: {kind: '1', token: tokenPosition(18, 18, 1, 19, 1, 19)},
+                ref: {entity: identifier('users', 20, 24, 1, 1, 21, 25), attrs: [identifier('id', 26, 27, 1, 1, 27, 28)]},
             }})
         })
         test('many-to-many', () => {
             expect(parseRule(p => p.relationRule(), 'rel groups(id) <> users(id)\n')).toEqual({result: {
                 kind: 'Relation',
-                srcCardinality: 'n',
-                refCardinality: 'n',
-                src: {
-                    entity: identifier('groups', 4, 9, 1, 1, 5, 10),
-                    attrs: [identifier('id', 11, 12, 1, 1, 12, 13)],
-                },
-                ref: {
-                    entity: identifier('users', 18, 22, 1, 1, 19, 23),
-                    attrs: [identifier('id', 24, 25, 1, 1, 25, 26)],
-                },
+                src: {entity: identifier('groups', 4, 9, 1, 1, 5, 10), attrs: [identifier('id', 11, 12, 1, 1, 12, 13)]},
+                refCardinality: {kind: 'n', token: tokenPosition(15, 15, 1, 16, 1, 16)},
+                srcCardinality: {kind: 'n', token: tokenPosition(16, 16, 1, 17, 1, 17)},
+                ref: {entity: identifier('users', 18, 22, 1, 1, 19, 23), attrs: [identifier('id', 24, 25, 1, 1, 25, 26)]},
             }})
         })
         test('composite', () => {
             expect(parseRule(p => p.relationRule(), 'rel audit(user_id, role_id) -> user_roles(user_id, role_id)\n')).toEqual({result: {
                 kind: 'Relation',
-                srcCardinality: 'n',
-                refCardinality: '1',
-                src: {
-                    entity: identifier('audit', 4, 8, 1, 1, 5, 9),
-                    attrs: [
-                        identifier('user_id', 10, 16, 1, 1, 11, 17),
-                        identifier('role_id', 19, 25, 1, 1, 20, 26),
-                    ],
-                },
-                ref: {
-                    entity: identifier('user_roles', 31, 40, 1, 1, 32, 41),
-                    attrs: [
-                        identifier('user_id', 42, 48, 1, 1, 43, 49),
-                        identifier('role_id', 51, 57, 1, 1, 52, 58),
-                    ],
-                },
+                src: {entity: identifier('audit', 4, 8, 1, 1, 5, 9), attrs: [identifier('user_id', 10, 16, 1, 1, 11, 17), identifier('role_id', 19, 25, 1, 1, 20, 26)],},
+                refCardinality: {kind: '1', token: tokenPosition(28, 28, 1, 29, 1, 29)},
+                srcCardinality: {kind: 'n', token: tokenPosition(29, 29, 1, 30, 1, 30)},
+                ref: {entity: identifier('user_roles', 31, 40, 1, 1, 32, 41), attrs: [identifier('user_id', 42, 48, 1, 1, 43, 49), identifier('role_id', 51, 57, 1, 1, 52, 58)]},
             }})
         })
         test('polymorphic', () => {
             expect(parseRule(p => p.relationRule(), 'rel events(item_id) -item_kind=User> users(id)\n')).toEqual({result: {
                 kind: 'Relation',
-                srcCardinality: 'n',
-                refCardinality: '1',
-                src: {
-                    entity: identifier('events', 4, 9, 1, 1, 5, 10),
-                    attrs: [identifier('item_id', 11, 17, 1, 1, 12, 18)],
-                },
-                ref: {
-                    entity: identifier('users', 37, 41, 1, 1, 38, 42),
-                    attrs: [identifier('id', 43, 44, 1, 1, 44, 45)],
-                },
-                polymorphic: {
-                    attr: identifier('item_kind', 21, 29, 1, 1, 22, 30),
-                    value: identifier('User', 31, 34, 1, 1, 32, 35),
-                }
+                src: {entity: identifier('events', 4, 9, 1, 1, 5, 10), attrs: [identifier('item_id', 11, 17, 1, 1, 12, 18)]},
+                refCardinality: {kind: '1', token: tokenPosition(20, 20, 1, 21, 1, 21)},
+                polymorphic: {attr: identifier('item_kind', 21, 29, 1, 1, 22, 30), value: identifier('User', 31, 34, 1, 1, 32, 35)},
+                srcCardinality: {kind: 'n', token: tokenPosition(35, 35, 1, 36, 1, 36)},
+                ref: {entity: identifier('users', 37, 41, 1, 1, 38, 42), attrs: [identifier('id', 43, 44, 1, 1, 44, 45)]}
             }})
         })
         test('extra', () => {
             expect(parseRule(p => p.relationRule(), 'rel groups(owner) -> users(id) {color: red} | a note # a comment\n')).toEqual({result: {
                 kind: 'Relation',
-                srcCardinality: 'n',
-                refCardinality: '1',
-                src: {
-                    entity: identifier('groups', 4, 9, 1, 1, 5, 10),
-                    attrs: [identifier('owner', 11, 15, 1, 1, 12, 16)],
-                },
-                ref: {
-                    entity: identifier('users', 21, 25, 1, 1, 22, 26),
-                    attrs: [identifier('id', 27, 28, 1, 1, 28, 29)],
-                },
-                properties: [{
-                    key: identifier('color', 32, 36, 1, 1, 33, 37),
-                    sep: tokenPosition(37, 37, 1, 38, 1, 38),
-                    value: identifier('red', 39, 41, 1, 1, 40, 42)
-                }],
+                src: {entity: identifier('groups', 4, 9, 1, 1, 5, 10), attrs: [identifier('owner', 11, 15, 1, 1, 12, 16)]},
+                refCardinality: {kind: '1', token: tokenPosition(18, 18, 1, 19, 1, 19)},
+                srcCardinality: {kind: 'n', token: tokenPosition(19, 19, 1, 20, 1, 20)},
+                ref: {entity: identifier('users', 21, 25, 1, 1, 22, 26), attrs: [identifier('id', 27, 28, 1, 1, 28, 29)]},
+                properties: [{key: identifier('color', 32, 36, 1, 1, 33, 37), sep: tokenPosition(37, 37, 1, 38, 1, 38), value: identifier('red', 39, 41, 1, 1, 40, 42)}],
                 doc: doc('a note', 44, 52, 1, 1, 45, 53),
                 comment: comment('a comment', 53, 63, 1, 1, 54, 64),
             }})
@@ -540,14 +530,14 @@ comments
             expect(parseRule(p => p.typeRule(), 'type bug_status varchar\n')).toEqual({result: {
                 kind: 'Type',
                 name: identifier('bug_status', 5, 14, 1, 1, 6, 15),
-                content: {kind: 'alias', name: identifier('varchar', 16, 22, 1, 1, 17, 23)},
+                content: {kind: 'Alias', name: identifier('varchar', 16, 22, 1, 1, 17, 23)},
             }})
         })
         test('enum', () => {
             expect(parseRule(p => p.typeRule(), 'type bug_status (new, "in progress", done)\n')).toEqual({result: {
                 kind: 'Type',
                 name: identifier('bug_status', 5, 14, 1, 1, 6, 15),
-                content: {kind: 'enum', values: [
+                content: {kind: 'Enum', values: [
                     identifier('new', 17, 19, 1, 1, 18, 20),
                     {...identifier('in progress', 22, 34, 1, 1, 23, 35), quoted: true},
                     identifier('done', 37, 40, 1, 1, 38, 41),
@@ -558,7 +548,7 @@ comments
             expect(parseRule(p => p.typeRule(), 'type bug_status {internal varchar, public varchar}\n')).toEqual({result: {
                 kind: 'Type',
                 name: identifier('bug_status', 5, 14, 1, 1, 6, 15),
-                content: {kind: 'struct', attrs: [{
+                content: {kind: 'Struct', attrs: [{
                     path: [identifier('internal', 17, 24, 1, 1, 18, 25)],
                     type: identifier('varchar', 26, 32, 1, 1, 27, 33),
                 }, {
@@ -570,7 +560,7 @@ comments
             /*expect(parseRule(p => p.typeRule(), 'type bug_status\n  internal varchar\n  public varchar\n')).toEqual({result: {
                 kind: 'Type',
                 name: identifier('bug_status', 5, 14, 1, 1, 6, 15),
-                content: {kind: 'struct', attrs: [{
+                content: {kind: 'Struct', attrs: [{
                     path: [identifier('internal', 18, 25, 2, 2, 3, 10)],
                     type: identifier('varchar', 27, 33, 2, 2, 12, 18),
                 }, {
@@ -583,7 +573,7 @@ comments
             expect(parseRule(p => p.typeRule(), 'type bug_status `range(subtype = float8, subtype_diff = float8mi)`\n')).toEqual({result: {
                 kind: 'Type',
                 name: identifier('bug_status', 5, 14, 1, 1, 6, 15),
-                content: {kind: 'custom', definition: expression('range(subtype = float8, subtype_diff = float8mi)', 16, 65, 1, 1, 17, 66)}
+                content: {kind: 'Custom', definition: expression('range(subtype = float8, subtype_diff = float8mi)', 16, 65, 1, 1, 17, 66)}
             }})
         })
         test('namespace', () => {
@@ -592,14 +582,14 @@ comments
                 catalog: identifier('reporting', 5, 13, 1, 1, 6, 14),
                 schema: identifier('public', 15, 20, 1, 1, 16, 21),
                 name: identifier('bug_status', 22, 31, 1, 1, 23, 32),
-                content: {kind: 'alias', name: identifier('varchar', 33, 39, 1, 1, 34, 40)},
+                content: {kind: 'Alias', name: identifier('varchar', 33, 39, 1, 1, 34, 40)},
             }})
         })
         test('metadata', () => {
             expect(parseRule(p => p.typeRule(), 'type bug_status varchar {tags: seo} | a note # a comment\n')).toEqual({result: {
                 kind: 'Type',
                 name: identifier('bug_status', 5, 14, 1, 1, 6, 15),
-                content: {kind: 'alias', name: identifier('varchar', 16, 22, 1, 1, 17, 23)},
+                content: {kind: 'Alias', name: identifier('varchar', 16, 22, 1, 1, 17, 23)},
                 properties: [{
                     key: identifier('tags', 25, 28, 1, 1, 26, 29),
                     sep: tokenPosition(29, 29, 1, 30, 1, 30),
@@ -627,32 +617,34 @@ comments
             })
         })
         test('attribute relation', () => {
-            const v1 = parseRule(p => p.attributeRule(), '  user_id fk users.id\n').result?.relation as AttributeRelationAst
-            const v2 = parseRule(p => p.attributeRule(), '  user_id -> users(id)\n').result?.relation
-            expect(v1).toEqual({
-                srcCardinality: 'n',
-                refCardinality: '1',
+            const v1 = parseRule(p => p.attributeRule(), '  user_id fk users.id\n').result?.constraints
+            const v2 = parseRule(p => p.attributeRule(), '  user_id -> users(id)\n').result?.constraints
+            expect(v1).toEqual([{
+                kind: 'Relation',
+                token: tokenPosition(10, 11, 1, 11, 1, 12),
+                refCardinality: {kind: '1', token: tokenPosition(10, 11, 1, 11, 1, 12)},
+                srcCardinality: {kind: 'n', token: tokenPosition(10, 11, 1, 11, 1, 12)},
                 ref: {
                     entity: identifier('users', 13, 17, 1, 1, 14, 18),
                     attrs: [identifier('id', 19, 20, 1, 1, 20, 21)],
                     warning: {...tokenPosition(13, 20, 1, 14, 1, 21), issues: [legacy('"users.id" is the legacy way, use "users(id)" instead')]}
                 },
                 warning: {...tokenPosition(10, 11, 1, 11, 1, 12), issues: [legacy('"fk" is legacy, replace it with "->"')]}
-            })
-            expect(removeFieldsDeep(v1, ['warning'])).toEqual(v2)
+            }])
+            expect(removeFieldsDeep(v1, ['token', 'warning'])).toEqual(removeFieldsDeep(v2, ['token']))
         })
         test('standalone relation', () => {
             const v1 = parseRule(p => p.relationRule(), 'fk groups.owner -> users.id\n')
             const v2 = parseRule(p => p.relationRule(), 'rel groups(owner) -> users(id)\n')
             expect(v1).toEqual({result: {
                 kind: 'Relation',
-                srcCardinality: 'n',
-                refCardinality: '1',
                 src: {
                     entity: identifier('groups', 3, 8, 1, 1, 4, 9),
                     attrs: [identifier('owner', 10, 14, 1, 1, 11, 15)],
                     warning: {...tokenPosition(3, 14, 1, 4, 1, 15), issues: [legacy('"groups.owner" is the legacy way, use "groups(owner)" instead')]}
                 },
+                refCardinality: {kind: '1', token: tokenPosition(16, 16, 1, 17, 1, 17)},
+                srcCardinality: {kind: 'n', token: tokenPosition(17, 17, 1, 18, 1, 18)},
                 ref: {
                     entity: identifier('users', 19, 23, 1, 1, 20, 24),
                     attrs: [identifier('id', 25, 26, 1, 1, 26, 27)],
@@ -698,10 +690,11 @@ comments
                 nesting: {depth: 0, token: tokenPosition(0, 1, 1, 1, 1, 2)},
                 name: identifier('age', 2, 4, 1, 1, 3, 5),
                 type: identifier('int', 6, 8, 1, 1, 7, 9),
-                check: {
+                constraints: [{
+                    kind: 'Check',
                     token: tokenPosition(10, 14, 1, 11, 1, 15),
                     predicate: expression('age > 0', 15, 24, 1, 1, 16, 25, [legacy('"=age > 0" is the legacy way, use expression instead "(`age > 0`)"')]),
-                },
+                }],
             })
             expect(removeFieldsDeep(v1, ['issues', 'offset', 'position', 'quoted'])).toEqual(removeFieldsDeep(v2, ['issues', 'offset', 'position']))
         })
@@ -852,7 +845,7 @@ comments
                 nesting: {depth: 0, token: tokenPosition(0, 1, 1, 1, 1, 2)},
                 name: identifier('id', 8, 9, 2, 2, 3, 4),
                 type: identifier('int', 11, 13, 2, 2, 6, 8),
-                primaryKey: {token: tokenPosition(15, 16, 2, 10, 2, 11)}
+                constraints: [{kind: 'PrimaryKey', token: tokenPosition(15, 16, 2, 10, 2, 11)}]
             }, {
                 nesting: {depth: 0, token: tokenPosition(0, 1, 1, 1, 1, 2)},
                 name: identifier('name', 20, 23, 3, 3, 3, 6),
@@ -880,7 +873,7 @@ comments
             }])).toEqual([{
                 path: [identifier('id', 8, 9, 2, 2, 3, 4)],
                 type: identifier('int', 11, 13, 2, 2, 6, 8),
-                primaryKey: {token: tokenPosition(15, 16, 2, 10, 2, 11)},
+                constraints: [{kind: 'PrimaryKey', token: tokenPosition(15, 16, 2, 10, 2, 11)}],
             }, {
                 path: [identifier('name', 20, 23, 3, 3, 3, 6)],
                 type: identifier('varchar', 25, 31, 3, 3, 8, 14),
@@ -919,8 +912,9 @@ function expression(value: string, start: number, end: number, lineStart: number
     return {kind: 'Expression', token: issues ? {...tokenPosition(start, end, lineStart, columnStart, lineEnd, columnEnd), issues} : tokenPosition(start, end, lineStart, columnStart, lineEnd, columnEnd), value}
 }
 
-function identifier(value: string, start: number, end: number, lineStart: number, lineEnd: number, columnStart: number, columnEnd: number): IdentifierAst {
-    return {kind: 'Identifier', token: tokenPosition(start, end, lineStart, columnStart, lineEnd, columnEnd), value}
+function identifier(value: string, start: number, end?: number, lineStart?: number, lineEnd?: number, columnStart?: number, columnEnd?: number): IdentifierAst {
+    const end2 = end || (start + value.length - 1)
+    return {kind: 'Identifier', token: tokenPosition(start, end2, lineStart || 1, columnStart || (start + 1), lineEnd || 1, columnEnd || (end2 + 1)), value}
 }
 
 function integer(value: number, start: number, end: number, lineStart: number, lineEnd: number, columnStart: number, columnEnd: number): IntegerAst {
