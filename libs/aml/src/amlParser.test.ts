@@ -1,7 +1,7 @@
 import {describe, expect, test} from "@jest/globals";
-import {removeFieldsDeep} from "@azimutt/utils";
+import {removeEmpty, removeFieldsDeep} from "@azimutt/utils";
 import {tokenPosition} from "@azimutt/models";
-import {AttributeRelationAst} from "./amlAst";
+import {AttributeRelationAst, TokenInfo, TokenIssue} from "./amlAst";
 import {nestAttributes, parseAmlAst, parseRule} from "./amlParser";
 import {badIndent, legacy} from "./errors";
 
@@ -171,7 +171,8 @@ comments
         describe('attributeRule', () => {
             test('name', () => {
                 expect(parseRule(p => p.attributeRule(), '  id\n')).toEqual({result: {nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)}, name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)}}})
-                expect(parseRule(p => p.attributeRule(), '  "index"\n')).toEqual({result: {nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)}, name: {token: 'Identifier', value: 'index', ...tokenPosition(2, 8, 1, 3, 1, 9)}}})
+                expect(parseRule(p => p.attributeRule(), '  "index"\n')).toEqual({result: {nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)}, name: {token: 'Identifier', value: 'index', ...tokenPosition(2, 8, 1, 3, 1, 9), quoted: true}}})
+                expect(parseRule(p => p.attributeRule(), '  fk_col\n')).toEqual({result: {nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)}, name: {token: 'Identifier', value: 'fk_col', ...tokenPosition(2, 7, 1, 3, 1, 8)}}})
             })
             test('type', () => {
                 expect(parseRule(p => p.attributeRule(), '  id uuid\n')).toEqual({result: {
@@ -182,17 +183,17 @@ comments
                 expect(parseRule(p => p.attributeRule(), '  name "varchar(12)"\n')).toEqual({result: {
                     nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'name', ...tokenPosition(2, 5, 1, 3, 1, 6)},
-                    type: {token: 'Identifier', value: 'varchar(12)', ...tokenPosition(7, 19, 1, 8, 1, 20)},
+                    type: {token: 'Identifier', value: 'varchar(12)', ...tokenPosition(7, 19, 1, 8, 1, 20), quoted: true},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  bio "character varying"\n')).toEqual({result: {
                     nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'bio', ...tokenPosition(2, 4, 1, 3, 1, 5)},
-                    type: {token: 'Identifier', value: 'character varying', ...tokenPosition(6, 24, 1, 7, 1, 25)},
+                    type: {token: 'Identifier', value: 'character varying', ...tokenPosition(6, 24, 1, 7, 1, 25), quoted: true},
                 }})
                 expect(parseRule(p => p.attributeRule(), '  id "type"\n')).toEqual({result: {
                     nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
-                    type: {token: 'Identifier', value: 'type', ...tokenPosition(5, 10, 1, 6, 1, 11)},
+                    type: {token: 'Identifier', value: 'type', ...tokenPosition(5, 10, 1, 6, 1, 11), quoted: true},
                 }})
             })
             test('enum', () => {
@@ -293,7 +294,7 @@ comments
                 expect(parseRule(p => p.attributeRule(), '  id index = "idx \\" id"\n')).toEqual({result: {
                     nesting: {depth: 0, ...tokenPosition(0, 1, 1, 1, 1, 2)},
                     name: {token: 'Identifier', value: 'id', ...tokenPosition(2, 3, 1, 3, 1, 4)},
-                    index: {keyword: tokenPosition(5, 9, 1, 6, 1, 10), name: {token: 'Identifier', value: 'idx " id', ...tokenPosition(13, 23, 1, 14, 1, 24)}},
+                    index: {keyword: tokenPosition(5, 9, 1, 6, 1, 10), name: {token: 'Identifier', value: 'idx " id', ...tokenPosition(13, 23, 1, 14, 1, 24), quoted: true}},
                 }})
             })
             test('unique', () => {
@@ -536,7 +537,7 @@ comments
                 name: {token: 'Identifier', value: 'bug_status', ...tokenPosition(5, 14, 1, 6, 1, 15)},
                 content: {kind: 'enum', values: [
                     {token: 'Identifier', value: 'new', ...tokenPosition(17, 19, 1, 18, 1, 20)},
-                    {token: 'Identifier', value: 'in progress', ...tokenPosition(22, 34, 1, 23, 1, 35)},
+                    {token: 'Identifier', value: 'in progress', ...tokenPosition(22, 34, 1, 23, 1, 35), quoted: true},
                     {token: 'Identifier', value: 'done', ...tokenPosition(37, 40, 1, 38, 1, 41)},
                 ]}
             }})
@@ -687,10 +688,10 @@ comments
                 type: {value: 'int', token: 'Identifier', ...tokenPosition(6, 8, 1, 7, 1, 9)},
                 check: {
                     keyword: tokenPosition(10, 14, 1, 11, 1, 15),
-                    predicate: {value: 'age > 0', token: 'Expression', ...tokenPosition(15, 24, 1, 16, 1, 25), issues: [legacy('"=age > 0" is the legacy way, use expression instead "(`age > 0`)"')]},
+                    predicate: {value: 'age > 0', token: 'Expression', ...tokenPosition(15, 24, 1, 16, 1, 25), issues: [legacy('"=age > 0" is the legacy way, use expression instead "(`age > 0`)"')], quoted: true},
                 },
             })
-            expect(removeFieldsDeep(v1, ['issues', 'offset', 'position'])).toEqual(removeFieldsDeep(v2, ['issues', 'offset', 'position']))
+            expect(removeFieldsDeep(v1, ['issues', 'offset', 'position', 'quoted'])).toEqual(removeFieldsDeep(v2, ['issues', 'offset', 'position']))
         })
     })
     describe('common', () => {
@@ -708,9 +709,9 @@ comments
             expect(parseRule(p => p.identifierRule(), 'id')).toEqual({result: {token: 'Identifier', value: 'id', ...tokenPosition(0, 1, 1, 1, 1, 2)}})
             expect(parseRule(p => p.identifierRule(), 'user_id')).toEqual({result: {token: 'Identifier', value: 'user_id', ...tokenPosition(0, 6, 1, 1, 1, 7)}})
             expect(parseRule(p => p.identifierRule(), 'C##INVENTORY')).toEqual({result: {token: 'Identifier', value: 'C##INVENTORY', ...tokenPosition(0, 11, 1, 1, 1, 12)}})
-            expect(parseRule(p => p.identifierRule(), '"my col"')).toEqual({result: {token: 'Identifier', value: 'my col', ...tokenPosition(0, 7, 1, 1, 1, 8)}})
-            expect(parseRule(p => p.identifierRule(), '"varchar[]"')).toEqual({result: {token: 'Identifier', value: 'varchar[]', ...tokenPosition(0, 10, 1, 1, 1, 11)}})
-            expect(parseRule(p => p.identifierRule(), '"my \\"new\\" col"')).toEqual({result: {token: 'Identifier', value: 'my "new" col', ...tokenPosition(0, 15, 1, 1, 1, 16)}})
+            expect(parseRule(p => p.identifierRule(), '"my col"')).toEqual({result: {token: 'Identifier', value: 'my col', ...tokenPosition(0, 7, 1, 1, 1, 8), quoted: true}})
+            expect(parseRule(p => p.identifierRule(), '"varchar[]"')).toEqual({result: {token: 'Identifier', value: 'varchar[]', ...tokenPosition(0, 10, 1, 1, 1, 11), quoted: true}})
+            expect(parseRule(p => p.identifierRule(), '"my \\"new\\" col"')).toEqual({result: {token: 'Identifier', value: 'my "new" col', ...tokenPosition(0, 15, 1, 1, 1, 16), quoted: true}})
             expect(parseRule(p => p.identifierRule(), 'bad col')).toEqual({result: {token: 'Identifier', value: 'bad', ...tokenPosition(0, 2, 1, 1, 1, 3)}, errors: [{message: "Redundant input, expecting EOF but found:  ", kind: 'NotAllInputParsedException', level: 'error', ...tokenPosition(3, 3, 1, 4, 1, 4)}]})
         })
         test('commentRule', () => {
@@ -720,7 +721,7 @@ comments
         test('noteRule', () => {
             expect(parseRule(p => p.docRule(), '| a note')).toEqual({result: {token: 'Doc', value: 'a note', ...tokenPosition(0, 7, 1, 1, 1, 8)}})
             expect(parseRule(p => p.docRule(), '| "a # note"')).toEqual({result: {token: 'Doc', value: 'a # note', ...tokenPosition(0, 11, 1, 1, 1, 12)}})
-            expect(parseRule(p => p.docRule(), '|||\n   a note\n   multiline\n|||')).toEqual({result: {token: 'Doc', value: 'a note\nmultiline', ...tokenPosition(0, 29, 1, 1, 4, 3)}})
+            expect(parseRule(p => p.docRule(), '|||\n   a note\n   multiline\n|||')).toEqual({result: {token: 'Doc', value: 'a note\nmultiline', ...tokenPosition(0, 29, 1, 1, 4, 3), multiLine: true}})
             expect(parseRule(p => p.docRule(), 'bad')).toEqual({errors: [{message: "Expecting: one of these possible Token sequences:\n  1. [DocMultiline]\n  2. [Doc]\nbut found: 'bad'", kind: 'NoViableAltException', level: 'error', ...tokenPosition(0, 2, 1, 1, 1, 3)}]})
         })
         test('propertiesRule', () => {
@@ -760,10 +761,10 @@ comments
 
             // bad
             expect(parseRule(p => p.propertiesRule(), 'bad')).toEqual({errors: [
-                {message: "Expecting token of type --> LCurly <-- but found --> 'bad' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(0, 2, 1, 1, 1, 3)},
-                {message: "Expecting token of type --> RCurly <-- but found --> '' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(NaN, -1, -1, -1, -1, -1)},
+                {message: "Expecting token of type --> CurlyLeft <-- but found --> 'bad' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(0, 2, 1, 1, 1, 3)},
+                {message: "Expecting token of type --> CurlyRight <-- but found --> '' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(-1, -1, -1, -1, -1, -1)},
             ]})
-            expect(parseRule(p => p.propertiesRule(), '{')).toEqual({errors: [{message: "Expecting token of type --> RCurly <-- but found --> '' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(NaN, -1, -1, -1, -1, -1)}]})
+            expect(parseRule(p => p.propertiesRule(), '{')).toEqual({errors: [{message: "Expecting token of type --> CurlyRight <-- but found --> '' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(-1, -1, -1, -1, -1, -1)}]})
         })
         test('extraRule', () => {
             expect(parseRule(p => p.extraRule(), '')).toEqual({result: {}})
@@ -834,7 +835,7 @@ comments
             expect(parseRule(p => p.attributeValueRule(), '2.0')).toEqual({result: {token: 'Decimal', value: 2, ...tokenPosition(0, 2, 1, 1, 1, 3)}})
             expect(parseRule(p => p.attributeValueRule(), '3.14')).toEqual({result: {token: 'Decimal', value: 3.14, ...tokenPosition(0, 3, 1, 1, 1, 4)}})
             expect(parseRule(p => p.attributeValueRule(), 'User')).toEqual({result: {token: 'Identifier', value: 'User', ...tokenPosition(0, 3, 1, 1, 1, 4)}})
-            expect(parseRule(p => p.attributeValueRule(), '"a user"')).toEqual({result: {token: 'Identifier', value: 'a user', ...tokenPosition(0, 7, 1, 1, 1, 8)}})
+            expect(parseRule(p => p.attributeValueRule(), '"a user"')).toEqual({result: {token: 'Identifier', value: 'a user', ...tokenPosition(0, 7, 1, 1, 1, 8), quoted: true}})
         })
     })
     describe('utils', () => {
@@ -895,8 +896,9 @@ comments
                 }]
             }])
         })
-        test('tokenPosition has expected structure', () => {
-            expect(tokenPosition(1, 2, 3, 4, 5, 6)).toEqual({offset: {start: 1, end: 2}, position: {start: {line: 3, column: 4}, end: {line: 5, column: 6}}})
-        })
     })
 })
+
+function token(start: number, end: number, issues?: TokenIssue[]): TokenInfo {
+    return removeEmpty({offset: {start, end}, position: {start: {line: 1, column: start + 1}, end: {line: 1, column: end + 1}}, issues})
+}

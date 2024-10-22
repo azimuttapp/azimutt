@@ -279,7 +279,7 @@ type public.status (pending, wip, done)
             })
             expect(parseAmlTest('users\n  id int pk\n\nposts\n  author int -> users(id\n')).toEqual({
                 result: {entities: [users, {name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 4, statement: 2}}], relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {line: 5, statement: 2, inline: true}}], extra: {}},
-                errors: [{message: "Expecting token of type --> RParen <-- but found --> '\n' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(49, 49, 5, 25, 5, 25)}]
+                errors: [{message: "Expecting token of type --> ParenRight <-- but found --> '\n' <--", kind: 'MismatchedTokenException', level: 'error', ...tokenPosition(49, 49, 5, 25, 5, 25)}]
             })
             expect(parseAmlTest('users\n  id int pk\n\nposts\n  author int -> users(id)\n')).toEqual({
                 result: {entities: [users, {name: 'posts', attrs: [{name: 'author', type: 'int'}], extra: {line: 4, statement: 2}}], relations: [{src: {entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, extra: {line: 5, statement: 2, inline: true}}], extra: {}},

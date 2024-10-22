@@ -49,8 +49,8 @@ export type DecimalToken = { token: 'Decimal', value: number } & TokenInfo
 export type IntegerToken = { token: 'Integer', value: number } & TokenInfo
 export type BooleanToken = { token: 'Boolean', value: boolean } & TokenInfo
 export type ExpressionToken = { token: 'Expression', value: string } & TokenInfo
-export type IdentifierToken = { token: 'Identifier', value: string } & TokenInfo
-export type DocToken = { token: 'Doc', value: string } & TokenPosition
+export type IdentifierToken = { token: 'Identifier', value: string, quoted?: boolean } & TokenInfo
+export type DocToken = { token: 'Doc', value: string, multiLine?: boolean } & TokenPosition
 export type CommentToken = { token: 'Comment', value: string } & TokenPosition
 
 export type TokenInfo = TokenPosition & { issues?: TokenIssue[] }
