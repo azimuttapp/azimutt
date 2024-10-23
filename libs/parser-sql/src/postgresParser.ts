@@ -50,6 +50,7 @@ import {
     NullAst,
     ObjectNameAst,
     OffsetClauseAst,
+    OnConflictClauseAst,
     OperatorAst,
     OperatorLeftAst,
     OperatorRightAst,
@@ -114,6 +115,7 @@ const Column = createToken({name: 'Column', pattern: /\bCOLUMN\b/i, longer_alt: 
 const Comment = createToken({name: 'Comment', pattern: /\bCOMMENT\b/i, longer_alt: Identifier})
 const Commit = createToken({name: 'Commit', pattern: /\bCOMMIT\b/i, longer_alt: Identifier})
 const Concurrently = createToken({name: 'Concurrently', pattern: /\bCONCURRENTLY\b/i, longer_alt: Identifier})
+const Conflict = createToken({name: 'Conflict', pattern: /\bCONFLICT\b/i, longer_alt: Identifier})
 const Constraint = createToken({name: 'Constraint', pattern: /\bCONSTRAINT\b/i, longer_alt: Identifier})
 const Create = createToken({name: 'Create', pattern: /\bCREATE\b/i, longer_alt: Identifier})
 const Cross = createToken({name: 'Cross', pattern: /\bCROSS\b/i, longer_alt: Identifier})
@@ -123,6 +125,7 @@ const Deferrable = createToken({name: 'Deferrable', pattern: /\bDEFERRABLE\b/i, 
 const Delete = createToken({name: 'Delete', pattern: /\bDELETE\b/i, longer_alt: Identifier})
 const Desc = createToken({name: 'Desc', pattern: /\bDESC\b/i, longer_alt: Identifier})
 const Distinct = createToken({name: 'Distinct', pattern: /\bDISTINCT\b/i, longer_alt: Identifier})
+const Do = createToken({name: 'Do', pattern: /\bDO\b/i, longer_alt: Identifier})
 const Domain = createToken({name: 'Domain', pattern: /\bDOMAIN\b/i, longer_alt: Identifier})
 const Drop = createToken({name: 'Drop', pattern: /\bDROP\b/i, longer_alt: Identifier})
 const Enum = createToken({name: 'Enum', pattern: /\bENUM\b/i, longer_alt: Identifier})
@@ -160,6 +163,7 @@ const Next = createToken({name: 'Next', pattern: /\bNEXT\b/i, longer_alt: Identi
 const No = createToken({name: 'No', pattern: /\bNO\b/i, longer_alt: Identifier})
 const NoAction = createToken({name: 'NoAction', pattern: /\bNO\s+ACTION\b/i})
 const Not = createToken({name: 'Not', pattern: /\bNOT\b/i, longer_alt: Identifier})
+const Nothing = createToken({name: 'Nothing', pattern: /\bNOTHING\b/i, longer_alt: Identifier})
 const NotNull = createToken({name: 'NotNull', pattern: /\bNOTNULL\b/i, longer_alt: Identifier})
 const Null = createToken({name: 'Null', pattern: /\bNULL\b/i, longer_alt: Identifier})
 const Nulls = createToken({name: 'Nulls', pattern: /\bNULLS\b/i, longer_alt: Identifier})
@@ -212,10 +216,10 @@ const With = createToken({name: 'With', pattern: /\bWITH\b/i, longer_alt: Identi
 const Work = createToken({name: 'Work', pattern: /\bWORK\b/i, longer_alt: Identifier})
 const keywordTokens: TokenType[] = [
     Add, All, Alter, And, As, Asc, Begin, Cascade, Chain, Check, Collate, Column, Comment, Commit, Concurrently,
-    Constraint, Create, Cross, Database, Default, Deferrable, Delete, Desc, Distinct, Domain, Drop, Enum, Except,
+    Conflict, Constraint, Create, Cross, Database, Default, Deferrable, Delete, Desc, Distinct, Do, Domain, Drop, Enum, Except,
     Exists, Extension, False, Fetch, First, ForeignKey, From, Full, Global, GroupBy, Having, If, In, Include, Index,
     Inner, InsertInto, Intersect, Is, IsNull, IsolationLevel, Join, Last, Left, Like, Limit, Local, MaterializedView,
-    Natural, Next, No, NoAction, Not, NotNull, Null, Nulls, Offset, On, Only, Or, OrderBy, Outer, PrimaryKey,
+    Natural, Next, No, NoAction, Not, Nothing, NotNull, Null, Nulls, Offset, On, Only, Or, OrderBy, Outer, PrimaryKey,
     ReadCommitted, ReadOnly, ReadUncommitted, ReadWrite, Recursive, References, RepeatableRead, Replace, Restrict,
     Returning, Right, Row, Rows, Schema, Select, Serializable, Session, SetDefault, SetNull, Set, Table, Temp,
     Temporary, Ties, To, Transaction, True, Type, Union, Unique, Unlogged, Update, Using, Values, Version, View, Where,
@@ -357,7 +361,7 @@ class PostgresParser extends EmbeddedActionsParser {
                 {ALT: () => ({kind: 'Transaction' as const, token: tokenInfo($.CONSUME(Transaction))})},
             ]))
             const modes: TransactionMode[] = []
-            $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => modes.push($.OR2([
+            $.MANY_SEP({SEP: Comma, DEF: () => modes.push($.OR2([
                 {ALT: () => ({kind: 'IsolationLevel' as const, token: tokenInfo($.CONSUME(IsolationLevel)), level: $.OR3([
                     {ALT: () => ({kind: 'Serializable' as const, token: tokenInfo($.CONSUME(Serializable))})},
                     {ALT: () => ({kind: 'RepeatableRead' as const, token: tokenInfo($.CONSUME(RepeatableRead))})},
@@ -369,7 +373,7 @@ class PostgresParser extends EmbeddedActionsParser {
                 {ALT: () => ({not: $.OPTION2(() => tokenInfo($.CONSUME(Not))), kind: 'Deferrable' as const, token: tokenInfo($.CONSUME(Deferrable))})}
             ]))})
             const end = $.CONSUME(Semicolon)
-            return removeUndefined({kind: 'Begin' as const, meta: tokenInfo2(start, end), token, object, modes})
+            return removeEmpty({kind: 'Begin' as const, meta: tokenInfo2(start, end), token, object, modes})
         })
 
         this.commentOnStatementRule = $.RULE<() => CommentOnStatementAst>('commentOnStatementRule', () => {
@@ -603,9 +607,36 @@ class PostgresParser extends EmbeddedActionsParser {
                 $.CONSUME2(ParenRight)
                 values.push(row)
             }})
-            const returning = $.OPTION2(() => $.SUBRULE(returningClauseRule))
+            const onConflict = $.OPTION2(() => $.SUBRULE(onConflictClauseRule))
+            const returning = $.OPTION3(() => $.SUBRULE(returningClauseRule))
             const end = $.CONSUME(Semicolon)
-            return removeUndefined({kind: 'InsertInto' as const, meta: tokenInfo2(start, end), token: tokenInfo(start), schema: object.schema, table: object.name, columns, values, returning})
+            return removeUndefined({kind: 'InsertInto' as const, meta: tokenInfo2(start, end), token: tokenInfo(start), schema: object.schema, table: object.name, columns, values, onConflict, returning})
+        })
+        const onConflictClauseRule = $.RULE<() => OnConflictClauseAst>('onConflictClauseRule', () => {
+            const token = tokenInfo2($.CONSUME(On), $.CONSUME(Conflict))
+            const target = $.OPTION(() => $.OR([
+                {ALT: () => ({kind: 'Constraint' as const, token: tokenInfo2($.CONSUME2(On), $.CONSUME(Constraint)), name: $.SUBRULE($.identifierRule)})},
+                {ALT: () => {
+                    $.CONSUME(ParenLeft)
+                    const columns: IdentifierAst[] = []
+                    $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => columns.push($.SUBRULE2($.identifierRule))})
+                    $.CONSUME(ParenRight)
+                    const where = $.OPTION2(() => $.SUBRULE($.whereClauseRule))
+                    return {kind: 'Columns' as const, columns, where}
+                }}
+            ]))
+            const do_ = $.CONSUME(Do)
+            const action = $.OR2([
+                {ALT: () => ({kind: 'Nothing' as const, token: tokenInfo2(do_, $.CONSUME(Nothing))})},
+                {ALT: () => {
+                    const token = tokenInfo2(do_, $.CONSUME(Update))
+                    $.CONSUME(Set)
+                    const columns = $.SUBRULE(updateColumnsRule)
+                    const where = $.OPTION3(() => $.SUBRULE2($.whereClauseRule))
+                    return ({kind: 'Update' as const, token, columns, where})
+                }},
+            ])
+            return {token, target, action}
         })
         const returningClauseRule = $.RULE<() => SelectClauseAst>('returningClauseRule', () => {
             const token = tokenInfo($.CONSUME(Returning))
@@ -627,29 +658,13 @@ class PostgresParser extends EmbeddedActionsParser {
                     const result = $.SUBRULE(selectStatementResultRule)
                     return removeUndefined({...main, ...result})
                 }},
-                {ALT: () => { // allow additional parenthesis
+                {ALT: () => { // additional parenthesis
                     $.CONSUME(ParenLeft)
                     const main = $.SUBRULE2(selectStatementMainRule)
-                    return $.OR2([
-                        {ALT: () => { // close parenthesis before union
-                            $.CONSUME(ParenRight)
-                            const union = $.SUBRULE(unionClauseRule)
-                            const orderBy = $.OPTION2(() => $.SUBRULE(orderByClauseRule))
-                            const limit = $.OPTION3(() => $.SUBRULE(limitClauseRule))
-                            const offset = $.OPTION4(() => $.SUBRULE(offsetClauseRule))
-                            const fetch = $.OPTION5(() => $.SUBRULE(fetchClauseRule))
-                            return removeUndefined({...main, union, orderBy, limit, offset, fetch})
-                        }},
-                        // TODO: close parenthesis before orderBy
-                        // TODO: close parenthesis before limit
-                        // TODO: close parenthesis before offset
-                        // TODO: close parenthesis before fetch
-                        {ALT: () => { // close parenthesis at the end
-                            const result = $.SUBRULE2(selectStatementResultRule)
-                            $.CONSUME2(ParenRight)
-                            return removeUndefined({...main, ...result})
-                        }},
-                    ])
+                    const result = $.SUBRULE2(selectStatementResultRule)
+                    $.CONSUME(ParenRight)
+                    const union = $.OPTION(() => $.SUBRULE(unionClauseRule))
+                    return removeUndefined({...main, union, ...result})
                 }},
             ])
         })
@@ -706,6 +721,13 @@ class PostgresParser extends EmbeddedActionsParser {
             const descendants = $.OPTION2(() => tokenInfo($.CONSUME(Asterisk)))
             const alias = $.OPTION3(() => $.SUBRULE($.aliasRule))
             $.CONSUME(Set)
+            const columns = $.SUBRULE(updateColumnsRule)
+            const where = $.OPTION4(() => $.SUBRULE($.whereClauseRule))
+            const returning = $.OPTION5(() => $.SUBRULE(returningClauseRule))
+            const end = $.CONSUME(Semicolon)
+            return removeUndefined({kind: 'Update' as const, meta: tokenInfo2(start, end), token: tokenInfo(start), only, schema: object.schema, table: object.name, descendants, alias, columns, where, returning})
+        })
+        const updateColumnsRule = $.RULE<() => UpdateColumnAst[]>('updateColumnsRule', () => {
             const columns: UpdateColumnAst[] = []
             $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => {
                 const column = $.SUBRULE($.identifierRule)
@@ -716,10 +738,7 @@ class PostgresParser extends EmbeddedActionsParser {
                 ])
                 columns.push({column, value})
             }})
-            const where = $.OPTION5(() => $.SUBRULE($.whereClauseRule))
-            const returning = $.OPTION6(() => $.SUBRULE(returningClauseRule))
-            const end = $.CONSUME(Semicolon)
-            return removeUndefined({kind: 'Update' as const, meta: tokenInfo2(start, end), token: tokenInfo(start), only, schema: object.schema, table: object.name, descendants, alias, columns, where, returning})
+            return columns
         })
 
         // clauses

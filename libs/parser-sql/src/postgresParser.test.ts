@@ -57,7 +57,7 @@ describe('postgresParser', () => {
         // easy:
         // DONE:563  `COMMIT;` (also: 1118)
         // DONE:801  `BEGIN;`
-        // TODO:396  `INSERT INTO ... ON CONFLICT DO NOTHING` (also: 996)
+        // DONE:396  `INSERT INTO ... ON CONFLICT DO NOTHING` (also: 996)
         // TODO:1242 `SELECT datname AS database, current_schema() AS schema` (also: 1560)
         // TODO:1265 `SELECT c.reltuples AS rows` (also: 2418)
         // TODO:2238 `SELECT null_frac AS nulls`
@@ -80,7 +80,7 @@ describe('postgresParser', () => {
         // hard:
         // TODO:12   `(information_schema._pg_expandarray(i.indkey)).n`
         // TODO:847  `select (current_schemas($3))[s.r] as nspname` (also: 1057)
-        // TODO:51   `SELECT * FROM table JOIN ((SELECT * FROM t1 ORDER BY c LIMIT1) UNION (SELECT * FROM t2 ORDER BY c LIMIT1))` (also: 336, 350, 491, 726, 1492, 1983, 2200, 2211, 2304, 2400)
+        // DONE:51   `SELECT * FROM table JOIN ((SELECT * FROM t1 ORDER BY c LIMIT1) UNION (SELECT * FROM t2 ORDER BY c LIMIT1))` (also: 336, 350, 491, 726, 1492, 1983, 2200, 2211, 2304, 2400)
         // TODO:326  `SELECT ... FROM (VALUES ($2, ($3)::text), ($4, ($5)::text)) as v(key, val)` (also: 1169)
     })
     describe('alterTable', () => {
@@ -416,8 +416,33 @@ describe('postgresParser', () => {
                 returning: {token: token(66, 74), columns: [column('id', 76)]},
             }]}})
         })
+        test('conflict', () => {
+            expect(parsePostgresAst("INSERT INTO users VALUES (1, 'loic') ON CONFLICT DO NOTHING;")).toEqual({result: {statements: [{
+                ...stmt('InsertInto', 0, 10, 59),
+                table: identifier('users', 12),
+                values: [[integer(1, 26), string('loic', 29)]],
+                onConflict: {token: token(37, 47), action: kind('Nothing', 49, 58)}
+            }]}})
+            expect(parsePostgresAst("INSERT INTO users VALUES (1, 'loic') ON CONFLICT (id) WHERE id > 10 DO UPDATE SET name = EXCLUDED.name WHERE users.role='guest';")).toEqual({result: {statements: [{
+                ...stmt('InsertInto', 0, 10, 127),
+                table: identifier('users', 12),
+                values: [[integer(1, 26), string('loic', 29)]],
+                onConflict: {
+                    token: token(37, 47),
+                    target: {
+                        kind: 'Columns',
+                        columns: [identifier('id', 50)],
+                        where: {token: token(54, 58), predicate: operation(column('id', 60), op('>', 63), integer(10, 65))}
+                    },
+                    action: {
+                        ...kind('Update', 68, 76),
+                        columns: [{column: identifier('name', 82), value: column('name', 89, 'EXCLUDED')}],
+                        where: {token: token(103, 107), predicate: operation(column('role', 109, 'users'), op('=', 119), string('guest', 120))}
+                    }
+                }
+            }]}})
+        })
         // TODO: `INSERT INTO films SELECT * FROM tmp_films WHERE date_prod < '2004-05-07';`
-        // TODO: `ON CONFLICT (did) DO UPDATE SET dname = EXCLUDED.dname`
     })
     describe('select', () => {
         test('simplest', () => {
@@ -528,6 +553,7 @@ describe('postgresParser', () => {
                     }}
                 }}
             }]}})
+            expect(parsePostgresAst('(SELECT * FROM ((SELECT name FROM users LIMIT 1) UNION (SELECT name FROM organizations LIMIT 1)));').errors).toEqual(undefined)
             expect(parsePostgresAst('(SELECT * FROM users WHERE role=0 ORDER BY id LIMIT 1 OFFSET 0 FETCH FIRST 1 ROW ONLY);').errors).toEqual(undefined)
             // expect(parsePostgresAst('(SELECT * FROM users WHERE role=0 ORDER BY id LIMIT 1 OFFSET 0) FETCH FIRST 1 ROW ONLY;').errors).toEqual(undefined)
             // expect(parsePostgresAst('(SELECT * FROM users WHERE role=0 ORDER BY id LIMIT 1) OFFSET 0 FETCH FIRST 1 ROW ONLY;').errors).toEqual(undefined)

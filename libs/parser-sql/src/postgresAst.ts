@@ -24,7 +24,7 @@ export type CreateTypeStatementAst = { kind: 'CreateType', token: TokenInfo, sch
 export type CreateViewStatementAst = { kind: 'CreateView', token: TokenInfo, replace?: TokenInfo, temporary?: TokenInfo, recursive?: TokenInfo, schema?: IdentifierAst, view: IdentifierAst, columns?: IdentifierAst[], query: SelectStatementInnerAst }
 export type DeleteStatementAst = { kind: 'Delete', token: TokenInfo, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, descendants?: TokenInfo, alias?: AliasAst, using?: FromItemAst & { token: TokenInfo }, where?: WhereClauseAst, returning?: SelectClauseAst }
 export type DropStatementAst = { kind: 'Drop', token: TokenInfo, object: DropObject, entities: ObjectNameAst[], concurrently?: TokenInfo, ifExists?: TokenInfo, mode?: { kind: DropMode, token: TokenInfo } }
-export type InsertIntoStatementAst = { kind: 'InsertInto', token: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, columns?: IdentifierAst[], values: (ExpressionAst | { kind: 'Default', token: TokenInfo })[][], returning?: SelectClauseAst }
+export type InsertIntoStatementAst = { kind: 'InsertInto', token: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, columns?: IdentifierAst[], values: (ExpressionAst | { kind: 'Default', token: TokenInfo })[][], onConflict?: OnConflictClauseAst, returning?: SelectClauseAst }
 export type SelectStatementAst = { kind: 'Select' } & SelectStatementInnerAst
 export type SetStatementAst = { kind: 'Set', token: TokenInfo, scope?: { kind: SetScope, token: TokenInfo }, parameter: IdentifierAst, equal?: { kind: SetAssign, token: TokenInfo }, value: SetValueAst }
 export type UpdateStatementAst = { kind: 'Update', token: TokenInfo, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, descendants?: TokenInfo, alias?: AliasAst, columns: UpdateColumnAst[], where?: WhereClauseAst, returning?: SelectClauseAst }
@@ -78,6 +78,11 @@ export type ConstraintNameAst = { token: TokenInfo, name: IdentifierAst }
 export type ColumnTypeAst = { token: TokenInfo, schema?: IdentifierAst, name: { token: TokenInfo, value: string }, args?: IntegerAst[], array?: TokenInfo }
 export type ForeignKeyActionAst = { action: { kind: ForeignKeyAction, token: TokenInfo }, columns?: IdentifierAst[] }
 export type SetValueAst = IdentifierAst | LiteralAst | (IdentifierAst | LiteralAst)[] | { kind: 'Default', token: TokenInfo }
+export type OnConflictClauseAst = { token: TokenInfo, target?: OnConflictColumns | OnConflictConstraint, action: OnConflictNothing | OnConflictUpdate }
+export type OnConflictColumns = { kind: 'Columns', columns: IdentifierAst[], where?: WhereClauseAst }
+export type OnConflictConstraint = { kind: 'Constraint', token: TokenInfo, name: IdentifierAst }
+export type OnConflictNothing = { kind: 'Nothing', token: TokenInfo }
+export type OnConflictUpdate = { kind: 'Update', columns: UpdateColumnAst[], where?: WhereClauseAst }
 export type TransactionMode = { kind: 'IsolationLevel', token: TokenInfo, level: { kind: 'Serializable' | 'RepeatableRead' | 'ReadCommitted' | 'ReadUncommitted', token: TokenInfo } } | { kind: 'ReadWrite' | 'ReadOnly', token: TokenInfo } | { kind: 'Deferrable', token: TokenInfo, not?: TokenInfo }
 
 // basic parts
