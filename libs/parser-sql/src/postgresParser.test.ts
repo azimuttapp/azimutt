@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import {describe, expect, test} from "@jest/globals";
-import {removeEmpty, removeFieldsDeep} from "@azimutt/utils";
+import {removeEmpty, removeFieldsDeep, removeUndefined} from "@azimutt/utils";
 import {
     AliasAst,
     BooleanAst,
@@ -55,16 +55,6 @@ describe('postgresParser', () => {
         const parsed = parsePostgresAst(sql, {strict: true})
         expect(parsed.errors || []).toEqual([])
         // easy:
-        // DONE:563  `COMMIT;` (also: 1118)
-        // DONE:801  `BEGIN;`
-        // DONE:396  `INSERT INTO ... ON CONFLICT DO NOTHING` (also: 996)
-        // TODO:1242 `SELECT datname AS database, current_schema() AS schema` (also: 1560)
-        // TODO:1265 `SELECT c.reltuples AS rows` (also: 2418)
-        // TODO:2238 `SELECT null_frac AS nulls`
-        // TODO:482  `c.contype IN ($2, $3) AND cn.nspname NOT IN ($4, $5)` (also: 532, 551, 1276, 2344)
-        // TODO:2380 `SELECT split_part(details ->> $1, $2, $3) as email_domain`
-        // TODO:940  `SELECT $1 || queryid || $2 as q`
-        // TODO:425  `SELECT count(distinct to_char(e.created_at, $2)) FROM` (also: 451, 960, 1041, 1178, 1217, 1218, 1765, 2181)
         // TODO:430  `WHERE e.created_at > NOW() - INTERVAL $3` (also: 502, 713, 962, 1046, 1221, 1767, 2186)
         // medium:
         // TODO:1362 `(u0."created_at" > $3::timestamp + (-($4)::numeric * interval $5))`
@@ -76,11 +66,9 @@ describe('postgresParser', () => {
         // TODO:1862 `SELECT ("public"."Event"."details" #>> array [$1]::text[])::text AS "details → source"` (also: 1962)
         // TODO:1415 `SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;` (also: 1934)
         // TODO:321  `SHOW TRANSACTION ISOLATION LEVEL;` (also: 1694)
-        // TODO:1451 `SHOW block_size;` (also: 1825)
         // hard:
         // TODO:12   `(information_schema._pg_expandarray(i.indkey)).n`
         // TODO:847  `select (current_schemas($3))[s.r] as nspname` (also: 1057)
-        // DONE:51   `SELECT * FROM table JOIN ((SELECT * FROM t1 ORDER BY c LIMIT1) UNION (SELECT * FROM t2 ORDER BY c LIMIT1))` (also: 336, 350, 491, 726, 1492, 1983, 2200, 2211, 2304, 2400)
         // TODO:326  `SELECT ... FROM (VALUES ($2, ($3)::text), ($4, ($5)::text)) as v(key, val)` (also: 1169)
     })
     describe('alterTable', () => {
@@ -509,6 +497,7 @@ describe('postgresParser', () => {
                 orderBy: {token: token(93, 100), expressions: [{...column('kind', 102), order: kind('Desc', 107)}]}
             }]}})
         })
+        // TODO: `SELECT DISTINCT name FROM users;`
         test('from select', () => {
             expect(parsePostgresAst('SELECT * FROM (SELECT * FROM users) u WHERE id = 1;')).toEqual({result: {statements: [{
                 ...stmt('Select', 0, 5, 50),
@@ -590,6 +579,20 @@ describe('postgresParser', () => {
             expect(parsePostgresAst('SET standard_conforming_strings = on;')).toEqual({result: {statements: [
                 {...stmt('Set', 0, 2, 36), parameter: identifier('standard_conforming_strings', 4), equal: kind('=', 32), value: identifier('on', 34)}
             ]}})
+        })
+    })
+    describe('show', () => {
+        test('simplest', () => {
+            expect(parsePostgresAst('SHOW block_size;')).toEqual({result: {statements: [{
+                ...stmt('Show', 0, 3, 15),
+                name: identifier('block_size', 5)
+            }]}})
+        })
+        test.skip('complex', () => {
+            expect(parsePostgresAst('SHOW TRANSACTION ISOLATION LEVEL;')).toEqual({result: {statements: [{
+                ...stmt('Show', 0, 3, 32),
+                name: identifier('TRANSACTION ISOLATION LEVEL', 5)
+            }]}})
         })
     })
     describe('update', () => {
@@ -830,16 +833,23 @@ describe('postgresParser', () => {
                     .toEqual({result: {...string('owner', 0), cast: {token: token(7, 8), type: {name: {value: 'character varying', token: token(9, 25)}, token: token(9, 25)}}}})
             })
             test('complex', () => {
-                const id = (value: string) => ({kind: 'Identifier', value})
-                const int = (value: number) => ({kind: 'Integer', value})
-                const col = (column: string) => ({kind: 'Column', column: id(column)})
-                const p = (value: string) => ({kind: 'Parameter', value})
-                const op = (left: any, kind: string, right: any) => ({kind: 'Operation', left, op: {kind}, right})
+                const i = (value: string) => ({kind: 'Identifier', value})
+                const n = (value: number) => ({kind: 'Integer', value})
+                const c = (column: string, table?: string) => removeUndefined({kind: 'Column', table: table ? i(table) : undefined, column: i(column)})
+                const f = (name: string, parameters: any[]) => ({kind: 'Function', function: i(name), parameters})
+                const p = (value: string) => ({kind: 'Parameter', value, index: value === '?' ? undefined : parseInt(value.slice(1))})
+                const o = (left: any, kind: string, right: any) => ({kind: 'Operation', left, op: {kind}, right})
                 const g = (expression: any) => ({kind: 'Group', expression})
-                expect(removeTokens(parseRule(p => p.expressionRule(), 'id'))).toEqual({result: col('id')})
-                expect(removeTokens(parseRule(p => p.expressionRule(), 'id = 0'))).toEqual({result: op(col('id'), '=', int(0))})
-                expect(removeTokens(parseRule(p => p.expressionRule(), 'id = 0 OR id = ?'))).toEqual({result: op(op(col('id'), '=', int(0)), 'Or', op(col('id'), '=', p('?')))})
-                expect(removeTokens(parseRule(p => p.expressionRule(), '(id = 0) OR (id = ?)'))).toEqual({result: op(g(op(col('id'), '=', int(0))), 'Or', g(op(col('id'), '=', p('?'))))})
+                const l = (items: any) => ({kind: 'List', items})
+                expect(removeTokens(parseRule(p => p.expressionRule(), 'id'))).toEqual({result: c('id')})
+                expect(removeTokens(parseRule(p => p.expressionRule(), 'id = 0'))).toEqual({result: o(c('id'), '=', n(0))})
+                expect(removeTokens(parseRule(p => p.expressionRule(), 'id = 0 OR id = ?'))).toEqual({result: o(o(c('id'), '=', n(0)), 'Or', o(c('id'), '=', p('?')))})
+                expect(removeTokens(parseRule(p => p.expressionRule(), '(id = 0) OR (id = ?)'))).toEqual({result: o(g(o(c('id'), '=', n(0))), 'Or', g(o(c('id'), '=', p('?'))))})
+                expect(removeTokens(parseRule(p => p.expressionRule(), 'type IN ($2, $3) AND name NOT IN ($4, $5)'))).toEqual({result: o(o(c('type'), 'In', l([p('$2'), p('$3')])), 'And', o(c('name'), 'NotIn', l([p('$4'), p('$5')])))})
+                expect(removeTokens(parseRule(p => p.expressionRule(), 'split_part(details ->> $1, $2, $3)'))).toEqual({result: f('split_part', [{...c('details'), json: [{kind: '->>', field: p('$1')}]}, p('$2'), p('$3')])})
+                expect(removeTokens(parseRule(p => p.expressionRule(), '$1 || queryid'))).toEqual({result: o(p('$1'), '||', c('queryid'))})
+                expect(removeTokens(parseRule(p => p.expressionRule(), '$1 || queryid ~ $2'))).toEqual({result: o(o(p('$1'), '||', c('queryid')), '~', p('$2'))})
+                expect(removeTokens(parseRule(p => p.expressionRule(), 'count(distinct to_char(e.created_at, $2))'))).toEqual({result: {...f('count', [f('to_char', [c('created_at', 'e'), p('$2')])]), distinct: {}}})
             })
         })
         describe('objectNameRule', () => {
@@ -916,10 +926,16 @@ describe('postgresParser', () => {
             test('not empty', () => {
                 expect(parseRule(p => p.identifierRule(), '""')).toEqual({errors: [
                     {kind: 'LexingError', level: 'error', message: 'unexpected character: ->"<- at offset: 0, skipped 2 characters.', ...token(0, 2)},
-                    {kind: 'NoViableAltException', level: 'error', message: "Expecting: one of these possible Token sequences:\n  1. [Identifier]\n  2. [Index]\n  3. [Version]\nbut found: ''", offset: {start: -1, end: -1}, position: {start: {line: -1, column: -1}, end: {line: -1, column: -1}}}
+                    {kind: 'NoViableAltException', level: 'error', message: "Expecting: one of these possible Token sequences:\n  1. [Identifier]\n  2. [Database]\n  3. [Index]\n  4. [Nulls]\n  5. [Rows]\n  6. [Schema]\n  7. [Type]\n  8. [Version]\nbut found: ''", offset: {start: -1, end: -1}, position: {start: {line: -1, column: -1}, end: {line: -1, column: -1}}}
                 ]})
             })
             test('special', () => {
+                expect(parseRule(p => p.identifierRule(), 'database')).toEqual({result: identifier('database', 0)})
+                expect(parseRule(p => p.identifierRule(), 'index')).toEqual({result: identifier('index', 0)})
+                expect(parseRule(p => p.identifierRule(), 'nulls')).toEqual({result: identifier('nulls', 0)})
+                expect(parseRule(p => p.identifierRule(), 'rows')).toEqual({result: identifier('rows', 0)})
+                expect(parseRule(p => p.identifierRule(), 'schema')).toEqual({result: identifier('schema', 0)})
+                expect(parseRule(p => p.identifierRule(), 'type')).toEqual({result: identifier('type', 0)})
                 expect(parseRule(p => p.identifierRule(), 'version')).toEqual({result: identifier('version', 0)})
             })
         })

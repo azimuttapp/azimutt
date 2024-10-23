@@ -63,6 +63,7 @@ import {
     SelectStatementMainAst,
     SelectStatementResultAst,
     SetStatementAst,
+    ShowStatementAst,
     SortNullsAst,
     SortOrderAst,
     StatementAst,
@@ -194,6 +195,7 @@ const Session = createToken({name: 'Session', pattern: /\bSESSION\b/i, longer_al
 const SetDefault = createToken({name: 'SetDefault', pattern: /\bSET\s+DEFAULT\b/i})
 const SetNull = createToken({name: 'SetNull', pattern: /\bSET\s+NULL\b/i})
 const Set = createToken({name: 'Set', pattern: /\bSET\b/i, longer_alt: Identifier})
+const Show = createToken({name: 'Show', pattern: /\bSHOW\b/i, longer_alt: Identifier})
 const Table = createToken({name: 'Table', pattern: /\bTABLE\b/i, longer_alt: Identifier})
 const Temp = createToken({name: 'Temp', pattern: /\bTEMP\b/i, longer_alt: Identifier})
 const Temporary = createToken({name: 'Temporary', pattern: /\bTEMPORARY\b/i, longer_alt: Identifier})
@@ -221,7 +223,7 @@ const keywordTokens: TokenType[] = [
     Inner, InsertInto, Intersect, Is, IsNull, IsolationLevel, Join, Last, Left, Like, Limit, Local, MaterializedView,
     Natural, Next, No, NoAction, Not, Nothing, NotNull, Null, Nulls, Offset, On, Only, Or, OrderBy, Outer, PrimaryKey,
     ReadCommitted, ReadOnly, ReadUncommitted, ReadWrite, Recursive, References, RepeatableRead, Replace, Restrict,
-    Returning, Right, Row, Rows, Schema, Select, Serializable, Session, SetDefault, SetNull, Set, Table, Temp,
+    Returning, Right, Row, Rows, Schema, Select, Serializable, Session, SetDefault, SetNull, Set, Show, Table, Temp,
     Temporary, Ties, To, Transaction, True, Type, Union, Unique, Unlogged, Update, Using, Values, Version, View, Where,
     Window, With, Work
 ]
@@ -280,6 +282,7 @@ class PostgresParser extends EmbeddedActionsParser {
     insertIntoStatementRule: () => InsertIntoStatementAst
     selectStatementRule: () => SelectStatementAst
     setStatementRule: () => SetStatementAst
+    showStatementRule: () => ShowStatementAst
     updateStatementRule: () => UpdateStatementAst
     // clauses
     selectClauseRule: () => SelectClauseAst
@@ -332,6 +335,7 @@ class PostgresParser extends EmbeddedActionsParser {
             {ALT: () => $.SUBRULE($.insertIntoStatementRule)},
             {ALT: () => $.SUBRULE($.selectStatementRule)},
             {ALT: () => $.SUBRULE($.setStatementRule)},
+            {ALT: () => $.SUBRULE($.showStatementRule)},
             {ALT: () => $.SUBRULE($.updateStatementRule)},
         ]))
 
@@ -713,6 +717,14 @@ class PostgresParser extends EmbeddedActionsParser {
             return removeUndefined({kind: 'Set' as const, meta: tokenInfo2(start, end), token: tokenInfo(start), scope, parameter, equal, value})
         })
 
+        this.showStatementRule = $.RULE<() => ShowStatementAst>('showStatementRule', () => {
+            // https://www.postgresql.org/docs/current/sql-show.html
+            const start = $.CONSUME(Show)
+            const name = $.SUBRULE($.identifierRule)
+            const end = $.CONSUME(Semicolon)
+            return removeUndefined({kind: 'Show' as const, meta: tokenInfo2(start, end), token: tokenInfo(start), name})
+        })
+
         this.updateStatementRule = $.RULE<() => UpdateStatementAst>('updateStatementRule', () => {
             // https://www.postgresql.org/docs/current/sql-update.html
             const start = $.CONSUME(Update)
@@ -1085,7 +1097,7 @@ class PostgresParser extends EmbeddedActionsParser {
         })
         const operatorExpressionRule = $.RULE<() => ExpressionAst>('operatorExpressionRule', () => {
             let expr = $.SUBRULE(unaryExpressionRule) // unary has higher precedence than other operators
-            $.OPTION(() => {
+            $.MANY(() => {
                 const op = $.SUBRULE(operatorRule)
                 if (['In', 'NotIn'].includes(op?.kind)) {
                     const right = $.SUBRULE(listRule)
@@ -1113,12 +1125,11 @@ class PostgresParser extends EmbeddedActionsParser {
             const expr = $.OR([
                 {ALT: () => $.SUBRULE(groupRule)},
                 {ALT: () => $.SUBRULE($.literalRule)},
-                {ALT: () => $.SUBRULE($.parameterRule)},
                 {ALT: () => ({kind: 'Wildcard', token: tokenInfo($.CONSUME(Asterisk))})},
                 {ALT: () => {
                     const first = $.SUBRULE($.identifierRule)
                     const nest = $.OPTION(() => $.OR2([
-                        {ALT: () => ({kind: 'Function', function: first, parameters: $.SUBRULE(functionParamsRule)})},
+                        {ALT: () => removeUndefined({kind: 'Function', function: first, ...($.SUBRULE(functionParamsRule) || {})})},
                         {ALT: () => {
                             $.CONSUME(Dot)
                             return $.OR3([
@@ -1126,7 +1137,7 @@ class PostgresParser extends EmbeddedActionsParser {
                                 {ALT: () => {
                                     const second = $.SUBRULE2($.identifierRule)
                                     const nest2 = $.OPTION2(() => $.OR4([
-                                        {ALT: () => ({kind: 'Function', schema: first, function: second, parameters: $.SUBRULE2(functionParamsRule)})},
+                                        {ALT: () => removeUndefined({kind: 'Function', schema: first, function: second, ...($.SUBRULE2(functionParamsRule) || {})})},
                                         {ALT: () => {
                                             $.CONSUME2(Dot)
                                             return $.OR5([
@@ -1231,7 +1242,10 @@ class PostgresParser extends EmbeddedActionsParser {
             const res: ColumnJsonAst[] = []
             $.MANY({DEF: () => {
                 const nest = $.SUBRULE(jsonOpRule)
-                const field = $.SUBRULE($.stringRule)
+                const field = $.OR([
+                    {ALT: () => $.SUBRULE($.stringRule)},
+                    {ALT: () => $.SUBRULE($.parameterRule)}
+                ])
                 res.push({...nest, field})
             }})
             return res
@@ -1242,12 +1256,13 @@ class PostgresParser extends EmbeddedActionsParser {
             const gt2 = $.OPTION(() => $.CONSUME2(GreaterThan))
             return gt2 ? {kind: '->>' as const, token: tokenInfo3(dash, gt, gt2)} : {kind: '->' as const, token: tokenInfo2(dash, gt)}
         })
-        const functionParamsRule = $.RULE<() => ExpressionAst[]>('functionParamsRule', () => {
+        const functionParamsRule = $.RULE<() => { distinct?: {token: TokenInfo}, parameters: ExpressionAst[] }>('functionParamsRule', () => {
             $.CONSUME(ParenLeft)
+            const distinct = $.OPTION(() => ({token: tokenInfo($.CONSUME(Distinct))}))
             const parameters: ExpressionAst[] = []
             $.MANY_SEP({SEP: Comma, DEF: () => parameters.push($.SUBRULE($.expressionRule))})
             $.CONSUME(ParenRight)
-            return parameters.filter(isNotUndefined)
+            return {distinct, parameters: parameters.filter(isNotUndefined)}
         })
 
         this.objectNameRule = $.RULE<() => ObjectNameAst>('objectNameRule', () => {
@@ -1294,6 +1309,7 @@ class PostgresParser extends EmbeddedActionsParser {
             {ALT: () => $.SUBRULE($.integerRule)},
             {ALT: () => $.SUBRULE($.booleanRule)},
             {ALT: () => $.SUBRULE($.nullRule)},
+            {ALT: () => $.SUBRULE($.parameterRule)},
         ]))
 
         // elements
@@ -1316,7 +1332,12 @@ class PostgresParser extends EmbeddedActionsParser {
                     return {kind: 'Identifier', token: tokenInfo(token), value: token.image}
                 }
             }},
+            {ALT: () => toIdentifier($.CONSUME(Database))}, // allowed as identifier
             {ALT: () => toIdentifier($.CONSUME(Index))}, // allowed as identifier
+            {ALT: () => toIdentifier($.CONSUME(Nulls))}, // allowed as identifier
+            {ALT: () => toIdentifier($.CONSUME(Rows))}, // allowed as identifier
+            {ALT: () => toIdentifier($.CONSUME(Schema))}, // allowed as identifier
+            {ALT: () => toIdentifier($.CONSUME(Type))}, // allowed as identifier
             {ALT: () => toIdentifier($.CONSUME(Version))}, // allowed as identifier
         ]))
 

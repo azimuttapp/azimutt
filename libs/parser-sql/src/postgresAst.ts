@@ -12,7 +12,7 @@ import {ParserErrorLevel, TokenPosition} from "@azimutt/models";
 export type StatementsAst = { statements: StatementAst[] }
 export type StatementAst = { meta: TokenInfo } & (AlterTableStatementAst | BeginStatementAst | CommentOnStatementAst | CommitStatementAst | CreateExtensionStatementAst |
     CreateIndexStatementAst | CreateTableStatementAst | CreateTypeStatementAst | CreateViewStatementAst | DeleteStatementAst | DropStatementAst | InsertIntoStatementAst |
-    SelectStatementAst | SetStatementAst | UpdateStatementAst)
+    SelectStatementAst | SetStatementAst | ShowStatementAst | UpdateStatementAst)
 export type AlterTableStatementAst = { kind: 'AlterTable', token: TokenInfo, ifExists?: TokenInfo, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, action: AlterTableActionAst }
 export type BeginStatementAst = { kind: 'Begin', token: TokenInfo, object?: {kind: 'Work' | 'Transaction', token: TokenInfo}, modes?: TransactionMode[] }
 export type CommentOnStatementAst = { kind: 'CommentOn', token: TokenInfo, object: { token: TokenInfo, kind: CommentObject }, schema?: IdentifierAst, parent?: IdentifierAst, entity: IdentifierAst, comment: StringAst | NullAst }
@@ -27,6 +27,7 @@ export type DropStatementAst = { kind: 'Drop', token: TokenInfo, object: DropObj
 export type InsertIntoStatementAst = { kind: 'InsertInto', token: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, columns?: IdentifierAst[], values: (ExpressionAst | { kind: 'Default', token: TokenInfo })[][], onConflict?: OnConflictClauseAst, returning?: SelectClauseAst }
 export type SelectStatementAst = { kind: 'Select' } & SelectStatementInnerAst
 export type SetStatementAst = { kind: 'Set', token: TokenInfo, scope?: { kind: SetScope, token: TokenInfo }, parameter: IdentifierAst, equal?: { kind: SetAssign, token: TokenInfo }, value: SetValueAst }
+export type ShowStatementAst = { kind: 'Show', token: TokenInfo, name: IdentifierAst }
 export type UpdateStatementAst = { kind: 'Update', token: TokenInfo, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, descendants?: TokenInfo, alias?: AliasAst, columns: UpdateColumnAst[], where?: WhereClauseAst, returning?: SelectClauseAst }
 
 // clauses
@@ -91,8 +92,8 @@ export type ObjectNameAst = { schema?: IdentifierAst, name: IdentifierAst }
 export type ExpressionAst = (LiteralAst | ParameterAst | ColumnAst | WildcardAst | FunctionAst | GroupAst | OperationAst | OperationLeftAst | OperationRightAst | ListAst) & { cast?: { token: TokenInfo, type: ColumnTypeAst } }
 export type LiteralAst = StringAst | IntegerAst | DecimalAst | BooleanAst | NullAst
 export type ColumnAst = { kind: 'Column', schema?: IdentifierAst, table?: IdentifierAst, column: IdentifierAst, json?: ColumnJsonAst[] }
-export type ColumnJsonAst = { kind: JsonOp, token: TokenInfo, field: StringAst }
-export type FunctionAst = { kind: 'Function', schema?: IdentifierAst, function: IdentifierAst, parameters: ExpressionAst[] }
+export type ColumnJsonAst = { kind: JsonOp, token: TokenInfo, field: StringAst | ParameterAst }
+export type FunctionAst = { kind: 'Function', schema?: IdentifierAst, function: IdentifierAst, distinct?: { token: TokenInfo }, parameters: ExpressionAst[] }
 export type GroupAst = { kind: 'Group', expression: ExpressionAst }
 export type WildcardAst = { kind: 'Wildcard', token: TokenInfo, schema?: IdentifierAst, table?: IdentifierAst }
 export type OperationAst = { kind: 'Operation', left: ExpressionAst, op: OperatorAst, right: ExpressionAst }
