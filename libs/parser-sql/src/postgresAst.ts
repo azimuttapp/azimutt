@@ -34,10 +34,10 @@ export type UpdateStatementAst = { kind: 'Update', token: TokenInfo, only?: Toke
 export type CreateTableModeAst = ({ kind: 'Unlogged', token: TokenInfo }) | ({ kind: 'Temporary', token: TokenInfo, scope?: { kind: 'Local' | 'Global', token: TokenInfo } })
 export type UpdateColumnAst = { column: IdentifierAst, value: ExpressionAst | { kind: 'Default', token: TokenInfo } }
 export type SelectStatementInnerAst = SelectStatementMainAst & SelectStatementResultAst
-export type SelectStatementMainAst = SelectClauseAst & { from?: FromClauseAst, where?: WhereClauseAst, groupBy?: GroupByClauseAst, having?: HavingClauseAst }
+export type SelectStatementMainAst = SelectClauseAst & { from?: FromClauseAst, where?: WhereClauseAst, groupBy?: GroupByClauseAst, having?: HavingClauseAst, window?: WindowClauseAst[] }
 export type SelectStatementResultAst = { union?: UnionClauseAst, orderBy?: OrderByClauseAst, limit?: LimitClauseAst, offset?: OffsetClauseAst, fetch?: FetchClauseAst }
-export type SelectClauseAst = { token: TokenInfo, columns: SelectClauseExprAst[] }
-export type SelectClauseExprAst = ExpressionAst & { alias?: AliasAst }
+export type SelectClauseAst = { token: TokenInfo, distinct?: { token: TokenInfo, on?: { token: TokenInfo, columns: ExpressionAst[] } }, columns: SelectClauseColumnAst[] }
+export type SelectClauseColumnAst = ExpressionAst & { filter?: { token: TokenInfo, where: WhereClauseAst }, over?: { token: TokenInfo } & ({ name: IdentifierAst } | WindowClauseContentAst), alias?: AliasAst }
 export type FromClauseAst = FromItemAst & { token: TokenInfo, joins?: FromJoinAst[] }
 export type FromItemAst = (FromTableAst | FromQueryAst) & { alias?: AliasAst }
 export type FromTableAst = { kind: 'Table', schema?: IdentifierAst, table: IdentifierAst }
@@ -49,6 +49,8 @@ export type FromJoinNaturalAst = { kind: 'Natural', token: TokenInfo }
 export type WhereClauseAst = { token: TokenInfo, predicate: ExpressionAst }
 export type GroupByClauseAst = { token: TokenInfo, mode: { kind: 'All' | 'Distinct', token: TokenInfo }, expressions: ExpressionAst[] }
 export type HavingClauseAst = { token: TokenInfo, predicate: ExpressionAst }
+export type WindowClauseAst = { token: TokenInfo, name: IdentifierAst } & WindowClauseContentAst
+export type WindowClauseContentAst = { partitionBy?: { token: TokenInfo, columns: ExpressionAst[] }, orderBy?: OrderByClauseAst }
 export type UnionClauseAst = { kind: 'Union' | 'Intersect' | 'Except', token: TokenInfo, mode: { kind: 'All' | 'Distinct', token: TokenInfo }, select: SelectStatementInnerAst } // TODO: VALUES also allowed
 export type OrderByClauseAst = { token: TokenInfo, expressions: (ExpressionAst & { order?: SortOrderAst, nulls?: SortNullsAst })[] }
 export type LimitClauseAst = { token: TokenInfo, value: IntegerAst | ParameterAst | ({ kind: 'All', token: TokenInfo }) }
@@ -118,7 +120,7 @@ export type CommentAst = { kind: CommentKind, token: TokenInfo, value: string } 
 
 // enums
 export type Operator = '+' | '-' | '*' | '/' | '%' | '^' | '&' | '|' | '#' | '<<' | '>>' | '=' | '<' | '>' | '<=' | '>=' | '<>' | '!=' | '||' | '~' | '~*' | '!~' | '!~*' | 'Is' | 'Like' | 'NotLike' | 'In' | 'NotIn' | 'Or' | 'And'
-export type OperatorLeft = 'Not' | '~'
+export type OperatorLeft = 'Not' | 'Interval' | '~'
 export type OperatorRight = 'IsNull' | 'NotNull'
 export type JsonOp = '->' | '->>'
 export type ForeignKeyAction = 'NoAction' | 'Restrict' | 'Cascade' | 'SetNull' | 'SetDefault'

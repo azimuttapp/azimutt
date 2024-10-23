@@ -26,7 +26,8 @@ import {
     ParameterAst,
     StringAst,
     TokenInfo,
-    TokenIssue
+    TokenIssue,
+    WildcardAst
 } from "./postgresAst";
 import {parsePostgresAst, parseRule} from "./postgresParser";
 
@@ -54,13 +55,9 @@ describe('postgresParser', () => {
         const sql = fs.readFileSync('./resources/pg_statements.sql', 'utf8')
         const parsed = parsePostgresAst(sql, {strict: true})
         expect(parsed.errors || []).toEqual([])
-        // easy:
-        // TODO:430  `WHERE e.created_at > NOW() - INTERVAL $3` (also: 502, 713, 962, 1046, 1221, 1767, 2186)
         // medium:
         // TODO:1362 `(u0."created_at" > $3::timestamp + (-($4)::numeric * interval $5))`
         // TODO:2155 `ARRAY(SELECT a.atttypid)`
-        // TODO:1218 `count(distinct e.created_by) FILTER (WHERE u.created_at + interval $2 < e.created_at)`
-        // TODO:814  `SELECT row_number() OVER (PARTITION BY a.attrelid ORDER BY a.attnum) AS attnum`
         // TODO:1639 `SELECT CASE con.confupdtype WHEN $3 THEN $4 ELSE $15 END AS UPDATE_RULE`
         // TODO:2010 `SELECT CASE n.nspname ~ $2 OR n.nspname = $3 WHEN $4 THEN CASE ELSE $51 END AS TABLE_TYPE`
         // TODO:1862 `SELECT ("public"."Event"."details" #>> array [$1]::text[])::text AS "details → source"` (also: 1962)
@@ -306,7 +303,7 @@ describe('postgresParser', () => {
                 view: identifier('admins', 12),
                 query: {
                     token: token(22, 27),
-                    columns: [kind('Wildcard', 29, 29)],
+                    columns: [wildcard(29)],
                     from: {token: token(31, 34), kind: 'Table', table: identifier('users', 36)},
                     where: {token: token(42, 46), predicate: operation(column('role', 48), op('=', 53), string('admin', 55))},
                 },
@@ -322,7 +319,7 @@ describe('postgresParser', () => {
                 columns: [identifier('id', 46), identifier('name', 50)],
                 query: {
                     token: token(59, 64),
-                    columns: [kind('Wildcard', 66, 66)],
+                    columns: [wildcard(66)],
                     from: {token: token(68, 71), kind: 'Table', table: identifier('users', 73)},
                     where: {token: token(79, 83), predicate: operation(column('role', 85), op('=', 90), string('admin', 92))},
                 },
@@ -345,7 +342,7 @@ describe('postgresParser', () => {
                 descendants: token(30, 30),
                 alias: alias('t', 32),
                 where: {token: token(34, 38), predicate: operation(column('status', 40, 't'), op('=', 49), string('DONE', 51))},
-                returning: {token: token(58, 66), columns: [kind('Wildcard', 68, 68)]}
+                returning: {token: token(58, 66), columns: [wildcard(68)]}
             }]}})
         })
         test('using', () => {
@@ -469,7 +466,7 @@ describe('postgresParser', () => {
                 ' NATURAL CROSS JOIN demo;'
             )).toEqual({result: {statements: [{
                 ...stmt('Select', 0, 5, 142),
-                columns: [kind('Wildcard', 7, 7)],
+                columns: [wildcard(7)],
                 from: {token: token(9, 12), kind: 'Table', table: identifier('events', 14), alias: alias('e', 21), joins: [{
                     ...kind('Inner', 23, 26),
                     from: {kind: 'Table', table: identifier('users', 28), alias: alias('u', 34)},
@@ -497,17 +494,30 @@ describe('postgresParser', () => {
                 orderBy: {token: token(93, 100), expressions: [{...column('kind', 102), order: kind('Desc', 107)}]}
             }]}})
         })
-        // TODO: `SELECT DISTINCT name FROM users;`
+        test('distinct', () => {
+            expect(parsePostgresAst('SELECT DISTINCT name, email FROM users;')).toEqual({result: {statements: [{
+                ...stmt('Select', 0, 5, 38),
+                distinct: {token: token(7, 14)},
+                columns: [column('name', 16), column('email', 22)],
+                from: {token: token(28, 31), kind: 'Table', table: identifier('users', 33)}
+            }]}})
+            expect(parsePostgresAst('SELECT DISTINCT ON (email) name, email FROM users;')).toEqual({result: {statements: [{
+                ...stmt('Select', 0, 5, 49),
+                distinct: {token: token(7, 14), on: {token: token(16, 17), columns: [column('email', 20)]}},
+                columns: [column('name', 27), column('email', 33)],
+                from: {token: token(39, 42), kind: 'Table', table: identifier('users', 44)}
+            }]}})
+        })
         test('from select', () => {
             expect(parsePostgresAst('SELECT * FROM (SELECT * FROM users) u WHERE id = 1;')).toEqual({result: {statements: [{
                 ...stmt('Select', 0, 5, 50),
-                columns: [kind('Wildcard', 7, 7)],
+                columns: [wildcard(7)],
                 from: {
                     token: token(9, 12),
                     kind: 'Select',
                     select: {
                         token: token(15, 20),
-                        columns: [kind('Wildcard', 22, 22)],
+                        columns: [wildcard(22)],
                         from: {token: token(24, 27), kind: 'Table', table: identifier('users', 29)},
                     },
                     alias: alias('u', 36)
@@ -527,10 +537,43 @@ describe('postgresParser', () => {
                 }}
             }]}})
         })
+        test('filter', () => {
+            expect(parsePostgresAst('SELECT count(*) AS user_count, count(*) FILTER (WHERE spend > 5000) AS top_user_count FROM users;')).toEqual({result: {statements: [{
+                ...stmt('Select', 0, 5, 96),
+                columns: [{...function_('count', 7, [wildcard(13)]), alias: alias('user_count', 19, 16)}, {
+                    ...function_('count', 31, [wildcard(37)]),
+                    filter: {token: token(40, 45), where: {token: token(48, 52), predicate: operation(column('spend', 54), op('>', 60), integer(5000, 62))}},
+                    alias: alias('top_user_count', 71, 68)
+                }],
+                from: {token: token(86, 89), kind: 'Table', table: identifier('users', 91)}
+            }]}})
+        })
+        test('window', () => {
+            expect(parsePostgresAst('SELECT org, salary, avg(salary) OVER (PARTITION BY org ORDER BY salary DESC) FROM users;')).toEqual({result: {statements: [{
+                ...stmt('Select', 0, 5, 87),
+                columns: [column('org', 7), column('salary', 12), {...function_('avg', 20, [column('salary', 24)]), over: {
+                    token: token(32, 35),
+                    partitionBy: {token: token(38, 49), columns: [column('org', 51)]},
+                    orderBy: {token: token(55, 62), expressions: [{...column('salary', 64), order: kind('Desc', 71)}]}
+                }}],
+                from: {token: token(77, 80), kind: 'Table', table: identifier('users', 82)}
+            }]}})
+            expect(parsePostgresAst('SELECT org, salary, avg(salary) OVER org_window FROM users WINDOW org_window AS (PARTITION BY org ORDER BY salary DESC);')).toEqual({result: {statements: [{
+                ...stmt('Select', 0, 5, 119),
+                columns: [column('org', 7), column('salary', 12), {...function_('avg', 20, [column('salary', 24)]), over: {token: token(32, 35), name: identifier('org_window', 37)}}],
+                from: {token: token(48, 51), kind: 'Table', table: identifier('users', 53)},
+                window: [{
+                    token: token(59, 64),
+                    name: identifier('org_window', 66),
+                    partitionBy: {token: token(81, 92), columns: [column('org', 94)]},
+                    orderBy: {token: token(98, 105), expressions: [{...column('salary', 107), order: kind('Desc', 114)}]}
+                }]
+            }]}})
+        })
         test('flexible parenthesis', () => {
             expect(parsePostgresAst('(SELECT * FROM ((SELECT name FROM users) UNION (SELECT name FROM organizations)));')).toEqual({result: {statements: [{
                 ...stmt('Select', 1, 6, 81),
-                columns: [kind('Wildcard', 8, 8)],
+                columns: [wildcard(8)],
                 from: {token: token(10, 13), kind: 'Select', select: {
                     token: token(17, 22),
                     columns: [column('name', 24)],
@@ -620,7 +663,7 @@ describe('postgresParser', () => {
             })
             test('complex', () => {
                 expect(parseRule(p => p.selectClauseRule(), 'SELECT e.*, u.name AS user_name, lower(u.email), "public"."Event"."id"')).toEqual({result: {token: token(0, 5), columns: [
-                    {table: identifier('e', 7), ...kind('Wildcard', 9, 9)},
+                    {table: identifier('e', 7), ...wildcard(9)},
                     {...column('name', 12, 'u'), alias: alias('user_name', 22, 19)},
                     function_('lower', 33, [column('email', 39, 'u')]),
                     {kind: 'Column', schema: {...identifier('public', 49, 56), quoted: true}, table: {...identifier('Event', 58, 64), quoted: true}, column: {...identifier('id', 66, 69), quoted: true}}
@@ -767,9 +810,9 @@ describe('postgresParser', () => {
                 ]}})
             })
             test('wildcard', () => {
-                expect(parseRule(p => p.expressionRule(), '*')).toEqual({result: kind('Wildcard', 0, 0)})
-                expect(parseRule(p => p.expressionRule(), 'users.*')).toEqual({result: {table: identifier('users', 0), ...kind('Wildcard', 6, 6)}})
-                expect(parseRule(p => p.expressionRule(), 'public.users.*')).toEqual({result: {schema: identifier('public', 0), table: identifier('users', 7), ...kind('Wildcard', 13, 13)}})
+                expect(parseRule(p => p.expressionRule(), '*')).toEqual({result: wildcard(0)})
+                expect(parseRule(p => p.expressionRule(), 'users.*')).toEqual({result: {table: identifier('users', 0), ...wildcard(6)}})
+                expect(parseRule(p => p.expressionRule(), 'public.users.*')).toEqual({result: {schema: identifier('public', 0), table: identifier('users', 7), ...wildcard(13)}})
             })
             test('function', () => {
                 expect(parseRule(p => p.expressionRule(), 'max(price)')).toEqual({result: function_('max', 0, [column('price', 4)])})
@@ -839,17 +882,20 @@ describe('postgresParser', () => {
                 const f = (name: string, parameters: any[]) => ({kind: 'Function', function: i(name), parameters})
                 const p = (value: string) => ({kind: 'Parameter', value, index: value === '?' ? undefined : parseInt(value.slice(1))})
                 const o = (left: any, kind: string, right: any) => ({kind: 'Operation', left, op: {kind}, right})
+                const u = (kind: string, right: any) => ({kind: 'OperationLeft', op: {kind}, right})
                 const g = (expression: any) => ({kind: 'Group', expression})
                 const l = (items: any) => ({kind: 'List', items})
-                expect(removeTokens(parseRule(p => p.expressionRule(), 'id'))).toEqual({result: c('id')})
-                expect(removeTokens(parseRule(p => p.expressionRule(), 'id = 0'))).toEqual({result: o(c('id'), '=', n(0))})
-                expect(removeTokens(parseRule(p => p.expressionRule(), 'id = 0 OR id = ?'))).toEqual({result: o(o(c('id'), '=', n(0)), 'Or', o(c('id'), '=', p('?')))})
-                expect(removeTokens(parseRule(p => p.expressionRule(), '(id = 0) OR (id = ?)'))).toEqual({result: o(g(o(c('id'), '=', n(0))), 'Or', g(o(c('id'), '=', p('?'))))})
-                expect(removeTokens(parseRule(p => p.expressionRule(), 'type IN ($2, $3) AND name NOT IN ($4, $5)'))).toEqual({result: o(o(c('type'), 'In', l([p('$2'), p('$3')])), 'And', o(c('name'), 'NotIn', l([p('$4'), p('$5')])))})
-                expect(removeTokens(parseRule(p => p.expressionRule(), 'split_part(details ->> $1, $2, $3)'))).toEqual({result: f('split_part', [{...c('details'), json: [{kind: '->>', field: p('$1')}]}, p('$2'), p('$3')])})
-                expect(removeTokens(parseRule(p => p.expressionRule(), '$1 || queryid'))).toEqual({result: o(p('$1'), '||', c('queryid'))})
-                expect(removeTokens(parseRule(p => p.expressionRule(), '$1 || queryid ~ $2'))).toEqual({result: o(o(p('$1'), '||', c('queryid')), '~', p('$2'))})
-                expect(removeTokens(parseRule(p => p.expressionRule(), 'count(distinct to_char(e.created_at, $2))'))).toEqual({result: {...f('count', [f('to_char', [c('created_at', 'e'), p('$2')])]), distinct: {}}})
+                const parse = (input: string) => removeTokens(parseRule(p => p.expressionRule(), input))
+                expect(parse('id')).toEqual({result: c('id')})
+                expect(parse('id = 0')).toEqual({result: o(c('id'), '=', n(0))})
+                expect(parse('id = 0 OR id = ?')).toEqual({result: o(o(c('id'), '=', n(0)), 'Or', o(c('id'), '=', p('?')))})
+                expect(parse('(id = 0) OR (id = ?)')).toEqual({result: o(g(o(c('id'), '=', n(0))), 'Or', g(o(c('id'), '=', p('?'))))})
+                expect(parse('type IN ($2, $3) AND name NOT IN ($4, $5)')).toEqual({result: o(o(c('type'), 'In', l([p('$2'), p('$3')])), 'And', o(c('name'), 'NotIn', l([p('$4'), p('$5')])))})
+                expect(parse('split_part(details ->> $1, $2, $3)')).toEqual({result: f('split_part', [{...c('details'), json: [{kind: '->>', field: p('$1')}]}, p('$2'), p('$3')])})
+                expect(parse('$1 || queryid')).toEqual({result: o(p('$1'), '||', c('queryid'))})
+                expect(parse('$1 || queryid ~ $2')).toEqual({result: o(o(p('$1'), '||', c('queryid')), '~', p('$2'))})
+                expect(parse('count(distinct to_char(e.created_at, $2))')).toEqual({result: {...f('count', [f('to_char', [c('created_at', 'e'), p('$2')])]), distinct: {}}})
+                expect(parse('e.created_at > NOW() - INTERVAL $3')).toEqual({result: o(o(c('created_at', 'e'), '>', f('NOW', [])), '-', u('Interval', p('$3')))})
             })
         })
         describe('objectNameRule', () => {
@@ -924,9 +970,10 @@ describe('postgresParser', () => {
                 expect(parseRule(p => p.identifierRule(), '"an id with \\""')).toEqual({result: {...identifier('an id with "', 0, 14), quoted: true}})
             })
             test('not empty', () => {
+                const specials = ['Database', 'Deferrable', 'Index', 'Nulls', 'Rows', 'Schema', 'Type', 'Version']
                 expect(parseRule(p => p.identifierRule(), '""')).toEqual({errors: [
                     {kind: 'LexingError', level: 'error', message: 'unexpected character: ->"<- at offset: 0, skipped 2 characters.', ...token(0, 2)},
-                    {kind: 'NoViableAltException', level: 'error', message: "Expecting: one of these possible Token sequences:\n  1. [Identifier]\n  2. [Database]\n  3. [Index]\n  4. [Nulls]\n  5. [Rows]\n  6. [Schema]\n  7. [Type]\n  8. [Version]\nbut found: ''", offset: {start: -1, end: -1}, position: {start: {line: -1, column: -1}, end: {line: -1, column: -1}}}
+                    {kind: 'NoViableAltException', level: 'error', message: `Expecting: one of these possible Token sequences:\n  1. [Identifier]${specials.map((n, i) => `\n  ${i + 2}. [${n}]`).join('')}\nbut found: ''`, offset: {start: -1, end: -1}, position: {start: {line: -1, column: -1}, end: {line: -1, column: -1}}}
                 ]})
             })
             test('special', () => {
@@ -1012,6 +1059,10 @@ function operationRight(left: ExpressionAst, op: OperatorRightAst): OperationRig
 
 function group(expression: ExpressionAst): GroupAst {
     return {kind: 'Group', expression}
+}
+
+function wildcard(start: number): WildcardAst {
+    return {kind: 'Wildcard', token: token(start, start)}
 }
 
 function column(name: string, start: number, table?: string, schema?: string): ColumnAst {
