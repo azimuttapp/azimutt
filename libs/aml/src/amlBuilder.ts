@@ -38,15 +38,15 @@ import packageJson from "../package.json";
 import {
     AmlAst,
     AttributeAstNested,
-    AttributeConstraintAst,
     AttributePathAst,
+    AttributePkAst,
     AttributeRelationAst,
     AttributeValueAst,
     EntityRefAst,
     EntityStatement,
-    ExpressionToken,
+    ExpressionAst,
     ExtraAst,
-    IdentifierToken,
+    IdentifierAst,
     NamespaceStatement,
     PropertiesAst,
     PropertyValue,
@@ -61,12 +61,12 @@ import {duplicated, notFound} from "./errors";
 export function buildDatabase(ast: AmlAst, start: number, parsed: number): {db: Database, errors: ParserError[]} {
     const db: Database = {entities: [], relations: [], types: []}
     const errors: ParserError[] = []
-    const statements = ast.filter(s => s.statement !== 'Empty')
+    const statements = ast.filter(s => s.kind !== 'Empty')
     const entityRelations = buildTypesAndEntities(db, errors, statements)
     buildRelations(db, errors, statements, entityRelations) // all entities need to be built to perform some relation checks
     const comments: {line: number, comment: string}[] = []
-    ast.filter(s => s.statement === 'Empty').forEach(stmt => {
-        if (stmt.comment) comments.push({line: stmt.comment.position.start.line, comment: stmt.comment.value})
+    ast.filter(s => s.kind === 'Empty').forEach(stmt => {
+        if (stmt.comment) comments.push({line: stmt.comment.token.position.start.line, comment: stmt.comment.value})
     })
     const done = Date.now()
     const extra = removeEmpty({
@@ -76,7 +76,7 @@ export function buildDatabase(ast: AmlAst, start: number, parsed: number): {db: 
         parsingTimeMs: parsed - start,
         formattingTimeMs: done - parsed,
         comments,
-        namespaces: ast.filter(s => s.statement === 'Namespace').map((s, i) => removeUndefined({line: s.line, ...buildNamespace(i, s), comment: s.comment?.value}))
+        namespaces: ast.filter(s => s.kind === 'Namespace').map((s, i) => removeUndefined({line: s.line, ...buildNamespace(i, s), comment: s.comment?.value}))
     })
     return {db: removeEmpty({
         entities: db.entities?.sort((a, b) => a.extra?.line && b.extra?.line ? a.extra.line - b.extra.line : a.name.toLowerCase().localeCompare(b.name.toLowerCase())),
@@ -91,12 +91,12 @@ function buildTypesAndEntities(db: Database, errors: ParserError[], ast: AmlAst)
     const relations: InlineRelation[] = []
     ast.forEach((stmt, i) => {
         const index = i + 1
-        if (stmt.statement === 'Namespace') {
+        if (stmt.kind === 'Namespace') {
             namespace = buildNamespace(index, stmt)
-        } else if (stmt.statement === 'Type') {
+        } else if (stmt.kind === 'Type') {
             const type = buildType(namespace, index, stmt)
-            addType(db, errors, type, mergePositions([stmt.database, stmt.catalog, stmt.schema, stmt.name]))
-        } else if (stmt.statement === 'Entity') {
+            addType(db, errors, type, mergePositions([stmt.database, stmt.catalog, stmt.schema, stmt.name].map(v => v?.token)))
+        } else if (stmt.kind === 'Entity') {
             if (!db.entities) db.entities = []
             const res = buildEntity(namespace, index, stmt)
             const ref = entityToRef(res.entity)
@@ -106,7 +106,7 @@ function buildTypesAndEntities(db: Database, errors: ParserError[], ast: AmlAst)
                 errors.push(duplicated(
                     `Entity ${entityToId(res.entity)}`,
                     prev.extra?.line ? prev.extra.line : undefined,
-                    mergePositions([stmt.database, stmt.catalog, stmt.schema, stmt.name])
+                    mergePositions([stmt.database, stmt.catalog, stmt.schema, stmt.name].map(v => v?.token))
                 ))
                 db.entities[prevIndex] = mergeEntity(prev, res.entity)
             } else {
@@ -128,18 +128,18 @@ function buildRelations(db: Database, errors: ParserError[], ast: AmlAst, attrRe
         db,
         errors,
         buildRelationAttribute(db.entities || [], aliases, r.statement, r.entity, r.attrs, r.ref),
-        mergePositions([r.ref.ref.database, r.ref.ref.catalog, r.ref.ref.schema, r.ref.ref.entity, ...r.ref.ref.attrs, ...r.ref.ref.attrs.flatMap(a => a.path)])
+        mergePositions([r.ref.ref.database, r.ref.ref.catalog, r.ref.ref.schema, r.ref.ref.entity, ...r.ref.ref.attrs, ...r.ref.ref.attrs.flatMap(a => a.path)].map(v => v?.token))
     ))
     ast.forEach((stmt, i) => {
         const index = i + 1
-        if (stmt.statement === 'Namespace') {
+        if (stmt.kind === 'Namespace') {
             namespace = buildNamespace(index, stmt)
-        } else if (stmt.statement === 'Relation') {
+        } else if (stmt.kind === 'Relation') {
             addRelation(
                 db,
                 errors,
                 buildRelationStatement(db.entities || [], aliases, namespace, index, stmt),
-                mergePositions([stmt.src.database, stmt.src.catalog, stmt.src.schema, stmt.src.entity, ...(stmt.ref?.attrs || []), ...(stmt.ref?.attrs || []).flatMap(a => a.path)])
+                mergePositions([stmt.src.database, stmt.src.catalog, stmt.src.schema, stmt.src.entity, ...(stmt.ref?.attrs || []), ...(stmt.ref?.attrs || []).flatMap(a => a.path)].map(v => v?.token))
             )
         } else {
             // last to be built, types & relations are already built
@@ -200,26 +200,27 @@ function buildEntity(namespace: Namespace, statement: number, e: EntityStatement
     const validAttrs = (e.attrs || []).filter(a => !a.path.some(p => p === undefined)) // `path` can be `[undefined]` on invalid input :/
     const attrs = validAttrs.map(a => buildAttribute(namespace, statement, a, {...entityNamespace, entity: e.name.value}))
     const flatAttrs = flattenAttributes(validAttrs).filter(a => !a.path.some(p => p === undefined)) // nested attributes can have `path` be `[undefined]` on invalid input :/
-    const pkAttrs = flatAttrs.filter(a => a.primaryKey)
-    const indexes: Index[] = buildIndexes(flatAttrs.map(a => a.index ? {path: a.path, ...a.index} : undefined).filter(isNotUndefined))
-    const uniques: Index[] = buildIndexes(flatAttrs.map(a => a.unique ? {path: a.path, ...a.unique} : undefined).filter(isNotUndefined)).map(u => ({...u, unique: true}))
-    const checks: Check[] = buildIndexes(flatAttrs.map(a => a.check ? {path: a.path, ...a.check} : undefined).filter(isNotUndefined)).map(c => ({...c, predicate: c.predicate || ''}))
+    const constraints = flatAttrs.flatMap(a => (a.constraints || []).map(c => ({path: a.path, ...c})))
+    const pkAttrs: ({ path: IdentifierAst[] } & AttributePkAst)[] = constraints.filter(c => c.kind === 'PrimaryKey')
+    const indexes: Index[] = buildIndexes(constraints.filter(c => c.kind === 'Index').map(c => ({path: c.path, name: c.name})))
+    const uniques: Index[] = buildIndexes(constraints.filter(c => c.kind === 'Unique').map(c => ({path: c.path, name: c.name}))).map(u => ({...u, unique: true}))
+    const checks: Check[] = buildIndexes(constraints.filter(c => c.kind === 'Check').map(c => ({path: c.path, name: c.name, predicate: c.predicate}))).map(c => ({...c, predicate: c.predicate || ''}))
     return {
         entity: removeEmpty({
             ...entityNamespace,
             name: e.name.value,
             kind: e.view || e.properties?.find(p => p.key.value === 'view') ? 'view' as const : undefined,
-            def: e.properties?.flatMap(p => p.key.value === 'view' && p.value && !Array.isArray(p.value) && p.value.token === 'Identifier' ? [p.value.value.replaceAll(/\\n/g, '\n')] : [])[0],
+            def: e.properties?.flatMap(p => p.key.value === 'view' && p.value && !Array.isArray(p.value) && p.value.kind === 'Identifier' ? [p.value.value.replaceAll(/\\n/g, '\n')] : [])[0],
             attrs: attrs.map(a => a.attribute),
             pk: pkAttrs.length > 0 ? removeUndefined({
-                name: pkAttrs.map(a => a.primaryKey?.name?.value).find(isNotUndefined),
+                name: pkAttrs.map(a => a.name?.value).find(isNotUndefined),
                 attrs: pkAttrs.map(a => a.path.map(p => p.value)),
             }) : undefined,
             indexes: uniques.concat(indexes),
             checks: checks,
             doc: e.doc?.value,
             stats: undefined,
-            extra: buildExtra({line: e.name.position.start.line, statement, alias: e.alias?.value, comment: e.comment?.value}, e, ['view'])
+            extra: buildExtra({line: e.name.token.position.start.line, statement, alias: e.alias?.value, comment: e.comment?.value}, e, ['view'])
         }),
         relations: attrs.flatMap(a => a.relations),
         types: attrs.flatMap(a => a.types),
@@ -231,9 +232,9 @@ type InlineType = {type: Type, position: TokenPosition}
 
 function buildAttribute(namespace: Namespace, statement: number, a: AttributeAstNested, entity: EntityRef): { attribute: Attribute, relations: InlineRelation[], types: InlineType[] } {
     const {entity: _, ...entityNamespace} = entity
-    const numType = a.enumValues && a.enumValues.length <= 2 && a.enumValues.every(v => v.token === 'Integer') ? '(' + a.enumValues.map(stringifyAttrValue).join(',') + ')' : '' // types with num parameter (varchar(10), decimal(2,3)...)
+    const numType = a.enumValues && a.enumValues.length <= 2 && a.enumValues.every(v => v.kind === 'Integer') ? '(' + a.enumValues.map(stringifyAttrValue).join(',') + ')' : '' // types with num parameter (varchar(10), decimal(2,3)...)
     const enumType: InlineType[] = buildTypeInline(entityNamespace, statement, a, numType)
-    const relation: InlineRelation[] = a.relation ? [{namespace, statement, entity, attrs: [a.path.map(p => p.value)], ref: a.relation}] : []
+    const relation: InlineRelation[] = (a.constraints || []).filter(c => c.kind === 'Relation').map(c => ({namespace, statement, entity, attrs: [a.path.map(p => p.value)], ref: c}))
     const validAttrs = (a.attrs || []).filter(aa => !aa.path.some(p => p === undefined)) // `path` can be `[undefined]` on invalid input :/
     const nested = validAttrs.map(aa => buildAttribute(namespace, statement, aa, entity))
     return {
@@ -258,22 +259,22 @@ function buildAttributeType(a: AttributeAstNested, ext: string): AttributeType {
 }
 
 function buildAttrValue(v: AttributeValueAst): AttributeValue {
-    if (v.token === 'Null') return null
-    if (v.token === 'Decimal') return v.value
-    if (v.token === 'Integer') return v.value
-    if (v.token === 'Boolean') return v.value
-    if (v.token === 'Expression') return '`' + v.value + '`'
-    if (v.token === 'Identifier') return v.value
+    if (v.kind === 'Null') return null
+    if (v.kind === 'Decimal') return v.value
+    if (v.kind === 'Integer') return v.value
+    if (v.kind === 'Boolean') return v.value
+    if (v.kind === 'Expression') return '`' + v.value + '`'
+    if (v.kind === 'Identifier') return v.value
     return isNever(v)
 }
 
 function stringifyAttrValue(v: AttributeValueAst): string {
-    if (v.token === 'Null') return 'null'
-    if (v.token === 'Decimal') return v.value.toString()
-    if (v.token === 'Integer') return v.value.toString()
-    if (v.token === 'Boolean') return v.value ? 'true' : 'false'
-    if (v.token === 'Expression') return v.value
-    if (v.token === 'Identifier') return v.value
+    if (v.kind === 'Null') return 'null'
+    if (v.kind === 'Decimal') return v.value.toString()
+    if (v.kind === 'Integer') return v.value.toString()
+    if (v.kind === 'Boolean') return v.value ? 'true' : 'false'
+    if (v.kind === 'Expression') return v.value
+    if (v.kind === 'Identifier') return v.value
     return isNever(v)
 }
 
@@ -284,7 +285,7 @@ function flattenAttributes(attributes: AttributeAstNested[]): AttributeAstNested
     })
 }
 
-function buildIndexes(indexes: (AttributeConstraintAst & { path: IdentifierToken[], predicate?: ExpressionToken })[]): {name?: string, attrs: AttributePath[], predicate?: string}[] {
+function buildIndexes(indexes: { path: IdentifierAst[], name?: IdentifierAst, predicate?: ExpressionAst }[]): {name?: string, attrs: AttributePath[], predicate?: string}[] {
     const indexesByName: Record<string, {name: string, path: AttributePath, predicate?: string}[]> = groupBy(indexes.map(i => ({name: i.name?.value || '', path: i.path.map(n => n.value), predicate: i.predicate?.value})), i => i.name)
     const singleIndexes: {name?: string, attrs: AttributePath[], predicate?: string}[] = (indexesByName[''] || []).map(i => removeUndefined({attrs: [i.path], predicate: i.predicate}))
     const compositeIndexes: {name?: string, attrs: AttributePath[], predicate?: string}[] = Object.entries(indexesByName).filter(([k, _]) => k !== '').map(([name, values]) => removeUndefined({name, attrs: values.map(v => v.path), predicate: values.map(v => v.predicate).find(p => !!p)}))
@@ -293,14 +294,14 @@ function buildIndexes(indexes: (AttributeConstraintAst & { path: IdentifierToken
 
 function buildRelationStatement(entities: Entity[], aliases: Record<string, EntityRef>, namespace: Namespace, statement: number, r: RelationStatement): Relation | undefined {
     const [srcEntity, srcAlias] = buildEntityRef(r.src, namespace, aliases)
-    return buildRelation(entities, aliases, statement, r.src.entity.position.start.line, srcEntity, srcAlias, r.src.attrs.map(buildAttrPath), r, r, false)
+    return buildRelation(entities, aliases, statement, r.src.entity.token.position.start.line, srcEntity, srcAlias, r.src.attrs.map(buildAttrPath), r, r, false)
 }
 
 function buildRelationAttribute(entities: Entity[], aliases: Record<string, EntityRef>, statement: number, srcEntity: EntityRef, srcAttrs: AttributePath[], r: AttributeRelationAst): Relation | undefined {
-    return buildRelation(entities, aliases, statement, r.ref.entity?.position.start.line, srcEntity, undefined, srcAttrs, r, undefined, true)
+    return buildRelation(entities, aliases, statement, r.ref.entity?.token.position.start.line, srcEntity, undefined, srcAttrs, r, undefined, true)
 }
 
-function buildRelation(entities: Entity[], aliases: Record<string, EntityRef>, statement: number, line: number, srcEntity: EntityRef, srcAlias: string | undefined, srcAttrs: AttributePath[], rel: AttributeRelationAst, extra: ExtraAst | undefined, inline: boolean): Relation | undefined {
+function buildRelation(entities: Entity[], aliases: Record<string, EntityRef>, statement: number, line: number, srcEntity: EntityRef, srcAlias: string | undefined, srcAttrs: AttributePath[], rel: Omit<AttributeRelationAst, 'token'>, extra: ExtraAst | undefined, inline: boolean): Relation | undefined {
     // TODO: report an error instead of just ignoring?
     if (!rel.ref || !rel.ref.entity.value || !rel.ref.attrs || rel.ref.attrs.some(a => a.value === undefined)) return undefined // `ref` can be undefined or with empty entity or undefined attrs on invalid input :/
     const [refEntity, refAlias] = buildEntityRef(rel.ref, {}, aliases) // current namespace not used for relation ref, good idea???
@@ -310,8 +311,8 @@ function buildRelation(entities: Entity[], aliases: Record<string, EntityRef>, s
     return removeUndefined({
         name: undefined,
         origin: undefined,
-        src: removeUndefined({...srcEntity, attrs: srcAttrs2, cardinality: rel.srcCardinality === 'n' ? undefined : rel.srcCardinality}),
-        ref: removeUndefined({...refEntity, attrs: refAttrs, cardinality: rel.refCardinality === '1' ? undefined : rel.refCardinality}),
+        src: removeUndefined({...srcEntity, attrs: srcAttrs2, cardinality: rel.srcCardinality?.kind === 'n' ? undefined : rel.srcCardinality?.kind}),
+        ref: removeUndefined({...refEntity, attrs: refAttrs, cardinality: rel.refCardinality?.kind === '1' ? undefined : rel.refCardinality?.kind}),
         polymorphic: rel.polymorphic ? {attribute: buildAttrPath(rel.polymorphic.attr), value: buildAttrValue(rel.polymorphic.value)} : undefined,
         doc: extra?.doc?.value,
         extra: buildExtra({line, statement, inline: inline ? true : undefined, natural, srcAlias, refAlias, comment: extra?.comment?.value}, extra || {}, []),
@@ -334,8 +335,8 @@ function buildAttrPath(a: AttributePathAst): AttributePath {
 
 function buildTypeInline(namespace: Namespace, statement: number, a: AttributeAstNested, numType: string): InlineType[] {
     return a.type && a.enumValues && !numType ? [{
-        type: {...namespace, name: a.type.value, values: a.enumValues.map(stringifyAttrValue), extra: {line: a.enumValues[0].position.start.line, statement, inline: true}},
-        position: mergePositions(a.enumValues)
+        type: {...namespace, name: a.type.value, values: a.enumValues.map(stringifyAttrValue), extra: {line: a.enumValues[0].token.position.start.line, statement, inline: true}},
+        position: mergePositions(a.enumValues.map(v => v.token))
     }] : []
 }
 
@@ -343,14 +344,14 @@ function buildType(namespace: Namespace, statement: number, t: TypeStatement): T
     const astNamespace = removeUndefined({schema: t.schema?.value, catalog: t.catalog?.value, database: t.database?.value})
     const typeNamespace = {...namespace, ...astNamespace}
     const content = t.content ? buildTypeContent(namespace, statement, t.content, {...typeNamespace, entity: t.name.value}) : {}
-    return removeUndefined({...typeNamespace, name: t.name.value, ...content, doc: t.doc?.value, extra: buildExtra({line: t.name.position.start.line, statement, comment: t.comment?.value}, t, [])})
+    return removeUndefined({...typeNamespace, name: t.name.value, ...content, doc: t.doc?.value, extra: buildExtra({line: t.name.token.position.start.line, statement, comment: t.comment?.value}, t, [])})
 }
 
 function buildTypeContent(namespace: Namespace, statement: number, t: TypeContentAst, entity: EntityRef): {alias?: string, values?: string[], attrs?: Attribute[], definition?: string} {
-    if (t.kind === 'alias') return {alias: t.name.value}
-    if (t.kind === 'enum') return {values: t.values.map(stringifyAttrValue)}
-    if (t.kind === 'struct') return {attrs: t.attrs.map(a => buildAttribute(namespace, statement, a, entity).attribute)}
-    if (t.kind === 'custom') return {definition: t.definition.value}
+    if (t.kind === 'Alias') return {alias: t.name.value}
+    if (t.kind === 'Enum') return {values: t.values.map(stringifyAttrValue)}
+    if (t.kind === 'Struct') return {attrs: t.attrs.map(a => buildAttribute(namespace, statement, a, entity).attribute)}
+    if (t.kind === 'Custom') return {definition: t.definition.value}
     return isNever(t)
 }
 
@@ -363,11 +364,11 @@ function buildExtra(extra: Extra, v: {properties?: PropertiesAst}, ignore: strin
 
 function buildPropValue(v: PropertyValueAst): PropertyValue {
     if (Array.isArray(v)) return v.map(buildPropValue) as PropertyValueBasic[] // ignore nested arrays
-    if (v.token === 'Null') return null
-    if (v.token === 'Decimal') return v.value
-    if (v.token === 'Integer') return v.value
-    if (v.token === 'Boolean') return v.value
-    if (v.token === 'Expression') return '`' + v.value + '`'
-    if (v.token === 'Identifier') return v.value
+    if (v.kind === 'Null') return null
+    if (v.kind === 'Decimal') return v.value
+    if (v.kind === 'Integer') return v.value
+    if (v.kind === 'Boolean') return v.value
+    if (v.kind === 'Expression') return '`' + v.value + '`'
+    if (v.kind === 'Identifier') return v.value
     return isNever(v)
 }
