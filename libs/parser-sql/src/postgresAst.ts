@@ -10,10 +10,13 @@ import {ParserErrorLevel, TokenPosition} from "@azimutt/models";
 
 // statements
 export type StatementsAst = { statements: StatementAst[] }
-export type StatementAst = { meta: TokenInfo } & (AlterTableStatementAst | CommentOnStatementAst | CreateExtensionStatementAst | CreateIndexStatementAst | CreateTableStatementAst |
-    CreateTypeStatementAst | CreateViewStatementAst | DeleteStatementAst | DropStatementAst | InsertIntoStatementAst | SelectStatementAst | SetStatementAst | UpdateStatementAst)
+export type StatementAst = { meta: TokenInfo } & (AlterTableStatementAst | BeginStatementAst | CommentOnStatementAst | CommitStatementAst | CreateExtensionStatementAst |
+    CreateIndexStatementAst | CreateTableStatementAst | CreateTypeStatementAst | CreateViewStatementAst | DeleteStatementAst | DropStatementAst | InsertIntoStatementAst |
+    SelectStatementAst | SetStatementAst | UpdateStatementAst)
 export type AlterTableStatementAst = { kind: 'AlterTable', token: TokenInfo, ifExists?: TokenInfo, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, action: AlterTableActionAst }
+export type BeginStatementAst = { kind: 'Begin', token: TokenInfo, object?: {kind: 'Work' | 'Transaction', token: TokenInfo}, modes?: TransactionMode[] }
 export type CommentOnStatementAst = { kind: 'CommentOn', token: TokenInfo, object: { token: TokenInfo, kind: CommentObject }, schema?: IdentifierAst, parent?: IdentifierAst, entity: IdentifierAst, comment: StringAst | NullAst }
+export type CommitStatementAst = { kind: 'Commit', token: TokenInfo, object?: { kind: 'Work' | 'Transaction', token: TokenInfo }, chain?: { token: TokenInfo, no?: TokenInfo } }
 export type CreateExtensionStatementAst = { kind: 'CreateExtension', token: TokenInfo, ifNotExists?: TokenInfo, name: IdentifierAst, with?: TokenInfo, schema?: { token: TokenInfo, name: IdentifierAst }, version?: { token: TokenInfo, number: StringAst | IdentifierAst }, cascade?: TokenInfo }
 export type CreateIndexStatementAst = { kind: 'CreateIndex', token: TokenInfo, unique?: TokenInfo, concurrently?: TokenInfo, ifNotExists?: TokenInfo, index?: IdentifierAst, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, using?: { token: TokenInfo, method: IdentifierAst }, columns: IndexColumnAst[], include?: { token: TokenInfo, columns: IdentifierAst[] }, where?: WhereClauseAst }
 export type CreateTableStatementAst = { kind: 'CreateTable', token: TokenInfo, mode?: CreateTableModeAst, ifNotExists?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, columns: TableColumnAst[], constraints?: TableConstraintAst[] }
@@ -75,6 +78,7 @@ export type ConstraintNameAst = { token: TokenInfo, name: IdentifierAst }
 export type ColumnTypeAst = { token: TokenInfo, schema?: IdentifierAst, name: { token: TokenInfo, value: string }, args?: IntegerAst[], array?: TokenInfo }
 export type ForeignKeyActionAst = { action: { kind: ForeignKeyAction, token: TokenInfo }, columns?: IdentifierAst[] }
 export type SetValueAst = IdentifierAst | LiteralAst | (IdentifierAst | LiteralAst)[] | { kind: 'Default', token: TokenInfo }
+export type TransactionMode = { kind: 'IsolationLevel', token: TokenInfo, level: { kind: 'Serializable' | 'RepeatableRead' | 'ReadCommitted' | 'ReadUncommitted', token: TokenInfo } } | { kind: 'ReadWrite' | 'ReadOnly', token: TokenInfo } | { kind: 'Deferrable', token: TokenInfo, not?: TokenInfo }
 
 // basic parts
 export type AliasAst = { token?: TokenInfo, name: IdentifierAst }

@@ -31,9 +31,7 @@ import {
 import {parsePostgresAst, parseRule} from "./postgresParser";
 
 describe('postgresParser', () => {
-    // CREATE MATERIALIZED VIEW
-    // UPDATE
-    // DELETE
+    // TODO: CREATE MATERIALIZED VIEW
     test('empty', () => {
         expect(parsePostgresAst('')).toEqual({result: {statements: []}})
     })
@@ -56,31 +54,34 @@ describe('postgresParser', () => {
         const sql = fs.readFileSync('./resources/pg_statements.sql', 'utf8')
         const parsed = parsePostgresAst(sql, {strict: true})
         expect(parsed.errors || []).toEqual([])
-        // TODO:12 `(information_schema._pg_expandarray(i.indkey)).n`
-        // TODO:51 `SELECT * FROM table JOIN ((SELECT * FROM t1 ORDER BY c LIMIT1) UNION (SELECT * FROM t2 ORDER BY c LIMIT1))` (also: 336, 350, 491, 726, 1492, 1983, 2200, 2211, 2304, 2400)
-        // TODO:321 `SHOW TRANSACTION ISOLATION LEVEL;` (also: 1694)
-        // TODO:326 `SELECT ... FROM (VALUES ($2, ($3)::text), ($4, ($5)::text)) as v(key, val)` (also: 1169)
-        // TODO:396 `INSERT INTO ... ON CONFLICT DO NOTHING` (also: 996)
-        // TODO:425 `SELECT count(distinct to_char(e.created_at, $2)) FROM` (also: 451, 960, 1041, 1178, 1217, 1218, 1765, 2181)
-        // TODO:430 `WHERE e.created_at > NOW() - INTERVAL $3` (also: 502, 713, 962, 1046, 1221, 1767, 2186)
-        // TODO:482 `c.contype IN ($2, $3) AND cn.nspname NOT IN ($4, $5)` (also: 532, 551, 1276, 2344)
-        // TODO:563 `COMMIT;` (also: 1118)
-        // TODO:801 `BEGIN;`
-        // TODO:814 `SELECT row_number() OVER (PARTITION BY a.attrelid ORDER BY a.attnum) AS attnum`
-        // TODO:847 `select (current_schemas($3))[s.r] as nspname` (also: 1057)
-        // TODO:940 `SELECT $1 || queryid || $2 as q`
-        // TODO:1218 `count(distinct e.created_by) FILTER (WHERE u.created_at + interval $2 < e.created_at)`
+        // easy:
+        // DONE:563  `COMMIT;` (also: 1118)
+        // DONE:801  `BEGIN;`
+        // TODO:396  `INSERT INTO ... ON CONFLICT DO NOTHING` (also: 996)
         // TODO:1242 `SELECT datname AS database, current_schema() AS schema` (also: 1560)
         // TODO:1265 `SELECT c.reltuples AS rows` (also: 2418)
-        // TODO:1362 `(u0."created_at" > $3::timestamp + (-($4)::numeric * interval $5))`
-        // TODO:1415 `SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;` (also: 1934)
-        // TODO:1451 `SHOW block_size;` (also: 1825)
-        // TODO:1639 `SELECT CASE con.confupdtype WHEN $3 THEN $4 ELSE $15 END AS UPDATE_RULE`
-        // TODO:1862 `SELECT ("public"."Event"."details" #>> array [$1]::text[])::text AS "details → source"` (also: 1962)
-        // TODO:2010 `SELECT CASE n.nspname ~ $2 OR n.nspname = $3 WHEN $4 THEN CASE ELSE $51 END AS TABLE_TYPE`
-        // TODO:2155 `ARRAY(SELECT a.atttypid)`
         // TODO:2238 `SELECT null_frac AS nulls`
+        // TODO:482  `c.contype IN ($2, $3) AND cn.nspname NOT IN ($4, $5)` (also: 532, 551, 1276, 2344)
         // TODO:2380 `SELECT split_part(details ->> $1, $2, $3) as email_domain`
+        // TODO:940  `SELECT $1 || queryid || $2 as q`
+        // TODO:425  `SELECT count(distinct to_char(e.created_at, $2)) FROM` (also: 451, 960, 1041, 1178, 1217, 1218, 1765, 2181)
+        // TODO:430  `WHERE e.created_at > NOW() - INTERVAL $3` (also: 502, 713, 962, 1046, 1221, 1767, 2186)
+        // medium:
+        // TODO:1362 `(u0."created_at" > $3::timestamp + (-($4)::numeric * interval $5))`
+        // TODO:2155 `ARRAY(SELECT a.atttypid)`
+        // TODO:1218 `count(distinct e.created_by) FILTER (WHERE u.created_at + interval $2 < e.created_at)`
+        // TODO:814  `SELECT row_number() OVER (PARTITION BY a.attrelid ORDER BY a.attnum) AS attnum`
+        // TODO:1639 `SELECT CASE con.confupdtype WHEN $3 THEN $4 ELSE $15 END AS UPDATE_RULE`
+        // TODO:2010 `SELECT CASE n.nspname ~ $2 OR n.nspname = $3 WHEN $4 THEN CASE ELSE $51 END AS TABLE_TYPE`
+        // TODO:1862 `SELECT ("public"."Event"."details" #>> array [$1]::text[])::text AS "details → source"` (also: 1962)
+        // TODO:1415 `SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;` (also: 1934)
+        // TODO:321  `SHOW TRANSACTION ISOLATION LEVEL;` (also: 1694)
+        // TODO:1451 `SHOW block_size;` (also: 1825)
+        // hard:
+        // TODO:12   `(information_schema._pg_expandarray(i.indkey)).n`
+        // TODO:847  `select (current_schemas($3))[s.r] as nspname` (also: 1057)
+        // TODO:51   `SELECT * FROM table JOIN ((SELECT * FROM t1 ORDER BY c LIMIT1) UNION (SELECT * FROM t2 ORDER BY c LIMIT1))` (also: 336, 350, 491, 726, 1492, 1983, 2200, 2211, 2304, 2400)
+        // TODO:326  `SELECT ... FROM (VALUES ($2, ($3)::text), ($4, ($5)::text)) as v(key, val)` (also: 1169)
     })
     describe('alterTable', () => {
         test('full', () => {
@@ -122,6 +123,22 @@ describe('postgresParser', () => {
             }]}})
         })
     })
+    describe('begin', () => {
+        test('simplest', () => {
+            expect(parsePostgresAst("BEGIN;")).toEqual({result: {statements: [stmt('Begin', 0, 4, 5)]}})
+        })
+        test('complex', () => {
+            expect(parsePostgresAst("BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED, READ ONLY, NOT DEFERRABLE;")).toEqual({result: {statements: [{
+                ...stmt('Begin', 0, 4, 75),
+                object: kind('Transaction', 6),
+                modes: [
+                    {...kind('IsolationLevel', 18, 32), level: kind('ReadCommitted', 34, 47)},
+                    kind('ReadOnly', 50, 58),
+                    {not: token(61, 63), ...kind('Deferrable', 65, 74)},
+                ]
+            }]}})
+        })
+    })
     describe('commentOn', () => {
         test('simplest', () => {
             expect(parsePostgresAst("COMMENT ON SCHEMA public IS 'Main schema';")).toEqual({result: {statements: [{
@@ -158,6 +175,18 @@ describe('postgresParser', () => {
                 schema: identifier('public', 34),
                 parent: identifier('users', 41),
                 comment: string('users pk', 50),
+            }]}})
+        })
+    })
+    describe('commit', () => {
+        test('simplest', () => {
+            expect(parsePostgresAst("COMMIT;")).toEqual({result: {statements: [stmt('Commit', 0, 5, 6)]}})
+        })
+        test('complex', () => {
+            expect(parsePostgresAst("COMMIT WORK AND NO CHAIN;")).toEqual({result: {statements: [{
+                ...stmt('Commit', 0, 5, 24),
+                object: kind('Work', 7),
+                chain: {token: token(12, 23), no: token(16, 17)},
             }]}})
         })
     })
