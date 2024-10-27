@@ -11,6 +11,7 @@ import {isNotUndefined, removeEmpty, removeUndefined} from "@azimutt/utils";
 import {mergePositions, ParserError, ParserErrorLevel, ParserResult, TokenPosition} from "@azimutt/models";
 import {
     AliasAst,
+    AlterSequenceStatementAst,
     AlterTableStatementAst,
     BeginStatementAst,
     BooleanAst,
@@ -23,6 +24,7 @@ import {
     CreateExtensionStatementAst,
     CreateIndexStatementAst,
     CreateMaterializedViewStatementAst,
+    CreateSequenceStatementAst,
     CreateTableStatementAst,
     CreateTypeStatementAst,
     CreateViewStatementAst,
@@ -63,6 +65,10 @@ import {
     SelectStatementInnerAst,
     SelectStatementMainAst,
     SelectStatementResultAst,
+    SequenceOwnedByAst,
+    SequenceParamAst,
+    SequenceParamOptAst,
+    SequenceTypeAst,
     SetStatementAst,
     ShowStatementAst,
     SortNullsAst,
@@ -84,7 +90,7 @@ import {
     TableUniqueAst,
     TokenInfo,
     TokenIssue,
-    TransactionMode,
+    TransactionModeAst,
     TypeColumnAst,
     UnionClauseAst,
     UpdateColumnAst,
@@ -111,6 +117,8 @@ const And = createToken({name: 'And', pattern: /\bAND\b/i, longer_alt: Identifie
 const As = createToken({name: 'As', pattern: /\bAS\b/i, longer_alt: Identifier})
 const Asc = createToken({name: 'Asc', pattern: /\bASC\b/i, longer_alt: Identifier})
 const Begin = createToken({name: 'Begin', pattern: /\bBEGIN\b/i, longer_alt: Identifier})
+const By = createToken({name: 'By', pattern: /\bBY\b/i, longer_alt: Identifier})
+const Cache = createToken({name: 'Cache', pattern: /\bCACHE\b/i, longer_alt: Identifier})
 const Cascade = createToken({name: 'Cascade', pattern: /\bCASCADE\b/i, longer_alt: Identifier})
 const Chain = createToken({name: 'Chain', pattern: /\bCHAIN\b/i, longer_alt: Identifier})
 const Check = createToken({name: 'Check', pattern: /\bCHECK\b/i, longer_alt: Identifier})
@@ -123,6 +131,7 @@ const Conflict = createToken({name: 'Conflict', pattern: /\bCONFLICT\b/i, longer
 const Constraint = createToken({name: 'Constraint', pattern: /\bCONSTRAINT\b/i, longer_alt: Identifier})
 const Create = createToken({name: 'Create', pattern: /\bCREATE\b/i, longer_alt: Identifier})
 const Cross = createToken({name: 'Cross', pattern: /\bCROSS\b/i, longer_alt: Identifier})
+const Cycle = createToken({name: 'Cycle', pattern: /\bCYCLE\b/i, longer_alt: Identifier})
 const Data = createToken({name: 'Data', pattern: /\bDATA\b/i, longer_alt: Identifier})
 const Database = createToken({name: 'Database', pattern: /\bDATABASE\b/i, longer_alt: Identifier})
 const Default = createToken({name: 'Default', pattern: /\bDEFAULT\b/i, longer_alt: Identifier})
@@ -144,12 +153,14 @@ const First = createToken({name: 'First', pattern: /\bFIRST\b/i, longer_alt: Ide
 const ForeignKey = createToken({name: 'ForeignKey', pattern: /\bFOREIGN\s+KEY\b/i})
 const From = createToken({name: 'From', pattern: /\bFROM\b/i, longer_alt: Identifier})
 const Full = createToken({name: 'Full', pattern: /\bFULL\b/i, longer_alt: Identifier})
+const Function = createToken({name: 'Function', pattern: /\bFUNCTION\b/i, longer_alt: Identifier})
 const Global = createToken({name: 'Global', pattern: /\bGLOBAL\b/i, longer_alt: Identifier})
 const GroupBy = createToken({name: 'GroupBy', pattern: /\bGROUP\s+BY\b/i})
 const Having = createToken({name: 'Having', pattern: /\bHAVING\b/i, longer_alt: Identifier})
 const If = createToken({name: 'If', pattern: /\bIF\b/i, longer_alt: Identifier})
 const In = createToken({name: 'In', pattern: /\bIN\b/i, longer_alt: Identifier})
 const Include = createToken({name: 'Include', pattern: /\bINCLUDE\b/i, longer_alt: Identifier})
+const Increment = createToken({name: 'Increment', pattern: /\bINCREMENT\b/i, longer_alt: Identifier})
 const Index = createToken({name: 'Index', pattern: /\bINDEX\b/i, longer_alt: Identifier})
 const Inner = createToken({name: 'Inner', pattern: /\bINNER\b/i, longer_alt: Identifier})
 const InsertInto = createToken({name: 'InsertInto', pattern: /\bINSERT\s+INTO\b/i})
@@ -165,10 +176,13 @@ const Like = createToken({name: 'Like', pattern: /\bLIKE\b/i, longer_alt: Identi
 const Limit = createToken({name: 'Limit', pattern: /\bLIMIT\b/i, longer_alt: Identifier})
 const Local = createToken({name: 'Local', pattern: /\bLOCAL\b/i, longer_alt: Identifier})
 const MaterializedView = createToken({name: 'MaterializedView', pattern: /\bMATERIALIZED\s+VIEW\b/i})
+const Maxvalue = createToken({name: 'Maxvalue', pattern: /\bMAXVALUE\b/i, longer_alt: Identifier})
+const Minvalue = createToken({name: 'Minvalue', pattern: /\bMINVALUE\b/i, longer_alt: Identifier})
 const Natural = createToken({name: 'Natural', pattern: /\bNATURAL\b/i, longer_alt: Identifier})
 const Next = createToken({name: 'Next', pattern: /\bNEXT\b/i, longer_alt: Identifier})
 const No = createToken({name: 'No', pattern: /\bNO\b/i, longer_alt: Identifier})
 const NoAction = createToken({name: 'NoAction', pattern: /\bNO\s+ACTION\b/i})
+const None = createToken({name: 'None', pattern: /\bNONE\b/i, longer_alt: Identifier})
 const Not = createToken({name: 'Not', pattern: /\bNOT\b/i, longer_alt: Identifier})
 const Nothing = createToken({name: 'Nothing', pattern: /\bNOTHING\b/i, longer_alt: Identifier})
 const NotNull = createToken({name: 'NotNull', pattern: /\bNOTNULL\b/i, longer_alt: Identifier})
@@ -181,6 +195,7 @@ const Or = createToken({name: 'Or', pattern: /\bOR\b/i, longer_alt: Identifier})
 const OrderBy = createToken({name: 'OrderBy', pattern: /\bORDER\s+BY\b/i})
 const Outer = createToken({name: 'Outer', pattern: /\bOUTER\b/i, longer_alt: Identifier})
 const Over = createToken({name: 'Over', pattern: /\bOVER\b/i, longer_alt: Identifier})
+const OwnedBy = createToken({name: 'OwnedBy', pattern: /\bOWNED\s+BY\b/i})
 const PartitionBy = createToken({name: 'PartitionBy', pattern: /\bPARTITION\s+BY\b/i})
 const PrimaryKey = createToken({name: 'PrimaryKey', pattern: /\bPRIMARY\s+KEY\b/i})
 const ReadCommitted = createToken({name: 'ReadCommitted', pattern: /\bREAD\s+COMMITTED\b/i})
@@ -198,12 +213,14 @@ const Row = createToken({name: 'Row', pattern: /\bROW\b/i, longer_alt: Identifie
 const Rows = createToken({name: 'Rows', pattern: /\bROWS\b/i, longer_alt: Identifier})
 const Schema = createToken({name: 'Schema', pattern: /\bSCHEMA\b/i, longer_alt: Identifier})
 const Select = createToken({name: 'Select', pattern: /\bSELECT\b/i, longer_alt: Identifier})
+const Sequence = createToken({name: 'Sequence', pattern: /\bSEQUENCE\b/i, longer_alt: Identifier})
 const Serializable = createToken({name: 'Serializable', pattern: /\bSERIALIZABLE\b/i, longer_alt: Identifier})
 const Session = createToken({name: 'Session', pattern: /\bSESSION\b/i, longer_alt: Identifier})
 const SetDefault = createToken({name: 'SetDefault', pattern: /\bSET\s+DEFAULT\b/i})
 const SetNull = createToken({name: 'SetNull', pattern: /\bSET\s+NULL\b/i})
 const Set = createToken({name: 'Set', pattern: /\bSET\b/i, longer_alt: Identifier})
 const Show = createToken({name: 'Show', pattern: /\bSHOW\b/i, longer_alt: Identifier})
+const Start = createToken({name: 'Start', pattern: /\bSTART\b/i, longer_alt: Identifier})
 const Table = createToken({name: 'Table', pattern: /\bTABLE\b/i, longer_alt: Identifier})
 const Temp = createToken({name: 'Temp', pattern: /\bTEMP\b/i, longer_alt: Identifier})
 const Temporary = createToken({name: 'Temporary', pattern: /\bTEMPORARY\b/i, longer_alt: Identifier})
@@ -225,13 +242,13 @@ const Window = createToken({name: 'Window', pattern: /\bWINDOW\b/i, longer_alt: 
 const With = createToken({name: 'With', pattern: /\bWITH\b/i, longer_alt: Identifier})
 const Work = createToken({name: 'Work', pattern: /\bWORK\b/i, longer_alt: Identifier})
 const keywordTokens: TokenType[] = [
-    Add, All, Alter, And, As, Asc, Begin, Cascade, Chain, Check, Collate, Column, Comment, Commit, Concurrently,
-    Conflict, Constraint, Create, Cross, Data, Database, Default, Deferrable, Delete, Desc, Distinct, Do, Domain, Drop, Enum, Except,
-    Exists, Extension, False, Fetch, Filter, First, ForeignKey, From, Full, Global, GroupBy, Having, If, In, Include, Index,
-    Inner, InsertInto, Intersect, Interval, Is, IsNull, IsolationLevel, Join, Last, Left, Like, Limit, Local, MaterializedView,
-    Natural, Next, No, NoAction, Not, Nothing, NotNull, Null, Nulls, Offset, On, Only, Or, OrderBy, Outer, Over, PartitionBy, PrimaryKey,
+    Add, All, Alter, And, As, Asc, Begin, By, Cache, Cascade, Chain, Check, Collate, Column, Comment, Commit, Concurrently,
+    Conflict, Constraint, Create, Cross, Cycle, Data, Database, Default, Deferrable, Delete, Desc, Distinct, Do, Domain, Drop, Enum, Except,
+    Exists, Extension, False, Fetch, Filter, First, ForeignKey, From, Full, Function, Global, GroupBy, Having, If, In, Include, Increment, Index,
+    Inner, InsertInto, Intersect, Interval, Is, IsNull, IsolationLevel, Join, Last, Left, Like, Limit, Local, MaterializedView, Maxvalue, Minvalue,
+    Natural, Next, No, None, NoAction, Not, Nothing, NotNull, Null, Nulls, Offset, On, Only, Or, OrderBy, Outer, Over, OwnedBy, PartitionBy, PrimaryKey,
     ReadCommitted, ReadOnly, ReadUncommitted, ReadWrite, Recursive, References, RepeatableRead, Replace, Restrict,
-    Returning, Right, Row, Rows, Schema, Select, Serializable, Session, SetDefault, SetNull, Set, Show, Table, Temp,
+    Returning, Right, Row, Rows, Schema, Select, Sequence, Serializable, Session, SetDefault, SetNull, Set, Show, Table, Start, Temp,
     Temporary, Ties, To, Transaction, True, Type, Union, Unique, Unlogged, Update, Using, Values, Version, View, Where,
     Window, With, Work
 ]
@@ -276,6 +293,7 @@ class PostgresParser extends EmbeddedActionsParser {
     statementsRule: () => StatementsAst
     // statements
     statementRule: () => StatementAst
+    alterSequenceStatementRule: () => AlterSequenceStatementAst
     alterTableStatementRule: () => AlterTableStatementAst
     beginStatementRule: () => BeginStatementAst
     commentOnStatementRule: () => CommentOnStatementAst
@@ -283,6 +301,7 @@ class PostgresParser extends EmbeddedActionsParser {
     createExtensionStatementRule: () => CreateExtensionStatementAst
     createIndexStatementRule: () => CreateIndexStatementAst
     createMaterializedViewStatementRule: () => CreateMaterializedViewStatementAst
+    createSequenceStatementRule: () => CreateSequenceStatementAst
     createTableStatementRule: () => CreateTableStatementAst
     createTypeStatementRule: () => CreateTypeStatementAst
     createViewStatementRule: () => CreateViewStatementAst
@@ -330,6 +349,7 @@ class PostgresParser extends EmbeddedActionsParser {
         })
 
         this.statementRule = $.RULE<() => StatementAst>('statementRule', () => $.OR([
+            {ALT: () => $.SUBRULE($.alterSequenceStatementRule)},
             {ALT: () => $.SUBRULE($.alterTableStatementRule)},
             {ALT: () => $.SUBRULE($.beginStatementRule)},
             {ALT: () => $.SUBRULE($.commentOnStatementRule)},
@@ -337,6 +357,7 @@ class PostgresParser extends EmbeddedActionsParser {
             {ALT: () => $.SUBRULE($.createExtensionStatementRule)},
             {ALT: () => $.SUBRULE($.createIndexStatementRule)},
             {ALT: () => $.SUBRULE($.createMaterializedViewStatementRule)},
+            {ALT: () => $.SUBRULE($.createSequenceStatementRule)},
             {ALT: () => $.SUBRULE($.createTableStatementRule)},
             {ALT: () => $.SUBRULE($.createTypeStatementRule)},
             {ALT: () => $.SUBRULE($.createViewStatementRule)},
@@ -348,6 +369,25 @@ class PostgresParser extends EmbeddedActionsParser {
             {ALT: () => $.SUBRULE($.showStatementRule)},
             {ALT: () => $.SUBRULE($.updateStatementRule)},
         ]))
+
+        this.alterSequenceStatementRule = $.RULE<() => AlterSequenceStatementAst>('alterSequenceStatementRule', () => {
+            // https://www.postgresql.org/docs/current/sql-altersequence.html
+            const begin = $.CONSUME(Alter)
+            const token = tokenInfo2(begin, $.CONSUME(Sequence))
+            const ifExists = $.SUBRULE(ifExistsRule)
+            const object = $.SUBRULE($.objectNameRule)
+            const as = $.OPTION3(() => $.SUBRULE(sequenceTypeRule))
+            const start = $.OPTION4(() => $.SUBRULE(sequenceStartRule))
+            const increment = $.OPTION5(() => $.SUBRULE(sequenceIncrementRule))
+            const minValue = $.OPTION6(() => $.SUBRULE(sequenceMinValueRule))
+            const maxValue = $.OPTION7(() => $.SUBRULE(sequenceMaxValueRule))
+            const cache = $.OPTION8(() => $.SUBRULE(sequenceCacheRule))
+            // TODO: CYCLE
+            const ownedBy = $.OPTION9(() => $.SUBRULE(sequenceOwnedByRule))
+            // TODO: RESTART
+            const end = $.CONSUME(Semicolon)
+            return removeUndefined({kind: 'AlterSequence' as const, meta: tokenInfo2(begin, end), token, ifExists, ...object, as, start, increment, minValue, maxValue, cache, ownedBy})
+        })
 
         this.alterTableStatementRule = $.RULE<() => AlterTableStatementAst>('alterTableStatementRule', () => {
             // https://www.postgresql.org/docs/current/sql-altertable.html
@@ -374,7 +414,7 @@ class PostgresParser extends EmbeddedActionsParser {
                 {ALT: () => ({kind: 'Work' as const, token: tokenInfo($.CONSUME(Work))})},
                 {ALT: () => ({kind: 'Transaction' as const, token: tokenInfo($.CONSUME(Transaction))})},
             ]))
-            const modes: TransactionMode[] = []
+            const modes: TransactionModeAst[] = []
             $.MANY_SEP({SEP: Comma, DEF: () => modes.push($.OR2([
                 {ALT: () => ({kind: 'IsolationLevel' as const, token: tokenInfo($.CONSUME(IsolationLevel)), level: $.OR3([
                     {ALT: () => ({kind: 'Serializable' as const, token: tokenInfo($.CONSUME(Serializable))})},
@@ -524,6 +564,58 @@ class PostgresParser extends EmbeddedActionsParser {
             })
             const end = $.CONSUME(Semicolon)
             return removeEmpty({kind: 'CreateMaterializedView' as const, meta: tokenInfo2(start, end), token, ifNotExists, schema: object.schema, view: object.name, columns, query, withData})
+        })
+
+        this.createSequenceStatementRule = $.RULE<() => CreateSequenceStatementAst>('createSequenceStatementRule', () => {
+            // https://www.postgresql.org/docs/current/sql-createsequence.html
+            const begin = $.CONSUME(Create)
+            const mode = $.OPTION(() => $.OR([
+                {ALT: () => ({kind: 'Unlogged' as const, token: tokenInfo($.CONSUME(Unlogged))})},
+                {ALT: () => ({kind: 'Temporary' as const, token: $.OR2([
+                    {ALT: () => tokenInfo($.CONSUME(Temp))},
+                    {ALT: () => tokenInfo($.CONSUME(Temporary))}
+                ])})}
+            ]))
+            const token = tokenInfo2(begin, $.CONSUME(Sequence))
+            const ifNotExists = $.OPTION2(() => $.SUBRULE(ifNotExistsRule))
+            const object = $.SUBRULE($.objectNameRule)
+            const as = $.OPTION3(() => $.SUBRULE(sequenceTypeRule))
+            const start = $.OPTION4(() => $.SUBRULE(sequenceStartRule))
+            const increment = $.OPTION5(() => $.SUBRULE(sequenceIncrementRule))
+            const minValue = $.OPTION6(() => $.SUBRULE(sequenceMinValueRule))
+            const maxValue = $.OPTION7(() => $.SUBRULE(sequenceMaxValueRule))
+            const cache = $.OPTION8(() => $.SUBRULE(sequenceCacheRule))
+            // TODO: CYCLE
+            const ownedBy = $.OPTION9(() => $.SUBRULE(sequenceOwnedByRule))
+            const end = $.CONSUME(Semicolon)
+            return removeUndefined({kind: 'CreateSequence' as const, meta: tokenInfo2(begin, end), token, mode, ifNotExists, ...object, as, start, increment, minValue, maxValue, cache, ownedBy})
+        })
+        const sequenceTypeRule = $.RULE<() => SequenceTypeAst>('sequenceTypeRule', () => ({token: tokenInfo($.CONSUME(As)), type: $.SUBRULE($.identifierRule)}))
+        const sequenceStartRule = $.RULE<() => SequenceParamAst>('sequenceStartRule', () => ({token: tokenInfo2($.CONSUME(Start), $.OPTION(() => $.CONSUME(With))), value: $.SUBRULE($.integerRule)}))
+        const sequenceIncrementRule = $.RULE<() => SequenceParamAst>('sequenceIncrementRule', () => ({token: tokenInfo2($.CONSUME(Increment), $.OPTION(() => $.CONSUME(By))), value: $.SUBRULE($.integerRule)}))
+        const sequenceMinValueRule = $.RULE<() => SequenceParamOptAst>('sequenceMinValueRule', () => $.OR([
+            {ALT: () => ({token: tokenInfo2($.CONSUME(No), $.CONSUME(Minvalue))})},
+            {ALT: () => ({token: tokenInfo($.CONSUME2(Minvalue)), value: $.SUBRULE($.integerRule)})},
+        ]))
+        const sequenceMaxValueRule = $.RULE<() => SequenceParamOptAst>('sequenceMaxValueRule', () => $.OR([
+            {ALT: () => ({token: tokenInfo2($.CONSUME(No), $.CONSUME(Maxvalue))})},
+            {ALT: () => ({token: tokenInfo($.CONSUME2(Maxvalue)), value: $.SUBRULE($.integerRule)})},
+        ]))
+        const sequenceCacheRule = $.RULE<() => SequenceParamAst>('sequenceCacheRule', () => ({token: tokenInfo($.CONSUME(Cache)), value: $.SUBRULE5($.integerRule)}))
+        const sequenceOwnedByRule = $.RULE<() => SequenceOwnedByAst>('sequenceOwnedByRule', () => {
+            return {token: tokenInfo($.CONSUME(OwnedBy)), owner: $.OR([
+                {ALT: () => ({kind: 'None' as const, token: $.CONSUME(None)})},
+                {ALT: () => {
+                    const first = $.SUBRULE($.identifierRule)
+                    $.CONSUME(Dot)
+                    const second = $.SUBRULE2($.identifierRule)
+                    const third = $.OPTION(() => {
+                        $.CONSUME2(Dot)
+                        return $.SUBRULE3($.identifierRule)
+                    })
+                    return third ? {kind: 'Column' as const, schema: first, table: second, column: third} : {kind: 'Column' as const, table: first, column: second}
+                }},
+            ])}
         })
 
         this.createTableStatementRule = $.RULE<() => CreateTableStatementAst>('createTableStatementRule', () => {

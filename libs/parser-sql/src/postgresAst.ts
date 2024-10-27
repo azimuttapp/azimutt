@@ -10,16 +10,19 @@ import {ParserErrorLevel, TokenPosition} from "@azimutt/models";
 
 // statements
 export type StatementsAst = { statements: StatementAst[] }
-export type StatementAst = { meta: TokenInfo } & (AlterTableStatementAst | BeginStatementAst | CommentOnStatementAst | CommitStatementAst | CreateExtensionStatementAst |
-    CreateIndexStatementAst | CreateTableStatementAst | CreateTypeStatementAst | CreateViewStatementAst | DeleteStatementAst | DropStatementAst | InsertIntoStatementAst |
+export type StatementAst = { meta: TokenInfo } & (AlterSequenceStatementAst | AlterTableStatementAst | BeginStatementAst | CommentOnStatementAst | CommitStatementAst |
+    CreateExtensionStatementAst | CreateIndexStatementAst | CreateMaterializedViewStatementAst | CreateSequenceStatementAst |
+    CreateTableStatementAst | CreateTypeStatementAst | CreateViewStatementAst | DeleteStatementAst | DropStatementAst | InsertIntoStatementAst |
     SelectStatementAst | SetStatementAst | ShowStatementAst | UpdateStatementAst)
+export type AlterSequenceStatementAst = { kind: 'AlterSequence', token: TokenInfo, ifExists?: TokenInfo, schema?: IdentifierAst, name: IdentifierAst, as?: SequenceTypeAst, start?: SequenceParamAst, increment?: SequenceParamAst, minValue?: SequenceParamOptAst, maxValue?: SequenceParamOptAst, cache?: SequenceParamAst, ownedBy?: SequenceOwnedByAst }
 export type AlterTableStatementAst = { kind: 'AlterTable', token: TokenInfo, ifExists?: TokenInfo, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, action: AlterTableActionAst }
-export type BeginStatementAst = { kind: 'Begin', token: TokenInfo, object?: {kind: 'Work' | 'Transaction', token: TokenInfo}, modes?: TransactionMode[] }
+export type BeginStatementAst = { kind: 'Begin', token: TokenInfo, object?: {kind: 'Work' | 'Transaction', token: TokenInfo}, modes?: TransactionModeAst[] }
 export type CommentOnStatementAst = { kind: 'CommentOn', token: TokenInfo, object: { token: TokenInfo, kind: CommentObject }, schema?: IdentifierAst, parent?: IdentifierAst, entity: IdentifierAst, comment: StringAst | NullAst }
 export type CommitStatementAst = { kind: 'Commit', token: TokenInfo, object?: { kind: 'Work' | 'Transaction', token: TokenInfo }, chain?: { token: TokenInfo, no?: TokenInfo } }
 export type CreateExtensionStatementAst = { kind: 'CreateExtension', token: TokenInfo, ifNotExists?: TokenInfo, name: IdentifierAst, with?: TokenInfo, schema?: { token: TokenInfo, name: IdentifierAst }, version?: { token: TokenInfo, number: StringAst | IdentifierAst }, cascade?: TokenInfo }
 export type CreateIndexStatementAst = { kind: 'CreateIndex', token: TokenInfo, unique?: TokenInfo, concurrently?: TokenInfo, ifNotExists?: TokenInfo, index?: IdentifierAst, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, using?: { token: TokenInfo, method: IdentifierAst }, columns: IndexColumnAst[], include?: { token: TokenInfo, columns: IdentifierAst[] }, where?: WhereClauseAst }
 export type CreateMaterializedViewStatementAst = { kind: 'CreateMaterializedView', token: TokenInfo, ifNotExists?: TokenInfo, schema?: IdentifierAst, view: IdentifierAst, columns?: IdentifierAst[], query: SelectStatementInnerAst, withData?: { token: TokenInfo, no?: TokenInfo } }
+export type CreateSequenceStatementAst = { kind: 'CreateSequence', token: TokenInfo, mode?: SequenceModeAst, ifNotExists?: TokenInfo, schema?: IdentifierAst, name: IdentifierAst, as?: SequenceTypeAst, start?: SequenceParamAst, increment?: SequenceParamAst, minValue?: SequenceParamOptAst, maxValue?: SequenceParamOptAst, cache?: SequenceParamAst, ownedBy?: SequenceOwnedByAst }
 export type CreateTableStatementAst = { kind: 'CreateTable', token: TokenInfo, mode?: CreateTableModeAst, ifNotExists?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, columns: TableColumnAst[], constraints?: TableConstraintAst[] }
 export type CreateTypeStatementAst = { kind: 'CreateType', token: TokenInfo, schema?: IdentifierAst, type: IdentifierAst, struct?: { token: TokenInfo, attrs: TypeColumnAst[] }, enum?: { token: TokenInfo, values: StringAst[] }, base?: { name: IdentifierAst, value: ExpressionAst }[] }
 export type CreateViewStatementAst = { kind: 'CreateView', token: TokenInfo, replace?: TokenInfo, temporary?: TokenInfo, recursive?: TokenInfo, schema?: IdentifierAst, view: IdentifierAst, columns?: IdentifierAst[], query: SelectStatementInnerAst }
@@ -82,12 +85,17 @@ export type ConstraintNameAst = { token: TokenInfo, name: IdentifierAst }
 export type ColumnTypeAst = { token: TokenInfo, schema?: IdentifierAst, name: { token: TokenInfo, value: string }, args?: IntegerAst[], array?: TokenInfo }
 export type ForeignKeyActionAst = { action: { kind: ForeignKeyAction, token: TokenInfo }, columns?: IdentifierAst[] }
 export type SetValueAst = IdentifierAst | LiteralAst | (IdentifierAst | LiteralAst)[] | { kind: 'Default', token: TokenInfo }
-export type OnConflictClauseAst = { token: TokenInfo, target?: OnConflictColumns | OnConflictConstraint, action: OnConflictNothing | OnConflictUpdate }
-export type OnConflictColumns = { kind: 'Columns', columns: IdentifierAst[], where?: WhereClauseAst }
-export type OnConflictConstraint = { kind: 'Constraint', token: TokenInfo, name: IdentifierAst }
-export type OnConflictNothing = { kind: 'Nothing', token: TokenInfo }
-export type OnConflictUpdate = { kind: 'Update', columns: UpdateColumnAst[], where?: WhereClauseAst }
-export type TransactionMode = { kind: 'IsolationLevel', token: TokenInfo, level: { kind: 'Serializable' | 'RepeatableRead' | 'ReadCommitted' | 'ReadUncommitted', token: TokenInfo } } | { kind: 'ReadWrite' | 'ReadOnly', token: TokenInfo } | { kind: 'Deferrable', token: TokenInfo, not?: TokenInfo }
+export type OnConflictClauseAst = { token: TokenInfo, target?: OnConflictColumnsAst | OnConflictConstraintAst, action: OnConflictNothingAst | OnConflictUpdateAst }
+export type OnConflictColumnsAst = { kind: 'Columns', columns: IdentifierAst[], where?: WhereClauseAst }
+export type OnConflictConstraintAst = { kind: 'Constraint', token: TokenInfo, name: IdentifierAst }
+export type OnConflictNothingAst = { kind: 'Nothing', token: TokenInfo }
+export type OnConflictUpdateAst = { kind: 'Update', columns: UpdateColumnAst[], where?: WhereClauseAst }
+export type TransactionModeAst = { kind: 'IsolationLevel', token: TokenInfo, level: { kind: 'Serializable' | 'RepeatableRead' | 'ReadCommitted' | 'ReadUncommitted', token: TokenInfo } } | { kind: 'ReadWrite' | 'ReadOnly', token: TokenInfo } | { kind: 'Deferrable', token: TokenInfo, not?: TokenInfo }
+export type SequenceModeAst = { kind: 'Unlogged' | 'Temporary', token: TokenInfo }
+export type SequenceTypeAst = { token: TokenInfo, type: IdentifierAst }
+export type SequenceParamAst = { token: TokenInfo, value: IntegerAst }
+export type SequenceParamOptAst = { token: TokenInfo, value?: IntegerAst }
+export type SequenceOwnedByAst = { token: TokenInfo, owner: { kind: 'None', token: TokenInfo } | { kind: 'Column', schema?: IdentifierAst, table: IdentifierAst, column: IdentifierAst } }
 
 // basic parts
 export type AliasAst = { token?: TokenInfo, name: IdentifierAst }

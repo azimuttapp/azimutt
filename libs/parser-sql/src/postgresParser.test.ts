@@ -32,6 +32,7 @@ import {
 import {parsePostgresAst, parseRule} from "./postgresParser";
 
 describe('postgresParser', () => {
+    // TODO: CREATE FUNCTION
     test('empty', () => {
         expect(parsePostgresAst('')).toEqual({result: {statements: []}})
     })
@@ -66,6 +67,30 @@ describe('postgresParser', () => {
         // TODO:12   `(information_schema._pg_expandarray(i.indkey)).n`
         // TODO:847  `select (current_schemas($3))[s.r] as nspname` (also: 1057)
         // TODO:326  `SELECT ... FROM (VALUES ($2, ($3)::text), ($4, ($5)::text)) as v(key, val)` (also: 1169)
+    })
+    describe('alterSequence', () => {
+        test('simplest', () => {
+            expect(parsePostgresAst('ALTER SEQUENCE users_id_seq OWNED BY users.id;')).toEqual({result: {statements: [{
+                ...stmt('AlterSequence', 0, 13, 45),
+                name: identifier('users_id_seq', 15),
+                ownedBy: {token: token(28, 35), owner: {kind: 'Column', table: identifier('users', 37), column: identifier('id', 43)}}
+            }]}})
+        })
+        test('complex', () => {
+            expect(parsePostgresAst('ALTER SEQUENCE IF EXISTS public.users_id_seq AS integer START WITH 1 INCREMENT BY 1 MINVALUE 1 NO MAXVALUE CACHE 1 OWNED BY users.id;')).toEqual({result: {statements: [{
+                ...stmt('AlterSequence', 0, 13, 132),
+                ifExists: token(15, 23),
+                schema: identifier('public', 25),
+                name: identifier('users_id_seq', 32),
+                as: {token: token(45, 46), type: identifier('integer', 48)},
+                start: {token: token(56, 65), value: integer(1, 67)},
+                increment: {token: token(69, 80), value: integer(1, 82)},
+                minValue: {token: token(84, 91), value: integer(1, 93)},
+                maxValue: {token: token(95, 105)},
+                cache: {token: token(107, 111), value: integer(1, 113)},
+                ownedBy: {token: token(115, 122), owner: {kind: 'Column', table: identifier('users', 124), column: identifier('id', 130)}}
+            }]}})
+        })
     })
     describe('alterTable', () => {
         test('full', () => {
@@ -239,6 +264,30 @@ describe('postgresParser', () => {
                     from: {...kind('Table', 44, 47), table: identifier('users', 49)},
                     where: {token: token(55, 59), predicate: operation(column('role', 61), op('=', 65), string('admin',  66))},
                 }
+            }]}})
+        })
+    })
+    describe('createSequence', () => {
+        test('simplest', () => {
+            expect(parsePostgresAst('CREATE SEQUENCE users_id_seq;')).toEqual({result: {statements: [{
+                ...stmt('CreateSequence', 0, 14, 28),
+                name: identifier('users_id_seq', 16)
+            }]}})
+        })
+        test('complex', () => {
+            expect(parsePostgresAst('CREATE UNLOGGED SEQUENCE IF NOT EXISTS public.users_id_seq AS integer START WITH 1 INCREMENT BY 1 MINVALUE 1 NO MAXVALUE CACHE 1 OWNED BY users.id;')).toEqual({result: {statements: [{
+                ...stmt('CreateSequence', 0, 23, 146),
+                mode: kind('Unlogged', 7),
+                ifNotExists: token(25, 37),
+                schema: identifier('public', 39),
+                name: identifier('users_id_seq', 46),
+                as: {token: token(59, 60), type: identifier('integer', 62)},
+                start: {token: token(70, 79), value: integer(1, 81)},
+                increment: {token: token(83, 94), value: integer(1, 96)},
+                minValue: {token: token(98, 105), value: integer(1, 107)},
+                maxValue: {token: token(109, 119)},
+                cache: {token: token(121, 125), value: integer(1, 127)},
+                ownedBy: {token: token(129, 136), owner: {kind: 'Column', table: identifier('users', 138), column: identifier('id', 144)}}
             }]}})
         })
     })
