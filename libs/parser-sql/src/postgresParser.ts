@@ -22,6 +22,7 @@ import {
     ConstraintNameAst,
     CreateExtensionStatementAst,
     CreateIndexStatementAst,
+    CreateMaterializedViewStatementAst,
     CreateTableStatementAst,
     CreateTypeStatementAst,
     CreateViewStatementAst,
@@ -122,6 +123,7 @@ const Conflict = createToken({name: 'Conflict', pattern: /\bCONFLICT\b/i, longer
 const Constraint = createToken({name: 'Constraint', pattern: /\bCONSTRAINT\b/i, longer_alt: Identifier})
 const Create = createToken({name: 'Create', pattern: /\bCREATE\b/i, longer_alt: Identifier})
 const Cross = createToken({name: 'Cross', pattern: /\bCROSS\b/i, longer_alt: Identifier})
+const Data = createToken({name: 'Data', pattern: /\bDATA\b/i, longer_alt: Identifier})
 const Database = createToken({name: 'Database', pattern: /\bDATABASE\b/i, longer_alt: Identifier})
 const Default = createToken({name: 'Default', pattern: /\bDEFAULT\b/i, longer_alt: Identifier})
 const Deferrable = createToken({name: 'Deferrable', pattern: /\bDEFERRABLE\b/i, longer_alt: Identifier})
@@ -224,7 +226,7 @@ const With = createToken({name: 'With', pattern: /\bWITH\b/i, longer_alt: Identi
 const Work = createToken({name: 'Work', pattern: /\bWORK\b/i, longer_alt: Identifier})
 const keywordTokens: TokenType[] = [
     Add, All, Alter, And, As, Asc, Begin, Cascade, Chain, Check, Collate, Column, Comment, Commit, Concurrently,
-    Conflict, Constraint, Create, Cross, Database, Default, Deferrable, Delete, Desc, Distinct, Do, Domain, Drop, Enum, Except,
+    Conflict, Constraint, Create, Cross, Data, Database, Default, Deferrable, Delete, Desc, Distinct, Do, Domain, Drop, Enum, Except,
     Exists, Extension, False, Fetch, Filter, First, ForeignKey, From, Full, Global, GroupBy, Having, If, In, Include, Index,
     Inner, InsertInto, Intersect, Interval, Is, IsNull, IsolationLevel, Join, Last, Left, Like, Limit, Local, MaterializedView,
     Natural, Next, No, NoAction, Not, Nothing, NotNull, Null, Nulls, Offset, On, Only, Or, OrderBy, Outer, Over, PartitionBy, PrimaryKey,
@@ -280,6 +282,7 @@ class PostgresParser extends EmbeddedActionsParser {
     commitStatementRule: () => CommitStatementAst
     createExtensionStatementRule: () => CreateExtensionStatementAst
     createIndexStatementRule: () => CreateIndexStatementAst
+    createMaterializedViewStatementRule: () => CreateMaterializedViewStatementAst
     createTableStatementRule: () => CreateTableStatementAst
     createTypeStatementRule: () => CreateTypeStatementAst
     createViewStatementRule: () => CreateViewStatementAst
@@ -333,6 +336,7 @@ class PostgresParser extends EmbeddedActionsParser {
             {ALT: () => $.SUBRULE($.commitStatementRule)},
             {ALT: () => $.SUBRULE($.createExtensionStatementRule)},
             {ALT: () => $.SUBRULE($.createIndexStatementRule)},
+            {ALT: () => $.SUBRULE($.createMaterializedViewStatementRule)},
             {ALT: () => $.SUBRULE($.createTableStatementRule)},
             {ALT: () => $.SUBRULE($.createTypeStatementRule)},
             {ALT: () => $.SUBRULE($.createViewStatementRule)},
@@ -493,6 +497,33 @@ class PostgresParser extends EmbeddedActionsParser {
             const where = $.OPTION7(() => $.SUBRULE($.whereClauseRule))
             const end = $.CONSUME(Semicolon)
             return removeUndefined({kind: 'CreateIndex' as const, meta: tokenInfo2(start, end), token, unique, concurrently, ...name, only, schema: object.schema, table: object.name, using, columns, include, where})
+        })
+
+        this.createMaterializedViewStatementRule = $.RULE<() => CreateMaterializedViewStatementAst>('createMaterializedViewStatementRule', () => {
+            // https://www.postgresql.org/docs/current/sql-creatematerializedview.html
+            const start = $.CONSUME(Create)
+            const token = tokenInfo2(start, $.CONSUME(MaterializedView))
+            const ifNotExists = $.OPTION(() => $.SUBRULE(ifNotExistsRule))
+            const object = $.SUBRULE($.objectNameRule)
+            const columns: IdentifierAst[] = []
+            $.OPTION2(() => {
+                $.CONSUME(ParenLeft)
+                $.AT_LEAST_ONE_SEP({SEP: Comma, DEF: () => columns.push($.SUBRULE($.identifierRule))})
+                $.CONSUME(ParenRight)
+            })
+            // TODO: USING
+            // TODO: WITH
+            // TODO: TABLESPACE
+            $.CONSUME(As)
+            const query = $.SUBRULE(selectStatementInnerRule)
+            const withData = $.OPTION3(() => {
+                const with_ = $.CONSUME(With)
+                const no = $.OPTION4(() => tokenInfo($.CONSUME(No)))
+                const data = $.CONSUME(Data)
+                return {token: tokenInfo2(with_, data), no}
+            })
+            const end = $.CONSUME(Semicolon)
+            return removeEmpty({kind: 'CreateMaterializedView' as const, meta: tokenInfo2(start, end), token, ifNotExists, schema: object.schema, view: object.name, columns, query, withData})
         })
 
         this.createTableStatementRule = $.RULE<() => CreateTableStatementAst>('createTableStatementRule', () => {
@@ -1388,6 +1419,7 @@ class PostgresParser extends EmbeddedActionsParser {
                 }
             }},
             // tokens allowed as identifiers:
+            {ALT: () => toIdentifier($.CONSUME(Data))},
             {ALT: () => toIdentifier($.CONSUME(Database))},
             {ALT: () => toIdentifier($.CONSUME(Deferrable))},
             {ALT: () => toIdentifier($.CONSUME(Index))},

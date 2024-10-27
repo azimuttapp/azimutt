@@ -32,7 +32,6 @@ import {
 import {parsePostgresAst, parseRule} from "./postgresParser";
 
 describe('postgresParser', () => {
-    // TODO: CREATE MATERIALIZED VIEW
     test('empty', () => {
         expect(parsePostgresAst('')).toEqual({result: {statements: []}})
     })
@@ -226,6 +225,20 @@ describe('postgresParser', () => {
                 }],
                 include: {token: token(148, 154), columns: [identifier('email', 157)]},
                 // where: {token: token(0, 0), predicate: {???}}
+            }]}})
+        })
+    })
+    describe('createMaterializedView', () => {
+        test('simplest', () => {
+            expect(parsePostgresAst("CREATE MATERIALIZED VIEW admins AS SELECT * FROM users WHERE role='admin';")).toEqual({result: {statements: [{
+                ...stmt('CreateMaterializedView', 0, 23, 73),
+                view: identifier('admins', 25),
+                query: {
+                    token: token(35, 40),
+                    columns: [wildcard(42)],
+                    from: {...kind('Table', 44, 47), table: identifier('users', 49)},
+                    where: {token: token(55, 59), predicate: operation(column('role', 61), op('=', 65), string('admin',  66))},
+                }
             }]}})
         })
     })
@@ -970,7 +983,7 @@ describe('postgresParser', () => {
                 expect(parseRule(p => p.identifierRule(), '"an id with \\""')).toEqual({result: {...identifier('an id with "', 0, 14), quoted: true}})
             })
             test('not empty', () => {
-                const specials = ['Database', 'Deferrable', 'Index', 'Nulls', 'Rows', 'Schema', 'Type', 'Version']
+                const specials = ['Data', 'Database', 'Deferrable', 'Index', 'Nulls', 'Rows', 'Schema', 'Type', 'Version']
                 expect(parseRule(p => p.identifierRule(), '""')).toEqual({errors: [
                     {kind: 'LexingError', level: 'error', message: 'unexpected character: ->"<- at offset: 0, skipped 2 characters.', ...token(0, 2)},
                     {kind: 'NoViableAltException', level: 'error', message: `Expecting: one of these possible Token sequences:\n  1. [Identifier]${specials.map((n, i) => `\n  ${i + 2}. [${n}]`).join('')}\nbut found: ''`, offset: {start: -1, end: -1}, position: {start: {line: -1, column: -1}, end: {line: -1, column: -1}}}
