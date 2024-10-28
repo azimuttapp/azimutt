@@ -68,6 +68,26 @@ describe('postgresParser', () => {
         // TODO:847  `select (current_schemas($3))[s.r] as nspname` (also: 1057)
         // TODO:326  `SELECT ... FROM (VALUES ($2, ($3)::text), ($4, ($5)::text)) as v(key, val)` (also: 1169)
     })
+    test.skip('plausible', () => {
+        const sql = fs.readFileSync('./resources/plausible.sql', 'utf8')
+        const parsed = parsePostgresAst(sql, {strict: true})
+        expect(parsed.errors || []).toEqual([])
+        // TODO:73  `CREATE FUNCTION`
+        // TODO:246 `features character varying(255)[] DEFAULT ARRAY['props'::character varying, 'stats_api'::character varying] NOT NULL`
+        // TODO:542 `recipients public.citext[] DEFAULT ARRAY[]::public.citext[] NOT NULL`
+        // TODO:575 `errors jsonb[] DEFAULT ARRAY[]::jsonb[] NOT NULL,`
+    })
+    test.skip('other structures', async () => {
+        const structures = ['https://raw.githubusercontent.com/plausible/analytics/refs/heads/master/priv/repo/structure.sql']
+        await Promise.all(structures.map(async url => {
+            const sql = await fetch(url).then(res => res.text())
+            const parsed = parsePostgresAst(sql, {strict: true})
+            if ((parsed.errors || []).length > 0) {
+                console.log(`Error in ${url}`)
+                expect(parsed.errors || []).toEqual([])
+            }
+        }))
+    })
     describe('alterSequence', () => {
         test('simplest', () => {
             expect(parsePostgresAst('ALTER SEQUENCE users_id_seq OWNED BY users.id;')).toEqual({result: {statements: [{
@@ -215,6 +235,29 @@ describe('postgresParser', () => {
                 schema: {token: token(43, 48), name: identifier('public', 50)},
                 version: {token: token(57, 63), number: string('1.0', 65)},
                 cascade: token(71, 77),
+            }]}})
+        })
+    })
+    describe.skip('createFunction', () => {
+        test('using SQL query', () => {
+            expect(parsePostgresAst("CREATE FUNCTION add(integer, integer) RETURNS integer AS 'select $1 + $2;' LANGUAGE SQL IMMUTABLE RETURNS NULL ON NULL INPUT;")).toEqual({result: {statements: [{
+                ...stmt('CreateFunction', 0, 11, 28),
+                table: identifier('users', 16),
+                columns: [column('name', 23)],
+            }]}})
+        })
+        test('using SQL', () => {
+            expect(parsePostgresAst('CREATE FUNCTION add(a integer, b integer) RETURNS integer LANGUAGE SQL IMMUTABLE RETURNS NULL ON NULL INPUT RETURN a + b;')).toEqual({result: {statements: [{
+                ...stmt('CreateFunction', 0, 11, 28),
+                table: identifier('users', 16),
+                columns: [column('name', 23)],
+            }]}})
+        })
+        test('using plSQL', () => {
+            expect(parsePostgresAst('CREATE OR REPLACE FUNCTION increment(i integer) RETURNS integer AS $$ BEGIN RETURN i + 1; END; $$ LANGUAGE plpgsql;')).toEqual({result: {statements: [{
+                ...stmt('CreateFunction', 0, 11, 28),
+                table: identifier('users', 16),
+                columns: [column('name', 23)],
             }]}})
         })
     })

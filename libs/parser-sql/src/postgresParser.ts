@@ -22,6 +22,7 @@ import {
     CommitStatementAst,
     ConstraintNameAst,
     CreateExtensionStatementAst,
+    CreateFunctionStatementAst,
     CreateIndexStatementAst,
     CreateMaterializedViewStatementAst,
     CreateSequenceStatementAst,
@@ -299,6 +300,7 @@ class PostgresParser extends EmbeddedActionsParser {
     commentOnStatementRule: () => CommentOnStatementAst
     commitStatementRule: () => CommitStatementAst
     createExtensionStatementRule: () => CreateExtensionStatementAst
+    createFunctionStatementRule: () => CreateFunctionStatementAst
     createIndexStatementRule: () => CreateIndexStatementAst
     createMaterializedViewStatementRule: () => CreateMaterializedViewStatementAst
     createSequenceStatementRule: () => CreateSequenceStatementAst
@@ -355,6 +357,7 @@ class PostgresParser extends EmbeddedActionsParser {
             {ALT: () => $.SUBRULE($.commentOnStatementRule)},
             {ALT: () => $.SUBRULE($.commitStatementRule)},
             {ALT: () => $.SUBRULE($.createExtensionStatementRule)},
+            {ALT: () => $.SUBRULE($.createFunctionStatementRule)},
             {ALT: () => $.SUBRULE($.createIndexStatementRule)},
             {ALT: () => $.SUBRULE($.createMaterializedViewStatementRule)},
             {ALT: () => $.SUBRULE($.createSequenceStatementRule)},
@@ -506,6 +509,15 @@ class PostgresParser extends EmbeddedActionsParser {
             const cascade = $.OPTION4(() => tokenInfo($.CONSUME(Cascade)))
             const end = $.CONSUME(Semicolon)
             return removeUndefined({kind: 'CreateExtension' as const, meta: tokenInfo2(start, end), token, ifNotExists, name, with: withh, schema, version, cascade})
+        })
+
+        this.createFunctionStatementRule = $.RULE<() => CreateFunctionStatementAst>('createFunctionStatementRule', () => {
+            // https://www.postgresql.org/docs/current/sql-createfunction.html
+            const start = $.CONSUME(Create)
+            const token = tokenInfo2(start, $.CONSUME(Function))
+            // TODO
+            const end = $.CONSUME(Semicolon)
+            return removeUndefined({kind: 'CreateFunction' as const, meta: tokenInfo2(start, end), token})
         })
 
         this.createIndexStatementRule = $.RULE<() => CreateIndexStatementAst>('createIndexStatementRule', () => {

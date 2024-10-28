@@ -11,7 +11,7 @@ import {ParserErrorLevel, TokenPosition} from "@azimutt/models";
 // statements
 export type StatementsAst = { statements: StatementAst[] }
 export type StatementAst = { meta: TokenInfo } & (AlterSequenceStatementAst | AlterTableStatementAst | BeginStatementAst | CommentOnStatementAst | CommitStatementAst |
-    CreateExtensionStatementAst | CreateIndexStatementAst | CreateMaterializedViewStatementAst | CreateSequenceStatementAst |
+    CreateExtensionStatementAst | CreateFunctionStatementAst | CreateIndexStatementAst | CreateMaterializedViewStatementAst | CreateSequenceStatementAst |
     CreateTableStatementAst | CreateTypeStatementAst | CreateViewStatementAst | DeleteStatementAst | DropStatementAst | InsertIntoStatementAst |
     SelectStatementAst | SetStatementAst | ShowStatementAst | UpdateStatementAst)
 export type AlterSequenceStatementAst = { kind: 'AlterSequence', token: TokenInfo, ifExists?: TokenInfo, schema?: IdentifierAst, name: IdentifierAst, as?: SequenceTypeAst, start?: SequenceParamAst, increment?: SequenceParamAst, minValue?: SequenceParamOptAst, maxValue?: SequenceParamOptAst, cache?: SequenceParamAst, ownedBy?: SequenceOwnedByAst }
@@ -20,6 +20,7 @@ export type BeginStatementAst = { kind: 'Begin', token: TokenInfo, object?: {kin
 export type CommentOnStatementAst = { kind: 'CommentOn', token: TokenInfo, object: { token: TokenInfo, kind: CommentObject }, schema?: IdentifierAst, parent?: IdentifierAst, entity: IdentifierAst, comment: StringAst | NullAst }
 export type CommitStatementAst = { kind: 'Commit', token: TokenInfo, object?: { kind: 'Work' | 'Transaction', token: TokenInfo }, chain?: { token: TokenInfo, no?: TokenInfo } }
 export type CreateExtensionStatementAst = { kind: 'CreateExtension', token: TokenInfo, ifNotExists?: TokenInfo, name: IdentifierAst, with?: TokenInfo, schema?: { token: TokenInfo, name: IdentifierAst }, version?: { token: TokenInfo, number: StringAst | IdentifierAst }, cascade?: TokenInfo }
+export type CreateFunctionStatementAst = { kind: 'CreateFunction', token: TokenInfo } // TODO
 export type CreateIndexStatementAst = { kind: 'CreateIndex', token: TokenInfo, unique?: TokenInfo, concurrently?: TokenInfo, ifNotExists?: TokenInfo, index?: IdentifierAst, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, using?: { token: TokenInfo, method: IdentifierAst }, columns: IndexColumnAst[], include?: { token: TokenInfo, columns: IdentifierAst[] }, where?: WhereClauseAst }
 export type CreateMaterializedViewStatementAst = { kind: 'CreateMaterializedView', token: TokenInfo, ifNotExists?: TokenInfo, schema?: IdentifierAst, view: IdentifierAst, columns?: IdentifierAst[], query: SelectStatementInnerAst, withData?: { token: TokenInfo, no?: TokenInfo } }
 export type CreateSequenceStatementAst = { kind: 'CreateSequence', token: TokenInfo, mode?: SequenceModeAst, ifNotExists?: TokenInfo, schema?: IdentifierAst, name: IdentifierAst, as?: SequenceTypeAst, start?: SequenceParamAst, increment?: SequenceParamAst, minValue?: SequenceParamOptAst, maxValue?: SequenceParamOptAst, cache?: SequenceParamAst, ownedBy?: SequenceOwnedByAst }
