@@ -9,6 +9,8 @@ import {ParserErrorLevel, TokenPosition} from "@azimutt/models";
  */
 
 // statements
+export type PostgresAst = StatementsAst & { comments?: CommentAst[] }
+export type PostgresStatementAst = StatementAst & { comments?: CommentAst[] }
 export type StatementsAst = { statements: StatementAst[] }
 export type StatementAst = { meta: TokenInfo } & (AlterSequenceStatementAst | AlterTableStatementAst | BeginStatementAst | CommentOnStatementAst | CommitStatementAst |
     CreateExtensionStatementAst | CreateFunctionStatementAst | CreateIndexStatementAst | CreateMaterializedViewStatementAst | CreateSequenceStatementAst |
@@ -21,12 +23,12 @@ export type CommentOnStatementAst = { kind: 'CommentOn', token: TokenInfo, objec
 export type CommitStatementAst = { kind: 'Commit', token: TokenInfo, object?: { kind: 'Work' | 'Transaction', token: TokenInfo }, chain?: { token: TokenInfo, no?: TokenInfo } }
 export type CreateExtensionStatementAst = { kind: 'CreateExtension', token: TokenInfo, ifNotExists?: TokenInfo, name: IdentifierAst, with?: TokenInfo, schema?: { token: TokenInfo, name: IdentifierAst }, version?: { token: TokenInfo, number: StringAst | IdentifierAst }, cascade?: TokenInfo }
 export type CreateFunctionStatementAst = { kind: 'CreateFunction', token: TokenInfo } // TODO
-export type CreateIndexStatementAst = { kind: 'CreateIndex', token: TokenInfo, unique?: TokenInfo, concurrently?: TokenInfo, ifNotExists?: TokenInfo, index?: IdentifierAst, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, using?: { token: TokenInfo, method: IdentifierAst }, columns: IndexColumnAst[], include?: { token: TokenInfo, columns: IdentifierAst[] }, where?: WhereClauseAst }
-export type CreateMaterializedViewStatementAst = { kind: 'CreateMaterializedView', token: TokenInfo, ifNotExists?: TokenInfo, schema?: IdentifierAst, view: IdentifierAst, columns?: IdentifierAst[], query: SelectStatementInnerAst, withData?: { token: TokenInfo, no?: TokenInfo } }
+export type CreateIndexStatementAst = { kind: 'CreateIndex', token: TokenInfo, unique?: TokenInfo, concurrently?: TokenInfo, ifNotExists?: TokenInfo, name?: IdentifierAst, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, using?: { token: TokenInfo, method: IdentifierAst }, columns: IndexColumnAst[], include?: { token: TokenInfo, columns: IdentifierAst[] }, where?: WhereClauseAst }
+export type CreateMaterializedViewStatementAst = { kind: 'CreateMaterializedView', token: TokenInfo, ifNotExists?: TokenInfo, schema?: IdentifierAst, name: IdentifierAst, columns?: IdentifierAst[], query: SelectStatementInnerAst, withData?: { token: TokenInfo, no?: TokenInfo } }
 export type CreateSequenceStatementAst = { kind: 'CreateSequence', token: TokenInfo, mode?: SequenceModeAst, ifNotExists?: TokenInfo, schema?: IdentifierAst, name: IdentifierAst, as?: SequenceTypeAst, start?: SequenceParamAst, increment?: SequenceParamAst, minValue?: SequenceParamOptAst, maxValue?: SequenceParamOptAst, cache?: SequenceParamAst, ownedBy?: SequenceOwnedByAst }
-export type CreateTableStatementAst = { kind: 'CreateTable', token: TokenInfo, mode?: CreateTableModeAst, ifNotExists?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, columns: TableColumnAst[], constraints?: TableConstraintAst[] }
-export type CreateTypeStatementAst = { kind: 'CreateType', token: TokenInfo, schema?: IdentifierAst, type: IdentifierAst, struct?: { token: TokenInfo, attrs: TypeColumnAst[] }, enum?: { token: TokenInfo, values: StringAst[] }, base?: { name: IdentifierAst, value: ExpressionAst }[] }
-export type CreateViewStatementAst = { kind: 'CreateView', token: TokenInfo, replace?: TokenInfo, temporary?: TokenInfo, recursive?: TokenInfo, schema?: IdentifierAst, view: IdentifierAst, columns?: IdentifierAst[], query: SelectStatementInnerAst }
+export type CreateTableStatementAst = { kind: 'CreateTable', token: TokenInfo, mode?: CreateTableModeAst, ifNotExists?: TokenInfo, schema?: IdentifierAst, name: IdentifierAst, columns?: TableColumnAst[], constraints?: TableConstraintAst[] }
+export type CreateTypeStatementAst = { kind: 'CreateType', token: TokenInfo, schema?: IdentifierAst, name: IdentifierAst, struct?: { token: TokenInfo, attrs: TypeColumnAst[] }, enum?: { token: TokenInfo, values: StringAst[] }, base?: { name: IdentifierAst, value: ExpressionAst }[] }
+export type CreateViewStatementAst = { kind: 'CreateView', token: TokenInfo, replace?: TokenInfo, temporary?: TokenInfo, recursive?: TokenInfo, schema?: IdentifierAst, name: IdentifierAst, columns?: IdentifierAst[], query: SelectStatementInnerAst }
 export type DeleteStatementAst = { kind: 'Delete', token: TokenInfo, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, descendants?: TokenInfo, alias?: AliasAst, using?: FromItemAst & { token: TokenInfo }, where?: WhereClauseAst, returning?: SelectClauseAst }
 export type DropStatementAst = { kind: 'Drop', token: TokenInfo, object: DropObject, entities: ObjectNameAst[], concurrently?: TokenInfo, ifExists?: TokenInfo, mode?: { kind: DropMode, token: TokenInfo } }
 export type InsertIntoStatementAst = { kind: 'InsertInto', token: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, columns?: IdentifierAst[], values: (ExpressionAst | { kind: 'Default', token: TokenInfo })[][], onConflict?: OnConflictClauseAst, returning?: SelectClauseAst }

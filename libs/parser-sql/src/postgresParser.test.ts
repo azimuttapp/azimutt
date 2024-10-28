@@ -300,7 +300,7 @@ describe('postgresParser', () => {
         test('simplest', () => {
             expect(parsePostgresAst("CREATE MATERIALIZED VIEW admins AS SELECT * FROM users WHERE role='admin';")).toEqual({result: {statements: [{
                 ...stmt('CreateMaterializedView', 0, 23, 73),
-                view: identifier('admins', 25),
+                name: identifier('admins', 25),
                 query: {
                     token: token(35, 40),
                     columns: [wildcard(42)],
@@ -338,7 +338,7 @@ describe('postgresParser', () => {
         test('simplest', () => {
             expect(parsePostgresAst('CREATE TABLE users (id int PRIMARY KEY, name VARCHAR);')).toEqual({result: {statements: [{
                 ...stmt('CreateTable', 0, 11, 53),
-                table: identifier('users', 13),
+                name: identifier('users', 13),
                 columns: [
                     {name: identifier('id', 20), type: {name: {value: 'int', token: token(23, 25)}, token: token(23, 25)}, constraints: [kind('PrimaryKey', 27, 37)]},
                     {name: identifier('name', 40), type: {name: {value: 'VARCHAR', token: token(45, 51)}, token: token(45, 51)}},
@@ -348,7 +348,7 @@ describe('postgresParser', () => {
         test('with constraints', () => {
             expect(parsePostgresAst('CREATE TABLE users (id int, role VARCHAR, CONSTRAINT users_pk PRIMARY KEY (id), FOREIGN KEY (role) REFERENCES roles (name));')).toEqual({result: {statements: [{
                 ...stmt('CreateTable', 0, 11, 123),
-                table: identifier('users', 13),
+                name: identifier('users', 13),
                 columns: [
                     {name: identifier('id', 20), type: {name: {value: 'int', token: token(23, 25)}, token: token(23, 25)}},
                     {name: identifier('role', 28), type: {name: {value: 'VARCHAR', token: token(33, 39)}, token: token(33, 39)}},
@@ -366,13 +366,13 @@ describe('postgresParser', () => {
         test('simplest', () => {
             expect(parsePostgresAst('CREATE TYPE position;')).toEqual({result: {statements: [{
                 ...stmt('CreateType', 0, 10, 20),
-                type: identifier('position', 12),
+                name: identifier('position', 12),
             }]}})
         })
         test('struct', () => {
             expect(parsePostgresAst('CREATE TYPE layout_position AS (x int, y int COLLATE "fr_FR");')).toEqual({result: {statements: [{
                 ...stmt('CreateType', 0, 10, 61),
-                type: identifier('layout_position', 12),
+                name: identifier('layout_position', 12),
                 struct: {token: token(28, 29), attrs: [
                     {name: identifier('x', 32), type: {name: {value: 'int', token: token(34, 36)}, token: token(34, 36)}},
                     {name: identifier('y', 39), type: {name: {value: 'int', token: token(41, 43)}, token: token(41, 43)}, collation: {token: token(45, 51), name: {...identifier('fr_FR', 53, 59), quoted: true}}}
@@ -383,7 +383,7 @@ describe('postgresParser', () => {
             expect(parsePostgresAst("CREATE TYPE public.bug_status AS ENUM ('open', 'closed');")).toEqual({result: {statements: [{
                 ...stmt('CreateType', 0, 10, 56),
                 schema: identifier('public', 12),
-                type: identifier('bug_status', 19),
+                name: identifier('bug_status', 19),
                 enum: {token: token(30, 36), values: [string('open', 39), string('closed', 47)]},
             }]}})
         })
@@ -391,7 +391,7 @@ describe('postgresParser', () => {
         test('base', () => {
             expect(parsePostgresAst("CREATE TYPE box (INPUT = my_box_in_function, OUTPUT = my_box_out_function, INTERNALLENGTH = 16);")).toEqual({result: {statements: [{
                 ...stmt('CreateType', 0, 10, 95),
-                type: identifier('box', 12),
+                name: identifier('box', 12),
                 base: [
                     // FIXME: expressions should be different here (identifier instead of column), or better, each parameter should have its own kind of value...
                     {name: identifier('INPUT', 17), value: column('my_box_in_function', 25)},
@@ -405,7 +405,7 @@ describe('postgresParser', () => {
         test('simplest', () => {
             expect(parsePostgresAst("CREATE VIEW admins AS SELECT * FROM users WHERE role = 'admin';")).toEqual({result: {statements: [{
                 ...stmt('CreateView', 0, 10, 62),
-                view: identifier('admins', 12),
+                name: identifier('admins', 12),
                 query: {
                     token: token(22, 27),
                     columns: [wildcard(29)],
@@ -420,7 +420,7 @@ describe('postgresParser', () => {
                 replace: token(7, 16),
                 temporary: token(18, 21),
                 recursive: token(23, 31),
-                view: identifier('admins', 38),
+                name: identifier('admins', 38),
                 columns: [identifier('id', 46), identifier('name', 50)],
                 query: {
                     token: token(59, 64),

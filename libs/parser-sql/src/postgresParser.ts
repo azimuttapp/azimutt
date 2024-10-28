@@ -60,6 +60,8 @@ import {
     OperatorRightAst,
     OrderByClauseAst,
     ParameterAst,
+    PostgresAst,
+    PostgresStatementAst,
     SelectClauseAst,
     SelectClauseColumnAst,
     SelectStatementAst,
@@ -575,7 +577,7 @@ class PostgresParser extends EmbeddedActionsParser {
                 return {token: tokenInfo2(with_, data), no}
             })
             const end = $.CONSUME(Semicolon)
-            return removeEmpty({kind: 'CreateMaterializedView' as const, meta: tokenInfo2(start, end), token, ifNotExists, schema: object.schema, view: object.name, columns, query, withData})
+            return removeEmpty({kind: 'CreateMaterializedView' as const, meta: tokenInfo2(start, end), token, ifNotExists, ...object, columns, query, withData})
         })
 
         this.createSequenceStatementRule = $.RULE<() => CreateSequenceStatementAst>('createSequenceStatementRule', () => {
@@ -656,7 +658,7 @@ class PostgresParser extends EmbeddedActionsParser {
             ])})
             $.CONSUME(ParenRight)
             const end = $.CONSUME(Semicolon)
-            return removeEmpty({kind: 'CreateTable' as const, meta: tokenInfo2(start, end), token, mode, ifNotExists, schema: object.schema, table: object.name, columns: columns.filter(isNotUndefined), constraints: constraints.filter(isNotUndefined)})
+            return removeEmpty({kind: 'CreateTable' as const, meta: tokenInfo2(start, end), token, mode, ifNotExists, ...object, columns: columns.filter(isNotUndefined), constraints: constraints.filter(isNotUndefined)})
         })
 
         this.createTypeStatementRule = $.RULE<() => CreateTypeStatementAst>('createTypeStatementRule', () => {
@@ -671,7 +673,7 @@ class PostgresParser extends EmbeddedActionsParser {
                 {ALT: () => ({base: $.SUBRULE(createTypeBase)})}
             ]))
             const end = $.CONSUME(Semicolon)
-            return removeEmpty({kind: 'CreateType' as const, meta: tokenInfo2(start, end), token, schema: object.schema, type: object.name, ...content})
+            return removeEmpty({kind: 'CreateType' as const, meta: tokenInfo2(start, end), token, ...object, ...content})
         })
 
         this.createViewStatementRule = $.RULE<() => CreateViewStatementAst>('createViewStatementRule', () => {
@@ -691,7 +693,7 @@ class PostgresParser extends EmbeddedActionsParser {
             $.CONSUME(As)
             const query = $.SUBRULE(selectStatementInnerRule)
             const end = $.CONSUME(Semicolon)
-            return removeEmpty({kind: 'CreateView' as const, meta: tokenInfo2(start, end), token, replace, temporary, recursive, schema: object.schema, view: object.name, columns, query})
+            return removeEmpty({kind: 'CreateView' as const, meta: tokenInfo2(start, end), token, replace, temporary, recursive, ...object, columns, query})
         })
 
         this.deleteStatementRule = $.RULE<() => DeleteStatementAst>('deleteStatementRule', () => {
@@ -1584,8 +1586,12 @@ export function parseRule<T extends object>(parse: (p: PostgresParser) => T, inp
     return new ParserResult(comments.length > 0 ? {...res, comments} : res, errors)
 }
 
-export function parsePostgresAst(input: string, opts: { strict?: boolean } = {strict: false}): ParserResult<StatementsAst & { comments?: CommentAst[] }> {
+export function parsePostgresAst(input: string, opts: { strict?: boolean } = {strict: false}): ParserResult<PostgresAst> {
     return parseRule(p => p.statementsRule(), input, opts.strict || false)
+}
+
+export function parsePostgresStatementAst(input: string, opts: { strict?: boolean } = {strict: false}): ParserResult<PostgresStatementAst> {
+    return parseRule(p => p.statementRule(), input, opts.strict || false)
 }
 
 function buildComment(token: IToken): CommentAst {

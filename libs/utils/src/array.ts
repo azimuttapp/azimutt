@@ -16,6 +16,10 @@ export const collectOne = <T, U>(arr: T[], f: (t: T) => U | undefined): U | unde
 }
 
 export const distinct = <T>(arr: T[]): T[] => arr.filter((t, i) => arr.indexOf(t) === i)
+export const distinctBy = <T>(arr: T[], by: (t: T) => string | number): T[] => {
+    const arrStr = arr.map(t => by(t))
+    return arr.filter((t, i) => arrStr.indexOf(by(t)) === i)
+}
 
 export type Diff<T> = {left: T[], right: T[], both: {left: T, right: T}[]}
 export const diffBy = <T>(arr1: T[], arr2: T[], f: (t: T, i: number) => string): Diff<T> => {
