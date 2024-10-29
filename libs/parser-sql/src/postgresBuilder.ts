@@ -47,6 +47,7 @@ import {
     PostgresAst,
     SelectClauseColumnAst,
     SelectStatementInnerAst,
+    StatementAst,
     TableColumnAst
 } from "./postgresAst";
 import {duplicated} from "./errors";
@@ -54,49 +55,7 @@ import {duplicated} from "./errors";
 export function buildPostgresDatabase(ast: PostgresAst, start: number, parsed: number): ParserResult<Database> {
     const db: Database = {entities: [], relations: [], types: []}
     const errors: ParserError[] = []
-    ast.statements.forEach((stmt, i) => {
-        const index = i + 1
-        if (stmt.kind === 'AlterTable') {
-            alterTable(index, stmt, db)
-        } else if (stmt.kind === 'CommentOn') {
-            commentOn(index, stmt, db)
-        } else if (stmt.kind === 'CreateIndex') {
-            if (!db.entities) db.entities = []
-            createIndex(index, stmt, db.entities)
-        } else if (stmt.kind === 'CreateMaterializedView') {
-            if (!db.entities) db.entities = []
-            const entity = createMaterializedView(index, stmt, db.entities)
-            addEntity(db.entities, errors, entity, mergePositions([stmt.schema, stmt.name].map(v => v?.token)))
-        } else if (stmt.kind === 'CreateTable') {
-            if (!db.entities) db.entities = []
-            const res = createTable(index, stmt)
-            addEntity(db.entities, errors, res.entity, mergePositions([stmt.schema, stmt.name].map(v => v?.token)))
-            res.relations.forEach(r => db.relations?.push(r))
-        } else if (stmt.kind === 'CreateType') {
-            if (!db.types) db.types = []
-            const type = createType(index, stmt)
-            addType(db.types, errors, type, mergePositions([stmt.schema, stmt.name].map(v => v?.token)))
-        } else if (stmt.kind === 'CreateView') {
-            if (!db.entities) db.entities = []
-            const entity = createView(index, stmt, db.entities)
-            addEntity(db.entities, errors, entity, mergePositions([stmt.schema, stmt.name].map(v => v?.token)))
-        } else if (stmt.kind === 'AlterSequence') { // nothing
-        } else if (stmt.kind === 'Begin') { // nothing
-        } else if (stmt.kind === 'Commit') { // nothing
-        } else if (stmt.kind === 'CreateExtension') { // nothing
-        } else if (stmt.kind === 'CreateFunction') { // nothing
-        } else if (stmt.kind === 'CreateSequence') { // nothing
-        } else if (stmt.kind === 'Delete') { // nothing
-        } else if (stmt.kind === 'Drop') { // nothing
-        } else if (stmt.kind === 'InsertInto') { // nothing
-        } else if (stmt.kind === 'Select') { // nothing
-        } else if (stmt.kind === 'Set') { // nothing
-        } else if (stmt.kind === 'Show') { // nothing
-        } else if (stmt.kind === 'Update') { // nothing
-        } else {
-            isNever(stmt)
-        }
-    })
+    ast.statements.forEach((stmt, i) => evolvePostgres(db, errors, i + 1, stmt))
     const done = Date.now()
     const extra = removeEmpty({
         source: `PostgreSQL parser <${packageJson.version}>`,
@@ -107,6 +66,49 @@ export function buildPostgresDatabase(ast: PostgresAst, start: number, parsed: n
         comments: ast.comments?.map(c => ({line: c.token.position.start.line, comment: c.value})) || [],
     })
     return new ParserResult(removeEmpty({...db, extra}), errors)
+}
+
+export function evolvePostgres(db: Database, errors: ParserError[], index: number, stmt: StatementAst): void {
+    if (stmt.kind === 'AlterTable') {
+        alterTable(index, stmt, db)
+    } else if (stmt.kind === 'CommentOn') {
+        commentOn(index, stmt, db)
+    } else if (stmt.kind === 'CreateIndex') {
+        if (!db.entities) db.entities = []
+        createIndex(index, stmt, db.entities)
+    } else if (stmt.kind === 'CreateMaterializedView') {
+        if (!db.entities) db.entities = []
+        const entity = createMaterializedView(index, stmt, db.entities)
+        addEntity(db.entities, errors, entity, mergePositions([stmt.schema, stmt.name].map(v => v?.token)))
+    } else if (stmt.kind === 'CreateTable') {
+        if (!db.entities) db.entities = []
+        const res = createTable(index, stmt)
+        addEntity(db.entities, errors, res.entity, mergePositions([stmt.schema, stmt.name].map(v => v?.token)))
+        res.relations.forEach(r => db.relations?.push(r))
+    } else if (stmt.kind === 'CreateType') {
+        if (!db.types) db.types = []
+        const type = createType(index, stmt)
+        addType(db.types, errors, type, mergePositions([stmt.schema, stmt.name].map(v => v?.token)))
+    } else if (stmt.kind === 'CreateView') {
+        if (!db.entities) db.entities = []
+        const entity = createView(index, stmt, db.entities)
+        addEntity(db.entities, errors, entity, mergePositions([stmt.schema, stmt.name].map(v => v?.token)))
+    } else if (stmt.kind === 'AlterSequence') { // nothing
+    } else if (stmt.kind === 'Begin') { // nothing
+    } else if (stmt.kind === 'Commit') { // nothing
+    } else if (stmt.kind === 'CreateExtension') { // nothing
+    } else if (stmt.kind === 'CreateFunction') { // nothing
+    } else if (stmt.kind === 'CreateSequence') { // nothing
+    } else if (stmt.kind === 'Delete') { // nothing
+    } else if (stmt.kind === 'Drop') { // nothing
+    } else if (stmt.kind === 'InsertInto') { // nothing
+    } else if (stmt.kind === 'Select') { // nothing
+    } else if (stmt.kind === 'Set') { // nothing
+    } else if (stmt.kind === 'Show') { // nothing
+    } else if (stmt.kind === 'Update') { // nothing
+    } else {
+        isNever(stmt)
+    }
 }
 
 function addEntity(entities: Entity[], errors: ParserError[], entity: Entity, pos: TokenPosition): void {
@@ -476,6 +478,7 @@ export type SelectSourceFrom = SelectSourceTable | SelectSourceSelect
 export type SelectSourceTable = { kind: 'Table', schema?: string, table: string, columns?: { name: string, type: string }[] }
 export type SelectSourceSelect = { kind: 'Select' } & SelectEntities
 
+// TODO: also extract entities in clauses such as WHERE, HAVING... (know all use involved tables & columns, wherever they are used)
 export function selectEntities(s: SelectStatementInnerAst, entities: Entity[]): SelectEntities {
     const sources = s.from ? selectTables(s.from, entities) : []
     const columns: SelectColumn[] = s.columns.flatMap((c, i) => selectColumn(c, i, sources))

@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import {describe, expect, test} from "@jest/globals";
+import {removeFieldsDeep} from "@azimutt/utils";
 import {Database, Entity, parseJsonDatabase, ParserError} from "@azimutt/models";
 import {SelectStatementInnerAst} from "./postgresAst";
 import {parsePostgresAst} from "./postgresParser";
@@ -87,13 +88,13 @@ COMMENT ON TYPE bug_status IS 'bug status';
         }
         expect(parse(input)).toEqual({db, errors: []})
     })
-    test.skip('full', () => {
+    test.skip('full', () => { // won't work, some concepts can't be handled in SQL, yet, worth checking the diff ^^
         const json = parseJsonDatabase(fs.readFileSync('../aml/resources/full.json', 'utf8'))
         const db: Database = json.result || {}
         const sql = fs.readFileSync('./resources/full.postgres.sql', 'utf8')
         const parsed = parse(sql)
         expect(parsed.errors).toEqual([])
-        expect(parsed.db).toEqual(db)
+        expect(removeFieldsDeep(parsed.db, ['extra'])).toEqual(removeFieldsDeep(db, ['extra']))
     })
     describe('selectEntities', () => {
         const users: Entity = {schema: 'public', name: 'users', attrs: [{name: 'id', type: 'int'}, {name: 'name', type: 'varchar'}]}
