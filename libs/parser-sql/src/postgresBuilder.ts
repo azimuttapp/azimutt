@@ -1,6 +1,5 @@
 import {distinctBy, isNever, removeEmpty, removeUndefined} from "@azimutt/utils";
 import {
-    AttributeName,
     AttributePath,
     attributePathSame,
     Check,
@@ -25,11 +24,13 @@ import {
     CreateViewStatementAst,
     ExpressionAst,
     FromClauseAst,
+    FromItemAst,
     FunctionAst,
     Operator,
     OperatorLeft,
     OperatorRight,
     PostgresAst,
+    SelectClauseColumnAst,
     SelectStatementInnerAst
 } from "./postgresAst";
 import {duplicated} from "./errors";
@@ -146,7 +147,7 @@ function buildCreateView(index: number, stmt: CreateViewStatementAst, entities: 
             // doc: z.string().optional(), // not defined in CREATE TABLE
             // stats: AttributeStats.optional(), // no stats in SQL
             // extra: AttributeExtra.optional(), // TODO
-        })) || selectAttrs(stmt.query, entities).map(name => ({name, type: 'unknown'})),
+        })) || selectEntities(stmt.query, entities).columns.map(c => ({name: c.name, type: c.type || 'unknown'})),
         // pk: PrimaryKey.optional(), // not in VIEW
         // indexes: Index.array().optional(), // not in VIEW
         // checks: Check.array().optional(), // not in VIEW
@@ -228,15 +229,6 @@ function operatorRightToString(o: OperatorRight): string {
     return o
 }
 
-function selectAttrs(s: SelectStatementInnerAst, entities: Entity[]): AttributeName[] {
-    return s.columns.map((c, i) => {
-        if (c.alias) return c.alias.name.value
-        if (c.kind === 'Column') return c.column.value
-        if (c.kind === 'Function') return c.function.value
-        return `col_${i + 1}` // TODO: improve
-    })
-}
-
 function expressionAttrs(e: ExpressionAst): AttributePath[] {
     if (e.kind === 'String') return []
     if (e.kind === 'Integer') return []
@@ -253,4 +245,115 @@ function expressionAttrs(e: ExpressionAst): AttributePath[] {
     if (e.kind === 'OperationRight') return expressionAttrs(e.left)
     if (e.kind === 'List') return []
     return isNever(e)
+}
+
+export type SelectEntities = { columns: SelectColumn[], sources: SelectSource[] }
+export type SelectColumn = { schema?: string, table?: string, name: string, type?: string, sources: SelectColumnSource[] }
+export type SelectColumnSource = { schema?: string, table: string, column: string, type?: string }
+export type SelectSource = { name: string, from: SelectSourceFrom }
+export type SelectSourceFrom = SelectSourceTable | SelectSourceSelect
+export type SelectSourceTable = { kind: 'Table', schema?: string, table: string, columns?: { name: string, type: string }[] }
+export type SelectSourceSelect = { kind: 'Select' } & SelectEntities
+
+export function selectEntities(s: SelectStatementInnerAst, entities: Entity[]): SelectEntities {
+    const sources = s.from ? selectTables(s.from, entities) : []
+    const columns: SelectColumn[] = s.columns.flatMap((c, i) => selectColumn(c, i, sources))
+    return {columns, sources}
+}
+function selectTables(f: FromClauseAst, entities: Entity[]): SelectSource[] {
+    const joins = f.joins?.map(j => fromTables(j.from, entities)) || []
+    return [fromTables(f, entities), ...joins]
+}
+function fromTables(i: FromItemAst, entities: Entity[]): SelectSource {
+    if (i.kind === 'Table') {
+        const entity = findEntity(entities, i.table.value, i.schema?.value)
+        if (entity) {
+            return {name: i.alias?.name.value || i.table.value, from: removeEmpty({kind: 'Table' as const, schema: entity.schema, table: entity.name, columns: entity.attrs?.map(a => ({name: a.name, type: a.type})) || []})}
+        } else {
+            return {name: i.alias?.name.value || i.table.value, from: removeUndefined({kind: 'Table' as const, schema: i.schema?.value, table: i.table.value})}
+        }
+    } else if (i.kind === 'Select') {
+        return {name: i.alias?.name.value || '', from: {kind: 'Select', ...selectEntities(i.select, entities)}}
+    } else {
+        return isNever(i)
+    }
+}
+function selectColumn(c: SelectClauseColumnAst, i: number, sources: SelectSource[]): SelectColumn[] {
+    if(c.kind === 'Column') {
+        const ref = removeUndefined({schema: c.schema?.value, table: c.table?.value, name: columnName(c, i)})
+        const source = findSource(sources, c.schema?.value, c.table?.value, c.column.value)?.from
+        if (source?.kind === 'Table') {
+            const col = source.columns?.find(col => col.name === c.column.value)
+            return [removeUndefined({...ref, type: col?.type, sources: [removeUndefined({schema: source.schema, table: source.table, column: c.column.value, type: col?.type})]})]
+        } else if (source?.kind === 'Select') {
+            const col = source.columns.find(col => col.name === c.column.value)
+            return [col ? col : {...ref, sources: []}] // `col` should always exist in correct queries
+        } else {
+            return [{...ref, sources: []}] // `source` should always exist in correct queries
+        }
+    } else if (c.kind === 'Wildcard') {
+        const ref = removeUndefined({schema: c.schema?.value, table: c.table?.value, name: columnName(c, i)})
+        const source = findSource(sources, c.schema?.value, c.table?.value, undefined)?.from
+        if (source?.kind === 'Table') {
+            const cols = source.columns || []
+            if(cols.length > 0) {
+                return cols.map(a => ({...ref, name: a.name, type: a.type, sources: [removeUndefined({schema: source.schema, table: source.table, column: a.name, type: a.type})]}))
+            } else {
+                return [{...ref, sources: []}] // Wildcard from a table with no columns :/ (happen when missing entities)
+            }
+        } else if (source?.kind === 'Select') {
+            return source.columns.map(col => removeUndefined({...col, schema: c.schema?.value, table: c.table?.value}))
+        } else {
+            return [{...ref, sources: []}] // `source` should always exist in correct queries
+        }
+    } else {
+        // TODO: handle more kind and remove `columnSources`
+        return [{name: columnName(c, i), sources: columnSources(c, sources)}]
+    }
+}
+function findEntity(entities: Entity[], entity: string, schema: string | undefined): Entity | undefined {
+    const candidates = entities.filter(e => e.name === entity)
+    if (schema !== undefined) return candidates.find(e => e.schema === schema)
+    if (candidates.length === 1) return candidates[0]
+    return candidates.find(e => e.schema === undefined) || candidates.find(e => e.schema === '')
+}
+function findSource(sources: SelectSource[], schema: string | undefined, table: string | undefined, column: string | undefined): SelectSource | undefined {
+    // not sure what to do with `schema` :/
+    if (table) {
+        return sources.find(s => s.name === table)
+    }
+    if (column) {
+        const candidates = sources.filter(s => {
+            if (s.from.kind === 'Table') {
+                return !!s.from.columns?.find(a => a.name === column)
+            } else if (s.from.kind === 'Select') {
+                return !!s.from.columns.find(c => c.name === column)
+            } else {
+                return isNever(s.from)
+            }
+        })
+        return candidates.length === 1 ? candidates[0] : sources.length === 1 ? sources[0] : undefined
+    }
+    return sources.length === 1 ? sources[0] : undefined
+}
+function columnName(c: SelectClauseColumnAst, i: number): string {
+    if (c.alias) return c.alias.name.value
+    if (c.kind === 'Column') return c.column.value
+    if (c.kind === 'Function') return c.function.value
+    if (c.kind === 'Wildcard') return '*'
+    return `col_${i + 1}`
+}
+function columnSources(c: SelectClauseColumnAst, sources: SelectSource[]): SelectColumnSource[] {
+    if (c.kind === 'Column') {
+        const source = c.table ? sources.find(s => s.name === c.table?.value) : sources.length === 1 ? sources[0] : undefined
+        if (source && source.from.kind === 'Table') {
+            return [removeUndefined({schema: source.from.schema, table: source.from.table, column: c.column.value})]
+        }
+    }
+    if (c.kind === 'Function') return c.parameters.flatMap(p => columnSources(p, sources))
+    if (c.kind === 'Operation') return columnSources(c.left, sources).concat(columnSources(c.right, sources))
+    if (c.kind === 'OperationLeft') return columnSources(c.right, sources)
+    if (c.kind === 'OperationRight') return columnSources(c.left, sources)
+    if (c.kind === 'Group') return columnSources(c.expression, sources)
+    return []
 }

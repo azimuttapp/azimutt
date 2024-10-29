@@ -1,8 +1,9 @@
 import * as fs from "fs";
 import {describe, expect, test} from "@jest/globals";
-import {Database, parseJsonDatabase, ParserError} from "@azimutt/models";
+import {Database, Entity, parseJsonDatabase, ParserError} from "@azimutt/models";
+import {SelectStatementInnerAst} from "./postgresAst";
 import {parsePostgresAst} from "./postgresParser";
-import {buildPostgresDatabase} from "./postgresBuilder";
+import {buildPostgresDatabase, SelectEntities, selectEntities} from "./postgresBuilder";
 
 describe('postgresBuilder', () => {
     test('empty', () => {
@@ -38,8 +39,8 @@ CREATE VIEW admins AS SELECT id, name FROM users WHERE role='admin';
                     {name: 'author', type: 'int', null: true}
                 ], pk: {attrs: [['id']]}, checks: [{attrs: [['title']], predicate: 'length(title) > 10'}]},
                 {name: 'admins', kind: 'view', def: "SELECT id, name FROM users WHERE role = 'admin'", attrs: [
-                    {name: 'id', type: 'unknown'},
-                    {name: 'name', type: 'unknown'},
+                    {name: 'id', type: 'int'},
+                    {name: 'name', type: 'varchar'},
                 ]}
             ],
             relations: [
@@ -57,6 +58,101 @@ CREATE VIEW admins AS SELECT id, name FROM users WHERE role='admin';
         expect(parsed.errors).toEqual([])
         expect(parsed.db).toEqual(db)
     })
+    describe('selectEntities', () => {
+        const users: Entity = {schema: 'public', name: 'users', attrs: [{name: 'id', type: 'int'}, {name: 'name', type: 'varchar'}]}
+        const events: Entity = {schema: 'public', name: 'events', attrs: [{name: 'id', type: 'int'}, {name: 'name', type: 'varchar'}, {name: 'created_by', type: 'int'}]}
+        test('simple', () => {
+            expect(extract('SELECT id, name FROM users;', [])).toEqual({
+                columns: [
+                    {name: 'id', sources: [{table: 'users', column: 'id'}]},
+                    {name: 'name', sources: [{table: 'users', column: 'name'}]}
+                ],
+                sources: [{name: 'users', from: {kind: 'Table', table: 'users'}}]
+            })
+            expect(extract('SELECT id, name FROM users;', [users])).toEqual({
+                columns: [
+                    {name: 'id', type: 'int', sources: [{schema: 'public', table: 'users', column: 'id', type: 'int'}]},
+                    {name: 'name', type: 'varchar', sources: [{schema: 'public', table: 'users', column: 'name', type: 'varchar'}]}
+                ],
+                sources: [{name: 'users', from: {kind: 'Table', schema: 'public', table: 'users', columns: [{name: 'id', type: 'int'}, {name: 'name', type: 'varchar'}]}}]
+            })
+        })
+        test('wildcard', () => {
+            expect(extract('SELECT * FROM users;', [])).toEqual({
+                columns: [{name: '*', sources: []}],
+                sources: [{name: 'users', from: {kind: 'Table', table: 'users'}}]
+            })
+            expect(extract('SELECT * FROM users;', [users])).toEqual({
+                columns: [
+                    {name: 'id', type: 'int', sources: [{schema: 'public', table: 'users', column: 'id', type: 'int'}]},
+                    {name: 'name', type: 'varchar', sources: [{schema: 'public', table: 'users', column: 'name', type: 'varchar'}]}
+                ],
+                sources: [{name: 'users', from: {kind: 'Table', schema: 'public', table: 'users', columns: [{name: 'id', type: 'int'}, {name: 'name', type: 'varchar'}]}}]
+            })
+        })
+        test('no from', () => {
+            expect(extract('SELECT 1;', [])).toEqual({
+                columns: [{name: 'col_1', sources: []}],
+                sources: []
+            })
+        })
+        test('function', () => {
+            expect(extract('SELECT first_name || last_name FROM users;', [])).toEqual({
+                columns: [{name: 'col_1', sources: [{table: 'users', column: 'first_name'}, {table: 'users', column: 'last_name'}]}],
+                sources: [{name: 'users', from: {kind: 'Table', table: 'users'}}]
+            })
+            expect(extract('SELECT lower(name) FROM users;', [])).toEqual({
+                columns: [{name: 'lower', sources: [{table: 'users', column: 'name'}]}],
+                sources: [{name: 'users', from: {kind: 'Table', table: 'users'}}]
+            })
+            expect(extract('SELECT count(*) FROM users;', [])).toEqual({
+                columns: [{name: 'count', sources: []}],
+                sources: [{name: 'users', from: {kind: 'Table', table: 'users'}}]
+            })
+        })
+        test('join', () => {
+            expect(extract('SELECT u.name, e.* FROM events e JOIN users u ON e.created_by = u.id;', [users, events])).toEqual({
+                columns: [
+                    {table: 'u', name: 'name', type: 'varchar', sources: [{schema: 'public', table: 'users', column: 'name', type: 'varchar'}]},
+                    {table: 'e', name: 'id', type: 'int', sources: [{schema: 'public', table: 'events', column: 'id', type: 'int'}]},
+                    {table: 'e', name: 'name', type: 'varchar', sources: [{schema: 'public', table: 'events', column: 'name', type: 'varchar'}]},
+                    {table: 'e', name: 'created_by', type: 'int', sources: [{schema: 'public', table: 'events', column: 'created_by', type: 'int'}]},
+                ],
+                sources: [
+                    {name: 'e', from: {kind: 'Table', schema: 'public', table: 'events', columns: [{name: 'id', type: 'int'}, {name: 'name', type: 'varchar'}, {name: 'created_by', type: 'int'}]}},
+                    {name: 'u', from: {kind: 'Table', schema: 'public', table: 'users', columns: [{name: 'id', type: 'int'}, {name: 'name', type: 'varchar'}]}},
+                ]
+            })
+            expect(extract('SELECT u.name, created_by FROM events e JOIN users u ON e.created_by = u.id;', [users, events])).toEqual({
+                columns: [
+                    {table: 'u', name: 'name', type: 'varchar', sources: [{schema: 'public', table: 'users', column: 'name', type: 'varchar'}]},
+                    {name: 'created_by', type: 'int', sources: [{schema: 'public', table: 'events', column: 'created_by', type: 'int'}]},
+                ],
+                sources: [
+                    {name: 'e', from: {kind: 'Table', schema: 'public', table: 'events', columns: [{name: 'id', type: 'int'}, {name: 'name', type: 'varchar'}, {name: 'created_by', type: 'int'}]}},
+                    {name: 'u', from: {kind: 'Table', schema: 'public', table: 'users', columns: [{name: 'id', type: 'int'}, {name: 'name', type: 'varchar'}]}},
+                ]
+            })
+        })
+        test('subquery', () => {
+            expect(extract("SELECT a.* FROM (SELECT id FROM users WHERE role = 'admin') a;", [])).toEqual({
+                columns: [{table: 'a', name: 'id', sources: [{table: 'users', column: 'id'}]}],
+                sources: [{name: 'a', from: {
+                    kind: 'Select',
+                    columns: [{name: 'id', sources: [{table: 'users', column: 'id'}]}],
+                    sources: [{name: 'users', from: {kind: 'Table', table: 'users'}}]}
+                }]
+            })
+            expect(extract("SELECT a.* FROM (SELECT id FROM users WHERE role = 'admin') a;", [users])).toEqual({
+                columns: [{table: 'a', name: 'id', type: 'int', sources: [{schema: 'public', table: 'users', column: 'id', type: 'int'}]}],
+                sources: [{name: 'a', from: {
+                    kind: 'Select',
+                    columns: [{name: 'id', type: 'int', sources: [{schema: 'public', table: 'users', column: 'id', type: 'int'}]}],
+                    sources: [{name: 'users', from: {kind: 'Table', schema: 'public', table: 'users', columns: [{name: 'id', type: 'int'}, {name: 'name', type: 'varchar'}]}}]}
+                }]
+            })
+        })
+    })
 })
 
 function parse(sql: string): {db: Database, errors: ParserError[]} {
@@ -70,4 +166,8 @@ function parse(sql: string): {db: Database, errors: ParserError[]} {
         console.error(e) // print stack trace
         throw new Error(`Can't parse '${sql}'${typeof e === 'object' && e !== null && 'message' in e ? ': ' + e.message : ''}`)
     }
+}
+
+function extract(sql: string, entities: Entity[]): SelectEntities {
+    return selectEntities(parsePostgresAst(sql).result?.statements?.[0] as SelectStatementInnerAst, entities)
 }
