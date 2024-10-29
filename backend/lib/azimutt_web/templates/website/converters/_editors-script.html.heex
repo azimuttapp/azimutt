@@ -95,6 +95,7 @@
                 if (lang === 'aml') return aml.parseAml(content)
                 if (lang === 'amlv1') return aml.parseAml(content).mapError(errs => errs.filter(e => e.kind !== 'LegacySyntax'))
                 if (lang === 'json') return aml.parseJsonDatabase(content)
+                if (lang === 'postgres') return sql.parseSql(content, 'postgres')
                 return {errors: [{message: 'Unsupported source dialect: ' + lang, kind: 'UnsupportedDialect', level: 'error', offset: {start: 0, end: 100}, position: {start: {line: 1, column: 1}, end: {line: 10, column: 10}}}]}
             } catch (e) {
                 return {errors: [{message: 'Failed to parse ' + lang + (e && e.message ? ': ' + e.message : ''), kind: 'DialectError', level: 'error', offset: {start: 0, end: 100}, position: {start: {line: 1, column: 1}, end: {line: 10, column: 10}}}]}

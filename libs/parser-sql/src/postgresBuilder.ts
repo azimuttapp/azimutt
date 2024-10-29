@@ -1,7 +1,9 @@
-import {distinctBy, isNever, removeEmpty, removeUndefined} from "@azimutt/utils";
+import {distinctBy, isNever, isNotUndefined, removeEmpty, removeUndefined} from "@azimutt/utils";
 import {
+    Attribute,
     AttributePath,
     attributePathSame,
+    AttributeValue,
     Check,
     Database,
     Entity,
@@ -12,6 +14,7 @@ import {
     mergeEntity,
     mergePositions,
     ParserError,
+    ParserResult,
     PrimaryKey,
     Relation,
     TokenPosition
@@ -20,12 +23,17 @@ import packageJson from "../package.json";
 import {
     AliasAst,
     ColumnAst,
+    CommentObject,
+    CommentOnStatementAst,
+    CreateIndexStatementAst,
+    CreateMaterializedViewStatementAst,
     CreateTableStatementAst,
     CreateViewStatementAst,
     ExpressionAst,
     FromClauseAst,
     FromItemAst,
     FunctionAst,
+    IdentifierAst,
     Operator,
     OperatorLeft,
     OperatorRight,
@@ -35,7 +43,7 @@ import {
 } from "./postgresAst";
 import {duplicated} from "./errors";
 
-export function buildPostgresDatabase(ast: PostgresAst, start: number, parsed: number): {db: Database, errors: ParserError[]} {
+export function buildPostgresDatabase(ast: PostgresAst, start: number, parsed: number): ParserResult<Database> {
     const db: Database = {entities: [], relations: [], types: []}
     const errors: ParserError[] = []
     ast.statements.forEach((stmt, i) => {
@@ -43,21 +51,24 @@ export function buildPostgresDatabase(ast: PostgresAst, start: number, parsed: n
         if (stmt.kind === 'AlterTable') {
             // TODO
         } else if (stmt.kind === 'CommentOn') {
-            // TODO
+            commentOn(index, stmt, db)
         } else if (stmt.kind === 'CreateIndex') {
-            // TODO
+            if (!db.entities) db.entities = []
+            createIndex(index, stmt, db.entities)
         } else if (stmt.kind === 'CreateMaterializedView') {
-            // TODO
+            if (!db.entities) db.entities = []
+            const entity = createMaterializedView(index, stmt, db.entities)
+            addEntity(db.entities, errors, entity, mergePositions([stmt.schema, stmt.name].map(v => v?.token)))
         } else if (stmt.kind === 'CreateTable') {
             if (!db.entities) db.entities = []
-            const res = buildCreateTable(index, stmt)
+            const res = createTable(index, stmt)
             addEntity(db.entities, errors, res.entity, mergePositions([stmt.schema, stmt.name].map(v => v?.token)))
             res.relations.forEach(r => db.relations?.push(r))
         } else if (stmt.kind === 'CreateType') {
             // TODO
         } else if (stmt.kind === 'CreateView') {
             if (!db.entities) db.entities = []
-            const entity = buildCreateView(index, stmt, db.entities)
+            const entity = createView(index, stmt, db.entities)
             addEntity(db.entities, errors, entity, mergePositions([stmt.schema, stmt.name].map(v => v?.token)))
         }
     })
@@ -70,7 +81,7 @@ export function buildPostgresDatabase(ast: PostgresAst, start: number, parsed: n
         formattingTimeMs: done - parsed,
         comments: ast.comments?.map(c => ({line: c.token.position.start.line, comment: c.value})) || [],
     })
-    return {db: removeEmpty({...db, extra}), errors}
+    return new ParserResult(removeEmpty({...db, extra}), errors)
 }
 
 function addEntity(entities: Entity[], errors: ParserError[], entity: Entity, pos: TokenPosition): void {
@@ -85,7 +96,7 @@ function addEntity(entities: Entity[], errors: ParserError[], entity: Entity, po
     }
 }
 
-function buildCreateTable(index: number, stmt: CreateTableStatementAst): { entity: Entity, relations: Relation[] } {
+function createTable(index: number, stmt: CreateTableStatementAst): { entity: Entity, relations: Relation[] } {
     const colPk: PrimaryKey[] = stmt.columns?.flatMap(col => col.constraints?.flatMap(c => c.kind === 'PrimaryKey' ? [removeUndefined({attrs: [[col.name.value]], name: c.constraint?.name.value})] : []) || []) || []
     const tablePk: PrimaryKey[] = stmt.constraints?.flatMap(c => c.kind === 'PrimaryKey' ? [removeUndefined({attrs: c.columns.map(col => [col.value]), name: c.constraint?.name.value})] : []) || []
     const pk: PrimaryKey[] = colPk.concat(tablePk)
@@ -116,7 +127,7 @@ function buildCreateTable(index: number, stmt: CreateTableStatementAst): { entit
             type: c.type.name.value,
             null: c.constraints?.find(c => c.kind === 'Nullable' ? !c.value : false) || pk.find(pk => pk.attrs.some(a => attributePathSame(a, [c.name.value]))) ? undefined : true,
             // gen: z.boolean().optional(), // not handled for now
-            default: (c.constraints || []).flatMap(c => c.kind === 'Default' ? [expressionToString(c.expression)] : [])[0],
+            default: (c.constraints || []).flatMap(c => c.kind === 'Default' ? [expressionToValue(c.expression)] : [])[0],
             // attrs: z.lazy(() => Attribute.array().optional()), // no nested attrs from SQL
             // doc: z.string().optional(), // not defined in CREATE TABLE
             // stats: AttributeStats.optional(), // no stats in SQL
@@ -131,23 +142,13 @@ function buildCreateTable(index: number, stmt: CreateTableStatementAst): { entit
     }), relations}
 }
 
-function buildCreateView(index: number, stmt: CreateViewStatementAst, entities: Entity[]): Entity {
+function createView(index: number, stmt: CreateViewStatementAst, entities: Entity[]): Entity {
     return removeEmpty({
         schema: stmt.schema?.value,
         name: stmt.name.value,
         kind: 'view' as const,
         def: selectInnerToString(stmt.query),
-        attrs: stmt.columns?.map(c => removeUndefined({
-            name: c.value,
-            type: 'unknown',
-            // null: z.boolean().optional(), // not in VIEW
-            // gen: z.boolean().optional(), // not handled for now
-            // default: AttributeValue.optional(), // now in VIEW
-            // attrs: z.lazy(() => Attribute.array().optional()), // no nested attrs from SQL
-            // doc: z.string().optional(), // not defined in CREATE TABLE
-            // stats: AttributeStats.optional(), // no stats in SQL
-            // extra: AttributeExtra.optional(), // TODO
-        })) || selectEntities(stmt.query, entities).columns.map(c => ({name: c.name, type: c.type || 'unknown'})),
+        attrs: buildViewAttrs(stmt.query, stmt.columns, entities),
         // pk: PrimaryKey.optional(), // not in VIEW
         // indexes: Index.array().optional(), // not in VIEW
         // checks: Check.array().optional(), // not in VIEW
@@ -155,6 +156,96 @@ function buildCreateView(index: number, stmt: CreateViewStatementAst, entities: 
         // stats: EntityStats.optional(), // no stats in SQL
         // extra: EntityExtra.optional(), // TODO
     })
+}
+
+function createMaterializedView(index: number, stmt: CreateMaterializedViewStatementAst, entities: Entity[]): Entity {
+    return removeEmpty({
+        schema: stmt.schema?.value,
+        name: stmt.name.value,
+        kind: 'materialized view' as const,
+        def: selectInnerToString(stmt.query),
+        attrs: buildViewAttrs(stmt.query, stmt.columns, entities),
+        // pk: PrimaryKey.optional(), // not in VIEW
+        // indexes: Index.array().optional(), // not in VIEW
+        // checks: Check.array().optional(), // not in VIEW
+        // doc: z.string().optional(), // not in VIEW
+        // stats: EntityStats.optional(), // no stats in SQL
+        // extra: EntityExtra.optional(), // TODO
+    })
+}
+
+function buildViewAttrs(query: SelectStatementInnerAst, columns: IdentifierAst[] | undefined, entities: Entity[]): Attribute[] {
+    const attrs = selectEntities(query, entities).columns.map(c => removeUndefined({
+        name: c.name,
+        type: c.type || 'unknown',
+        // null: z.boolean().optional(), // not in VIEW
+        // gen: z.boolean().optional(), // not handled for now
+        // default: AttributeValue.optional(), // now in VIEW
+        // attrs: z.lazy(() => Attribute.array().optional()), // no nested attrs from SQL
+        // doc: z.string().optional(), // not defined in CREATE TABLE
+        // stats: AttributeStats.optional(), // no stats in SQL
+        // extra: AttributeExtra.optional(), // TODO
+    }))
+    return columns ? columns.map(c => attrs.find(a => a.name === c.value) || {name: c.value, type: 'unknown'}) : attrs
+}
+
+function createIndex(index: number, stmt: CreateIndexStatementAst, entities: Entity[]): void {
+    const entity = entities.find(e => e.schema === stmt.schema?.value && e.name === stmt.table?.value)
+    if (entity) {
+        if (!entity.indexes) entity.indexes = []
+        entity.indexes.push(removeUndefined({
+            name: stmt.name?.value,
+            attrs: stmt.columns.map(c => {
+                if (c.kind === 'Column') {
+                    return [c.column.value] // TODO: improve
+                }
+            }).filter(isNotUndefined),
+            unique: stmt.unique ? true : undefined,
+            partial: stmt.where ? expressionToString(stmt.where.predicate) : undefined,
+            // TODO: definition: z.string().optional(),
+            // doc: z.string().optional(),
+            // stats: IndexStats.optional(),
+            // TODO: extra: IndexExtra.optional(),
+        }))
+    }
+}
+
+function commentOn(index: number, stmt: CommentOnStatementAst, db: Database): void {
+    const object: CommentObject = stmt.object.kind
+    if (object === 'Column') {
+        const entity = db.entities?.find(e => e.schema === stmt.schema?.value && e.name === stmt.parent?.value)
+        const attr = entity?.attrs?.find(a => a.name === stmt.entity.value)
+        if (attr) attr.doc = stmt.comment.kind === 'String' ? stmt.comment.value : undefined
+    } else if (object === 'Constraint') {
+        const entity = db.entities?.find(e => e.name === stmt.parent?.value && e.schema === stmt.schema?.value)
+        if (entity) {
+            if (entity.pk?.name === stmt.entity.value) entity.pk.doc = stmt.comment.kind === 'String' ? stmt.comment.value : undefined
+            const index = entity.indexes?.find(i => i.name === stmt.entity.value)
+            if (index) index.doc = stmt.comment.kind === 'String' ? stmt.comment.value : undefined
+            const check = entity.checks?.find(c => c.name === stmt.entity.value)
+            if (check) check.doc = stmt.comment.kind === 'String' ? stmt.comment.value : undefined
+        }
+        const rel = db.relations?.find(r => r.name === stmt.entity.value && r.src.entity === stmt.parent?.value && r.src.schema === stmt.schema?.value)
+        if (rel) rel.doc = stmt.comment.kind === 'String' ? stmt.comment.value : undefined
+    } else if (object === 'Database') {
+        if (!db.extra) db.extra = {}
+        db.extra.doc = stmt.comment.kind === 'String' ? stmt.comment.value : undefined
+    } else if (object === 'Extension') {
+        // not stored
+    } else if (object === 'Index') {
+        const index = db.entities?.flatMap(e => e.schema === stmt.schema?.value && e.name === stmt.parent?.value ? e.indexes?.filter(i => i.name === stmt.entity.value) : [])?.[0]
+        if (index) index.doc = stmt.comment.kind === 'String' ? stmt.comment.value : undefined
+    } else if (object === 'Schema') {
+        // not stored
+    } else if (object === 'Table' || object === 'View' || object === 'MaterializedView') {
+        const entity = db.entities?.find(e => e.schema === stmt.schema?.value && e.name === stmt.entity.value)
+        if (entity) entity.doc = stmt.comment.kind === 'String' ? stmt.comment.value : undefined
+    } else if (object === 'Type') {
+        const type = db.types?.find(e => e.schema === stmt.schema?.value && e.name === stmt.entity.value)
+        if (type) type.doc = stmt.comment.kind === 'String' ? stmt.comment.value : undefined
+    } else {
+        isNever(object)
+    }
 }
 
 function selectInnerToString(s: SelectStatementInnerAst): string {
@@ -189,6 +280,24 @@ function expressionToString(e: ExpressionAst): string {
     if (e.kind === 'OperationLeft') return operatorLeftToString(e.op.kind) + ' ' + expressionToString(e.right)
     if (e.kind === 'OperationRight') return expressionToString(e.left) + ' ' + operatorRightToString(e.op.kind)
     if (e.kind === 'List') return '(' + e.items.map(expressionToString).join(', ') + ')'
+    return isNever(e)
+}
+
+function expressionToValue(e: ExpressionAst): AttributeValue {
+    if (e.kind === 'String') return e.value
+    if (e.kind === 'Integer') return e.value
+    if (e.kind === 'Decimal') return e.value
+    if (e.kind === 'Boolean') return e.value
+    if (e.kind === 'Null') return null
+    if (e.kind === 'Parameter') return e.value
+    if (e.kind === 'Column') return columnToString(e)
+    if (e.kind === 'Wildcard') return (e.schema ? e.schema.value + '.' : '') + (e.table ? e.table.value + '.' : '') + '*'
+    if (e.kind === 'Function') return '`' + functionToString(e) + '`'
+    if (e.kind === 'Group') return expressionToValue(e.expression)
+    if (e.kind === 'Operation') return '`' + expressionToString(e) + '`'
+    if (e.kind === 'OperationLeft') return '`' + expressionToString(e) + '`'
+    if (e.kind === 'OperationRight') return '`' + expressionToString(e) + '`'
+    if (e.kind === 'List') return e.items.map(expressionToValue)
     return isNever(e)
 }
 
@@ -307,7 +416,6 @@ function selectColumn(c: SelectClauseColumnAst, i: number, sources: SelectSource
             return [{...ref, sources: []}] // `source` should always exist in correct queries
         }
     } else {
-        // TODO: handle more kind and remove `columnSources`
         return [{name: columnName(c, i), sources: columnSources(c, sources)}]
     }
 }
@@ -343,17 +451,18 @@ function columnName(c: SelectClauseColumnAst, i: number): string {
     if (c.kind === 'Wildcard') return '*'
     return `col_${i + 1}`
 }
-function columnSources(c: SelectClauseColumnAst, sources: SelectSource[]): SelectColumnSource[] {
+function columnSources(c: ExpressionAst, sources: SelectSource[]): SelectColumnSource[] {
     if (c.kind === 'Column') {
         const source = c.table ? sources.find(s => s.name === c.table?.value) : sources.length === 1 ? sources[0] : undefined
         if (source && source.from.kind === 'Table') {
             return [removeUndefined({schema: source.from.schema, table: source.from.table, column: c.column.value})]
         }
     }
+    if (c.kind === 'Wildcard') return []
     if (c.kind === 'Function') return c.parameters.flatMap(p => columnSources(p, sources))
+    if (c.kind === 'Group') return columnSources(c.expression, sources)
     if (c.kind === 'Operation') return columnSources(c.left, sources).concat(columnSources(c.right, sources))
     if (c.kind === 'OperationLeft') return columnSources(c.right, sources)
     if (c.kind === 'OperationRight') return columnSources(c.left, sources)
-    if (c.kind === 'Group') return columnSources(c.expression, sources)
     return []
 }

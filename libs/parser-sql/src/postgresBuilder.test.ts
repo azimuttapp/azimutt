@@ -17,34 +17,56 @@ CREATE TABLE users (
   role varchar NOT NULL,
   CHECK ( length(name) >= 4 )
 );
+CREATE INDEX ON users (role);
+COMMENT ON TABLE users IS 'List users';
+COMMENT ON COLUMN users.name IS 'user name';
+COMMENT ON COLUMN users.role IS 'user role';
+COMMENT ON COLUMN users.role IS NULL;
 
 CREATE TABLE cms.posts (
   id int PRIMARY KEY,
   title varchar CHECK ( length(title) > 10 ),
-  author int REFERENCES users(id)
+  author int CONSTRAINT posts_author_fk REFERENCES users(id),
+  created_at timestamp NOT NULL DEFAULT now()
 );
+COMMENT ON CONSTRAINT posts_author_fk ON cms.posts IS 'posts fk';
 
 CREATE VIEW admins AS SELECT id, name FROM users WHERE role='admin';
 `
         const db: Database = {
-            entities: [
-                {name: 'users', attrs: [
+            entities: [{
+                name: 'users',
+                attrs: [
                     {name: 'id', type: 'int'},
-                    {name: 'name', type: 'varchar', default: "'anon'"}, // TODO: anon instead of 'anon'
+                    {name: 'name', type: 'varchar', default: 'anon', doc: 'user name'},
                     {name: 'role', type: 'varchar'},
-                ], pk: {attrs: [['id']]}, indexes: [{attrs: [['name']], unique: true}], checks: [{attrs: [['name']], predicate: 'length(name) >= 4'}]},
-                {schema: 'cms', name: 'posts', attrs: [
+                ],
+                pk: {attrs: [['id']]},
+                indexes: [{attrs: [['name']], unique: true}, {attrs: [['role']]}],
+                checks: [{attrs: [['name']], predicate: 'length(name) >= 4'}],
+                doc: 'List users'
+            }, {
+                schema: 'cms',
+                name: 'posts',
+                attrs: [
                     {name: 'id', type: 'int'},
                     {name: 'title', type: 'varchar', null: true},
-                    {name: 'author', type: 'int', null: true}
-                ], pk: {attrs: [['id']]}, checks: [{attrs: [['title']], predicate: 'length(title) > 10'}]},
-                {name: 'admins', kind: 'view', def: "SELECT id, name FROM users WHERE role = 'admin'", attrs: [
+                    {name: 'author', type: 'int', null: true},
+                    {name: 'created_at', type: 'timestamp', default: '`now()`'},
+                ],
+                pk: {attrs: [['id']]},
+                checks: [{attrs: [['title']], predicate: 'length(title) > 10'}]
+            }, {
+                name: 'admins',
+                kind: 'view',
+                def: "SELECT id, name FROM users WHERE role = 'admin'",
+                attrs: [
                     {name: 'id', type: 'int'},
                     {name: 'name', type: 'varchar'},
-                ]}
-            ],
+                ]
+            }],
             relations: [
-                {src: {schema: 'cms', entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}},
+                {name: 'posts_author_fk', src: {schema: 'cms', entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, doc: 'posts fk'},
             ],
             extra: {}
         }
@@ -157,11 +179,11 @@ CREATE VIEW admins AS SELECT id, name FROM users WHERE role='admin';
 
 function parse(sql: string): {db: Database, errors: ParserError[]} {
     try {
-        return parsePostgresAst(sql)
-            .map(ast => buildPostgresDatabase(ast, 0, 0))
-            .map(({db: {extra: {source, createdAt, creationTimeMs, parsingTimeMs, formattingTimeMs, ...extra} = {}, ...db}, errors}) =>
-                ({db: {...db, extra}, errors})
-            ).result || {db: {}, errors: []}
+        const start = Date.now()
+        const res = parsePostgresAst(sql)
+            .flatMap(ast => buildPostgresDatabase(ast, start, Date.now()))
+            .map(({extra: {source, createdAt, creationTimeMs, parsingTimeMs, formattingTimeMs, ...extra} = {}, ...db}) => ({...db, extra}))
+        return {db: res.result || {}, errors: res.errors || []}
     } catch (e) {
         console.error(e) // print stack trace
         throw new Error(`Can't parse '${sql}'${typeof e === 'object' && e !== null && 'message' in e ? ': ' + e.message : ''}`)
