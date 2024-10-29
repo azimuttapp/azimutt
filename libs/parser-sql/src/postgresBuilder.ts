@@ -13,21 +13,28 @@ import {
     Index,
     mergeEntity,
     mergePositions,
+    mergeType,
     ParserError,
     ParserResult,
     PrimaryKey,
     Relation,
-    TokenPosition
+    TokenPosition,
+    Type,
+    typeRefSame,
+    typeToId,
+    typeToRef
 } from "@azimutt/models";
 import packageJson from "../package.json";
 import {
     AliasAst,
+    AlterTableStatementAst,
     ColumnAst,
     CommentObject,
     CommentOnStatementAst,
     CreateIndexStatementAst,
     CreateMaterializedViewStatementAst,
     CreateTableStatementAst,
+    CreateTypeStatementAst,
     CreateViewStatementAst,
     ExpressionAst,
     FromClauseAst,
@@ -39,7 +46,8 @@ import {
     OperatorRight,
     PostgresAst,
     SelectClauseColumnAst,
-    SelectStatementInnerAst
+    SelectStatementInnerAst,
+    TableColumnAst
 } from "./postgresAst";
 import {duplicated} from "./errors";
 
@@ -49,7 +57,7 @@ export function buildPostgresDatabase(ast: PostgresAst, start: number, parsed: n
     ast.statements.forEach((stmt, i) => {
         const index = i + 1
         if (stmt.kind === 'AlterTable') {
-            // TODO
+            alterTable(index, stmt, db)
         } else if (stmt.kind === 'CommentOn') {
             commentOn(index, stmt, db)
         } else if (stmt.kind === 'CreateIndex') {
@@ -65,11 +73,28 @@ export function buildPostgresDatabase(ast: PostgresAst, start: number, parsed: n
             addEntity(db.entities, errors, res.entity, mergePositions([stmt.schema, stmt.name].map(v => v?.token)))
             res.relations.forEach(r => db.relations?.push(r))
         } else if (stmt.kind === 'CreateType') {
-            // TODO
+            if (!db.types) db.types = []
+            const type = createType(index, stmt)
+            addType(db.types, errors, type, mergePositions([stmt.schema, stmt.name].map(v => v?.token)))
         } else if (stmt.kind === 'CreateView') {
             if (!db.entities) db.entities = []
             const entity = createView(index, stmt, db.entities)
             addEntity(db.entities, errors, entity, mergePositions([stmt.schema, stmt.name].map(v => v?.token)))
+        } else if (stmt.kind === 'AlterSequence') { // nothing
+        } else if (stmt.kind === 'Begin') { // nothing
+        } else if (stmt.kind === 'Commit') { // nothing
+        } else if (stmt.kind === 'CreateExtension') { // nothing
+        } else if (stmt.kind === 'CreateFunction') { // nothing
+        } else if (stmt.kind === 'CreateSequence') { // nothing
+        } else if (stmt.kind === 'Delete') { // nothing
+        } else if (stmt.kind === 'Drop') { // nothing
+        } else if (stmt.kind === 'InsertInto') { // nothing
+        } else if (stmt.kind === 'Select') { // nothing
+        } else if (stmt.kind === 'Set') { // nothing
+        } else if (stmt.kind === 'Show') { // nothing
+        } else if (stmt.kind === 'Update') { // nothing
+        } else {
+            isNever(stmt)
         }
     })
     const done = Date.now()
@@ -93,6 +118,18 @@ function addEntity(entities: Entity[], errors: ParserError[], entity: Entity, po
         entities[prevIndex] = mergeEntity(prev, entity)
     } else {
         entities.push(entity)
+    }
+}
+
+function addType(types: Type[], errors: ParserError[], type: Type, pos: TokenPosition): void {
+    const ref = typeToRef(type)
+    const prevIndex = types.findIndex(t => typeRefSame(typeToRef(t), ref))
+    if (prevIndex !== -1) {
+        const prev = types[prevIndex]
+        errors.push(duplicated(`Type ${typeToId(type)}`, prev.extra?.line ? prev.extra.line : undefined, pos))
+        types[prevIndex] = mergeType(prev, type)
+    } else {
+        types.push(type)
     }
 }
 
@@ -122,17 +159,7 @@ function createTable(index: number, stmt: CreateTableStatementAst): { entity: En
         name: stmt.name.value,
         kind: undefined,
         def: undefined,
-        attrs: (stmt.columns || []).map(c => removeUndefined({
-            name: c.name.value,
-            type: c.type.name.value,
-            null: c.constraints?.find(c => c.kind === 'Nullable' ? !c.value : false) || pk.find(pk => pk.attrs.some(a => attributePathSame(a, [c.name.value]))) ? undefined : true,
-            // gen: z.boolean().optional(), // not handled for now
-            default: (c.constraints || []).flatMap(c => c.kind === 'Default' ? [expressionToValue(c.expression)] : [])[0],
-            // attrs: z.lazy(() => Attribute.array().optional()), // no nested attrs from SQL
-            // doc: z.string().optional(), // not defined in CREATE TABLE
-            // stats: AttributeStats.optional(), // no stats in SQL
-            // extra: AttributeExtra.optional(), // TODO
-        })),
+        attrs: (stmt.columns || []).map(c => buildTableAttr(c, !!pk.find(pk => pk.attrs.some(a => attributePathSame(a, [c.name.value]))))),
         pk: pk.length > 0 ? pk[0] : undefined,
         indexes,
         checks,
@@ -140,6 +167,20 @@ function createTable(index: number, stmt: CreateTableStatementAst): { entity: En
         // stats: EntityStats.optional(), // no stats in SQL
         // extra: EntityExtra.optional(), // TODO
     }), relations}
+}
+
+function buildTableAttr(c: TableColumnAst, notNull?: boolean): Attribute {
+    return removeUndefined({
+        name: c.name.value,
+        type: c.type.name.value,
+        null: c.constraints?.find(c => c.kind === 'Nullable' ? !c.value : false) || notNull ? undefined : true,
+        // gen: z.boolean().optional(), // not handled for now
+        default: (c.constraints || []).flatMap(c => c.kind === 'Default' ? [expressionToValue(c.expression)] : [])[0],
+        // attrs: z.lazy(() => Attribute.array().optional()), // no nested attrs from SQL
+        // doc: z.string().optional(), // not defined in CREATE TABLE
+        // stats: AttributeStats.optional(), // no stats in SQL
+        // extra: AttributeExtra.optional(), // TODO
+    })
 }
 
 function createView(index: number, stmt: CreateViewStatementAst, entities: Entity[]): Entity {
@@ -208,6 +249,77 @@ function createIndex(index: number, stmt: CreateIndexStatementAst, entities: Ent
             // TODO: extra: IndexExtra.optional(),
         }))
     }
+}
+
+function alterTable(index: number, stmt: AlterTableStatementAst, db: Database): void {
+    const entity = db.entities?.find(e => e.schema === stmt.schema?.value && e.name === stmt.table?.value)
+    if (entity) {
+        const action = stmt.action
+        if (action.kind === 'AddColumn') {
+            if (!entity.attrs) entity.attrs = []
+            const exists = entity.attrs.find(a => a.name === action.column.name.value)
+            if (!exists) entity.attrs.push(buildTableAttr(action.column))
+        } else if (action.kind === 'DropColumn') {
+            const attrIndex = entity.attrs?.findIndex(a => a.name === action.column.value)
+            if (attrIndex !== undefined && attrIndex !== -1) entity.attrs?.splice(attrIndex, 1)
+            // TODO: remove constraints depending on this column
+        } else if (action.kind === 'AddConstraint') {
+            const constraint = action.constraint
+            if (constraint.kind === 'PrimaryKey') {
+                entity.pk = removeUndefined({name: constraint.constraint?.name.value, attrs: constraint.columns.map(c => [c.value])})
+            } else if (constraint.kind === 'Unique') {
+                if (!entity.indexes) entity.indexes = []
+                entity.indexes.push(removeUndefined({
+                    name: constraint.constraint?.name.value,
+                    attrs: constraint.columns.map(c => [c.value]),
+                    unique: true
+                }))
+            } else if (constraint.kind === 'Check') {
+                if (!entity.checks) entity.checks = []
+                entity.checks.push(removeUndefined({
+                    name: constraint.constraint?.name.value,
+                    attrs: expressionAttrs(constraint.predicate),
+                    predicate: expressionToString(constraint.predicate)
+                }))
+            } else if (constraint.kind === 'ForeignKey') {
+                if (!db.relations) db.relations = []
+                db.relations.push(removeUndefined({
+                    name: constraint.constraint?.name.value,
+                    src: removeUndefined({schema: stmt.schema?.value, entity: stmt.table?.value, attrs: constraint.columns.map(c => [c.value])}),
+                    ref: removeUndefined({schema: constraint.ref.schema?.value, entity: constraint.ref.table.value, attrs: constraint.ref.columns?.map(c => [c.value]) || []})
+                }))
+            } else {
+                isNever(constraint)
+            }
+        } else if (action.kind === 'DropConstraint') {
+            if (entity.pk?.name === action.constraint.value) entity.pk = undefined
+            const idxIndex = entity.indexes?.findIndex(a => a.name === action.constraint.value)
+            if (idxIndex !== undefined && idxIndex !== -1) entity.indexes?.splice(idxIndex, 1)
+            const chkIndex = entity.checks?.findIndex(c => c.name === action.constraint.value)
+            if (chkIndex !== undefined && chkIndex !== -1) entity.checks?.splice(chkIndex, 1)
+            const relIndex = db.relations?.findIndex(r => r.name === action.constraint.value && r.src.schema === stmt.schema?.value && r.src.entity === stmt.table?.value)
+            if (relIndex !== undefined && relIndex !== -1) db.relations?.splice(relIndex, 1)
+            // TODO: also NOT NULL & DEFAULT constraints...
+        } else {
+            isNever(action)
+        }
+    }
+}
+
+function createType(index: number, stmt: CreateTypeStatementAst): Type {
+    return removeUndefined({
+        schema: stmt.schema?.value,
+        name: stmt.name.value,
+        // alias: z.string().optional(), // does not exist in PostgreSQL
+        values: stmt.enum?.values.map(v => v.value),
+        attrs: stmt.struct?.attrs.map(a => ({
+            name: a.name.value,
+            type: a.type.name.value,
+        })),
+        definition: stmt.base ? '(' + stmt.base.map(p => `${p.name.value} = ${expressionToString(p.value)}`).join(', ') + ')' : undefined,
+        // doc: z.string().optional(), // not defined in CREATE TYPE
+        // extra: TypeExtra.optional(), // TODO
+    })
 }
 
 function commentOn(index: number, stmt: CommentOnStatementAst, db: Database): void {

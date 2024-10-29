@@ -13,11 +13,13 @@ describe('postgresBuilder', () => {
         const input = `
 CREATE TABLE users (
   id int PRIMARY KEY,
-  name varchar NOT NULL DEFAULT 'anon' UNIQUE,
+  name varchar NOT NULL DEFAULT 'anon' CONSTRAINT users_name_uniq UNIQUE,
   role varchar NOT NULL,
   CHECK ( length(name) >= 4 )
 );
 CREATE INDEX ON users (role);
+ALTER TABLE users ADD COLUMN created_at timestamp NOT NULL DEFAULT now();
+ALTER TABLE users DROP CONSTRAINT users_name_uniq;
 COMMENT ON TABLE users IS 'List users';
 COMMENT ON COLUMN users.name IS 'user name';
 COMMENT ON COLUMN users.role IS 'user role';
@@ -29,44 +31,57 @@ CREATE TABLE cms.posts (
   author int CONSTRAINT posts_author_fk REFERENCES users(id),
   created_at timestamp NOT NULL DEFAULT now()
 );
+ALTER TABLE cms.posts DROP COLUMN created_at;
+ALTER TABLE cms.posts ADD UNIQUE (title);
 COMMENT ON CONSTRAINT posts_author_fk ON cms.posts IS 'posts fk';
 
 CREATE VIEW admins AS SELECT id, name FROM users WHERE role='admin';
+
+CREATE TYPE bug_status AS ENUM ('open', 'closed');
+COMMENT ON TYPE bug_status IS 'bug status';
 `
         const db: Database = {
-            entities: [{
-                name: 'users',
-                attrs: [
-                    {name: 'id', type: 'int'},
-                    {name: 'name', type: 'varchar', default: 'anon', doc: 'user name'},
-                    {name: 'role', type: 'varchar'},
-                ],
-                pk: {attrs: [['id']]},
-                indexes: [{attrs: [['name']], unique: true}, {attrs: [['role']]}],
-                checks: [{attrs: [['name']], predicate: 'length(name) >= 4'}],
-                doc: 'List users'
-            }, {
-                schema: 'cms',
-                name: 'posts',
-                attrs: [
-                    {name: 'id', type: 'int'},
-                    {name: 'title', type: 'varchar', null: true},
-                    {name: 'author', type: 'int', null: true},
-                    {name: 'created_at', type: 'timestamp', default: '`now()`'},
-                ],
-                pk: {attrs: [['id']]},
-                checks: [{attrs: [['title']], predicate: 'length(title) > 10'}]
-            }, {
-                name: 'admins',
-                kind: 'view',
-                def: "SELECT id, name FROM users WHERE role = 'admin'",
-                attrs: [
-                    {name: 'id', type: 'int'},
-                    {name: 'name', type: 'varchar'},
-                ]
-            }],
+            entities: [
+                {
+                    name: 'users',
+                    attrs: [
+                        {name: 'id', type: 'int'},
+                        {name: 'name', type: 'varchar', default: 'anon', doc: 'user name'},
+                        {name: 'role', type: 'varchar'},
+                        {name: 'created_at', type: 'timestamp', default: '`now()`'},
+                    ],
+                    pk: {attrs: [['id']]},
+                    indexes: [{attrs: [['role']]}],
+                    checks: [{attrs: [['name']], predicate: 'length(name) >= 4'}],
+                    doc: 'List users'
+                },
+                {
+                    schema: 'cms',
+                    name: 'posts',
+                    attrs: [
+                        {name: 'id', type: 'int'},
+                        {name: 'title', type: 'varchar', null: true},
+                        {name: 'author', type: 'int', null: true},
+                    ],
+                    pk: {attrs: [['id']]},
+                    indexes: [{attrs: [['title']], unique: true}],
+                    checks: [{attrs: [['title']], predicate: 'length(title) > 10'}]
+                },
+                {
+                    name: 'admins',
+                    kind: 'view',
+                    def: "SELECT id, name FROM users WHERE role = 'admin'",
+                    attrs: [
+                        {name: 'id', type: 'int'},
+                        {name: 'name', type: 'varchar'},
+                    ]
+                }
+            ],
             relations: [
                 {name: 'posts_author_fk', src: {schema: 'cms', entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, doc: 'posts fk'},
+            ],
+            types: [
+                {name: 'bug_status', values: ['open', 'closed'], doc: 'bug status'}
             ],
             extra: {}
         }
