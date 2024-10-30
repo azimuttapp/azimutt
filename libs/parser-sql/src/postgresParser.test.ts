@@ -32,7 +32,6 @@ import {
 import {parsePostgresAst, parseRule} from "./postgresParser";
 
 describe('postgresParser', () => {
-    // TODO: CREATE FUNCTION
     // TODO: ALTER TYPE
     test('empty', () => {
         expect(parsePostgresAst('')).toEqual({result: {statements: []}})
@@ -82,26 +81,26 @@ describe('postgresParser', () => {
         // cf https://github.com/search?q=path%3A**%2Fstructure.sql&type=code
         const structures = [
             'https://raw.githubusercontent.com/ChanAlex2357/gestion_analytique_S5/refs/heads/main/Structure.sql',
-            // 'https://raw.githubusercontent.com/plausible/analytics/refs/heads/master/priv/repo/structure.sql', // fail#73: CREATE FUNCTION
-            // 'https://raw.githubusercontent.com/inaturalist/inaturalist/refs/heads/main/db/structure.sql', // fail#44: CREATE FUNCTION
+            // 'https://raw.githubusercontent.com/plausible/analytics/refs/heads/master/priv/repo/structure.sql', // fail#246: `DEFAULT ARRAY['props'::character varying, 'stats_api'::character varying]`
+            // 'https://raw.githubusercontent.com/inaturalist/inaturalist/refs/heads/main/db/structure.sql', // fail#44: column type: `numeric[]`
             // 'https://raw.githubusercontent.com/cardstack/cardstack/refs/heads/main/packages/hub/config/structure.sql', // fail#52: `ALTER TYPE` & 1986: `COPY`
-            // 'https://raw.githubusercontent.com/gocardless/draupnir/refs/heads/master/structure.sql', // fail#118: ALTER TABLE ... ALTER COLUMN id SET DEFAULT ...;
-            // 'https://raw.githubusercontent.com/drenther/Empirical-Core/refs/heads/develop/db/structure.sql', // fail#79: CREATE FUNCTION
-            // 'https://raw.githubusercontent.com/spuddybike/archivist/refs/heads/develop/db/structure.sql', // fail#44: CREATE FUNCTION
+            // 'https://raw.githubusercontent.com/gocardless/draupnir/refs/heads/master/structure.sql', // fail#118: `ALTER TABLE ... ALTER COLUMN id SET DEFAULT ...` TODO
+            // 'https://raw.githubusercontent.com/drenther/Empirical-Core/refs/heads/develop/db/structure.sql', // fail#688: `ARRAY[]`
+            // 'https://raw.githubusercontent.com/spuddybike/archivist/refs/heads/develop/db/structure.sql', // fail#849: parenthesis in FROM clause
             // 'https://raw.githubusercontent.com/sathreddy/bety/refs/heads/master/db/structure.sql', // fail#274: LexingError: unexpected character: ->\\<-
-            // 'https://raw.githubusercontent.com/dhbtk/achabus/refs/heads/master/db/structure.sql', // fail#71: CREATE FUNCTION
+            // 'https://raw.githubusercontent.com/dhbtk/achabus/refs/heads/master/db/structure.sql', // fail#293: column type: `geography(Point,4326)`
             // 'https://raw.githubusercontent.com/mveytsman/community/refs/heads/master/db/structure.sql', // fail#299: JOIN (`SELECT * FROM users, events;`)
-            // 'https://raw.githubusercontent.com/yazilimcilarinmolayeri/pixels-clone/refs/heads/master/Structure.sql', // fail#27: CREATE SEQUENCE param order (START at the end)
-            // 'https://raw.githubusercontent.com/henry2992/aprendemy/refs/heads/master/db/structure.sql', // fail#58: CREATE FUNCTION
-            // 'https://raw.githubusercontent.com/LuisMDeveloper/travis-core/refs/heads/master/db/structure.sql', // fail#32: CREATE FUNCTION
+            // 'https://raw.githubusercontent.com/yazilimcilarinmolayeri/pixels-clone/refs/heads/master/Structure.sql', // fail#27: CREATE SEQUENCE param order (START at the end) TODO
+            // 'https://raw.githubusercontent.com/henry2992/aprendemy/refs/heads/master/db/structure.sql', // fail#1291: `ALTER TABLE ... ALTER COLUMN id SET DEFAULT ...` TODO
+            // 'https://raw.githubusercontent.com/LuisMDeveloper/travis-core/refs/heads/master/db/structure.sql', // fail#832: `ALTER TABLE ... ALTER COLUMN id SET DEFAULT ...` TODO
             // 'https://raw.githubusercontent.com/ppawel/openstreetmap-watch-list/refs/heads/master/db/structure.sql', // fail#92: `CREATE TYPE change AS (geom geometry(Geometry,4326))`
             // 'https://raw.githubusercontent.com/OPG-813/electronic-queue-server/refs/heads/master/src/db/structure.sql', // fail#2: `CREATE OR REPLACE FUNCTION`
-            // 'https://raw.githubusercontent.com/Rotabot-io/rotabot/refs/heads/main/assets/structure.sql', // fail#31: CREATE FUNCTION
-            // 'https://raw.githubusercontent.com/TechnoDann/PPC-board-2.0/refs/heads/master/db/structure.sql', // fail#16: CREATE FUNCTION
-            // 'https://raw.githubusercontent.com/bocoup/devstats/refs/heads/master/structure.sql', // fail#46: CREATE FUNCTION
-            // 'https://raw.githubusercontent.com/gustavodiel/monet-backend/refs/heads/main/db/structure.sql', // fail#23: CREATE FUNCTION
-            // 'https://raw.githubusercontent.com/Leonardo-Zappani/bd2/refs/heads/main/db/structure.sql', // fail#16: CREATE FUNCTION
-            // 'https://raw.githubusercontent.com/Style12341/UTN-gestor-aulas-backend/refs/heads/main/db/structure.sql', // fail#16: CREATE FUNCTION
+            // 'https://raw.githubusercontent.com/Rotabot-io/rotabot/refs/heads/main/assets/structure.sql', // fail#57: `ALTER FUNCTION public.generate_uid(size integer) OWNER TO rotabot;`
+            // 'https://raw.githubusercontent.com/TechnoDann/PPC-board-2.0/refs/heads/master/db/structure.sql', // fail#254: `ALTER TABLE ... ALTER COLUMN id SET DEFAULT ...` TODO
+            // 'https://raw.githubusercontent.com/bocoup/devstats/refs/heads/master/structure.sql', // fail#57: `ALTER FUNCTION current_state.label_prefix(some_label text) OWNER TO devstats_team;`
+            // 'https://raw.githubusercontent.com/gustavodiel/monet-backend/refs/heads/main/db/structure.sql', // fail#199: `ALTER TABLE ... ALTER COLUMN id SET DEFAULT ...` TODO
+            // 'https://raw.githubusercontent.com/Leonardo-Zappani/bd2/refs/heads/main/db/structure.sql', // fail#250: `ALTER TABLE ... ALTER COLUMN id SET DEFAULT ...` TODO
+            // 'https://raw.githubusercontent.com/Style12341/UTN-gestor-aulas-backend/refs/heads/main/db/structure.sql', // fail#25: `CREATE TYPE public.timerange AS RANGE`
         ]
         await Promise.all(structures.map(async url => {
             const sql = await fetch(url).then(res => res.text())
@@ -278,26 +277,63 @@ describe('postgresParser', () => {
             }]}})
         })
     })
-    describe.skip('createFunction', () => {
-        test('using SQL query', () => {
-            expect(parsePostgresAst("CREATE FUNCTION add(integer, integer) RETURNS integer AS 'select $1 + $2;' LANGUAGE SQL IMMUTABLE RETURNS NULL ON NULL INPUT;")).toEqual({result: {statements: [{
-                ...stmt('CreateFunction', 0, 11, 28),
-                table: identifier('users', 16),
-                columns: [column('name', 23)],
+    describe('createFunction', () => {
+        test('sample', () => {
+            expect(parsePostgresAst("CREATE FUNCTION add(IN a integer, IN b integer) RETURNS integer LANGUAGE SQL IMMUTABLE AS $$ BEGIN RETURN a + b; END; $$ RETURNS NULL ON NULL INPUT;")).toEqual({result: {statements: [{
+                ...stmt('CreateFunction', 0, 14, 147),
+                name: identifier('add', 16),
+                args: [
+                    {mode: kind('In', 20), name: identifier('a', 23), type: {name: {token: token(25, 31), value: 'integer'}, token: token(25, 31)}},
+                    {mode: kind('In', 34), name: identifier('b', 37), type: {name: {token: token(39, 45), value: 'integer'}, token: token(39, 45)}},
+                ],
+                returns: {kind: 'Type', token: token(48, 54), type: {name: {token: token(56, 62), value: 'integer'}, token: token(56, 62)}},
+                language: {token: token(64, 71), name: identifier('SQL', 73)},
+                behavior: kind('Immutable', 77),
+                definition: {token: token(87, 88), value: {...string('BEGIN RETURN a + b; END;', 90, 119), dollar: '$$'}},
+                nullBehavior: kind('ReturnsNull', 121, 146),
             }]}})
         })
         test('using SQL', () => {
             expect(parsePostgresAst('CREATE FUNCTION add(a integer, b integer) RETURNS integer LANGUAGE SQL IMMUTABLE RETURNS NULL ON NULL INPUT RETURN a + b;')).toEqual({result: {statements: [{
-                ...stmt('CreateFunction', 0, 11, 28),
-                table: identifier('users', 16),
-                columns: [column('name', 23)],
+                ...stmt('CreateFunction', 0, 14, 120),
+                name: identifier('add', 16),
+                args: [
+                    {name: identifier('a', 20), type: {name: {token: token(22, 28), value: 'integer'}, token: token(22, 28)}},
+                    {name: identifier('b', 31), type: {name: {token: token(33, 39), value: 'integer'}, token: token(33, 39)}},
+                ],
+                returns: {kind: 'Type', token: token(42, 48), type: {name: {token: token(50, 56), value: 'integer'}, token: token(50, 56)}},
+                language: {token: token(58, 65), name: identifier('SQL', 67)},
+                behavior: kind('Immutable', 71),
+                nullBehavior: kind('ReturnsNull', 81, 106),
+                return: {token: token(108, 113), expression: operation(column('a', 115), op('+', 117), column('b', 119))}
             }]}})
         })
         test('using plSQL', () => {
-            expect(parsePostgresAst('CREATE OR REPLACE FUNCTION increment(i integer) RETURNS integer AS $$ BEGIN RETURN i + 1; END; $$ LANGUAGE plpgsql;')).toEqual({result: {statements: [{
-                ...stmt('CreateFunction', 0, 11, 28),
-                table: identifier('users', 16),
-                columns: [column('name', 23)],
+            expect(parsePostgresAst('CREATE FUNCTION increment(i integer) RETURNS integer AS $$ BEGIN RETURN i + 1; END; $$ LANGUAGE plpgsql;')).toEqual({result: {statements: [{
+                ...stmt('CreateFunction', 0, 14, 103),
+                name: identifier('increment', 16),
+                args: [{name: identifier('i', 26), type: {name: {token: token(28, 34), value: 'integer'}, token: token(28, 34)}}],
+                returns: {kind: 'Type', token: token(37, 43), type: {name: {token: token(45, 51), value: 'integer'}, token: token(45, 51)}},
+                definition: {token: token(53, 54), value: {...string('BEGIN RETURN i + 1; END;', 56, 85), dollar: '$$'}},
+                language: {token: token(87, 94), name: identifier('plpgsql', 96)},
+            }]}})
+        })
+        test.skip('using SQL query', () => {
+            // FIXME: ambiguous `CREATE OR REPLACE`
+            // FIXME: bad argument parsing when no name
+            expect(parsePostgresAst("CREATE OR REPLACE FUNCTION public.add(integer, integer) RETURNS integer AS 'select $1 + $2;' LANGUAGE SQL IMMUTABLE RETURNS NULL ON NULL INPUT;")).toEqual({result: {statements: [{
+                ...stmt('CreateFunction', 0, 14, 28),
+                schema: identifier('public', 16),
+                name: identifier('add', 23),
+                args: [
+                    {type: {name: {token: token(25, 31), value: 'integer'}, token: token(25, 31)}},
+                    {type: {name: {token: token(39, 45), value: 'integer'}, token: token(39, 45)}},
+                ],
+                returns: {kind: 'Type', token: token(48, 54), type: {name: {token: token(56, 62), value: 'integer'}, token: token(56, 62)}},
+                definition: {token: token(87, 88), value: string('select $1 + $2;', 90, 119)},
+                language: {token: token(64, 71), name: identifier('SQL', 73)},
+                behavior: kind('Immutable', 77),
+                nullBehavior: kind('ReturnsNull', 121, 146),
             }]}})
         })
     })
@@ -1131,7 +1167,7 @@ describe('postgresParser', () => {
                 expect(parseRule(p => p.identifierRule(), '"an id with \\""')).toEqual({result: {...identifier('an id with "', 0, 14), quoted: true}})
             })
             test('not empty', () => {
-                const specials = ['Data', 'Database', 'Deferrable', 'Index', 'Nulls', 'Rows', 'Schema', 'Type', 'Version']
+                const specials = ['Add', 'Commit', 'Data', 'Database', 'Deferrable', 'Increment', 'Index', 'Input', 'Nulls', 'Rows', 'Schema', 'Start', 'Temporary', 'Type', 'Version']
                 expect(parseRule(p => p.identifierRule(), '""')).toEqual({errors: [
                     {kind: 'LexingError', level: 'error', message: 'unexpected character: ->"<- at offset: 0, skipped 2 characters.', ...token(0, 2)},
                     {kind: 'NoViableAltException', level: 'error', message: `Expecting: one of these possible Token sequences:\n  1. [Identifier]${specials.map((n, i) => `\n  ${i + 2}. [${n}]`).join('')}\nbut found: ''`, offset: {start: -1, end: -1}, position: {start: {line: -1, column: -1}, end: {line: -1, column: -1}}}
@@ -1165,6 +1201,9 @@ describe('postgresParser', () => {
             })
             test('escaped', () => {
                 expect(parseRule(p => p.stringRule(), "E'value\\nmulti\\nline'")).toEqual({result: {...string('value\\nmulti\\nline', 0, 20), escaped: true}})
+            })
+            test('dollar', () => {
+                expect(parseRule(p => p.stringRule(), "$tag$\nmulti\nline\nvalue\n$tag$")).toEqual({result: {value: 'multi\nline\nvalue', dollar: '$tag$', kind: 'String', token: {offset: {start: 0, end: 27}, position: {start: {line: 1, column: 1}, end: {line: 5, column: 5}}}}})
             })
         })
         describe('integerRule', () => {

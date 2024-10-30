@@ -25,7 +25,7 @@ export type BeginStatementAst = { kind: 'Begin', token: TokenInfo, object?: {kin
 export type CommentOnStatementAst = { kind: 'CommentOn', token: TokenInfo, object: { token: TokenInfo, kind: CommentObject }, schema?: IdentifierAst, parent?: IdentifierAst, entity: IdentifierAst, comment: StringAst | NullAst }
 export type CommitStatementAst = { kind: 'Commit', token: TokenInfo, object?: { kind: 'Work' | 'Transaction', token: TokenInfo }, chain?: { token: TokenInfo, no?: TokenInfo } }
 export type CreateExtensionStatementAst = { kind: 'CreateExtension', token: TokenInfo, ifNotExists?: TokenInfo, name: IdentifierAst, with?: TokenInfo, schema?: { token: TokenInfo, name: IdentifierAst }, version?: { token: TokenInfo, number: StringAst | IdentifierAst }, cascade?: TokenInfo }
-export type CreateFunctionStatementAst = { kind: 'CreateFunction', token: TokenInfo } // TODO
+export type CreateFunctionStatementAst = { kind: 'CreateFunction', token: TokenInfo, replace?: TokenInfo, schema?: IdentifierAst, name: IdentifierAst, args: FunctionArgumentAst[], returns?: FunctionReturnsAst, language?: { token: TokenInfo, name: IdentifierAst }, behavior?: { kind: 'Immutable' | 'Stable' | 'Volatile', token: TokenInfo }, nullBehavior?: { kind: 'Called' | 'ReturnsNull' | 'Strict', token: TokenInfo }, definition?: { token: TokenInfo, value: StringAst }, return?: { token: TokenInfo, expression: ExpressionAst } }
 export type CreateIndexStatementAst = { kind: 'CreateIndex', token: TokenInfo, unique?: TokenInfo, concurrently?: TokenInfo, ifNotExists?: TokenInfo, name?: IdentifierAst, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, using?: { token: TokenInfo, method: IdentifierAst }, columns: IndexColumnAst[], include?: { token: TokenInfo, columns: IdentifierAst[] }, where?: WhereClauseAst }
 export type CreateMaterializedViewStatementAst = { kind: 'CreateMaterializedView', token: TokenInfo, ifNotExists?: TokenInfo, schema?: IdentifierAst, name: IdentifierAst, columns?: IdentifierAst[], query: SelectStatementInnerAst, withData?: { token: TokenInfo, no?: TokenInfo } }
 export type CreateSchemaStatementAst = { kind: 'CreateSchema', token: TokenInfo, ifNotExists?: TokenInfo, schema?: IdentifierAst, authorization?: { token: TokenInfo, role: SchemaRoleAst } }
@@ -104,6 +104,8 @@ export type SequenceTypeAst = { token: TokenInfo, type: IdentifierAst }
 export type SequenceParamAst = { token: TokenInfo, value: IntegerAst }
 export type SequenceParamOptAst = { token: TokenInfo, value?: IntegerAst }
 export type SequenceOwnedByAst = { token: TokenInfo, owner: { kind: 'None', token: TokenInfo } | { kind: 'Column', schema?: IdentifierAst, table: IdentifierAst, column: IdentifierAst } }
+export type FunctionArgumentAst = { mode?: { kind: 'In' | 'Out' | 'InOut' | 'Variadic', token: TokenInfo }, name?: IdentifierAst, type: ColumnTypeAst }
+export type FunctionReturnsAst = { kind: 'Type', token: TokenInfo, setOf?: TokenInfo, type: ColumnTypeAst } | { kind: 'Table', token: TokenInfo, columns: { name: IdentifierAst, type: ColumnTypeAst }[] }
 
 // basic parts
 export type AliasAst = { token?: TokenInfo, name: IdentifierAst }
@@ -128,7 +130,7 @@ export type SortNullsAst = { kind: SortNulls, token: TokenInfo }
 // elements
 export type ParameterAst = { kind: 'Parameter', token: TokenInfo, value: string, index?: number }
 export type IdentifierAst = { kind: 'Identifier', token: TokenInfo, value: string, quoted?: boolean }
-export type StringAst = { kind: 'String', token: TokenInfo, value: string, escaped?: boolean }
+export type StringAst = { kind: 'String', token: TokenInfo, value: string, escaped?: boolean, dollar?: string }
 export type DecimalAst = { kind: 'Decimal', token: TokenInfo, value: number }
 export type IntegerAst = { kind: 'Integer', token: TokenInfo, value: number }
 export type BooleanAst = { kind: 'Boolean', token: TokenInfo, value: boolean }

@@ -42,6 +42,8 @@ import {
     FromJoinAst,
     FromQueryAst,
     FromTableAst,
+    FunctionArgumentAst,
+    FunctionReturnsAst,
     GroupAst,
     GroupByClauseAst,
     HavingClauseAst,
@@ -112,9 +114,10 @@ const WhiteSpace = createToken({name: 'WhiteSpace', pattern: /\s+/, group: Lexer
 
 const Identifier = createToken({name: 'Identifier', pattern: /\b[a-zA-Z_]\w*\b|"([^\\"]|\\\\|\\")+"/})
 const String = createToken({name: 'String', pattern: /E?'([^']|'')*'/i})
+const StringDollar = createToken({name: 'StringDollar', pattern: /\$(\w*)\$[\s\S]*?\$\1\$/i})
 const Decimal = createToken({name: 'Decimal', pattern: /\d+\.\d+/})
 const Integer = createToken({name: 'Integer', pattern: /0|[1-9]\d*/, longer_alt: Decimal})
-const valueTokens: TokenType[] = [Integer, Decimal, String, Identifier, LineComment, BlockComment]
+const valueTokens: TokenType[] = [Integer, Decimal, String, StringDollar, Identifier, LineComment, BlockComment]
 
 const Add = createToken({name: 'Add', pattern: /\bADD\b/i, longer_alt: Identifier})
 const All = createToken({name: 'All', pattern: /\bALL\b/i, longer_alt: Identifier})
@@ -126,6 +129,7 @@ const Authorization = createToken({name: 'Authorization', pattern: /\bAUTHORIZAT
 const Begin = createToken({name: 'Begin', pattern: /\bBEGIN\b/i, longer_alt: Identifier})
 const By = createToken({name: 'By', pattern: /\bBY\b/i, longer_alt: Identifier})
 const Cache = createToken({name: 'Cache', pattern: /\bCACHE\b/i, longer_alt: Identifier})
+const Called = createToken({name: 'Called', pattern: /\bCALLED\b/i, longer_alt: Identifier})
 const Cascade = createToken({name: 'Cascade', pattern: /\bCASCADE\b/i, longer_alt: Identifier})
 const Chain = createToken({name: 'Chain', pattern: /\bCHAIN\b/i, longer_alt: Identifier})
 const Check = createToken({name: 'Check', pattern: /\bCHECK\b/i, longer_alt: Identifier})
@@ -167,11 +171,14 @@ const Global = createToken({name: 'Global', pattern: /\bGLOBAL\b/i, longer_alt: 
 const GroupBy = createToken({name: 'GroupBy', pattern: /\bGROUP\s+BY\b/i})
 const Having = createToken({name: 'Having', pattern: /\bHAVING\b/i, longer_alt: Identifier})
 const If = createToken({name: 'If', pattern: /\bIF\b/i, longer_alt: Identifier})
+const Immutable = createToken({name: 'Immutable', pattern: /\bIMMUTABLE\b/i, longer_alt: Identifier})
 const In = createToken({name: 'In', pattern: /\bIN\b/i, longer_alt: Identifier})
 const Include = createToken({name: 'Include', pattern: /\bINCLUDE\b/i, longer_alt: Identifier})
 const Increment = createToken({name: 'Increment', pattern: /\bINCREMENT\b/i, longer_alt: Identifier})
 const Index = createToken({name: 'Index', pattern: /\bINDEX\b/i, longer_alt: Identifier})
 const Inner = createToken({name: 'Inner', pattern: /\bINNER\b/i, longer_alt: Identifier})
+const InOut = createToken({name: 'InOut', pattern: /\bINOUT\b/i, longer_alt: Identifier})
+const Input = createToken({name: 'Input', pattern: /\bINPUT\b/i, longer_alt: Identifier})
 const InsertInto = createToken({name: 'InsertInto', pattern: /\bINSERT\s+INTO\b/i})
 const Intersect = createToken({name: 'Intersect', pattern: /\bINTERSECT\b/i, longer_alt: Identifier})
 const Interval = createToken({name: 'Interval', pattern: /\bINTERVAL\b/i, longer_alt: Identifier})
@@ -179,6 +186,7 @@ const Is = createToken({name: 'Is', pattern: /\bIS\b/i, longer_alt: Identifier})
 const IsNull = createToken({name: 'IsNull', pattern: /\bISNULL\b/i, longer_alt: Identifier})
 const IsolationLevel = createToken({name: 'IsolationLevel', pattern: /\bISOLATION\s+LEVEL\b/i})
 const Join = createToken({name: 'Join', pattern: /\bJOIN\b/i, longer_alt: Identifier})
+const Language = createToken({name: 'Language', pattern: /\bLANGUAGE\b/i, longer_alt: Identifier})
 const Last = createToken({name: 'Last', pattern: /\bLAST\b/i, longer_alt: Identifier})
 const Left = createToken({name: 'Left', pattern: /\bLEFT\b/i, longer_alt: Identifier})
 const Like = createToken({name: 'Like', pattern: /\bLIKE\b/i, longer_alt: Identifier})
@@ -202,6 +210,7 @@ const On = createToken({name: 'On', pattern: /\bON\b/i, longer_alt: Identifier})
 const Only = createToken({name: 'Only', pattern: /\bONLY\b/i, longer_alt: Identifier})
 const Or = createToken({name: 'Or', pattern: /\bOR\b/i, longer_alt: Identifier})
 const OrderBy = createToken({name: 'OrderBy', pattern: /\bORDER\s+BY\b/i})
+const Out = createToken({name: 'Out', pattern: /\bOUT\b/i, longer_alt: Identifier})
 const Outer = createToken({name: 'Outer', pattern: /\bOUTER\b/i, longer_alt: Identifier})
 const Over = createToken({name: 'Over', pattern: /\bOVER\b/i, longer_alt: Identifier})
 const OwnedBy = createToken({name: 'OwnedBy', pattern: /\bOWNED\s+BY\b/i})
@@ -218,7 +227,9 @@ const RenameTo = createToken({name: 'RenameTo', pattern: /\bRENAME\s+TO\b/i})
 const RepeatableRead = createToken({name: 'RepeatableRead', pattern: /\bREPEATABLE\s+READ\b/i})
 const Replace = createToken({name: 'Replace', pattern: /\bREPLACE\b/i, longer_alt: Identifier})
 const Restrict = createToken({name: 'Restrict', pattern: /\bRESTRICT\b/i, longer_alt: Identifier})
+const Return = createToken({name: 'Return', pattern: /\bRETURN\b/i, longer_alt: Identifier})
 const Returning = createToken({name: 'Returning', pattern: /\bRETURNING\b/i, longer_alt: Identifier})
+const Returns = createToken({name: 'Returns', pattern: /\bRETURNS\b/i, longer_alt: Identifier})
 const Right = createToken({name: 'Right', pattern: /\bRIGHT\b/i, longer_alt: Identifier})
 const Row = createToken({name: 'Row', pattern: /\bROW\b/i, longer_alt: Identifier})
 const Rows = createToken({name: 'Rows', pattern: /\bROWS\b/i, longer_alt: Identifier})
@@ -231,8 +242,11 @@ const SessionUser = createToken({name: 'SessionUser', pattern: /\bSESSION_USER\b
 const SetDefault = createToken({name: 'SetDefault', pattern: /\bSET\s+DEFAULT\b/i})
 const SetNull = createToken({name: 'SetNull', pattern: /\bSET\s+NULL\b/i})
 const Set = createToken({name: 'Set', pattern: /\bSET\b/i, longer_alt: Identifier})
+const SetOf = createToken({name: 'SetOf', pattern: /\bSETOF\b/i, longer_alt: Identifier})
 const Show = createToken({name: 'Show', pattern: /\bSHOW\b/i, longer_alt: Identifier})
+const Stable = createToken({name: 'Stable', pattern: /\bSTABLE\b/i, longer_alt: Identifier})
 const Start = createToken({name: 'Start', pattern: /\bSTART\b/i, longer_alt: Identifier})
+const Strict = createToken({name: 'Strict', pattern: /\bSTRICT\b/i, longer_alt: Identifier})
 const Table = createToken({name: 'Table', pattern: /\bTABLE\b/i, longer_alt: Identifier})
 const Temp = createToken({name: 'Temp', pattern: /\bTEMP\b/i, longer_alt: Identifier})
 const Temporary = createToken({name: 'Temporary', pattern: /\bTEMPORARY\b/i, longer_alt: Identifier})
@@ -247,22 +261,27 @@ const Unlogged = createToken({name: 'Unlogged', pattern: /\bUNLOGGED\b/i, longer
 const Update = createToken({name: 'Update', pattern: /\bUPDATE\b/i, longer_alt: Identifier})
 const Using = createToken({name: 'Using', pattern: /\bUSING\b/i, longer_alt: Identifier})
 const Values = createToken({name: 'Values', pattern: /\bVALUES\b/i, longer_alt: Identifier})
+const Variadic = createToken({name: 'Variadic', pattern: /\bVARIADIC\b/i, longer_alt: Identifier})
 const Version = createToken({name: 'Version', pattern: /\bVERSION\b/i, longer_alt: Identifier})
 const View = createToken({name: 'View', pattern: /\bVIEW\b/i, longer_alt: Identifier})
+const Volatile = createToken({name: 'Volatile', pattern: /\bVOLATILE\b/i, longer_alt: Identifier})
 const Where = createToken({name: 'Where', pattern: /\bWHERE\b/i, longer_alt: Identifier})
 const Window = createToken({name: 'Window', pattern: /\bWINDOW\b/i, longer_alt: Identifier})
 const With = createToken({name: 'With', pattern: /\bWITH\b/i, longer_alt: Identifier})
 const Work = createToken({name: 'Work', pattern: /\bWORK\b/i, longer_alt: Identifier})
 const keywordTokens: TokenType[] = [
-    Add, All, Alter, And, As, Asc, Authorization, Begin, By, Cache, Cascade, Chain, Check, Collate, Column, Comment, Commit, Concurrently,
-    Conflict, Constraint, Create, Cross, CurrentRole, CurrentUser, Cycle, Data, Database, Default, Deferrable, Delete, Desc, Distinct, Do, Domain, Drop, Enum, Except,
-    Exists, Extension, False, Fetch, Filter, First, ForeignKey, From, Full, Function, Global, GroupBy, Having, If, In, Include, Increment, Index,
-    Inner, InsertInto, Intersect, Interval, Is, IsNull, IsolationLevel, Join, Last, Left, Like, Limit, Local, MaterializedView, Maxvalue, Minvalue,
-    Natural, Next, No, None, NoAction, Not, Nothing, NotNull, Null, Nulls, Offset, On, Only, Or, OrderBy, Outer, Over, OwnedBy, OwnerTo, PartitionBy, PrimaryKey,
-    ReadCommitted, ReadOnly, ReadUncommitted, ReadWrite, Recursive, References, RenameTo, RepeatableRead, Replace, Restrict,
-    Returning, Right, Row, Rows, Schema, Select, Sequence, Serializable, Session, SessionUser, SetDefault, SetNull, Set, Show, Table, Start, Temp,
-    Temporary, Ties, To, Transaction, True, Type, Union, Unique, Unlogged, Update, Using, Values, Version, View, Where,
-    Window, With, Work
+    Add, All, Alter, And, As, Asc, Authorization, Begin, By, Cache, Called, Cascade, Chain, Check, Collate, Column,
+    Comment, Commit, Concurrently, Conflict, Constraint, Create, Cross, CurrentRole, CurrentUser, Cycle, Data, Database,
+    Default, Deferrable, Delete, Desc, Distinct, Do, Domain, Drop, Enum, Except, Exists, Extension, False, Fetch,
+    Filter, First, ForeignKey, From, Full, Function, Global, GroupBy, Having, If, Immutable, In, Include, Increment,
+    Index, Inner, InOut, Input, InsertInto, Intersect, Interval, Is, IsNull, IsolationLevel, Join, Language, Last, Left,
+    Like, Limit, Local, MaterializedView, Maxvalue, Minvalue, Natural, Next, No, None, NoAction, Not, Nothing, NotNull,
+    Null, Nulls, Offset, On, Only, Or, OrderBy, Out, Outer, Over, OwnedBy, OwnerTo, PartitionBy, PrimaryKey,
+    ReadCommitted, ReadOnly, ReadUncommitted, ReadWrite, Recursive, References, RenameTo, RepeatableRead, Replace,
+    Restrict, Return, Returning, Returns, Right, Row, Rows, Schema, Select, Sequence, Serializable, Session,
+    SessionUser, SetDefault, SetNull, Set, SetOf, Show, Table, Stable, Start, Strict, Temp, Temporary, Ties, To,
+    Transaction, True, Type, Union, Unique, Unlogged, Update, Using, Values, Version, View, Volatile, Where, Window,
+    With, Work
 ]
 
 const Amp = createToken({name: 'Amp', pattern: /&/})
@@ -275,7 +294,7 @@ const Comma = createToken({name: 'Comma', pattern: /,/})
 const CurlyLeft = createToken({name: 'CurlyLeft', pattern: /\{/})
 const CurlyRight = createToken({name: 'CurlyRight', pattern: /}/})
 const Dash = createToken({name: 'Dash', pattern: /-/, longer_alt: LineComment})
-const Dollar = createToken({name: 'Dollar', pattern: /\$/})
+const Dollar = createToken({name: 'Dollar', pattern: /\$/, longer_alt: StringDollar})
 const Dot = createToken({name: 'Dot', pattern: /\./})
 const Equal = createToken({name: 'Equal', pattern: /=/})
 const Exclamation = createToken({name: 'Exclamation', pattern: /!/})
@@ -543,10 +562,60 @@ class PostgresParser extends EmbeddedActionsParser {
         this.createFunctionStatementRule = $.RULE<() => CreateFunctionStatementAst>('createFunctionStatementRule', () => {
             // https://www.postgresql.org/docs/current/sql-createfunction.html
             const start = $.CONSUME(Create)
+            const replace = undefined // TODO: $.OPTION(() => tokenInfo2($.CONSUME(Or), $.CONSUME(Replace)))
             const token = tokenInfo2(start, $.CONSUME(Function))
-            // TODO
+            const object = $.SUBRULE($.objectNameRule)
+            const args = $.SUBRULE(functionArgumentsRule)
+            const statement: Pick<CreateFunctionStatementAst, 'returns' | 'language' | 'behavior' | 'definition' | 'nullBehavior' | 'return'> = {}
+            $.MANY({DEF: () => $.OR([
+                {ALT: () => statement.returns = $.SUBRULE(functionReturnsRule)},
+                {ALT: () => statement.language = {token: tokenInfo($.CONSUME(Language)), name: $.SUBRULE3($.identifierRule)}},
+                {ALT: () => statement.behavior = $.OR2([
+                    {ALT: () => ({kind: 'Immutable' as const, token: tokenInfo($.CONSUME(Immutable))})},
+                    {ALT: () => ({kind: 'Stable' as const, token: tokenInfo($.CONSUME(Stable))})},
+                    {ALT: () => ({kind: 'Volatile' as const, token: tokenInfo($.CONSUME(Volatile))})},
+                ])},
+                {ALT: () => statement.definition = {token: tokenInfo($.CONSUME(As)), value: $.SUBRULE(this.stringRule)}},
+                {ALT: () => statement.nullBehavior = $.OR3([
+                    {ALT: () => ({kind: 'Called' as const, token: tokenInfoN([$.CONSUME(Called), $.CONSUME(On), $.CONSUME(Null), $.CONSUME(Input)])})},
+                    {ALT: () => ({kind: 'ReturnsNull' as const, token: tokenInfoN([$.CONSUME(Returns), $.CONSUME2(Null), $.CONSUME2(On), $.CONSUME3(Null), $.CONSUME2(Input)])})},
+                    {ALT: () => ({kind: 'Strict' as const, token: tokenInfo($.CONSUME(Strict))})},
+                ])},
+                {ALT: () => statement.return = {token: tokenInfo($.CONSUME(Return)), expression: $.SUBRULE(this.expressionRule)}},
+            ])})
             const end = $.CONSUME(Semicolon)
-            return removeUndefined({kind: 'CreateFunction' as const, meta: tokenInfo2(start, end), token})
+            return removeUndefined({kind: 'CreateFunction' as const, meta: tokenInfo2(start, end), token, replace, ...object, args, ...statement})
+        })
+        const functionArgumentsRule = $.RULE<() => FunctionArgumentAst[]>('functionArgumentsRule', () => {
+            const args: FunctionArgumentAst[] = []
+            $.CONSUME(ParenLeft)
+            $.MANY_SEP({SEP: Comma, DEF: () => {
+                const mode = $.OPTION(() => $.OR([
+                    {ALT: () => ({kind: 'In' as const, token: tokenInfo($.CONSUME(In))})},
+                    {ALT: () => ({kind: 'Out' as const, token: tokenInfo($.CONSUME(Out))})},
+                    {ALT: () => ({kind: 'InOut' as const, token: tokenInfo($.CONSUME(InOut))})},
+                    {ALT: () => ({kind: 'Variadic' as const, token: tokenInfo($.CONSUME(Variadic))})},
+                ]))
+                const name = $.OPTION2(() => $.SUBRULE($.identifierRule))
+                const type = $.SUBRULE($.columnTypeRule)
+                args.push(removeUndefined({mode, name, type}))
+            }})
+            $.CONSUME(ParenRight)
+            return args
+        })
+        const functionReturnsRule = $.RULE<() => FunctionReturnsAst>('functionReturnsRule', () => {
+            const ret = $.CONSUME(Returns)
+            return $.OR([
+                {ALT: () => removeUndefined({kind: 'Type' as const, token: tokenInfo(ret), setOf: $.OPTION(() => tokenInfo($.CONSUME(SetOf))), type: $.SUBRULE($.columnTypeRule)})},
+                {ALT: () => {
+                    const token = tokenInfo2(ret, $.CONSUME(Table))
+                    $.CONSUME(ParenLeft)
+                    const columns: {name: IdentifierAst, type: ColumnTypeAst}[] = []
+                    $.MANY_SEP({SEP: Comma, DEF: () => columns.push({name: $.SUBRULE($.identifierRule), type: $.SUBRULE2($.columnTypeRule)})})
+                    $.CONSUME(ParenRight)
+                    return {kind: 'Table' as const, token, columns}
+                }},
+            ])
         })
 
         this.createIndexStatementRule = $.RULE<() => CreateIndexStatementAst>('createIndexStatementRule', () => {
@@ -1570,26 +1639,41 @@ class PostgresParser extends EmbeddedActionsParser {
                 }
             }},
             // tokens allowed as identifiers:
+            {ALT: () => toIdentifier($.CONSUME(Add))},
+            {ALT: () => toIdentifier($.CONSUME(Commit))},
             {ALT: () => toIdentifier($.CONSUME(Data))},
             {ALT: () => toIdentifier($.CONSUME(Database))},
             {ALT: () => toIdentifier($.CONSUME(Deferrable))},
+            {ALT: () => toIdentifier($.CONSUME(Increment))},
             {ALT: () => toIdentifier($.CONSUME(Index))},
+            {ALT: () => toIdentifier($.CONSUME(Input))},
             {ALT: () => toIdentifier($.CONSUME(Nulls))},
             {ALT: () => toIdentifier($.CONSUME(Rows))},
             {ALT: () => toIdentifier($.CONSUME(Schema))},
+            {ALT: () => toIdentifier($.CONSUME(Start))},
+            {ALT: () => toIdentifier($.CONSUME(Temporary))},
             {ALT: () => toIdentifier($.CONSUME(Type))},
             {ALT: () => toIdentifier($.CONSUME(Version))},
         ]))
 
-        this.stringRule = $.RULE<() => StringAst>('stringRule', () => {
-            const token = $.CONSUME(String)
-            if (token.image.match(/^E/i)) {
-                // https://www.postgresql.org/docs/current/sql-syntax-lexical.html
-                return {kind: 'String', token: tokenInfo(token), value: token.image.slice(2, -1).replaceAll(/''/g, "'"), escaped: true}
-            } else {
-                return {kind: 'String', token: tokenInfo(token), value: token.image.slice(1, -1).replaceAll(/''/g, "'")}
-            }
-        })
+        this.stringRule = $.RULE<() => StringAst>('stringRule', () => $.OR([
+            {ALT: () => {
+                const token = $.CONSUME(String)
+                if (token.image.match(/^E/i)) {
+                    // https://www.postgresql.org/docs/current/sql-syntax-lexical.html
+                    return {kind: 'String', token: tokenInfo(token), value: token.image.slice(2, -1).replaceAll(/''/g, "'"), escaped: true}
+                } else {
+                    return {kind: 'String', token: tokenInfo(token), value: token.image.slice(1, -1).replaceAll(/''/g, "'")}
+                }
+            }},
+            {ALT: () => {
+                // https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-DOLLAR-QUOTING
+                const token = $.CONSUME(StringDollar)
+                const [, dollar] = token.image.match(/^(\$[^$]*\$)/) || []
+                const prefix = dollar?.length || 0
+                return {kind: 'String', token: tokenInfo(token), value: token.image.slice(prefix, -prefix).trim(), dollar}
+            }},
+        ]))
 
         this.integerRule = $.RULE<() => IntegerAst>('integerRule', () => {
             const neg = $.OPTION(() => $.CONSUME(Dash))
@@ -1680,6 +1764,10 @@ function tokenInfo2(start: IToken | undefined, end: IToken | undefined, issues?:
 
 function tokenInfo3(start: IToken | undefined, middle: IToken | undefined, end: IToken | undefined, issues?: TokenIssue[]): TokenInfo {
     return removeEmpty({...mergePositions([start, middle, end].map(t => t ? tokenPosition(t) : undefined)), issues})
+}
+
+function tokenInfoN(tokens: (IToken | undefined)[], issues?: TokenIssue[]): TokenInfo {
+    return removeEmpty({...mergePositions(tokens.map(t => t ? tokenPosition(t) : undefined)), issues})
 }
 
 function tokenPosition(token: IToken): TokenPosition {
