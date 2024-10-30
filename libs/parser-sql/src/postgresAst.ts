@@ -12,10 +12,13 @@ import {ParserErrorLevel, TokenPosition} from "@azimutt/models";
 export type PostgresAst = StatementsAst & { comments?: CommentAst[] }
 export type PostgresStatementAst = StatementAst & { comments?: CommentAst[] }
 export type StatementsAst = { statements: StatementAst[] }
-export type StatementAst = { meta: TokenInfo } & (AlterSequenceStatementAst | AlterTableStatementAst | BeginStatementAst | CommentOnStatementAst | CommitStatementAst |
-    CreateExtensionStatementAst | CreateFunctionStatementAst | CreateIndexStatementAst | CreateMaterializedViewStatementAst | CreateSequenceStatementAst |
-    CreateTableStatementAst | CreateTypeStatementAst | CreateViewStatementAst | DeleteStatementAst | DropStatementAst | InsertIntoStatementAst |
-    SelectStatementAst | SetStatementAst | ShowStatementAst | UpdateStatementAst)
+export type StatementAst = { meta: TokenInfo } & (AlterSchemaStatementAst | AlterSequenceStatementAst |
+    AlterTableStatementAst | BeginStatementAst | CommentOnStatementAst | CommitStatementAst |
+    CreateExtensionStatementAst | CreateFunctionStatementAst | CreateIndexStatementAst |
+    CreateMaterializedViewStatementAst | CreateSchemaStatementAst | CreateSequenceStatementAst |
+    CreateTableStatementAst | CreateTypeStatementAst | CreateViewStatementAst | DeleteStatementAst | DropStatementAst |
+    InsertIntoStatementAst | SelectStatementAst | SetStatementAst | ShowStatementAst | UpdateStatementAst)
+export type AlterSchemaStatementAst = { kind: 'AlterSchema', token: TokenInfo, schema: IdentifierAst, action: { kind: 'Rename', token: TokenInfo, schema: IdentifierAst } | { kind: 'Owner', token: TokenInfo, role: SchemaRoleAst } }
 export type AlterSequenceStatementAst = { kind: 'AlterSequence', token: TokenInfo, ifExists?: TokenInfo, schema?: IdentifierAst, name: IdentifierAst, as?: SequenceTypeAst, start?: SequenceParamAst, increment?: SequenceParamAst, minValue?: SequenceParamOptAst, maxValue?: SequenceParamOptAst, cache?: SequenceParamAst, ownedBy?: SequenceOwnedByAst }
 export type AlterTableStatementAst = { kind: 'AlterTable', token: TokenInfo, ifExists?: TokenInfo, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, action: AlterTableActionAst }
 export type BeginStatementAst = { kind: 'Begin', token: TokenInfo, object?: {kind: 'Work' | 'Transaction', token: TokenInfo}, modes?: TransactionModeAst[] }
@@ -25,6 +28,7 @@ export type CreateExtensionStatementAst = { kind: 'CreateExtension', token: Toke
 export type CreateFunctionStatementAst = { kind: 'CreateFunction', token: TokenInfo } // TODO
 export type CreateIndexStatementAst = { kind: 'CreateIndex', token: TokenInfo, unique?: TokenInfo, concurrently?: TokenInfo, ifNotExists?: TokenInfo, name?: IdentifierAst, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, using?: { token: TokenInfo, method: IdentifierAst }, columns: IndexColumnAst[], include?: { token: TokenInfo, columns: IdentifierAst[] }, where?: WhereClauseAst }
 export type CreateMaterializedViewStatementAst = { kind: 'CreateMaterializedView', token: TokenInfo, ifNotExists?: TokenInfo, schema?: IdentifierAst, name: IdentifierAst, columns?: IdentifierAst[], query: SelectStatementInnerAst, withData?: { token: TokenInfo, no?: TokenInfo } }
+export type CreateSchemaStatementAst = { kind: 'CreateSchema', token: TokenInfo, ifNotExists?: TokenInfo, schema?: IdentifierAst, authorization?: { token: TokenInfo, role: SchemaRoleAst } }
 export type CreateSequenceStatementAst = { kind: 'CreateSequence', token: TokenInfo, mode?: SequenceModeAst, ifNotExists?: TokenInfo, schema?: IdentifierAst, name: IdentifierAst, as?: SequenceTypeAst, start?: SequenceParamAst, increment?: SequenceParamAst, minValue?: SequenceParamOptAst, maxValue?: SequenceParamOptAst, cache?: SequenceParamAst, ownedBy?: SequenceOwnedByAst }
 export type CreateTableStatementAst = { kind: 'CreateTable', token: TokenInfo, mode?: CreateTableModeAst, ifNotExists?: TokenInfo, schema?: IdentifierAst, name: IdentifierAst, columns?: TableColumnAst[], constraints?: TableConstraintAst[] }
 export type CreateTypeStatementAst = { kind: 'CreateType', token: TokenInfo, schema?: IdentifierAst, name: IdentifierAst, struct?: { token: TokenInfo, attrs: TypeColumnAst[] }, enum?: { token: TokenInfo, values: StringAst[] }, base?: { name: IdentifierAst, value: ExpressionAst }[] }
@@ -38,6 +42,7 @@ export type ShowStatementAst = { kind: 'Show', token: TokenInfo, name: Identifie
 export type UpdateStatementAst = { kind: 'Update', token: TokenInfo, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, descendants?: TokenInfo, alias?: AliasAst, columns: UpdateColumnAst[], where?: WhereClauseAst, returning?: SelectClauseAst }
 
 // clauses
+export type SchemaRoleAst = { kind: 'Role', name: IdentifierAst } | { kind: 'CurrentRole' | 'CurrentUser' | 'SessionUser', token: TokenInfo }
 export type CreateTableModeAst = ({ kind: 'Unlogged', token: TokenInfo }) | ({ kind: 'Temporary', token: TokenInfo, scope?: { kind: 'Local' | 'Global', token: TokenInfo } })
 export type UpdateColumnAst = { column: IdentifierAst, value: ExpressionAst | { kind: 'Default', token: TokenInfo } }
 export type SelectStatementInnerAst = SelectStatementMainAst & SelectStatementResultAst
@@ -136,7 +141,7 @@ export type OperatorLeft = 'Not' | 'Interval' | '~'
 export type OperatorRight = 'IsNull' | 'NotNull'
 export type JsonOp = '->' | '->>'
 export type ForeignKeyAction = 'NoAction' | 'Restrict' | 'Cascade' | 'SetNull' | 'SetDefault'
-export type DropObject = 'Table' | 'View' | 'MaterializedView' | 'Index' | 'Type'
+export type DropObject = 'Index' | 'MaterializedView' | 'Sequence' | 'Table' | 'Type' | 'View'
 export type DropMode = 'Cascade' | 'Restrict'
 export type CommentObject = 'Column' | 'Constraint' | 'Database' | 'Extension' | 'Index' | 'MaterializedView' | 'Schema' | 'Table' | 'Type' | 'View'
 export type JoinKind = 'Inner' | 'Left' | 'Right' | 'Full' | 'Cross'

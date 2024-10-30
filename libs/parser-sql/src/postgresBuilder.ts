@@ -94,11 +94,13 @@ export function evolvePostgres(db: Database, errors: ParserError[], index: numbe
         if (!db.entities) db.entities = []
         const entity = createView(index, stmt, db.entities)
         addEntity(db.entities, errors, entity, mergePositions([stmt.schema, stmt.name].map(v => v?.token)))
+    } else if (stmt.kind === 'AlterSchema') { // nothing
     } else if (stmt.kind === 'AlterSequence') { // nothing
     } else if (stmt.kind === 'Begin') { // nothing
     } else if (stmt.kind === 'Commit') { // nothing
     } else if (stmt.kind === 'CreateExtension') { // nothing
     } else if (stmt.kind === 'CreateFunction') { // nothing
+    } else if (stmt.kind === 'CreateSchema') { // nothing
     } else if (stmt.kind === 'CreateSequence') { // nothing
     } else if (stmt.kind === 'Delete') { // nothing
     } else if (stmt.kind === 'Drop') { // nothing

@@ -33,6 +33,7 @@ import {parsePostgresAst, parseRule} from "./postgresParser";
 
 describe('postgresParser', () => {
     // TODO: CREATE FUNCTION
+    // TODO: ALTER TYPE
     test('empty', () => {
         expect(parsePostgresAst('')).toEqual({result: {statements: []}})
     })
@@ -79,7 +80,29 @@ describe('postgresParser', () => {
     })
     test.skip('other structures', async () => {
         // cf https://github.com/search?q=path%3A**%2Fstructure.sql&type=code
-        const structures = ['https://raw.githubusercontent.com/plausible/analytics/refs/heads/master/priv/repo/structure.sql']
+        const structures = [
+            'https://raw.githubusercontent.com/ChanAlex2357/gestion_analytique_S5/refs/heads/main/Structure.sql',
+            // 'https://raw.githubusercontent.com/plausible/analytics/refs/heads/master/priv/repo/structure.sql', // fail#73: CREATE FUNCTION
+            // 'https://raw.githubusercontent.com/inaturalist/inaturalist/refs/heads/main/db/structure.sql', // fail#44: CREATE FUNCTION
+            // 'https://raw.githubusercontent.com/cardstack/cardstack/refs/heads/main/packages/hub/config/structure.sql', // fail#52: `ALTER TYPE` & 1986: `COPY`
+            // 'https://raw.githubusercontent.com/gocardless/draupnir/refs/heads/master/structure.sql', // fail#118: ALTER TABLE ... ALTER COLUMN id SET DEFAULT ...;
+            // 'https://raw.githubusercontent.com/drenther/Empirical-Core/refs/heads/develop/db/structure.sql', // fail#79: CREATE FUNCTION
+            // 'https://raw.githubusercontent.com/spuddybike/archivist/refs/heads/develop/db/structure.sql', // fail#44: CREATE FUNCTION
+            // 'https://raw.githubusercontent.com/sathreddy/bety/refs/heads/master/db/structure.sql', // fail#274: LexingError: unexpected character: ->\\<-
+            // 'https://raw.githubusercontent.com/dhbtk/achabus/refs/heads/master/db/structure.sql', // fail#71: CREATE FUNCTION
+            // 'https://raw.githubusercontent.com/mveytsman/community/refs/heads/master/db/structure.sql', // fail#299: JOIN (`SELECT * FROM users, events;`)
+            // 'https://raw.githubusercontent.com/yazilimcilarinmolayeri/pixels-clone/refs/heads/master/Structure.sql', // fail#27: CREATE SEQUENCE param order (START at the end)
+            // 'https://raw.githubusercontent.com/henry2992/aprendemy/refs/heads/master/db/structure.sql', // fail#58: CREATE FUNCTION
+            // 'https://raw.githubusercontent.com/LuisMDeveloper/travis-core/refs/heads/master/db/structure.sql', // fail#32: CREATE FUNCTION
+            // 'https://raw.githubusercontent.com/ppawel/openstreetmap-watch-list/refs/heads/master/db/structure.sql', // fail#92: `CREATE TYPE change AS (geom geometry(Geometry,4326))`
+            // 'https://raw.githubusercontent.com/OPG-813/electronic-queue-server/refs/heads/master/src/db/structure.sql', // fail#2: `CREATE OR REPLACE FUNCTION`
+            // 'https://raw.githubusercontent.com/Rotabot-io/rotabot/refs/heads/main/assets/structure.sql', // fail#31: CREATE FUNCTION
+            // 'https://raw.githubusercontent.com/TechnoDann/PPC-board-2.0/refs/heads/master/db/structure.sql', // fail#16: CREATE FUNCTION
+            // 'https://raw.githubusercontent.com/bocoup/devstats/refs/heads/master/structure.sql', // fail#46: CREATE FUNCTION
+            // 'https://raw.githubusercontent.com/gustavodiel/monet-backend/refs/heads/main/db/structure.sql', // fail#23: CREATE FUNCTION
+            // 'https://raw.githubusercontent.com/Leonardo-Zappani/bd2/refs/heads/main/db/structure.sql', // fail#16: CREATE FUNCTION
+            // 'https://raw.githubusercontent.com/Style12341/UTN-gestor-aulas-backend/refs/heads/main/db/structure.sql', // fail#16: CREATE FUNCTION
+        ]
         await Promise.all(structures.map(async url => {
             const sql = await fetch(url).then(res => res.text())
             const parsed = parsePostgresAst(sql, {strict: true})
@@ -88,6 +111,22 @@ describe('postgresParser', () => {
                 expect(parsed.errors || []).toEqual([])
             }
         }))
+    })
+    describe('alterSchema', () => {
+        test('rename', () => {
+            expect(parsePostgresAst('ALTER SCHEMA cms RENAME TO marketing;')).toEqual({result: {statements: [{
+                ...stmt('AlterSchema', 0, 11, 36),
+                schema: identifier('cms', 13),
+                action: {kind: 'Rename', token: token(17, 25), schema: identifier('marketing', 27)}
+            }]}})
+        })
+        test('owner', () => {
+            expect(parsePostgresAst('ALTER SCHEMA cms OWNER TO CURRENT_USER;')).toEqual({result: {statements: [{
+                ...stmt('AlterSchema', 0, 11, 38),
+                schema: identifier('cms', 13),
+                action: {kind: 'Owner', token: token(17, 24), role: kind('CurrentUser', 26, 37)}
+            }]}})
+        })
     })
     describe('alterSequence', () => {
         test('simplest', () => {
@@ -308,6 +347,22 @@ describe('postgresParser', () => {
                     from: {...kind('Table', 44, 47), table: identifier('users', 49)},
                     where: {token: token(55, 59), predicate: operation(column('role', 61), op('=', 65), string('admin',  66))},
                 }
+            }]}})
+        })
+    })
+    describe('createSchema', () => {
+        test('simplest', () => {
+            expect(parsePostgresAst('CREATE SCHEMA cms;')).toEqual({result: {statements: [{
+                ...stmt('CreateSchema', 0, 12, 17),
+                schema: identifier('cms', 14),
+            }]}})
+        })
+        test('complex', () => {
+            expect(parsePostgresAst('CREATE SCHEMA IF NOT EXISTS cms AUTHORIZATION CURRENT_USER;')).toEqual({result: {statements: [{
+                ...stmt('CreateSchema', 0, 12, 58),
+                ifNotExists: token(14, 26),
+                schema: identifier('cms', 28),
+                authorization: {token: token(32, 44), role: kind('CurrentUser', 46, 57)},
             }]}})
         })
     })
