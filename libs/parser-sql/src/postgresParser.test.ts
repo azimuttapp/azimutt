@@ -78,6 +78,7 @@ describe('postgresParser', () => {
         // TODO:575 `errors jsonb[] DEFAULT ARRAY[]::jsonb[] NOT NULL,`
     })
     test.skip('other structures', async () => {
+        // cf https://github.com/search?q=path%3A**%2Fstructure.sql&type=code
         const structures = ['https://raw.githubusercontent.com/plausible/analytics/refs/heads/master/priv/repo/structure.sql']
         await Promise.all(structures.map(async url => {
             const sql = await fetch(url).then(res => res.text())

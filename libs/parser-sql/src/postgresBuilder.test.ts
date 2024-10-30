@@ -8,7 +8,7 @@ import {buildPostgresDatabase, SelectEntities, selectEntities} from "./postgresB
 
 describe('postgresBuilder', () => {
     test('empty', () => {
-        expect(parse('')).toEqual({db: {extra: {}}, errors: []})
+        expect(parse('')).toEqual({db: {}, errors: []})
     })
     test('complex', () => {
         const input = `
@@ -82,9 +82,8 @@ COMMENT ON TYPE bug_status IS 'bug status';
                 {name: 'posts_author_fk', src: {schema: 'cms', entity: 'posts', attrs: [['author']]}, ref: {entity: 'users', attrs: [['id']]}, doc: 'posts fk'},
             ],
             types: [
-                {name: 'bug_status', values: ['open', 'closed'], doc: 'bug status'}
+                {name: 'bug_status', values: ['open', 'closed'], doc: 'bug status'},
             ],
-            extra: {}
         }
         expect(parse(input)).toEqual({db, errors: []})
     })
@@ -199,7 +198,7 @@ function parse(sql: string): {db: Database, errors: ParserError[]} {
         const res = parsePostgresAst(sql)
             .flatMap(ast => buildPostgresDatabase(ast, start, Date.now()))
             .map(({extra: {source, createdAt, creationTimeMs, parsingTimeMs, formattingTimeMs, ...extra} = {}, ...db}) => ({...db, extra}))
-        return {db: res.result || {}, errors: res.errors || []}
+        return {db: removeFieldsDeep(res.result || {}, ['extra']), errors: res.errors || []}
     } catch (e) {
         console.error(e) // print stack trace
         throw new Error(`Can't parse '${sql}'${typeof e === 'object' && e !== null && 'message' in e ? ': ' + e.message : ''}`)
@@ -207,5 +206,5 @@ function parse(sql: string): {db: Database, errors: ParserError[]} {
 }
 
 function extract(sql: string, entities: Entity[]): SelectEntities {
-    return selectEntities(parsePostgresAst(sql).result?.statements?.[0] as SelectStatementInnerAst, entities)
+    return removeFieldsDeep(selectEntities(parsePostgresAst(sql).result?.statements?.[0] as SelectStatementInnerAst, entities), ['token'])
 }

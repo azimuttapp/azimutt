@@ -48,7 +48,8 @@ import {
     SelectClauseColumnAst,
     SelectStatementInnerAst,
     StatementAst,
-    TableColumnAst
+    TableColumnAst,
+    TokenInfo
 } from "./postgresAst";
 import {duplicated} from "./errors";
 
@@ -136,24 +137,26 @@ function addType(types: Type[], errors: ParserError[], type: Type, pos: TokenPos
 }
 
 function createTable(index: number, stmt: CreateTableStatementAst): { entity: Entity, relations: Relation[] } {
-    const colPk: PrimaryKey[] = stmt.columns?.flatMap(col => col.constraints?.flatMap(c => c.kind === 'PrimaryKey' ? [removeUndefined({attrs: [[col.name.value]], name: c.constraint?.name.value})] : []) || []) || []
-    const tablePk: PrimaryKey[] = stmt.constraints?.flatMap(c => c.kind === 'PrimaryKey' ? [removeUndefined({attrs: c.columns.map(col => [col.value]), name: c.constraint?.name.value})] : []) || []
+    const colPk: PrimaryKey[] = stmt.columns?.flatMap(col => col.constraints?.flatMap(c => c.kind === 'PrimaryKey' ? [removeUndefined({attrs: [[col.name.value]], name: c.constraint?.name.value, extra: {line: c.token.position.start.line, statement: index}})] : []) || []) || []
+    const tablePk: PrimaryKey[] = stmt.constraints?.flatMap(c => c.kind === 'PrimaryKey' ? [removeUndefined({attrs: c.columns.map(col => [col.value]), name: c.constraint?.name.value, extra: {line: c.token.position.start.line, statement: index}})] : []) || []
     const pk: PrimaryKey[] = colPk.concat(tablePk)
-    const colIndexes: Index[] = stmt.columns?.flatMap(col => col.constraints?.flatMap(c => c.kind === 'Unique' ? [removeUndefined({attrs: [[col.name.value]], unique: true, name: c.constraint?.name.value})] : []) || []) || []
-    const tableIndexes: Index[] = stmt.constraints?.flatMap(c => c.kind === 'Unique' ? [removeUndefined({attrs: c.columns.map(col => [col.value]), unique: true, name: c.constraint?.name.value})] : []) || []
+    const colIndexes: Index[] = stmt.columns?.flatMap(col => col.constraints?.flatMap(c => c.kind === 'Unique' ? [removeUndefined({attrs: [[col.name.value]], unique: true, name: c.constraint?.name.value, extra: {line: c.token.position.start.line, statement: index}})] : []) || []) || []
+    const tableIndexes: Index[] = stmt.constraints?.flatMap(c => c.kind === 'Unique' ? [removeUndefined({attrs: c.columns.map(col => [col.value]), unique: true, name: c.constraint?.name.value, extra: {line: c.token.position.start.line, statement: index}})] : []) || []
     const indexes: Index[] = colIndexes.concat(tableIndexes)
-    const colChecks: Check[] = stmt.columns?.flatMap(col => col.constraints?.flatMap(c => c.kind === 'Check' ? [removeUndefined({attrs: [[col.name.value]], predicate: expressionToString(c.predicate), name: c.constraint?.name.value})] : []) || []) || []
-    const tableChecks: Check[] = stmt.constraints?.flatMap(c => c.kind === 'Check' ? [removeUndefined({attrs: expressionAttrs(c.predicate), predicate: expressionToString(c.predicate), name: c.constraint?.name.value})] : []) || []
+    const colChecks: Check[] = stmt.columns?.flatMap(col => col.constraints?.flatMap(c => c.kind === 'Check' ? [removeUndefined({attrs: [[col.name.value]], predicate: expressionToString(c.predicate), name: c.constraint?.name.value, extra: {line: c.token.position.start.line, statement: index}})] : []) || []) || []
+    const tableChecks: Check[] = stmt.constraints?.flatMap(c => c.kind === 'Check' ? [removeUndefined({attrs: expressionAttrs(c.predicate), predicate: expressionToString(c.predicate), name: c.constraint?.name.value, extra: {line: c.token.position.start.line, statement: index}})] : []) || []
     const checks: Check[] = colChecks.concat(tableChecks)
     const colRels: Relation[] = stmt.columns?.flatMap(col => col.constraints?.flatMap(c => c.kind === 'ForeignKey' ? [removeUndefined({
         name: c.constraint?.name.value,
         src: removeUndefined({schema: stmt.schema?.value, entity: stmt.name.value, attrs: [[col.name.value]]}),
         ref: removeUndefined({schema: c.schema?.value, entity: c.table.value, attrs: [c.column ? [c.column.value] : []]}),
+        extra: {line: c.token.position.start.line, statement: index},
     })] : []) || []) || []
     const tableRels: Relation[] = stmt.constraints?.flatMap(c => c.kind === 'ForeignKey' ? [removeUndefined({
         name: c.constraint?.name.value,
         src: removeUndefined({schema: stmt.schema?.value, entity: stmt.name.value, attrs: c.columns.map(col => [col.value])}),
         ref: removeUndefined({schema: c.ref.schema?.value, entity: c.ref.table.value, attrs: c.ref.columns?.map(col => [col.value]) || []}),
+        extra: {line: c.token.position.start.line, statement: index},
     })] : []) || []
     const relations: Relation[] = colRels.concat(tableRels)
     return {entity: removeEmpty({
@@ -161,17 +164,17 @@ function createTable(index: number, stmt: CreateTableStatementAst): { entity: En
         name: stmt.name.value,
         kind: undefined,
         def: undefined,
-        attrs: (stmt.columns || []).map(c => buildTableAttr(c, !!pk.find(pk => pk.attrs.some(a => attributePathSame(a, [c.name.value]))))),
+        attrs: (stmt.columns || []).map(c => buildTableAttr(index, c, !!pk.find(pk => pk.attrs.some(a => attributePathSame(a, [c.name.value]))))),
         pk: pk.length > 0 ? pk[0] : undefined,
         indexes,
         checks,
         // doc: z.string().optional(), // not defined in CREATE TABLE
         // stats: EntityStats.optional(), // no stats in SQL
-        // extra: EntityExtra.optional(), // TODO
+        extra: {line: stmt.token.position.start.line, statement: index},
     }), relations}
 }
 
-function buildTableAttr(c: TableColumnAst, notNull?: boolean): Attribute {
+function buildTableAttr(index: number, c: TableColumnAst, notNull?: boolean): Attribute {
     return removeUndefined({
         name: c.name.value,
         type: c.type.name.value,
@@ -181,7 +184,7 @@ function buildTableAttr(c: TableColumnAst, notNull?: boolean): Attribute {
         // attrs: z.lazy(() => Attribute.array().optional()), // no nested attrs from SQL
         // doc: z.string().optional(), // not defined in CREATE TABLE
         // stats: AttributeStats.optional(), // no stats in SQL
-        // extra: AttributeExtra.optional(), // TODO
+        extra: {line: c.name.token.position.start.line, statement: index},
     })
 }
 
@@ -191,13 +194,13 @@ function createView(index: number, stmt: CreateViewStatementAst, entities: Entit
         name: stmt.name.value,
         kind: 'view' as const,
         def: selectInnerToString(stmt.query),
-        attrs: buildViewAttrs(stmt.query, stmt.columns, entities),
+        attrs: buildViewAttrs(index, stmt.query, stmt.columns, entities),
         // pk: PrimaryKey.optional(), // not in VIEW
         // indexes: Index.array().optional(), // not in VIEW
         // checks: Check.array().optional(), // not in VIEW
         // doc: z.string().optional(), // not in VIEW
         // stats: EntityStats.optional(), // no stats in SQL
-        // extra: EntityExtra.optional(), // TODO
+        extra: {line: stmt.token.position.start.line, statement: index},
     })
 }
 
@@ -207,17 +210,17 @@ function createMaterializedView(index: number, stmt: CreateMaterializedViewState
         name: stmt.name.value,
         kind: 'materialized view' as const,
         def: selectInnerToString(stmt.query),
-        attrs: buildViewAttrs(stmt.query, stmt.columns, entities),
+        attrs: buildViewAttrs(index, stmt.query, stmt.columns, entities),
         // pk: PrimaryKey.optional(), // not in VIEW
         // indexes: Index.array().optional(), // not in VIEW
         // checks: Check.array().optional(), // not in VIEW
         // doc: z.string().optional(), // not in VIEW
         // stats: EntityStats.optional(), // no stats in SQL
-        // extra: EntityExtra.optional(), // TODO
+        extra: {line: stmt.token.position.start.line, statement: index},
     })
 }
 
-function buildViewAttrs(query: SelectStatementInnerAst, columns: IdentifierAst[] | undefined, entities: Entity[]): Attribute[] {
+function buildViewAttrs(index: number, query: SelectStatementInnerAst, columns: IdentifierAst[] | undefined, entities: Entity[]): Attribute[] {
     const attrs = selectEntities(query, entities).columns.map(c => removeUndefined({
         name: c.name,
         type: c.type || 'unknown',
@@ -227,7 +230,7 @@ function buildViewAttrs(query: SelectStatementInnerAst, columns: IdentifierAst[]
         // attrs: z.lazy(() => Attribute.array().optional()), // no nested attrs from SQL
         // doc: z.string().optional(), // not defined in CREATE TABLE
         // stats: AttributeStats.optional(), // no stats in SQL
-        // extra: AttributeExtra.optional(), // TODO
+        extra: {line: c.token.position.start.line, statement: index},
     }))
     return columns ? columns.map(c => attrs.find(a => a.name === c.value) || {name: c.value, type: 'unknown'}) : attrs
 }
@@ -248,7 +251,7 @@ function createIndex(index: number, stmt: CreateIndexStatementAst, entities: Ent
             // TODO: definition: z.string().optional(),
             // doc: z.string().optional(),
             // stats: IndexStats.optional(),
-            // TODO: extra: IndexExtra.optional(),
+            extra: {line: stmt.token.position.start.line, statement: index},
         }))
     }
 }
@@ -260,7 +263,7 @@ function alterTable(index: number, stmt: AlterTableStatementAst, db: Database): 
         if (action.kind === 'AddColumn') {
             if (!entity.attrs) entity.attrs = []
             const exists = entity.attrs.find(a => a.name === action.column.name.value)
-            if (!exists) entity.attrs.push(buildTableAttr(action.column))
+            if (!exists) entity.attrs.push(buildTableAttr(index, action.column))
         } else if (action.kind === 'DropColumn') {
             const attrIndex = entity.attrs?.findIndex(a => a.name === action.column.value)
             if (attrIndex !== undefined && attrIndex !== -1) entity.attrs?.splice(attrIndex, 1)
@@ -268,27 +271,30 @@ function alterTable(index: number, stmt: AlterTableStatementAst, db: Database): 
         } else if (action.kind === 'AddConstraint') {
             const constraint = action.constraint
             if (constraint.kind === 'PrimaryKey') {
-                entity.pk = removeUndefined({name: constraint.constraint?.name.value, attrs: constraint.columns.map(c => [c.value])})
+                entity.pk = removeUndefined({name: constraint.constraint?.name.value, attrs: constraint.columns.map(c => [c.value]), extra: {line: stmt.token.position.start.line, statement: index}})
             } else if (constraint.kind === 'Unique') {
                 if (!entity.indexes) entity.indexes = []
                 entity.indexes.push(removeUndefined({
                     name: constraint.constraint?.name.value,
                     attrs: constraint.columns.map(c => [c.value]),
-                    unique: true
+                    unique: true,
+                    extra: {line: stmt.token.position.start.line, statement: index},
                 }))
             } else if (constraint.kind === 'Check') {
                 if (!entity.checks) entity.checks = []
                 entity.checks.push(removeUndefined({
                     name: constraint.constraint?.name.value,
                     attrs: expressionAttrs(constraint.predicate),
-                    predicate: expressionToString(constraint.predicate)
+                    predicate: expressionToString(constraint.predicate),
+                    extra: {line: stmt.token.position.start.line, statement: index},
                 }))
             } else if (constraint.kind === 'ForeignKey') {
                 if (!db.relations) db.relations = []
                 db.relations.push(removeUndefined({
                     name: constraint.constraint?.name.value,
                     src: removeUndefined({schema: stmt.schema?.value, entity: stmt.table?.value, attrs: constraint.columns.map(c => [c.value])}),
-                    ref: removeUndefined({schema: constraint.ref.schema?.value, entity: constraint.ref.table.value, attrs: constraint.ref.columns?.map(c => [c.value]) || []})
+                    ref: removeUndefined({schema: constraint.ref.schema?.value, entity: constraint.ref.table.value, attrs: constraint.ref.columns?.map(c => [c.value]) || []}),
+                    extra: {line: stmt.token.position.start.line, statement: index},
                 }))
             } else {
                 isNever(constraint)
@@ -320,11 +326,12 @@ function createType(index: number, stmt: CreateTypeStatementAst): Type {
         })),
         definition: stmt.base ? '(' + stmt.base.map(p => `${p.name.value} = ${expressionToString(p.value)}`).join(', ') + ')' : undefined,
         // doc: z.string().optional(), // not defined in CREATE TYPE
-        // extra: TypeExtra.optional(), // TODO
+        extra: {line: stmt.token.position.start.line, statement: index},
     })
 }
 
 function commentOn(index: number, stmt: CommentOnStatementAst, db: Database): void {
+    // TODO: store comment statement? (where?)
     const object: CommentObject = stmt.object.kind
     if (object === 'Column') {
         const entity = db.entities?.find(e => e.schema === stmt.schema?.value && e.name === stmt.parent?.value)
@@ -471,7 +478,7 @@ function expressionAttrs(e: ExpressionAst): AttributePath[] {
 }
 
 export type SelectEntities = { columns: SelectColumn[], sources: SelectSource[] }
-export type SelectColumn = { schema?: string, table?: string, name: string, type?: string, sources: SelectColumnSource[] }
+export type SelectColumn = { schema?: string, table?: string, name: string, type?: string, sources: SelectColumnSource[], token: TokenInfo }
 export type SelectColumnSource = { schema?: string, table: string, column: string, type?: string }
 export type SelectSource = { name: string, from: SelectSourceFrom }
 export type SelectSourceFrom = SelectSourceTable | SelectSourceSelect
@@ -504,7 +511,7 @@ function fromTables(i: FromItemAst, entities: Entity[]): SelectSource {
 }
 function selectColumn(c: SelectClauseColumnAst, i: number, sources: SelectSource[]): SelectColumn[] {
     if(c.kind === 'Column') {
-        const ref = removeUndefined({schema: c.schema?.value, table: c.table?.value, name: columnName(c, i)})
+        const ref = removeUndefined({schema: c.schema?.value, table: c.table?.value, name: c.alias ? c.alias.name.value : c.column.value, token: c.column.token})
         const source = findSource(sources, c.schema?.value, c.table?.value, c.column.value)?.from
         if (source?.kind === 'Table') {
             const col = source.columns?.find(col => col.name === c.column.value)
@@ -516,7 +523,7 @@ function selectColumn(c: SelectClauseColumnAst, i: number, sources: SelectSource
             return [{...ref, sources: []}] // `source` should always exist in correct queries
         }
     } else if (c.kind === 'Wildcard') {
-        const ref = removeUndefined({schema: c.schema?.value, table: c.table?.value, name: columnName(c, i)})
+        const ref = removeUndefined({schema: c.schema?.value, table: c.table?.value, name: c.alias ? c.alias.name.value : '*', token: c.token})
         const source = findSource(sources, c.schema?.value, c.table?.value, undefined)?.from
         if (source?.kind === 'Table') {
             const cols = source.columns || []
@@ -530,8 +537,10 @@ function selectColumn(c: SelectClauseColumnAst, i: number, sources: SelectSource
         } else {
             return [{...ref, sources: []}] // `source` should always exist in correct queries
         }
+    } else if (c.kind === 'Function') {
+        return [{name: c.alias ? c.alias.name.value : c.function.value, sources: columnSources(c, sources), token: c.function.token}]
     } else {
-        return [{name: columnName(c, i), sources: columnSources(c, sources)}]
+        return [{name: c.alias ? c.alias.name.value : `col_${i + 1}`, sources: columnSources(c, sources), token: expressionToken(c)}]
     }
 }
 function findEntity(entities: Entity[], entity: string, schema: string | undefined): Entity | undefined {
@@ -559,13 +568,6 @@ function findSource(sources: SelectSource[], schema: string | undefined, table: 
     }
     return sources.length === 1 ? sources[0] : undefined
 }
-function columnName(c: SelectClauseColumnAst, i: number): string {
-    if (c.alias) return c.alias.name.value
-    if (c.kind === 'Column') return c.column.value
-    if (c.kind === 'Function') return c.function.value
-    if (c.kind === 'Wildcard') return '*'
-    return `col_${i + 1}`
-}
 function columnSources(c: ExpressionAst, sources: SelectSource[]): SelectColumnSource[] {
     if (c.kind === 'Column') {
         const source = c.table ? sources.find(s => s.name === c.table?.value) : sources.length === 1 ? sources[0] : undefined
@@ -580,4 +582,27 @@ function columnSources(c: ExpressionAst, sources: SelectSource[]): SelectColumnS
     if (c.kind === 'OperationLeft') return columnSources(c.right, sources)
     if (c.kind === 'OperationRight') return columnSources(c.left, sources)
     return []
+}
+function expressionToken(e: ExpressionAst): TokenPosition {
+    if (e.kind === 'Parameter' || e.kind === 'String' || e.kind === 'Decimal' || e.kind === 'Integer' || e.kind === 'Boolean' || e.kind === 'Null') {
+        return e.token
+    } else if (e.kind === 'Column') {
+        return e.column.token
+    } else if (e.kind === 'Wildcard') {
+        return e.token
+    } else if (e.kind === 'Function') {
+        return e.function.token
+    } else if (e.kind === 'Group') {
+        return expressionToken(e.expression)
+    } else if (e.kind === 'Operation') {
+        return mergePositions([expressionToken(e.left), expressionToken(e.right)])
+    } else if (e.kind === 'OperationLeft') {
+        return mergePositions([e.op.token, expressionToken(e.right)])
+    } else if (e.kind === 'OperationRight') {
+        return mergePositions([expressionToken(e.left), e.op.token])
+    } else if (e.kind === 'List') {
+        return mergePositions(e.items.map(expressionToken))
+    } else {
+        return isNever(e)
+    }
 }
