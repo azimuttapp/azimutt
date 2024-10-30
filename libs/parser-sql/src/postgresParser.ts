@@ -13,6 +13,7 @@ import {
     AliasAst,
     AlterSchemaStatementAst,
     AlterSequenceStatementAst,
+    AlterTableActionAst,
     AlterTableStatementAst,
     BeginStatementAst,
     BooleanAst,
@@ -239,8 +240,6 @@ const Sequence = createToken({name: 'Sequence', pattern: /\bSEQUENCE\b/i, longer
 const Serializable = createToken({name: 'Serializable', pattern: /\bSERIALIZABLE\b/i, longer_alt: Identifier})
 const Session = createToken({name: 'Session', pattern: /\bSESSION\b/i, longer_alt: Identifier})
 const SessionUser = createToken({name: 'SessionUser', pattern: /\bSESSION_USER\b/i, longer_alt: Identifier})
-const SetDefault = createToken({name: 'SetDefault', pattern: /\bSET\s+DEFAULT\b/i})
-const SetNull = createToken({name: 'SetNull', pattern: /\bSET\s+NULL\b/i})
 const Set = createToken({name: 'Set', pattern: /\bSET\b/i, longer_alt: Identifier})
 const SetOf = createToken({name: 'SetOf', pattern: /\bSETOF\b/i, longer_alt: Identifier})
 const Show = createToken({name: 'Show', pattern: /\bSHOW\b/i, longer_alt: Identifier})
@@ -260,6 +259,7 @@ const Unique = createToken({name: 'Unique', pattern: /\bUNIQUE\b/i, longer_alt: 
 const Unlogged = createToken({name: 'Unlogged', pattern: /\bUNLOGGED\b/i, longer_alt: Identifier})
 const Update = createToken({name: 'Update', pattern: /\bUPDATE\b/i, longer_alt: Identifier})
 const Using = createToken({name: 'Using', pattern: /\bUSING\b/i, longer_alt: Identifier})
+const Valid = createToken({name: 'Valid', pattern: /\bVALID\b/i, longer_alt: Identifier})
 const Values = createToken({name: 'Values', pattern: /\bVALUES\b/i, longer_alt: Identifier})
 const Variadic = createToken({name: 'Variadic', pattern: /\bVARIADIC\b/i, longer_alt: Identifier})
 const Version = createToken({name: 'Version', pattern: /\bVERSION\b/i, longer_alt: Identifier})
@@ -279,9 +279,8 @@ const keywordTokens: TokenType[] = [
     Null, Nulls, Offset, On, Only, Or, OrderBy, Out, Outer, Over, OwnedBy, OwnerTo, PartitionBy, PrimaryKey,
     ReadCommitted, ReadOnly, ReadUncommitted, ReadWrite, Recursive, References, RenameTo, RepeatableRead, Replace,
     Restrict, Return, Returning, Returns, Right, Row, Rows, Schema, Select, Sequence, Serializable, Session,
-    SessionUser, SetDefault, SetNull, Set, SetOf, Show, Table, Stable, Start, Strict, Temp, Temporary, Ties, To,
-    Transaction, True, Type, Union, Unique, Unlogged, Update, Using, Values, Version, View, Volatile, Where, Window,
-    With, Work
+    SessionUser, Set, SetOf, Show, Table, Stable, Start, Strict, Temp, Temporary, Ties, To, Transaction, True, Type,
+    Union, Unique, Unlogged, Update, Using, Valid, Values, Version, View, Volatile, Where, Window, With, Work
 ]
 
 const Amp = createToken({name: 'Amp', pattern: /&/})
@@ -446,16 +445,24 @@ class PostgresParser extends EmbeddedActionsParser {
             const ifExists = $.SUBRULE(ifExistsRule)
             const only = $.OPTION(() => tokenInfo($.CONSUME(Only)))
             const object = $.SUBRULE($.objectNameRule)
-            const action = $.OR([
+            const actions: AlterTableActionAst[] = []
+            $.MANY_SEP({SEP: Comma, DEF: () => actions.push($.OR([
                 {ALT: () => removeUndefined({kind: 'AddColumn' as const, token: tokenInfo2($.CONSUME(Add), $.OPTION2(() => $.CONSUME(Column))), ifNotExists: $.SUBRULE(ifNotExistsRule), column: $.SUBRULE($.tableColumnRule)})},
-                {ALT: () => removeUndefined({kind: 'AddConstraint' as const, token: tokenInfo($.CONSUME2(Add)), constraint: $.SUBRULE($.tableConstraintRule)})},
                 {ALT: () => removeUndefined({kind: 'DropColumn' as const, token: tokenInfo2($.CONSUME(Drop), $.OPTION3(() => $.CONSUME2(Column))), ifExists: $.SUBRULE2(ifExistsRule), column: $.SUBRULE($.identifierRule)})},
-                {ALT: () => removeUndefined({kind: 'DropConstraint' as const, token: tokenInfo2($.CONSUME2(Drop), $.CONSUME(Constraint)), ifExists: $.SUBRULE3(ifExistsRule), constraint: $.SUBRULE2($.identifierRule)})},
-                // TODO: ALTER COLUMN
-            ])
+                {ALT: () => removeUndefined({kind: 'AlterColumn' as const, token: tokenInfo2($.CONSUME2(Alter), $.OPTION4(() => $.CONSUME3(Column))), column: $.SUBRULE2($.identifierRule), action: $.OR2([
+                    {ALT: () => removeUndefined({kind: 'Default' as const, action: $.SUBRULE(constraintActionRule), token: tokenInfo($.CONSUME(Default)), expression: $.OPTION5(() => $.SUBRULE($.expressionRule))})},
+                    {ALT: () => ({kind: 'NotNull' as const, action: $.SUBRULE2(constraintActionRule), token: tokenInfo2($.CONSUME(Not), $.CONSUME(Null))})},
+                ])})},
+                {ALT: () => removeUndefined({kind: 'AddConstraint' as const, token: tokenInfo($.CONSUME2(Add)), constraint: $.SUBRULE($.tableConstraintRule), notValid: $.OPTION6(() => tokenInfo2($.CONSUME2(Not), $.CONSUME(Valid)))})},
+                {ALT: () => removeUndefined({kind: 'DropConstraint' as const, token: tokenInfo2($.CONSUME2(Drop), $.CONSUME(Constraint)), ifExists: $.SUBRULE3(ifExistsRule), constraint: $.SUBRULE3($.identifierRule)})},
+            ]))})
             const end = $.CONSUME(Semicolon)
-            return removeUndefined({kind: 'AlterTable' as const, meta: tokenInfo2(start, end), token, ifExists, only, schema: object.schema, table: object.name, action})
+            return removeUndefined({kind: 'AlterTable' as const, meta: tokenInfo2(start, end), token, ifExists, only, schema: object.schema, table: object.name, actions})
         })
+        const constraintActionRule =$.RULE<() => { kind: 'Set' | 'Drop', token: TokenInfo }>('constraintActionRule', () => $.OR([
+            {ALT: () => ({kind: 'Set' as const, token: tokenInfo($.CONSUME(Set))})},
+            {ALT: () => ({kind: 'Drop' as const, token: tokenInfo($.CONSUME(Drop))})},
+        ]))
 
         this.beginStatementRule = $.RULE<() => BeginStatementAst>('beginStatementRule', () => {
             // https://www.postgresql.org/docs/current/sql-begin.html
@@ -706,16 +713,20 @@ class PostgresParser extends EmbeddedActionsParser {
             const token = tokenInfo2(begin, $.CONSUME(Sequence))
             const ifNotExists = $.OPTION2(() => $.SUBRULE(ifNotExistsRule))
             const object = $.SUBRULE($.objectNameRule)
-            const as = $.OPTION3(() => $.SUBRULE(sequenceTypeRule))
-            const start = $.OPTION4(() => $.SUBRULE(sequenceStartRule))
-            const increment = $.OPTION5(() => $.SUBRULE(sequenceIncrementRule))
-            const minValue = $.OPTION6(() => $.SUBRULE(sequenceMinValueRule))
-            const maxValue = $.OPTION7(() => $.SUBRULE(sequenceMaxValueRule))
-            const cache = $.OPTION8(() => $.SUBRULE(sequenceCacheRule))
-            // TODO: CYCLE
-            const ownedBy = $.OPTION9(() => $.SUBRULE(sequenceOwnedByRule))
+
+            const statement: Pick<CreateSequenceStatementAst, 'as' | 'start' | 'increment' | 'minValue' | 'maxValue' | 'cache' | 'ownedBy'> = {}
+            $.MANY({DEF: () => $.OR3([
+                {ALT: () => statement.as = $.SUBRULE(sequenceTypeRule)},
+                {ALT: () => statement.start = $.SUBRULE(sequenceStartRule)},
+                {ALT: () => statement.increment = $.SUBRULE(sequenceIncrementRule)},
+                {ALT: () => statement.minValue = $.SUBRULE(sequenceMinValueRule)},
+                {ALT: () => statement.maxValue = $.SUBRULE(sequenceMaxValueRule)},
+                {ALT: () => statement.cache = $.SUBRULE(sequenceCacheRule)},
+                // TODO: CYCLE
+                {ALT: () => statement.ownedBy = $.SUBRULE(sequenceOwnedByRule)},
+            ])})
             const end = $.CONSUME(Semicolon)
-            return removeUndefined({kind: 'CreateSequence' as const, meta: tokenInfo2(begin, end), token, mode, ifNotExists, ...object, as, start, increment, minValue, maxValue, cache, ownedBy})
+            return removeUndefined({kind: 'CreateSequence' as const, meta: tokenInfo2(begin, end), token, mode, ifNotExists, ...object, ...statement})
         })
         const sequenceTypeRule = $.RULE<() => SequenceTypeAst>('sequenceTypeRule', () => ({token: tokenInfo($.CONSUME(As)), type: $.SUBRULE($.identifierRule)}))
         const sequenceStartRule = $.RULE<() => SequenceParamAst>('sequenceStartRule', () => ({token: tokenInfo2($.CONSUME(Start), $.OPTION(() => $.CONSUME(With))), value: $.SUBRULE($.integerRule)}))
@@ -1356,8 +1367,8 @@ class PostgresParser extends EmbeddedActionsParser {
                 {ALT: () => ({kind: 'NoAction' as const, token: tokenInfo($.CONSUME(NoAction))})},
                 {ALT: () => ({kind: 'Restrict' as const, token: tokenInfo($.CONSUME(Restrict))})},
                 {ALT: () => ({kind: 'Cascade' as const, token: tokenInfo($.CONSUME(Cascade))})},
-                {ALT: () => ({kind: 'SetNull' as const, token: tokenInfo($.CONSUME(SetNull))})},
-                {ALT: () => ({kind: 'SetDefault' as const, token: tokenInfo($.CONSUME(SetDefault))})},
+                {ALT: () => ({kind: 'SetNull' as const, token: tokenInfo2($.CONSUME(Set), $.CONSUME(Null))})},
+                {ALT: () => ({kind: 'SetDefault' as const, token: tokenInfo2($.CONSUME2(Set), $.CONSUME(Default))})},
             ])
             const columns = $.OPTION(() => $.SUBRULE(columnNamesRule))
             return removeEmpty({action, columns})
@@ -1644,6 +1655,7 @@ class PostgresParser extends EmbeddedActionsParser {
             {ALT: () => toIdentifier($.CONSUME(Data))},
             {ALT: () => toIdentifier($.CONSUME(Database))},
             {ALT: () => toIdentifier($.CONSUME(Deferrable))},
+            {ALT: () => toIdentifier($.CONSUME(Domain))},
             {ALT: () => toIdentifier($.CONSUME(Increment))},
             {ALT: () => toIdentifier($.CONSUME(Index))},
             {ALT: () => toIdentifier($.CONSUME(Input))},

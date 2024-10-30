@@ -21,6 +21,7 @@ CREATE TABLE users (
 CREATE INDEX ON users (role);
 ALTER TABLE users ADD COLUMN created_at timestamp NOT NULL DEFAULT now();
 ALTER TABLE users DROP CONSTRAINT users_name_uniq;
+ALTER TABLE users ALTER COLUMN role SET DEFAULT 'guest';
 COMMENT ON TABLE users IS 'List users';
 COMMENT ON COLUMN users.name IS 'user name';
 COMMENT ON COLUMN users.role IS 'user role';
@@ -34,6 +35,7 @@ CREATE TABLE cms.posts (
 );
 ALTER TABLE cms.posts DROP COLUMN created_at;
 ALTER TABLE cms.posts ADD UNIQUE (title);
+ALTER TABLE cms.posts ALTER COLUMN title SET NOT NULL;
 COMMENT ON CONSTRAINT posts_author_fk ON cms.posts IS 'posts fk';
 
 CREATE VIEW admins AS SELECT id, name FROM users WHERE role='admin';
@@ -48,7 +50,7 @@ COMMENT ON TYPE bug_status IS 'bug status';
                     attrs: [
                         {name: 'id', type: 'int'},
                         {name: 'name', type: 'varchar', default: 'anon', doc: 'user name'},
-                        {name: 'role', type: 'varchar'},
+                        {name: 'role', type: 'varchar', default: 'guest'},
                         {name: 'created_at', type: 'timestamp', default: '`now()`'},
                     ],
                     pk: {attrs: [['id']]},
@@ -61,7 +63,7 @@ COMMENT ON TYPE bug_status IS 'bug status';
                     name: 'posts',
                     attrs: [
                         {name: 'id', type: 'int'},
-                        {name: 'title', type: 'varchar', null: true},
+                        {name: 'title', type: 'varchar'},
                         {name: 'author', type: 'int', null: true},
                     ],
                     pk: {attrs: [['id']]},

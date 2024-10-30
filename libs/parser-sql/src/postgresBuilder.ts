@@ -261,58 +261,71 @@ function createIndex(index: number, stmt: CreateIndexStatementAst, entities: Ent
 function alterTable(index: number, stmt: AlterTableStatementAst, db: Database): void {
     const entity = db.entities?.find(e => e.schema === stmt.schema?.value && e.name === stmt.table?.value)
     if (entity) {
-        const action = stmt.action
-        if (action.kind === 'AddColumn') {
-            if (!entity.attrs) entity.attrs = []
-            const exists = entity.attrs.find(a => a.name === action.column.name.value)
-            if (!exists) entity.attrs.push(buildTableAttr(index, action.column))
-        } else if (action.kind === 'DropColumn') {
-            const attrIndex = entity.attrs?.findIndex(a => a.name === action.column.value)
-            if (attrIndex !== undefined && attrIndex !== -1) entity.attrs?.splice(attrIndex, 1)
-            // TODO: remove constraints depending on this column
-        } else if (action.kind === 'AddConstraint') {
-            const constraint = action.constraint
-            if (constraint.kind === 'PrimaryKey') {
-                entity.pk = removeUndefined({name: constraint.constraint?.name.value, attrs: constraint.columns.map(c => [c.value]), extra: {line: stmt.token.position.start.line, statement: index}})
-            } else if (constraint.kind === 'Unique') {
-                if (!entity.indexes) entity.indexes = []
-                entity.indexes.push(removeUndefined({
-                    name: constraint.constraint?.name.value,
-                    attrs: constraint.columns.map(c => [c.value]),
-                    unique: true,
-                    extra: {line: stmt.token.position.start.line, statement: index},
-                }))
-            } else if (constraint.kind === 'Check') {
-                if (!entity.checks) entity.checks = []
-                entity.checks.push(removeUndefined({
-                    name: constraint.constraint?.name.value,
-                    attrs: expressionAttrs(constraint.predicate),
-                    predicate: expressionToString(constraint.predicate),
-                    extra: {line: stmt.token.position.start.line, statement: index},
-                }))
-            } else if (constraint.kind === 'ForeignKey') {
-                if (!db.relations) db.relations = []
-                db.relations.push(removeUndefined({
-                    name: constraint.constraint?.name.value,
-                    src: removeUndefined({schema: stmt.schema?.value, entity: stmt.table?.value, attrs: constraint.columns.map(c => [c.value])}),
-                    ref: removeUndefined({schema: constraint.ref.schema?.value, entity: constraint.ref.table.value, attrs: constraint.ref.columns?.map(c => [c.value]) || []}),
-                    extra: {line: stmt.token.position.start.line, statement: index},
-                }))
+        stmt.actions.forEach(action => {
+            if (action.kind === 'AddColumn') {
+                if (!entity.attrs) entity.attrs = []
+                const exists = entity.attrs.find(a => a.name === action.column.name.value)
+                if (!exists) entity.attrs.push(buildTableAttr(index, action.column))
+            } else if (action.kind === 'DropColumn') {
+                const attrIndex = entity.attrs?.findIndex(a => a.name === action.column.value)
+                if (attrIndex !== undefined && attrIndex !== -1) entity.attrs?.splice(attrIndex, 1)
+                // TODO: remove constraints depending on this column
+            } else if (action.kind === 'AlterColumn') {
+                const attr = entity.attrs?.find(a => a.name === action.column.value)
+                if (attr) {
+                    const aa = action.action
+                    if (aa.kind === 'Default') {
+                        attr.default = aa.action.kind === 'Set' && aa.expression ? expressionToValue(aa.expression) : undefined
+                    } else if (aa.kind === 'NotNull') {
+                        attr.null = aa.action.kind === 'Set' ? undefined : true
+                    } else {
+                        isNever(aa)
+                    }
+                }
+            } else if (action.kind === 'AddConstraint') {
+                const constraint = action.constraint
+                if (constraint.kind === 'PrimaryKey') {
+                    entity.pk = removeUndefined({name: constraint.constraint?.name.value, attrs: constraint.columns.map(c => [c.value]), extra: {line: stmt.token.position.start.line, statement: index}})
+                } else if (constraint.kind === 'Unique') {
+                    if (!entity.indexes) entity.indexes = []
+                    entity.indexes.push(removeUndefined({
+                        name: constraint.constraint?.name.value,
+                        attrs: constraint.columns.map(c => [c.value]),
+                        unique: true,
+                        extra: {line: stmt.token.position.start.line, statement: index},
+                    }))
+                } else if (constraint.kind === 'Check') {
+                    if (!entity.checks) entity.checks = []
+                    entity.checks.push(removeUndefined({
+                        name: constraint.constraint?.name.value,
+                        attrs: expressionAttrs(constraint.predicate),
+                        predicate: expressionToString(constraint.predicate),
+                        extra: {line: stmt.token.position.start.line, statement: index},
+                    }))
+                } else if (constraint.kind === 'ForeignKey') {
+                    if (!db.relations) db.relations = []
+                    db.relations.push(removeUndefined({
+                        name: constraint.constraint?.name.value,
+                        src: removeUndefined({schema: stmt.schema?.value, entity: stmt.table?.value, attrs: constraint.columns.map(c => [c.value])}),
+                        ref: removeUndefined({schema: constraint.ref.schema?.value, entity: constraint.ref.table.value, attrs: constraint.ref.columns?.map(c => [c.value]) || []}),
+                        extra: {line: stmt.token.position.start.line, statement: index},
+                    }))
+                } else {
+                    isNever(constraint)
+                }
+            } else if (action.kind === 'DropConstraint') {
+                if (entity.pk?.name === action.constraint.value) entity.pk = undefined
+                const idxIndex = entity.indexes?.findIndex(a => a.name === action.constraint.value)
+                if (idxIndex !== undefined && idxIndex !== -1) entity.indexes?.splice(idxIndex, 1)
+                const chkIndex = entity.checks?.findIndex(c => c.name === action.constraint.value)
+                if (chkIndex !== undefined && chkIndex !== -1) entity.checks?.splice(chkIndex, 1)
+                const relIndex = db.relations?.findIndex(r => r.name === action.constraint.value && r.src.schema === stmt.schema?.value && r.src.entity === stmt.table?.value)
+                if (relIndex !== undefined && relIndex !== -1) db.relations?.splice(relIndex, 1)
+                // TODO: also NOT NULL & DEFAULT constraints...
             } else {
-                isNever(constraint)
+                isNever(action)
             }
-        } else if (action.kind === 'DropConstraint') {
-            if (entity.pk?.name === action.constraint.value) entity.pk = undefined
-            const idxIndex = entity.indexes?.findIndex(a => a.name === action.constraint.value)
-            if (idxIndex !== undefined && idxIndex !== -1) entity.indexes?.splice(idxIndex, 1)
-            const chkIndex = entity.checks?.findIndex(c => c.name === action.constraint.value)
-            if (chkIndex !== undefined && chkIndex !== -1) entity.checks?.splice(chkIndex, 1)
-            const relIndex = db.relations?.findIndex(r => r.name === action.constraint.value && r.src.schema === stmt.schema?.value && r.src.entity === stmt.table?.value)
-            if (relIndex !== undefined && relIndex !== -1) db.relations?.splice(relIndex, 1)
-            // TODO: also NOT NULL & DEFAULT constraints...
-        } else {
-            isNever(action)
-        }
+        })
     }
 }
 

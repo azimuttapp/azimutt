@@ -66,40 +66,43 @@ describe('postgresParser', () => {
         // hard:
         // TODO:12   `(information_schema._pg_expandarray(i.indkey)).n`
         // TODO:847  `select (current_schemas($3))[s.r] as nspname` (also: 1057)
-        // TODO:326  `SELECT ... FROM (VALUES ($2, ($3)::text), ($4, ($5)::text)) as v(key, val)` (also: 1169)
+        // TODO:326  `SELECT ... FROM (VALUES ($2, ($3)::text), ($4, ($5)::text)) as v(key, val)` (also: 1168)
     })
     test.skip('plausible', () => {
         const sql = fs.readFileSync('./resources/plausible.sql', 'utf8')
         const parsed = parsePostgresAst(sql, {strict: true})
         expect(parsed.errors || []).toEqual([])
-        // TODO:73  `CREATE FUNCTION`
-        // TODO:246 `features character varying(255)[] DEFAULT ARRAY['props'::character varying, 'stats_api'::character varying] NOT NULL`
-        // TODO:542 `recipients public.citext[] DEFAULT ARRAY[]::public.citext[] NOT NULL`
-        // TODO:575 `errors jsonb[] DEFAULT ARRAY[]::jsonb[] NOT NULL,`
+        // TODO:246  `features character varying(255)[] DEFAULT ARRAY['props'::character varying, 'stats_api'::character varying] NOT NULL,`
+        // TODO:542  `recipients public.citext[] DEFAULT ARRAY[]::public.citext[] NOT NULL,`
+        // TODO:575  `errors jsonb[] DEFAULT ARRAY[]::jsonb[] NOT NULL,`
+        // TODO:585  `tags character varying(255)[] DEFAULT ARRAY[]::character varying[],`
+        // TODO:1357 `recipients public.citext[] DEFAULT ARRAY[]::public.citext[] NOT NULL,`
+        // TODO:1357 `recipients public.citext[] DEFAULT ARRAY[]::public.citext[] NOT NULL`
+        // TODO:2246 `CREATE TRIGGER ...`
     })
     test.skip('other structures', async () => {
         // cf https://github.com/search?q=path%3A**%2Fstructure.sql&type=code
         const structures = [
             'https://raw.githubusercontent.com/ChanAlex2357/gestion_analytique_S5/refs/heads/main/Structure.sql',
+            'https://raw.githubusercontent.com/gocardless/draupnir/refs/heads/master/structure.sql',
+            'https://raw.githubusercontent.com/LuisMDeveloper/travis-core/refs/heads/master/db/structure.sql',
+            'https://raw.githubusercontent.com/gustavodiel/monet-backend/refs/heads/main/db/structure.sql',
             // 'https://raw.githubusercontent.com/plausible/analytics/refs/heads/master/priv/repo/structure.sql', // fail#246: `DEFAULT ARRAY['props'::character varying, 'stats_api'::character varying]`
             // 'https://raw.githubusercontent.com/inaturalist/inaturalist/refs/heads/main/db/structure.sql', // fail#44: column type: `numeric[]`
             // 'https://raw.githubusercontent.com/cardstack/cardstack/refs/heads/main/packages/hub/config/structure.sql', // fail#52: `ALTER TYPE` & 1986: `COPY`
-            // 'https://raw.githubusercontent.com/gocardless/draupnir/refs/heads/master/structure.sql', // fail#118: `ALTER TABLE ... ALTER COLUMN id SET DEFAULT ...` TODO
             // 'https://raw.githubusercontent.com/drenther/Empirical-Core/refs/heads/develop/db/structure.sql', // fail#688: `ARRAY[]`
             // 'https://raw.githubusercontent.com/spuddybike/archivist/refs/heads/develop/db/structure.sql', // fail#849: parenthesis in FROM clause
             // 'https://raw.githubusercontent.com/sathreddy/bety/refs/heads/master/db/structure.sql', // fail#274: LexingError: unexpected character: ->\\<-
             // 'https://raw.githubusercontent.com/dhbtk/achabus/refs/heads/master/db/structure.sql', // fail#293: column type: `geography(Point,4326)`
             // 'https://raw.githubusercontent.com/mveytsman/community/refs/heads/master/db/structure.sql', // fail#299: JOIN (`SELECT * FROM users, events;`)
-            // 'https://raw.githubusercontent.com/yazilimcilarinmolayeri/pixels-clone/refs/heads/master/Structure.sql', // fail#27: CREATE SEQUENCE param order (START at the end) TODO
-            // 'https://raw.githubusercontent.com/henry2992/aprendemy/refs/heads/master/db/structure.sql', // fail#1291: `ALTER TABLE ... ALTER COLUMN id SET DEFAULT ...` TODO
-            // 'https://raw.githubusercontent.com/LuisMDeveloper/travis-core/refs/heads/master/db/structure.sql', // fail#832: `ALTER TABLE ... ALTER COLUMN id SET DEFAULT ...` TODO
+            // 'https://raw.githubusercontent.com/yazilimcilarinmolayeri/pixels-clone/refs/heads/master/Structure.sql', // fail#68: column `GENERATED ALWAYS AS IDENTITY`
+            // 'https://raw.githubusercontent.com/henry2992/aprendemy/refs/heads/master/db/structure.sql', // fail#1961: `CREATE TRIGGER`
             // 'https://raw.githubusercontent.com/ppawel/openstreetmap-watch-list/refs/heads/master/db/structure.sql', // fail#92: `CREATE TYPE change AS (geom geometry(Geometry,4326))`
             // 'https://raw.githubusercontent.com/OPG-813/electronic-queue-server/refs/heads/master/src/db/structure.sql', // fail#2: `CREATE OR REPLACE FUNCTION`
             // 'https://raw.githubusercontent.com/Rotabot-io/rotabot/refs/heads/main/assets/structure.sql', // fail#57: `ALTER FUNCTION public.generate_uid(size integer) OWNER TO rotabot;`
-            // 'https://raw.githubusercontent.com/TechnoDann/PPC-board-2.0/refs/heads/master/db/structure.sql', // fail#254: `ALTER TABLE ... ALTER COLUMN id SET DEFAULT ...` TODO
+            // 'https://raw.githubusercontent.com/TechnoDann/PPC-board-2.0/refs/heads/master/db/structure.sql', // fail#350: `CREATE INDEX index_posts_on_ancestry ON public.posts USING btree (ancestry text_pattern_ops NULLS FIRST);`
             // 'https://raw.githubusercontent.com/bocoup/devstats/refs/heads/master/structure.sql', // fail#57: `ALTER FUNCTION current_state.label_prefix(some_label text) OWNER TO devstats_team;`
-            // 'https://raw.githubusercontent.com/gustavodiel/monet-backend/refs/heads/main/db/structure.sql', // fail#199: `ALTER TABLE ... ALTER COLUMN id SET DEFAULT ...` TODO
-            // 'https://raw.githubusercontent.com/Leonardo-Zappani/bd2/refs/heads/main/db/structure.sql', // fail#250: `ALTER TABLE ... ALTER COLUMN id SET DEFAULT ...` TODO
+            // 'https://raw.githubusercontent.com/Leonardo-Zappani/bd2/refs/heads/main/db/structure.sql', // fail#390: `CREATE TRIGGER`
             // 'https://raw.githubusercontent.com/Style12341/UTN-gestor-aulas-backend/refs/heads/main/db/structure.sql', // fail#25: `CREATE TYPE public.timerange AS RANGE`
         ]
         await Promise.all(structures.map(async url => {
@@ -159,35 +162,68 @@ describe('postgresParser', () => {
                 only: token(22, 25),
                 schema: identifier('public', 27),
                 table: identifier('users', 34),
-                action: {...kind('AddConstraint', 40, 42), constraint: {constraint: {token: token(44, 53), name: identifier('users_pk', 55)}, ...kind('PrimaryKey', 64, 74), columns: [identifier('id', 77)]}},
+                actions: [{...kind('AddConstraint', 40, 42), constraint: {constraint: {token: token(44, 53), name: identifier('users_pk', 55)}, ...kind('PrimaryKey', 64, 74), columns: [identifier('id', 77)]}}],
             }]}})
         })
         test('add column', () => {
             expect(parsePostgresAst('ALTER TABLE users ADD author int;')).toEqual({result: {statements: [{
                 ...stmt('AlterTable', 0, 10, 32),
                 table: identifier('users', 12),
-                action: {...kind('AddColumn', 18, 20), column: {name: identifier('author', 22), type: {name: {value: 'int', token: token(29, 31)}, token: token(29, 31)}}},
+                actions: [{...kind('AddColumn', 18, 20), column: {name: identifier('author', 22), type: {name: {value: 'int', token: token(29, 31)}, token: token(29, 31)}}}],
             }]}})
         })
         test('drop column', () => {
             expect(parsePostgresAst('ALTER TABLE users DROP author;')).toEqual({result: {statements: [{
                 ...stmt('AlterTable', 0, 10, 29),
                 table: identifier('users', 12),
-                action: {...kind('DropColumn', 18, 21), column: identifier('author', 23)},
+                actions: [{...kind('DropColumn', 18, 21), column: identifier('author', 23)}],
+            }]}})
+        })
+        test('alter column default', () => {
+            expect(parsePostgresAst("ALTER TABLE ONLY public.posts ALTER COLUMN id SET DEFAULT nextval('public.posts_id_seq'::regclass);")).toEqual({result: {statements: [{
+                ...stmt('AlterTable', 0, 10, 98),
+                only: token(12, 15),
+                schema: identifier('public', 17),
+                table: identifier('posts', 24),
+                actions: [{
+                    ...kind('AlterColumn', 30, 41),
+                    column: identifier('id', 43),
+                    action: {
+                        ...kind('Default', 50, 56),
+                        action: kind('Set', 46),
+                        expression: function_('nextval', 58, [{...string('public.posts_id_seq', 66), cast: {token: token(87, 88), type: {name: {value: 'regclass', token: token(89, 96)}, token: token(89, 96)}}}])
+                    }
+                }]
+            }]}})
+            expect(parsePostgresAst("ALTER TABLE ONLY public.posts ALTER COLUMN id DROP DEFAULT;")).toEqual({result: {statements: [{
+                ...stmt('AlterTable', 0, 10, 58),
+                only: token(12, 15),
+                schema: identifier('public', 17),
+                table: identifier('posts', 24),
+                actions: [{...kind('AlterColumn', 30, 41), column: identifier('id', 43), action: {...kind('Default', 51, 57), action: kind('Drop', 46)}}]
+            }]}})
+        })
+        test('alter column not null', () => {
+            expect(parsePostgresAst("ALTER TABLE ONLY public.posts ALTER COLUMN id DROP NOT NULL;")).toEqual({result: {statements: [{
+                ...stmt('AlterTable', 0, 10, 59),
+                only: token(12, 15),
+                schema: identifier('public', 17),
+                table: identifier('posts', 24),
+                actions: [{...kind('AlterColumn', 30, 41), column: identifier('id', 43), action: {...kind('NotNull', 51, 58), action: kind('Drop', 46)}}]
             }]}})
         })
         test('add primaryKey', () => {
-            expect(parsePostgresAst('ALTER TABLE users ADD PRIMARY KEY (id);')).toEqual({result: {statements: [{
-                ...stmt('AlterTable', 0, 10, 38),
+            expect(parsePostgresAst('ALTER TABLE users ADD PRIMARY KEY (id) NOT VALID;')).toEqual({result: {statements: [{
+                ...stmt('AlterTable', 0, 10, 48),
                 table: identifier('users', 12),
-                action: {...kind('AddConstraint', 18, 20), constraint: {...kind('PrimaryKey', 22, 32), columns: [identifier('id', 35)]}},
+                actions: [{...kind('AddConstraint', 18, 20), constraint: {...kind('PrimaryKey', 22, 32), columns: [identifier('id', 35)]}, notValid: token(39, 47)}],
             }]}})
         })
         test('drop primaryKey', () => {
             expect(parsePostgresAst('ALTER TABLE users DROP CONSTRAINT users_pk;')).toEqual({result: {statements: [{
                 ...stmt('AlterTable', 0, 10, 42),
                 table: identifier('users', 12),
-                action: {...kind('DropConstraint', 18, 32), constraint: identifier('users_pk', 34)},
+                actions: [{...kind('DropConstraint', 18, 32), constraint: identifier('users_pk', 34)}],
             }]}})
         })
     })
@@ -1167,7 +1203,7 @@ describe('postgresParser', () => {
                 expect(parseRule(p => p.identifierRule(), '"an id with \\""')).toEqual({result: {...identifier('an id with "', 0, 14), quoted: true}})
             })
             test('not empty', () => {
-                const specials = ['Add', 'Commit', 'Data', 'Database', 'Deferrable', 'Increment', 'Index', 'Input', 'Nulls', 'Rows', 'Schema', 'Start', 'Temporary', 'Type', 'Version']
+                const specials = ['Add', 'Commit', 'Data', 'Database', 'Deferrable', 'Domain', 'Increment', 'Index', 'Input', 'Nulls', 'Rows', 'Schema', 'Start', 'Temporary', 'Type', 'Version']
                 expect(parseRule(p => p.identifierRule(), '""')).toEqual({errors: [
                     {kind: 'LexingError', level: 'error', message: 'unexpected character: ->"<- at offset: 0, skipped 2 characters.', ...token(0, 2)},
                     {kind: 'NoViableAltException', level: 'error', message: `Expecting: one of these possible Token sequences:\n  1. [Identifier]${specials.map((n, i) => `\n  ${i + 2}. [${n}]`).join('')}\nbut found: ''`, offset: {start: -1, end: -1}, position: {start: {line: -1, column: -1}, end: {line: -1, column: -1}}}
