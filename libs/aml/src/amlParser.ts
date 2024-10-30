@@ -667,7 +667,7 @@ function tokenPosition(token: IToken): TokenPosition {
 }
 
 function pos(value: number | undefined): number {
-    return value !== undefined && !isNaN(value) ? value : defaultPos
+    return value !== undefined && !Number.isNaN(value) ? value : defaultPos
 }
 
 // utils functions

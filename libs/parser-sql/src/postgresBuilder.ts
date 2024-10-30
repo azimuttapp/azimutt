@@ -180,7 +180,7 @@ function buildTableAttr(index: number, c: TableColumnAst, notNull?: boolean): At
     return removeUndefined({
         name: c.name.value,
         type: c.type.name.value,
-        null: c.constraints?.find(c => c.kind === 'Nullable' ? !c.value : false) || notNull ? undefined : true,
+        null: (c.constraints?.find(c => c.kind === 'Nullable' ? !c.value : false) || notNull) ? undefined : true,
         // gen: z.boolean().optional(), // not handled for now
         default: (c.constraints || []).flatMap(c => c.kind === 'Default' ? [expressionToValue(c.expression)] : [])[0],
         // attrs: z.lazy(() => Attribute.array().optional()), // no nested attrs from SQL

@@ -15,10 +15,22 @@ export const collectOne = <T, U>(arr: T[], f: (t: T) => U | undefined): U | unde
     return undefined
 }
 
-export const distinct = <T>(arr: T[]): T[] => arr.filter((t, i) => arr.indexOf(t) === i)
+export const distinct = <T>(arr: T[]): T[] => {
+    const seen = new Set<T>()
+    return arr.filter(t => {
+        if (seen.has(t)) return false
+        seen.add(t)
+        return true
+    })
+}
 export const distinctBy = <T>(arr: T[], by: (t: T) => string | number): T[] => {
-    const arrStr = arr.map(t => by(t))
-    return arr.filter((t, i) => arrStr.indexOf(by(t)) === i)
+    const seen = new Set<string | number>()
+    return arr.filter(t => {
+        const key = by(t)
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+    })
 }
 
 export type Diff<T> = {left: T[], right: T[], both: {left: T, right: T}[]}

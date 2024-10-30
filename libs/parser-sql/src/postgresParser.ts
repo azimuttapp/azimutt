@@ -110,7 +110,7 @@ import {
 } from "./postgresAst";
 
 const LineComment = createToken({name: 'LineComment', pattern: /--.*/, group: 'comments'})
-const BlockComment = createToken({name: 'BlockComment', pattern: /\/\*[^]*?\*\//, line_breaks: true, group: 'comments'})
+const BlockComment = createToken({name: 'BlockComment', pattern: /\/\*[\s\S]*?\*\//, line_breaks: true, group: 'comments'})
 const WhiteSpace = createToken({name: 'WhiteSpace', pattern: /\s+/, group: Lexer.SKIPPED})
 
 const Identifier = createToken({name: 'Identifier', pattern: /\b[a-zA-Z_]\w*\b|"([^\\"]|\\\\|\\")+"/})
@@ -1614,6 +1614,7 @@ class PostgresParser extends EmbeddedActionsParser {
             ]))})
             const array = $.OPTION3(() => tokenInfo2($.CONSUME(BracketLeft), $.CONSUME(BracketRight)))
             const name = {
+                kind: 'Identifier' as const,
                 token: mergePositions(parts.flatMap(p => [p.name?.token, p.last]).concat([array])),
                 value: parts.filter(isNotUndefined).map(p => p.name?.value + (p.args ? `(${p.args.map(v => v.value).join(', ')})` : '')).join(' ') + (array ? '[]' : '')
             }
@@ -1793,5 +1794,5 @@ function tokenPosition(token: IToken): TokenPosition {
 }
 
 function pos(value: number | undefined): number {
-    return value !== undefined && !isNaN(value) ? value : defaultPos
+    return value !== undefined && !Number.isNaN(value) ? value : defaultPos
 }

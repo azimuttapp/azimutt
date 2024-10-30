@@ -169,7 +169,7 @@ describe('postgresParser', () => {
             expect(parsePostgresAst('ALTER TABLE users ADD author int;')).toEqual({result: {statements: [{
                 ...stmt('AlterTable', 0, 10, 32),
                 table: identifier('users', 12),
-                actions: [{...kind('AddColumn', 18, 20), column: {name: identifier('author', 22), type: {name: {value: 'int', token: token(29, 31)}, token: token(29, 31)}}}],
+                actions: [{...kind('AddColumn', 18, 20), column: {name: identifier('author', 22), type: {name: identifier('int', 29), token: token(29, 31)}}}],
             }]}})
         })
         test('drop column', () => {
@@ -191,7 +191,7 @@ describe('postgresParser', () => {
                     action: {
                         ...kind('Default', 50, 56),
                         action: kind('Set', 46),
-                        expression: function_('nextval', 58, [{...string('public.posts_id_seq', 66), cast: {token: token(87, 88), type: {name: {value: 'regclass', token: token(89, 96)}, token: token(89, 96)}}}])
+                        expression: function_('nextval', 58, [{...string('public.posts_id_seq', 66), cast: {token: token(87, 88), type: {name: identifier('regclass', 89), token: token(89, 96)}}}])
                     }
                 }]
             }]}})
@@ -319,10 +319,10 @@ describe('postgresParser', () => {
                 ...stmt('CreateFunction', 0, 14, 147),
                 name: identifier('add', 16),
                 args: [
-                    {mode: kind('In', 20), name: identifier('a', 23), type: {name: {token: token(25, 31), value: 'integer'}, token: token(25, 31)}},
-                    {mode: kind('In', 34), name: identifier('b', 37), type: {name: {token: token(39, 45), value: 'integer'}, token: token(39, 45)}},
+                    {mode: kind('In', 20), name: identifier('a', 23), type: {name: identifier('integer', 25), token: token(25, 31)}},
+                    {mode: kind('In', 34), name: identifier('b', 37), type: {name: identifier('integer', 39), token: token(39, 45)}},
                 ],
-                returns: {kind: 'Type', token: token(48, 54), type: {name: {token: token(56, 62), value: 'integer'}, token: token(56, 62)}},
+                returns: {kind: 'Type', token: token(48, 54), type: {name: identifier('integer', 56), token: token(56, 62)}},
                 language: {token: token(64, 71), name: identifier('SQL', 73)},
                 behavior: kind('Immutable', 77),
                 definition: {token: token(87, 88), value: {...string('BEGIN RETURN a + b; END;', 90, 119), dollar: '$$'}},
@@ -334,10 +334,10 @@ describe('postgresParser', () => {
                 ...stmt('CreateFunction', 0, 14, 120),
                 name: identifier('add', 16),
                 args: [
-                    {name: identifier('a', 20), type: {name: {token: token(22, 28), value: 'integer'}, token: token(22, 28)}},
-                    {name: identifier('b', 31), type: {name: {token: token(33, 39), value: 'integer'}, token: token(33, 39)}},
+                    {name: identifier('a', 20), type: {name: identifier('integer', 22), token: token(22, 28)}},
+                    {name: identifier('b', 31), type: {name: identifier('integer', 33), token: token(33, 39)}},
                 ],
-                returns: {kind: 'Type', token: token(42, 48), type: {name: {token: token(50, 56), value: 'integer'}, token: token(50, 56)}},
+                returns: {kind: 'Type', token: token(42, 48), type: {name: identifier('integer', 50), token: token(50, 56)}},
                 language: {token: token(58, 65), name: identifier('SQL', 67)},
                 behavior: kind('Immutable', 71),
                 nullBehavior: kind('ReturnsNull', 81, 106),
@@ -348,8 +348,8 @@ describe('postgresParser', () => {
             expect(parsePostgresAst('CREATE FUNCTION increment(i integer) RETURNS integer AS $$ BEGIN RETURN i + 1; END; $$ LANGUAGE plpgsql;')).toEqual({result: {statements: [{
                 ...stmt('CreateFunction', 0, 14, 103),
                 name: identifier('increment', 16),
-                args: [{name: identifier('i', 26), type: {name: {token: token(28, 34), value: 'integer'}, token: token(28, 34)}}],
-                returns: {kind: 'Type', token: token(37, 43), type: {name: {token: token(45, 51), value: 'integer'}, token: token(45, 51)}},
+                args: [{name: identifier('i', 26), type: {name: identifier('integer', 28), token: token(28, 34)}}],
+                returns: {kind: 'Type', token: token(37, 43), type: {name: identifier('integer', 45), token: token(45, 51)}},
                 definition: {token: token(53, 54), value: {...string('BEGIN RETURN i + 1; END;', 56, 85), dollar: '$$'}},
                 language: {token: token(87, 94), name: identifier('plpgsql', 96)},
             }]}})
@@ -362,10 +362,10 @@ describe('postgresParser', () => {
                 schema: identifier('public', 16),
                 name: identifier('add', 23),
                 args: [
-                    {type: {name: {token: token(25, 31), value: 'integer'}, token: token(25, 31)}},
-                    {type: {name: {token: token(39, 45), value: 'integer'}, token: token(39, 45)}},
+                    {type: {name: identifier('integer', 25), token: token(25, 31)}},
+                    {type: {name: identifier('integer', 39), token: token(39, 45)}},
                 ],
-                returns: {kind: 'Type', token: token(48, 54), type: {name: {token: token(56, 62), value: 'integer'}, token: token(56, 62)}},
+                returns: {kind: 'Type', token: token(48, 54), type: {name: identifier('integer', 56), token: token(56, 62)}},
                 definition: {token: token(87, 88), value: string('select $1 + $2;', 90, 119)},
                 language: {token: token(64, 71), name: identifier('SQL', 73)},
                 behavior: kind('Immutable', 77),
@@ -468,8 +468,8 @@ describe('postgresParser', () => {
                 ...stmt('CreateTable', 0, 11, 53),
                 name: identifier('users', 13),
                 columns: [
-                    {name: identifier('id', 20), type: {name: {value: 'int', token: token(23, 25)}, token: token(23, 25)}, constraints: [kind('PrimaryKey', 27, 37)]},
-                    {name: identifier('name', 40), type: {name: {value: 'VARCHAR', token: token(45, 51)}, token: token(45, 51)}},
+                    {name: identifier('id', 20), type: {name: identifier('int', 23), token: token(23, 25)}, constraints: [kind('PrimaryKey', 27, 37)]},
+                    {name: identifier('name', 40), type: {name: identifier('VARCHAR', 45), token: token(45, 51)}},
                 ],
             }]}})
         })
@@ -478,8 +478,8 @@ describe('postgresParser', () => {
                 ...stmt('CreateTable', 0, 11, 123),
                 name: identifier('users', 13),
                 columns: [
-                    {name: identifier('id', 20), type: {name: {value: 'int', token: token(23, 25)}, token: token(23, 25)}},
-                    {name: identifier('role', 28), type: {name: {value: 'VARCHAR', token: token(33, 39)}, token: token(33, 39)}},
+                    {name: identifier('id', 20), type: {name: identifier('int', 23), token: token(23, 25)}},
+                    {name: identifier('role', 28), type: {name: identifier('VARCHAR', 33), token: token(33, 39)}},
                 ],
                 constraints: [
                     {constraint: {token: token(42, 51), name: identifier('users_pk', 53)}, ...kind('PrimaryKey', 62, 72), columns: [identifier('id', 75)]},
@@ -502,8 +502,8 @@ describe('postgresParser', () => {
                 ...stmt('CreateType', 0, 10, 61),
                 name: identifier('layout_position', 12),
                 struct: {token: token(28, 29), attrs: [
-                    {name: identifier('x', 32), type: {name: {value: 'int', token: token(34, 36)}, token: token(34, 36)}},
-                    {name: identifier('y', 39), type: {name: {value: 'int', token: token(41, 43)}, token: token(41, 43)}, collation: {token: token(45, 51), name: {...identifier('fr_FR', 53, 59), quoted: true}}}
+                    {name: identifier('x', 32), type: {name: identifier('int', 34), token: token(34, 36)}},
+                    {name: identifier('y', 39), type: {name: identifier('int', 41), token: token(41, 43)}, collation: {token: token(45, 51), name: {...identifier('fr_FR', 53, 59), quoted: true}}}
                 ]},
             }]}})
         })
@@ -939,42 +939,42 @@ describe('postgresParser', () => {
         })
         describe('tableColumnRule', () => {
             test('simplest', () => {
-                expect(parseRule(p => p.tableColumnRule(), 'id int')).toEqual({result: {name: identifier('id', 0), type: {name: {value: 'int', token: token(3, 5)}, token: token(3, 5)}}})
+                expect(parseRule(p => p.tableColumnRule(), 'id int')).toEqual({result: {name: identifier('id', 0), type: {name: identifier('int', 3), token: token(3, 5)}}})
             })
             test('not null & default', () => {
                 expect(parseRule(p => p.tableColumnRule(), "role varchar NOT NULL DEFAULT 'guest'")).toEqual({result: {
                     name: identifier('role', 0),
-                    type: {name: {value: 'varchar', token: token(5, 11)}, token: token(5, 11)},
+                    type: {name: identifier('varchar', 5), token: token(5, 11)},
                     constraints: [{...kind('Nullable', 13, 20), value: false}, {...kind('Default', 22), expression: string('guest', 30)}],
                 }})
                 expect(parseRule(p => p.tableColumnRule(), "role int DEFAULT 0 NOT NULL")).toEqual({result: {
                     name: identifier('role', 0),
-                    type: {name: {value: 'int', token: token(5, 7)}, token: token(5, 7)},
+                    type: {name: identifier('int', 5), token: token(5, 7)},
                     constraints: [{...kind('Default', 9), expression: integer(0, 17)}, {...kind('Nullable', 19, 26), value: false}],
                 }})
                 expect(parseRule(p => p.tableColumnRule(), "role varchar DEFAULT 'guest'::character varying")).toEqual({result: {
                     name: identifier('role', 0),
-                    type: {name: {value: 'varchar', token: token(5, 11)}, token: token(5, 11)},
-                    constraints: [{...kind('Default', 13), expression: {...string('guest', 21), cast: {token: token(28, 29), type: {name: {value: 'character varying', token: token(30, 46)}, token: token(30, 46)}}}}],
+                    type: {name: identifier('varchar', 5), token: token(5, 11)},
+                    constraints: [{...kind('Default', 13), expression: {...string('guest', 21), cast: {token: token(28, 29), type: {name: identifier('character varying', 30), token: token(30, 46)}}}}],
                 }})
             })
             test('primaryKey', () => {
-                expect(parseRule(p => p.tableColumnRule(), 'id int PRIMARY KEY')).toEqual({result: {name: identifier('id', 0), type: {name: {value: 'int', token: token(3, 5)}, token: token(3, 5)}, constraints: [
+                expect(parseRule(p => p.tableColumnRule(), 'id int PRIMARY KEY')).toEqual({result: {name: identifier('id', 0), type: {name: identifier('int', 3), token: token(3, 5)}, constraints: [
                     kind('PrimaryKey', 7, 17)
                 ]}})
             })
             test('unique', () => {
-                expect(parseRule(p => p.tableColumnRule(), "email varchar UNIQUE")).toEqual({result: {name: identifier('email', 0), type: {name: {value: 'varchar', token: token(6, 12)}, token: token(6, 12)}, constraints: [
+                expect(parseRule(p => p.tableColumnRule(), "email varchar UNIQUE")).toEqual({result: {name: identifier('email', 0), type: {name: identifier('varchar', 6), token: token(6, 12)}, constraints: [
                     kind('Unique', 14)
                 ]}})
             })
             test('check', () => {
-                expect(parseRule(p => p.tableColumnRule(), "email varchar CHECK (email LIKE '%@%')")).toEqual({result: {name: identifier('email', 0), type: {name: {value: 'varchar', token: token(6, 12)}, token: token(6, 12)}, constraints: [
+                expect(parseRule(p => p.tableColumnRule(), "email varchar CHECK (email LIKE '%@%')")).toEqual({result: {name: identifier('email', 0), type: {name: identifier('varchar', 6), token: token(6, 12)}, constraints: [
                     {...kind('Check', 14), predicate: operation(column('email', 21), op('Like', 27), string('%@%', 32))}
                 ]}})
             })
             test('foreignKey', () => {
-                expect(parseRule(p => p.tableColumnRule(), "author uuid REFERENCES users(id) ON DELETE SET NULL (id)")).toEqual({result: {name: identifier('author', 0), type: {name: {value: 'uuid', token: token(7, 10)}, token: token(7, 10)}, constraints: [{
+                expect(parseRule(p => p.tableColumnRule(), "author uuid REFERENCES users(id) ON DELETE SET NULL (id)")).toEqual({result: {name: identifier('author', 0), type: {name: identifier('uuid', 7), token: token(7, 10)}, constraints: [{
                     ...kind('ForeignKey', 12, 21),
                     table: identifier('users', 23),
                     column: identifier('id', 29),
@@ -990,7 +990,7 @@ describe('postgresParser', () => {
                     "CONSTRAINT users_email_chk CHECK (email LIKE '%@%') " +
                     "CONSTRAINT users_email_fk REFERENCES public.emails(id)")).toEqual({result: {
                         name: identifier('email', 0),
-                        type: {name: {value: 'varchar', token: token(6, 12)}, token: token(6, 12)},
+                        type: {name: identifier('varchar', 6), token: token(6, 12)},
                         constraints: [
                             {constraint: {token: token(14, 23), name: identifier('users_email_nn', 25)}, ...kind('Nullable', 40, 47), value: false},
                             {constraint: {token: token(49, 58), name: identifier('users_email_def', 60)}, ...kind('Default', 76), expression: string('anon@mail.com', 84)},
@@ -1106,7 +1106,7 @@ describe('postgresParser', () => {
             })
             test('cast', () => {
                 expect(parseRule(p => p.expressionRule(), "'owner'::character varying"))
-                    .toEqual({result: {...string('owner', 0), cast: {token: token(7, 8), type: {name: {value: 'character varying', token: token(9, 25)}, token: token(9, 25)}}}})
+                    .toEqual({result: {...string('owner', 0), cast: {token: token(7, 8), type: {name: identifier('character varying', 9), token: token(9, 25)}}}})
             })
             test('complex', () => {
                 const i = (value: string) => ({kind: 'Identifier', value})
@@ -1141,28 +1141,28 @@ describe('postgresParser', () => {
         })
         describe('columnTypeRule', () => {
             test('simplest', () => {
-                expect(parseRule(p => p.columnTypeRule(), 'int')).toEqual({result: {name: {value: 'int', token: token(0, 2)}, token: token(0, 2)}})
+                expect(parseRule(p => p.columnTypeRule(), 'int')).toEqual({result: {name: identifier('int', 0), token: token(0, 2)}})
             })
             test('with space', () => {
-                expect(parseRule(p => p.columnTypeRule(), 'character varying')).toEqual({result: {name: {value: 'character varying', token: token(0, 16)}, token: token(0, 16)}})
+                expect(parseRule(p => p.columnTypeRule(), 'character varying')).toEqual({result: {name: identifier('character varying', 0), token: token(0, 16)}})
             })
             test('with args', () => {
-                expect(parseRule(p => p.columnTypeRule(), 'character(255)')).toEqual({result: {name: {value: 'character(255)', token: token(0, 13)}, args: [integer(255, 10)], token: token(0, 13)}})
-                expect(parseRule(p => p.columnTypeRule(), 'NUMERIC(2, -3)')).toEqual({result: {name: {value: 'NUMERIC(2, -3)', token: token(0, 13)}, args: [integer(2, 8), integer(-3, 11)], token: token(0, 13)}})
+                expect(parseRule(p => p.columnTypeRule(), 'character(255)')).toEqual({result: {name: identifier('character(255)', 0), args: [integer(255, 10)], token: token(0, 13)}})
+                expect(parseRule(p => p.columnTypeRule(), 'NUMERIC(2, -3)')).toEqual({result: {name: identifier('NUMERIC(2, -3)', 0), args: [integer(2, 8), integer(-3, 11)], token: token(0, 13)}})
             })
             test('array', () => {
-                expect(parseRule(p => p.columnTypeRule(), 'int[]')).toEqual({result: {name: {value: 'int[]', token: token(0, 4)}, array: token(3, 4), token: token(0, 4)}})
+                expect(parseRule(p => p.columnTypeRule(), 'int[]')).toEqual({result: {name: identifier('int[]', 0), array: token(3, 4), token: token(0, 4)}})
             })
             test('with time zone', () => {
-                expect(parseRule(p => p.columnTypeRule(), 'timestamp with time zone')).toEqual({result: {name: {value: 'timestamp with time zone', token: token(0, 23)}, token: token(0, 23)}})
-                expect(parseRule(p => p.columnTypeRule(), 'timestamp without time zone')).toEqual({result: {name: {value: 'timestamp without time zone', token: token(0, 26)}, token: token(0, 26)}})
+                expect(parseRule(p => p.columnTypeRule(), 'timestamp with time zone')).toEqual({result: {name: identifier('timestamp with time zone', 0), token: token(0, 23)}})
+                expect(parseRule(p => p.columnTypeRule(), 'timestamp without time zone')).toEqual({result: {name: identifier('timestamp without time zone', 0), token: token(0, 26)}})
             })
             test('with time zone and args', () => {
                 expect(parseRule(p => p.columnTypeRule(), 'timestamp(0) without time zone'))
-                    .toEqual({result: {name: {value: 'timestamp(0) without time zone', token: token(0, 29)}, args: [integer(0, 10)], token: token(0, 29)}})
+                    .toEqual({result: {name: identifier('timestamp(0) without time zone', 0), args: [integer(0, 10)], token: token(0, 29)}})
             })
             test('with schema', () => {
-                expect(parseRule(p => p.columnTypeRule(), 'public.citext')).toEqual({result: {schema: identifier('public', 0), name: {value: 'citext', token: token(7, 12)}, token: token(0, 12)}})
+                expect(parseRule(p => p.columnTypeRule(), 'public.citext')).toEqual({result: {schema: identifier('public', 0), name: identifier('citext', 7), token: token(0, 12)}})
             })
             // TODO: intervals
         })
