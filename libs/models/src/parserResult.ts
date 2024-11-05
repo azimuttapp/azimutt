@@ -84,11 +84,11 @@ export const positionEndAdd = <T extends TokenPosition>(pos: T, value: number): 
 })
 
 const posStart = (values: number[]): number => {
-    const valid = values.filter(n => n >= 0 && !Number.isNaN(n) && isFinite(n))
+    const valid = values.filter(n => n >= 0 && !Number.isNaN(n) && Number.isFinite(n))
     return valid.length > 0 ? Math.min(...valid) : 0
 }
 
 const posEnd = (values: number[]): number => {
-    const valid = values.filter(n => n >= 0 && !Number.isNaN(n) && isFinite(n))
+    const valid = values.filter(n => n >= 0 && !Number.isNaN(n) && Number.isFinite(n))
     return valid.length > 0 ? Math.max(...valid) : 0
 }

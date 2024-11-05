@@ -9,7 +9,7 @@ import {
 } from "chevrotain";
 import {isNotUndefined, removeEmpty, removeUndefined} from "@azimutt/utils";
 import {mergePositions, ParserError, ParserErrorLevel, ParserResult, TokenPosition} from "@azimutt/models";
-import {
+import type {
     AliasAst,
     AlterSchemaStatementAst,
     AlterSequenceStatementAst,

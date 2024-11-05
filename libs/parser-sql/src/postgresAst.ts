@@ -145,7 +145,7 @@ export type CommentAst = { kind: CommentKind, token: TokenInfo, value: string } 
 export type Operator = '+' | '-' | '*' | '/' | '%' | '^' | '&' | '|' | '#' | '<<' | '>>' | '=' | '<' | '>' | '<=' | '>=' | '<>' | '!=' | '||' | '~' | '~*' | '!~' | '!~*' | 'Is' | 'Like' | 'NotLike' | 'In' | 'NotIn' | 'Or' | 'And'
 export type OperatorLeft = 'Not' | 'Interval' | '~'
 export type OperatorRight = 'IsNull' | 'NotNull'
-export type JsonOp = '->' | '->>'
+export type JsonOp = '->' | '->>' // TODO: | '#>' | '#>>'
 export type ForeignKeyAction = 'NoAction' | 'Restrict' | 'Cascade' | 'SetNull' | 'SetDefault'
 export type DropObject = 'Index' | 'MaterializedView' | 'Sequence' | 'Table' | 'Type' | 'View'
 export type DropMode = 'Cascade' | 'Restrict'

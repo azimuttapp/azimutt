@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import {describe, expect, test} from "@jest/globals";
 import {removeEmpty, removeFieldsDeep, removeUndefined} from "@azimutt/utils";
-import {
+import type {
     AliasAst,
     BooleanAst,
     ColumnAst,
@@ -95,13 +95,13 @@ describe('postgresParser', () => {
             // 'https://raw.githubusercontent.com/sathreddy/bety/refs/heads/master/db/structure.sql', // fail#274: LexingError: unexpected character: ->\\<-
             // 'https://raw.githubusercontent.com/dhbtk/achabus/refs/heads/master/db/structure.sql', // fail#293: column type: `geography(Point,4326)`
             // 'https://raw.githubusercontent.com/mveytsman/community/refs/heads/master/db/structure.sql', // fail#299: JOIN (`SELECT * FROM users, events;`)
-            // 'https://raw.githubusercontent.com/yazilimcilarinmolayeri/pixels-clone/refs/heads/master/Structure.sql', // fail#68: column `GENERATED ALWAYS AS IDENTITY`
+            // 'https://raw.githubusercontent.com/yazilimcilarinmolayeri/pixels-clone/refs/heads/master/Structure.sql', // fail#68: column `GENERATED ALWAYS AS IDENTITY` TODO
             // 'https://raw.githubusercontent.com/henry2992/aprendemy/refs/heads/master/db/structure.sql', // fail#1961: `CREATE TRIGGER`
             // 'https://raw.githubusercontent.com/ppawel/openstreetmap-watch-list/refs/heads/master/db/structure.sql', // fail#92: `CREATE TYPE change AS (geom geometry(Geometry,4326))`
-            // 'https://raw.githubusercontent.com/OPG-813/electronic-queue-server/refs/heads/master/src/db/structure.sql', // fail#2: `CREATE OR REPLACE FUNCTION`
-            // 'https://raw.githubusercontent.com/Rotabot-io/rotabot/refs/heads/main/assets/structure.sql', // fail#57: `ALTER FUNCTION public.generate_uid(size integer) OWNER TO rotabot;`
+            // 'https://raw.githubusercontent.com/OPG-813/electronic-queue-server/refs/heads/master/src/db/structure.sql', // fail#2: `CREATE OR REPLACE FUNCTION` TODO
+            // 'https://raw.githubusercontent.com/Rotabot-io/rotabot/refs/heads/main/assets/structure.sql', // fail#57: `ALTER FUNCTION public.generate_uid(size integer) OWNER TO rotabot;` TODO
+            // 'https://raw.githubusercontent.com/bocoup/devstats/refs/heads/master/structure.sql', // fail#57: `ALTER FUNCTION current_state.label_prefix(some_label text) OWNER TO devstats_team;` TODO
             // 'https://raw.githubusercontent.com/TechnoDann/PPC-board-2.0/refs/heads/master/db/structure.sql', // fail#350: `CREATE INDEX index_posts_on_ancestry ON public.posts USING btree (ancestry text_pattern_ops NULLS FIRST);`
-            // 'https://raw.githubusercontent.com/bocoup/devstats/refs/heads/master/structure.sql', // fail#57: `ALTER FUNCTION current_state.label_prefix(some_label text) OWNER TO devstats_team;`
             // 'https://raw.githubusercontent.com/Leonardo-Zappani/bd2/refs/heads/main/db/structure.sql', // fail#390: `CREATE TRIGGER`
             // 'https://raw.githubusercontent.com/Style12341/UTN-gestor-aulas-backend/refs/heads/main/db/structure.sql', // fail#25: `CREATE TYPE public.timerange AS RANGE`
         ]
