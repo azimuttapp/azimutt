@@ -2,8 +2,7 @@
 title: Document your database schema using rich text memos
 banner: "{{base_link}}/azimutt-memos.png"
 excerpt: Have you ever dreamed about embellishing your database schema with some doc? Text, images, headings, links, code, table and more? It's now a core feature of Azimutt, here's more...
-category: azimutt
-tags: azimutt, feature
+category: features
 author: loic
 ---
 

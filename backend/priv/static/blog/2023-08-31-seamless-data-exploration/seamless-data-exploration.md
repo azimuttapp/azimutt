@@ -2,8 +2,7 @@
 title: Seamless data exploration
 banner: "{{base_link}}/table-rows.png"
 excerpt: If you know Azimutt as the perfect tool to explore the schema of large database, now you can add data exploration to it! With both seamlessly integrated, you will fall in love when you need to dig deep into your database.
-category: azimutt
-tags: [feature]
+category: features
 author: loic
 ---
 

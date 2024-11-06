@@ -2,8 +2,7 @@
 title: "[changelog] Get schema using database connection, JSON source and more"
 banner: "{{base_link}}/database-extract.jpeg"
 excerpt: "July: holidays and big change! You can now import your schema in Azimutt using a database connection, no need to export it yourself anymore. This is THE big change but not the only nice improvement, of the month."
-category: azimutt
-tags: changelog, azimutt
+category: changelog
 author: loic
 ---
 

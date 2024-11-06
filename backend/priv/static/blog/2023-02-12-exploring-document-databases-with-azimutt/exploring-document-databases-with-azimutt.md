@@ -2,8 +2,7 @@
 title: Exploring document databases with Azimutt nested columns
 banner: "{{base_link}}/json.jpg"
 excerpt: Azimutt is known for exploring relational databases. But today, we gave it a huge upgrade, making document databases such as MongoDB and Couchbase easily explorable too. Let's dive in.
-category: azimutt
-tags: azimutt
+category: features
 author: loic
 ---
 

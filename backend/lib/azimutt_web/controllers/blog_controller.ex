@@ -18,18 +18,19 @@ defmodule AzimuttWeb.BlogController do
   end
 
   def show(conn, %{"article_id" => article_id}) do
-    with {:ok, article} <- Blog.get_article(article_id),
-         do:
-           render(conn, "show.html",
-             article: article,
-             related: Blog.related_articles(article) |> Result.or_else([]),
-             seo: %{
-               type: "article",
-               title: article.title,
-               description: article.excerpt,
-               image: Routes.url(conn) <> article.banner
-             }
-           )
+    with {:ok, article} <- Blog.get_article(article_id) do
+      render(conn, "show.html",
+        article: article,
+        related: Blog.related_articles(article) |> Result.or_else([]),
+        seo: %{
+          type: "article",
+          title: article.title,
+          description: article.excerpt,
+          keywords: if(length(article.keywords) > 0, do: article.keywords |> Enum.join(","), else: Azimutt.config(:seo_keywords)),
+          image: Routes.url(conn) <> article.banner
+        }
+      )
+    end
   end
 
   # same as index but to preview cards

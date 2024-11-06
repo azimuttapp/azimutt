@@ -2,8 +2,7 @@
 title: The best language to design databases, just upgraded 🤯
 banner: "{{base_link}}/landing.png"
 excerpt: Want to design a database without all the SQL ceremony? AML got you covered, being fast to learn and write, yet flexible and with convertors to other dialects (SQL, JSON, Markdown, Mermaid...).
-category: azimutt
-tags: [AML]
+category: AML
 author: loic
 ---
 

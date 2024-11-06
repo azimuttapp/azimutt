@@ -3,7 +3,6 @@ title: Review of 2022, plans for 2023
 banner: "{{base_link}}/2023-new-year.jpg"
 excerpt: 2022 has been quite a year for Azimutt, we went from a basic tool to a full-fledged product, ready to be used by large companies, like Doctolib! Here's what happened, and what to expect next...
 category: azimutt
-tags: azimutt
 author: loic
 ---
 

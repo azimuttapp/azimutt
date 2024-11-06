@@ -2,8 +2,7 @@
 title: "[changelog] Extend schema, better search, easier exploration and more"
 banner: "{{base_link}}/sunny-tech-intro.jpeg"
 excerpt: Let's make good recap on what happened on Azimutt in June. The big feature you don't want to miss is the schema edition but there is a lot more that will improve your daily life exploring your database schema.
-category: azimutt
-tags: changelog, azimutt
+category: changelog
 author: loic
 ---
 

@@ -15,7 +15,7 @@ defmodule Azimutt.Blog.Article do
     field :banner, String.t()
     field :excerpt, String.t()
     field :category, String.t()
-    field :tags, list(String.t())
+    field :keywords, list(String.t())
     field :author, Author.t()
     field :published, Date.t()
     field :markdown, String.t()
@@ -45,7 +45,7 @@ defmodule Azimutt.Blog.Article do
          {:ok, banner} when is_binary(banner) <- map |> Mapx.fetch("banner"),
          {:ok, excerpt} when is_binary(excerpt) <- map |> Mapx.fetch("excerpt"),
          {:ok, category} when is_binary(category) <- map |> Mapx.fetch("category"),
-         {:ok, tags} <- map |> Mapx.fetch("tags") |> Result.flat_map(&build_tags/1),
+         keywords = map |> Map.fetch("keywords") |> Result.flat_map(&build_list/1) |> Result.or_else([]),
          {:ok, author_id} when is_binary(author_id) <- map |> Mapx.fetch("author"),
          author = author_id |> get_author,
          {:ok, published} <- published_str |> Date.from_iso8601(),
@@ -61,7 +61,7 @@ defmodule Azimutt.Blog.Article do
               banner: banner |> String.replace("{{base_link}}", Markdown.base_link(path)),
               excerpt: excerpt,
               category: category,
-              tags: tags,
+              keywords: keywords,
               author: author,
               published: published,
               markdown: markdown,
@@ -72,8 +72,8 @@ defmodule Azimutt.Blog.Article do
   def path_to_id(path), do: path |> String.split("/") |> Enum.take(-1) |> Enum.at(0) |> String.replace_suffix(".md", "")
   def path_to_date(path), do: path |> String.split("/") |> Enum.drop(3) |> Enum.at(0) |> String.split("-") |> Enum.take(3) |> Enum.join("-")
 
-  defp build_tags(tags) when is_binary(tags), do: {:ok, tags |> String.split(",") |> Enum.map(&String.trim/1)}
-  defp build_tags(tags) when is_list(tags), do: {:ok, tags}
-  defp build_tags(tags) when is_nil(tags), do: {:ok, []}
-  defp build_tags(tags), do: {:error, "Unexpected tags: #{Stringx.inspect(tags)}"}
+  defp build_list(value) when is_binary(value), do: {:ok, value |> String.split(",") |> Enum.map(&String.trim/1)}
+  defp build_list(value) when is_list(value), do: {:ok, value}
+  defp build_list(value) when is_nil(value), do: {:ok, []}
+  defp build_list(value), do: {:error, "Unexpected list value: #{Stringx.inspect(value)}"}
 end

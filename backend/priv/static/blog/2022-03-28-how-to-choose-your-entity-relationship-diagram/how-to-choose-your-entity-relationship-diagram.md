@@ -3,7 +3,6 @@ title: How to choose your Entity-Relationship Diagram (ERD)
 banner: "{{base_link}}/too-many-tools.png"
 excerpt: If you ever looked for database diagrams you already have found plenty of ERDs. But knowing how to choose one is another matter, and it's the goal of this article to guide you in this crowded space.
 category: database tools
-tags: entity relationship diagram
 author: loic
 ---
 

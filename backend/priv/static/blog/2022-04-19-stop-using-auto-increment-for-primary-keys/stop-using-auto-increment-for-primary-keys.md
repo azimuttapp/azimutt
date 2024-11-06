@@ -3,7 +3,6 @@ title: Stop using auto-increment for table primary keys!
 banner: "{{base_link}}/fail.jpg"
 excerpt: It is quite popular to use integer auto-increments for table primary keys, lots of tutorial and even frameworks do so. But it's a mistake that will bite you, unless you fail before. Here is why and how to fix it, easily.
 category: database design
-tags: sql
 author: loic
 ---
 
