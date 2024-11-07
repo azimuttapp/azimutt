@@ -420,7 +420,8 @@ defmodule Azimutt do
         children: [
           %{path: ["cli"], name: "CLI"},
           %{path: ["gateway"], name: "Gateway"},
-          %{path: ["converters"], name: "Converters"}
+          %{path: ["converters"], name: "Converters"},
+          %{path: ["badge"], name: "GitHub badge"}
         ]
       },
       %{path: ["data-privacy"], name: "Data privacy", details: "how Azimutt keep your data safe"},
