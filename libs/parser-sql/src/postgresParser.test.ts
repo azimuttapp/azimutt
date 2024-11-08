@@ -355,7 +355,6 @@ describe('postgresParser', () => {
             }]}})
         })
         test.skip('using SQL query', () => {
-            // FIXME: ambiguous `CREATE OR REPLACE`
             // FIXME: bad argument parsing when no name
             expect(parsePostgresAst("CREATE OR REPLACE FUNCTION public.add(integer, integer) RETURNS integer AS 'select $1 + $2;' LANGUAGE SQL IMMUTABLE RETURNS NULL ON NULL INPUT;")).toEqual({result: {statements: [{
                 ...stmt('CreateFunction', 0, 14, 28),
