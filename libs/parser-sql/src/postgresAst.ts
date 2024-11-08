@@ -114,7 +114,7 @@ export type FunctionReturnsAst = { kind: 'Type', token: TokenInfo, setOf?: Token
 // basic parts
 export type AliasAst = { token?: TokenInfo, name: IdentifierAst }
 export type ObjectNameAst = { schema?: IdentifierAst, name: IdentifierAst }
-export type ExpressionAst = (LiteralAst | ParameterAst | ColumnAst | WildcardAst | FunctionAst | GroupAst | OperationAst | OperationLeftAst | OperationRightAst | ListAst) & { cast?: { token: TokenInfo, type: ColumnTypeAst } }
+export type ExpressionAst = (LiteralAst | ParameterAst | ColumnAst | WildcardAst | FunctionAst | GroupAst | OperationAst | OperationLeftAst | OperationRightAst | ArrayAst | ListAst) & { cast?: { token: TokenInfo, type: ColumnTypeAst } }
 export type LiteralAst = StringAst | IntegerAst | DecimalAst | BooleanAst | NullAst
 export type ColumnAst = { kind: 'Column', schema?: IdentifierAst, table?: IdentifierAst, column: IdentifierAst, json?: ColumnJsonAst[] }
 export type ColumnJsonAst = { kind: JsonOp, token: TokenInfo, field: StringAst | ParameterAst }
@@ -127,6 +127,7 @@ export type OperationLeftAst = { kind: 'OperationLeft', op: OperatorLeftAst, rig
 export type OperatorLeftAst = { kind: OperatorLeft, token: TokenInfo }
 export type OperationRightAst = { kind: 'OperationRight', left: ExpressionAst, op: OperatorRightAst }
 export type OperatorRightAst = { kind: OperatorRight, token: TokenInfo }
+export type ArrayAst = { kind: 'Array', token: TokenInfo, items: ExpressionAst[] }
 export type ListAst = { kind: 'List', items: LiteralAst[] }
 export type SortOrderAst = { kind: SortOrder, token: TokenInfo }
 export type SortNullsAst = { kind: SortNulls, token: TokenInfo }

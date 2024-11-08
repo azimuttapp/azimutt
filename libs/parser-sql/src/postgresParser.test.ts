@@ -72,12 +72,6 @@ describe('postgresParser', () => {
         const sql = fs.readFileSync('./resources/plausible.sql', 'utf8')
         const parsed = parsePostgresAst(sql, {strict: true})
         expect(parsed.errors || []).toEqual([])
-        // TODO:246  `features character varying(255)[] DEFAULT ARRAY['props'::character varying, 'stats_api'::character varying] NOT NULL,`
-        // TODO:542  `recipients public.citext[] DEFAULT ARRAY[]::public.citext[] NOT NULL,`
-        // TODO:575  `errors jsonb[] DEFAULT ARRAY[]::jsonb[] NOT NULL,`
-        // TODO:585  `tags character varying(255)[] DEFAULT ARRAY[]::character varying[],`
-        // TODO:1357 `recipients public.citext[] DEFAULT ARRAY[]::public.citext[] NOT NULL,`
-        // TODO:1357 `recipients public.citext[] DEFAULT ARRAY[]::public.citext[] NOT NULL`
         // TODO:2246 `CREATE TRIGGER ...`
     })
     test.skip('other structures', async () => {
@@ -87,10 +81,10 @@ describe('postgresParser', () => {
             'https://raw.githubusercontent.com/gocardless/draupnir/refs/heads/master/structure.sql',
             'https://raw.githubusercontent.com/LuisMDeveloper/travis-core/refs/heads/master/db/structure.sql',
             'https://raw.githubusercontent.com/gustavodiel/monet-backend/refs/heads/main/db/structure.sql',
-            // 'https://raw.githubusercontent.com/plausible/analytics/refs/heads/master/priv/repo/structure.sql', // fail#246: `DEFAULT ARRAY['props'::character varying, 'stats_api'::character varying]`
-            // 'https://raw.githubusercontent.com/inaturalist/inaturalist/refs/heads/main/db/structure.sql', // fail#44: column type: `numeric[]`
+            // 'https://raw.githubusercontent.com/plausible/analytics/refs/heads/master/priv/repo/structure.sql', // fail#2246: `CREATE TRIGGER`
+            // 'https://raw.githubusercontent.com/inaturalist/inaturalist/refs/heads/main/db/structure.sql', // fail#44: `CREATE FUNCTION` with unnamed parameter
             // 'https://raw.githubusercontent.com/cardstack/cardstack/refs/heads/main/packages/hub/config/structure.sql', // fail#52: `ALTER TYPE` & 1986: `COPY`
-            // 'https://raw.githubusercontent.com/drenther/Empirical-Core/refs/heads/develop/db/structure.sql', // fail#688: `ARRAY[]`
+            // 'https://raw.githubusercontent.com/drenther/Empirical-Core/refs/heads/develop/db/structure.sql', // fail#2894: `CREATE INDEX email_idx ON users USING gin (email gin_trgm_ops);`
             // 'https://raw.githubusercontent.com/spuddybike/archivist/refs/heads/develop/db/structure.sql', // fail#849: parenthesis in FROM clause
             // 'https://raw.githubusercontent.com/sathreddy/bety/refs/heads/master/db/structure.sql', // fail#274: LexingError: unexpected character: ->\\<-
             // 'https://raw.githubusercontent.com/dhbtk/achabus/refs/heads/master/db/structure.sql', // fail#293: column type: `geography(Point,4326)`
@@ -98,7 +92,7 @@ describe('postgresParser', () => {
             // 'https://raw.githubusercontent.com/yazilimcilarinmolayeri/pixels-clone/refs/heads/master/Structure.sql', // fail#68: column `GENERATED ALWAYS AS IDENTITY` TODO
             // 'https://raw.githubusercontent.com/henry2992/aprendemy/refs/heads/master/db/structure.sql', // fail#1961: `CREATE TRIGGER`
             // 'https://raw.githubusercontent.com/ppawel/openstreetmap-watch-list/refs/heads/master/db/structure.sql', // fail#92: `CREATE TYPE change AS (geom geometry(Geometry,4326))`
-            // 'https://raw.githubusercontent.com/OPG-813/electronic-queue-server/refs/heads/master/src/db/structure.sql', // fail#2: `CREATE OR REPLACE FUNCTION` TODO
+            // 'https://raw.githubusercontent.com/OPG-813/electronic-queue-server/refs/heads/master/src/db/structure.sql', // fail#110: `DEFAULT CURRENT_DATE AT TIME ZONE( SYSTEM_TIMEZONE() )`
             // 'https://raw.githubusercontent.com/Rotabot-io/rotabot/refs/heads/main/assets/structure.sql', // fail#57: `ALTER FUNCTION public.generate_uid(size integer) OWNER TO rotabot;` TODO
             // 'https://raw.githubusercontent.com/bocoup/devstats/refs/heads/master/structure.sql', // fail#57: `ALTER FUNCTION current_state.label_prefix(some_label text) OWNER TO devstats_team;` TODO
             // 'https://raw.githubusercontent.com/TechnoDann/PPC-board-2.0/refs/heads/master/db/structure.sql', // fail#350: `CREATE INDEX index_posts_on_ancestry ON public.posts USING btree (ancestry text_pattern_ops NULLS FIRST);`
@@ -1202,7 +1196,7 @@ describe('postgresParser', () => {
                 expect(parseRule(p => p.identifierRule(), '"an id with \\""')).toEqual({result: {...identifier('an id with "', 0, 14), quoted: true}})
             })
             test('not empty', () => {
-                const specials = ['Add', 'Commit', 'Data', 'Database', 'Deferrable', 'Domain', 'Increment', 'Index', 'Input', 'Nulls', 'Rows', 'Schema', 'Start', 'Temporary', 'Type', 'Version']
+                const specials = ['Add', 'Commit', 'Data', 'Database', 'Deferrable', 'Domain', 'Increment', 'Index', 'Input', 'Nulls', 'Rows', 'Schema', 'Session', 'Start', 'Temporary', 'Type', 'Version']
                 expect(parseRule(p => p.identifierRule(), '""')).toEqual({errors: [
                     {kind: 'LexingError', level: 'error', message: 'unexpected character: ->"<- at offset: 0, skipped 2 characters.', ...token(0, 2)},
                     {kind: 'NoViableAltException', level: 'error', message: `Expecting: one of these possible Token sequences:\n  1. [Identifier]${specials.map((n, i) => `\n  ${i + 2}. [${n}]`).join('')}\nbut found: ''`, offset: {start: -1, end: -1}, position: {start: {line: -1, column: -1}, end: {line: -1, column: -1}}}

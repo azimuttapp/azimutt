@@ -124,6 +124,7 @@ const Add = createToken({name: 'Add', pattern: /\bADD\b/i, longer_alt: Identifie
 const All = createToken({name: 'All', pattern: /\bALL\b/i, longer_alt: Identifier})
 const Alter = createToken({name: 'Alter', pattern: /\bALTER\b/i, longer_alt: Identifier})
 const And = createToken({name: 'And', pattern: /\bAND\b/i, longer_alt: Identifier})
+const Array = createToken({name: 'Array', pattern: /\bARRAY\b/i, longer_alt: Identifier})
 const As = createToken({name: 'As', pattern: /\bAS\b/i, longer_alt: Identifier})
 const Asc = createToken({name: 'Asc', pattern: /\bASC\b/i, longer_alt: Identifier})
 const Authorization = createToken({name: 'Authorization', pattern: /\bAUTHORIZATION\b/i, longer_alt: Identifier})
@@ -270,7 +271,7 @@ const Window = createToken({name: 'Window', pattern: /\bWINDOW\b/i, longer_alt: 
 const With = createToken({name: 'With', pattern: /\bWITH\b/i, longer_alt: Identifier})
 const Work = createToken({name: 'Work', pattern: /\bWORK\b/i, longer_alt: Identifier})
 const keywordTokens: TokenType[] = [
-    Add, All, Alter, And, As, Asc, Authorization, Begin, By, Cache, Called, Cascade, Chain, Check, Collate, Column,
+    Add, All, Alter, And, Array, As, Asc, Authorization, Begin, By, Cache, Called, Cascade, Chain, Check, Collate, Column,
     Comment, Commit, Concurrently, Conflict, Constraint, Create, Cross, CurrentRole, CurrentUser, Cycle, Data, Database,
     Default, Deferrable, Delete, Desc, Distinct, Do, Domain, Drop, Enum, Except, Exists, Extension, False, Fetch,
     Filter, First, ForeignKey, From, Full, Function, Global, GroupBy, Having, If, Immutable, In, Include, Increment,
@@ -1438,6 +1439,14 @@ class PostgresParser extends EmbeddedActionsParser {
                 {ALT: () => $.SUBRULE($.literalRule)},
                 {ALT: () => ({kind: 'Wildcard', token: tokenInfo($.CONSUME(Asterisk))})},
                 {ALT: () => {
+                    const token = tokenInfo($.CONSUME(Array))
+                    $.CONSUME(BracketLeft)
+                    const items: ExpressionAst[] = []
+                    $.MANY_SEP({SEP: Comma, DEF: () => items.push($.SUBRULE($.expressionRule))})
+                    $.CONSUME(BracketRight)
+                    return {kind: 'Array' as const, token, items}
+                }},
+                {ALT: () => {
                     const first = $.SUBRULE($.identifierRule)
                     const nest = $.OPTION(() => $.OR2([
                         {ALT: () => removeUndefined({kind: 'Function', function: first, ...($.SUBRULE(functionParamsRule) || {})})},
@@ -1658,6 +1667,7 @@ class PostgresParser extends EmbeddedActionsParser {
             {ALT: () => toIdentifier($.CONSUME(Nulls))},
             {ALT: () => toIdentifier($.CONSUME(Rows))},
             {ALT: () => toIdentifier($.CONSUME(Schema))},
+            {ALT: () => toIdentifier($.CONSUME(Session))},
             {ALT: () => toIdentifier($.CONSUME(Start))},
             {ALT: () => toIdentifier($.CONSUME(Temporary))},
             {ALT: () => toIdentifier($.CONSUME(Type))},

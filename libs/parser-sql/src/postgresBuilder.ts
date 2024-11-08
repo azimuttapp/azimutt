@@ -415,6 +415,7 @@ function expressionToString(e: ExpressionAst): string {
     if (e.kind === 'Operation') return expressionToString(e.left) + ' ' + operatorToString(e.op.kind) + ' ' + expressionToString(e.right)
     if (e.kind === 'OperationLeft') return operatorLeftToString(e.op.kind) + ' ' + expressionToString(e.right)
     if (e.kind === 'OperationRight') return expressionToString(e.left) + ' ' + operatorRightToString(e.op.kind)
+    if (e.kind === 'Array') return '[' + e.items.map(expressionToString).join(', ') + ']'
     if (e.kind === 'List') return '(' + e.items.map(expressionToString).join(', ') + ')'
     return isNever(e)
 }
@@ -433,6 +434,7 @@ function expressionToValue(e: ExpressionAst): AttributeValue {
     if (e.kind === 'Operation') return '`' + expressionToString(e) + '`'
     if (e.kind === 'OperationLeft') return '`' + expressionToString(e) + '`'
     if (e.kind === 'OperationRight') return '`' + expressionToString(e) + '`'
+    if (e.kind === 'Array') return e.items.map(expressionToValue)
     if (e.kind === 'List') return e.items.map(expressionToValue)
     return isNever(e)
 }
@@ -488,6 +490,7 @@ function expressionAttrs(e: ExpressionAst): AttributePath[] {
     if (e.kind === 'Operation') return distinctBy(expressionAttrs(e.left).concat(expressionAttrs(e.right)), p => p.join('.'))
     if (e.kind === 'OperationLeft') return expressionAttrs(e.right)
     if (e.kind === 'OperationRight') return expressionAttrs(e.left)
+    if (e.kind === 'Array') return []
     if (e.kind === 'List') return []
     return isNever(e)
 }
@@ -615,6 +618,8 @@ function expressionToken(e: ExpressionAst): TokenPosition {
         return mergePositions([e.op.token, expressionToken(e.right)])
     } else if (e.kind === 'OperationRight') {
         return mergePositions([expressionToken(e.left), e.op.token])
+    } else if (e.kind === 'Array') {
+        return mergePositions([e.token, ...e.items.map(expressionToken)])
     } else if (e.kind === 'List') {
         return mergePositions(e.items.map(expressionToken))
     } else {
