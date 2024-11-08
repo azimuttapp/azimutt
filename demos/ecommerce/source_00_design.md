@@ -542,6 +542,73 @@ shopping.wishlist_members
   deleted_at timestamp nullable index
   deleted_by bigint nullable -> identity.Users(id)
 
+shopping.price_alerts
+  product_version_id bigint pk -> catalog.product_versions(id)
+  created_by bigint pk -> identity.Users(id)
+  created_at timestamp=`now()`
+  threshold double
+  expire_at timestamp nullable index
+  deleted_at timestamp nullable index
+
+shopping.product_reactions
+  product_version_id bigint pk -> catalog.product_versions(id)
+  created_by bigint pk -> identity.Users(id)
+  created_at timestamp=`now()`
+  kind reaction_kind(like, dislike)
+  deleted_at timestamp nullable index
+
+shopping.buyinglists | like "wedding list"
+  id bigint pk
+  name varchar index
+  date timestamp nullable
+  active boolean index
+  close_at timestamp nullable
+  description text
+  contact_email varchar nullable
+  created_at timestamp=`now()`
+  created_by bigint -> identity.Users(id)
+  updated_at timestamp
+  updated_by bigint -> identity.Users(id)
+  deleted_at timestamp nullable index
+  deleted_by bigint nullable -> identity.Users(id)
+
+shopping.buyinglist_admins
+  buyinglist_id bigint pk -> shopping.buyinglists(id)
+  admin_id bigint pk -> identity.Users(id)
+  created_at timestamp=`now()`
+  deleted_at timestamp nullable index
+
+shopping.buyinglist_guests
+  id bigint pk
+  buyinglist_id bigint -> shopping.buyinglists(id)
+  name varchar
+  user_id bigint nullable index -> identity.Users(id)
+  created_at timestamp=`now()`
+  deleted_at timestamp nullable index
+
+shopping.buyinglist_items
+  id bigint pk
+  buyinglist_id bigint index -> shopping.buyinglists(id)
+  product_id bigint index -> catalog.products(id)
+  preferences json nullable
+  quantity int nullable
+  created_at timestamp=`now()`
+  created_by bigint -> identity.Users(id)
+  deleted_at timestamp nullable index
+  deleted_by bigint nullable -> identity.Users(id)
+
+shopping.buyinglist_participations
+  id bigint pk
+  guest_id bigint index -> shopping.buyinglist_guests(id)
+  amount double nullable
+  message text nullable
+  created_at timestamp=`now()`
+
+shopping.buyinglist_participation_items
+  participation_id bigint pk -> shopping.buyinglist_participations(id)
+  item_id bigint pk -> shopping.buyinglist_items(id)
+  quantity int
+
 # Billing
 
 billing.CustomerAddresses

@@ -73,6 +73,101 @@ CREATE TABLE shopping.wishlist_members (
 );
 CREATE INDEX idx_wishlist_members_deleted_at ON shopping.wishlist_members (deleted_at);
 
+CREATE TABLE shopping.price_alerts (
+    product_version_id BIGINT,
+    created_by         BIGINT,
+    created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    threshold          FLOAT8    NOT NULL,
+    expire_at          TIMESTAMP,
+    deleted_at         TIMESTAMP,
+    PRIMARY KEY (product_version_id, created_by)
+);
+CREATE INDEX price_alerts_expire_at_idx ON shopping.price_alerts (expire_at);
+CREATE INDEX price_alerts_deleted_at_idx ON shopping.price_alerts (deleted_at);
+
+CREATE TYPE shopping.reaction_kind AS ENUM ('like', 'dislike');
+
+CREATE TABLE shopping.product_reactions (
+    product_version_id BIGINT,
+    created_by         BIGINT,
+    created_at         TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    kind               shopping.reaction_kind NOT NULL,
+    deleted_at         TIMESTAMP,
+    PRIMARY KEY (product_version_id, created_by)
+);
+CREATE INDEX product_reactions_deleted_at_idx ON shopping.product_reactions (deleted_at);
+
+CREATE TABLE shopping.buyinglists (
+    id            BIGINT PRIMARY KEY,
+    name          VARCHAR(50) NOT NULL,
+    date          TIMESTAMP,
+    active        BOOLEAN     NOT NULL,
+    close_at      TIMESTAMP,
+    description   TEXT        NOT NULL,
+    contact_email VARCHAR(128),
+    created_at    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by    BIGINT      NOT NULL,
+    updated_at    TIMESTAMP   NOT NULL,
+    updated_by    BIGINT      NOT NULL,
+    deleted_at    TIMESTAMP,
+    deleted_by    BIGINT
+);
+CREATE INDEX buyinglists_name_idx ON shopping.buyinglists (name);
+CREATE INDEX buyinglists_active_idx ON shopping.buyinglists (active);
+CREATE INDEX buyinglists_deleted_at_idx ON shopping.buyinglists (deleted_at);
+COMMENT ON TABLE shopping.buyinglists IS 'like "wedding list"';
+
+CREATE TABLE shopping.buyinglist_admins (
+    buyinglist_id BIGINT REFERENCES shopping.buyinglists (id),
+    admin_id      BIGINT,
+    created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at    TIMESTAMP,
+    PRIMARY KEY (buyinglist_id, admin_id)
+);
+CREATE INDEX buyinglist_admins_deleted_at_idx ON shopping.buyinglist_admins (deleted_at);
+
+CREATE TABLE shopping.buyinglist_guests (
+    id            BIGINT PRIMARY KEY,
+    buyinglist_id BIGINT      NOT NULL REFERENCES shopping.buyinglists (id),
+    name          VARCHAR(50) NOT NULL,
+    user_id       BIGINT,
+    created_at    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at    TIMESTAMP
+);
+CREATE INDEX buyinglist_guests_user_id_idx ON shopping.buyinglist_guests (user_id);
+CREATE INDEX buyinglist_guests_deleted_at_idx ON shopping.buyinglist_guests (deleted_at);
+
+CREATE TABLE shopping.buyinglist_items (
+    id            BIGINT PRIMARY KEY,
+    buyinglist_id BIGINT    NOT NULL REFERENCES shopping.buyinglists (id),
+    product_id    BIGINT    NOT NULL,
+    preferences   JSON,
+    quantity      INT,
+    created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by    BIGINT    NOT NULL,
+    deleted_at    TIMESTAMP,
+    deleted_by    BIGINT
+);
+CREATE INDEX buyinglist_items_buyinglist_id_idx ON shopping.buyinglist_items (buyinglist_id);
+CREATE INDEX buyinglist_items_product_id_idx ON shopping.buyinglist_items (product_id);
+CREATE INDEX buyinglist_items_deleted_at_idx ON shopping.buyinglist_items (deleted_at);
+
+CREATE TABLE shopping.buyinglist_participations (
+    id         BIGINT PRIMARY KEY,
+    guest_id   BIGINT    NOT NULL REFERENCES shopping.buyinglist_guests (id),
+    amount     FLOAT8,
+    message    TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX buyinglist_participations_guest_id_idx ON shopping.buyinglist_participations (guest_id);
+
+CREATE TABLE shopping.buyinglist_participation_items (
+    participation_id BIGINT REFERENCES shopping.buyinglist_participations (id),
+    item_id          BIGINT REFERENCES shopping.buyinglist_items (id),
+    quantity         INT NOT NULL,
+    PRIMARY KEY (participation_id, item_id)
+);
+
 
 -- database data
 INSERT INTO shopping.carts (id, owner_kind, owner_id, expire_at)

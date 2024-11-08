@@ -78,6 +78,7 @@ Use [Simple Icons](https://simpleicons.org) to find other icon/color if needed o
 
 [![Explore database with Azimutt](https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/assets/azimutt-button.png)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql&name=Azimutt)
 
+More details on [Azimutt documentation](https://azimutt.app/docs/badge)
 
 ## Self-hosted
 
