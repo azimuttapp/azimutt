@@ -1,0 +1,76 @@
+<%= render "docs/_header.html", conn: @conn, page: @page %>
+
+<%= doc_prose do %>
+    <p class="lead">
+        Azimutt can load any SQL file from the URL and display its entity-relationship diagram.
+        Thanks to that, you can create a GitHub badge allowing your users to explore your database schema, IN ONE CLICK 🤯
+    </p>
+    <p>
+        Just try it:
+        <a href="https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql&name=Azimutt" target="_blank" rel="noopener" class="not-prose no-underline">
+            <img src="https://img.shields.io/badge/PostgreSQL-browse_online-gray?labelColor=4169E1&logo=postgresql&logoColor=fff&style=flat" alt="Explore database with Azimutt" class="inline" />
+        </a>
+    </p>
+    <iframe width="768" height="432" src="https://www.youtube-nocookie.com/embed/3hFV3A9ZWs4?rel=0&modestbranding=1" title="Azimutt badge for GitHub" frameborder="0" allowfullscreen></iframe>
+    <p>
+        To use it on your own repository, there are a few simple steps:
+    </p>
+    <ol>
+        <li>
+            <p><strong>Navigate to your SQL schema file and get it's *raw* url</strong></p>
+            <p>
+                For Azimutt the file is <a href="https://github.com/azimuttapp/azimutt/blob/main/backend/priv/repo/structure.sql" target="_blank" rel="noopener">backend/priv/repo/structure.sql</a>,
+                so the raw url is <i>https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql</i>
+            </p>
+        </li>
+        <li>
+            <p><strong>Build the Azimutt create url</strong></p>
+            <p>
+                The structure is <code>https://azimutt.app/create?sql=$file_url&name=$project_name</code>, so Azimutt it's
+                <i>https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql&name=Azimutt</i>
+            </p>
+        </li>
+        <li>
+            <p><strong>Create your badge with <a href="https://shields.io" target="_blank" rel="noopener">shields.io</a></strong></p>
+            <p>
+                You can build the ones you want. For PostgreSQL here is the suggested url:
+                <i>https://img.shields.io/badge/PostgreSQL-browse_online-gray?labelColor=4169E1&logo=postgresql&logoColor=fff&style=flat</i>.
+                See below for others.
+            </p>
+        </li>
+        <li>
+            <p><strong>Put everything together, displaying a link with image in your README</strong></p>
+            <p>
+                Here is how to do it in markdown: <code>[![Image alt](Image url)](Link url)</code>, so the final result for Azimutt is:
+                <i>[![Explore database with Azimutt](https://img.shields.io/badge/PostgreSQL-browse_online-gray?labelColor=4169E1&logo=postgresql&logoColor=fff&style=flat)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql&name=Azimutt)</i>
+            </p>
+        </li>
+    </ol>
+    <p>Depending on your database, you can use these examples:</p>
+    <p>
+    <%= for {name, logo, color, logoColor} <- [
+        {"PostgreSQL", "postgresql", "4169E1", "fff"},
+        {"MySQL", "mysql", "4479A1", "fff"},
+        {"MariaDB", "mariadb", "003545", "fff"},
+        {"Oracle", "oracle", "F80000", "fff"},
+        {"SQL_Server", "", "0078D4", "fff"},
+        {"SQLite", "sqlite", "003B57", "fff"},
+        {"MongoDB", "mongodb", "47A248", "fff"},
+        {"Couchbase", "couchbase", "EA2328", "fff"},
+        {"Snowflake", "snowflake", "29B5E8", "fff"},
+        {"BigQuery", "googlebigquery", "669DF6", "fff"},
+        {"Apache_Hive", "apachehive", "FDEE21", "000"},
+    ] do %>
+        <!--<pre><code class="hljs md">[![Explore database with Azimutt](https://img.shields.io/badge/<%= name %>-browse_online-gray?labelColor=<%= color %>&logo=<%= logo %>&logoColor=<%= logoColor %>&style=flat)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql&name=Azimutt)</code></pre>-->
+        <a href={"https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql&name=Azimutt"} target="_blank" rel="noopener" class="not-prose no-underline">
+            <img src={"https://img.shields.io/badge/#{name}-browse_online-gray?labelColor=#{color}&logo=#{logo}&logoColor=#{logoColor}&style=flat"} alt="Explore database with Azimutt" class="inline" />
+        </a>
+    <% end %>
+    </p>
+    <p>Some repos have adopted it, add yours if you want:</p>
+    <ul>
+        <li><a href="https://github.com/azimuttapp/azimutt" target="_blank" rel="noopener">azimuttapp/azimutt</a></li>
+    </ul>
+<% end %>
+
+<%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

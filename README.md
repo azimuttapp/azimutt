@@ -3,17 +3,22 @@
         <picture>
           <source media="(prefers-color-scheme: dark)" srcset="assets/azimutt-logo-light.png">
           <source media="(prefers-color-scheme: light)" srcset="assets/azimutt-logo-dark.png">
-          <img alt="Azimutt logo" src="assets/azimutt-logo-dark.png" width="500">
+          <img alt="Azimutt logo" src="assets/azimutt-logo-dark.png" width="400">
         </picture>
     </a>
 </p>
 <p align="center">
-    <b>Next-Gen ERD</b>: Design, Explore, Document and Analyze your database, schema and data
+    <b>Next-Gen ERD</b>: Design, Explore, Document and Analyze your database schema and data
 </p>
 <p align="center">
-  <a href="https://azimutt.app" target="_blank" rel="noopener">azimutt.app</a> •
-  <a href="https://github.com/orgs/azimuttapp/projects/5" target="_blank" rel="noopener noreferrer">roadmap</a> •
-  <a href="https://twitter.com/azimuttapp" target="_blank" rel="noopener noreferrer">@azimuttapp</a>
+    <a href="https://azimutt.app" target="_blank" rel="noopener">azimutt.app</a> •
+    <a href="https://github.com/orgs/azimuttapp/projects/5" target="_blank" rel="noopener noreferrer">roadmap</a> •
+    <a href="https://twitter.com/azimuttapp" target="_blank" rel="noopener noreferrer">@azimuttapp</a>
+</p>
+<p align="center">
+    <a href="https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql&name=Azimutt" target="_blank" rel="noopener">
+        <img src="https://img.shields.io/badge/PostgreSQL-browse_online-gray?labelColor=4169E1&logo=postgresql&logoColor=fff&style=flat" alt="Explore database with Azimutt" />
+    </a>
 </p>
 <p align="center">
     <a href="https://www.producthunt.com/posts/azimutt?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-azimutt" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=390699&theme=light" alt="Azimutt - Easily explore and analyze your database with your team | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
@@ -49,22 +54,31 @@ Azimutt goal is to be your **ultimate tool to understand your database**.
 ## Azimutt badge
 
 You can load any public SQL file in Azimutt with just an url parameter.
-So if you have a SQL file in your repo, like [structure.sql](./backend/priv/repo/structure.sql), you can add a button allowing your visitors to quickly explore it:
+So if you have a SQL file in your repo, like [structure.sql](./backend/priv/repo/structure.sql), you can add a badge allowing your visitors to easily explore it:
 
 ```markdown
-[![explore database with Azimutt](https://img.shields.io/badge/PostgreSQL-browse_online-gray?labelColor=4169E1&logo=postgresql&logoColor=fff&style=flat)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql)
+[![Explore database with Azimutt](https://img.shields.io/badge/PostgreSQL-browse_online-gray?labelColor=4169E1&logo=postgresql&logoColor=fff&style=flat)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql&name=Azimutt)
 ```
 
 Here are some examples:
 
-[![explore database with Azimutt](https://img.shields.io/badge/PostgreSQL-browse_online-gray?labelColor=4169E1&logo=postgresql&logoColor=fff&style=flat)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql)
-[![explore database with Azimutt](https://img.shields.io/badge/MySQL-browse_online-gray?labelColor=4479A1&logo=mysql&logoColor=fff&style=flat)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql)
-[![explore database with Azimutt](https://img.shields.io/badge/MariaDB-browse_online-gray?labelColor=003545&logo=mariadb&logoColor=fff&style=flat)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql)
+[![Explore database with Azimutt](https://img.shields.io/badge/PostgreSQL-browse_online-gray?labelColor=4169E1&logo=postgresql&logoColor=fff&style=flat)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql&name=Azimutt)
+[![Explore database with Azimutt](https://img.shields.io/badge/MySQL-browse_online-gray?labelColor=4479A1&logo=mysql&logoColor=fff&style=flat)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql&name=Azimutt)
+[![Explore database with Azimutt](https://img.shields.io/badge/MariaDB-browse_online-gray?labelColor=003545&logo=mariadb&logoColor=fff&style=flat)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql&name=Azimutt)
+[![Explore database with Azimutt](https://img.shields.io/badge/Oracle-browse_online-gray?labelColor=F80000&logo=oracle&logoColor=fff&style=flat)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql&name=Azimutt)
+[![Explore database with Azimutt](https://img.shields.io/badge/SQL_Server-browse_online-gray?labelColor=0078D4&logoColor=fff&style=flat)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql&name=Azimutt)
+[![Explore database with Azimutt](https://img.shields.io/badge/SQLite-browse_online-gray?labelColor=003B57&logo=sqlite&logoColor=fff&style=flat)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql&name=Azimutt)
+[![Explore database with Azimutt](https://img.shields.io/badge/MongoDB-browse_online-gray?labelColor=47A248&logo=mongodb&logoColor=fff&style=flat)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql&name=Azimutt)
+[![Explore database with Azimutt](https://img.shields.io/badge/Couchbase-browse_online-gray?labelColor=EA2328&logo=couchbase&logoColor=fff&style=flat)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql&name=Azimutt)
+[![Explore database with Azimutt](https://img.shields.io/badge/Snowflake-browse_online-gray?labelColor=29B5E8&logo=snowflake&logoColor=fff&style=flat)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql&name=Azimutt)
+[![Explore database with Azimutt](https://img.shields.io/badge/BigQuery-browse_online-gray?labelColor=669DF6&logo=googlebigquery&logoColor=fff&style=flat)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql&name=Azimutt)
+[![Explore database with Azimutt](https://img.shields.io/badge/Apache_Hive-browse_online-gray?labelColor=FDEE21&logo=apachehive&logoColor=000&style=flat)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql&name=Azimutt)
 
-Or use our custom button image:
+Use [Simple Icons](https://simpleicons.org) to find other icon/color if needed or use our custom button image:
 
-[![explore database with Azimutt](https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/assets/azimutt-button.png)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql)
+[![Explore database with Azimutt](https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/assets/azimutt-button.png)](https://azimutt.app/create?sql=https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/backend/priv/repo/structure.sql&name=Azimutt)
 
+More details on [Azimutt documentation](https://azimutt.app/docs/badge)
 
 ## Self-hosted
 

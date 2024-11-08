@@ -54,5 +54,15 @@ export function base64Decode(base64: string): string {
 }
 
 export function base64Valid(text: string): boolean {
-    return !!text.match(/^[a-zA-Z0-9+/]+={0,2}$/g) && text.length % 4 === 0
+    return text.length % 4 === 0 && /^[a-zA-Z0-9+/]+={0,2}$/g.test(text)
+}
+
+export function isPrintable(text: string): boolean {
+    for (let char of text) {
+        const charCode = char.charCodeAt(0)
+        if (charCode < 32 || charCode > 126) {
+            return false
+        }
+    }
+    return true
 }

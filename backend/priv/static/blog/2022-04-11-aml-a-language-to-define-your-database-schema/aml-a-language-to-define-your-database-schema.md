@@ -2,8 +2,7 @@
 title: AML, a language to define your database schema
 banner: "{{base_link}}/hello.jpg"
 excerpt: When you have an idea, you want to write it as fast as possible because your thoughts are much quicker than your hands. Having tools that let you do that is a must when having a discussion or brainstorming.
-category: azimutt feature
-tags: automation
+category: AML
 author: loic
 ---
 

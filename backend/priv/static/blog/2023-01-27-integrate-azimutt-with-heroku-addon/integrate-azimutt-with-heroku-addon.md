@@ -2,8 +2,7 @@
 title: Got a PostgreSQL database on Heroku? Try Azimutt Add-on!
 banner: "{{base_link}}/azimutt-heroku.png"
 excerpt: Azimutt has now a full integration with Heroku! Let's see how you can easily integrate Azimutt with your PostgreSQL database on Heroku. It's a bliss ✨
-category: azimutt
-tags: azimutt, feature
+category: partnerships
 author: loic
 ---
 

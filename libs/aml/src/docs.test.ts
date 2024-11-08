@@ -83,7 +83,7 @@ function getAmlSnippets(path: string, content: string): {snippet: string, versio
 }
 
 function getLinks(markdown: string): string[] {
-    const linkRegex = /\[[^\]]*?]\([^)]*?\)/g
+    const linkRegex = /\[[^\]]*?]\([^) ]*?\)/g
     const links = markdown.match(linkRegex) || []
     return links.map((link: string) => link.match(/\[.*?]\((.*?)\)/)?.[1] || '') // extract url/path
 }

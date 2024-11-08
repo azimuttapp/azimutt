@@ -3,7 +3,6 @@ title: Why you should avoid tables with many columns, and how to fix them
 banner: "{{base_link}}/core-tables-black-hole.jpg"
 excerpt: If you keep adding columns to your existing tables when you develop new features, they may grow a lot with time and cause complexity problems later. Let's better design your database structure to avoid that.
 category: database design
-tags: 
 author: loic
 ---
 

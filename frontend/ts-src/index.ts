@@ -66,7 +66,7 @@ import {AzimuttApi} from "./services/api";
 import {ConsoleLogger} from "./services/logger";
 import {Storage} from "./services/storage";
 import {Backend} from "./services/backend";
-import {aesDecrypt, aesEncrypt, base64Decode, base64Valid} from "./utils/crypto";
+import {aesDecrypt, aesEncrypt, base64Decode, base64Valid, isPrintable} from "./utils/crypto";
 import {Env} from "./utils/env";
 import {loadPolyfills} from "./utils/polyfills";
 import * as url from "./utils/url";
@@ -179,7 +179,7 @@ function buildFlagParams(): [string, string][] {
         hash ? {database: hash} : {}
     )).map(([key, value]) => {
         value = url.uriComponentEncoded(value) ? decodeURIComponent(value) : value
-        value = base64Valid(value) ? base64Decode(value) : value
+        value = base64Valid(value) && isPrintable(base64Decode(value)) ? base64Decode(value) : value
         return [key, value]
     })
 }

@@ -20,7 +20,7 @@ defmodule Azimutt.Blog.ArticleTest do
         "banner" => "{{base_link}}/home.jpg",
         "excerpt" => "Awesome post!",
         "category" => "news",
-        "tags" => "announce, v2",
+        "keywords" => "announce, v2",
         "author" => "loic",
         "body" => "Go [home]({{base_link}}/home.jpg), it's late"
       }
@@ -32,7 +32,7 @@ defmodule Azimutt.Blog.ArticleTest do
         banner: "/blog/2021-10-01-the-story-behind-azimutt/home.jpg",
         excerpt: "Awesome post!",
         category: "news",
-        tags: ["announce", "v2"],
+        keywords: ["announce", "v2"],
         author: %Author{name: "Loïc Knuchel"},
         published: Date.from_iso8601!("2021-10-01"),
         markdown: "Go [home](/blog/2021-10-01-the-story-behind-azimutt/home.jpg), it's late",

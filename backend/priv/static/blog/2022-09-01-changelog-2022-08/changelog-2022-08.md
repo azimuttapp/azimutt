@@ -2,8 +2,7 @@
 title: "[changelog] Type definitions in your diagram, full AML documentation..."
 banner: "{{base_link}}/database-exploration.jpg"
 excerpt: No rest in August for Azimutt, some nice improvements and tricky bugs finally tackled and released. And also huge preparation work for big launches in September, stay tuned!
-category: azimutt
-tags: changelog, azimutt
+category: changelog
 author: loic
 ---
 

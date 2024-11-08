@@ -2,8 +2,7 @@
 title: Clever Cloud just made their databases way more accessible
 banner: "{{base_link}}/banner.jpg"
 excerpt: You guessed it, Clever Cloud is partnering with Azimutt to allow their customers to speed up their database investigations and better understand and manage their databases.
-category: azimutt
-tags: [partnership]
+category: partnerships
 author: loic
 ---
 

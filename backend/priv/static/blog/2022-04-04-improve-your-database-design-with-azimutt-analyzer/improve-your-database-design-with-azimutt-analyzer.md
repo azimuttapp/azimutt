@@ -2,8 +2,7 @@
 title: Improve your database design with Azimutt analyzer
 banner: "{{base_link}}/azimutt-datacenter.jpg"
 excerpt: Keeping your database schema consistent can be quite hard, especially when your team is growing. Computers are much better than humans at exhaustivity and consistency, so let join forces and exploit this for the better.
-category: azimutt feature
-tags: automation, entity relationship diagram
+category: features
 author: loic
 ---
 

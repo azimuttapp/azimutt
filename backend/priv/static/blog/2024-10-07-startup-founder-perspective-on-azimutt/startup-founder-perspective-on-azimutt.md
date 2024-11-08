@@ -2,8 +2,7 @@
 title: "Azimutt Review: A Startup Founder’s Perspective"
 banner: "{{base_link}}/banner.jpg"
 excerpt: As a startup founder we make strategic choices everyday to deliver the most value possible. Thus choosing our tools is crucial. Here's my review of Azimutt for fast database design.
-category: azimutt
-tags: [testimonial]
+category: testimonial
 author: "Matthew, startup founder"
 ---
 

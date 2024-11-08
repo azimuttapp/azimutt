@@ -65,7 +65,7 @@ Launch **Oracle** with Docker (more details on [Oracle connector](../../libs/con
 docker run --name oracle_sample -p 1521:1521 -e ORACLE_PWD=oracle container-registry.oracle.com/database/free:23.4.0.0-lite
 ```
 
-Then connect to it using `oracle:thin:C##INVENTORY/inventory@localhost:1521/FREE` and run the [source_03_inventory_oracle.sql](./source_03_inventory_oracle.sql) loading script.
+Then connect to it using `oracle:thin:system/oracle@localhost:1521/FREE?user=C##INVENTORY` or `oracle:thin:C##INVENTORY/inventory@localhost:1521/FREE` and run the [source_03_inventory_oracle.sql](./source_03_inventory_oracle.sql) loading script.
 
 If already created, start the container with `docker start oracle_sample`.
 
