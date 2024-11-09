@@ -27,6 +27,6 @@
     "@types/webextension-polyfill": "^0.8.3",
     "esbuild": "^0.14.54",
     "esbuild-plugin-copy": "^1.6.0",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.3"
   }
 }
