@@ -32,7 +32,6 @@ import type {
 import {parsePostgresAst, parseRule} from "./postgresParser";
 
 describe('postgresParser', () => {
-    // TODO: ALTER TYPE
     test('empty', () => {
         expect(parsePostgresAst('')).toEqual({result: {statements: []}})
     })
@@ -79,11 +78,9 @@ describe('postgresParser', () => {
             'https://raw.githubusercontent.com/henry2992/aprendemy/refs/heads/master/db/structure.sql',
             'https://raw.githubusercontent.com/Leonardo-Zappani/bd2/refs/heads/main/db/structure.sql',
             'https://raw.githubusercontent.com/wikimedia/mediawiki/refs/heads/master/maintenance/postgres/tables-generated.sql',
+            'https://raw.githubusercontent.com/Unleash/unleash/refs/heads/main/website/docs/migrations/unleash_dump.sql',
             // 'https://raw.githubusercontent.com/gitlabhq/gitlabhq/refs/heads/master/db/init_structure.sql', // fail#209: `SECURITY DEFINER` in `CREATE FUNCTION`
             // 'https://raw.githubusercontent.com/gitlabhq/gitlabhq/refs/heads/master/db/structure.sql', // fail#195: `STABLE COST 1 PARALLEL SAFE` in `CREATE FUNCTION`
-            // 'https://raw.githubusercontent.com/mattermost/mattermost/refs/heads/master/server/scripts/mattermost-postgresql-6.0.0.sql', // fail#36: `ALTER TABLE public.audits OWNER TO mmuser;` TODO
-            // 'https://raw.githubusercontent.com/dokuwiki/dokuwiki/refs/heads/master/lib/plugins/authpdo/_test/pgsql/django.sql', // fail#44: `ALTER TABLE auth_group OWNER TO postgres;` TODO
-            // 'https://raw.githubusercontent.com/Unleash/unleash/refs/heads/main/website/docs/migrations/unleash_dump.sql', // fail#38: `ALTER TABLE public.addons OWNER TO unleash_user;` TODO
             // 'https://raw.githubusercontent.com/Rotabot-io/rotabot/refs/heads/main/assets/structure.sql', // fail#57: `ALTER FUNCTION public.generate_uid(size integer) OWNER TO rotabot;` TODO
             // 'https://raw.githubusercontent.com/bocoup/devstats/refs/heads/master/structure.sql', // fail#57: `ALTER FUNCTION current_state.label_prefix(some_label text) OWNER TO devstats_team;` TODO
             // 'https://raw.githubusercontent.com/yazilimcilarinmolayeri/pixels-clone/refs/heads/master/Structure.sql', // fail#68: column `GENERATED ALWAYS AS IDENTITY` TODO
@@ -91,6 +88,8 @@ describe('postgresParser', () => {
             // 'https://raw.githubusercontent.com/knadh/listmonk/refs/heads/master/schema.sql', // fail#58: `INTEGER REFERENCES subscribers(id) ON DELETE CASCADE ON UPDATE CASCADE`
             // 'https://raw.githubusercontent.com/drenther/Empirical-Core/refs/heads/develop/db/structure.sql', // fail#2894: `CREATE INDEX email_idx ON users USING gin (email gin_trgm_ops);`
             // 'https://raw.githubusercontent.com/TechnoDann/PPC-board-2.0/refs/heads/master/db/structure.sql', // fail#350: `CREATE INDEX index_posts_on_ancestry ON public.posts USING btree (ancestry text_pattern_ops NULLS FIRST);`
+            // 'https://raw.githubusercontent.com/mattermost/mattermost/refs/heads/master/server/scripts/mattermost-postgresql-6.0.0.sql', // fail#2300: `CREATE INDEX idx_users_email_lower_textpattern ON public.users USING btree (lower((email)::text) text_pattern_ops);`
+            // 'https://raw.githubusercontent.com/dokuwiki/dokuwiki/refs/heads/master/lib/plugins/authpdo/_test/pgsql/django.sql', // fail#1080: `CREATE INDEX auth_group_name_a6ea08ec_like ON auth_group USING btree (name varchar_pattern_ops);`
             // 'https://raw.githubusercontent.com/goksan/statusnook/refs/heads/main/schema.sql', // fail#65: `destination text not null collate nocase`
             // 'https://raw.githubusercontent.com/Style12341/UTN-gestor-aulas-backend/refs/heads/main/db/structure.sql', // fail#25: `CREATE TYPE public.timerange AS RANGE`
             // 'https://raw.githubusercontent.com/inaturalist/inaturalist/refs/heads/main/db/structure.sql', // fail#44: `CREATE FUNCTION` with unnamed parameter
@@ -124,7 +123,7 @@ describe('postgresParser', () => {
             expect(parsePostgresAst('ALTER SCHEMA cms OWNER TO CURRENT_USER;')).toEqual({result: {statements: [{
                 ...stmt('AlterSchema', 0, 11, 38),
                 schema: identifier('cms', 13),
-                action: {kind: 'Owner', token: token(17, 24), role: kind('CurrentUser', 26, 37)}
+                action: {kind: 'Owner', token: token(17, 24), owner: kind('CurrentUser', 26, 37)}
             }]}})
         })
     })
@@ -222,6 +221,13 @@ describe('postgresParser', () => {
                 ...stmt('AlterTable', 0, 10, 42),
                 table: identifier('users', 12),
                 actions: [{...kind('DropConstraint', 18, 32), constraint: identifier('users_pk', 34)}],
+            }]}})
+        })
+        test('change owner', () => {
+            expect(parsePostgresAst('ALTER TABLE users OWNER TO admin;')).toEqual({result: {statements: [{
+                ...stmt('AlterTable', 0, 10, 32),
+                table: identifier('users', 12),
+                actions: [{...kind('SetOwner', 18), owner: {kind: 'User', name: identifier('admin', 27)}}],
             }]}})
         })
     })
@@ -431,7 +437,7 @@ describe('postgresParser', () => {
                 ...stmt('CreateSchema', 0, 12, 58),
                 ifNotExists: {token: token(14, 26)},
                 schema: identifier('cms', 28),
-                authorization: {token: token(32, 44), role: kind('CurrentUser', 46, 57)},
+                authorization: {token: token(32, 44), owner: kind('CurrentUser', 46, 57)},
             }]}})
         })
     })
@@ -1235,7 +1241,7 @@ describe('postgresParser', () => {
                 expect(parseRule(p => p.identifierRule(), '"an id with \\""')).toEqual({result: {...identifier('an id with "', 0, 14), quoted: true}})
             })
             test('not empty', () => {
-                const specials = ['Add', 'Comment', 'Commit', 'Data', 'Database', 'Deferrable', 'Domain', 'Increment', 'Index', 'Input', 'New', 'Nulls', 'Old', 'Rows', 'Schema', 'Session', 'Start', 'Temporary', 'Trigger', 'Type', 'Version']
+                const specials = ['Add', 'Comment', 'Commit', 'Data', 'Database', 'Deferrable', 'Domain', 'Extension', 'Increment', 'Index', 'Input', 'New', 'Nulls', 'Old', 'Rows', 'Schema', 'Session', 'Start', 'Temporary', 'Trigger', 'Type', 'Version']
                 expect(parseRule(p => p.identifierRule(), '""')).toEqual({errors: [
                     {kind: 'LexingError', level: 'error', message: 'unexpected character: ->"<- at offset: 0, skipped 2 characters.', ...token(0, 2)},
                     {kind: 'NoViableAltException', level: 'error', message: `Expecting: one of these possible Token sequences:\n  1. [Identifier]${specials.map((n, i) => `\n  ${i + 2}. [${n}]`).join('')}\nbut found: ''`, offset: {start: -1, end: -1}, position: {start: {line: -1, column: -1}, end: {line: -1, column: -1}}}

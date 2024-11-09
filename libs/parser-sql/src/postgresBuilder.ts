@@ -323,6 +323,7 @@ function alterTable(index: number, stmt: AlterTableStatementAst, db: Database): 
                 const relIndex = db.relations?.findIndex(r => r.name === action.constraint.value && r.src.schema === stmt.schema?.value && r.src.entity === stmt.table?.value)
                 if (relIndex !== undefined && relIndex !== -1) db.relations?.splice(relIndex, 1)
                 // TODO: also NOT NULL & DEFAULT constraints...
+            } else if (action.kind === 'SetOwner') { // nothing
             } else {
                 isNever(action)
             }
@@ -347,7 +348,7 @@ function createType(index: number, stmt: CreateTypeStatementAst): Type {
 }
 
 function commentOn(index: number, stmt: CommentOnStatementAst, db: Database): void {
-    // TODO: store comment statement? (where?)
+    // TODO: store comment statement infos? where?
     const object: CommentObject = stmt.object.kind
     if (object === 'Column') {
         const entity = db.entities?.find(e => e.schema === stmt.schema?.value && e.name === stmt.parent?.value)

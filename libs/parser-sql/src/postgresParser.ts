@@ -65,10 +65,10 @@ import {
     OperatorLeftAst,
     OperatorRightAst,
     OrderByClauseAst,
+    OwnerAst,
     ParameterAst,
     PostgresAst,
     PostgresStatementAst,
-    SchemaRoleAst,
     SelectClauseAst,
     SelectClauseColumnAst,
     SelectInnerAst,
@@ -445,7 +445,7 @@ class PostgresParser extends EmbeddedActionsParser {
             const schema = $.SUBRULE($.identifierRule)
             const action = $.OR([
                 {ALT: () => ({kind: 'Rename' as const, token: tokenInfo($.CONSUME(RenameTo)), schema: $.SUBRULE2($.identifierRule)})},
-                {ALT: () => ({kind: 'Owner' as const, token: tokenInfo($.CONSUME(OwnerTo)), role: $.SUBRULE(schemaRoleRule)})},
+                {ALT: () => ({kind: 'Owner' as const, token: tokenInfo($.CONSUME(OwnerTo)), owner: $.SUBRULE(ownerRule)})},
             ])
             const end = $.CONSUME(Semicolon)
             return removeUndefined({kind: 'AlterSchema' as const, meta: tokenInfo2(start, end), token, schema, action})
@@ -487,6 +487,7 @@ class PostgresParser extends EmbeddedActionsParser {
                 ])})},
                 {ALT: () => removeUndefined({kind: 'AddConstraint' as const, token: tokenInfo($.CONSUME2(Add)), constraint: $.SUBRULE($.tableConstraintRule), notValid: $.OPTION6(() => ({token: tokenInfo2($.CONSUME2(Not), $.CONSUME(Valid))}))})},
                 {ALT: () => removeUndefined({kind: 'DropConstraint' as const, token: tokenInfo2($.CONSUME2(Drop), $.CONSUME(Constraint)), ifExists: $.SUBRULE3(ifExistsRule), constraint: $.SUBRULE3($.identifierRule)})},
+                {ALT: () => removeUndefined({kind: 'SetOwner' as const, token: tokenInfo($.CONSUME(OwnerTo)), owner: $.SUBRULE(ownerRule)})},
             ]))})
             const end = $.CONSUME(Semicolon)
             return removeUndefined({kind: 'AlterTable' as const, meta: tokenInfo2(start, end), token, ifExists, only, schema: object.schema, table: object.name, actions})
@@ -715,12 +716,12 @@ class PostgresParser extends EmbeddedActionsParser {
             const token = tokenInfo2(create, $.CONSUME(Schema))
             const ifNotExists = $.SUBRULE(ifNotExistsRule)
             const schema = $.OPTION2(() => $.SUBRULE($.identifierRule))
-            const authorization = $.OPTION3(() => ({token: tokenInfo($.CONSUME(Authorization)), role: $.SUBRULE(schemaRoleRule)}))
+            const authorization = $.OPTION3(() => ({token: tokenInfo($.CONSUME(Authorization)), owner: $.SUBRULE(ownerRule)}))
             const end = $.CONSUME(Semicolon)
             return removeEmpty({kind: 'CreateSchema' as const, meta: tokenInfo2(create, end), token, ifNotExists, schema, authorization})
         })
-        const schemaRoleRule = $.RULE<() => SchemaRoleAst>('schemaRoleRule', () => $.OR([
-            {ALT: () => ({kind: 'Role' as const, name: $.SUBRULE2($.identifierRule)})},
+        const ownerRule = $.RULE<() => OwnerAst>('ownerRule', () => $.OR([
+            {ALT: () => ({kind: 'User' as const, name: $.SUBRULE2($.identifierRule)})},
             {ALT: () => ({kind: 'CurrentRole' as const, token: tokenInfo($.CONSUME(CurrentRole))})},
             {ALT: () => ({kind: 'CurrentUser' as const, token: tokenInfo($.CONSUME(CurrentUser))})},
             {ALT: () => ({kind: 'SessionUser' as const, token: tokenInfo($.CONSUME(SessionUser))})},
@@ -1782,6 +1783,7 @@ class PostgresParser extends EmbeddedActionsParser {
             {ALT: () => toIdentifier($.CONSUME(Database))},
             {ALT: () => toIdentifier($.CONSUME(Deferrable))},
             {ALT: () => toIdentifier($.CONSUME(Domain))},
+            {ALT: () => toIdentifier($.CONSUME(Extension))},
             {ALT: () => toIdentifier($.CONSUME(Increment))},
             {ALT: () => toIdentifier($.CONSUME(Index))},
             {ALT: () => toIdentifier($.CONSUME(Input))},
