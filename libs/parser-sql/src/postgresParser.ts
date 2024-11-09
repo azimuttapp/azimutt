@@ -294,17 +294,18 @@ const Window = createToken({name: 'Window', pattern: /\bWINDOW\b/i, longer_alt: 
 const With = createToken({name: 'With', pattern: /\bWITH\b/i, longer_alt: Identifier})
 const Work = createToken({name: 'Work', pattern: /\bWORK\b/i, longer_alt: Identifier})
 const keywordTokens: TokenType[] = [
-    Add, After, All, Alter, And, Array, As, Asc, Authorization, Before, Begin, By, Cache, Called, Cascade, Chain, Check, Collate, Column,
-    Comment, Commit, Concurrently, Conflict, Constraint, Create, Cross, CurrentRole, CurrentUser, Cycle, Data, Database,
-    Default, Deferrable, Deferred, Delete, Desc, Distinct, Do, Domain, Drop, Each, Enum, Except, Execute, Exists, Extension, False, Fetch,
-    Filter, First, For, ForeignKey, From, Full, Function, Global, GroupBy, Having, If, Immediate, Immutable, In, Include, Increment,
-    Index, Initially, Inner, InOut, Input, Insert, InsteadOf, Intersect, Interval, Into, Is, IsNull, IsolationLevel, Join, Language, Last, Left,
-    Like, Limit, Local, MaterializedView, Maxvalue, Minvalue, Natural, New, Next, No, NoAction, None, Not, Nothing, NotNull,
-    Null, Nulls, Of, Offset, Old, On, Only, Or, OrderBy, Out, Outer, Over, OwnedBy, OwnerTo, PartitionBy, PrimaryKey, Procedure,
-    ReadCommitted, ReadOnly, ReadUncommitted, ReadWrite, Recursive, References, Referencing, RenameTo, RepeatableRead, Replace,
-    Restrict, Return, Returning, Returns, Right, Row, Rows, Schema, Select, Sequence, Serializable, Session,
-    SessionUser, Set, SetOf, Show, Stable, Start, Statement, Strict, Table, Temp, Temporary, Ties, To, Transaction, Trigger, True, Truncate, Type,
-    Union, Unique, Unlogged, Update, Using, Valid, Values, Variadic, Version, View, Volatile, When, Where, Window, With, Work
+    Add, After, All, Alter, And, Array, As, Asc, Authorization, Before, Begin, By, Cache, Called, Cascade, Chain, Check,
+    Collate, Column, Comment, Commit, Concurrently, Conflict, Constraint, Create, Cross, CurrentRole, CurrentUser, Cycle,
+    Data, Database, Default, Deferrable, Deferred, Delete, Desc, Distinct, Do, Domain, Drop, Each, Enum, Except, Execute,
+    Exists, Extension, False, Fetch, Filter, First, For, ForeignKey, From, Full, Function, Global, GroupBy, Having, If,
+    Immediate, Immutable, In, Include, Increment, Index, Initially, Inner, InOut, Input, Insert, InsteadOf, Intersect,
+    Interval, Into, Is, IsNull, IsolationLevel, Join, Language, Last, Left, Like, Limit, Local, MaterializedView, Maxvalue,
+    Minvalue, Natural, New, Next, No, NoAction, None, Not, Nothing, NotNull, Null, Nulls, Of, Offset, Old, On, Only, Or,
+    OrderBy, Out, Outer, Over, OwnedBy, OwnerTo, PartitionBy, PrimaryKey, Procedure, ReadCommitted, ReadOnly, ReadUncommitted,
+    ReadWrite, Recursive, References, Referencing, RenameTo, RepeatableRead, Replace, Restrict, Return, Returning, Returns,
+    Right, Row, Rows, Schema, Select, Sequence, Serializable, Session, SessionUser, Set, SetOf, Show, Stable, Start,
+    Statement, Strict, Table, Temp, Temporary, Ties, To, Transaction, Trigger, True, Truncate, Type, Union, Unique,
+    Unlogged, Update, Using, Valid, Values, Variadic, Version, View, Volatile, When, Where, Window, With, Work
 ]
 
 const Amp = createToken({name: 'Amp', pattern: /&/})
@@ -618,7 +619,7 @@ class PostgresParser extends EmbeddedActionsParser {
                     {ALT: () => ({kind: 'ReturnsNull' as const, token: tokenInfoN([$.CONSUME(Returns), $.CONSUME2(Null), $.CONSUME2(On), $.CONSUME3(Null), $.CONSUME2(Input)])})},
                     {ALT: () => ({kind: 'Strict' as const, token: tokenInfo($.CONSUME(Strict))})},
                 ])},
-                {ALT: () => statement.return = {token: tokenInfo($.CONSUME(Return)), condition: $.SUBRULE(this.expressionRule)}},
+                {ALT: () => statement.return = {token: tokenInfo($.CONSUME(Return)), expression: $.SUBRULE(this.expressionRule)}},
             ])})
             const end = $.CONSUME(Semicolon)
             return removeUndefined({kind: 'CreateFunction' as const, meta: tokenInfo2(create, end), token, replace, ...object, args, ...statement})
@@ -1693,10 +1694,16 @@ class PostgresParser extends EmbeddedActionsParser {
             return res
         })
         const jsonOpRule = $.RULE<() => { kind: JsonOp, token: TokenInfo }>('jsonOpRule', () => {
-            const dash = $.CONSUME(Dash)
+            // https://www.postgresql.org/docs/current/functions-json.html
+            const kind = $.OR([
+                {ALT: () => ({dash: true, token: $.CONSUME(Dash)})},
+                {ALT: () => ({dash: false, token: $.CONSUME(Hash)})},
+            ])
             const gt = $.CONSUME(GreaterThan)
             const gt2 = $.OPTION(() => $.CONSUME2(GreaterThan))
-            return gt2 ? {kind: '->>' as const, token: tokenInfo3(dash, gt, gt2)} : {kind: '->' as const, token: tokenInfo2(dash, gt)}
+            return kind.dash ?
+                (gt2 ? {kind: '->>' as const, token: tokenInfo3(kind.token, gt, gt2)} : {kind: '->' as const, token: tokenInfo2(kind.token, gt)}) :
+                (gt2 ? {kind: '#>>' as const, token: tokenInfo3(kind.token, gt, gt2)} : {kind: '#>' as const, token: tokenInfo2(kind.token, gt)})
         })
         const functionParamsRule = $.RULE<() => { distinct?: {token: TokenInfo}, parameters: ExpressionAst[] }>('functionParamsRule', () => {
             $.CONSUME(ParenLeft)

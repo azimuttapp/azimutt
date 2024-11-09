@@ -128,7 +128,7 @@ describe('postgresParser', () => {
         })
     })
     describe('alterSequence', () => {
-        test('simplest', () => {
+        test('simple', () => {
             expect(parsePostgresAst('ALTER SEQUENCE users_id_seq OWNED BY users.id;')).toEqual({result: {statements: [{
                 ...stmt('AlterSequence', 0, 13, 45),
                 name: identifier('users_id_seq', 15),
@@ -232,11 +232,11 @@ describe('postgresParser', () => {
         })
     })
     describe('begin', () => {
-        test('simplest', () => {
-            expect(parsePostgresAst("BEGIN;")).toEqual({result: {statements: [stmt('Begin', 0, 4, 5)]}})
+        test('simple', () => {
+            expect(parsePostgresAst('BEGIN;')).toEqual({result: {statements: [stmt('Begin', 0, 4, 5)]}})
         })
         test('complex', () => {
-            expect(parsePostgresAst("BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED, READ ONLY, NOT DEFERRABLE;")).toEqual({result: {statements: [{
+            expect(parsePostgresAst('BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED, READ ONLY, NOT DEFERRABLE;')).toEqual({result: {statements: [{
                 ...stmt('Begin', 0, 4, 75),
                 object: kind('Transaction', 6),
                 modes: [
@@ -248,7 +248,7 @@ describe('postgresParser', () => {
         })
     })
     describe('commentOn', () => {
-        test('simplest', () => {
+        test('schema', () => {
             expect(parsePostgresAst("COMMENT ON SCHEMA public IS 'Main schema';")).toEqual({result: {statements: [{
                 ...stmt('CommentOn', 0, 9, 41),
                 object: kind('Schema', 11),
@@ -287,11 +287,11 @@ describe('postgresParser', () => {
         })
     })
     describe('commit', () => {
-        test('simplest', () => {
-            expect(parsePostgresAst("COMMIT;")).toEqual({result: {statements: [stmt('Commit', 0, 5, 6)]}})
+        test('simple', () => {
+            expect(parsePostgresAst('COMMIT;')).toEqual({result: {statements: [stmt('Commit', 0, 5, 6)]}})
         })
         test('complex', () => {
-            expect(parsePostgresAst("COMMIT WORK AND NO CHAIN;")).toEqual({result: {statements: [{
+            expect(parsePostgresAst('COMMIT WORK AND NO CHAIN;')).toEqual({result: {statements: [{
                 ...stmt('Commit', 0, 5, 24),
                 object: kind('Work', 7),
                 chain: {token: token(12, 23), no: {token: token(16, 17)}},
@@ -299,7 +299,7 @@ describe('postgresParser', () => {
         })
     })
     describe('createExtension', () => {
-        test('simplest', () => {
+        test('simple', () => {
             expect(parsePostgresAst('CREATE EXTENSION citext;')).toEqual({result: {statements: [{
                 ...stmt('CreateExtension', 0, 15, 23),
                 name: identifier('citext', 17),
@@ -345,7 +345,7 @@ describe('postgresParser', () => {
                 language: {token: token(58, 65), name: identifier('SQL', 67)},
                 behavior: kind('Immutable', 71),
                 nullBehavior: kind('ReturnsNull', 81, 106),
-                return: {token: token(108, 113), condition: operation(column('a', 115), op('+', 117), column('b', 119))}
+                return: {token: token(108, 113), expression: operation(column('a', 115), op('+', 117), column('b', 119))}
             }]}})
         })
         test('using plSQL', () => {
@@ -377,7 +377,7 @@ describe('postgresParser', () => {
         })
     })
     describe('createIndex', () => {
-        test('simplest', () => {
+        test('simple', () => {
             expect(parsePostgresAst('CREATE INDEX ON users (name);')).toEqual({result: {statements: [{
                 ...stmt('CreateIndex', 0, 11, 28),
                 table: identifier('users', 16),
@@ -412,7 +412,7 @@ describe('postgresParser', () => {
         })
     })
     describe('createMaterializedView', () => {
-        test('simplest', () => {
+        test('simple', () => {
             expect(parsePostgresAst("CREATE MATERIALIZED VIEW admins AS SELECT * FROM users WHERE role='admin';")).toEqual({result: {statements: [{
                 ...stmt('CreateMaterializedView', 0, 23, 73),
                 name: identifier('admins', 25),
@@ -426,7 +426,7 @@ describe('postgresParser', () => {
         })
     })
     describe('createSchema', () => {
-        test('simplest', () => {
+        test('simple', () => {
             expect(parsePostgresAst('CREATE SCHEMA cms;')).toEqual({result: {statements: [{
                 ...stmt('CreateSchema', 0, 12, 17),
                 schema: identifier('cms', 14),
@@ -442,7 +442,7 @@ describe('postgresParser', () => {
         })
     })
     describe('createSequence', () => {
-        test('simplest', () => {
+        test('simple', () => {
             expect(parsePostgresAst('CREATE SEQUENCE users_id_seq;')).toEqual({result: {statements: [{
                 ...stmt('CreateSequence', 0, 14, 28),
                 name: identifier('users_id_seq', 16)
@@ -466,7 +466,7 @@ describe('postgresParser', () => {
         })
     })
     describe('createTable', () => {
-        test('simplest', () => {
+        test('simple', () => {
             expect(parsePostgresAst('CREATE TABLE users (id int PRIMARY KEY, name VARCHAR);')).toEqual({result: {statements: [{
                 ...stmt('CreateTable', 0, 11, 53),
                 name: identifier('users', 13),
@@ -492,7 +492,7 @@ describe('postgresParser', () => {
         })
     })
     describe('createTrigger', () => {
-        test('simplest', () => {
+        test('simple', () => {
             expect(parsePostgresAst('CREATE TRIGGER check_update BEFORE UPDATE ON accounts EXECUTE FUNCTION check_account_update();')).toEqual({result: {statements: [{
                 ...stmt('CreateTrigger', 0, 13, 93),
                 name: identifier('check_update', 15),
@@ -527,7 +527,7 @@ describe('postgresParser', () => {
         })
     })
     describe('createType', () => {
-        test('simplest', () => {
+        test('simple', () => {
             expect(parsePostgresAst('CREATE TYPE position;')).toEqual({result: {statements: [{
                 ...stmt('CreateType', 0, 10, 20),
                 name: identifier('position', 12),
@@ -566,7 +566,7 @@ describe('postgresParser', () => {
         })
     })
     describe('createView', () => {
-        test('simplest', () => {
+        test('simple', () => {
             expect(parsePostgresAst("CREATE VIEW admins AS SELECT * FROM users WHERE role = 'admin';")).toEqual({result: {statements: [{
                 ...stmt('CreateView', 0, 10, 62),
                 name: identifier('admins', 12),
@@ -596,7 +596,7 @@ describe('postgresParser', () => {
         })
     })
     describe('delete', () => {
-        test('simplest', () => {
+        test('simple', () => {
             expect(parsePostgresAst('DELETE FROM films;')).toEqual({result: {statements: [{
                 ...stmt('Delete', 0, 10, 17),
                 table: identifier('films', 12),
@@ -628,7 +628,7 @@ describe('postgresParser', () => {
         })
     })
     describe('drop', () => {
-        test('simplest', () => {
+        test('simple', () => {
             expect(parsePostgresAst('DROP TABLE users;')).toEqual({result: {statements: [{
                 ...stmt('Drop', 0, 9, 16),
                 object: 'Table',
@@ -654,7 +654,7 @@ describe('postgresParser', () => {
         })
     })
     describe('insertInto', () => {
-        test('simplest', () => {
+        test('simple', () => {
             expect(parsePostgresAst("INSERT INTO users VALUES (1, 'loic');")).toEqual({result: {statements: [{
                 ...stmt('InsertInto', 0, 10, 36),
                 table: identifier('users', 12),
@@ -699,7 +699,7 @@ describe('postgresParser', () => {
         // TODO: `INSERT INTO films SELECT * FROM tmp_films WHERE date_prod < '2004-05-07';`
     })
     describe('select', () => {
-        test('simplest', () => {
+        test('simple', () => {
             expect(parsePostgresAst('SELECT name FROM users;')).toEqual({result: {statements: [{
                 ...stmt('Select', 0, 5, 22),
                 columns: [column('name', 7)],
@@ -872,7 +872,7 @@ describe('postgresParser', () => {
         })
     })
     describe('set', () => {
-        test('simplest', () => {
+        test('simple', () => {
             expect(parsePostgresAst('SET lock_timeout = 0;')).toEqual({result: {statements: [
                 {...stmt('Set', 0, 2, 20), parameter: identifier('lock_timeout', 4), equal: kind('=', 17), value: integer(0, 19)}
             ]}})
@@ -894,7 +894,7 @@ describe('postgresParser', () => {
         })
     })
     describe('show', () => {
-        test('simplest', () => {
+        test('simple', () => {
             expect(parsePostgresAst('SHOW block_size;')).toEqual({result: {statements: [{
                 ...stmt('Show', 0, 3, 15),
                 name: identifier('block_size', 5)
@@ -908,7 +908,7 @@ describe('postgresParser', () => {
         })
     })
     describe('update', () => {
-        test('simplest', () => {
+        test('simple', () => {
             expect(parsePostgresAst("UPDATE films SET kind = 'Dramatic' WHERE kind = 'Drama';")).toEqual({result: {statements: [{
                 ...stmt('Update', 0, 5, 55),
                 table: identifier('films', 7),
@@ -924,7 +924,7 @@ describe('postgresParser', () => {
     })
     describe('clauses', () => {
         describe('selectClause', () => {
-            test('simplest', () => {
+            test('simple', () => {
                 expect(parseRule(p => p.selectClauseRule(), 'SELECT name')).toEqual({result: {
                     token: token(0, 5),
                     columns: [column('name', 7)],
@@ -941,7 +941,7 @@ describe('postgresParser', () => {
             // TODO: SELECT count(*), count(distinct e.created_by) FILTER (WHERE u.created_at + interval '#{period}' < e.created_at) AS not_new_users
         })
         describe('fromClause', () => {
-            test('simplest', () => {
+            test('simple', () => {
                 expect(parseRule(p => p.fromClauseRule(), 'FROM users')).toEqual({result: {token: token(0, 3), kind: 'Table', table: identifier('users', 5)}})
             })
             test('table', () => {
@@ -955,7 +955,7 @@ describe('postgresParser', () => {
             // TODO: FROM (SELECT * FROM ...)
         })
         describe('whereClause', () => {
-            test('simplest', () => {
+            test('simple', () => {
                 expect(parseRule(p => p.whereClauseRule(), 'WHERE id = 1')).toEqual({result: {
                     token: token(0, 4),
                     predicate: operation(column('id', 6), op('=', 9), integer(1, 11)),
@@ -974,7 +974,7 @@ describe('postgresParser', () => {
             })
         })
         describe('tableColumnRule', () => {
-            test('simplest', () => {
+            test('simple', () => {
                 expect(parseRule(p => p.tableColumnRule(), 'id int')).toEqual({result: {name: identifier('id', 0), type: {name: identifier('int', 3), token: token(3, 5)}}})
             })
             test('not null & default', () => {
@@ -1178,7 +1178,7 @@ describe('postgresParser', () => {
             })
         })
         describe('columnTypeRule', () => {
-            test('simplest', () => {
+            test('simple', () => {
                 expect(parseRule(p => p.columnTypeRule(), 'int')).toEqual({result: {name: identifier('int', 0), token: token(0, 2)}})
             })
             test('with space', () => {
