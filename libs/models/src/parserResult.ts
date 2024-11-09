@@ -61,7 +61,7 @@ export const tokenPosition = (offsetStart: number, offsetEnd: number, positionSt
     ({offset: {start: offsetStart, end: offsetEnd}, position: {start: {line: positionStartLine, column: positionStartColumn}, end: {line: positionEndLine, column: positionEndColumn}}})
 
 export const mergePositions = (positions: (TokenPosition | undefined)[]): TokenPosition => {
-    const pos: TokenPosition[] = positions.filter(isNotUndefined)
+    const pos: TokenPosition[] = positions.filter(isNotUndefined).filter(p => !!p.offset)
     return ({
         offset: {start: posStart(pos.map(p => p.offset.start)), end: posEnd(pos.map(p => p.offset.end))},
         position: {
@@ -84,11 +84,11 @@ export const positionEndAdd = <T extends TokenPosition>(pos: T, value: number): 
 })
 
 const posStart = (values: number[]): number => {
-    const valid = values.filter(n => n >= 0 && !isNaN(n) && isFinite(n))
+    const valid = values.filter(n => n >= 0 && !Number.isNaN(n) && Number.isFinite(n))
     return valid.length > 0 ? Math.min(...valid) : 0
 }
 
 const posEnd = (values: number[]): number => {
-    const valid = values.filter(n => n >= 0 && !isNaN(n) && isFinite(n))
+    const valid = values.filter(n => n >= 0 && !Number.isNaN(n) && Number.isFinite(n))
     return valid.length > 0 ? Math.max(...valid) : 0
 }

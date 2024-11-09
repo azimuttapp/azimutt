@@ -224,7 +224,7 @@
     {"name": "uid", "alias": "int", "extra": {"line": 79, "statement": 15, "tags": ["generic"], "comment": "alias type"}},
     {"schema": "cms", "name": "post_status", "values": ["draft", "published", "archived"], "extra": {"line": 80, "statement": 16, "comment": "enum type"}},
     {"name": "position", "attrs": [{"name": "x", "type": "int"}, {"name": "y", "type": "int"}], "extra": {"line": 81, "statement": 17, "comment": "struct type"}},
-    {"name": "box", "definition": "(INTERNALLENGTH = 16, INPUT = lower, OUTPUT = lower)", "extra": {"line": 82, "statement": 18, "comment": "custom type"}}
+    {"name": "box", "definition": "(INPUT = lower, OUTPUT = lower, INTERNALLENGTH = 16)", "extra": {"line": 82, "statement": 18, "comment": "custom type"}}
   ],
   "extra": {
     "comments": [{"line": 1, "comment": ""}, {"line": 2, "comment": "Full Schema AML"}, {"line": 3, "comment": ""}],

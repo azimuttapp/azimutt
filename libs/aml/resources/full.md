@@ -165,7 +165,7 @@ STRUCT:
 
 ### box
 
-EXPRESSION: (INTERNALLENGTH = 16, INPUT = lower, OUTPUT = lower)
+EXPRESSION: (INPUT = lower, OUTPUT = lower, INTERNALLENGTH = 16)
 
 ## Diagram
 

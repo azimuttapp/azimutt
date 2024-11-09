@@ -37,7 +37,7 @@ defmodule AzimuttWeb.Api.CleverCloudController do
     end
   end
 
-  def migrations(conn, params) do
+  def migrations(_conn, params) do
     Logger.info("Api.CleverCloudController.migrations: #{inspect(params)}")
     :ok
   end

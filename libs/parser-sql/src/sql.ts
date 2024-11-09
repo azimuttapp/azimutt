@@ -4,9 +4,13 @@ import * as generator from "./generator";
 import {SqlScript} from "./statements";
 import {importDatabase} from "./sqlImport";
 import {exportDatabase} from "./sqlExport";
+import {parsePostgresAst} from "./postgresParser";
+import {buildPostgresDatabase} from "./postgresBuilder";
 import {generatePostgres, generatePostgresDiff} from "./postgresGenerator";
 
 export function parseSql(content: string, dialect: DatabaseKind, opts: { strict?: boolean, context?: Database } = {}): ParserResult<Database> {
+    const start = Date.now()
+    if (dialect === DatabaseKind.enum.postgres) return parsePostgresAst(content, opts).flatMap(ast => buildPostgresDatabase(ast, start, Date.now()))
     return parseSqlScript(content).map(importDatabase)
 }
 
