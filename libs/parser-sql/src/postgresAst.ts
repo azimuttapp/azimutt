@@ -16,7 +16,7 @@ export type StatementAst = { meta: TokenInfo } & (AlterSchemaStatementAst | Alte
     AlterTableStatementAst | BeginStatementAst | CommentOnStatementAst | CommitStatementAst |
     CreateExtensionStatementAst | CreateFunctionStatementAst | CreateIndexStatementAst |
     CreateMaterializedViewStatementAst | CreateSchemaStatementAst | CreateSequenceStatementAst |
-    CreateTableStatementAst | CreateTypeStatementAst | CreateViewStatementAst | DeleteStatementAst | DropStatementAst |
+    CreateTableStatementAst | CreateTriggerStatementAst | CreateTypeStatementAst | CreateViewStatementAst | DeleteStatementAst | DropStatementAst |
     InsertIntoStatementAst | SelectStatementAst | SetStatementAst | ShowStatementAst | UpdateStatementAst)
 export type AlterSchemaStatementAst = { kind: 'AlterSchema', token: TokenInfo, schema: IdentifierAst, action: { kind: 'Rename', token: TokenInfo, schema: IdentifierAst } | { kind: 'Owner', token: TokenInfo, role: SchemaRoleAst } }
 export type AlterSequenceStatementAst = { kind: 'AlterSequence', token: TokenInfo, ifExists?: TokenInfo, schema?: IdentifierAst, name: IdentifierAst, as?: SequenceTypeAst, start?: SequenceParamAst, increment?: SequenceParamAst, minValue?: SequenceParamOptAst, maxValue?: SequenceParamOptAst, cache?: SequenceParamAst, ownedBy?: SequenceOwnedByAst }
@@ -31,6 +31,7 @@ export type CreateMaterializedViewStatementAst = { kind: 'CreateMaterializedView
 export type CreateSchemaStatementAst = { kind: 'CreateSchema', token: TokenInfo, ifNotExists?: TokenInfo, schema?: IdentifierAst, authorization?: { token: TokenInfo, role: SchemaRoleAst } }
 export type CreateSequenceStatementAst = { kind: 'CreateSequence', token: TokenInfo, mode?: SequenceModeAst, ifNotExists?: TokenInfo, schema?: IdentifierAst, name: IdentifierAst, as?: SequenceTypeAst, start?: SequenceParamAst, increment?: SequenceParamAst, minValue?: SequenceParamOptAst, maxValue?: SequenceParamOptAst, cache?: SequenceParamAst, ownedBy?: SequenceOwnedByAst }
 export type CreateTableStatementAst = { kind: 'CreateTable', token: TokenInfo, mode?: CreateTableModeAst, ifNotExists?: TokenInfo, schema?: IdentifierAst, name: IdentifierAst, columns?: TableColumnAst[], constraints?: TableConstraintAst[] }
+export type CreateTriggerStatementAst = { kind: 'CreateTrigger', token: TokenInfo, replace?: TokenInfo, constraint?: { token: TokenInfo }, name: IdentifierAst, timing: TriggerTimingAst, events?: TriggerEventAst[], schema?: IdentifierAst, table: IdentifierAst, from?: { token: TokenInfo, schema?: IdentifierAst, table: IdentifierAst }, deferrable?: TriggerDeferrableAst, referencing?: TriggerReferencingAst, target?: { kind: 'Row' | 'Statement', token: TokenInfo }, when?: { token: TokenInfo, condition: ExpressionAst }, execute: { token: TokenInfo, schema?: IdentifierAst, function: IdentifierAst, arguments: ExpressionAst[] } }
 export type CreateTypeStatementAst = { kind: 'CreateType', token: TokenInfo, schema?: IdentifierAst, name: IdentifierAst, struct?: { token: TokenInfo, attrs: TypeColumnAst[] }, enum?: { token: TokenInfo, values: StringAst[] }, base?: { name: IdentifierAst, value: ExpressionAst }[] }
 export type CreateViewStatementAst = { kind: 'CreateView', token: TokenInfo, replace?: TokenInfo, temporary?: TokenInfo, recursive?: TokenInfo, schema?: IdentifierAst, name: IdentifierAst, columns?: IdentifierAst[], query: SelectStatementInnerAst }
 export type DeleteStatementAst = { kind: 'Delete', token: TokenInfo, only?: TokenInfo, schema?: IdentifierAst, table: IdentifierAst, descendants?: TokenInfo, alias?: AliasAst, using?: FromItemAst & { token: TokenInfo }, where?: WhereClauseAst, returning?: SelectClauseAst }
@@ -110,6 +111,10 @@ export type SequenceParamOptAst = { token: TokenInfo, value?: IntegerAst }
 export type SequenceOwnedByAst = { token: TokenInfo, owner: { kind: 'None', token: TokenInfo } | { kind: 'Column', schema?: IdentifierAst, table: IdentifierAst, column: IdentifierAst } }
 export type FunctionArgumentAst = { mode?: { kind: 'In' | 'Out' | 'InOut' | 'Variadic', token: TokenInfo }, name?: IdentifierAst, type: ColumnTypeAst }
 export type FunctionReturnsAst = { kind: 'Type', token: TokenInfo, setOf?: TokenInfo, type: ColumnTypeAst } | { kind: 'Table', token: TokenInfo, columns: { name: IdentifierAst, type: ColumnTypeAst }[] }
+export type TriggerTimingAst = { kind: 'Before' | 'After' | 'InsteadOf', token: TokenInfo }
+export type TriggerEventAst = { kind: 'Insert' | 'Update' | 'Delete' | 'Truncate', token: TokenInfo, columns?: IdentifierAst }
+export type TriggerDeferrableAst = { kind: 'Deferrable' | 'NotDeferrable', token: TokenInfo, initially?: { kind: 'Immediate' | 'Deferred', token: TokenInfo } }
+export type TriggerReferencingAst = { token: TokenInfo, old?: { token: TokenInfo, name: IdentifierAst }, new?: { token: TokenInfo, name: IdentifierAst } }
 
 // basic parts
 export type AliasAst = { token?: TokenInfo, name: IdentifierAst }
@@ -143,7 +148,7 @@ export type NullAst = { kind: 'Null', token: TokenInfo }
 export type CommentAst = { kind: CommentKind, token: TokenInfo, value: string } // special case
 
 // enums
-export type Operator = '+' | '-' | '*' | '/' | '%' | '^' | '&' | '|' | '#' | '<<' | '>>' | '=' | '<' | '>' | '<=' | '>=' | '<>' | '!=' | '||' | '~' | '~*' | '!~' | '!~*' | 'Is' | 'Like' | 'NotLike' | 'In' | 'NotIn' | 'Or' | 'And'
+export type Operator = '+' | '-' | '*' | '/' | '%' | '^' | '&' | '|' | '#' | '<<' | '>>' | '=' | '<' | '>' | '<=' | '>=' | '<>' | '!=' | '||' | '~' | '~*' | '!~' | '!~*' | 'Is' | 'IsNot' | 'Like' | 'NotLike' | 'In' | 'NotIn' | 'DistinctFrom' | 'NotDistinctFrom' | 'Or' | 'And'
 export type OperatorLeft = 'Not' | 'Interval' | '~'
 export type OperatorRight = 'IsNull' | 'NotNull'
 export type JsonOp = '->' | '->>' // TODO: | '#>' | '#>>'

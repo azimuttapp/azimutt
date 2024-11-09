@@ -100,6 +100,7 @@ export function evolvePostgres(db: Database, errors: ParserError[], index: numbe
     } else if (stmt.kind === 'Commit') { // nothing
     } else if (stmt.kind === 'CreateExtension') { // nothing
     } else if (stmt.kind === 'CreateFunction') { // nothing
+    } else if (stmt.kind === 'CreateTrigger') { // nothing
     } else if (stmt.kind === 'CreateSchema') { // nothing
     } else if (stmt.kind === 'CreateSequence') { // nothing
     } else if (stmt.kind === 'Delete') { // nothing
