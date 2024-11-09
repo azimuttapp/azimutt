@@ -2,7 +2,7 @@ import * as fs from "fs";
 import {describe, expect, test} from "@jest/globals";
 import {removeFieldsDeep} from "@azimutt/utils";
 import {Database, Entity, parseJsonDatabase, ParserError} from "@azimutt/models";
-import {SelectStatementInnerAst} from "./postgresAst";
+import {SelectInnerAst} from "./postgresAst";
 import {parsePostgresAst} from "./postgresParser";
 import {buildPostgresDatabase, SelectEntities, selectEntities} from "./postgresBuilder";
 
@@ -208,5 +208,5 @@ function parse(sql: string): {db: Database, errors: ParserError[]} {
 }
 
 function extract(sql: string, entities: Entity[]): SelectEntities {
-    return removeFieldsDeep(selectEntities(parsePostgresAst(sql).result?.statements?.[0] as SelectStatementInnerAst, entities), ['token'])
+    return removeFieldsDeep(selectEntities(parsePostgresAst(sql).result?.statements?.[0] as SelectInnerAst, entities), ['token'])
 }

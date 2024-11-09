@@ -38,7 +38,7 @@ import {
     CreateViewStatementAst,
     ExpressionAst,
     FromClauseAst,
-    FromItemAst,
+    FromClauseItemAst,
     FunctionAst,
     IdentifierAst,
     Operator,
@@ -46,7 +46,7 @@ import {
     OperatorRight,
     PostgresAst,
     SelectClauseColumnAst,
-    SelectStatementInnerAst,
+    SelectInnerAst,
     StatementAst,
     TableColumnAst,
     TokenInfo
@@ -223,7 +223,7 @@ function createMaterializedView(index: number, stmt: CreateMaterializedViewState
     })
 }
 
-function buildViewAttrs(index: number, query: SelectStatementInnerAst, columns: IdentifierAst[] | undefined, entities: Entity[]): Attribute[] {
+function buildViewAttrs(index: number, query: SelectInnerAst, columns: IdentifierAst[] | undefined, entities: Entity[]): Attribute[] {
     const attrs = selectEntities(query, entities).columns.map(c => removeUndefined({
         name: c.name,
         type: c.type || 'unknown',
@@ -385,7 +385,7 @@ function commentOn(index: number, stmt: CommentOnStatementAst, db: Database): vo
     }
 }
 
-function selectInnerToString(s: SelectStatementInnerAst): string {
+function selectInnerToString(s: SelectInnerAst): string {
     const select = 'SELECT ' + s.columns.map(c => expressionToString(c) + (c.alias ? ' ' + aliasToString(c.alias) : '')).join(', ')
     const from = s.from ? fromToString(s.from) : ''
     const where = s.where ? ' WHERE ' + expressionToString(s.where.predicate) : ''
@@ -505,7 +505,7 @@ export type SelectSourceTable = { kind: 'Table', schema?: string, table: string,
 export type SelectSourceSelect = { kind: 'Select' } & SelectEntities
 
 // TODO: also extract entities in clauses such as WHERE, HAVING... (know all use involved tables & columns, wherever they are used)
-export function selectEntities(s: SelectStatementInnerAst, entities: Entity[]): SelectEntities {
+export function selectEntities(s: SelectInnerAst, entities: Entity[]): SelectEntities {
     const sources = s.from ? selectTables(s.from, entities) : []
     const columns: SelectColumn[] = s.columns.flatMap((c, i) => selectColumn(c, i, sources))
     return {columns, sources}
@@ -514,7 +514,7 @@ function selectTables(f: FromClauseAst, entities: Entity[]): SelectSource[] {
     const joins = f.joins?.map(j => fromTables(j.from, entities)) || []
     return [fromTables(f, entities), ...joins]
 }
-function fromTables(i: FromItemAst, entities: Entity[]): SelectSource {
+function fromTables(i: FromClauseItemAst, entities: Entity[]): SelectSource {
     if (i.kind === 'Table') {
         const entity = findEntity(entities, i.table.value, i.schema?.value)
         if (entity) {
