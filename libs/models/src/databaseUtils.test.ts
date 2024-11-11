@@ -416,7 +416,7 @@ describe('databaseUtils', () => {
             types: [{name: 'user_role', values: ['admin', 'guest']}],
             doc: 'CMS database',
             stats: {name: 'cms', kind: DatabaseKind.Enum.postgres, version: '1.2.3'},
-            extra: {comment: 'great!'}
+            extra: {comment: 'great!', statements: [{id: 1, kind: 'INSERT'}, {id: 2, kind: 'SELECT'}]}
         })
         expect(prettyJson).toEqual(`{
   "entities": [
@@ -472,7 +472,17 @@ describe('databaseUtils', () => {
   "doc": "CMS database",
   "stats": {"name": "cms", "kind": "postgres", "version": "1.2.3"},
   "extra": {
-    "comment": "great!"
+    "comment": "great!",
+    "statements": [
+      {
+        "id": 1,
+        "kind": "INSERT"
+      },
+      {
+        "id": 2,
+        "kind": "SELECT"
+      }
+    ]
   }
 }
 `)

@@ -1,4 +1,4 @@
-import {distinctBy, isNever, isNotUndefined, removeEmpty, removeUndefined} from "@azimutt/utils";
+import {distinctBy, isNever, isNotUndefined, removeEmpty, removeFieldsDeep, removeUndefined} from "@azimutt/utils";
 import {
     Attribute,
     AttributePath,
@@ -36,20 +36,24 @@ import {
     CreateTableStatementAst,
     CreateTypeStatementAst,
     CreateViewStatementAst,
+    DeleteStatementAst,
     ExpressionAst,
     FromClauseAst,
     FromClauseItemAst,
     FunctionAst,
     IdentifierAst,
+    InsertIntoStatementAst,
     Operator,
     OperatorLeft,
     OperatorRight,
     PostgresAst,
     SelectClauseColumnAst,
     SelectInnerAst,
+    SelectStatementAst,
     StatementAst,
     TableColumnAst,
-    TokenInfo
+    TokenInfo,
+    UpdateStatementAst
 } from "./postgresAst";
 import {duplicated} from "./errors";
 
@@ -66,7 +70,7 @@ export function buildPostgresDatabase(ast: PostgresAst, start: number, parsed: n
         formattingTimeMs: done - parsed,
         comments: ast.comments?.map(c => ({line: c.token.position.start.line, comment: c.value})) || [],
     })
-    return new ParserResult(removeEmpty({...db, extra}), errors)
+    return new ParserResult(removeEmpty({...db, extra: {...db.extra, ...extra}}), errors)
 }
 
 export function evolvePostgres(db: Database, errors: ParserError[], index: number, stmt: StatementAst): void {
@@ -94,8 +98,37 @@ export function evolvePostgres(db: Database, errors: ParserError[], index: numbe
         if (!db.entities) db.entities = []
         const entity = createView(index, stmt, db.entities)
         addEntity(db.entities, errors, entity, mergePositions([stmt.schema, stmt.name].map(v => v?.token)))
+    } else if (stmt.kind === 'Drop') {
+        if (stmt.object === 'Table' || stmt.object === 'View' || stmt.object === 'MaterializedView') {
+            const index = db.entities?.findIndex(e => stmt.entities.some(ee => ee.name.value === e.name && (ee.schema?.value ? ee.schema.value === e.schema : true)))
+            if (index !== undefined && index !== -1) {
+                db.entities?.splice(index, 1)
+                // TODO: remove all relations linked to this entity
+            }
+        } else if (stmt.object === 'Index') { // TODO
+        } else if (stmt.object === 'Sequence') { // nothing
+        } else if (stmt.object === 'Type') {
+            const index = db.types?.findIndex(t => stmt.entities.some(e => e.name.value === t.name && (e.schema?.value ? e.schema.value === t.schema : true)))
+            if (index !== undefined && index !== -1) {
+                db.types?.splice(index, 1)
+            }
+        } else {
+            isNever(stmt.object)
+        }
+    } else if (stmt.kind === 'Select') {
+        addDQL(db, index, stmt)
+    } else if (stmt.kind === 'InsertInto') {
+        addDML(db, index, stmt)
+    } else if (stmt.kind === 'Update') {
+        addDML(db, index, stmt)
+    } else if (stmt.kind === 'Delete') {
+        addDML(db, index, stmt)
+    } else if (stmt.kind === 'AlterFunction') { // nothing
+    } else if (stmt.kind === 'AlterMaterializedView') { // TODO
     } else if (stmt.kind === 'AlterSchema') { // nothing
     } else if (stmt.kind === 'AlterSequence') { // nothing
+    } else if (stmt.kind === 'AlterType') { // TODO
+    } else if (stmt.kind === 'AlterView') { // TODO
     } else if (stmt.kind === 'Begin') { // nothing
     } else if (stmt.kind === 'Commit') { // nothing
     } else if (stmt.kind === 'CreateExtension') { // nothing
@@ -103,13 +136,8 @@ export function evolvePostgres(db: Database, errors: ParserError[], index: numbe
     } else if (stmt.kind === 'CreateTrigger') { // nothing
     } else if (stmt.kind === 'CreateSchema') { // nothing
     } else if (stmt.kind === 'CreateSequence') { // nothing
-    } else if (stmt.kind === 'Delete') { // nothing
-    } else if (stmt.kind === 'Drop') { // nothing
-    } else if (stmt.kind === 'InsertInto') { // nothing
-    } else if (stmt.kind === 'Select') { // nothing
     } else if (stmt.kind === 'Set') { // nothing
     } else if (stmt.kind === 'Show') { // nothing
-    } else if (stmt.kind === 'Update') { // nothing
     } else {
         isNever(stmt)
     }
@@ -137,6 +165,18 @@ function addType(types: Type[], errors: ParserError[], type: Type, pos: TokenPos
     } else {
         types.push(type)
     }
+}
+
+function addDQL(db: Database, index: number, stmt: SelectStatementAst): void {
+    if (!db.extra) db.extra = {}
+    if (!db.extra.dql) db.extra.dql = []
+    db.extra.dql.push({...removeFieldsDeep(stmt, ['token']), statement: index})
+}
+
+function addDML(db: Database, index: number, stmt: InsertIntoStatementAst | UpdateStatementAst | DeleteStatementAst): void {
+    if (!db.extra) db.extra = {}
+    if (!db.extra.dql) db.extra.dml = []
+    db.extra.dml.push({...removeFieldsDeep(stmt, ['token']), statement: index})
 }
 
 function createTable(index: number, stmt: CreateTableStatementAst): { entity: Entity, relations: Relation[] } {
@@ -260,7 +300,7 @@ function createIndex(index: number, stmt: CreateIndexStatementAst, entities: Ent
 }
 
 function alterTable(index: number, stmt: AlterTableStatementAst, db: Database): void {
-    const entity = db.entities?.find(e => e.schema === stmt.schema?.value && e.name === stmt.table?.value)
+    const entity = db.entities?.find(e => e.schema === stmt.schema?.value && e.name === stmt.name?.value)
     if (entity) {
         stmt.actions.forEach(action => {
             if (action.kind === 'AddColumn') {
@@ -307,7 +347,7 @@ function alterTable(index: number, stmt: AlterTableStatementAst, db: Database): 
                     if (!db.relations) db.relations = []
                     db.relations.push(removeUndefined({
                         name: constraint.constraint?.name.value,
-                        src: removeUndefined({schema: stmt.schema?.value, entity: stmt.table?.value, attrs: constraint.columns.map(c => [c.value])}),
+                        src: removeUndefined({schema: stmt.schema?.value, entity: stmt.name?.value, attrs: constraint.columns.map(c => [c.value])}),
                         ref: removeUndefined({schema: constraint.ref.schema?.value, entity: constraint.ref.table.value, attrs: constraint.ref.columns?.map(c => [c.value]) || []}),
                         extra: {line: stmt.token.position.start.line, statement: index},
                     }))
@@ -320,7 +360,7 @@ function alterTable(index: number, stmt: AlterTableStatementAst, db: Database): 
                 if (idxIndex !== undefined && idxIndex !== -1) entity.indexes?.splice(idxIndex, 1)
                 const chkIndex = entity.checks?.findIndex(c => c.name === action.constraint.value)
                 if (chkIndex !== undefined && chkIndex !== -1) entity.checks?.splice(chkIndex, 1)
-                const relIndex = db.relations?.findIndex(r => r.name === action.constraint.value && r.src.schema === stmt.schema?.value && r.src.entity === stmt.table?.value)
+                const relIndex = db.relations?.findIndex(r => r.name === action.constraint.value && r.src.schema === stmt.schema?.value && r.src.entity === stmt.name?.value)
                 if (relIndex !== undefined && relIndex !== -1) db.relations?.splice(relIndex, 1)
                 // TODO: also NOT NULL & DEFAULT constraints...
             } else if (action.kind === 'SetOwner') { // nothing

@@ -12,15 +12,19 @@ import {ParserErrorLevel, TokenPosition} from "@azimutt/models";
 export type PostgresAst = StatementsAst & { comments?: CommentAst[] }
 export type PostgresStatementAst = StatementAst & { comments?: CommentAst[] }
 export type StatementsAst = { statements: StatementAst[] }
-export type StatementAst = { meta: TokenInfo } & (AlterSchemaStatementAst | AlterSequenceStatementAst |
-    AlterTableStatementAst | BeginStatementAst | CommentOnStatementAst | CommitStatementAst |
-    CreateExtensionStatementAst | CreateFunctionStatementAst | CreateIndexStatementAst |
-    CreateMaterializedViewStatementAst | CreateSchemaStatementAst | CreateSequenceStatementAst |
-    CreateTableStatementAst | CreateTriggerStatementAst | CreateTypeStatementAst | CreateViewStatementAst | DeleteStatementAst | DropStatementAst |
+export type StatementAst = { meta: TokenInfo } & (AlterFunctionStatementAst | AlterMaterializedViewStatementAst | AlterSchemaStatementAst |
+    AlterSequenceStatementAst | AlterTableStatementAst | AlterTypeStatementAst | AlterViewStatementAst | BeginStatementAst |
+    CommentOnStatementAst | CommitStatementAst | CreateExtensionStatementAst | CreateFunctionStatementAst | CreateIndexStatementAst |
+    CreateMaterializedViewStatementAst | CreateSchemaStatementAst | CreateSequenceStatementAst | CreateTableStatementAst |
+    CreateTriggerStatementAst | CreateTypeStatementAst | CreateViewStatementAst | DeleteStatementAst | DropStatementAst |
     InsertIntoStatementAst | SelectStatementAst | SetStatementAst | ShowStatementAst | UpdateStatementAst)
-export type AlterSchemaStatementAst = { kind: 'AlterSchema', token: TokenInfo, schema: IdentifierAst, action: SchemaAlterActionAst }
+export type AlterFunctionStatementAst = { kind: 'AlterFunction', token: TokenInfo, schema?: IdentifierAst, name: IdentifierAst, args: FunctionArgumentAst[], actions: AlterFunctionActionAst[] }
+export type AlterMaterializedViewStatementAst = { kind: 'AlterMaterializedView', token: TokenInfo, ifExists?: TokenAst, schema?: IdentifierAst, name: IdentifierAst, actions: AlterMaterializedViewActionAst[] }
+export type AlterSchemaStatementAst = { kind: 'AlterSchema', token: TokenInfo, schema: IdentifierAst, actions: AlterSchemaActionAst[] }
 export type AlterSequenceStatementAst = { kind: 'AlterSequence', token: TokenInfo, ifExists?: TokenAst, schema?: IdentifierAst, name: IdentifierAst, as?: SequenceTypeAst, start?: SequenceParamAst, increment?: SequenceParamAst, minValue?: SequenceParamOptAst, maxValue?: SequenceParamOptAst, cache?: SequenceParamAst, ownedBy?: SequenceOwnedByAst }
-export type AlterTableStatementAst = { kind: 'AlterTable', token: TokenInfo, ifExists?: TokenAst, only?: TokenAst, schema?: IdentifierAst, table: IdentifierAst, actions: TableAlterActionAst[] }
+export type AlterTableStatementAst = { kind: 'AlterTable', token: TokenInfo, ifExists?: TokenAst, only?: TokenAst, schema?: IdentifierAst, name: IdentifierAst, actions: AlterTableActionAst[] }
+export type AlterTypeStatementAst = { kind: 'AlterType', token: TokenInfo, schema?: IdentifierAst, name: IdentifierAst, actions: AlterTypeActionAst[] }
+export type AlterViewStatementAst = { kind: 'AlterView', token: TokenInfo, ifExists?: TokenAst, schema?: IdentifierAst, name: IdentifierAst, actions: AlterViewActionAst[] }
 export type BeginStatementAst = { kind: 'Begin', token: TokenInfo, object?: TransactionObjectAst, modes?: TransactionModeAst[] }
 export type CommentOnStatementAst = { kind: 'CommentOn', token: TokenInfo, object: CommentObjectAst, schema?: IdentifierAst, parent?: IdentifierAst, entity: IdentifierAst, comment: StringAst | NullAst }
 export type CommitStatementAst = { kind: 'Commit', token: TokenInfo, object?: TransactionObjectAst, chain?: TransactionChainAst }
@@ -68,6 +72,20 @@ export type OffsetClauseAst = { token: TokenInfo, value: IntegerAst | ParameterA
 export type FetchClauseAst = { token: TokenInfo, first: { kind: 'First' | 'Next', token: TokenInfo }, value: IntegerAst | ParameterAst, rows: { kind: 'Rows' | 'Row', token: TokenInfo }, mode: { kind: 'Only' | 'WithTies', token: TokenInfo } }
 
 // other clauses
+export type AlterFunctionActionAst = AlterRenameAst | AlterSetOwnerAst | AlterSetSchemaAst
+export type AlterMaterializedViewActionAst = AlterRenameAst | AlterSetOwnerAst | AlterSetSchemaAst
+export type AlterSchemaActionAst = AlterRenameAst | AlterSetOwnerAst
+export type AlterTableActionAst = AlterAddColumnAst | AlterAddConstraintAst | AlterTableColumnAst | AlterDropColumnAst | AlterDropConstraintAst | AlterSetOwnerAst
+export type AlterTypeActionAst = AlterRenameAst | AlterSetOwnerAst | AlterSetSchemaAst
+export type AlterViewActionAst = AlterRenameAst | AlterSetOwnerAst | AlterSetSchemaAst
+export type AlterAddColumnAst = { kind: 'AddColumn', token: TokenInfo, ifNotExists?: TokenAst, column: TableColumnAst }
+export type AlterAddConstraintAst = { kind: 'AddConstraint', token: TokenInfo, constraint: TableConstraintAst, notValid?: TokenAst }
+export type AlterTableColumnAst = { kind: 'AlterColumn', token: TokenInfo, column: IdentifierAst, action: ColumnAlterActionAst }
+export type AlterDropColumnAst = { kind: 'DropColumn', token: TokenInfo, ifExists?: TokenAst, column: IdentifierAst }
+export type AlterDropConstraintAst = { kind: 'DropConstraint', token: TokenInfo, ifExists?: TokenAst, constraint: IdentifierAst }
+export type AlterRenameAst = { kind: 'Rename', token: TokenInfo, name: IdentifierAst }
+export type AlterSetOwnerAst = { kind: 'SetOwner', token: TokenInfo, owner: OwnerAst }
+export type AlterSetSchemaAst = { kind: 'SetSchema', token: TokenInfo, schema: IdentifierAst }
 export type ColumnAlterActionAst = ColumnAlterDefaultAst | ColumnAlterNotNullAst
 export type ColumnAlterDefaultAst = { kind: 'Default', action: { kind: 'Set' | 'Drop', token: TokenInfo }, token: TokenInfo, expression?: ExpressionAst }
 export type ColumnAlterNotNullAst = { kind: 'NotNull', action: { kind: 'Set' | 'Drop', token: TokenInfo }, token: TokenInfo }
@@ -92,7 +110,6 @@ export type OnConflictColumnsAst = { kind: 'Columns', columns: IdentifierAst[], 
 export type OnConflictConstraintAst = { kind: 'Constraint', token: TokenInfo, name: IdentifierAst }
 export type OnConflictNothingAst = { kind: 'Nothing', token: TokenInfo }
 export type OnConflictUpdateAst = { kind: 'Update', columns: ColumnUpdateAst[], where?: WhereClauseAst }
-export type SchemaAlterActionAst = { kind: 'Rename', token: TokenInfo, schema: IdentifierAst } | { kind: 'Owner', token: TokenInfo, owner: OwnerAst }
 export type SchemaAuthorizationAst = { token: TokenInfo, owner: OwnerAst }
 export type SequenceModeAst = { kind: 'Unlogged' | 'Temporary', token: TokenInfo }
 export type SequenceOwnedByAst = { token: TokenInfo, owner: { kind: 'None', token: TokenInfo } | { kind: 'Column', schema?: IdentifierAst, table: IdentifierAst, column: IdentifierAst } }
@@ -102,13 +119,6 @@ export type SequenceTypeAst = { token: TokenInfo, type: IdentifierAst }
 export type SetAssignAst = { kind: SetAssign, token: TokenInfo }
 export type SetModeAst = { kind: SetScope, token: TokenInfo }
 export type SetValueAst = IdentifierAst | LiteralAst | (IdentifierAst | LiteralAst)[] | { kind: 'Default', token: TokenInfo }
-export type TableAlterActionAst = TableAddColumnAst | TableAddConstraintAst | TableAlterColumnAst | TableDropColumnAst | TableDropConstraintAst | TableSetOwnerAst
-export type TableAddColumnAst = { kind: 'AddColumn', token: TokenInfo, ifNotExists?: TokenAst, column: TableColumnAst }
-export type TableAddConstraintAst = { kind: 'AddConstraint', token: TokenInfo, constraint: TableConstraintAst, notValid?: TokenAst }
-export type TableAlterColumnAst = { kind: 'AlterColumn', token: TokenInfo, column: IdentifierAst, action: ColumnAlterActionAst }
-export type TableDropColumnAst = { kind: 'DropColumn', token: TokenInfo, ifExists?: TokenAst, column: IdentifierAst }
-export type TableDropConstraintAst = { kind: 'DropConstraint', token: TokenInfo, ifExists?: TokenAst, constraint: IdentifierAst }
-export type TableSetOwnerAst = { kind: 'SetOwner', token: TokenInfo, owner: OwnerAst }
 export type TableColumnAst = { name: IdentifierAst, type: ColumnTypeAst, constraints?: TableColumnConstraintAst[] }
 export type TableColumnConstraintAst = TableColumnNullableAst | TableColumnDefaultAst | TableColumnPkAst | TableColumnUniqueAst | TableColumnCheckAst | TableColumnFkAst
 export type TableColumnNullableAst = { kind: 'Nullable', value: boolean } & TableConstraintCommonAst

@@ -4,7 +4,7 @@ import json from "@rollup/plugin-json"
 import typescript from "@rollup/plugin-typescript"
 import resolve from "@rollup/plugin-node-resolve"
 
-// used to generate a min file to be used in backend/lib/azimutt_web/templates/website/_converter-editors-script.html.heex
+// used to generate a min file to be used in backend/lib/azimutt_web/templates/website/_editors-script.html.heex
 export default {
     input: 'src/index.ts',
     output: [{

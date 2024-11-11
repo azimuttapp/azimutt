@@ -1,6 +1,6 @@
 {
   "name": "@azimutt/parser-sql",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Parse and Generate SQL.",
   "keywords": [],
   "homepage": "https://azimutt.app",

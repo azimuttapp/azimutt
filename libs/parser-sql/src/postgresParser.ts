@@ -11,9 +11,22 @@ import {isNotUndefined, removeEmpty, removeUndefined} from "@azimutt/utils";
 import {mergePositions, ParserError, ParserErrorLevel, ParserResult, TokenPosition} from "@azimutt/models";
 import {
     AliasAst,
+    AlterFunctionActionAst,
+    AlterFunctionStatementAst,
+    AlterMaterializedViewActionAst,
+    AlterMaterializedViewStatementAst,
+    AlterRenameAst,
+    AlterSchemaActionAst,
     AlterSchemaStatementAst,
     AlterSequenceStatementAst,
+    AlterSetOwnerAst,
+    AlterSetSchemaAst,
+    AlterTableActionAst,
     AlterTableStatementAst,
+    AlterTypeActionAst,
+    AlterTypeStatementAst,
+    AlterViewActionAst,
+    AlterViewStatementAst,
     BeginStatementAst,
     BooleanAst,
     ColumnJsonAst,
@@ -86,7 +99,6 @@ import {
     StatementAst,
     StatementsAst,
     StringAst,
-    TableAlterActionAst,
     TableColumnAst,
     TableColumnCheckAst,
     TableColumnConstraintAst,
@@ -99,6 +111,7 @@ import {
     TableFkAst,
     TablePkAst,
     TableUniqueAst,
+    TokenAst,
     TokenInfo,
     TokenIssue,
     TransactionModeAst,
@@ -348,22 +361,26 @@ class PostgresParser extends EmbeddedActionsParser {
     statementsRule: () => StatementsAst
     // statements
     statementRule: () => StatementAst
-    alterSchemaStatementRule: () => AlterSchemaStatementAst
-    alterSequenceStatementRule: () => AlterSequenceStatementAst
-    alterTableStatementRule: () => AlterTableStatementAst
+    alterFunctionStatementRule: (alter: IToken) => AlterFunctionStatementAst
+    alterMaterializedViewStatementRule: (alter: IToken) => AlterMaterializedViewStatementAst
+    alterSchemaStatementRule: (alter: IToken) => AlterSchemaStatementAst
+    alterSequenceStatementRule: (alter: IToken) => AlterSequenceStatementAst
+    alterTableStatementRule: (alter: IToken) => AlterTableStatementAst
+    alterTypeStatementRule: (alter: IToken) => AlterTypeStatementAst
+    alterViewStatementRule: (alter: IToken) => AlterViewStatementAst
     beginStatementRule: () => BeginStatementAst
     commentOnStatementRule: () => CommentOnStatementAst
     commitStatementRule: () => CommitStatementAst
     createExtensionStatementRule: (create: IToken) => CreateExtensionStatementAst
-    createFunctionStatementRule: (create: IToken, replace?: { token: TokenInfo }) => CreateFunctionStatementAst
+    createFunctionStatementRule: (create: IToken, replace?: TokenAst) => CreateFunctionStatementAst
     createIndexStatementRule: (create: IToken) => CreateIndexStatementAst
     createMaterializedViewStatementRule: (create: IToken) => CreateMaterializedViewStatementAst
     createSchemaStatementRule: (create: IToken) => CreateSchemaStatementAst
     createSequenceStatementRule: (create: IToken) => CreateSequenceStatementAst
     createTableStatementRule: (create: IToken) => CreateTableStatementAst
-    createTriggerStatementRule: (create: IToken, replace?: { token: TokenInfo }) => CreateTriggerStatementAst
+    createTriggerStatementRule: (create: IToken, replace?: TokenAst) => CreateTriggerStatementAst
     createTypeStatementRule: (create: IToken) => CreateTypeStatementAst
-    createViewStatementRule: (create: IToken, replace?: { token: TokenInfo }) => CreateViewStatementAst
+    createViewStatementRule: (create: IToken, replace?: TokenAst) => CreateViewStatementAst
     deleteStatementRule: () => DeleteStatementAst
     dropStatementRule: () => DropStatementAst
     insertIntoStatementRule: () => InsertIntoStatementAst
@@ -408,16 +425,25 @@ class PostgresParser extends EmbeddedActionsParser {
         })
 
         this.statementRule = $.RULE<() => StatementAst>('statementRule', () => $.OR([
-            {ALT: () => $.SUBRULE($.alterSchemaStatementRule)},
-            {ALT: () => $.SUBRULE($.alterSequenceStatementRule)},
-            {ALT: () => $.SUBRULE($.alterTableStatementRule)},
+            {ALT: () => {
+                const alter = $.CONSUME(Alter)
+                return $.OR2([
+                    {ALT: () => $.SUBRULE($.alterFunctionStatementRule, {ARGS: [alter]})},
+                    {ALT: () => $.SUBRULE($.alterMaterializedViewStatementRule, {ARGS: [alter]})},
+                    {ALT: () => $.SUBRULE($.alterSchemaStatementRule, {ARGS: [alter]})},
+                    {ALT: () => $.SUBRULE($.alterSequenceStatementRule, {ARGS: [alter]})},
+                    {ALT: () => $.SUBRULE($.alterTableStatementRule, {ARGS: [alter]})},
+                    {ALT: () => $.SUBRULE($.alterTypeStatementRule, {ARGS: [alter]})},
+                    {ALT: () => $.SUBRULE($.alterViewStatementRule, {ARGS: [alter]})},
+                ])
+            }},
             {ALT: () => $.SUBRULE($.beginStatementRule)},
             {ALT: () => $.SUBRULE($.commentOnStatementRule)},
             {ALT: () => $.SUBRULE($.commitStatementRule)},
             {ALT: () => {
                 const create = $.CONSUME(Create)
                 const replace = $.OPTION(() => ({token: tokenInfo2($.CONSUME(Or), $.CONSUME(Replace))}))
-                return $.OR2([
+                return $.OR3([
                     {ALT: () => $.SUBRULE($.createExtensionStatementRule, {ARGS: [create]})},
                     {ALT: () => $.SUBRULE($.createFunctionStatementRule, {ARGS: [create, replace]})},
                     {ALT: () => $.SUBRULE($.createIndexStatementRule, {ARGS: [create]})},
@@ -439,23 +465,52 @@ class PostgresParser extends EmbeddedActionsParser {
             {ALT: () => $.SUBRULE($.updateStatementRule)},
         ]))
 
-        this.alterSchemaStatementRule = $.RULE<() => AlterSchemaStatementAst>('alterSchemaStatementRule', () => {
-            // https://www.postgresql.org/docs/current/sql-alterschema.html
-            const start = $.CONSUME(Alter)
-            const token = tokenInfo2(start, $.CONSUME(Schema))
-            const schema = $.SUBRULE($.identifierRule)
-            const action = $.OR([
-                {ALT: () => ({kind: 'Rename' as const, token: tokenInfo($.CONSUME(RenameTo)), schema: $.SUBRULE2($.identifierRule)})},
-                {ALT: () => ({kind: 'Owner' as const, token: tokenInfo($.CONSUME(OwnerTo)), owner: $.SUBRULE(ownerRule)})},
-            ])
+        this.alterFunctionStatementRule = $.RULE<(alter: IToken) => AlterFunctionStatementAst>('alterFunctionStatementRule', (alter: IToken) => {
+            // https://www.postgresql.org/docs/current/sql-alterfunction.html
+            const token = tokenInfo2(alter, $.CONSUME(Function))
+            const object = $.SUBRULE($.objectNameRule)
+            const args = $.OPTION(() => $.SUBRULE(functionArgumentsRule)) || []
+            const actions: AlterFunctionActionAst[] = []
+            $.MANY_SEP({SEP: Comma, DEF: () => actions.push($.OR([
+                {ALT: () => $.SUBRULE(alterRenameRule)},
+                {ALT: () => $.SUBRULE(alterSetOwnerRule)},
+                {ALT: () => $.SUBRULE(alterSetSchemaRule)},
+            ]))})
             const end = $.CONSUME(Semicolon)
-            return removeUndefined({kind: 'AlterSchema' as const, meta: tokenInfo2(start, end), token, schema, action})
+            return removeUndefined({kind: 'AlterFunction' as const, meta: tokenInfo2(alter, end), token, ...object, args, actions})
         })
 
-        this.alterSequenceStatementRule = $.RULE<() => AlterSequenceStatementAst>('alterSequenceStatementRule', () => {
+        this.alterMaterializedViewStatementRule = $.RULE<(alter: IToken) => AlterMaterializedViewStatementAst>('alterMaterializedViewStatementRule', (alter: IToken) => {
+            // https://www.postgresql.org/docs/current/sql-altermaterializedview.html
+            const token = tokenInfo2(alter, $.CONSUME(MaterializedView))
+            const ifExists = $.SUBRULE(ifExistsRule)
+            const object = $.SUBRULE($.objectNameRule)
+            const actions: AlterMaterializedViewActionAst[] = []
+            $.MANY_SEP({SEP: Comma, DEF: () => actions.push($.OR([
+                {ALT: () => $.SUBRULE(alterRenameRule)},
+                {ALT: () => $.SUBRULE(alterSetOwnerRule)},
+                {ALT: () => $.SUBRULE(alterSetSchemaRule)},
+            ]))})
+            const end = $.CONSUME(Semicolon)
+            return removeUndefined({kind: 'AlterMaterializedView' as const, meta: tokenInfo2(alter, end), token, ifExists, ...object, actions})
+        })
+
+        this.alterSchemaStatementRule = $.RULE<(alter: IToken) => AlterSchemaStatementAst>('alterSchemaStatementRule', (alter: IToken) => {
+            // https://www.postgresql.org/docs/current/sql-alterschema.html
+            const token = tokenInfo2(alter, $.CONSUME(Schema))
+            const schema = $.SUBRULE($.identifierRule)
+            const actions: AlterSchemaActionAst[] = []
+            $.MANY_SEP({SEP: Comma, DEF: () => actions.push($.OR([
+                {ALT: () => $.SUBRULE(alterRenameRule)},
+                {ALT: () => $.SUBRULE(alterSetOwnerRule)},
+            ]))})
+            const end = $.CONSUME(Semicolon)
+            return removeUndefined({kind: 'AlterSchema' as const, meta: tokenInfo2(alter, end), token, schema, actions})
+        })
+
+        this.alterSequenceStatementRule = $.RULE<(alter: IToken) => AlterSequenceStatementAst>('alterSequenceStatementRule', (alter: IToken) => {
             // https://www.postgresql.org/docs/current/sql-altersequence.html
-            const begin = $.CONSUME(Alter)
-            const token = tokenInfo2(begin, $.CONSUME(Sequence))
+            const token = tokenInfo2(alter, $.CONSUME(Sequence))
             const ifExists = $.SUBRULE(ifExistsRule)
             const object = $.SUBRULE($.objectNameRule)
             const as = $.OPTION3(() => $.SUBRULE(sequenceTypeRule))
@@ -468,17 +523,16 @@ class PostgresParser extends EmbeddedActionsParser {
             const ownedBy = $.OPTION9(() => $.SUBRULE(sequenceOwnedByRule))
             // TODO: RESTART
             const end = $.CONSUME(Semicolon)
-            return removeUndefined({kind: 'AlterSequence' as const, meta: tokenInfo2(begin, end), token, ifExists, ...object, as, start, increment, minValue, maxValue, cache, ownedBy})
+            return removeUndefined({kind: 'AlterSequence' as const, meta: tokenInfo2(alter, end), token, ifExists, ...object, as, start, increment, minValue, maxValue, cache, ownedBy})
         })
 
-        this.alterTableStatementRule = $.RULE<() => AlterTableStatementAst>('alterTableStatementRule', () => {
+        this.alterTableStatementRule = $.RULE<(alter: IToken) => AlterTableStatementAst>('alterTableStatementRule', (alter: IToken) => {
             // https://www.postgresql.org/docs/current/sql-altertable.html
-            const start = $.CONSUME(Alter)
-            const token = tokenInfo2(start, $.CONSUME(Table))
+            const token = tokenInfo2(alter, $.CONSUME(Table))
             const ifExists = $.SUBRULE(ifExistsRule)
             const only = $.OPTION(() => ({token: tokenInfo($.CONSUME(Only))}))
             const object = $.SUBRULE($.objectNameRule)
-            const actions: TableAlterActionAst[] = []
+            const actions: AlterTableActionAst[] = []
             $.MANY_SEP({SEP: Comma, DEF: () => actions.push($.OR([
                 {ALT: () => removeUndefined({kind: 'AddColumn' as const, token: tokenInfo2($.CONSUME(Add), $.OPTION2(() => $.CONSUME(Column))), ifNotExists: $.SUBRULE(ifNotExistsRule), column: $.SUBRULE($.tableColumnRule)})},
                 {ALT: () => removeUndefined({kind: 'DropColumn' as const, token: tokenInfo2($.CONSUME(Drop), $.OPTION3(() => $.CONSUME2(Column))), ifExists: $.SUBRULE2(ifExistsRule), column: $.SUBRULE($.identifierRule)})},
@@ -488,15 +542,53 @@ class PostgresParser extends EmbeddedActionsParser {
                 ])})},
                 {ALT: () => removeUndefined({kind: 'AddConstraint' as const, token: tokenInfo($.CONSUME2(Add)), constraint: $.SUBRULE($.tableConstraintRule), notValid: $.OPTION6(() => ({token: tokenInfo2($.CONSUME2(Not), $.CONSUME(Valid))}))})},
                 {ALT: () => removeUndefined({kind: 'DropConstraint' as const, token: tokenInfo2($.CONSUME2(Drop), $.CONSUME(Constraint)), ifExists: $.SUBRULE3(ifExistsRule), constraint: $.SUBRULE3($.identifierRule)})},
-                {ALT: () => removeUndefined({kind: 'SetOwner' as const, token: tokenInfo($.CONSUME(OwnerTo)), owner: $.SUBRULE(ownerRule)})},
+                {ALT: () => $.SUBRULE(alterSetOwnerRule)},
             ]))})
             const end = $.CONSUME(Semicolon)
-            return removeUndefined({kind: 'AlterTable' as const, meta: tokenInfo2(start, end), token, ifExists, only, schema: object.schema, table: object.name, actions})
+            return removeUndefined({kind: 'AlterTable' as const, meta: tokenInfo2(alter, end), token, ifExists, only, ...object, actions})
         })
         const constraintActionRule =$.RULE<() => { kind: 'Set' | 'Drop', token: TokenInfo }>('constraintActionRule', () => $.OR([
             {ALT: () => ({kind: 'Set' as const, token: tokenInfo($.CONSUME(Set))})},
             {ALT: () => ({kind: 'Drop' as const, token: tokenInfo($.CONSUME(Drop))})},
         ]))
+
+        this.alterTypeStatementRule = $.RULE<(alter: IToken) => AlterTypeStatementAst>('alterTypeStatementRule', (alter: IToken) => {
+            // https://www.postgresql.org/docs/current/sql-altertype.html
+            const token = tokenInfo2(alter, $.CONSUME(Type))
+            const object = $.SUBRULE($.objectNameRule)
+            const actions: AlterTypeActionAst[] = []
+            $.MANY_SEP({SEP: Comma, DEF: () => actions.push($.OR([
+                {ALT: () => $.SUBRULE(alterRenameRule)},
+                {ALT: () => $.SUBRULE(alterSetOwnerRule)},
+                {ALT: () => $.SUBRULE(alterSetSchemaRule)},
+            ]))})
+            const end = $.CONSUME(Semicolon)
+            return removeUndefined({kind: 'AlterType' as const, meta: tokenInfo2(alter, end), token, ...object, actions})
+        })
+
+        this.alterViewStatementRule = $.RULE<(alter: IToken) => AlterViewStatementAst>('alterViewStatementRule', (alter: IToken) => {
+            // https://www.postgresql.org/docs/current/sql-alterview.html
+            const token = tokenInfo2(alter, $.CONSUME(View))
+            const ifExists = $.SUBRULE(ifExistsRule)
+            const object = $.SUBRULE($.objectNameRule)
+            const actions: AlterViewActionAst[] = []
+            $.MANY_SEP({SEP: Comma, DEF: () => actions.push($.OR([
+                {ALT: () => $.SUBRULE(alterRenameRule)},
+                {ALT: () => $.SUBRULE(alterSetOwnerRule)},
+                {ALT: () => $.SUBRULE(alterSetSchemaRule)},
+            ]))})
+            const end = $.CONSUME(Semicolon)
+            return removeUndefined({kind: 'AlterView' as const, meta: tokenInfo2(alter, end), token, ifExists, ...object, actions})
+        })
+        const alterRenameRule = $.RULE<() => AlterRenameAst>('alterRenameRule', () => {
+            return {kind: 'Rename' as const, token: tokenInfo($.CONSUME(RenameTo)), name: $.SUBRULE($.identifierRule)}
+        })
+        const alterSetOwnerRule = $.RULE<() => AlterSetOwnerAst>('alterSetOwnerRule', () => {
+            return {kind: 'SetOwner' as const, token: tokenInfo($.CONSUME(OwnerTo)), owner: $.SUBRULE(ownerRule)}
+        })
+        const alterSetSchemaRule = $.RULE<() => AlterSetSchemaAst>('alterSetSchemaRule', () => {
+            return {kind: 'SetSchema' as const, token: tokenInfo2($.CONSUME(Set), $.CONSUME(Schema)), schema: $.SUBRULE($.identifierRule)}
+        })
 
         this.beginStatementRule = $.RULE<() => BeginStatementAst>('beginStatementRule', () => {
             // https://www.postgresql.org/docs/current/sql-begin.html
@@ -599,7 +691,7 @@ class PostgresParser extends EmbeddedActionsParser {
             return removeUndefined({kind: 'CreateExtension' as const, meta: tokenInfo2(create, end), token, ifNotExists, name, with: with_, schema, version, cascade})
         })
 
-        this.createFunctionStatementRule = $.RULE<(create: IToken, replace?: { token: TokenInfo }) => CreateFunctionStatementAst>('createFunctionStatementRule', (create: IToken, replace?: { token: TokenInfo }) => {
+        this.createFunctionStatementRule = $.RULE<(create: IToken, replace?: TokenAst) => CreateFunctionStatementAst>('createFunctionStatementRule', (create: IToken, replace?: TokenAst) => {
             // https://www.postgresql.org/docs/current/sql-createfunction.html
             const token = tokenInfo2(create, $.CONSUME(Function))
             const object = $.SUBRULE($.objectNameRule)
@@ -811,7 +903,7 @@ class PostgresParser extends EmbeddedActionsParser {
             return removeEmpty({kind: 'CreateTable' as const, meta: tokenInfo2(create, end), token, mode, ifNotExists, ...object, columns: columns.filter(isNotUndefined), constraints: constraints.filter(isNotUndefined)})
         })
 
-        this.createTriggerStatementRule = $.RULE<(create: IToken, replace?: { token: TokenInfo }) => CreateTriggerStatementAst>('createTriggerStatementRule', (create: IToken, replace?: { token: TokenInfo }) => {
+        this.createTriggerStatementRule = $.RULE<(create: IToken, replace?: TokenAst) => CreateTriggerStatementAst>('createTriggerStatementRule', (create: IToken, replace?: TokenAst) => {
             // https://www.postgresql.org/docs/current/sql-createtrigger.html
             const constraint = $.OPTION(() => ({token: tokenInfo($.CONSUME(Constraint))}))
             const token = tokenInfo2(create, $.CONSUME(Trigger))
@@ -912,7 +1004,7 @@ class PostgresParser extends EmbeddedActionsParser {
             return removeEmpty({kind: 'CreateType' as const, meta: tokenInfo2(create, end), token, ...object, ...content})
         })
 
-        this.createViewStatementRule = $.RULE<(create: IToken, replace?: { token: TokenInfo }) => CreateViewStatementAst>('createViewStatementRule', (create: IToken, replace?: { token: TokenInfo }) => {
+        this.createViewStatementRule = $.RULE<(create: IToken, replace?: TokenAst) => CreateViewStatementAst>('createViewStatementRule', (create: IToken, replace?: TokenAst) => {
             // https://www.postgresql.org/docs/current/sql-createview.html
             const temporary = $.OPTION2(() => ({token: $.OR([{ALT: () => tokenInfo($.CONSUME(Temp))}, {ALT: () => tokenInfo($.CONSUME(Temporary))}])}))
             const recursive = $.OPTION3(() => ({token: tokenInfo($.CONSUME(Recursive))}))
@@ -1492,8 +1584,8 @@ class PostgresParser extends EmbeddedActionsParser {
             return columns.filter(isNotUndefined)
         })
 
-        const ifExistsRule = $.RULE<() => {token: TokenInfo} | undefined>('ifExistsRule', () => $.OPTION(() => ({token: tokenInfo2($.CONSUME(If), $.CONSUME(Exists))})))
-        const ifNotExistsRule = $.RULE<() => {token: TokenInfo} | undefined>('ifNotExistsRule', () => $.OPTION(() => ({token: tokenInfo3($.CONSUME(If), $.CONSUME(Not), $.CONSUME(Exists))})))
+        const ifExistsRule = $.RULE<() => TokenAst | undefined>('ifExistsRule', () => $.OPTION(() => ({token: tokenInfo2($.CONSUME(If), $.CONSUME(Exists))})))
+        const ifNotExistsRule = $.RULE<() => TokenAst | undefined>('ifNotExistsRule', () => $.OPTION(() => ({token: tokenInfo3($.CONSUME(If), $.CONSUME(Not), $.CONSUME(Exists))})))
 
         // basic parts
 
@@ -1705,7 +1797,7 @@ class PostgresParser extends EmbeddedActionsParser {
                 (gt2 ? {kind: '->>' as const, token: tokenInfo3(kind.token, gt, gt2)} : {kind: '->' as const, token: tokenInfo2(kind.token, gt)}) :
                 (gt2 ? {kind: '#>>' as const, token: tokenInfo3(kind.token, gt, gt2)} : {kind: '#>' as const, token: tokenInfo2(kind.token, gt)})
         })
-        const functionParamsRule = $.RULE<() => { distinct?: {token: TokenInfo}, parameters: ExpressionAst[] }>('functionParamsRule', () => {
+        const functionParamsRule = $.RULE<() => { distinct?: TokenAst, parameters: ExpressionAst[] }>('functionParamsRule', () => {
             $.CONSUME(ParenLeft)
             const distinct = $.OPTION(() => ({token: tokenInfo($.CONSUME(Distinct))}))
             const parameters: ExpressionAst[] = []

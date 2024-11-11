@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import {describe, expect, test} from "@jest/globals";
 import {removeFieldsDeep} from "@azimutt/utils";
-import {Database, Entity, parseJsonDatabase, ParserError} from "@azimutt/models";
+import {Database, Entity, parseJsonDatabase, ParserError, ParserResult} from "@azimutt/models";
 import {SelectInnerAst} from "./postgresAst";
 import {parsePostgresAst} from "./postgresParser";
 import {buildPostgresDatabase, SelectEntities, selectEntities} from "./postgresBuilder";
@@ -96,6 +96,27 @@ COMMENT ON TYPE bug_status IS 'bug status';
         const parsed = parse(sql)
         expect(parsed.errors).toEqual([])
         expect(removeFieldsDeep(parsed.db, ['extra'])).toEqual(removeFieldsDeep(db, ['extra']))
+    })
+    test('keep some statements in extra', () => {
+        const input = `
+INSERT INTO users VALUES (1, 'loic');
+SELECT * FROM users;
+`
+        const res = parseSql(input)
+        expect(res.result?.extra?.dml).toEqual([{
+            statement: 1,
+            kind: 'InsertInto',
+            meta: {offset: {start: 1, end: 37}, position: {start: {line: 2, column: 1}, end: {line: 2, column: 37}}},
+            table: {kind: 'Identifier', value: 'users'},
+            values: [[{kind: 'Integer', value: 1}, {kind: 'String', value: 'loic'}]]
+        }])
+        expect(res.result?.extra?.dql).toEqual([{
+            statement: 2,
+            kind: 'Select',
+            meta: {offset: {start: 39, end: 58}, position: {start: {line: 3, column: 1}, end: {line: 3, column: 20}}},
+            columns: [{kind: 'Wildcard'}],
+            from: {kind: 'Table', table: {kind: 'Identifier', value: 'users'}}
+        }])
     })
     describe('selectEntities', () => {
         const users: Entity = {schema: 'public', name: 'users', attrs: [{name: 'id', type: 'int'}, {name: 'name', type: 'varchar'}]}
@@ -194,19 +215,21 @@ COMMENT ON TYPE bug_status IS 'bug status';
     })
 })
 
-function parse(sql: string): {db: Database, errors: ParserError[]} {
+function parse(input: string): {db: Database, errors: ParserError[]} {
     try {
-        const start = Date.now()
-        const res = parsePostgresAst(sql)
-            .flatMap(ast => buildPostgresDatabase(ast, start, Date.now()))
-            .map(({extra: {source, createdAt, creationTimeMs, parsingTimeMs, formattingTimeMs, ...extra} = {}, ...db}) => ({...db, extra}))
+        const res = parseSql(input).map(({extra: {source, createdAt, creationTimeMs, parsingTimeMs, formattingTimeMs, ...extra} = {}, ...db}) => ({...db, extra}))
         return {db: removeFieldsDeep(res.result || {}, ['extra']), errors: res.errors || []}
     } catch (e) {
         console.error(e) // print stack trace
-        throw new Error(`Can't parse '${sql}'${typeof e === 'object' && e !== null && 'message' in e ? ': ' + e.message : ''}`)
+        throw new Error(`Can't parse '${input}'${typeof e === 'object' && e !== null && 'message' in e ? ': ' + e.message : ''}`)
     }
 }
 
-function extract(sql: string, entities: Entity[]): SelectEntities {
-    return removeFieldsDeep(selectEntities(parsePostgresAst(sql).result?.statements?.[0] as SelectInnerAst, entities), ['token'])
+function parseSql(input: string): ParserResult<Database> {
+    const start = Date.now()
+    return parsePostgresAst(input).flatMap(ast => buildPostgresDatabase(ast, start, Date.now()))
+}
+
+function extract(input: string, entities: Entity[]): SelectEntities {
+    return removeFieldsDeep(selectEntities(parsePostgresAst(input).result?.statements?.[0] as SelectInnerAst, entities), ['token'])
 }
