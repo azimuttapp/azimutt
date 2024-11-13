@@ -27,7 +27,7 @@ defmodule AzimuttWeb.BlogController do
           title: article.title,
           description: article.excerpt,
           keywords: if(length(article.keywords) > 0, do: article.keywords |> Enum.join(","), else: Azimutt.config(:seo_keywords)),
-          image: Routes.url(conn) <> article.banner
+          image: Routes.static_url(conn, article.banner)
         }
       )
     end

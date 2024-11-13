@@ -167,6 +167,7 @@ defmodule Azimutt do
         # cursor-arrow-ripple / document-magnifying-glass / eye / globe-europe-africa / magnifying-glass-circle / map / rectangle-group
         icon: "cursor-arrow-rays",
         name: "Explore",
+        title: "Exploring your database",
         description: "The all-in-one tool to understand and design your database following your thought process."
       },
       %{
@@ -174,6 +175,7 @@ defmodule Azimutt do
         # tag / archive-box / bars-3-center-left
         icon: "book-open",
         name: "Document",
+        title: "Documenting your database",
         description: "Nice and contextual documentation for databases is now finally a reality."
       },
       %{
@@ -181,6 +183,7 @@ defmodule Azimutt do
         # check-badge / beaker / clipboard-document-check / finger-print / funnel
         icon: "shield-check",
         name: "Optimize",
+        title: "Analyzing your database",
         description: "Identify database design warts and automate any check to keep it consistent."
       },
       %{
@@ -188,6 +191,7 @@ defmodule Azimutt do
         # adjustments-horizontal / sparkles
         icon: "academic-cap",
         name: "Design",
+        title: "Designing your database",
         description: "Make beautiful diagrams at your typing speed using our minimal DSL."
       }
     ]
@@ -347,9 +351,9 @@ defmodule Azimutt do
   def comparisons do
     [
       %{
-        id: "entity-relationship-diagrams",
-        name: "Entity-Relationship Diagrams",
-        keywords: ["entity-relationship diagram", "erd", "database diagram", "database visualization tool", "database schema explorer"],
+        id: "entity-relationship-diagram",
+        name: "Entity-Relationship Diagram",
+        keywords: "entity-relationship diagram,erd,database diagram,database visualization tool,database schema explorer,SQL,database",
         show: true,
         tools: [
           %{id: "dbdiagram", name: "dbdiagram.io", show: true},
@@ -359,18 +363,18 @@ defmodule Azimutt do
         ]
       },
       %{
-        id: "database-design-languages",
-        name: "Database Design Languages",
-        keywords: ["database design", "database schema", "dsl"],
+        id: "database-design-language",
+        name: "Database Design Language",
+        keywords: "database design,database schema,dsl",
         show: true,
         tools: [
           %{id: "dbml", name: "DBML", show: true}
         ]
       },
       %{
-        id: "sql-clients",
-        name: "SQL Clients",
-        keywords: ["sql client"],
+        id: "sql-client",
+        name: "SQL Client",
+        keywords: "sql client",
         show: true,
         tools: [
           %{id: "dbeaver", name: "DBeaver", show: false},
@@ -382,16 +386,16 @@ defmodule Azimutt do
       %{
         id: "database-documentation",
         name: "Database Documentation",
-        keywords: ["database documentation"],
+        keywords: "database documentation",
         show: true,
         tools: [
           %{id: "schemaspy", name: "SchemaSpy", show: true}
         ]
       },
       %{
-        id: "data-catalogs",
-        name: "Data Catalogs",
-        keywords: ["data catalog"],
+        id: "data-catalog",
+        name: "Data Catalog",
+        keywords: "data catalog",
         show: true,
         tools: [
           %{id: "amundsen", name: "Amundsen", show: false},
@@ -401,7 +405,7 @@ defmodule Azimutt do
       %{
         id: "database-monitoring",
         name: "Database Monitoring",
-        keywords: ["database monitoring", "proactive monitoring"],
+        keywords: "database monitoring,proactive monitoring",
         show: false,
         tools: [
           %{id: "datadog-database-monitoring", name: "Datadog Database Monitoring", show: false}
@@ -410,7 +414,7 @@ defmodule Azimutt do
       %{
         id: "dashboard",
         name: "Dashboard",
-        keywords: ["dashboard", "data visualization", "infographics"],
+        keywords: "dashboard,data visualization,infographics",
         show: true,
         tools: [
           %{id: "metabase", name: "Metabase", show: true}

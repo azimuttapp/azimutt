@@ -1,5 +1,5 @@
 <%= comparison_prose do %>
-    <h1>dbdiagram.io vs Azimutt, which database tool is right for you?</h1>
+    <h1><%= @seo.title %></h1>
     <p class="lead">
         Looking for a dbdiagram.io alternative?
         Or just shopping around for an Entity-Relationship Diagramming tool (ERD) to design your database schema or explore an existing database?
@@ -8,7 +8,7 @@
         Azimutt and dbdiagram.io are two great tools, but also with vast differences.
         Let's dive on the product similarities and differences to find out which one suits you best.
     </p>
-    <img src={Routes.static_path(@conn, "/images/comparisons/dbdiagram-vs-azimutt.jpg")} alt="dbdiagram.io vs Azimutt">
+    <img src={@seo.image} alt="dbdiagram.io vs Azimutt">
     <p>Here is an overview of what each product offers. More details just below.</p>
     <table>
         <thead><tr><th></th><th>dbdiagram.io</th><th>Azimutt</th></tr></thead>

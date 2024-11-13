@@ -19,24 +19,24 @@ defmodule AzimuttWeb.LayoutView do
   # https://app.sistrix.com/en/serp-snippet-generator
 
   # max 55-70 chars
-  def title(%{assigns: %{seo: %{title: title}}}), do: title <> " · Azimutt"
+  def title(%{assigns: %{seo: %{title: title}}}) when is_binary(title), do: title <> if(title |> String.contains?("Azimutt"), do: "", else: " · Azimutt")
   def title(_conn), do: Azimutt.config(:seo_title)
 
   # max 150-300 chars
-  def description(%{assigns: %{seo: %{description: description}}}), do: description
+  def description(%{assigns: %{seo: %{description: description}}}) when is_binary(description), do: description
   def description(_conn), do: Azimutt.config(:seo_description)
 
-  def keywords(%{assigns: %{seo: %{keywords: keywords}}}), do: keywords
+  def keywords(%{assigns: %{seo: %{keywords: keywords}}}) when is_binary(keywords), do: keywords
   def keywords(_conn), do: Azimutt.config(:seo_keywords)
 
-  def canonical(%{request_path: request_path} = conn), do: Routes.url(conn) <> request_path
+  def canonical(%{request_path: request_path} = conn), do: Routes.static_url(conn, request_path)
   def canonical(_conn), do: AzimuttWeb.Endpoint.url()
 
-  def og_type(%{assigns: %{seo: %{type: type}}}), do: type
+  def og_type(%{assigns: %{seo: %{type: type}}}) when is_binary(type), do: type
   def og_type(_conn), do: "website"
 
   # ratio: 2:1, ex: 1200x600
-  def og_image(%{assigns: %{seo: %{image: image}}}), do: image
+  def og_image(%{assigns: %{seo: %{image: image}}}) when is_binary(image), do: image
   def og_image(conn), do: Routes.static_url(conn, "/images/og/azimutt.jpg")
 
   def twitter_card(%{assigns: %{seo: %{card: card}}}), do: card
