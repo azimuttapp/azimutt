@@ -316,15 +316,15 @@ defmodule Azimutt do
 
   def connectors do
     [
-      %{id: "postgres", name: "PostgreSQL", color: "#699eca"},
-      %{id: "mysql", name: "MySQL", color: "#00758f"},
-      %{id: "mariadb", name: "MariaDB", color: "#444b5e"},
-      %{id: "sqlserver", name: "SQL Server", color: "#ededee"},
-      %{id: "oracle", name: "Oracle", color: "#e61d18"},
-      %{id: "mongodb", name: "MongoDB", color: "#20a854"},
-      %{id: "couchbase", name: "Couchbase", color: "#ed2226"},
-      %{id: "bigquery", name: "BigQuery", color: "#4386fa"},
-      %{id: "snowflake", name: "Snowflake", color: "#29b5e8"}
+      %{id: "postgres", name: "PostgreSQL", date: "2024-10-15", color: "#699eca", description: "The most powerful open-source relational database, known for extensibility and SQL compliance. Now explorable with Azimutt."},
+      %{id: "mysql", name: "MySQL", color: "#00758f", description: "The world's most popular open-source relational database, widely used for web applications. Now accessible within Azimutt."},
+      %{id: "mariadb", name: "MariaDB", color: "#444b5e", description: "An open-source fork of MySQL with improved performance, scalability, and open development. Also available to connect to Azimutt."},
+      %{id: "sqlserver", name: "SQL Server", color: "#ededee", description: "A robust, enterprise-grade relational database by Microsoft, with integrated analytics and management tools. Integrated in Azimutt."},
+      %{id: "oracle", name: "Oracle", color: "#e61d18", description: "A high-performance relational database widely used in enterprises for mission-critical applications. Uniquely explorable with Azimutt."},
+      %{id: "mongodb", name: "MongoDB", color: "#20a854", description: "A NoSQL database designed for flexible, document-oriented storage and scalability. Collection schema and relations are inferred in Azimutt."},
+      %{id: "couchbase", name: "Couchbase", color: "#ed2226", description: "A distributed NoSQL database optimized for interactive applications and real-time analytics. Infer collection schema and relations."},
+      %{id: "bigquery", name: "BigQuery", color: "#4386fa", description: "Google’s fully-managed, serverless data warehouse for large-scale analytics using SQL. Discover your datasets with Azimutt."},
+      %{id: "snowflake", name: "Snowflake", color: "#29b5e8", description: "A cloud-native data platform for seamless data warehousing, sharing, and analytics. Easily explorable with this Azimutt connector."}
     ]
   end
 
@@ -366,7 +366,7 @@ defmodule Azimutt do
         name: "Database Design Language",
         keywords: "database design,database schema,dsl",
         tools: [
-          %{id: "dbml", name: "DBML", description: "DBML (Database Markup Language) is an open-source DSL to define and document database schemas."}
+          %{id: "dbml", name: "DBML", date: "2024-11-14", title: "DBML vs AML, what are the differences?", description: "DBML (Database Markup Language) is an open-source DSL to define and document database schemas."}
         ]
       },
       %{
@@ -402,11 +402,7 @@ defmodule Azimutt do
         name: "Database Monitoring",
         keywords: "database monitoring,proactive monitoring",
         tools: [
-          %{
-            id: "datadog-database-monitoring",
-            name: "Datadog Database Monitoring",
-            description: "Resolve issues and optimize inefficient query performance across entire database fleets."
-          }
+          %{id: "datadog", name: "Datadog Database Monitoring", description: "Resolve issues and optimize inefficient query performance across entire database fleets."}
         ]
       },
       %{

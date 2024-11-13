@@ -6,7 +6,7 @@
     </p>
     <p class="lead">
         Azimutt and dbdiagram.io are two great tools, but also with vast differences.
-        Let's dive on the product similarities and differences to find out which one suits you best.
+        Let's dive onto the product similarities and differences to find out which one suits you best.
     </p>
     <img src={@seo.image} alt="dbdiagram.io vs Azimutt">
     <p>Here is an overview of what each product offers. More details just below.</p>
@@ -42,9 +42,9 @@
     <%= render "docs/_h2.html", title: "About Azimutt" %>
     <p>
         Azimutt is a full database toolset which started as a visual database exploration tool for large databases (>1000 tables).
-        You can see it as the Notion for the databases.
+        You can see it as the Notion for the databases ^^
         Like dbdiagram.io, it allows database design using <a href={Routes.website_path(@conn, :aml)} target="_blank" rel="noopener">AML</a>, but it also provides many other features to understand, document, maintain and improve real-world databases.
-        It started at Doctolib, a French healthcare unicorn, with Principal Engineers needed to quickly understand the huge data model, and it's now independent to speed its growth.
+        It started at Doctolib, a French healthcare unicorn, with Principal Engineers needing to quickly understand the huge data model; it's now independent to speed its growth.
     </p>
 
     <%= render "docs/_h2.html", title: "Pricing" %>
@@ -75,7 +75,7 @@
     <%= render "docs/_h3.html", title: "Import from existing database" %>
     <p>
         dbdiagram.io and Azimutt can import your existing database schema to visualize it. But they do it very differently.
-        dbdiagram.io converts your database schema into DBML you will have to paste in their editor.
+        dbdiagram.io converts your database schema into DBML that you will have to paste in their editor.
         Azimutt can directly connect to your database and import its schema but also inner usage statistics, or import a SQL dump.
     </p>
 
@@ -185,15 +185,15 @@ posts | All posts
         Visualizing your database is great. But know what's better? Continually improving it!<br>
         Azimutt integrates a <a href={Routes.website_url(@conn, :doc, ["database-analysis"])}>linter</a> showing you schema issues like missing primary and foreign keys, inconsistent naming or even duplicated indexes.
         But if you connected your database, it has much more data to analyze like common values in columns or historical queries can can do much more advanced suggestions like empty or badly typed columns, slow or inefficient queries and even unused tables or indexes.<br>
-        These checks are surely not as smart as you, but they continually evolve and are performed at your database scale, which can be tricky for a human when there is >100 tables.
+        These checks are surely not as smart as you, but they steadily evolve and are performed at your database scale, which can be tricky for a human when there is >100 tables.
     </p>
 
     <%= render "docs/_h3.html", title: "dbdiagram.io uniques features" %>
     <p>
-        Of course, dbdiagram.io also has some features not available in Azimutt that you should take into account in your choice to see which one fit best:
+        Of course, dbdiagram.io also has some unique features that you should take into account in your choice to see which one fits best:
     </p>
     <ul>
-        <li><b>Realtime collaboration</b>: ideal to work at the same time, in Azimutt if two people edit the same thing at the same time, you will have a conflict and the latest won't be able to save its work</li>
+        <li><b>Realtime collaboration</b>: ideal to work at the same time, in Azimutt if two people edit the same thing at the same time, they will have a conflict and the latest won't be able to save its work</li>
         <li><b>Diagram versioning</b>: great to keep your project timeline, in Azimutt you can export your full project as JSON or just your AML and version it in git with your code, definitely less friendly</li>
         <li><b>PDF/PNG export</b>: useful to make your work accessible elsewhere, in Azimutt you can of course take a screenshot of your diagram, but it will miss resolution on large zoom out</li>
     </ul>
@@ -201,7 +201,7 @@ posts | All posts
     <!-- TODO: add testimonials -->
 
     <%= render "docs/_h2.html", title: "Conclusion" %>
-    <p>So, which one is the best database visualization tool for you?</p>
+    <p>Bottom line, which one is the best database visualization tool for you?</p>
     <p>
         As seen, dbdiagram.io and Azimutt <b>share a lot of similarities</b> with a DSL first approach to design or explore your database.
         The biggest differences are obviously the multi-sources & multi-layouts capabilities of Azimutt, and its database querying and suggestions features.<br>
@@ -219,27 +219,4 @@ posts | All posts
     </p>
 <% end %>
 
-<div class="mx-auto max-w-7xl px-6 py-16 lg:px-8">
-    <div class="overflow-hidden rounded-lg bg-indigo-700 shadow-xl lg:grid lg:grid-cols-2 lg:gap-4">
-        <div class="px-6 pb-12 pt-10 sm:px-16 sm:pt-16 lg:py-16 lg:pr-0 xl:px-20 xl:py-20">
-            <div class="lg:self-center">
-                <h2 class="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-                    <span class="block">Ready to dive in?</span>
-                    <span class="block">Take 5 min to try Azimutt.</span>
-                </h2>
-                <p class="mt-4 text-lg/6 text-indigo-200">Or if you need to discuss with us or want a private demo, let's book a 30-min slot together.</p>
-                <div class="mt-8 flex items-center justify-center gap-x-6 lg:justify-start">
-                    <a href={Routes.elm_path(@conn, :new)} class="rounded-md bg-white px-5 py-3 text-base font-semibold text-indigo-600 shadow hover:bg-indigo-50">Try Azimutt fast</a>
-                    <a href={"mailto:#{Azimutt.config(:contact_email)}"} class="text-sm/6 font-semibold text-white">Book a call <span aria-hidden="true">→</span></a>
-                </div>
-            </div>
-        </div>
-        <div class="aspect-h-3 aspect-w-5 -mt-6 md:aspect-h-1 md:aspect-w-2">
-            <img class="translate-x-6 translate-y-6 transform rounded-md object-cover object-left-top sm:translate-x-16 lg:translate-y-20" src={Routes.static_path(@conn, "/images/screenshots/azimutt-ecommerce.png")} alt="App screenshot">
-        </div>
-    </div>
-</div>
-
-<!-- TODO: other comparisons -->
-
-<%= render "_footer.html", conn: @conn %>
+<%= render "comparisons/_footer.html", conn: @conn, tool: @tool %>

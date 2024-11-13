@@ -72,8 +72,7 @@ defmodule AzimuttWeb.WebsiteController do
     render(conn, "connectors/index.html",
       seo: %{
         title: "Discover all the connectors for Azimutt",
-        description:
-          "Azimutt is a database exploration and documentation tool made to help you understand and manage any database. We already have the mainstream ones, and we keep extending the integrations.",
+        description: "Azimutt is a database exploration and documentation tool made to help you understand and manage any database. We already have the mainstream ones, and we keep extending the integrations.",
         image: Routes.static_url(conn, "/images/og/connectors.jpg")
       }
     )

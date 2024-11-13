@@ -1,5 +1,5 @@
 <%= comparison_prose do %>
-<h1>drawDB vs Azimutt</h1>
+    <h1><%= @seo.title %></h1>
 <% end %>
 
-<%= render "_footer.html", conn: @conn %>
+<%= render "comparisons/_footer.html", conn: @conn, tool: @tool %>

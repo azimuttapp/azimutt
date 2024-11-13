@@ -229,9 +229,7 @@ defmodule AzimuttWeb.Api.SourceController do
               example: "DatabaseConnection"
             )
 
-            url(:string, "Database url for DatabaseConnection kind, file url for remote kinds (SqlRemoteFile, PrismaRemoteFile & JsonRemoteFile)",
-              example: "postgresql://postgres:postgres@localhost:5432/azimutt_dev"
-            )
+            url(:string, "Database url for DatabaseConnection kind, file url for remote kinds (SqlRemoteFile, PrismaRemoteFile & JsonRemoteFile)", example: "postgresql://postgres:postgres@localhost:5432/azimutt_dev")
 
             size(:integer, "File size for file kinds (SqlLocalFile, SqlRemoteFile, PrismaLocalFile, PrismaRemoteFile, JsonLocalFile & JsonRemoteFile)", example: 1324)
             name(:string, "File name for local kinds (SqlLocalFile, PrismaLocalFile & JsonLocalFile)", example: "structure.sql")

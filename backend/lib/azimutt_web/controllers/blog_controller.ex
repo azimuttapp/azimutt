@@ -11,8 +11,7 @@ defmodule AzimuttWeb.BlogController do
              articles: articles,
              seo: %{
                title: "The Azimutt Blog",
-               description:
-                 "Hi there! We're building a Next-Gen ERD to help understand real world databases, with cool UI and privacy focus. You can read about our journey and what we've learnt along the way on this blog."
+               description: "Hi there! We're building a Next-Gen ERD to help understand real world databases, with cool UI and privacy focus. You can read about our journey and what we've learnt along the way on this blog."
              }
            )
   end
