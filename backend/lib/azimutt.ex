@@ -344,6 +344,81 @@ defmodule Azimutt do
     ]
   end
 
+  def comparisons do
+    [
+      %{
+        id: "entity-relationship-diagrams",
+        name: "Entity-Relationship Diagrams",
+        keywords: ["entity-relationship diagram", "erd", "database diagram", "database visualization tool", "database schema explorer"],
+        show: true,
+        tools: [
+          %{id: "dbdiagram", name: "dbdiagram.io", show: true},
+          %{id: "drawsql", name: "DrawSQL", show: true},
+          %{id: "drawdb", name: "drawDB", show: true},
+          %{id: "chartdb", name: "ChartDB", show: true}
+        ]
+      },
+      %{
+        id: "database-design-languages",
+        name: "Database Design Languages",
+        keywords: ["database design", "database schema", "dsl"],
+        show: true,
+        tools: [
+          %{id: "dbml", name: "DBML", show: true}
+        ]
+      },
+      %{
+        id: "sql-clients",
+        name: "SQL Clients",
+        keywords: ["sql client"],
+        show: true,
+        tools: [
+          %{id: "dbeaver", name: "DBeaver", show: false},
+          %{id: "datagrip", name: "DataGrip", show: true},
+          %{id: "navicat", name: "Navicat", show: true},
+          %{id: "beekeeperstudio", name: "Beekeeper Studio", show: false}
+        ]
+      },
+      %{
+        id: "database-documentation",
+        name: "Database Documentation",
+        keywords: ["database documentation"],
+        show: true,
+        tools: [
+          %{id: "schemaspy", name: "SchemaSpy", show: true}
+        ]
+      },
+      %{
+        id: "data-catalogs",
+        name: "Data Catalogs",
+        keywords: ["data catalog"],
+        show: true,
+        tools: [
+          %{id: "amundsen", name: "Amundsen", show: false},
+          %{id: "atlan", name: "Atlan", show: false}
+        ]
+      },
+      %{
+        id: "database-monitoring",
+        name: "Database Monitoring",
+        keywords: ["database monitoring", "proactive monitoring"],
+        show: false,
+        tools: [
+          %{id: "datadog-database-monitoring", name: "Datadog Database Monitoring", show: false}
+        ]
+      },
+      %{
+        id: "dashboard",
+        name: "Dashboard",
+        keywords: ["dashboard", "data visualization", "infographics"],
+        show: true,
+        tools: [
+          %{id: "metabase", name: "Metabase", show: true}
+        ]
+      }
+    ]
+  end
+
   def doc_pages do
     # path must be unique and not change as they are used for urls (SEO) and template names.
     [
@@ -400,6 +475,7 @@ defmodule Azimutt do
           %{path: ["sources"], name: "Sources"},
           %{path: ["data-exploration"], name: "Data exploration"},
           %{path: ["database-analysis"], name: "Database analysis"},
+          %{path: ["ai"], name: "AI integration"},
           %{path: ["keyboard-shortcuts"], name: "Keyboard shortcuts"},
           %{path: ["collaboration"], name: "Collaboration"},
           %{path: ["export"], name: "Export"},

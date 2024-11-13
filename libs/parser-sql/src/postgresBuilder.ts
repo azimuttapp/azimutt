@@ -170,13 +170,13 @@ function addType(types: Type[], errors: ParserError[], type: Type, pos: TokenPos
 function addDQL(db: Database, index: number, stmt: SelectStatementAst): void {
     if (!db.extra) db.extra = {}
     if (!db.extra.dql) db.extra.dql = []
-    db.extra.dql.push({...removeFieldsDeep(stmt, ['token']), statement: index})
+    db.extra.dql.push({statement: index, ...removeFieldsDeep(stmt, ['token'])})
 }
 
 function addDML(db: Database, index: number, stmt: InsertIntoStatementAst | UpdateStatementAst | DeleteStatementAst): void {
     if (!db.extra) db.extra = {}
     if (!db.extra.dql) db.extra.dml = []
-    db.extra.dml.push({...removeFieldsDeep(stmt, ['token']), statement: index})
+    db.extra.dml.push({statement: index, ...removeFieldsDeep(stmt, ['token'])})
 }
 
 function createTable(index: number, stmt: CreateTableStatementAst): { entity: Entity, relations: Relation[] } {

@@ -10,18 +10,27 @@
   <url><loc><%= Routes.website_url(@conn, :features_show, feature.id) %></loc><lastmod>2023-03-10</lastmod></url>
   <% end %>
   <url><loc><%= Routes.website_url(@conn, :pricing) %></loc><lastmod>2023-03-10</lastmod></url>
-
   <url><loc><%= Routes.website_url(@conn, :aml) %></loc><lastmod>2024-09-29</lastmod></url>
+
   <url><loc><%= Routes.website_url(@conn, :connectors) %></loc><lastmod>2024-10-15</lastmod></url>
   <url><loc><%= Routes.website_url(@conn, :connector_new) %></loc><lastmod>2024-10-15</lastmod></url>
   <%= for connector <- Azimutt.connectors() do %>
   <url><loc><%= Routes.website_url(@conn, :connector, connector.id) %></loc><lastmod>2024-10-15</lastmod></url>
   <% end %>
+
   <url><loc><%= Routes.website_url(@conn, :converters) %></loc><lastmod>2024-09-29</lastmod></url>
   <%= for parser <- Azimutt.converters() |> Enum.filter(fn c -> c.parse end) do %>
   <url><loc><%= Routes.website_url(@conn, :converter, parser.id) %></loc><lastmod>2024-09-29</lastmod></url>
   <%= for generator <- Azimutt.converters() |> Enum.filter(fn c -> c.generate end) do %>
   <url><loc><%= Routes.website_url(@conn, :convert, parser.id, generator.id) %></loc><lastmod>2024-09-29</lastmod></url>
+  <% end %>
+  <% end %>
+
+  <url><loc><%= Routes.website_url(@conn, :comparisons) %></loc><lastmod>2024-11-15</lastmod></url>
+  <%= for category <- Azimutt.comparisons() |> Enum.filter(fn c -> c.show end) do %>
+  <url><loc><%= Routes.website_url(@conn, :comparison_category, category.id) %></loc><lastmod>2024-11-15</lastmod></url>
+  <%= for tool <- category.tools |> Enum.filter(fn t -> t.show end) do %>
+  <url><loc><%= Routes.website_url(@conn, :comparison, category.id, tool.id) %></loc><lastmod>2024-11-15</lastmod></url>
   <% end %>
   <% end %>
 

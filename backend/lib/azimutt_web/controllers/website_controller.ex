@@ -99,6 +99,33 @@ defmodule AzimuttWeb.WebsiteController do
     end)
   end
 
+  def comparisons(conn, _params) do
+    conn |> render("comparisons/index.html", categories: Azimutt.comparisons())
+  end
+
+  def comparison_category(conn, %{"category" => category}) do
+    Azimutt.comparisons()
+    |> Enum.find(fn c -> c.id == category end)
+    |> Result.from_nillable()
+    |> Result.map(fn c ->
+      conn |> render("comparisons/#{category}.html", category: c)
+    end)
+  end
+
+  def comparison(conn, %{"category" => category, "tool" => tool}) do
+    Azimutt.comparisons()
+    |> Enum.find(fn c -> c.id == category end)
+    |> Result.from_nillable()
+    |> Result.flat_map(fn c ->
+      c.tools
+      |> Enum.find(fn t -> t.id == tool end)
+      |> Result.from_nillable()
+      |> Result.map(fn t ->
+        conn |> render("comparisons/#{tool}.html", category: c, tool: t)
+      end)
+    end)
+  end
+
   def last(conn, _params) do
     case conn |> last_used_project do
       {:ok, p} -> conn |> redirect(to: Routes.elm_path(conn, :project_show, p.organization_id, p.id))
