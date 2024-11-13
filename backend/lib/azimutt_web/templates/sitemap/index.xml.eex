@@ -27,9 +27,8 @@
   <% end %>
 
   <url><loc><%= Routes.website_url(@conn, :comparisons) %></loc><lastmod>2024-11-15</lastmod></url>
-  <%= for category <- Azimutt.comparisons() |> Enum.filter(fn c -> c.show end) do %>
-  <url><loc><%= Routes.website_url(@conn, :comparison_category, category.id) %></loc><lastmod>2024-11-15</lastmod></url>
-  <%= for tool <- category.tools |> Enum.filter(fn t -> t.show end) do %>
+  <%= for category <- Azimutt.comparisons() do %>
+  <%= for tool <- category.tools do %>
   <url><loc><%= Routes.website_url(@conn, :comparison, category.id, tool.id) %></loc><lastmod>2024-11-15</lastmod></url>
   <% end %>
   <% end %>

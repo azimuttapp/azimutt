@@ -354,70 +354,67 @@ defmodule Azimutt do
         id: "entity-relationship-diagram",
         name: "Entity-Relationship Diagram",
         keywords: "entity-relationship diagram,erd,database diagram,database visualization tool,database schema explorer,SQL,database",
-        show: true,
         tools: [
-          %{id: "dbdiagram", name: "dbdiagram.io", show: true},
-          %{id: "drawsql", name: "DrawSQL", show: true},
-          %{id: "drawdb", name: "drawDB", show: true},
-          %{id: "chartdb", name: "ChartDB", show: true}
+          %{id: "dbdiagram", name: "dbdiagram.io", description: "An online Entity-Relationship Diagram using code to define your database schema, as fast as you can type."},
+          %{id: "drawsql", name: "DrawSQL", description: "A beautiful online Entity-Relationship Diagram tool to design your database from scratch or from SQL dump."},
+          %{id: "drawdb", name: "drawDB", description: "A Free and Open Source online Entity-Relationship Diagram tool that can generate SQL."},
+          %{id: "chartdb", name: "ChartDB", description: "An Open Source online Entity-Relationship Diagram that visualize your database with a single query."}
         ]
       },
       %{
         id: "database-design-language",
         name: "Database Design Language",
         keywords: "database design,database schema,dsl",
-        show: true,
         tools: [
-          %{id: "dbml", name: "DBML", show: true}
+          %{id: "dbml", name: "DBML", description: "DBML (Database Markup Language) is an open-source DSL to define and document database schemas."}
         ]
       },
       %{
         id: "sql-client",
         name: "SQL Client",
         keywords: "sql client",
-        show: true,
         tools: [
-          %{id: "dbeaver", name: "DBeaver", show: false},
-          %{id: "datagrip", name: "DataGrip", show: true},
-          %{id: "navicat", name: "Navicat", show: true},
-          %{id: "beekeeperstudio", name: "Beekeeper Studio", show: false}
+          %{id: "dbeaver", name: "DBeaver", description: "A free cross-platform database tool with support of many databases: MySQL, PostgreSQL, SQLite..."},
+          %{id: "datagrip", name: "DataGrip", description: "A powerful cross-platform tool for relational and NoSQL databases by JetBrains."},
+          %{id: "navicat", name: "Navicat", description: "Navicat is a robust, all-in-one solution for database development from a single application."},
+          %{id: "beekeeperstudio", name: "Beekeeper Studio", description: "The SQL Editor and Database Manager Of Your Dreams, easy to use and good looking SQL Client."}
         ]
       },
       %{
         id: "database-documentation",
         name: "Database Documentation",
         keywords: "database documentation",
-        show: true,
         tools: [
-          %{id: "schemaspy", name: "SchemaSpy", show: true}
+          %{id: "schemaspy", name: "SchemaSpy", description: "Document your database simply and easily with a statically generated site from your CI."}
         ]
       },
       %{
         id: "data-catalog",
         name: "Data Catalog",
         keywords: "data catalog",
-        show: true,
         tools: [
-          %{id: "amundsen", name: "Amundsen", show: false},
-          %{id: "atlan", name: "Atlan", show: false}
+          %{id: "amundsen", name: "Amundsen", description: "Open source data discovery and metadata engine for analysts, data engineers and developers."},
+          %{id: "atlan", name: "Atlan", description: "Atlan is a metadata platform designed to cater to the needs of data-driven teams."}
         ]
       },
       %{
         id: "database-monitoring",
         name: "Database Monitoring",
         keywords: "database monitoring,proactive monitoring",
-        show: false,
         tools: [
-          %{id: "datadog-database-monitoring", name: "Datadog Database Monitoring", show: false}
+          %{
+            id: "datadog-database-monitoring",
+            name: "Datadog Database Monitoring",
+            description: "Resolve issues and optimize inefficient query performance across entire database fleets."
+          }
         ]
       },
       %{
         id: "dashboard",
         name: "Dashboard",
         keywords: "dashboard,data visualization,infographics",
-        show: true,
         tools: [
-          %{id: "metabase", name: "Metabase", show: true}
+          %{id: "metabase", name: "Metabase", description: "Fast analytics with the friendly UX and integrated tooling to let your company explore data on their own."}
         ]
       }
     ]

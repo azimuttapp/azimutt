@@ -59,7 +59,7 @@ defmodule AzimuttWeb.Router do
     get("/converters/:from", WebsiteController, :converter)
     get("/converters/:from/to/:to", WebsiteController, :convert)
     get("/vs", WebsiteController, :comparisons)
-    get("/vs/:category", WebsiteController, :comparison_category)
+    # get("/vs/:category", WebsiteController, :comparison_category)
     get("/vs/:category/:tool", WebsiteController, :comparison)
     get("/docs", WebsiteController, :docs)
     get("/docs/*path", WebsiteController, :doc)
