@@ -9,7 +9,17 @@
         Let's dive onto the product similarities and differences to find out which one suits you best.
     </p>
     <img src={@seo.image} alt="dbdiagram.io vs Azimutt">
-    <p>Here is an overview of what each product offers. More details just below.</p>
+    <p>
+        Entity-Relationship Diagrams (ERDs) are visual representations of your entities and relations (thanks captain obvious ^^).
+        In relational databases they represent tables with their columns as relations and foreign keys as relations.
+        Some tools are specialized in ERDs for databases and can more specialized content like primary keys, indexes, constraints and more.
+    </p>
+    <p>
+        Visual tools and diagrams can be crucial to simplify things, especially in high complexity environment like databases, and better understand and communicate the real situation.
+        It's not rare to have unidentified issues until you are able to get a good visualization and understanding of the situation.
+        They sometimes may look like a distraction, but it's often a good investment in improved understanding and collaboration.
+    </p>
+    <p>dbdiagram.io and Azimutt are among the best choices in this domain. Let's have a quick look at what they offer before diving into more details.</p>
     <table>
         <thead><tr><th></th><th>dbdiagram.io</th><th>Azimutt</th></tr></thead>
         <tbody>
@@ -35,10 +45,11 @@
     </table>
     <%= render "docs/_h2.html", title: "About dbdiagram.io" %>
     <p>
-        dbdiagram.io is an online Entity-Relationship Diagram using <a href="https://dbml.dbdiagram.io" target="_blank" rel="noopener noreferrer">DBML</a> to define the database schema.
+        dbdiagram.io is an online Entity-Relationship Diagram using <a href={Routes.website_path(@conn, :comparison, "database-design-language", "dbml")} target="_blank" rel="noopener">DBML</a> to define the database schema.
         It makes schema definition very pleasant as it can be generated easily, copy/pasted and even versioned.
         It's made by holistics.io, a Singapore-based business intelligence product company, as an internal tool that was shared publicly.
     </p>
+    <img src={Routes.static_path(@conn, "/images/comparisons/dbdiagram-sample.jpg")} alt="dbdiagram.io sample">
     <%= render "docs/_h2.html", title: "About Azimutt" %>
     <p>
         Azimutt is a full database toolset which started as a visual database exploration tool for large databases (>1000 tables).
@@ -46,6 +57,7 @@
         Like dbdiagram.io, it allows database design using <a href={Routes.website_path(@conn, :aml)} target="_blank" rel="noopener">AML</a>, but it also provides many other features to understand, document, maintain and improve real-world databases.
         It started at Doctolib, a French healthcare unicorn, with Principal Engineers needing to quickly understand the huge data model; it's now independent to speed its growth.
     </p>
+    <img src={Routes.static_path(@conn, "/images/comparisons/azimutt-sample.jpg")} alt="Azimutt sample">
 
     <%= render "docs/_h2.html", title: "Pricing" %>
     <h3>dbdiagram.io</h3>
@@ -87,7 +99,7 @@
     </p>
     <div class="flex gap-x-3 gap-y-5 flex-col sm:flex-row">
         <div class="grow">
-            <p class="mt-0">dbdiagram.io uses <a href="https://dbml.dbdiagram.io" target="_blank" rel="noopener noreferrer">DBML</a>, here is how it looks:</p>
+            <p class="mt-0">dbdiagram.io uses <a href={Routes.website_path(@conn, :comparison, "database-design-language", "dbml")} target="_blank" rel="noopener">DBML</a>, here is how it looks:</p>
             <pre class="mb-0"><code class="hljs dbml">// DBML from dbdiagram.io
 
 Table users {
@@ -150,6 +162,7 @@ posts | All posts
     <p>
         Both languages are Open Source and available as standalone libraries (<a href="https://github.com/holistics/dbml" target="_blank" rel="noopener">DBML</a>,
         <a href="https://github.com/azimuttapp/azimutt/tree/main/libs/aml" target="_blank" rel="noopener">AML</a>), you can use them in your own projects if you want.
+        Check our <a href={Routes.website_path(@conn, :comparison, "database-design-language", "dbml")} target="_blank" rel="noopener">full comparison</a>.
     </p>
 
     <%= render "docs/_h2.html", title: "Different features" %>

@@ -1,5 +1,279 @@
 <%= comparison_prose do %>
     <h1><%= @seo.title %></h1>
+    <p class="lead">
+        Looking for a language to design or document your database schema?<br>
+        Text languages are clearly the best option to invest in.
+    </p>
+    <ul>
+        <li>They can be parsed and generated, making them quite portable from one to another</li>
+        <li>They can be versioned with your project to keep track of changes and go back in time if needed</li>
+        <li>They can be used in powerful editors with contextual error reporting and fixes, as well as easy edition with copy/paste, find/replace (using regexp) and even column edition or refactoring methods</li>
+    </ul>
+    <p class="lead">Why not SQL?</p>
+    <p>
+        You're right, SQL DDL sounds like the perfect fit for defining your database schema.<br>
+        But it has some issues: it's different for each database, writing valid SQL will slow your though process, you may want to ignore some SQL requirements or add information not supported by your SQL dialect.
+        What sounds like a great idea at first is not that practical in fact.
+        Specific languages though can capture the right details, be more user-friendly and can be converted to your wanted SQL flavor. They win all the way 😎
+    </p>
+    <p>Ok then, but which one to choose?</p>
+    <img src={@seo.image} alt="DBML vs AML">
+    <p>Let's look at different aspects:</p>
+    <ul>
+        <li><a href="#syntax-comparison-look-and-feel-of-dbml-vs-aml">Syntax comparison</a></li>
+        <li><a href="#feature-comparison">Feature comparison</a></li>
+        <li><a href="#tooling">Tooling</a></li>
+        <li><a href="#conclusion">Conclusion</a></li>
+    </ul>
+
+    <%= render "docs/_h2.html", title: "About DBML" %>
+    <p>
+        <a href="https://github.com/holistics/dbml" target="_blank" rel="noopener">DBML</a> (Database Markup Language) is an Open Source language made for
+        <a href={Routes.website_path(@conn, :comparison, "entity-relationship-diagram", "dbdiagram")}>dbdiagram.io</a> to define and document database schemas.
+        It's designed to be simple, consistent and highly-readable.
+    </p>
+    <%= render "docs/_h2.html", title: "About AML" %>
+    <p>
+        <a href={Routes.website_path(@conn, :aml)}>AML</a> (Azimutt Markup Language) is also an Open Source language for defining database schemas.
+        It's designed to be flexible with minimal syntax in order to be fast to write and powerful at the same time.
+    </p>
+
+    <%= render "docs/_h2.html", title: "Syntax comparison: Look and Feel of DBML vs AML" %>
+    <p>Here is a short example so you can quickly see how they look and compare:</p>
+    <div class="flex gap-x-3 gap-y-5 flex-col sm:flex-row">
+        <div class="grow">
+            <pre class="mb-0"><code class="hljs dbml">// DBML
+
+Table users {
+  id integer
+  username varchar
+  role varchar
+  created_at timestamp
+}
+
+Table posts {
+  id integer [primary key]
+  title varchar
+  body text [note: 'Content of the post']
+  user_id integer
+  status post_status
+  created_at timestamp
+}
+
+Enum post_status {
+  draft
+  published
+  private [note: 'visible via URL only']
+}
+
+Ref: posts.user_id > users.id // many-to-one</code></pre>
+        </div>
+        <div class="grow">
+            <pre class="mb-0"><code class="hljs aml"># AML
+
+users
+  id integer
+  username varchar
+  role varchar
+  created_at timestamp
+
+posts
+  id integer pk
+  title varchar
+  body text | Content of the post
+  user_id integer -> users(id)
+  status post_status(draft, published, private)
+  created_at timestamp</code></pre>
+            <a href="/create?aml=%23%20AML%0A%0Ausers%0A%20%20id%20integer%0A%20%20username%20varchar%0A%20%20role%20varchar%0A%20%20created_at%20timestamp%0A%0Aposts%0A%20%20id%20integer%20pk%0A%20%20title%20varchar%0A%20%20body%20text%20%7C%20Content%20of%20the%20post%0A%20%20user_id%20integer%20-%3E%20users(id)%0A%20%20status%20post_status(draft%2C%20published%2C%20private)%0A%20%20created_at%20timestamp%0A" target="_blank" rel="noopener">
+                Try in Azimutt
+            </a>
+        </div>
+    </div>
+    <p>
+        As you can see, they are not radically different.
+        But, even in this small example, the AML philosophy is clear: be as concise as possible to reduce learning curve and allow fast note-taking during brainstorming.
+        And in fact, everything is optional int AML. Such a schema is usually built with several iterations:
+    </p>
+    <ol>
+        <li>
+            <b>Start with central entities</b>
+            <pre class="mb-0"><code class="hljs aml">users
+posts</code></pre>
+        </li>
+        <li>
+            <b>Add important columns</b>
+            <pre class="mb-0"><code class="hljs aml">users
+  id
+  name
+  role
+
+posts
+  id
+  title
+  body
+  author -> users</code></pre>
+        </li>
+        <li>
+            <b>Specify more details</b>
+            <pre class="mb-0"><code class="hljs aml">users
+  id int pk
+  name varchar
+  role varchar
+
+posts
+  id int pk
+  title varchar
+  body text
+  author int -> users(id)</code></pre>
+        </li>
+        <li>
+            <b>Finalize schema with technical fields, constraints and documentation</b>
+            <pre class="mb-0"><code class="hljs aml">users
+  id int pk
+  name varchar unique
+  role user_role(admin, guest)=guest index
+  created_at timestamp=`now()`
+
+posts | All blog posts
+  id int pk
+  title varchar index
+  body text | Content of the post
+  author int -> users(id)
+  status post_status(draft, published, private)
+  created_at timestamp=`now()`
+  deleted_at timestamp nullable</code></pre>
+        </li>
+    </ol>
+    <p>
+        If you are asking how AML could look like at scale, check our
+        <a href="https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/demos/ecommerce/source_00_design.md" target="_blank" rel="noopener">e-commerce demo</a>,
+        it's 900 lines of AML to define an 85 tables database 🤯
+    </p>
+
+    <%= render "docs/_h2.html", title: "Feature comparison" %>
+    <p>
+        If you want the exhaustive feature list, you can check <a href="https://dbml.dbdiagram.io/docs" target="_blank" rel="noopener noreferrer">DBML documentation</a> and
+        <a href={Routes.website_path(@conn, :doc, ["aml"])} target="_blank" rel="noopener">AML documentation</a>. As they are simple language they are not that long.
+        Here is a quick recap:
+    </p>
+    <table>
+        <thead><tr><th></th><th>dbdiagram.io</th><th>Azimutt</th></tr></thead>
+        <tbody>
+        <tr><th>Table definition</th><td>✅ Yes</td><td>✅ Yes</td></tr>
+        <tr><th>View definition</th><td>❌ No</td><td>✅ Yes</td></tr>
+        <tr><th>Column definition</th><td>✅ Yes</td><td>✅ Yes</td></tr>
+        <tr><th>Nested columns</th><td>❌ No</td><td>✅ Yes</td></tr>
+        <tr><th>Relation definition</th><td>✅ Yes</td><td>✅ Yes</td></tr>
+        <tr><th>Composite relations</th><td>✅ Yes</td><td>✅ Yes</td></tr>
+        <tr><th><a href={Routes.blog_path(@conn, :show, "what-is-a-polymorphic-relation")} target="_blank" rel="noopener">Polymorphic relations</a></th><td>❌ No</td><td>✅ Yes</td></tr>
+        <tr><th>Index definition</th><td>✅ Yes</td><td>✅ Yes</td></tr>
+        <tr><th>Check constraint</th><td>❌ No</td><td>✅ Yes</td></tr>
+        <tr><th>Schema documentation</th><td>✅ Yes</td><td>✅ Yes</td></tr>
+        <tr><th>Sticky notes</th><td>✅ Yes</td><td>❌ No</td></tr>
+        <tr><th>Table groups</th><td>✅ Yes</td><td>❌ No</td></tr>
+        <tr><th>Custom properties</th><td>❌ No</td><td>✅ Yes</td></tr>
+        </tbody>
+    </table>
+    <p>
+        DBML is specialized toward dbdiagram.io specificities with additional features for project definition, table groups and sticky notes.
+    </p>
+    <p>
+        AML is focused on database schema (not ERD) and has a few additional features:
+    </p>
+    <ul>
+        <li><a href={Routes.website_path(@conn, :doc, ["aml", "properties"])}>Custom properties</a>: to add structured data to any table, column, relation or type</li>
+        <li><a href={"#{Routes.website_path(@conn, :doc, ["aml", "entities"])}#nested-attribute"}>Nested columns</a>: for document databases or defining what's inside JSON columns</li>
+        <li><a href={"#{Routes.website_path(@conn, :doc, ["aml", "relations"])}#polymorphic-relation"}>Polymorphic relations</a>: for relations targeting several entities</li>
+        <li><a href={"#{Routes.website_path(@conn, :doc, ["aml", "entities"])}#index-and-constraint"}>Check constraints</a></li>
+        <li><a href={"#{Routes.website_path(@conn, :doc, ["aml", "entities"])}#metadata"}>Views</a></li>
+        <li><a href={"#{Routes.website_path(@conn, :doc, ["aml", "types"])}#alias"}>Type alias</a></li>
+    </ul>
+    <p>
+        Depending on your needs, it can be important to the ability to define what you need with your chosen language.
+        That's why <b>Custom properties</b> are a crucial part of AML. They let you define whatever you need making language extensions very easy.
+    </p>
+
+    <%= render "docs/_h2.html", title: "Tooling" %>
+    <p>
+        Having an easy to learn/use language with powerful features is great. But it's tooling and ecosystem is at least as important for practical usage.
+        Beside their use in their respective products, DBML and AML are Open Source and provide a package to parse/generate them as JSON and some other tools as well.
+    </p>
+
+    <%= render "docs/_h3.html", title: "DBML tooling" %>
+    <p>DBML package is <a href="https://www.npmjs.com/package/@dbml/core" target="_blank" rel="noopener">@dbml/core</a>, here is how to parse DBML into JSON:</p>
+    <pre><code class="hljs ts">const { Parser } = require('@dbml/core')
+
+const parser = new Parser()
+const dbml = 'Table users {\n  id int [pk]\n  name varchar\n}\n' // your DBML script
+const database = parser.parse(dbml, 'dbml')
+console.log('database', database)</code></pre>
+    <p>
+        It's also able to parse SQL or extract the schema from a database.<br>
+        DBML has a community with some <a href="https://github.com/holistics/dbml#community-contributions" target="_blank" rel="noopener">tooling contributions</a>,
+        especially editor plugins (Emacs, Vim, VSCode), other parsers (Python, Go, PHP, Java) and converters from other formats (Rails schema, Django models, Laravel schema, Maven, Parse Server classes, Android Room).
+    </p>
+
+    <%= render "docs/_h3.html", title: "AML tooling" %>
+    <p>
+        AML package is <a href="https://www.npmjs.com/package/@azimutt/aml" target="_blank" rel="noopener">@azimutt/aml</a>,
+        here is how to parse/generate AML into <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/models/src/database.ts" target="_blank" rel="noopener">JSON</a>:
+    </p>
+    <pre><code class="hljs ts">import {generateAml, parseAml} from "@azimutt/aml"
+
+const aml = 'users\n  id int pk\n  name varchar\n' // your AML script
+const parsed = parseAml(aml)
+if (parsed.errors) parsed.errors.forEach(e => console.log('paring error', e.message))
+if (parsed.result) {
+    console.log('database', parsed.result)
+    const generated = generateAml(parsed.result)
+    console.log('generated', generated)
+}</code></pre>
+    <p>
+        It can also format the JSON is other formats such as DOT, Mermaid or Markdown.
+        For SQL, you will have to use the <a href="https://www.npmjs.com/package/@azimutt/parser-sql" target="_blank" rel="noopener">@azimutt/parser-sql</a> package:
+    </p>
+<pre><code class="hljs ts">import {generateSql} from "@azimutt/parser-sql"
+
+const database = {entities: [{
+  name: 'users',
+  attrs: [{name: 'id', type: 'int'}, {name: 'name', type: 'varchar'}],
+  pk: {attrs: [['id']]}
+}]}
+const generated = generateSql(database, 'postgres')
+console.log('generated', generated)</code></pre>
+    <p>
+        A VSCode plugin is coming soon, in the meantime you can try it online with smart auto-completion and contextual errors on
+        <a href={Routes.website_path(@conn, :convert, "aml", "json")} target="_blank" rel="noopener">Azimutt converters</a> (you can change the output format):
+    </p>
+<% end %>
+
+<div class="my-5 mx-auto flex flex-col md:flex-row space-y-8 md:space-y-0 md:space-x-8 justify-center w-full max-w-7xl">
+    <div id="monaco-editor-left" class="relative w-full md:w-1/2 h-96 border border-gray-300 rounded-lg overflow-hidden"></div>
+    <div id="monaco-editor-right" class="relative w-full md:w-1/2 h-96 border border-gray-300 rounded-lg overflow-hidden"></div>
+</div>
+<%= render "converters/_editors-script.html", left: %{id: "monaco-editor-left", lang: "aml"}, right: %{id: "monaco-editor-right", lang: "json"} %>
+
+<%= comparison_prose do %>
+    <p>
+        AML is a newer language than DBML. It has a smaller community and no external contributions, for now.
+        But don't be shy, we welcome them and can help if you need.
+    </p>
+
+    <%= render "docs/_h2.html", title: "Conclusion" %>
+    <p>
+        So, what do you think?<br>
+        I hope you are now convinced that <b>DSL for database schema are AWESOME</b> 😍
+    </p>
+    <p>
+        We saw that DBML and AML have differences, in terms of syntax, features and even tooling.
+        But, in all honesty, unless one point is really important to you, your choice may be more influenced by their original tool:
+        <a href={Routes.website_path(@conn, :comparison, "entity-relationship-diagram", "dbdiagram")}>dbdiagram.io vs Azimutt</a> 😅
+    </p>
+    <p>
+        If you see any issue or missing feature or tool that prevent you from using AML, please let us know.
+        We probably can address that and open you this wonderful world of textual database modeling 😉
+    </p>
+    <p>Talking of that, have you tried Azimutt? If not, 👇️</p>
 <% end %>
 
 <%= render "comparisons/_footer.html", conn: @conn, tool: @tool %>

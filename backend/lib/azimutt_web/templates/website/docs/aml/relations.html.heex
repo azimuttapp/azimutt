@@ -188,7 +188,7 @@ rel user_project_rights(user_id, project_id) -> user_projects(user_id, project_i
     <p>This kind of relation can only be defined using standalone relation.</p>
 
     <%= render "docs/_h2.html", title: "Polymorphic relation" %>
-    <p>Polymorphic relations are used to target different entities depending on the value of another attribute.</p>
+    <p>Polymorphic relations are used to <a href={Routes.blog_path(@conn, :show, "what-is-a-polymorphic-relation")}>target different entities</a> depending on the value of another attribute.</p>
     <p>For example, if you want to make a comment system in your app and be able to comment on different entities, you can either create one comment entity for each entity, like:</p>
     <pre><code class="hljs aml">posts
   id uuid pk

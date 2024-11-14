@@ -366,7 +366,7 @@ defmodule Azimutt do
         name: "Database Design Language",
         keywords: "database design,database schema,dsl",
         tools: [
-          %{id: "dbml", name: "DBML", date: "2024-11-14", title: "DBML vs AML, what are the differences?", description: "DBML (Database Markup Language) is an open-source DSL to define and document database schemas."}
+          %{id: "dbml", name: "DBML", title: "DBML vs AML, what are the differences?", image: "dbml-vs-aml.jpg", description: "DBML (Database Markup Language) is an open-source DSL to define and document database schemas."}
         ]
       },
       %{

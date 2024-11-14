@@ -166,16 +166,14 @@ defmodule AzimuttWeb.WebsiteController do
       |> Result.from_nillable()
       |> Result.map(fn t ->
         conn
-        |> render("comparisons/#{tool}.html",
+        |> render("comparisons/#{t.id}.html",
           category: c,
           tool: t,
           seo: %{
             type: "article",
             title: t[:title] || "#{t.name} vs Azimutt, which database tool is right for you?",
-            description:
-              t[:description] ||
-                "Looking for a #{t.name} alternative? Or just shopping around for a #{c.name}? Compare Azimutt and #{t.name} to discover which is the best database tool for you.",
-            image: Routes.static_url(conn, "/images/comparisons/#{t.id}-vs-azimutt.jpg"),
+            description: "Looking for a #{t.name} alternative? Or just shopping around for a #{c.name}? Compare Azimutt and #{t.name} to discover which is the best database tool for you.",
+            image: Routes.static_url(conn, "/images/comparisons/#{t[:image] || "#{t.id}-vs-azimutt.jpg"}"),
             keywords: t[:keywords] || c[:keywords]
           }
         )
