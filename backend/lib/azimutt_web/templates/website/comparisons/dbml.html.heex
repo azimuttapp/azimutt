@@ -12,7 +12,7 @@
     <p class="lead">Why not SQL?</p>
     <p>
         You're right, SQL DDL sounds like the perfect fit for defining your database schema.<br>
-        But it has some issues: it's different for each database, writing valid SQL will slow your though process, you may want to ignore some SQL requirements or add information not supported by your SQL dialect.
+        But it has some issues: it's different for each database, writing valid SQL will slow your thought process, you may want to ignore some SQL requirements or add information not supported by your SQL dialect.
         What sounds like a great idea at first is not that practical in fact.
         Specific languages though can capture the right details, be more user-friendly and can be converted to your wanted SQL flavor. They win all the way 😎
     </p>
@@ -157,7 +157,7 @@ posts | All blog posts
         Here is a quick recap:
     </p>
     <table>
-        <thead><tr><th></th><th>dbdiagram.io</th><th>Azimutt</th></tr></thead>
+        <thead><tr><th></th><th>DBML</th><th>AML</th></tr></thead>
         <tbody>
         <tr><th>Table definition</th><td>✅ Yes</td><td>✅ Yes</td></tr>
         <tr><th>View definition</th><td>❌ No</td><td>✅ Yes</td></tr>
@@ -189,13 +189,13 @@ posts | All blog posts
         <li><a href={"#{Routes.website_path(@conn, :doc, ["aml", "types"])}#alias"}>Type alias</a></li>
     </ul>
     <p>
-        Depending on your needs, it can be important to the ability to define what you need with your chosen language.
-        That's why <b>Custom properties</b> are a crucial part of AML. They let you define whatever you need making language extensions very easy.
+        Depending on your needs, it can be important to have the ability to define what you need with your chosen language.
+        That's why <b>Custom properties</b> are a crucial part of AML. They let you define whatever you need, making language extensions very easy.
     </p>
 
     <%= render "docs/_h2.html", title: "Tooling" %>
     <p>
-        Having an easy to learn/use language with powerful features is great. But it's tooling and ecosystem is at least as important for practical usage.
+        Having an easy to learn/use language with powerful features is great. But its tooling and ecosystem is at least as important for practical usage.
         Beside their use in their respective products, DBML and AML are Open Source and provide a package to parse/generate them as JSON and some other tools as well.
     </p>
 
@@ -271,9 +271,9 @@ console.log('generated', generated)</code></pre>
     </p>
     <p>
         If you see any issue or missing feature or tool that prevent you from using AML, please let us know.
-        We probably can address that and open you this wonderful world of textual database modeling 😉
+        We probably can address that and open to you this wonderful world of textual database modeling 😉
     </p>
-    <p>Talking of that, have you tried Azimutt? If not, 👇️</p>
+    <p>By the way, have you tried Azimutt? If not, 👇️</p>
 <% end %>
 
 <%= render "comparisons/_footer.html", conn: @conn, tool: @tool %>

@@ -316,7 +316,7 @@ defmodule Azimutt do
 
   def connectors do
     [
-      %{id: "postgres", name: "PostgreSQL", date: "2024-10-15", color: "#699eca", description: "The most powerful open-source relational database, known for extensibility and SQL compliance. Now explorable with Azimutt."},
+      %{id: "postgres", name: "PostgreSQL", color: "#699eca", description: "The most powerful open-source relational database, known for extensibility and SQL compliance. Now explorable with Azimutt."},
       %{id: "mysql", name: "MySQL", color: "#00758f", description: "The world's most popular open-source relational database, widely used for web applications. Now accessible within Azimutt."},
       %{id: "mariadb", name: "MariaDB", color: "#444b5e", description: "An open-source fork of MySQL with improved performance, scalability, and open development. Also available to connect to Azimutt."},
       %{id: "sqlserver", name: "SQL Server", color: "#ededee", description: "A robust, enterprise-grade relational database by Microsoft, with integrated analytics and management tools. Integrated in Azimutt."},
@@ -355,10 +355,10 @@ defmodule Azimutt do
         name: "Entity-Relationship Diagram",
         keywords: "entity-relationship diagram,erd,database diagram,database visualization tool,database schema explorer,SQL,database",
         tools: [
-          %{id: "dbdiagram", name: "dbdiagram.io", description: "An online Entity-Relationship Diagram using code to define your database schema, as fast as you can type."},
-          %{id: "drawsql", name: "DrawSQL", description: "A beautiful online Entity-Relationship Diagram tool to design your database from scratch or from SQL dump."},
-          %{id: "drawdb", name: "drawDB", description: "A Free and Open Source online Entity-Relationship Diagram tool that can generate SQL."},
-          %{id: "chartdb", name: "ChartDB", description: "An Open Source online Entity-Relationship Diagram that visualize your database with a single query."}
+          %{id: "dbdiagram", name: "dbdiagram.io", description: "An online Entity-Relationship Diagram using code to define your database schema, as fast as you can type."}
+          # %{id: "drawsql", name: "DrawSQL", description: "A beautiful online Entity-Relationship Diagram tool to design your database from scratch or from SQL dump."},
+          # %{id: "drawdb", name: "drawDB", description: "A Free and Open Source online Entity-Relationship Diagram tool that can generate SQL."},
+          # %{id: "chartdb", name: "ChartDB", description: "An Open Source online Entity-Relationship Diagram that visualize your database with a single query."}
         ]
       },
       %{
@@ -374,10 +374,10 @@ defmodule Azimutt do
         name: "SQL Client",
         keywords: "sql client",
         tools: [
-          %{id: "dbeaver", name: "DBeaver", description: "A free cross-platform database tool with support of many databases: MySQL, PostgreSQL, SQLite..."},
-          %{id: "datagrip", name: "DataGrip", description: "A powerful cross-platform tool for relational and NoSQL databases by JetBrains."},
-          %{id: "navicat", name: "Navicat", description: "Navicat is a robust, all-in-one solution for database development from a single application."},
-          %{id: "beekeeperstudio", name: "Beekeeper Studio", description: "The SQL Editor and Database Manager Of Your Dreams, easy to use and good looking SQL Client."}
+          # %{id: "dbeaver", name: "DBeaver", description: "A free cross-platform database tool with support of many databases: MySQL, PostgreSQL, SQLite..."},
+          # %{id: "datagrip", name: "DataGrip", description: "A powerful cross-platform tool for relational and NoSQL databases by JetBrains."},
+          # %{id: "navicat", name: "Navicat", description: "Navicat is a robust, all-in-one solution for database development from a single application."},
+          # %{id: "beekeeperstudio", name: "Beekeeper Studio", description: "The SQL Editor and Database Manager Of Your Dreams, easy to use and good looking SQL Client."}
         ]
       },
       %{
@@ -385,7 +385,7 @@ defmodule Azimutt do
         name: "Database Documentation",
         keywords: "database documentation",
         tools: [
-          %{id: "schemaspy", name: "SchemaSpy", description: "Document your database simply and easily with a statically generated site from your CI."}
+          # %{id: "schemaspy", name: "SchemaSpy", description: "Document your database simply and easily with a statically generated site from your CI."}
         ]
       },
       %{
@@ -393,8 +393,8 @@ defmodule Azimutt do
         name: "Data Catalog",
         keywords: "data catalog",
         tools: [
-          %{id: "amundsen", name: "Amundsen", description: "Open source data discovery and metadata engine for analysts, data engineers and developers."},
-          %{id: "atlan", name: "Atlan", description: "Atlan is a metadata platform designed to cater to the needs of data-driven teams."}
+          # %{id: "amundsen", name: "Amundsen", description: "Open source data discovery and metadata engine for analysts, data engineers and developers."},
+          # %{id: "atlan", name: "Atlan", description: "Atlan is a metadata platform designed to cater to the needs of data-driven teams."}
         ]
       },
       %{
@@ -402,7 +402,7 @@ defmodule Azimutt do
         name: "Database Monitoring",
         keywords: "database monitoring,proactive monitoring",
         tools: [
-          %{id: "datadog", name: "Datadog Database Monitoring", description: "Resolve issues and optimize inefficient query performance across entire database fleets."}
+          # %{id: "datadog", name: "Datadog Database Monitoring", description: "Resolve issues and optimize inefficient query performance across entire database fleets."}
         ]
       },
       %{
@@ -410,7 +410,7 @@ defmodule Azimutt do
         name: "Dashboard",
         keywords: "dashboard,data visualization,infographics",
         tools: [
-          %{id: "metabase", name: "Metabase", description: "Fast analytics with the friendly UX and integrated tooling to let your company explore data on their own."}
+          # %{id: "metabase", name: "Metabase", description: "Fast analytics with the friendly UX and integrated tooling to let your company explore data on their own."}
         ]
       }
     ]

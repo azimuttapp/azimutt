@@ -39,14 +39,31 @@
 <meta name="msapplication-config" content="/browserconfig.xml" />
 <meta name="theme-color" content="#000000" />
 
+<%= if @conn.assigns[:seo] && @conn.assigns[:seo][:type] == "article" do %>
 <script type="application/ld+json">
-    {
-        "@@context": "https://schema.org",
-        "@@type": "Organization",
-        "name": "Azimutt",
-        "url": "https://azimutt.app",
-        "logo": "https://azimutt.app/images/logo_dark.svg"
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "<%= title(@conn) %>",
+    "description": "<%= description(@conn) %>",
+    "publisher": {
+      "@type": "Organization",
+      "name": "Azimutt",
+      "url": "https://azimutt.app",
+      "logo": "https://azimutt.app/images/logo_dark.svg"
     }
+  }
 </script>
+<% else %>
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Azimutt",
+    "url": "https://azimutt.app",
+    "logo": "https://azimutt.app/images/logo_dark.svg"
+  }
+</script>
+<% end %>
 
 <%= csrf_meta_tag() %>

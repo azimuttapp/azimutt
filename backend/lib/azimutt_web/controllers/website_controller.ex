@@ -52,17 +52,19 @@ defmodule AzimuttWeb.WebsiteController do
   def features_index(conn, _params), do: conn |> render("features/index.html")
 
   def features_show(conn, %{"feature_id" => feature_id}) do
-    Azimutt.showcase_features()
+    features = Azimutt.showcase_features()
+
+    features
     |> Enum.find_index(fn f -> f.id == feature_id end)
     |> Result.from_nillable()
     |> Result.map(fn index ->
-      feature = Azimutt.showcase_features() |> Enum.at(index)
+      feature = features |> Enum.at(index)
 
       conn
       |> render("features/#{feature_id}.html",
         feature: feature,
-        previous: if(index > 0, do: Azimutt.showcase_features() |> Enum.at(index - 1), else: nil),
-        next: Azimutt.showcase_features() |> Enum.at(index + 1),
+        previous: if(index > 0, do: features |> Enum.at(index - 1), else: nil),
+        next: features |> Enum.at(index + 1),
         seo: %{type: "article", title: feature.name, description: feature.description, image: Routes.static_url(conn, feature.image)}
       )
     end)
