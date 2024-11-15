@@ -355,7 +355,7 @@ defmodule Azimutt do
         name: "Entity-Relationship Diagram",
         keywords: "entity-relationship diagram,erd,database diagram,database visualization tool,database schema explorer,SQL,database",
         tools: [
-          %{id: "dbdiagram", name: "dbdiagram.io", description: "An online Entity-Relationship Diagram using code to define your database schema, as fast as you can type."}
+          %{id: "dbdiagram", name: "dbdiagram.io", description: "An online Entity-Relationship Diagram using code to define your database schema, as fast as you can type.", pub: "2024-11-15"}
           # %{id: "drawsql", name: "DrawSQL", description: "A beautiful online Entity-Relationship Diagram tool to design your database from scratch or from SQL dump."},
           # %{id: "drawdb", name: "drawDB", description: "A Free and Open Source online Entity-Relationship Diagram tool that can generate SQL."},
           # %{id: "chartdb", name: "ChartDB", description: "An Open Source online Entity-Relationship Diagram that visualize your database with a single query."}
@@ -366,7 +366,14 @@ defmodule Azimutt do
         name: "Database Design Language",
         keywords: "database design,database schema,dsl",
         tools: [
-          %{id: "dbml", name: "DBML", title: "DBML vs AML, what are the differences?", image: "dbml-vs-aml.jpg", description: "DBML (Database Markup Language) is an open-source DSL to define and document database schemas."}
+          %{
+            id: "dbml",
+            name: "DBML",
+            title: "DBML vs AML, what are the differences?",
+            image: "dbml-vs-aml.jpg",
+            description: "DBML (Database Markup Language) is an open-source DSL to define and document database schemas.",
+            pub: "2024-11-15"
+          }
         ]
       },
       %{

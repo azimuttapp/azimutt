@@ -18,42 +18,47 @@ defmodule AzimuttWeb.LayoutView do
   # https://developers.facebook.com/tools/debug
   # https://app.sistrix.com/en/serp-snippet-generator
 
-  # max 55-70 chars
-  def title(%{assigns: %{seo: %{title: title}}}) when is_binary(title), do: title <> if(title |> String.contains?("Azimutt"), do: "", else: " · Azimutt")
-  def title(_conn), do: Azimutt.config(:seo_title)
-
-  # max 150-300 chars
-  def description(%{assigns: %{seo: %{description: description}}}) when is_binary(description), do: description
-  def description(_conn), do: Azimutt.config(:seo_description)
-
-  def keywords(%{assigns: %{seo: %{keywords: keywords}}}) when is_binary(keywords), do: keywords
-  def keywords(_conn), do: Azimutt.config(:seo_keywords)
-
-  def canonical(%{request_path: request_path} = conn), do: Routes.static_url(conn, request_path)
-  def canonical(_conn), do: AzimuttWeb.Endpoint.url()
-
   def og_type(%{assigns: %{seo: %{type: type}}}) when is_binary(type), do: type
   def og_type(_conn), do: "website"
+
+  # max 55-70 chars
+  def og_title(%{assigns: %{seo: %{title: title}}}) when is_binary(title), do: title <> if(title |> String.contains?("Azimutt"), do: "", else: " · Azimutt")
+  def og_title(_conn), do: Azimutt.config(:seo_title)
+
+  # max 150-300 chars
+  def og_description(%{assigns: %{seo: %{description: description}}}) when is_binary(description), do: description
+  def og_description(_conn), do: Azimutt.config(:seo_description)
 
   # ratio: 2:1, ex: 1200x600
   def og_image(%{assigns: %{seo: %{image: image}}}) when is_binary(image), do: image
   def og_image(conn), do: Routes.static_url(conn, "/images/og/azimutt.jpg")
 
-  def twitter_card(%{assigns: %{seo: %{card: card}}}), do: card
-  def twitter_card(_conn), do: "summary_large_image"
+  def og_canonical(%{request_path: request_path} = conn), do: Routes.static_url(conn, request_path)
+  def og_canonical(_conn), do: AzimuttWeb.Endpoint.url()
 
-  def twitter_creator(%{assigns: %{seo: %{twitter_creator: twitter_creator}}}), do: twitter_creator
-  def twitter_creator(_conn), do: twitter_site(%{})
+  def og_keywords(%{assigns: %{seo: %{keywords: keywords}}}) when is_binary(keywords), do: keywords
+  def og_keywords(_conn), do: Azimutt.config(:seo_keywords)
 
-  def twitter_site(%{assigns: %{seo: %{twitter_site: twitter_site}}}), do: twitter_site
+  def og_published(%{assigns: %{seo: %{published: published}}}) when is_binary(published), do: published
+  def og_published(_conn), do: ""
 
-  def twitter_site(_conn) do
-    if Azimutt.config(:azimutt_twitter) do
-      "@" <> (Azimutt.config(:azimutt_twitter) |> String.split("/") |> List.last())
-    else
-      ""
-    end
-  end
+  def og_modified(%{assigns: %{seo: %{modified: modified}}}) when is_binary(modified), do: modified
+  def og_modified(_conn), do: ""
+
+  def og_author(%{assigns: %{seo: %{author: author}}}) when is_binary(author), do: author
+  def og_author(_conn), do: "Loïc Knuchel"
+
+  def og_twitter_card(%{assigns: %{seo: %{card: card}}}), do: card
+  def og_twitter_card(_conn), do: "summary_large_image"
+
+  def og_twitter_creator(%{assigns: %{seo: %{twitter_creator: twitter_creator}}}), do: twitter_creator
+  def og_twitter_creator(_conn), do: og_twitter_site(%{})
+
+  def og_twitter_site(%{assigns: %{seo: %{twitter_site: twitter_site}}}), do: twitter_site
+  def og_twitter_site(_conn), do: if(Azimutt.config(:azimutt_twitter), do: "@" <> (Azimutt.config(:azimutt_twitter) |> String.split("/") |> List.last()), else: "")
+
+  def og_azimutt_url(conn), do: Routes.url(conn)
+  def og_azimutt_logo(conn), do: Routes.static_url(conn, "/images/logo_dark.svg")
 
   def active(current_path, path) do
     real_path = path |> String.split("?") |> hd()

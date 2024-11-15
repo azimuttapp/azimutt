@@ -176,6 +176,7 @@ defmodule AzimuttWeb.WebsiteController do
             title: t[:title] || "#{t.name} vs Azimutt, which database tool is right for you?",
             description: "Looking for a #{t.name} alternative? Or just shopping around for a #{c.name}? Compare Azimutt and #{t.name} to discover which is the best database tool for you.",
             image: Routes.static_url(conn, "/images/comparisons/#{t[:image] || "#{t.id}-vs-azimutt.jpg"}"),
+            published: t.pub,
             keywords: t[:keywords] || c[:keywords]
           }
         )
