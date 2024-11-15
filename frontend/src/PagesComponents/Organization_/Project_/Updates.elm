@@ -59,7 +59,7 @@ import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableL
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint(..))
-import PagesComponents.Organization_.Project_.Updates.Canvas exposing (arrangeTables, fitCanvas, handleWheel, squashViewHistory, zoomCanvas)
+import PagesComponents.Organization_.Project_.Updates.Canvas exposing (applyAutoLayout, fitCanvas, handleWheel, launchAutoLayout, squashViewHistory, zoomCanvas)
 import PagesComponents.Organization_.Project_.Updates.Drag exposing (handleDrag)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import PagesComponents.Organization_.Project_.Updates.FindPath exposing (handleFindPath)
@@ -346,7 +346,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapCanvasT (\c -> ( canvas, Extra.history ( SetView_ c, SetView_ canvas ) )))) |> Extra.defaultT
 
         ArrangeTables ->
-            model |> mapErdMT (arrangeTables now model.erdElem) |> Extra.defaultT
+            model |> mapErdMT launchAutoLayout |> Extra.defaultT
 
         SetLayout_ layout ->
             model |> mapErdMTM (Erd.mapCurrentLayoutT (\l -> ( layout, Extra.new (Ports.observeLayout layout) ( SetLayout_ l, SetLayout_ layout ) ))) |> setDirtyM
@@ -532,7 +532,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
                     update urlLayout zone now urlInfos organizations projects next { model | history = ( back, next ) :: model.history, future = future } |> Tuple.mapSecond Extra.dropHistory
 
         JsMessage message ->
-            model |> handleJsMessage now urlLayout message |> Tuple.mapSecond Extra.cmd
+            model |> handleJsMessage now urlLayout message
 
         Batch messages ->
             messages |> List.foldl (\curMsg ( curModel, curExtra ) -> update urlLayout zone now urlInfos organizations projects curMsg curModel |> Tuple.mapSecond (Extra.combine curExtra)) ( model, Extra.none )
@@ -544,7 +544,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             ( model, Extra.none )
 
 
-handleJsMessage : Time.Posix -> Maybe LayoutName -> JsMsg -> Model -> ( Model, Cmd Msg )
+handleJsMessage : Time.Posix -> Maybe LayoutName -> JsMsg -> Model -> ( Model, Extra Msg )
 handleJsMessage now urlLayout msg model =
     case msg of
         GotSizes sizes ->
@@ -553,83 +553,86 @@ handleJsMessage now urlLayout msg model =
         GotProject context res ->
             case res of
                 Nothing ->
-                    ( { model | loaded = True, saving = False }, Cmd.none )
+                    ( { model | loaded = True, saving = False }, Extra.none )
 
                 Just (Err err) ->
-                    ( { model | loaded = True, saving = False }, Cmd.batch [ "Unable to read project: " ++ Decode.errorToHtml err |> Toasts.error |> Toast |> T.send, Track.jsonError "decode-project" err ] )
+                    ( { model | loaded = True, saving = False }, Extra.cmdL [ "Unable to read project: " ++ Decode.errorToHtml err |> Toasts.error |> Toast |> T.send, Track.jsonError "decode-project" err ] )
 
                 Just (Ok project) ->
                     { model | saving = False } |> updateErd urlLayout context project
 
         ProjectDeleted _ ->
             -- handled in Shared
-            ( model, Cmd.none )
+            ( model, Extra.none )
 
         GotLocalFile kind file content ->
             if kind == SqlSource.kind then
-                ( model, SourceId.generator |> Random.generate (\sourceId -> SqlSource.GotLocalFile sourceId file content |> SourceUpdateDialog.SqlSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
+                ( model, SourceId.generator |> Random.generate (\sourceId -> SqlSource.GotLocalFile sourceId file content |> SourceUpdateDialog.SqlSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) |> Extra.cmd )
 
             else if kind == PrismaSource.kind then
-                ( model, SourceId.generator |> Random.generate (\sourceId -> PrismaSource.GotLocalFile sourceId file content |> SourceUpdateDialog.PrismaSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
+                ( model, SourceId.generator |> Random.generate (\sourceId -> PrismaSource.GotLocalFile sourceId file content |> SourceUpdateDialog.PrismaSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) |> Extra.cmd )
 
             else if kind == JsonSource.kind then
-                ( model, SourceId.generator |> Random.generate (\sourceId -> JsonSource.GotLocalFile sourceId file content |> SourceUpdateDialog.JsonSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
+                ( model, SourceId.generator |> Random.generate (\sourceId -> JsonSource.GotLocalFile sourceId file content |> SourceUpdateDialog.JsonSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) |> Extra.cmd )
 
             else
-                ( model, "Unhandled local file kind '" ++ kind ++ "'" |> Toasts.error |> Toast |> T.send )
+                ( model, "Unhandled local file kind '" ++ kind ++ "'" |> Toasts.error |> Toast |> Extra.msg )
 
         GotDatabaseSchema schema ->
             if model.embedSourceParsing == Nothing then
-                ( model, Ok schema |> DatabaseSource.GotSchema |> SourceUpdateDialog.DatabaseSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send )
+                ( model, Ok schema |> DatabaseSource.GotSchema |> SourceUpdateDialog.DatabaseSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> Extra.msg )
 
             else
-                ( model, Ok schema |> DatabaseSource.GotSchema |> EmbedSourceParsingDialog.EmbedDatabaseSource |> EmbedSourceParsingMsg |> T.send )
+                ( model, Ok schema |> DatabaseSource.GotSchema |> EmbedSourceParsingDialog.EmbedDatabaseSource |> EmbedSourceParsingMsg |> Extra.msg )
 
         GotDatabaseSchemaError error ->
             if model.embedSourceParsing == Nothing then
-                ( model, Err error |> DatabaseSource.GotSchema |> SourceUpdateDialog.DatabaseSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send )
+                ( model, Err error |> DatabaseSource.GotSchema |> SourceUpdateDialog.DatabaseSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> Extra.msg )
 
             else
-                ( model, Err error |> DatabaseSource.GotSchema |> EmbedSourceParsingDialog.EmbedDatabaseSource |> EmbedSourceParsingMsg |> T.send )
+                ( model, Err error |> DatabaseSource.GotSchema |> EmbedSourceParsingDialog.EmbedDatabaseSource |> EmbedSourceParsingMsg |> Extra.msg )
 
         GotTableStats source stats ->
-            ( { model | tableStats = model.tableStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Ok stats) >> Just) }, Cmd.none )
+            ( { model | tableStats = model.tableStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Ok stats) >> Just) }, Extra.none )
 
         GotTableStatsError source table error ->
-            ( { model | tableStats = model.tableStats |> Dict.update table (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Err error) >> Just) }, Cmd.none )
+            ( { model | tableStats = model.tableStats |> Dict.update table (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Err error) >> Just) }, Extra.none )
 
         GotColumnStats source stats ->
-            ( { model | columnStats = model.columnStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Ok stats) >> Just) }, Cmd.none )
+            ( { model | columnStats = model.columnStats |> Dict.update stats.id (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Ok stats) >> Just) }, Extra.none )
 
         GotColumnStatsError source column error ->
-            ( { model | columnStats = model.columnStats |> Dict.update (ColumnId.fromRef column) (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Err error) >> Just) }, Cmd.none )
+            ( { model | columnStats = model.columnStats |> Dict.update (ColumnId.fromRef column) (Maybe.withDefault Dict.empty >> Dict.insert (SourceId.toString source) (Err error) >> Just) }, Extra.none )
 
         GotDatabaseQueryResult result ->
             model |> handleDatabaseQueryResponse result
 
         GotAmlSchema source length schema errors ->
-            ( model, AGotSchema source length schema errors |> AmlSidebarMsg |> T.send )
+            ( model, AGotSchema source length schema errors |> AmlSidebarMsg |> Extra.msg )
 
         GotPrismaSchema schema ->
             if model.embedSourceParsing == Nothing then
-                ( model, Ok schema |> PrismaSource.GotSchema |> SourceUpdateDialog.PrismaSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send )
+                ( model, Ok schema |> PrismaSource.GotSchema |> SourceUpdateDialog.PrismaSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> Extra.msg )
 
             else
-                ( model, Ok schema |> PrismaSource.GotSchema |> EmbedSourceParsingDialog.EmbedPrismaSource |> EmbedSourceParsingMsg |> T.send )
+                ( model, Ok schema |> PrismaSource.GotSchema |> EmbedSourceParsingDialog.EmbedPrismaSource |> EmbedSourceParsingMsg |> Extra.msg )
 
         GotPrismaSchemaError error ->
             if model.embedSourceParsing == Nothing then
-                ( model, Err error |> PrismaSource.GotSchema |> SourceUpdateDialog.PrismaSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> T.send )
+                ( model, Err error |> PrismaSource.GotSchema |> SourceUpdateDialog.PrismaSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg |> Extra.msg )
 
             else
-                ( model, Err error |> PrismaSource.GotSchema |> EmbedSourceParsingDialog.EmbedPrismaSource |> EmbedSourceParsingMsg |> T.send )
+                ( model, Err error |> PrismaSource.GotSchema |> EmbedSourceParsingDialog.EmbedPrismaSource |> EmbedSourceParsingMsg |> Extra.msg )
 
         GotCode dialect content ->
-            ( model, ExportDialogBody.GotOutput dialect content |> ExportDialog.BodyMsg |> ExportDialogMsg |> T.send )
+            ( model, ExportDialogBody.GotOutput dialect content |> ExportDialog.BodyMsg |> ExportDialogMsg |> Extra.msg )
+
+        GotAutoLayout nodes ->
+            model |> mapErdMT (applyAutoLayout now model.erdElem nodes) |> Extra.defaultT
 
         GotHotkey hotkey ->
             if model.saving then
-                ( model, Cmd.none )
+                ( model, Extra.none )
 
             else
                 handleHotkey now model hotkey
@@ -637,61 +640,61 @@ handleJsMessage now urlLayout msg model =
         GotKeyHold key start ->
             if key == "Space" && model.conf.move then
                 if start then
-                    ( model |> setCursorMode CursorMode.Drag, Cmd.none )
+                    ( model |> setCursorMode CursorMode.Drag, Extra.none )
 
                 else
-                    ( model |> setCursorMode CursorMode.Select, Cmd.none )
+                    ( model |> setCursorMode CursorMode.Select, Extra.none )
 
             else
-                ( model, Cmd.none )
+                ( model, Extra.none )
 
         GotToast level message ->
-            ( model, message |> Toasts.create level |> Toast |> T.send )
+            ( model, message |> Toasts.create level |> Toast |> Extra.msg )
 
         GotTableShow id hint ->
-            ( model, ShowTable id (hint |> Maybe.map PlaceAt) "port" |> T.send )
+            ( model, ShowTable id (hint |> Maybe.map PlaceAt) "port" |> Extra.msg )
 
         GotTableHide id ->
-            ( model, HideTable id |> T.send )
+            ( model, HideTable id |> Extra.msg )
 
         GotTableToggleColumns id ->
-            ( model, ToggleTableCollapse id |> T.send )
+            ( model, ToggleTableCollapse id |> Extra.msg )
 
         GotTablePosition id pos ->
-            ( model, TablePosition id pos |> T.send )
+            ( model, TablePosition id pos |> Extra.msg )
 
         GotTableMove id delta ->
-            ( model, TableMove id delta |> T.send )
+            ( model, TableMove id delta |> Extra.msg )
 
         GotTableSelect id ->
-            ( model, SelectItem (TableId.toHtmlId id) False |> T.send )
+            ( model, SelectItem (TableId.toHtmlId id) False |> Extra.msg )
 
         GotTableColor id color ->
-            ( model, TableColor id color True |> T.send )
+            ( model, TableColor id color True |> Extra.msg )
 
         GotColumnShow ref ->
-            ( model, ShowColumn 1000 ref |> T.send )
+            ( model, ShowColumn 1000 ref |> Extra.msg )
 
         GotColumnHide ref ->
-            ( model, HideColumn ref |> T.send )
+            ( model, HideColumn ref |> Extra.msg )
 
         GotColumnMove ref index ->
-            ( model, MoveColumn ref index |> T.send )
+            ( model, MoveColumn ref index |> Extra.msg )
 
         GotFitToScreen ->
-            ( model, FitToScreen |> T.send )
+            ( model, FitToScreen |> Extra.msg )
 
         GotLlmSqlGenerated query ->
-            ( model, Ok query |> LlmGenerateSqlBody.SqlGenerated |> LlmGenerateSqlDialog.BodyMsg |> LlmGenerateSqlDialogMsg |> T.send )
+            ( model, Ok query |> LlmGenerateSqlBody.SqlGenerated |> LlmGenerateSqlDialog.BodyMsg |> LlmGenerateSqlDialogMsg |> Extra.msg )
 
         GotLlmSqlGeneratedError err ->
-            ( model, Err err |> LlmGenerateSqlBody.SqlGenerated |> LlmGenerateSqlDialog.BodyMsg |> LlmGenerateSqlDialogMsg |> T.send )
+            ( model, Err err |> LlmGenerateSqlBody.SqlGenerated |> LlmGenerateSqlDialog.BodyMsg |> LlmGenerateSqlDialogMsg |> Extra.msg )
 
         Error json err ->
-            ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Track.jsonError "js_message" err ] )
+            ( model, [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Track.jsonError "js_message" err ] |> Extra.cmdL )
 
 
-updateSizes : List SizeChange -> Model -> ( Model, Cmd Msg )
+updateSizes : List SizeChange -> Model -> ( Model, Extra Msg )
 updateSizes changes model =
     let
         erdChanged : Model
@@ -720,18 +723,18 @@ updateSizes changes model =
             (\e ->
                 if e.layoutOnLoad /= "" && newModel.erdElem.size /= Size.zeroViewport && (e |> Erd.currentLayout |> .tables |> List.length) > 0 then
                     if e.layoutOnLoad == "fit" then
-                        e |> fitCanvas newModel.erdElem |> Extra.unpackT
+                        e |> fitCanvas newModel.erdElem
 
                     else if e.layoutOnLoad == "arrange" then
-                        e |> arrangeTables Time.zero newModel.erdElem |> Extra.unpackT
+                        e |> launchAutoLayout
 
                     else
-                        ( e, Cmd.none )
+                        ( e, Extra.none )
 
                 else
-                    ( e, Cmd.none )
+                    ( e, Extra.none )
             )
-            Cmd.none
+            Extra.none
 
 
 updateMemos : ZoomLevel -> List SizeChange -> List Memo -> List Memo
@@ -897,7 +900,7 @@ isSameTopRight a b =
     aPos.top == bPos.top && aPos.left + aSize.width == bPos.left + bSize.width
 
 
-updateErd : Maybe LayoutName -> String -> Project.Project -> Model -> ( Model, Cmd Msg )
+updateErd : Maybe LayoutName -> String -> Project.Project -> Model -> ( Model, Extra Msg )
 updateErd urlLayout context project model =
     -- context: load, draft, create, update
     let
@@ -930,7 +933,7 @@ updateErd urlLayout context project model =
                 |> Maybe.orElse (B.maybe (model.conf.update && (project.sources |> List.all (\s -> s.kind == SourceKind.AmlEditor))) (AmlSidebar.init Nothing (Just erd)))
     in
     ( { model | loaded = True, dirty = False, erd = Just erd, amlSidebar = amlSidebar }
-    , Cmd.batch
+    , Extra.cmdL
         ([ Ports.observeSize Conf.ids.erd
          , Ports.observeLayout (erd |> Erd.currentLayout)
          , Ports.setMeta { title = Just (Views.title (Just erd)), description = Nothing, canonical = Nothing, html = Nothing, body = Nothing }
@@ -953,20 +956,20 @@ showAllTablesIfNeeded erd =
         erd
 
 
-handleDatabaseQueryResponse : QueryResult -> Model -> ( Model, Cmd Msg )
+handleDatabaseQueryResponse : QueryResult -> Model -> ( Model, Extra Msg )
 handleDatabaseQueryResponse result model =
     case result.context |> String.split "/" of
         "data-explorer-query" :: idStr :: [] ->
-            ( model, idStr |> String.toInt |> Maybe.map (\id -> DataExplorerQuery.GotResult result |> DataExplorer.QueryMsg id |> DataExplorerMsg |> T.send) |> Maybe.withDefault ("Invalid data explorer query context: " ++ result.context |> Toasts.warning |> Toast |> T.send) )
+            ( model, idStr |> String.toInt |> Maybe.map (\id -> DataExplorerQuery.GotResult result |> DataExplorer.QueryMsg id |> DataExplorerMsg) |> Maybe.withDefault ("Invalid data explorer query context: " ++ result.context |> Toasts.warning |> Toast) |> Extra.msg )
 
         "data-explorer-details" :: idStr :: [] ->
-            ( model, idStr |> String.toInt |> Maybe.map (\id -> DataExplorerDetails.GotResult result |> DataExplorer.DetailsMsg id |> DataExplorerMsg |> T.send) |> Maybe.withDefault ("Invalid data explorer details context: " ++ result.context |> Toasts.warning |> Toast |> T.send) )
+            ( model, idStr |> String.toInt |> Maybe.map (\id -> DataExplorerDetails.GotResult result |> DataExplorer.DetailsMsg id |> DataExplorerMsg) |> Maybe.withDefault ("Invalid data explorer details context: " ++ result.context |> Toasts.warning |> Toast) |> Extra.msg )
 
         "table-row" :: idStr :: [] ->
-            ( model, idStr |> String.toInt |> Maybe.map (\id -> TableRow.GotResult result |> TableRowMsg id |> T.send) |> Maybe.withDefault ("Invalid table row context: " ++ result.context |> Toasts.warning |> Toast |> T.send) )
+            ( model, idStr |> String.toInt |> Maybe.map (\id -> TableRow.GotResult result |> TableRowMsg id) |> Maybe.withDefault ("Invalid table row context: " ++ result.context |> Toasts.warning |> Toast) |> Extra.msg )
 
         "table-row" :: idStr :: column :: [] ->
-            ( model, idStr |> String.toInt |> Maybe.map (\id -> TableRow.GotIncomingRows (ColumnPath.fromString column) result |> TableRowMsg id |> T.send) |> Maybe.withDefault ("Invalid incoming table row context: " ++ result.context |> Toasts.warning |> Toast |> T.send) )
+            ( model, idStr |> String.toInt |> Maybe.map (\id -> TableRow.GotIncomingRows (ColumnPath.fromString column) result |> TableRowMsg id) |> Maybe.withDefault ("Invalid incoming table row context: " ++ result.context |> Toasts.warning |> Toast) |> Extra.msg )
 
         _ ->
-            ( model, "Unknown db query context: " ++ result.context |> Toasts.warning |> Toast |> T.send )
+            ( model, "Unknown db query context: " ++ result.context |> Toasts.warning |> Toast |> Extra.msg )

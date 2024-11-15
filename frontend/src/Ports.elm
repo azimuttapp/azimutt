@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, copyToClipboard, createProject, createProjectTmp, deleteProject, deleteSource, downloadFile, fireworks, focus, fullscreen, getAmlSchema, getCode, getColumnStats, getDatabaseSchema, getPrismaSchema, getProject, getTableStats, listenHotkeys, llmGenerateSql, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableRowSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, copyToClipboard, createProject, createProjectTmp, deleteProject, deleteSource, downloadFile, fireworks, focus, fullscreen, getAmlSchema, getAutoLayout, getCode, getColumnStats, getDatabaseSchema, getPrismaSchema, getProject, getTableStats, listenHotkeys, llmGenerateSql, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableRowSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
 
 import DataSources.JsonMiner.JsonSchema as JsonSchema exposing (JsonSchema)
 import Dict exposing (Dict)
@@ -15,6 +15,7 @@ import Libs.Models.FileName exposing (FileName)
 import Libs.Models.Hotkey as Hotkey exposing (Hotkey)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Color exposing (Color)
+import Models.AutoLayout exposing (AutoLayoutMethod, DiagramEdge, DiagramNode, decodeDiagramNode, encodeAutoLayoutMethod, encodeDiagramEdge, encodeDiagramNode)
 import Models.Dialect as Dialect exposing (Dialect)
 import Models.OpenAIKey as OpenAIKey exposing (OpenAIKey)
 import Models.OpenAIModel as OpenAIModel exposing (OpenAIModel)
@@ -184,6 +185,11 @@ getCode dialect schema =
     messageToJs (GetCode dialect schema)
 
 
+getAutoLayout : AutoLayoutMethod -> List DiagramNode -> List DiagramEdge -> Cmd msg
+getAutoLayout method nodes edges =
+    messageToJs (GetAutoLayout method nodes edges)
+
+
 observeSize : HtmlId -> Cmd msg
 observeSize id =
     observeSizes [ id ]
@@ -295,6 +301,7 @@ type ElmMsg
     | GetAmlSchema SourceId String
     | GetPrismaSchema String
     | GetCode Dialect JsonSchema
+    | GetAutoLayout AutoLayoutMethod (List DiagramNode) (List DiagramEdge)
     | ObserveSizes (List HtmlId)
     | LlmGenerateSql OpenAIKey OpenAIModel String DatabaseKind Source
     | ListenKeys (Dict String (List Hotkey))
@@ -320,6 +327,7 @@ type JsMsg
     | GotPrismaSchema JsonSchema
     | GotPrismaSchemaError String
     | GotCode Dialect String
+    | GotAutoLayout (List DiagramNode)
     | GotHotkey String
     | GotKeyHold String Bool
     | GotToast String String
@@ -451,6 +459,9 @@ elmEncoder elm =
         GetCode dialect schema ->
             Encode.object [ ( "kind", "GetCode" |> Encode.string ), ( "dialect", dialect |> Dialect.encode ), ( "schema", schema |> JsonSchema.encode ) ]
 
+        GetAutoLayout method nodes edges ->
+            Encode.object [ ( "kind", "GetAutoLayout" |> Encode.string ), ( "method", method |> encodeAutoLayoutMethod ), ( "nodes", nodes |> Encode.list encodeDiagramNode ), ( "edges", edges |> Encode.list encodeDiagramEdge ) ]
+
         ObserveSizes ids ->
             Encode.object [ ( "kind", "ObserveSizes" |> Encode.string ), ( "ids", ids |> Encode.list Encode.string ) ]
 
@@ -534,6 +545,9 @@ jsDecoder =
 
                 "GotCode" ->
                     Decode.map2 GotCode (Decode.field "dialect" Dialect.decode) (Decode.field "content" Decode.string)
+
+                "GotAutoLayout" ->
+                    Decode.map GotAutoLayout (Decode.field "nodes" (Decode.list decodeDiagramNode))
 
                 "GotHotkey" ->
                     Decode.map GotHotkey (Decode.field "id" Decode.string)
@@ -643,6 +657,9 @@ unhandledJsMsgError msg =
 
                 GotCode _ _ ->
                     "GotCode"
+
+                GotAutoLayout _ ->
+                    "GotAutoLayout"
 
                 GotHotkey _ ->
                     "GotHotkey"

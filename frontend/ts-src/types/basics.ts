@@ -1,4 +1,5 @@
 import {z} from "zod";
+import {Position, Size} from "@azimutt/models";
 
 export type Brand<K, T> = K & { __brand: T } // cf https://michalzalecki.com/nominal-typing-in-typescript
 
@@ -38,3 +39,10 @@ export const PositionViewport = z.object({
     clientX: z.number(),
     clientY: z.number()
 }).strict()
+
+export const AutoLayoutMethod = z.enum(['default'])
+export type AutoLayoutMethod = z.infer<typeof AutoLayoutMethod>
+export const DiagramNode = z.object({id: z.string(), size: Size, pos: Position}).strict()
+export type DiagramNode = z.infer<typeof DiagramNode>
+export const DiagramEdge = z.object({src: z.string(), ref: z.string()}).strict()
+export type DiagramEdge = z.infer<typeof DiagramEdge>

@@ -1,34 +1,33 @@
-module PagesComponents.Organization_.Project_.Updates.Canvas exposing (arrangeTables, computeFit, fitCanvas, handleWheel, performZoom, squashViewHistory, zoomCanvas)
+module PagesComponents.Organization_.Project_.Updates.Canvas exposing (applyAutoLayout, computeFit, fitCanvas, handleWheel, launchAutoLayout, performZoom, squashViewHistory, zoomCanvas)
 
 import Conf
-import Dagre as D
-import Dagre.Attributes as DA
 import Dict exposing (Dict)
-import Graph
+import Libs.Dict as Dict
 import Libs.Html.Events exposing (WheelEvent)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.Delta as Delta exposing (Delta)
-import Libs.Models.Position as Position
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tuple3 as Tuple3
 import Models.Area as Area
+import Models.AutoLayout as AutoLayout exposing (DiagramEdge, DiagramNode)
 import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
-import Models.Project.TableId exposing (TableId)
+import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableRow as TableRow exposing (TableRow)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models exposing (Model, Msg(..))
-import PagesComponents.Organization_.Project_.Models.DiagramObject as DiagramObject exposing (DiagramObject)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
-import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
+import PagesComponents.Organization_.Project_.Models.MemoId as MemoId exposing (MemoId)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
+import Ports
 import Services.Lenses exposing (mapMemos, mapPosition, mapProps, mapTableRows, mapTables, setCanvas, setLayoutOnLoad, setPosition)
 import Services.Toasts as Toasts
+import Set exposing (Set)
 import Time
 
 
@@ -86,9 +85,39 @@ fitCanvasAlgo erdElem tables rows memos groups layout =
         |> Maybe.withDefault ( layout, Extra.none )
 
 
-arrangeTables : Time.Posix -> ErdProps -> Erd -> ( Erd, Extra Msg )
-arrangeTables now erdElem erd =
+launchAutoLayout : Erd -> ( Erd, Extra Msg )
+launchAutoLayout erd =
     -- TODO: toggle this on show all tables if layout was empty before, see frontend/src/PagesComponents/Organization_/Project_/Updates/Table.elm:106#showAllTables
+    (erd |> Erd.currentLayout |> objectsToFit)
+        |> Maybe.map
+            (\( tables, ( rows, memos, _ ) ) ->
+                let
+                    layout : ErdLayout
+                    layout =
+                        erd |> Erd.currentLayout
+
+                    nodes : List DiagramNode
+                    nodes =
+                        (layout.tables |> List.filterInBy .id tables |> List.map (\t -> { id = "table/" ++ TableId.toString t.id, size = t.props.size |> Size.extractCanvas, pos = t.props.position |> Position.extractGrid }))
+                            ++ (layout.tableRows |> List.filterInBy .id rows |> List.map (\r -> { id = "row/" ++ TableRow.toString r.id, size = r.size |> Size.extractCanvas, pos = r.position |> Position.extractGrid }))
+                            ++ (layout.memos |> List.filterInBy .id memos |> List.map (\m -> { id = "memo/" ++ MemoId.toString m.id, size = m.size |> Size.extractCanvas, pos = m.position |> Position.extractGrid }))
+
+                    ids : Set String
+                    ids =
+                        nodes |> List.map .id |> Set.fromList
+
+                    edges : List DiagramEdge
+                    edges =
+                        (layout.tables |> List.filterInBy .id tables)
+                            |> List.concatMap (\t -> t.relatedTables |> Dict.filter (\_ -> .shown) |> Dict.keys |> List.map (\id -> { src = "table/" ++ TableId.toString t.id, ref = "table/" ++ TableId.toString id }) |> List.filter (\r -> ids |> Set.member r.ref))
+                in
+                ( erd, Ports.getAutoLayout AutoLayout.Default nodes edges |> Extra.cmd )
+            )
+        |> Maybe.withDefault ( erd, "No table to arrange in the canvas" |> Toasts.create "warning" |> Toast |> Extra.msg )
+
+
+applyAutoLayout : Time.Posix -> ErdProps -> List DiagramNode -> Erd -> ( Erd, Extra Msg )
+applyAutoLayout now erdElem nodes erd =
     (erd |> Erd.currentLayout |> objectsToFit)
         |> Maybe.map
             (\( tables, ( rows, memos, groups ) ) ->
@@ -96,80 +125,33 @@ arrangeTables now erdElem erd =
                     |> setLayoutOnLoad ""
                     |> Erd.mapCurrentLayoutTWithTime now
                         (\layout ->
+                            let
+                                nodesByKind : Dict String (List { id : String, pos : Position.Grid })
+                                nodesByKind =
+                                    nodes |> List.groupBy (\n -> n.id |> String.split "/" |> List.headOr "") |> Dict.mapValues (List.map (\n -> { id = n.id |> String.split "/" |> List.drop 1 |> String.join "/", pos = Position.grid n.pos }))
+
+                                tablePositions : Dict TableId Position.Grid
+                                tablePositions =
+                                    nodesByKind |> Dict.getOrElse "table" [] |> List.filterMap (\n -> n.id |> TableId.fromString |> Maybe.map (\id -> { id = id, pos = n.pos })) |> List.indexBy .id |> Dict.mapValues .pos
+
+                                rowNodes : Dict TableRow.Id Position.Grid
+                                rowNodes =
+                                    nodesByKind |> Dict.getOrElse "row" [] |> List.filterMap (\n -> n.id |> TableRow.fromString |> Maybe.map (\id -> { id = id, pos = n.pos })) |> List.indexBy .id |> Dict.mapValues .pos
+
+                                memoNodes : Dict MemoId Position.Grid
+                                memoNodes =
+                                    nodesByKind |> Dict.getOrElse "memo" [] |> List.filterMap (\n -> n.id |> MemoId.fromString |> Maybe.map (\id -> { id = id, pos = n.pos })) |> List.indexBy .id |> Dict.mapValues .pos
+                            in
                             layout
-                                |> arrangeTablesAlgo tables rows memos
-                                |> Tuple.mapFirst (fitCanvasAlgo erdElem tables rows memos groups)
-                                |> (\( ( l, e2 ), e1 ) -> ( l, Extra.combine e1 e2 |> Extra.setHistory ( SetLayout_ layout, SetLayout_ l ) ))
+                                |> mapTables (List.map (\t -> tablePositions |> Dict.get t.id |> Maybe.mapOrElse (\pos -> t |> mapProps (setPosition pos)) t))
+                                |> mapTableRows (List.map (\r -> rowNodes |> Dict.get r.id |> Maybe.mapOrElse (\p -> r |> setPosition p) r))
+                                |> mapMemos (List.map (\m -> memoNodes |> Dict.get m.id |> Maybe.mapOrElse (\p -> m |> setPosition p) m))
+                                |> fitCanvasAlgo erdElem tables rows memos groups
+                                |> (\( newLayout, extra ) -> ( newLayout, extra |> Extra.setHistory ( SetLayout_ layout, SetLayout_ newLayout ) ))
                         )
                     |> Extra.defaultT
             )
         |> Maybe.withDefault ( erd, "No table to arrange in the canvas" |> Toasts.create "warning" |> Toast |> Extra.msg )
-
-
-arrangeTablesAlgo : List TableId -> List TableRow.Id -> List MemoId -> ErdLayout -> ( ErdLayout, Extra Msg )
-arrangeTablesAlgo tables rows memos layout =
-    let
-        nodes : List (Graph.Node DiagramObject)
-        nodes =
-            ((layout.tables |> List.filterInBy .id tables |> List.map DiagramObject.fromTable)
-                ++ (layout.tableRows |> List.filterInBy .id rows |> List.map DiagramObject.fromTableRow)
-                ++ (layout.memos |> List.filterInBy .id memos |> List.map DiagramObject.fromMemo)
-            )
-                |> List.indexedMap Graph.Node
-
-        initialContentArea : Maybe Area.Canvas
-        initialContentArea =
-            (nodes |> List.map (.label >> DiagramObject.area >> Area.offGrid)) |> Area.mergeCanvas
-
-        tableNodeId : Dict TableId Graph.NodeId
-        tableNodeId =
-            nodes |> List.filterMap (\n -> n.label |> DiagramObject.toTable |> Maybe.map (\t -> ( t.id, n.id ))) |> Dict.fromList
-
-        tableRowNodeId : Dict TableRow.Id Graph.NodeId
-        tableRowNodeId =
-            nodes |> List.filterMap (\n -> n.label |> DiagramObject.toTableRow |> Maybe.map (\r -> ( r.id, n.id ))) |> Dict.fromList
-
-        memoNodeId : Dict MemoId Graph.NodeId
-        memoNodeId =
-            nodes |> List.filterMap (\n -> n.label |> DiagramObject.toMemo |> Maybe.map (\m -> ( m.id, n.id ))) |> Dict.fromList
-
-        edges : List (Graph.Edge ())
-        edges =
-            nodes
-                |> List.filterMap (\n -> n.label |> DiagramObject.toTable |> Maybe.map (\t -> ( n, t )))
-                |> List.concatMap (\( n, t ) -> t.relatedTables |> Dict.filter (\_ -> .shown) |> Dict.keys |> List.filterMap (\id -> tableNodeId |> Dict.get id) |> List.map (\n2 -> Graph.Edge n.id n2 ()))
-
-        diagram : D.GraphLayout
-        diagram =
-            D.runLayout
-                [ DA.rankDir DA.LR
-                , DA.widthDict (nodes |> List.map (\n -> ( n.id, n.label |> DiagramObject.size |> Size.extractCanvas |> .width )) |> Dict.fromList)
-                , DA.heightDict (nodes |> List.map (\n -> ( n.id, n.label |> DiagramObject.size |> Size.extractCanvas |> .height )) |> Dict.fromList)
-                ]
-                (Graph.fromNodesAndEdges nodes edges)
-
-        positions : Dict Graph.NodeId Position.Canvas
-        positions =
-            diagram.coordDict |> Dict.map (\_ -> Position.fromTuple >> Position.canvas)
-
-        finalContentArea : Maybe Area.Canvas
-        finalContentArea =
-            positions |> Dict.values |> List.reduce Position.minCanvas |> Maybe.map (\p -> { position = p, size = Size.canvas diagram })
-
-        delta : Delta
-        delta =
-            -- keep same top-left position for the content area
-            Maybe.map2 (\i f -> i.position |> Position.diffCanvas f.position) initialContentArea finalContentArea |> Maybe.withDefault Delta.zero
-
-        getPosition : Graph.NodeId -> Maybe Position.Grid
-        getPosition id =
-            positions |> Dict.get id |> Maybe.map (Position.moveCanvas delta >> Position.onGrid)
-    in
-    layout
-        |> mapTables (List.map (\t -> tableNodeId |> Dict.get t.id |> Maybe.andThen getPosition |> Maybe.mapOrElse (\p -> t |> mapProps (setPosition p)) t))
-        |> mapTableRows (List.map (\r -> tableRowNodeId |> Dict.get r.id |> Maybe.andThen getPosition |> Maybe.mapOrElse (\p -> r |> setPosition p) r))
-        |> mapMemos (List.map (\m -> memoNodeId |> Dict.get m.id |> Maybe.andThen getPosition |> Maybe.mapOrElse (\p -> m |> setPosition p) m))
-        |> (\l -> ( l, Extra.history ( SetLayout_ layout, SetLayout_ l ) ))
 
 
 objectsToFit : ErdLayout -> Maybe ( List TableId, ( List TableRow.Id, List MemoId, List Area.Canvas ) )

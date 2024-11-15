@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/browser";
 import {BrowserTracing} from "@sentry/tracing";
+import dagre from "@dagrejs/dagre";
 import {AnyError, errorToString} from "@azimutt/utils";
 import {
     attributePathFromId,
@@ -42,6 +43,7 @@ import {
     DeleteSource,
     ElmFlags,
     GetAmlSchema,
+    GetAutoLayout,
     GetCode,
     GetColumnStats,
     GetDatabaseSchema,
@@ -135,6 +137,7 @@ app.on('RunDatabaseQuery', runDatabaseQuery)
 app.on('GetAmlSchema', getAmlSchema)
 app.on('GetPrismaSchema', getPrismaSchema)
 app.on('GetCode', getCode)
+app.on('GetAutoLayout', getAutoLayout)
 app.on('ObserveSizes', observeSizes)
 app.on('LlmGenerateSql', llmGenerateSql)
 app.on('ListenKeys', listenHotkeys)
@@ -468,6 +471,23 @@ function getCode(msg: GetCode) {
         content = legacyDatabaseJsonFormat(msg.schema)
     }
     app.gotCode(msg.dialect, content)
+}
+
+function getAutoLayout(msg: GetAutoLayout) {
+    if (msg.method === 'default') {
+        const g = new dagre.graphlib.Graph()
+        g.setGraph({})
+        g.setDefaultEdgeLabel(() => ({}))
+        msg.nodes.forEach(n => g.setNode(n.id, {width: n.size.width, height: n.size.height}))
+        msg.edges.forEach(e => g.setEdge(e.src, e.ref))
+        dagre.layout(g, {rankdir: 'LR'})
+        app.gotAutoLayout(g.nodes().map(id => {
+            const node = g.node(id)
+            return {id, size: {width: node.width, height: node.height}, pos: {left: node.x, top: node.y}}
+        }))
+    } else {
+        app.toast(ToastLevel.enum.error, `Unknown auto-layout method '${msg.method}', please report it for a fix.`)
+    }
 }
 
 const resizeObserver = new ResizeObserver(entries => {

@@ -1,4 +1,4 @@
-module Models.Project.TableRow exposing (FailureState, Id, LoadingState, State(..), SuccessState, TableRow, TableRowColumn, decode, encode, fromHtmlId, isHtmlId, stateSuccess, toHtmlId)
+module Models.Project.TableRow exposing (FailureState, Id, LoadingState, State(..), SuccessState, TableRow, TableRowColumn, decode, encode, fromHtmlId, fromString, isHtmlId, stateSuccess, toHtmlId, toString)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
@@ -76,6 +76,16 @@ stateSuccess row =
 
         _ ->
             Nothing
+
+
+toString : Id -> String
+toString id =
+    String.fromInt id
+
+
+fromString : String -> Maybe Id
+fromString id =
+    id |> String.toInt
 
 
 htmlIdPrefix : HtmlId
