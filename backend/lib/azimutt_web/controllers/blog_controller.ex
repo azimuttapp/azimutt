@@ -11,8 +11,7 @@ defmodule AzimuttWeb.BlogController do
              articles: articles,
              seo: %{
                title: "The Azimutt Blog",
-               description:
-                 "Hi there! We're building a Next-Gen ERD to help understand real world databases, with cool UI and privacy focus. You can read about our journey and what we've learnt along the way on this blog."
+               description: "Hi there! We're building a Next-Gen ERD to help understand real world databases, with cool UI and privacy focus. You can read about our journey and what we've learnt along the way on this blog."
              }
            )
   end
@@ -27,7 +26,7 @@ defmodule AzimuttWeb.BlogController do
           title: article.title,
           description: article.excerpt,
           keywords: if(length(article.keywords) > 0, do: article.keywords |> Enum.join(","), else: Azimutt.config(:seo_keywords)),
-          image: Routes.url(conn) <> article.banner
+          image: Routes.static_url(conn, article.banner)
         }
       )
     end

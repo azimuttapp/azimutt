@@ -105,7 +105,7 @@
             try {
                 if (lang === 'aml') return aml.generateAml(db)
                 if (lang === 'amlv1') return aml.generateAml(db, true)
-                if (lang === 'json') return aml.generateJsonDatabase(db)
+                if (lang === 'json') return sql.generateJsonDatabase(db)
                 if (lang === 'postgres') return sql.generateSql(db, 'postgres')
                 if (lang === 'dot') return aml.generateDot(db)
                 if (lang === 'mermaid') return aml.generateMermaid(db)

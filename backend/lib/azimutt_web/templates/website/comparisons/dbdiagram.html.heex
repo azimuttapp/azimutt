@@ -1,0 +1,235 @@
+<%= comparison_prose do %>
+    <h1><%= @seo.title %></h1>
+    <p class="lead">
+        Looking for a dbdiagram.io alternative?
+        Or just shopping around for an Entity-Relationship Diagramming tool (ERD) to design your database schema or explore an existing database?
+    </p>
+    <p class="lead">
+        Azimutt and dbdiagram.io are two great tools, but also with vast differences.
+        Let's dive onto the product similarities and differences to find out which one suits you best.
+    </p>
+    <img src={@seo.image} alt="dbdiagram.io vs Azimutt">
+    <p>
+        Entity-Relationship Diagrams (ERDs) are visual representations of your entities and relations (thanks captain obvious ^^).
+        In relational databases they represent tables with their columns as entities and foreign keys as relations.
+        Some tools are specialized in ERDs for databases and can have more specialized content like primary keys, indexes, constraints and more.
+    </p>
+    <p>
+        Visual tools and diagrams can be crucial to simplify things, especially in high complexity environment like databases, and better understand and communicate the real situation.
+        It's not rare to have unidentified issues until you are able to get a good visualization and understanding of the situation.
+        They sometimes may look like a distraction, but it's often a good investment in improved understanding and collaboration.
+    </p>
+    <p>dbdiagram.io and Azimutt are among the best choices in this domain. Let's have a quick look at what they offer before diving into more details.</p>
+    <table>
+        <thead><tr><th></th><th>dbdiagram.io</th><th>Azimutt</th></tr></thead>
+        <tbody>
+        <tr><th>Visual schema exploration</th><td>✅ Yes</td><td>✅ Yes</td></tr>
+        <tr><th><a href="#a-dsl-for-database-design">DSL for Database Design</a></th><td>✅ Yes</td><td>✅ Yes</td></tr>
+        <tr><th>Schema documentation</th><td>✅ Yes</td><td>✅ Yes</td></tr>
+        <tr><th>Database sync</th><td>✅ Yes, but overrides changes</td><td>✅ Yes</td></tr>
+        <tr><th>Collaboration</th><td>✅ Yes (realtime)</td><td>✅ Yes (not realtime)</td></tr>
+        <tr><th>Version history</th><td>✅ Yes</td><td>❌ No</td></tr>
+        <tr><th>Scaling</th><td>⚠️ Harder to use with >50 tables</td><td>✅ Handles >1000 tables without issue</td></tr>
+        <tr><th><a href="#multi-layouts">Multi-layouts</a></th><td>❌ No, all tables are displayed</td><td>✅ Yes, each layout has chosen tables/columns</td></tr>
+        <tr><th><a href="#multi-sources">Multi-sources</a></th><td>❌ No, everything is in the same DBML</td><td>✅ Yes, visualize several databases at once</td></tr>
+        <tr><th>Database queries</th><td>❌ No</td><td>✅ Yes</td></tr>
+        <tr><th><a href="#database-access">Visual data exploration</a></th><td>❌ No</td><td>✅ Yes</td></tr>
+        <tr><th><a href="#database-linter">Database linter</a></th><td>❌ No</td><td>✅ Yes</td></tr>
+        <tr><th>API access</th><td>❌ No</td><td>✅ Yes</td></tr>
+        <tr><th>Embed</th><td>✅ Yes</td><td>✅ Yes</td></tr>
+        <tr><th>Export</th><td>✅ Yes: PDF, PNG</td><td>✅ Yes: JSON, SQL, AML</td></tr>
+        <tr><th>On-Premise</th><td>✅ Yes</td><td>✅ Yes</td></tr>
+        <tr><th>Open-Source</th><td>❌ No</td><td>✅ Yes</td></tr>
+        <tr><th>Personal plan</th><td>$14/month</td><td>9€/month</td></tr>
+        </tbody>
+    </table>
+    <%= render "docs/_h2.html", title: "About dbdiagram.io" %>
+    <p>
+        dbdiagram.io is an online Entity-Relationship Diagram using <a href={Routes.website_path(@conn, :comparison, "database-design-language", "dbml")} target="_blank" rel="noopener">DBML</a> to define the database schema.
+        It makes schema definition very pleasant as it can be generated easily, copy/pasted and even versioned.
+        It's made by holistics.io, a Singapore-based business intelligence product company, as an internal tool that was shared publicly.
+    </p>
+    <img src={Routes.static_path(@conn, "/images/comparisons/dbdiagram-sample.jpg")} alt="dbdiagram.io sample">
+    <%= render "docs/_h2.html", title: "About Azimutt" %>
+    <p>
+        Azimutt is a full database toolset which started as a visual database exploration tool for large databases (>1000 tables).
+        You can see it as the Notion for the databases ^^
+        Like dbdiagram.io, it allows database design using <a href={Routes.website_path(@conn, :aml)} target="_blank" rel="noopener">AML</a>, but it also provides many other features to understand, document, maintain and improve real-world databases.
+        It started at Doctolib, a French healthcare unicorn, with Principal Engineers needing to quickly understand the huge data model; it's now independent to speed its growth.
+    </p>
+    <img src={Routes.static_path(@conn, "/images/comparisons/azimutt-sample.jpg")} alt="Azimutt sample">
+
+    <%= render "docs/_h2.html", title: "Pricing" %>
+    <h3>dbdiagram.io</h3>
+    <p>
+        dbdiagram.io has a Free plan but your work will be public.<br>
+        The Personal plan is at $14/month and the Team plan at $60/month for 3 users.
+    </p>
+    <h3>Azimutt</h3>
+    <p>
+        Azimutt is Open-Source under <a href="https://github.com/azimuttapp/azimutt/blob/main/LICENSE.txt" target="_blank" rel="noopener">MIT license</a>
+        with the <a href="https://github.com/azimuttapp/azimutt" target="_blank" rel="noopener">code available on GitHub</a> <small>(give us a star 😉)</small>.
+        You can host it and use it on your own, use the Free plan of the online version or buy a license either for Cloud or On-Premise installation, depending on your requirements.<br>
+        The Solo plan is at 9€/month and the Team plan at 42€/user/month, more details on the <a href={Routes.website_path(@conn, :pricing)}>pricing page</a>.
+    </p>
+
+    <%= render "docs/_h2.html", title: "Similar features" %>
+    <p>
+        First, and obviously, they are both Entity-Relationship Diagram tools allowing you to design or import your database schema and visualize it.
+        They are both online tools requiring no installation and both share a very pleasant UX.
+    </p>
+
+    <%= render "docs/_h3.html", title: "No required signup" %>
+    <p>
+        May look trivial but very appreciable when you want to try out a new tool 😉
+    </p>
+
+    <%= render "docs/_h3.html", title: "Import from existing database" %>
+    <p>
+        dbdiagram.io and Azimutt can import your existing database schema to visualize it. But they do it very differently.
+        dbdiagram.io converts your database schema into DBML that you will have to paste in their editor.
+        Azimutt can directly connect to your database and import its schema but also inner usage statistics, or import a SQL dump.
+    </p>
+
+    <%= render "docs/_h3.html", title: "A DSL for Database Design" %>
+    <p>
+        dbdiagram.io and Azimutt both have a specific language to design your database schema.
+        This is quite rare in the ERD space, but it makes database design fast and pleasant.
+        It unlocks all the features we love when writing code: copy/paste, find/replace, column editing, versioning... only limited by your typing speed 😎
+    </p>
+    <div class="flex gap-x-3 gap-y-5 flex-col sm:flex-row">
+        <div class="grow">
+            <p class="mt-0">dbdiagram.io uses <a href={Routes.website_path(@conn, :comparison, "database-design-language", "dbml")} target="_blank" rel="noopener">DBML</a>, here is how it looks:</p>
+            <pre class="mb-0"><code class="hljs dbml">// DBML from dbdiagram.io
+
+Table users {
+  id uuid [primary key]
+  name varchar [not null]
+  email varchar [not null, unique]
+  created_at timestamp [default: `now()`]
+
+  indexes {
+    name
+  }
+}
+
+Table posts {
+  id uuid [primary key]
+  status post_status [not null]
+  title varchar [not null]
+  content text [note: 'Supports markdown']
+  author uuid [ref: > users.id]
+  created_at timestamp [default: `now()`]
+  deleted_at timestamp
+
+  Note: 'All posts'
+}
+
+enum post_status {
+  draft
+  public
+}</code></pre>
+        </div>
+        <div class="grow">
+            <p class="mt-0">Azimutt uses <a href={Routes.website_path(@conn, :aml)} target="_blank" rel="noopener">AML</a>, here is how it looks:</p>
+            <pre class="mb-0"><code class="hljs aml"># AML from Azimutt
+
+users
+  id uuid pk
+  name varchar index
+  email varchar unique
+  created_at timestamp=`now()`
+
+posts | All posts
+  id uuid pk
+  status post_status(draft, public)
+  title varchar
+  content text | Supports markdown
+  author uuid -> users(id)
+  created_at timestamp=`now()`
+  deleted_at timestamp nullable
+</code></pre>
+            <a href="/create?aml=%23%20AML%20from%20Azimutt%0A%0Ausers%0A%20%20id%20uuid%20pk%0A%20%20name%20varchar%20index%0A%20%20email%20varchar%20unique%0A%20%20created_at%20timestamp%3D%60now()%60%0A%0Aposts%20%7C%20All%20posts%0A%20%20id%20uuid%20pk%0A%20%20status%20post_status(draft%2C%20public)%0A%20%20title%20varchar%0A%20%20content%20text%20%7C%20Supports%20markdown%0A%20%20author%20uuid%20-%3E%20users(id)%0A%20%20created_at%20timestamp%3D%60now()%60%0A%20%20deleted_at%20timestamp%20nullable%0A" target="_blank" rel="noopener">
+                Try in Azimutt
+            </a>
+        </div>
+    </div>
+    <div class="relative">
+        <div style="width: 100%; height: 100%; position: absolute; left: -1px; background: rgba(0, 0, 0, 0.3); clip-path: polygon(50% 0, 60% 0, 50% 100%, 40% 100%);"></div>
+        <img src={Routes.static_path(@conn, "/images/comparisons/azimutt-ecommerce-diagram.jpg")} alt="Azimutt e-commerce diagram" class="absolute" style="margin: 0; clip-path: polygon(50% 0, 100% 0, 100% 100%, 40% 100%);">
+        <img src={Routes.static_path(@conn, "/images/comparisons/dbdiagram-ecommerce-diagram.jpg")} alt="dbdiagram.io e-commerce diagram">
+    </div>
+    <p>
+        Both languages are Open Source and available as standalone libraries (<a href="https://github.com/holistics/dbml" target="_blank" rel="noopener">DBML</a>,
+        <a href="https://github.com/azimuttapp/azimutt/tree/main/libs/aml" target="_blank" rel="noopener">AML</a>), you can use them in your own projects if you want.
+        Check our <a href={Routes.website_path(@conn, :comparison, "database-design-language", "dbml")} target="_blank" rel="noopener">full comparison</a>.
+    </p>
+
+    <%= render "docs/_h2.html", title: "Different features" %>
+
+    <%= render "docs/_h3.html", title: "Multi-layouts" %>
+    <p>
+        This one is very specific to Azimutt among all the ERDs, making it scale to any database size.
+        Instead of displaying <i>THE database schema</i> with all the tables,
+        Azimutt has <a href={Routes.website_url(@conn, :doc, ["layouts"])}>layouts</a> where you can choose which tables and columns to show,
+        giving you <i>a view of your database schema</i>.
+        Moving from a single view to several ones makes diagrams understandable for any size of database.
+    </p>
+
+    <%= render "docs/_h3.html", title: "Multi-sources" %>
+    <p>
+        Another specificity of Azimutt...
+        Instead of having a single database schema, Azimutt has several sources that are merged to build your explorable schema.
+        <a href={Routes.website_url(@conn, :doc, ["sources"])}>Sources</a> can be of many types: database connection, SQL file, AML code or even Prisma schema or JSON, and can be activated or not.
+        You can add several databases (if you use microservices) and choose which ones to enable or even refresh, create some AML sources to design new features and delete them once added to a database...
+    </p>
+
+    <%= render "docs/_h3.html", title: "Database access" %>
+    <p>
+        Azimutt is not only an ERD tool but a complete and evolving toolset to work with your database.
+        With Azimutt, you can explore your database schema but also your <a href={Routes.website_url(@conn, :doc, ["data-exploration"])}>database content</a>.
+        It extracts and shows database statistics to give you a quick overview of tables and columns content and size.
+        It also let you query your database to perform any investigation or analysis, and even provide an <a href={Routes.website_url(@conn, :doc, ["ai"])}>AI assistant</a> to create or improve your queries 🪄
+        Finally, you can navigate in your data like in your schema, following foreign keys or looking at incoming relations for any table row, even in a cross-database setup 🤯
+    </p>
+
+    <%= render "docs/_h3.html", title: "Database linter" %>
+    <p>
+        Visualizing your database is great. But know what's better? Continually improving it!<br>
+        Azimutt integrates a <a href={Routes.website_url(@conn, :doc, ["database-analysis"])}>linter</a> showing you schema issues like missing primary and foreign keys, inconsistent naming or even duplicated indexes.
+        But if you connected your database, it has much more data to analyze like common values in columns or historical queries can can do much more advanced suggestions like empty or badly typed columns, slow or inefficient queries and even unused tables or indexes.<br>
+        These checks are surely not as smart as you, but they steadily evolve and are performed at your database scale, which can be tricky for a human when there is >100 tables.
+    </p>
+
+    <%= render "docs/_h3.html", title: "dbdiagram.io uniques features" %>
+    <p>
+        Of course, dbdiagram.io also has some unique features that you should take into account in your choice to see which one fits best:
+    </p>
+    <ul>
+        <li><b>Realtime collaboration</b>: ideal to work at the same time, in Azimutt if two people edit the same thing at the same time, they will have a conflict and the latest won't be able to save its work</li>
+        <li><b>Diagram versioning</b>: great to keep your project timeline, in Azimutt you can export your full project as JSON or just your AML and version it in git with your code, definitely less friendly</li>
+        <li><b>PDF/PNG export</b>: useful to make your work accessible elsewhere, in Azimutt you can of course take a screenshot of your diagram, but it will miss resolution on large zoom out</li>
+    </ul>
+
+    <!-- TODO: add testimonials -->
+
+    <%= render "docs/_h2.html", title: "Conclusion" %>
+    <p>Bottom line, which one is the best database visualization tool for you?</p>
+    <p>
+        As seen, dbdiagram.io and Azimutt <b>share a lot of similarities</b> with a DSL first approach to design or explore your database.
+        The biggest differences are obviously the multi-sources & multi-layouts capabilities of Azimutt, and its database querying and suggestions features.<br>
+        Beyond personal preference, totally up to you, if you have a rather <b>simple project</b> or really need realtime collaboration, <b>dbdiagram.io</b> is probably your best option.<br>
+        But if you have a <b>bigger project</b>, let's say above 50 tables, you will probably be more comfortable with <b>Azimutt</b> multi-layouts capability.
+        And if you want to keep your layout sync with your database and access your data, then Azimutt is here for you.
+    </p>
+    <p>
+        With all this, we believe Azimutt is a great alternative to dbdiagram.io, even for simple projects.
+        In either way, you can give a try to both of them, you don't even need to create an account. And Azimutt paid plans have a 2-week free trial to try advanced features!
+    </p>
+    <p>
+        If you need inspiration, you can have a look at the <a href={Routes.gallery_path(@conn, :index)}>Azimutt Gallery</a> for simple or complex projects, built for it or from popular projects;
+        or check our <a href="https://azimutt.app/45f571a6-d9b8-4752-8a13-93ac0d2b7984/c00d0c45-8db2-46b7-9b51-eba661640c3c?token=9a59ccbb-7a58-4c88-9dfc-692de6177be9" target="_blank" rel="noopener">complex e-commerce demo</a> with 85 tables over 9 databases.
+    </p>
+<% end %>
+
+<%= render "comparisons/_footer.html", conn: @conn, tool: @tool %>

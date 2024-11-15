@@ -29,8 +29,10 @@ import Alpine from "alpinejs"
 import Hljs from "highlight.js"
 import topbar from "topbar"
 import {language as hljsAml} from "./aml.hljs"
+import {language as hljsDbml} from "./dbml.hljs"
 
 Hljs.registerLanguage('aml', hljsAml)
+Hljs.registerLanguage('dbml', hljsDbml)
 Hljs.configure({cssSelector: 'pre code'})
 Hljs.highlightAll()
 

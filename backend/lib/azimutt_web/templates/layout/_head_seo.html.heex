@@ -2,28 +2,28 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
 
-<%= live_title_tag title(@conn) %>
-<meta name="description" content={description(@conn)} />
-<meta name="keywords" content={keywords(@conn)} />
+<%= live_title_tag og_title(@conn) %>
+<meta name="description" content={og_description(@conn)} />
+<meta name="keywords" content={og_keywords(@conn)} />
 <meta name="author" content="Loïc Knuchel" />
 <meta name="robots" content="index, follow" />
-<link rel="canonical" href={canonical(@conn)}>
+<link rel="canonical" href={og_canonical(@conn)}>
 
-<meta property="og:title" content={title(@conn)} />
-<meta property="og:description" content={description(@conn)} />
+<meta property="og:title" content={og_title(@conn)} />
+<meta property="og:description" content={og_description(@conn)} />
 <meta property="og:type" content={og_type(@conn)} />
 <meta property="og:image" content={og_image(@conn)} />
-<meta property="og:url" content={canonical(@conn)} />
+<meta property="og:url" content={og_canonical(@conn)} />
 <meta property="og:site_name" content="Azimutt"/>
 <meta property="og:locale" content="en_US" />
 
-<meta name="twitter:title" content={title(@conn)} />
-<meta name="twitter:description" content={description(@conn)} />
-<meta name="twitter:card" content={twitter_card(@conn)} />
+<meta name="twitter:title" content={og_title(@conn)} />
+<meta name="twitter:description" content={og_description(@conn)} />
 <meta name="twitter:image" content={og_image(@conn)} />
-<meta name="twitter:site" content={twitter_site(@conn)} />
-<meta name="twitter:creator" content={twitter_creator(@conn)} />
-<meta name="twitter:url" content="https://azimutt.app" />
+<meta name="twitter:card" content={og_twitter_card(@conn)} />
+<meta name="twitter:site" content={og_twitter_site(@conn)} />
+<meta name="twitter:creator" content={og_twitter_creator(@conn)} />
+<meta name="twitter:url" content={og_azimutt_url(@conn)} />
 
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/apple-touch-icon.png" />
@@ -39,14 +39,38 @@
 <meta name="msapplication-config" content="/browserconfig.xml" />
 <meta name="theme-color" content="#000000" />
 
+<%= if og_type(@conn) == "article" do %>
 <script type="application/ld+json">
-    {
-        "@@context": "https://schema.org",
-        "@@type": "Organization",
-        "name": "Azimutt",
-        "url": "https://azimutt.app",
-        "logo": "https://azimutt.app/images/logo_dark.svg"
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "<%= og_title(@conn) %>",
+    "description": "<%= og_description(@conn) %>",
+    "image": "<%= og_image(@conn) %>",<%= if og_published(@conn) != "" do %>
+    "datePublished": "<%= og_published(@conn) %>T13:37:42+02:00",<% end %><%= if og_modified(@conn) != "" do %>
+    "dateModified": "<%= og_modified(@conn) %>T13:37:42+02:00",<% end %><%= if og_author(@conn) != "" do %>
+    "author": {
+      "@type": "Person",
+      "name": "<%= og_author(@conn) %>"
+    },<% end %>
+    "publisher": {
+      "@type": "Organization",
+      "name": "Azimutt",
+      "url": "<%= og_azimutt_url(@conn) %>",
+      "logo": "<%= og_azimutt_logo(@conn) %>"
     }
+  }
 </script>
+<% else %>
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Azimutt",
+    "url": "<%= og_azimutt_url(@conn) %>",
+    "logo": "<%= og_azimutt_logo(@conn) %>"
+  }
+</script>
+<% end %>
 
 <%= csrf_meta_tag() %>

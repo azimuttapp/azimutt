@@ -70,7 +70,7 @@ You can look at the [Database](../models/src/database.ts) definition, it's how A
 Here is a sample usage:
 
 ```typescript
-const aml = 'users\  id int pk\n  name varchar\n'
+const aml = 'users\n  id int pk\n  name varchar\n'
 const parsed = parseAml(aml)
 if (parsed.errors) {
     parsed.errors.forEach(e => console.log('paring error', e.message))

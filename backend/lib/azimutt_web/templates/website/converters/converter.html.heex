@@ -7,7 +7,7 @@
                 <div class="mt-6 max-w-xl lg:mt-0 xl:col-end-1 xl:row-start-1">
                     <p class="text-lg leading-8 text-gray-600"><%= render "converters/_description-short.html", conn: @conn, converter: @converter.id %></p>
                 </div>
-                <img src={"/images/converters/#{@converter.id}.jpg"} alt={"#{@converter.name} converter"} class="mt-10 w-full max-w-lg rounded-2xl object-cover sm:mt-16 lg:mt-0 lg:max-w-none xl:row-span-2 xl:row-end-2 xl:-mt-32">
+                <img src={Routes.static_path(@conn, "/images/converters/#{@converter.id}.jpg")} alt={"#{@converter.name} converter"} class="mt-10 w-full max-w-lg rounded-2xl object-cover sm:mt-16 lg:mt-0 lg:max-w-none xl:row-span-2 xl:row-end-2 xl:-mt-32">
             </div>
         </div>
         <div class="absolute inset-x-0 top-0 -z-10 h-24 bg-gradient-to-b from-white sm:h-32"></div>
@@ -22,7 +22,7 @@
             <%= for converter <- Azimutt.converters() |> Enum.filter(fn c -> c.generate && c.id != @converter.id end) do %>
             <div class="flex flex-col overflow-hidden rounded-lg shadow-lg">
                 <div class="flex-shrink-0">
-                    <img class="h-48 w-full object-cover" src={"/images/converters/#{converter.id}.jpg"} alt={"#{converter.name} connector"}>
+                    <img class="h-48 w-full object-cover" src={Routes.static_path(@conn, "/images/converters/#{converter.id}.jpg")} alt={"#{converter.name} connector"}>
                 </div>
                 <div class="flex flex-1 flex-col justify-between bg-white p-6">
                     <div class="mt-2 block">

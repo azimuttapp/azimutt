@@ -23,7 +23,7 @@ defmodule AzimuttWeb.GalleryController do
                type: "article",
                title: sample.project.name <> " database schema",
                description: sample.description,
-               image: Routes.url(conn) <> sample.banner
+               image: Routes.static_url(conn, sample.banner)
              }
            )
   end

@@ -167,6 +167,7 @@ defmodule Azimutt do
         # cursor-arrow-ripple / document-magnifying-glass / eye / globe-europe-africa / magnifying-glass-circle / map / rectangle-group
         icon: "cursor-arrow-rays",
         name: "Explore",
+        title: "Exploring your database",
         description: "The all-in-one tool to understand and design your database following your thought process."
       },
       %{
@@ -174,6 +175,7 @@ defmodule Azimutt do
         # tag / archive-box / bars-3-center-left
         icon: "book-open",
         name: "Document",
+        title: "Documenting your database",
         description: "Nice and contextual documentation for databases is now finally a reality."
       },
       %{
@@ -181,6 +183,7 @@ defmodule Azimutt do
         # check-badge / beaker / clipboard-document-check / finger-print / funnel
         icon: "shield-check",
         name: "Optimize",
+        title: "Analyzing your database",
         description: "Identify database design warts and automate any check to keep it consistent."
       },
       %{
@@ -188,6 +191,7 @@ defmodule Azimutt do
         # adjustments-horizontal / sparkles
         icon: "academic-cap",
         name: "Design",
+        title: "Designing your database",
         description: "Make beautiful diagrams at your typing speed using our minimal DSL."
       }
     ]
@@ -312,15 +316,15 @@ defmodule Azimutt do
 
   def connectors do
     [
-      %{id: "postgres", name: "PostgreSQL", color: "#699eca"},
-      %{id: "mysql", name: "MySQL", color: "#00758f"},
-      %{id: "mariadb", name: "MariaDB", color: "#444b5e"},
-      %{id: "sqlserver", name: "SQL Server", color: "#ededee"},
-      %{id: "oracle", name: "Oracle", color: "#e61d18"},
-      %{id: "mongodb", name: "MongoDB", color: "#20a854"},
-      %{id: "couchbase", name: "Couchbase", color: "#ed2226"},
-      %{id: "bigquery", name: "BigQuery", color: "#4386fa"},
-      %{id: "snowflake", name: "Snowflake", color: "#29b5e8"}
+      %{id: "postgres", name: "PostgreSQL", color: "#699eca", description: "The most powerful open-source relational database, known for extensibility and SQL compliance. Now explorable with Azimutt."},
+      %{id: "mysql", name: "MySQL", color: "#00758f", description: "The world's most popular open-source relational database, widely used for web applications. Now accessible within Azimutt."},
+      %{id: "mariadb", name: "MariaDB", color: "#444b5e", description: "An open-source fork of MySQL with improved performance, scalability, and open development. Also available to connect to Azimutt."},
+      %{id: "sqlserver", name: "SQL Server", color: "#ededee", description: "A robust, enterprise-grade relational database by Microsoft, with integrated analytics and management tools. Integrated in Azimutt."},
+      %{id: "oracle", name: "Oracle", color: "#e61d18", description: "A high-performance relational database widely used in enterprises for mission-critical applications. Uniquely explorable with Azimutt."},
+      %{id: "mongodb", name: "MongoDB", color: "#20a854", description: "A NoSQL database designed for flexible, document-oriented storage and scalability. Collection schema and relations are inferred in Azimutt."},
+      %{id: "couchbase", name: "Couchbase", color: "#ed2226", description: "A distributed NoSQL database optimized for interactive applications and real-time analytics. Infer collection schema and relations."},
+      %{id: "bigquery", name: "BigQuery", color: "#4386fa", description: "Google’s fully-managed, serverless data warehouse for large-scale analytics using SQL. Discover your datasets with Azimutt."},
+      %{id: "snowflake", name: "Snowflake", color: "#29b5e8", description: "A cloud-native data platform for seamless data warehousing, sharing, and analytics. Easily explorable with this Azimutt connector."}
     ]
   end
 
@@ -341,6 +345,81 @@ defmodule Azimutt do
       %{id: "quicksql", name: "Quick SQL", parse: false, generate: false},
       %{id: "markdown", name: "Markdown", parse: false, generate: true},
       %{id: "amlv1", name: "AMLv1", parse: true, generate: true}
+    ]
+  end
+
+  def comparisons do
+    [
+      %{
+        id: "entity-relationship-diagram",
+        name: "Entity-Relationship Diagram",
+        keywords: "entity-relationship diagram,erd,database diagram,database visualization tool,database schema explorer,SQL,database",
+        tools: [
+          %{id: "dbdiagram", name: "dbdiagram.io", description: "An online Entity-Relationship Diagram using code to define your database schema, as fast as you can type.", pub: "2024-11-15"}
+          # %{id: "drawsql", name: "DrawSQL", description: "A beautiful online Entity-Relationship Diagram tool to design your database from scratch or from SQL dump."},
+          # %{id: "drawdb", name: "drawDB", description: "A Free and Open Source online Entity-Relationship Diagram tool that can generate SQL."},
+          # %{id: "chartdb", name: "ChartDB", description: "An Open Source online Entity-Relationship Diagram that visualize your database with a single query."}
+        ]
+      },
+      %{
+        id: "database-design-language",
+        name: "Database Design Language",
+        keywords: "database design,database schema,dsl",
+        tools: [
+          %{
+            id: "dbml",
+            name: "DBML",
+            title: "DBML vs AML, what are the differences?",
+            image: "dbml-vs-aml.jpg",
+            description: "DBML (Database Markup Language) is an open-source DSL to define and document database schemas.",
+            pub: "2024-11-15"
+          }
+        ]
+      },
+      %{
+        id: "sql-client",
+        name: "SQL Client",
+        keywords: "sql client",
+        tools: [
+          # %{id: "dbeaver", name: "DBeaver", description: "A free cross-platform database tool with support of many databases: MySQL, PostgreSQL, SQLite..."},
+          # %{id: "datagrip", name: "DataGrip", description: "A powerful cross-platform tool for relational and NoSQL databases by JetBrains."},
+          # %{id: "navicat", name: "Navicat", description: "Navicat is a robust, all-in-one solution for database development from a single application."},
+          # %{id: "beekeeperstudio", name: "Beekeeper Studio", description: "The SQL Editor and Database Manager Of Your Dreams, easy to use and good looking SQL Client."}
+        ]
+      },
+      %{
+        id: "database-documentation",
+        name: "Database Documentation",
+        keywords: "database documentation",
+        tools: [
+          # %{id: "schemaspy", name: "SchemaSpy", description: "Document your database simply and easily with a statically generated site from your CI."}
+        ]
+      },
+      %{
+        id: "data-catalog",
+        name: "Data Catalog",
+        keywords: "data catalog",
+        tools: [
+          # %{id: "amundsen", name: "Amundsen", description: "Open source data discovery and metadata engine for analysts, data engineers and developers."},
+          # %{id: "atlan", name: "Atlan", description: "Atlan is a metadata platform designed to cater to the needs of data-driven teams."}
+        ]
+      },
+      %{
+        id: "database-monitoring",
+        name: "Database Monitoring",
+        keywords: "database monitoring,proactive monitoring",
+        tools: [
+          # %{id: "datadog", name: "Datadog Database Monitoring", description: "Resolve issues and optimize inefficient query performance across entire database fleets."}
+        ]
+      },
+      %{
+        id: "dashboard",
+        name: "Dashboard",
+        keywords: "dashboard,data visualization,infographics",
+        tools: [
+          # %{id: "metabase", name: "Metabase", description: "Fast analytics with the friendly UX and integrated tooling to let your company explore data on their own."}
+        ]
+      }
     ]
   end
 
@@ -400,6 +479,7 @@ defmodule Azimutt do
           %{path: ["sources"], name: "Sources"},
           %{path: ["data-exploration"], name: "Data exploration"},
           %{path: ["database-analysis"], name: "Database analysis"},
+          %{path: ["ai"], name: "AI integration"},
           %{path: ["keyboard-shortcuts"], name: "Keyboard shortcuts"},
           %{path: ["collaboration"], name: "Collaboration"},
           %{path: ["export"], name: "Export"},

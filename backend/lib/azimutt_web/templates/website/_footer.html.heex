@@ -39,6 +39,7 @@
                             <%= for use_case <- Azimutt.showcase_usages do %>
                                 <li><a href={Routes.website_path(@conn, :use_cases_show, use_case.id)} class="text-sm leading-6 text-gray-600 hover:text-gray-900"><%= use_case.name %></a></li>
                             <% end %>
+                            <li><a href={Routes.website_path(@conn, :comparisons)} title="How Azimutt compares with other solutions" class="text-sm leading-6 text-gray-600 hover:text-gray-900">Comparisons</a></li>
                         </ul>
                     </div>
                     <div class="mt-10 md:mt-0">
@@ -60,7 +61,7 @@
                         <h3 class="text-sm font-semibold leading-6 text-gray-900">Support</h3>
                         <ul role="list" class="mt-6 space-y-4">
                             <li><a href={Azimutt.config(:azimutt_slack)} target="_blank" rel="noopener noreferrer" class="text-sm leading-6 text-gray-600 hover:text-gray-900">Slack</a></li>
-                            <li><a href={Azimutt.config(:azimutt_documentation)} target="_blank" rel="noopener noreferrer" class="text-sm leading-6 text-gray-600 hover:text-gray-900">Documentation</a></li>
+                            <li><a href={Azimutt.config(:azimutt_documentation)} class="text-sm leading-6 text-gray-600 hover:text-gray-900">Documentation</a></li>
                             <li><a href={Azimutt.config(:azimutt_github)} target="_blank" rel="noopener noreferrer" class="text-sm leading-6 text-gray-600 hover:text-gray-900">GitHub issues</a></li>
                             <li><a href={"mailto:#{Azimutt.config(:contact_email)}"} target="_blank" rel="noopener noreferrer" class="text-sm leading-6 text-gray-600 hover:text-gray-900">Email us</a></li>
                         </ul>
