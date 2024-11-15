@@ -33,7 +33,7 @@ defmodule AzimuttWeb.LayoutView do
   def og_image(%{assigns: %{seo: %{image: image}}}) when is_binary(image), do: image
   def og_image(conn), do: Routes.static_url(conn, "/images/og/azimutt.jpg")
 
-  def og_canonical(%{request_path: request_path} = conn), do: Routes.static_url(conn, request_path)
+  def og_canonical(%{request_path: request_path} = conn), do: Routes.static_url(conn, request_path |> String.split("?") |> List.first())
   def og_canonical(_conn), do: AzimuttWeb.Endpoint.url()
 
   def og_keywords(%{assigns: %{seo: %{keywords: keywords}}}) when is_binary(keywords), do: keywords
