@@ -1,4 +1,5 @@
 import {
+    Area,
     Color,
     DatabaseKind,
     DatabaseUrl,
@@ -164,8 +165,8 @@ export type GetPrismaSchema = { kind: 'GetPrismaSchema', content: string }
 export const GetPrismaSchema = z.object({kind: z.literal('GetPrismaSchema'), content: z.string()}).strict()
 export type GetCode = { kind: 'GetCode', dialect: Dialect, schema: LegacyDatabase}
 export const GetCode = z.object({kind: z.literal('GetCode'), dialect: Dialect, schema: LegacyDatabase}).strict()
-export type GetAutoLayout = { kind: 'GetAutoLayout', method: AutoLayoutMethod, nodes: DiagramNode[], edges: DiagramEdge[] }
-export const GetAutoLayout = z.object({kind: z.literal('GetAutoLayout'), method: AutoLayoutMethod, nodes: DiagramNode.array(), edges: DiagramEdge.array()}).strict()
+export type GetAutoLayout = { kind: 'GetAutoLayout', method: AutoLayoutMethod, viewport: Area, nodes: DiagramNode[], edges: DiagramEdge[] }
+export const GetAutoLayout = z.object({kind: z.literal('GetAutoLayout'), method: AutoLayoutMethod, viewport: Area, nodes: DiagramNode.array(), edges: DiagramEdge.array()}).strict()
 export type ObserveSizes = { kind: 'ObserveSizes', ids: HtmlId[] }
 export const ObserveSizes = z.object({kind: z.literal('ObserveSizes'), ids: HtmlId.array()}).strict()
 export type ListenKeys = { kind: 'ListenKeys', keys: { [id: HotkeyId]: Hotkey[] } }

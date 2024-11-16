@@ -15,6 +15,7 @@ import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind as Tw exposing (TwClass, batch, focus, hover)
+import Models.AutoLayout as AutoLayoutMethod
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), Msg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
@@ -67,8 +68,25 @@ viewCommands conf canvasZoom history future args =
                     |> Tooltip.t (B.cond (historyLen == 0) "Undo" ("Undo (" ++ String.fromInt historyLen ++ ")"))
                 , button [ type_ "button", onClick Redo, disabled (futureLen == 0), css [ "-ml-px", buttonStyles, classic ] ] [ Icon.solid ArrowCircleRight "" ]
                     |> Tooltip.t (B.cond (futureLen == 0) "Redo" ("Redo (" ++ String.fromInt futureLen ++ ")"))
-                , button [ type_ "button", onClick ArrangeTables, css [ "-ml-px rounded-r-md", buttonStyles, classic ] ] [ Icon.solid CubeTransparent "" ]
-                    |> Tooltip.t "Arrange tables"
+                , Dropdown.dropdown { id = htmlId ++ "-auto-layout", direction = TopLeft, isOpen = openedDropdown == htmlId ++ "-auto-layout" }
+                    (\m ->
+                        button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup "true", css [ "-ml-px rounded-r-md", buttonStyles, classic ] ]
+                            [ Icon.solid CubeTransparent "" ]
+                            |> Tooltip.t "Arrange tables"
+                    )
+                    (\_ ->
+                        div []
+                            [ ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.Dagre) [] [ text "Dagre layout" ]
+                            , ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.CytoRand) [] [ text "Random layout" ]
+                            , ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.CytoGrid) [] [ text "Grid layout" ]
+                            , ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.CytoCircle) [] [ text "Circle layout" ]
+                            , ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.CytoAvsdf) [] [ text "Avsdf layout" ]
+                            , ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.CytoBreadth) [] [ text "Breadth layout" ]
+                            , ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.CytoCose) [] [ text "Cose layout" ]
+                            , ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.CytoDagre) [] [ text "Dagre2 layout" ]
+                            , ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.CytoFcose) [] [ text "Force layout" ]
+                            ]
+                    )
                 ]
 
           else

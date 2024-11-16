@@ -33,6 +33,9 @@ export type Position = z.infer<typeof Position>
 export const Size = z.object({width: Px, height: Px}).strict()
 export type Size = z.infer<typeof Size>
 
+export const Area = z.object({position: Position, size: Size}).strict()
+export type Area = z.infer<typeof Area>
+
 export const Delta = z.object({dx: z.number(), dy: z.number()}).strict()
 export type Delta = z.infer<typeof Delta>
 

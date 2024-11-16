@@ -6,11 +6,12 @@ import Libs.Dict as Dict
 import Libs.Html.Events exposing (WheelEvent)
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.Area exposing (Area)
 import Libs.Models.Delta as Delta exposing (Delta)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tuple3 as Tuple3
 import Models.Area as Area
-import Models.AutoLayout as AutoLayout exposing (DiagramEdge, DiagramNode)
+import Models.AutoLayout exposing (AutoLayoutMethod, DiagramEdge, DiagramNode)
 import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
@@ -85,13 +86,17 @@ fitCanvasAlgo erdElem tables rows memos groups layout =
         |> Maybe.withDefault ( layout, Extra.none )
 
 
-launchAutoLayout : Erd -> ( Erd, Extra Msg )
-launchAutoLayout erd =
+launchAutoLayout : AutoLayoutMethod -> ErdProps -> Erd -> ( Erd, Extra Msg )
+launchAutoLayout method erdElem erd =
     -- TODO: toggle this on show all tables if layout was empty before, see frontend/src/PagesComponents/Organization_/Project_/Updates/Table.elm:106#showAllTables
     (erd |> Erd.currentLayout |> objectsToFit)
         |> Maybe.map
             (\( tables, ( rows, memos, _ ) ) ->
                 let
+                    viewport : Area
+                    viewport =
+                        erd |> Erd.viewport erdElem |> Area.extractCanvas
+
                     layout : ErdLayout
                     layout =
                         erd |> Erd.currentLayout
@@ -111,7 +116,7 @@ launchAutoLayout erd =
                         (layout.tables |> List.filterInBy .id tables)
                             |> List.concatMap (\t -> t.relatedTables |> Dict.filter (\_ -> .shown) |> Dict.keys |> List.map (\id -> { src = "table/" ++ TableId.toString t.id, ref = "table/" ++ TableId.toString id }) |> List.filter (\r -> ids |> Set.member r.ref))
                 in
-                ( erd, Ports.getAutoLayout AutoLayout.Default nodes edges |> Extra.cmd )
+                ( erd, Ports.getAutoLayout method viewport nodes edges |> Extra.cmd )
             )
         |> Maybe.withDefault ( erd, "No table to arrange in the canvas" |> Toasts.create "warning" |> Toast |> Extra.msg )
 

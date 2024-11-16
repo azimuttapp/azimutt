@@ -22,8 +22,8 @@ import Libs.Models.Delta as Delta exposing (Delta)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Nel as Nel
 import Libs.Task as T
-import Libs.Time as Time
 import Models.Area as Area
+import Models.AutoLayout as AutoLayout
 import Models.Feature as Feature
 import Models.Organization as Organization exposing (Organization)
 import Models.Position as Position
@@ -345,8 +345,8 @@ update urlLayout zone now urlInfos organizations projects msg model =
         SetView_ canvas ->
             model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapCanvasT (\c -> ( canvas, Extra.history ( SetView_ c, SetView_ canvas ) )))) |> Extra.defaultT
 
-        ArrangeTables ->
-            model |> mapErdMT launchAutoLayout |> Extra.defaultT
+        ArrangeTables method ->
+            model |> mapErdMT (launchAutoLayout method model.erdElem) |> Extra.defaultT
 
         SetLayout_ layout ->
             model |> mapErdMTM (Erd.mapCurrentLayoutT (\l -> ( layout, Extra.new (Ports.observeLayout layout) ( SetLayout_ l, SetLayout_ layout ) ))) |> setDirtyM
@@ -726,7 +726,7 @@ updateSizes changes model =
                         e |> fitCanvas newModel.erdElem
 
                     else if e.layoutOnLoad == "arrange" then
-                        e |> launchAutoLayout
+                        e |> launchAutoLayout AutoLayout.default model.erdElem
 
                     else
                         ( e, Extra.none )

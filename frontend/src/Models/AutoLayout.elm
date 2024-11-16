@@ -1,4 +1,4 @@
-module Models.AutoLayout exposing (AutoLayoutMethod(..), DiagramEdge, DiagramNode, decodeDiagramNode, encodeAutoLayoutMethod, encodeDiagramEdge, encodeDiagramNode)
+module Models.AutoLayout exposing (AutoLayoutMethod(..), DiagramEdge, DiagramNode, decodeDiagramNode, default, encodeAutoLayoutMethod, encodeDiagramEdge, encodeDiagramNode)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
@@ -7,7 +7,20 @@ import Libs.Models.Size as Size exposing (Size)
 
 
 type AutoLayoutMethod
-    = Default
+    = Dagre
+    | CytoRand
+    | CytoGrid
+    | CytoCircle
+    | CytoAvsdf
+    | CytoBreadth
+    | CytoCose
+    | CytoDagre
+    | CytoFcose
+
+
+default : AutoLayoutMethod
+default =
+    Dagre
 
 
 type alias DiagramNode =
@@ -21,8 +34,32 @@ type alias DiagramEdge =
 encodeAutoLayoutMethod : AutoLayoutMethod -> Value
 encodeAutoLayoutMethod value =
     case value of
-        Default ->
-            "default" |> Encode.string
+        Dagre ->
+            "dagre" |> Encode.string
+
+        CytoRand ->
+            "cytoscape/random" |> Encode.string
+
+        CytoGrid ->
+            "cytoscape/grid" |> Encode.string
+
+        CytoCircle ->
+            "cytoscape/circle" |> Encode.string
+
+        CytoAvsdf ->
+            "cytoscape/avsdf" |> Encode.string
+
+        CytoBreadth ->
+            "cytoscape/breadthfirst" |> Encode.string
+
+        CytoCose ->
+            "cytoscape/cose" |> Encode.string
+
+        CytoDagre ->
+            "cytoscape/dagre" |> Encode.string
+
+        CytoFcose ->
+            "cytoscape/fcose" |> Encode.string
 
 
 encodeDiagramNode : DiagramNode -> Value

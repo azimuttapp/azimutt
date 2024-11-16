@@ -17,6 +17,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Notes exposing (Notes)
 import Libs.Tailwind as Tw exposing (Color)
 import Libs.Task as T
+import Models.AutoLayout exposing (AutoLayoutMethod)
 import Models.ColumnOrder exposing (ColumnOrder)
 import Models.ErdProps as ErdProps exposing (ErdProps)
 import Models.OpenAIKey exposing (OpenAIKey)
@@ -280,7 +281,7 @@ type Msg
     | LayoutMsg LayoutMsg
     | FitToScreen
     | SetView_ CanvasProps
-    | ArrangeTables
+    | ArrangeTables AutoLayoutMethod
     | SetLayout_ ErdLayout
     | NotesMsg NotesMsg
     | TagsMsg TagsMsg

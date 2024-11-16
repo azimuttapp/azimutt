@@ -1,7 +1,10 @@
-module Libs.Models.Area exposing (Area, AreaLike, debug, inside, merge, normalize, overlap, toStringRound, zero)
+module Libs.Models.Area exposing (Area, AreaLike, debug, decode, encode, inside, merge, normalize, overlap, toStringRound, zero)
 
 import Html exposing (Attribute, Html, text)
 import Html.Attributes exposing (class)
+import Json.Decode as Decode
+import Json.Encode exposing (Value)
+import Libs.Json.Encode as Encode
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size exposing (Size)
 import Libs.Tailwind exposing (TwClass)
@@ -79,6 +82,21 @@ toStringRound { position, size } =
 styleTransform : AreaLike a -> List (Attribute msg)
 styleTransform area =
     Position.styleTransform area.position :: Size.styles area.size
+
+
+encode : Area -> Value
+encode value =
+    Encode.notNullObject
+        [ ( "position", value.position |> Position.encode )
+        , ( "size", value.size |> Size.encode )
+        ]
+
+
+decode : Decode.Decoder Area
+decode =
+    Decode.map2 Area
+        (Decode.field "position" Position.decode)
+        (Decode.field "size" Size.decode)
 
 
 debug : String -> TwClass -> AreaLike a -> Html msg

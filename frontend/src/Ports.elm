@@ -8,6 +8,7 @@ import Json.Encode as Encode
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.Models exposing (FileContent, SizeChange)
+import Libs.Models.Area as Area exposing (Area)
 import Libs.Models.DatabaseKind as DatabaseKind exposing (DatabaseKind)
 import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.Delta as Delta exposing (Delta)
@@ -185,9 +186,9 @@ getCode dialect schema =
     messageToJs (GetCode dialect schema)
 
 
-getAutoLayout : AutoLayoutMethod -> List DiagramNode -> List DiagramEdge -> Cmd msg
-getAutoLayout method nodes edges =
-    messageToJs (GetAutoLayout method nodes edges)
+getAutoLayout : AutoLayoutMethod -> Area -> List DiagramNode -> List DiagramEdge -> Cmd msg
+getAutoLayout method viewport nodes edges =
+    messageToJs (GetAutoLayout method viewport nodes edges)
 
 
 observeSize : HtmlId -> Cmd msg
@@ -301,7 +302,7 @@ type ElmMsg
     | GetAmlSchema SourceId String
     | GetPrismaSchema String
     | GetCode Dialect JsonSchema
-    | GetAutoLayout AutoLayoutMethod (List DiagramNode) (List DiagramEdge)
+    | GetAutoLayout AutoLayoutMethod Area (List DiagramNode) (List DiagramEdge)
     | ObserveSizes (List HtmlId)
     | LlmGenerateSql OpenAIKey OpenAIModel String DatabaseKind Source
     | ListenKeys (Dict String (List Hotkey))
@@ -459,8 +460,8 @@ elmEncoder elm =
         GetCode dialect schema ->
             Encode.object [ ( "kind", "GetCode" |> Encode.string ), ( "dialect", dialect |> Dialect.encode ), ( "schema", schema |> JsonSchema.encode ) ]
 
-        GetAutoLayout method nodes edges ->
-            Encode.object [ ( "kind", "GetAutoLayout" |> Encode.string ), ( "method", method |> encodeAutoLayoutMethod ), ( "nodes", nodes |> Encode.list encodeDiagramNode ), ( "edges", edges |> Encode.list encodeDiagramEdge ) ]
+        GetAutoLayout method viewport nodes edges ->
+            Encode.object [ ( "kind", "GetAutoLayout" |> Encode.string ), ( "method", method |> encodeAutoLayoutMethod ), ( "viewport", viewport |> Area.encode ), ( "nodes", nodes |> Encode.list encodeDiagramNode ), ( "edges", edges |> Encode.list encodeDiagramEdge ) ]
 
         ObserveSizes ids ->
             Encode.object [ ( "kind", "ObserveSizes" |> Encode.string ), ( "ids", ids |> Encode.list Encode.string ) ]
