@@ -76,15 +76,14 @@ viewCommands conf canvasZoom history future args =
                     )
                     (\_ ->
                         div []
-                            [ ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.Dagre) [] [ text "Dagre layout" ]
-                            , ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.CytoRand) [] [ text "Random layout" ]
-                            , ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.CytoGrid) [] [ text "Grid layout" ]
-                            , ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.CytoCircle) [] [ text "Circle layout" ]
-                            , ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.CytoAvsdf) [] [ text "Avsdf layout" ]
-                            , ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.CytoBreadth) [] [ text "Breadth layout" ]
-                            , ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.CytoCose) [] [ text "Cose layout" ]
-                            , ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.CytoDagre) [] [ text "Dagre2 layout" ]
-                            , ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.CytoFcose) [] [ text "Force layout" ]
+                            [ ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.Random) [] [ text "Random layout" ]
+                            , ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.Grid) [] [ text "Grid layout" ]
+                            , ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.Circle) [] [ text "Circle layout" ]
+                            , ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.Avsdf) [] [ text "Avsdf layout" ]
+                            , ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.BreadthFirst) [] [ text "Breadth layout" ]
+                            , ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.Dagre) [] [ text "Dagre layout" ]
+                            , ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.Cose) [] [ text "Compound layout" ]
+                            , ContextMenu.btn "" (ArrangeTables AutoLayoutMethod.FCose) [] [ text "Force layout" ]
                             ]
                     )
                 ]

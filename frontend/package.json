@@ -56,7 +56,6 @@
     "@azimutt/models": "workspace:^",
     "@azimutt/parser-prisma": "workspace:^",
     "@azimutt/utils": "workspace:^",
-    "@dagrejs/dagre": "^1.1.4",
     "@sentry/browser": "7.114.0",
     "@sentry/tracing": "7.114.0",
     "canvas-confetti": "1.9.3",

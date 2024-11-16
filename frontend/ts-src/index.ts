@@ -1,9 +1,8 @@
 import * as Sentry from "@sentry/browser";
 import {BrowserTracing} from "@sentry/tracing";
-import dagre from "@dagrejs/dagre";
 import cytoscape, {ElementDefinition, LayoutOptions, NodeSingular} from "cytoscape";
 import avsdf from "cytoscape-avsdf";
-import dagre2 from "cytoscape-dagre";
+import dagre from "cytoscape-dagre";
 import fcose from "cytoscape-fcose";
 import {AnyError, errorToString} from "@azimutt/utils";
 import {
@@ -477,44 +476,27 @@ function getCode(msg: GetCode) {
     app.gotCode(msg.dialect, content)
 }
 
+// load cytoscape layout extensions
+cytoscape.use(avsdf)
+cytoscape.use(dagre)
+cytoscape.use(fcose)
 function getAutoLayout(msg: GetAutoLayout): void {
     const pos = msg.viewport.position
     const size = msg.viewport.size
     const count = msg.nodes.length
-    if (msg.method === 'dagre') { dagreLayout(msg.nodes, msg.edges) }
     // https://blog.js.cytoscape.org/2020/05/11/layouts & https://js.cytoscape.org/#layouts
-    else if (msg.method === 'cytoscape/random') { cytoscapeLayout(msg, {name: 'random', boundingBox: {x1: pos.left, y1: pos.top, w: count * 100, h: count * 100 * (size.height / size.width)}}) } // https://js.cytoscape.org/#layouts/random
-    else if (msg.method === 'cytoscape/grid') { cytoscapeLayout(msg, {name: 'grid', condense: true, boundingBox: {x1: pos.left, y1: pos.top, w: size.width, h: size.height}}) } // https://js.cytoscape.org/#layouts/grid
-    else if (msg.method === 'cytoscape/circle') { cytoscapeLayout(msg, {name: 'circle', spacingFactor: 0.3}) } // https://js.cytoscape.org/#layouts/grid
-    else if (msg.method === 'cytoscape/avsdf') { cytoscapeLayout(msg, {name: 'avsdf', nodeSeparation: 225} as LayoutOptions) } // https://github.com/iVis-at-Bilkent/cytoscape.js-avsdf (like circle but better)
-    else if (msg.method === 'cytoscape/breadthfirst') { cytoscapeLayout(msg, {name: 'breadthfirst', circle: true, spacingFactor: 1}) } // https://js.cytoscape.org/#layouts/breadthfirst
-    else if (msg.method === 'cytoscape/cose') { cytoscapeLayout(msg, {name: 'cose', boundingBox: {x1: 0, y1: 0, w: count * 100, h: count * 100 * (size.height / size.width)}}) } // https://js.cytoscape.org/#layouts/cose
-    else if (msg.method === 'cytoscape/dagre') { cytoscapeLayout(msg, {name: 'dagre'}) } // https://github.com/cytoscape/cytoscape.js-dagre
-    else if (msg.method === 'cytoscape/fcose') { cytoscapeLayout(msg, {name: 'fcose', idealEdgeLength: () => 300, fixedNodeConstraint: []} as LayoutOptions) } // https://github.com/iVis-at-Bilkent/cytoscape.js-fcose
+    if (msg.method === 'random') { cytoscapeLayout(msg, {name: 'random', boundingBox: {x1: pos.left, y1: pos.top, w: count * 100, h: count * 100 * (size.height / size.width)}}) } // https://js.cytoscape.org/#layouts/random
+    else if (msg.method === 'grid') { cytoscapeLayout(msg, {name: 'grid', condense: true, boundingBox: {x1: pos.left, y1: pos.top, w: size.width, h: size.height}}) } // https://js.cytoscape.org/#layouts/grid
+    else if (msg.method === 'circle') { cytoscapeLayout(msg, {name: 'circle', spacingFactor: 0.3}) } // https://js.cytoscape.org/#layouts/grid
+    else if (msg.method === 'avsdf') { cytoscapeLayout(msg, {name: 'avsdf', nodeSeparation: 225} as LayoutOptions) } // https://github.com/iVis-at-Bilkent/cytoscape.js-avsdf (like circle but better)
+    else if (msg.method === 'breadthfirst') { cytoscapeLayout(msg, {name: 'breadthfirst', circle: true, spacingFactor: 1}) } // https://js.cytoscape.org/#layouts/breadthfirst
+    else if (msg.method === 'dagre') { cytoscapeLayout(msg, {name: 'dagre'}) } // https://github.com/cytoscape/cytoscape.js-dagre
+    else if (msg.method === 'cose') { cytoscapeLayout(msg, {name: 'cose', boundingBox: {x1: 0, y1: 0, w: count * 100, h: count * 100 * (size.height / size.width)}}) } // https://js.cytoscape.org/#layouts/cose
+    else if (msg.method === 'fcose') { cytoscapeLayout(msg, {name: 'fcose', idealEdgeLength: () => 300, fixedNodeConstraint: []} as LayoutOptions) } // https://github.com/iVis-at-Bilkent/cytoscape.js-fcose
     else { app.toast(ToastLevel.enum.error, `Unknown auto-layout method '${msg.method}', please report it for a fix.`) }
 }
 
-function dagreLayout(nodes: DiagramNode[], edges: DiagramEdge[]): void {
-    // https://github.com/dagrejs/dagre/issues/461
-    // https://github.com/dagrejs/dagre/issues/462
-    const g = new dagre.graphlib.Graph()
-    g.setGraph({})
-    g.setDefaultEdgeLabel(() => ({}))
-    nodes.forEach(n => g.setNode(n.id, {width: n.size.width, height: n.size.height}))
-    edges.forEach(e => g.setEdge(e.src, e.ref))
-    dagre.layout(g, {rankdir: 'LR'})
-    app.gotAutoLayout(g.nodes().map(id => {
-        const node = g.node(id)
-        return {id, size: {width: node.width, height: node.height}, pos: {left: node.x - (node.width / 2), top: node.y - (node.height / 2)}}
-    }))
-}
-
-// load cytoscape layout extensions
-cytoscape.use(avsdf)
-cytoscape.use(dagre2)
-cytoscape.use(fcose)
 function cytoscapeLayout(msg: { nodes: DiagramNode[], edges: DiagramEdge[] }, layout: LayoutOptions): void {
-    console.log('layout', layout)
     const nodeElts: ElementDefinition[] = msg.nodes.map(n => ({
         group: 'nodes',
         data: {id: n.id, width: n.size.width, height: n.size.height},

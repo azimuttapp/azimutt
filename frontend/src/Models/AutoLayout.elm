@@ -7,20 +7,19 @@ import Libs.Models.Size as Size exposing (Size)
 
 
 type AutoLayoutMethod
-    = Dagre
-    | CytoRand
-    | CytoGrid
-    | CytoCircle
-    | CytoAvsdf
-    | CytoBreadth
-    | CytoCose
-    | CytoDagre
-    | CytoFcose
+    = Random
+    | Grid
+    | Circle
+    | Avsdf
+    | BreadthFirst
+    | Dagre
+    | Cose
+    | FCose
 
 
 default : AutoLayoutMethod
 default =
-    Dagre
+    Cose
 
 
 type alias DiagramNode =
@@ -34,32 +33,29 @@ type alias DiagramEdge =
 encodeAutoLayoutMethod : AutoLayoutMethod -> Value
 encodeAutoLayoutMethod value =
     case value of
+        Random ->
+            "random" |> Encode.string
+
+        Grid ->
+            "grid" |> Encode.string
+
+        Circle ->
+            "circle" |> Encode.string
+
+        Avsdf ->
+            "avsdf" |> Encode.string
+
+        BreadthFirst ->
+            "breadthfirst" |> Encode.string
+
         Dagre ->
             "dagre" |> Encode.string
 
-        CytoRand ->
-            "cytoscape/random" |> Encode.string
+        Cose ->
+            "cose" |> Encode.string
 
-        CytoGrid ->
-            "cytoscape/grid" |> Encode.string
-
-        CytoCircle ->
-            "cytoscape/circle" |> Encode.string
-
-        CytoAvsdf ->
-            "cytoscape/avsdf" |> Encode.string
-
-        CytoBreadth ->
-            "cytoscape/breadthfirst" |> Encode.string
-
-        CytoCose ->
-            "cytoscape/cose" |> Encode.string
-
-        CytoDagre ->
-            "cytoscape/dagre" |> Encode.string
-
-        CytoFcose ->
-            "cytoscape/fcose" |> Encode.string
+        FCose ->
+            "fcose" |> Encode.string
 
 
 encodeDiagramNode : DiagramNode -> Value

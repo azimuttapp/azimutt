@@ -40,7 +40,7 @@ export const PositionViewport = z.object({
     clientY: z.number()
 }).strict()
 
-export const AutoLayoutMethod = z.enum(['dagre', 'cytoscape/random', 'cytoscape/grid', 'cytoscape/circle', 'cytoscape/avsdf', 'cytoscape/breadthfirst', 'cytoscape/cose', 'cytoscape/dagre', 'cytoscape/fcose'])
+export const AutoLayoutMethod = z.enum(['random', 'grid', 'circle', 'avsdf', 'breadthfirst', 'cose', 'dagre', 'fcose'])
 export type AutoLayoutMethod = z.infer<typeof AutoLayoutMethod>
 export const DiagramNode = z.object({id: z.string(), size: Size, pos: Position}).strict()
 export type DiagramNode = z.infer<typeof DiagramNode>
