@@ -114,7 +114,7 @@ showTables now ids hint from erd =
             )
             ( ( erd, [] ), ( [], [], [] ) )
         |> (\( ( e, h ), ( found, shown, notFound ) ) ->
-                ( e
+                ( B.cond (erd |> Erd.currentLayout |> .tables |> List.isEmpty) { e | layoutOnLoad = "arrange" } e
                 , Extra.newLL
                     [ Ports.observeTablesSize found
                     , B.cond (shown |> List.isEmpty) Cmd.none (Track.tableShown (List.length shown) from (Just erd))

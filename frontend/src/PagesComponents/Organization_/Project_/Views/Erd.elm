@@ -1,8 +1,8 @@
 module PagesComponents.Organization_.Project_.Views.Erd exposing (ErdArgs, argsToString, stringToArgs, viewErd)
 
-import Components.Atoms.Badge as Badge
+import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Molecules.Tooltip as Tooltip
+import Components.Molecules.Alert as Alert
 import Components.Organisms.Table exposing (TableHover)
 import Components.Organisms.TableRow as TableRow exposing (TableRowHover, TableRowRelation, TableRowRelationColumn, TableRowSuccess)
 import Conf
@@ -46,7 +46,7 @@ import Models.Project.TableRow as TableRow exposing (TableRow, TableRowColumn)
 import Models.RelationStyle exposing (RelationStyle)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
-import PagesComponents.Organization_.Project_.Models exposing (GroupEdit, GroupMsg(..), MemoEdit, MemoMsg(..), Msg(..), VirtualRelation)
+import PagesComponents.Organization_.Project_.Models exposing (GroupEdit, GroupMsg(..), MemoEdit, MemoMsg(..), Msg(..), VirtualRelation, confirm)
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.DragState exposing (DragState)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
@@ -54,7 +54,7 @@ import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColu
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
-import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
@@ -184,7 +184,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
             , div [ class "az-virtual-relation pointer-events-none" ] [ virtualRelationInfo |> Maybe.mapOrElse (\i -> viewVirtualRelation erd.settings.relationStyle i) viewEmptyRelation ]
             ]
         , if layout |> ErdLayout.isEmpty then
-            viewEmptyState erd.settings.defaultSchema erd.tables
+            viewEmptyState erd.tables
 
           else
             div [] []
@@ -385,27 +385,12 @@ viewHiddenTables defaultSchema tables =
         )
 
 
-viewEmptyState : SchemaName -> Dict TableId ErdTable -> Html Msg
-viewEmptyState defaultSchema tables =
+viewEmptyState : Dict TableId ErdTable -> Html Msg
+viewEmptyState tables =
     let
-        bestOneWordTables : List ErdTable
-        bestOneWordTables =
-            tables
-                |> Dict.values
-                |> List.filterNot (\t -> (t.schema |> String.contains "_") || (t.name |> String.contains "_") || (t.schema |> String.contains "-") || (t.name |> String.contains "-"))
-                |> List.sortBy (\t -> (t.name |> String.length) - (t.columns |> Dict.size))
-                |> List.take 10
-
-        bestTables : List ErdTable
-        bestTables =
-            if bestOneWordTables |> List.isEmpty then
-                tables
-                    |> Dict.values
-                    |> List.sortBy (\t -> (t.name |> String.length) - (t.columns |> Dict.size))
-                    |> List.take 10
-
-            else
-                bestOneWordTables
+        topTables : List TableId
+        topTables =
+            tables |> Dict.values |> List.sortBy (ErdTable.rank >> negate) |> List.take 30 |> List.map .id
     in
     div [ class "flex h-full justify-center items-center" ]
         [ div [ class "max-w-prose p-6 bg-white border border-gray-200 rounded-lg" ]
@@ -425,16 +410,27 @@ viewEmptyState defaultSchema tables =
                   else
                     div []
                         [ p [ class "mt-3 text-sm text-gray-500" ]
-                            [ text "Azimutt allows you to explore your database schema. Start by typing what you are looking for in the "
-                            , button [ onClick (Focus Conf.ids.searchInput), css [ "link", focus [ "outline-none" ] ] ] [ text "search bar" ]
-                            , text ", and then look at columns, follow relations and more... Create new layouts to save them for later."
-                            ]
-                        , p [ class "mt-3 text-sm text-gray-500" ]
-                            [ text "Your project has "
+                            [ text "Explore your "
                             , bText (tables |> String.pluralizeD "table")
-                            , text ". Here are some that could be interesting:"
-                            , div [] (bestTables |> List.map (\t -> Badge.roundedFlex Tw.primary [ onClick (ShowTable t.id Nothing "empty-screen"), class "m-1 cursor-pointer" ] [ text (TableId.show defaultSchema t.id) ] |> Tooltip.t (t.columns |> String.pluralizeD "column")))
+                            , text " database with Azimutt. Create layouts, show tables you want and share them. Use the "
+                            , button [ onClick (Focus Conf.ids.searchInput), css [ "link", focus [ "outline-none" ] ] ] [ text "search bar" ]
+                            , text " or start with an overview:"
                             ]
+                        , div [ class "my-8 flex justify-around items-center" ]
+                            [ Button.white4 Tw.indigo
+                                [ onClick
+                                    (if Dict.size tables < Conf.constants.manyTablesLimit then
+                                        ShowAllTables "welcome"
+
+                                     else
+                                        confirm "Show all tables" (text ("You are about to show " ++ (tables |> String.pluralizeD "table") ++ ". That's a lot. It may slow down your browser and make Azimutt unresponsive. Continue?")) (ShowAllTables "welcome")
+                                    )
+                                ]
+                                [ text ("Show all " ++ (tables |> String.pluralizeD "table")) ]
+                            , span [] [ text "or" ]
+                            , Button.white4 Tw.indigo [ onClick (ShowTables topTables Nothing "welcome") ] [ text ("Show " ++ (topTables |> String.pluralizeL "most central table")) ]
+                            ]
+                        , Alert.simple Tw.indigo Icon.InformationCircle [ text "Click on colored column icons to follow relations (in/out)." ]
                         ]
                 , p [ class "mt-3 text-sm text-gray-500" ]
                     [ text "If you ❤️ Azimutt, "

@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable, create, getColumnI, getColumnRoot, getTable, inChecks, inIndexes, inPrimaryKey, inUniques, ranking, unpack)
+module PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable, create, getColumnI, getColumnRoot, getTable, inChecks, inIndexes, inPrimaryKey, inUniques, rank, unpack)
 
 import Conf
 import Dict exposing (Dict)
@@ -157,7 +157,7 @@ hasColumn column columns =
     columns |> List.any (\c -> c |> ColumnPath.startsWith column)
 
 
-ranking : ErdTable -> Int
-ranking table =
+rank : ErdTable -> Int
+rank table =
     -- basic computation if "table importance", using number of incoming relations as the main metric, then number of columns
     table.columns |> Dict.foldl (\_ c r -> r + 1 + (10 * (c.inRelations |> List.length))) 0
