@@ -136,7 +136,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdMT (goToTable now id model.erdElem) |> setDirtyM
 
         ShowTable id hint from ->
-            if projectRef |> Organization.canShowTables 1 (model.erd |> Erd.countLayoutTables) then
+            if projectRef |> Organization.canShowTables (model.erd |> Maybe.mapOrElse .currentLayout "") (model.erd |> Erd.countLayoutTables) 1 then
                 if model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables) [] |> List.any (\t -> t.id == id) then
                     ( model, GoToTable id |> Extra.msg )
 
@@ -147,14 +147,14 @@ update urlLayout zone now urlInfos organizations projects msg model =
                 ( model, Extra.cmdL [ PlanDialog.layoutTablesModalBody projectRef |> CustomModalOpen |> T.send, Track.planLimit Feature.layoutTables model.erd ] )
 
         ShowTables ids hint from ->
-            if projectRef |> Organization.canShowTables (ids |> List.length) (model.erd |> Erd.countLayoutTables) then
+            if projectRef |> Organization.canShowTables (model.erd |> Maybe.mapOrElse .currentLayout "") (model.erd |> Erd.countLayoutTables) (ids |> List.length) then
                 model |> mapErdMT (showTables now ids hint from) |> setDirtyM
 
             else
                 ( model, Extra.cmdL [ PlanDialog.layoutTablesModalBody projectRef |> CustomModalOpen |> T.send, Track.planLimit Feature.layoutTables model.erd ] )
 
         ShowAllTables from ->
-            if projectRef |> Organization.canShowTables (model.erd |> Maybe.mapOrElse (.tables >> Dict.size) 0) (model.erd |> Erd.countLayoutTables) then
+            if projectRef |> Organization.canShowTables (model.erd |> Maybe.mapOrElse .currentLayout "") (model.erd |> Erd.countLayoutTables) (model.erd |> Maybe.mapOrElse (.tables >> Dict.size) 0) then
                 model |> mapErdMT (showAllTables now from) |> setDirtyM
 
             else
@@ -171,7 +171,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
                 model |> mapErdMT (unHideTable now index table) |> setDirtyM
 
         ShowRelatedTables id ->
-            if projectRef |> Organization.canShowTables 1 (model.erd |> Erd.countLayoutTables) then
+            if projectRef |> Organization.canShowTables (model.erd |> Maybe.mapOrElse .currentLayout "") (model.erd |> Erd.countLayoutTables) 1 then
                 model |> mapErdMT (showRelatedTables now id) |> setDirtyM
 
             else
@@ -346,7 +346,7 @@ update urlLayout zone now urlInfos organizations projects msg model =
             model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapCanvasT (\c -> ( canvas, Extra.history ( SetView_ c, SetView_ canvas ) )))) |> Extra.defaultT
 
         ArrangeTables method ->
-            model |> mapErdMT (launchAutoLayout method model.erdElem) |> Extra.defaultT
+            ( model, model.erd |> Maybe.mapOrElse (launchAutoLayout method model.erdElem) Cmd.none |> Extra.cmd )
 
         SetLayout_ layout ->
             model |> mapErdMTM (Erd.mapCurrentLayoutT (\l -> ( layout, Extra.new (Ports.observeLayout layout) ( SetLayout_ l, SetLayout_ layout ) ))) |> setDirtyM
@@ -726,7 +726,7 @@ updateSizes changes model =
                         e |> fitCanvas newModel.erdElem
 
                     else if e.layoutOnLoad == "arrange" then
-                        e |> launchAutoLayout AutoLayout.default model.erdElem
+                        ( e, e |> launchAutoLayout AutoLayout.default model.erdElem |> Extra.cmd )
 
                     else
                         ( e, Extra.none )

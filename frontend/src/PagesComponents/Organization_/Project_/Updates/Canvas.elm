@@ -10,6 +10,7 @@ import Libs.Models.Area exposing (Area)
 import Libs.Models.Delta as Delta exposing (Delta)
 import Libs.Models.Position as Position
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
+import Libs.Task as T
 import Models.Area as Area
 import Models.AutoLayout exposing (AutoLayoutMethod, DiagramEdge, DiagramNode)
 import Models.ErdProps exposing (ErdProps)
@@ -82,9 +83,9 @@ fitCanvasAlgo erdElem areas layout =
         |> Maybe.withDefault ( layout, Extra.none )
 
 
-launchAutoLayout : AutoLayoutMethod -> ErdProps -> Erd -> ( Erd, Extra Msg )
+launchAutoLayout : AutoLayoutMethod -> ErdProps -> Erd -> Cmd Msg
 launchAutoLayout method erdElem erd =
-    -- TODO: toggle this on show all tables if layout was empty before, see frontend/src/PagesComponents/Organization_/Project_/Updates/Table.elm:106#showAllTables
+    -- TODO: toggle this on show all tables if layout was empty before, see frontend/src/PagesComponents/Organization_/Project_/Updates/Table.elm:128#showAllTables
     (erd |> Erd.currentLayout |> objectsToFit)
         |> Maybe.map
             (\( ( tables, rows, memos ), full ) ->
@@ -112,9 +113,9 @@ launchAutoLayout method erdElem erd =
                         tables
                             |> List.concatMap (\t -> t.relatedTables |> Dict.filter (\_ -> .shown) |> Dict.keys |> List.map (\id -> { src = "table/" ++ TableId.toString t.id, ref = "table/" ++ TableId.toString id }) |> List.filter (\r -> ids |> Set.member r.ref))
                 in
-                ( erd, Ports.getAutoLayout method viewport nodes edges |> Extra.cmd )
+                Ports.getAutoLayout method viewport nodes edges
             )
-        |> Maybe.withDefault ( erd, "Nothing to arrange in the canvas" |> Toasts.create "warning" |> Toast |> Extra.msg )
+        |> Maybe.withDefault ("Nothing to arrange in the canvas" |> Toasts.create "warning" |> Toast |> T.send)
 
 
 applyAutoLayout : Time.Posix -> ErdProps -> List DiagramNode -> Erd -> ( Erd, Extra Msg )

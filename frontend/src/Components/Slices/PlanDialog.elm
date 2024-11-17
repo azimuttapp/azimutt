@@ -8,7 +8,7 @@ import Conf
 import ElmBook
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, blockquote, br, button, div, h3, input, label, p, span, text)
+import Html exposing (Html, blockquote, br, button, div, h3, input, label, p, small, span, text)
 import Html.Attributes exposing (class, for, href, id, name, placeholder, rel, style, target, title, type_, value)
 import Html.Events exposing (onBlur, onClick, onInput)
 import Libs.Html exposing (bText, extLink, sendTweet)
@@ -147,8 +147,8 @@ layoutTablesModalBody project close titleId =
     modalBody color
         Icon.Calculator
         ( titleId, "Tables in layout" )
-        [ p [ class "text-sm text-gray-500" ] [ bText ("Ooops, you just hit a plan limit, you can only add " ++ String.pluralize "table" limit ++ " per layout!") ]
-        , p [ class "text-sm text-gray-500" ] [ text "We hope you like experimenting with Azimutt but, as you know, we have to make it sustainable to continue its long term development." ]
+        [ p [ class "text-sm text-gray-500" ] [ bText ("Ooops, you just hit a plan limit, you can only add " ++ String.pluralize "table" limit ++ " per layout!"), br [] [], small [] [ text "*except on the initial layout" ] ]
+        , p [ class "text-sm text-gray-500 mt-3" ] [ text "We hope you like experimenting with Azimutt but, as you know, we have to make it sustainable to continue its long term development." ]
         , p [ class "text-sm text-gray-500" ] [ text "Please consider subscribing to a paid plan to contribute to it and unlock more features!" ]
         ]
         [ subscribeButtonPrimary project color feature Icon.CheckCircle "Expand your view"
