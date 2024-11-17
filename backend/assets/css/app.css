@@ -28,6 +28,10 @@ h5 {
     font-family: "Helvetica";
 }
 
+/* Fallback until ../tailwind.config.js `theme.extend.listStyleImage` works */
+
+.list-image-checkmark { list-style-image: url("/images/icons/checkmark.svg"); }
+
 
 /* This file is for your main application CSS */
 
