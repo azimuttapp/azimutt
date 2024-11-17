@@ -144,6 +144,9 @@ module.exports = {
         'scheme-blue': '#118AB2',
         'scheme-darkblue': '#118AB2',
       },
+      listStyleImage: {
+        checkmark: 'url("/images/icons/checkmark.svg")',
+      },
     },
   },
   plugins: [

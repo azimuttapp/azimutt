@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, countLayoutTables, countLayouts, create, currentLayout, defaultSchemaM, getColumnI, getColumnPos, getLayoutTable, getProjectRef, getTableI, isShown, mapCurrentLayout, mapCurrentLayoutT, mapCurrentLayoutTMWithTime, mapCurrentLayoutTWithTime, mapCurrentLayoutWithTime, mapIgnoredRelationsT, mapSettings, mapSource, mapSourceT, mapSources, mapSourcesT, setIgnoredRelations, setSettings, setSources, toSchema, unpack, viewportM, viewportToCanvas)
+module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, countLayoutTables, countLayouts, create, currentLayout, defaultSchemaM, getColumnI, getColumnPos, getLayoutTable, getProjectRef, getTableI, isShown, mapCurrentLayout, mapCurrentLayoutT, mapCurrentLayoutTMWithTime, mapCurrentLayoutTWithTime, mapCurrentLayoutWithTime, mapIgnoredRelationsT, mapSettings, mapSource, mapSourceT, mapSources, mapSourcesT, setIgnoredRelations, setSettings, setSources, toSchema, unpack, viewport, viewportM, viewportToCanvas)
 
 import Conf
 import Dict exposing (Dict)
@@ -217,9 +217,14 @@ viewportToCanvas erdElem canvas pos =
     pos |> Position.viewportToCanvas erdElem.position canvas.position canvas.zoom
 
 
+viewport : ErdProps -> Erd -> Area.Canvas
+viewport erdElem erd =
+    erd |> currentLayout |> .canvas |> CanvasProps.viewport erdElem
+
+
 viewportM : ErdProps -> Maybe Erd -> Area.Canvas
 viewportM erdElem erd =
-    erd |> Maybe.mapOrElse (currentLayout >> .canvas >> CanvasProps.viewport erdElem) Area.zeroCanvas
+    erd |> Maybe.mapOrElse (viewport erdElem) Area.zeroCanvas
 
 
 computeSources : ProjectSettings -> List Source -> Dict TableId (List ColumnPath) -> ( ( Dict TableId ErdTable, List ErdRelation, Dict CustomTypeId ErdCustomType ), Dict TableId (List ErdRelation) )

@@ -12,6 +12,7 @@ import Libs.Ned as Ned
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Task as T
 import Models.Area as Area
+import Models.AutoLayout as AutoLayout
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
@@ -35,6 +36,7 @@ import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (Erd
 import PagesComponents.Organization_.Project_.Models.HideColumns as HideColumns exposing (HideColumns)
 import PagesComponents.Organization_.Project_.Models.PositionHint as PositionHint exposing (PositionHint(..))
 import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns exposing (ShowColumns)
+import PagesComponents.Organization_.Project_.Updates.Canvas exposing (launchAutoLayout)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Ports
 import Services.Lenses exposing (mapCanvas, mapColumns, mapColumnsT, mapRelatedTables, mapTables, mapTablesL, mapTablesLTM, mapTablesT, setHighlighted, setHoverTable, setPosition, setShown)
@@ -112,7 +114,7 @@ showTables now ids hint from erd =
             )
             ( ( erd, [] ), ( [], [], [] ) )
         |> (\( ( e, h ), ( found, shown, notFound ) ) ->
-                ( e
+                ( B.cond (erd |> Erd.currentLayout |> .tables |> List.isEmpty) { e | layoutOnLoad = "arrange" } e
                 , Extra.newLL
                     [ Ports.observeTablesSize found
                     , B.cond (shown |> List.isEmpty) Cmd.none (Track.tableShown (List.length shown) from (Just erd))
@@ -138,8 +140,12 @@ showAllTables now from erd =
         newTables : List ErdTableLayout
         newTables =
             tablesToShow |> List.map (\t -> t |> ErdTableLayout.init erd.settings shownIds (erd.relationsByTable |> Dict.getOrElse t.id []) erd.settings.collapseTableColumns Nothing)
+
+        newErd : Erd
+        newErd =
+            erd |> Erd.mapCurrentLayoutWithTime now (mapTables (\old -> newTables ++ old))
     in
-    ( erd |> Erd.mapCurrentLayoutWithTime now (mapTables (\old -> newTables ++ old))
+    ( B.cond (shownIds |> Set.isEmpty) { newErd | layoutOnLoad = "arrange" } newErd
     , Extra.newCL
         [ Ports.observeTablesSize (newTables |> List.map .id)
         , B.cond (newTables |> List.isEmpty) Cmd.none (Track.tableShown (List.length newTables) from (Just erd))

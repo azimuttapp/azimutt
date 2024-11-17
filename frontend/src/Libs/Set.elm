@@ -4,9 +4,9 @@ import Set exposing (Set)
 
 
 toggle : comparable -> Set comparable -> Set comparable
-toggle item list =
-    if list |> Set.member item then
-        list |> Set.remove item
+toggle item set =
+    if set |> Set.member item then
+        set |> Set.remove item
 
     else
-        list |> Set.insert item
+        set |> Set.insert item

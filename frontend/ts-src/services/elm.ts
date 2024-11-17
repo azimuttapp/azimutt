@@ -21,7 +21,7 @@ import {
     zodParse
 } from "@azimutt/models";
 import {ElementSize, ElmFlags, ElmMsg, ElmRuntime, GetLocalFile, Hotkey, HotkeyId, JsMsg} from "../types/ports";
-import {Dialect, ToastLevel} from "../types/basics";
+import {DiagramNode, Dialect, ToastLevel} from "../types/basics";
 import {Logger} from "./logger";
 
 export class ElmApp {
@@ -58,6 +58,7 @@ export class ElmApp {
         GetAmlSchema: [],
         GetPrismaSchema: [],
         GetCode: [],
+        GetAutoLayout: [],
         ObserveSizes: [],
         LlmGenerateSql: [],
         ListenKeys: [],
@@ -118,6 +119,7 @@ export class ElmApp {
     gotPrismaSchema = (schema: LegacyDatabase): void => this.send({kind: 'GotPrismaSchema', schema})
     gotPrismaSchemaError = (error: string): void => this.send({kind: 'GotPrismaSchemaError', error})
     gotCode = (dialect: Dialect, content: string): void => this.send({kind: 'GotCode', dialect, content})
+    gotAutoLayout = (nodes: DiagramNode[]): void => this.send({kind: 'GotAutoLayout', nodes})
     gotHotkey = (hotkey: Hotkey & { id: HotkeyId }): void => this.send({kind: 'GotHotkey', id: hotkey.id})
     gotKeyHold = (key: string, start: boolean): void => this.send({kind: 'GotKeyHold', key, start})
     toast = (level: ToastLevel, message: string): void => this.send({kind: 'GotToast', level, message})

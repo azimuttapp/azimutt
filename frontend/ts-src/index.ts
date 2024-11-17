@@ -1,5 +1,9 @@
 import * as Sentry from "@sentry/browser";
 import {BrowserTracing} from "@sentry/tracing";
+import cytoscape, {ElementDefinition, LayoutOptions, NodeSingular} from "cytoscape";
+import avsdf from "cytoscape-avsdf";
+import dagre from "cytoscape-dagre";
+import fcose from "cytoscape-fcose";
 import {AnyError, errorToString} from "@azimutt/utils";
 import {
     attributePathFromId,
@@ -33,7 +37,7 @@ import {
 } from "@azimutt/models";
 import {generateAml, parseAml} from "@azimutt/aml";
 import {parsePrisma} from "@azimutt/parser-prisma";
-import {Dialect, HtmlId, Platform, ToastLevel, ViewPosition} from "./types/basics";
+import {DiagramEdge, DiagramNode, Dialect, HtmlId, Platform, ToastLevel, ViewPosition} from "./types/basics";
 import * as Uuid from "./types/uuid";
 import {
     CreateProject,
@@ -42,6 +46,7 @@ import {
     DeleteSource,
     ElmFlags,
     GetAmlSchema,
+    GetAutoLayout,
     GetCode,
     GetColumnStats,
     GetDatabaseSchema,
@@ -135,6 +140,7 @@ app.on('RunDatabaseQuery', runDatabaseQuery)
 app.on('GetAmlSchema', getAmlSchema)
 app.on('GetPrismaSchema', getPrismaSchema)
 app.on('GetCode', getCode)
+app.on('GetAutoLayout', getAutoLayout)
 app.on('ObserveSizes', observeSizes)
 app.on('LlmGenerateSql', llmGenerateSql)
 app.on('ListenKeys', listenHotkeys)
@@ -468,6 +474,60 @@ function getCode(msg: GetCode) {
         content = legacyDatabaseJsonFormat(msg.schema)
     }
     app.gotCode(msg.dialect, content)
+}
+
+// load cytoscape layout extensions
+cytoscape.use(avsdf)
+cytoscape.use(dagre)
+cytoscape.use(fcose)
+function getAutoLayout(msg: GetAutoLayout): void {
+    const width = msg.viewport.size.width || 1600
+    const height = msg.viewport.size.height || 900 // default values on 0x0, avoid NaN on ratio :/
+    const pos = msg.viewport.position
+    const count = msg.nodes.length
+    // https://blog.js.cytoscape.org/2020/05/11/layouts & https://js.cytoscape.org/#layouts
+    if (msg.method === 'random') { runLayout(msg, {name: 'random', boundingBox: {x1: pos.left, y1: pos.top, w: count * 100, h: count * 100 * (height / width)}}) } // https://js.cytoscape.org/#layouts/random
+    else if (msg.method === 'grid') { runLayout(msg, {name: 'grid', condense: true, boundingBox: {x1: pos.left, y1: pos.top, w: width, h: height}}) } // https://js.cytoscape.org/#layouts/grid
+    else if (msg.method === 'circle') { runLayout(msg, {name: 'circle', spacingFactor: 0.3}) } // https://js.cytoscape.org/#layouts/grid
+    else if (msg.method === 'avsdf') { runLayout(msg, {name: 'avsdf', nodeSeparation: 225} as LayoutOptions) } // https://github.com/iVis-at-Bilkent/cytoscape.js-avsdf (like circle but better)
+    else if (msg.method === 'breadthfirst') { runLayout(msg, {name: 'breadthfirst', circle: true, spacingFactor: 1}) } // https://js.cytoscape.org/#layouts/breadthfirst
+    else if (msg.method === 'dagre') { runLayout(msg, {name: 'dagre'}) } // https://github.com/cytoscape/cytoscape.js-dagre
+    else if (msg.method === 'cose') { runLayout(msg, {name: 'cose', boundingBox: {x1: 0, y1: 0, w: count * 100, h: count * 100 * (height / width)}}) } // https://js.cytoscape.org/#layouts/cose
+    else if (msg.method === 'fcose') { runLayout(msg, {name: 'fcose', idealEdgeLength: () => 300, fixedNodeConstraint: []} as LayoutOptions) } // https://github.com/iVis-at-Bilkent/cytoscape.js-fcose
+    else { app.toast(ToastLevel.enum.error, `Unknown auto-layout method '${msg.method}', please report it for a fix.`) }
+}
+
+function runLayout(msg: GetAutoLayout, layout: LayoutOptions): void {
+    const nodeElts: ElementDefinition[] = msg.nodes.map(n => ({
+        group: 'nodes',
+        data: {id: n.id, width: n.size.width, height: n.size.height},
+        position: {x: n.position.left + (n.size.width / 2), y: n.position.top + (n.size.height / 2)} // top left -> center
+    }))
+    const edgeElts: ElementDefinition[] = msg.edges.map(e => ({
+        group: 'edges',
+        data: {id: `${e.src}->${e.ref}`, source: e.src, target: e.ref}
+    }))
+    const cy = cytoscape({
+        headless: true,
+        styleEnabled: true, // to take node size into account in layout
+        elements: nodeElts.concat(edgeElts),
+    })
+    cy.nodes().forEach(n => {
+        const data = n.data()
+        n.css('width', data.width)
+        n.css('height', data.height)
+    })
+    cy.layout({fit: false, animate: false, ...layout, stop: () => {
+        app.gotAutoLayout(cy.nodes().map((n: NodeSingular) => {
+            const data = n.data()
+            const pos = n.position()
+            return {
+                id: n.id(),
+                size: {width: n.data().width, height: n.data().height},
+                position: {left: pos.x - (data.width / 2), top: pos.y - (data.height / 2)} // center -> top left
+            }
+        }))
+    }} as LayoutOptions).run()
 }
 
 const resizeObserver = new ResizeObserver(entries => {

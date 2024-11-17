@@ -11,7 +11,6 @@ import Html.Attributes exposing (autocomplete, class, for, id, name, placeholder
 import Html.Events exposing (onBlur, onFocus, onInput, onMouseDown)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (css, role)
-import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Notes exposing (Notes)
@@ -25,13 +24,19 @@ import PagesComponents.Organization_.Project_.Components.DetailsSidebar as Detai
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), SearchModel, confirm)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
-import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
+import Set exposing (Set)
 import Simple.Fuzzy
 
 
 viewNavbarSearch : SchemaName -> SearchModel -> Dict TableId ErdTable -> List ErdRelation -> Metadata -> List ErdTableLayout -> HtmlId -> HtmlId -> Html Msg
 viewNavbarSearch defaultSchema search tables relations metadata shownTables htmlId openedDropdown =
+    let
+        shown : Set TableId
+        shown =
+            shownTables |> List.map .id |> Set.fromList
+    in
     div [ class "ml-6 print:hidden" ]
         [ div [ css [ "max-w-lg w-full", lg [ "max-w-xs" ] ] ]
             [ label [ for htmlId, class "sr-only" ] [ text "Search" ]
@@ -80,6 +85,19 @@ viewNavbarSearch defaultSchema search tables relations metadata shownTables html
                                 [ text ("Show all tables (" ++ (tables |> Dict.size |> String.fromInt) ++ ")") ]
                             , button [ type_ "button", onMouseDown (DetailsSidebarMsg DetailsSidebar.Toggle), role "menuitem", tabindex -1, css [ "flex w-full items-center", focus [ "outline-none" ], ContextMenu.itemStyles ] ]
                                 [ text "Browse table list" ]
+                            , let
+                                topTables : List ErdTable
+                                topTables =
+                                    tables |> Dict.values |> List.sortBy (ErdTable.rank >> negate) |> List.filter (\t -> shown |> Set.member t.id |> not) |> List.take 15
+                              in
+                              if topTables |> List.isEmpty then
+                                div [] []
+
+                              else
+                                div [ class "border-t" ]
+                                    (span [ role "menuitem", tabindex -1, css [ "flex w-full items-center py-2 px-4 text-sm text-gray-700" ] ] [ text "Or check other interesting tables:" ]
+                                        :: (topTables |> List.map (\t -> FoundTable t) |> List.indexedMap (viewSearchResult m.id defaultSchema shown -1))
+                                    )
                             ]
 
                     else
@@ -93,7 +111,7 @@ viewNavbarSearch defaultSchema search tables relations metadata shownTables html
 
                                     else
                                         div [ class "max-h-192 overflow-y-auto" ]
-                                            (results |> List.indexedMap (viewSearchResult m.id defaultSchema shownTables (search.active |> modBy (results |> List.length))))
+                                            (results |> List.indexedMap (viewSearchResult m.id defaultSchema shown (search.active |> modBy (results |> List.length))))
                                )
                 )
             ]
@@ -106,8 +124,8 @@ type SearchResult
     | FoundRelation ErdRelation
 
 
-viewSearchResult : HtmlId -> SchemaName -> List ErdTableLayout -> Int -> Int -> SearchResult -> Html Msg
-viewSearchResult searchId defaultSchema shownTables active index res =
+viewSearchResult : HtmlId -> SchemaName -> Set TableId -> Int -> Int -> SearchResult -> Html Msg
+viewSearchResult searchId defaultSchema shown active index res =
     let
         viewItem : String -> TableId -> Icon -> List (Html Msg) -> Bool -> Html Msg
         viewItem =
@@ -131,16 +149,16 @@ viewSearchResult searchId defaultSchema shownTables active index res =
     in
     case res of
         FoundTable table ->
-            viewItem "table" table.id Icons.table [ text (TableId.show defaultSchema table.id) ] (shownTables |> List.memberBy .id table.id)
+            viewItem "table" table.id Icons.table [ text (TableId.show defaultSchema table.id) ] (shown |> Set.member table.id)
 
         FoundColumn table column ->
-            viewItem "column" table.id Icons.column [ span [ class "opacity-50" ] [ text (TableId.show defaultSchema table.id ++ ".") ], text (ColumnPath.show column.path) ] (shownTables |> List.memberBy .id table.id)
+            viewItem "column" table.id Icons.column [ span [ class "opacity-50" ] [ text (TableId.show defaultSchema table.id ++ ".") ], text (ColumnPath.show column.path) ] (shown |> Set.member table.id)
 
         FoundRelation relation ->
-            if shownTables |> List.memberBy .id relation.src.table |> not then
+            if shown |> Set.member relation.src.table |> not then
                 viewItem "relation" relation.src.table Icons.columns.foreignKey [ text relation.name ] False
 
-            else if shownTables |> List.memberBy .id relation.ref.table |> not then
+            else if shown |> Set.member relation.ref.table |> not then
                 viewItem "relation" relation.ref.table Icons.columns.foreignKey [ text relation.name ] False
 
             else

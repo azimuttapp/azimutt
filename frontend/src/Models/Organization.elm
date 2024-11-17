@@ -1,5 +1,6 @@
 module Models.Organization exposing (Organization, canAnalyse, canChangeColor, canCreateLayout, canExportProject, canExportSchema, canSaveProject, canShareProject, canShowTables, canUseAi, canUseAml, canWriteAml, decode, encode, isLastLayout, one, zero)
 
+import Conf
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
@@ -12,6 +13,7 @@ import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.OrganizationName as OrganizationName exposing (OrganizationName)
 import Models.OrganizationSlug as OrganizationSlug exposing (OrganizationSlug)
 import Models.Plan as Plan exposing (Plan)
+import Models.Project.LayoutName exposing (LayoutName)
 
 
 type alias Organization =
@@ -26,9 +28,9 @@ type alias Organization =
     }
 
 
-canShowTables : Int -> Int -> { x | organization : Maybe Organization } -> Bool
-canShowTables newTables layoutTables projectRef =
-    projectRef.organization |> Maybe.mapOrElse (.plan >> .layoutTables >> Maybe.all (\max -> layoutTables + newTables <= max)) (newTables + layoutTables <= Feature.layoutTables.default)
+canShowTables : LayoutName -> Int -> Int -> { x | organization : Maybe Organization } -> Bool
+canShowTables layout layoutTables newTables projectRef =
+    layout == Conf.constants.defaultLayout || (projectRef.organization |> Maybe.mapOrElse (.plan >> .layoutTables >> Maybe.all (\max -> layoutTables + newTables <= max)) (newTables + layoutTables <= Feature.layoutTables.default))
 
 
 canChangeColor : { x | organization : Maybe Organization } -> Bool

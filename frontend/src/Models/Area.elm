@@ -1,8 +1,8 @@
-module Models.Area exposing (Canvas, CanvasLike, Diagram, Grid, GridLike, Viewport, ViewportLike, centerCanvas, centerCanvasGrid, centerViewport, debugCanvas, debugViewport, diagramToCanvas, divCanvas, fromCanvas, mergeCanvas, multCanvas, offGrid, overlapCanvas, styleTransformCanvas, styleTransformViewport, stylesGrid, stylesViewport, toStringRoundCanvas, toStringRoundViewport, topLeftCanvasGrid, topRightCanvasGrid, withPadding, zeroCanvas)
+module Models.Area exposing (Canvas, CanvasLike, Diagram, Grid, GridLike, Viewport, ViewportLike, bottomRightCanvas, canvas, centerCanvas, centerCanvasGrid, centerViewport, debugCanvas, debugViewport, diagramToCanvas, divCanvas, extractCanvas, fromCanvas, grid, insideCanvas, mergeCanvas, mergeGrid, multCanvas, offGrid, overlapCanvas, styleTransformCanvas, styleTransformViewport, stylesGrid, stylesViewport, toStringRoundCanvas, toStringRoundViewport, topLeftCanvasGrid, topRightCanvasGrid, withPadding, zeroCanvas)
 
 import Html exposing (Attribute, Html, div, text)
 import Html.Attributes exposing (class)
-import Libs.Models.Area as Area exposing (Area)
+import Libs.Models.Area as Area exposing (Area, AreaLike)
 import Libs.Models.Delta as Delta
 import Libs.Tailwind exposing (TwClass)
 import Models.Position as Position
@@ -62,6 +62,21 @@ offGrid area =
     Canvas (area.position |> Position.offGrid) area.size
 
 
+grid : AreaLike a -> Grid
+grid area =
+    Grid (area.position |> Position.grid) (area.size |> Size.canvas)
+
+
+canvas : AreaLike a -> Canvas
+canvas area =
+    Canvas (area.position |> Position.canvas) (area.size |> Size.canvas)
+
+
+extractCanvas : Canvas -> Area
+extractCanvas area =
+    { position = area.position |> Position.extractCanvas, size = area.size |> Size.extractCanvas }
+
+
 topLeftCanvasGrid : GridLike a -> Position.Canvas
 topLeftCanvasGrid area =
     area.position |> Position.offGrid
@@ -70,6 +85,11 @@ topLeftCanvasGrid area =
 topRightCanvasGrid : GridLike a -> Position.Canvas
 topRightCanvasGrid area =
     area.position |> Position.offGrid |> Position.moveCanvas { dx = area.size |> Size.extractCanvas |> .width, dy = 0 }
+
+
+bottomRightCanvas : CanvasLike a -> Position.Canvas
+bottomRightCanvas area =
+    area.position |> Position.moveCanvas (area.size |> Size.deltaCanvas)
 
 
 centerCanvasGrid : GridLike a -> Position.Canvas
@@ -99,6 +119,19 @@ mergeCanvas areas =
         |> List.map (\{ position, size } -> Area (Position.extractCanvas position) (Size.extractCanvas size))
         |> Area.merge
         |> Maybe.map (\{ position, size } -> Canvas (Position.canvas position) (Size.canvas size))
+
+
+mergeGrid : List (GridLike a) -> Maybe Grid
+mergeGrid areas =
+    areas
+        |> List.map (\{ position, size } -> Area (Position.extractGrid position) (Size.extractCanvas size))
+        |> Area.merge
+        |> Maybe.map (\{ position, size } -> Grid (Position.grid position) (Size.canvas size))
+
+
+insideCanvas : Position.Canvas -> CanvasLike a -> Bool
+insideCanvas pos area =
+    Area.inside (Position.extractCanvas pos) (Area (Position.extractCanvas area.position) (Size.extractCanvas area.size))
 
 
 overlapCanvas : CanvasLike b -> CanvasLike a -> Bool

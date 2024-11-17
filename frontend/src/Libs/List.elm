@@ -19,6 +19,7 @@ module Libs.List exposing
     , groupBy
     , groupByL
     , headOr
+    , indexBy
     , indexOf
     , indexedConcatMap
     , indexedFilter
@@ -603,6 +604,11 @@ uniqueBy matcher list =
 groupBy : (a -> comparable) -> List a -> Dict comparable (List a)
 groupBy key list =
     list |> List.foldr (\a dict -> dict |> Dict.update (key a) (\v -> v |> Maybe.mapOrElse (\x -> a :: x) [ a ] |> Just)) Dict.empty
+
+
+indexBy : (a -> comparable) -> List a -> Dict comparable a
+indexBy key list =
+    list |> List.foldr (\a dict -> dict |> Dict.update (key a) (\_ -> Just a)) Dict.empty
 
 
 groupByL : (a -> comparable) -> List a -> List ( comparable, List a )
