@@ -55,6 +55,7 @@ import PagesComponents.Organization_.Project_.Models.DragState as DragState
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
+import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
@@ -947,9 +948,18 @@ updateErd urlLayout context project model =
 
 showAllTablesIfNeeded : Erd -> Erd
 showAllTablesIfNeeded erd =
-    if erd.currentLayout == Conf.constants.defaultLayout && (erd |> Erd.currentLayout |> ErdLayout.isEmpty) && Dict.size erd.tables < Conf.constants.fewTablesLimit then
+    if erd.currentLayout == Conf.constants.defaultLayout && (erd |> Erd.currentLayout |> ErdLayout.isEmpty) then
+        let
+            tables : List ErdTable
+            tables =
+                if Dict.size erd.tables < Conf.constants.fewTablesLimit then
+                    erd.tables |> Dict.values
+
+                else
+                    erd.tables |> Dict.values |> List.sortBy (ErdTable.ranking >> negate) |> List.take Conf.constants.fewTablesLimit
+        in
         erd
-            |> Erd.mapCurrentLayout (setTables (erd.tables |> Dict.values |> List.map (\t -> t |> ErdTableLayout.init erd.settings Set.empty (erd.relationsByTable |> Dict.getOrElse t.id []) erd.settings.collapseTableColumns Nothing)))
+            |> Erd.mapCurrentLayout (setTables (tables |> List.map (\t -> t |> ErdTableLayout.init erd.settings Set.empty (erd.relationsByTable |> Dict.getOrElse t.id []) erd.settings.collapseTableColumns Nothing)))
             |> setLayoutOnLoad "arrange"
 
     else

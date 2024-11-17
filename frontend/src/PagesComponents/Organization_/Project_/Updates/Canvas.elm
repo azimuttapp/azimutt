@@ -21,6 +21,8 @@ import Models.Project.TableRow as TableRow exposing (TableRow)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models exposing (Model, Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps)
+import PagesComponents.Organization_.Project_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
@@ -29,7 +31,6 @@ import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (E
 import Ports
 import Services.Lenses exposing (mapMemos, mapPosition, mapProps, mapTableRows, mapTables, setCanvas, setLayoutOnLoad, setPosition)
 import Services.Toasts as Toasts
-import Set exposing (Set)
 import Time
 
 
@@ -104,18 +105,24 @@ launchAutoLayout method erdElem erd =
                             ++ (rows |> List.map (\r -> { id = "row/" ++ TableRow.toString r.id, size = r.size |> Size.extractCanvas, position = r.position |> Position.extractGrid }))
                             ++ (memos |> List.map (\m -> { id = "memo/" ++ MemoId.toString m.id, size = m.size |> Size.extractCanvas, position = m.position |> Position.extractGrid }))
 
-                    ids : Set String
-                    ids =
-                        nodes |> List.map .id |> Set.fromList
+                    tablesById : Dict TableId ErdTableLayout
+                    tablesById =
+                        tables |> List.indexBy .id
 
                     edges : List DiagramEdge
                     edges =
-                        tables
-                            |> List.concatMap (\t -> t.relatedTables |> Dict.filter (\_ -> .shown) |> Dict.keys |> List.map (\id -> { src = "table/" ++ TableId.toString t.id, ref = "table/" ++ TableId.toString id }) |> List.filter (\r -> ids |> Set.member r.ref))
+                        erd.relations
+                            |> List.filter (\r -> isShown tablesById r.src && isShown tablesById r.ref)
+                            |> List.map (\r -> { src = "table/" ++ TableId.toString r.src.table, ref = "table/" ++ TableId.toString r.ref.table })
                 in
                 Ports.getAutoLayout method viewport nodes edges
             )
         |> Maybe.withDefault ("Nothing to arrange in the canvas" |> Toasts.create "warning" |> Toast |> T.send)
+
+
+isShown : Dict TableId ErdTableLayout -> ErdColumnRef -> Bool
+isShown tablesById ref =
+    tablesById |> Dict.get ref.table |> Maybe.any (.columns >> ErdColumnProps.member ref.column)
 
 
 applyAutoLayout : Time.Posix -> ErdProps -> List DiagramNode -> Erd -> ( Erd, Extra Msg )

@@ -481,22 +481,23 @@ cytoscape.use(avsdf)
 cytoscape.use(dagre)
 cytoscape.use(fcose)
 function getAutoLayout(msg: GetAutoLayout): void {
+    const width = msg.viewport.size.width || 1600
+    const height = msg.viewport.size.height || 900 // default values on 0x0, avoid NaN on ratio :/
     const pos = msg.viewport.position
-    const size = msg.viewport.size
     const count = msg.nodes.length
     // https://blog.js.cytoscape.org/2020/05/11/layouts & https://js.cytoscape.org/#layouts
-    if (msg.method === 'random') { runLayout(msg, {name: 'random', boundingBox: {x1: pos.left, y1: pos.top, w: count * 100, h: count * 100 * (size.height / size.width)}}) } // https://js.cytoscape.org/#layouts/random
-    else if (msg.method === 'grid') { runLayout(msg, {name: 'grid', condense: true, boundingBox: {x1: pos.left, y1: pos.top, w: size.width, h: size.height}}) } // https://js.cytoscape.org/#layouts/grid
+    if (msg.method === 'random') { runLayout(msg, {name: 'random', boundingBox: {x1: pos.left, y1: pos.top, w: count * 100, h: count * 100 * (height / width)}}) } // https://js.cytoscape.org/#layouts/random
+    else if (msg.method === 'grid') { runLayout(msg, {name: 'grid', condense: true, boundingBox: {x1: pos.left, y1: pos.top, w: width, h: height}}) } // https://js.cytoscape.org/#layouts/grid
     else if (msg.method === 'circle') { runLayout(msg, {name: 'circle', spacingFactor: 0.3}) } // https://js.cytoscape.org/#layouts/grid
     else if (msg.method === 'avsdf') { runLayout(msg, {name: 'avsdf', nodeSeparation: 225} as LayoutOptions) } // https://github.com/iVis-at-Bilkent/cytoscape.js-avsdf (like circle but better)
     else if (msg.method === 'breadthfirst') { runLayout(msg, {name: 'breadthfirst', circle: true, spacingFactor: 1}) } // https://js.cytoscape.org/#layouts/breadthfirst
     else if (msg.method === 'dagre') { runLayout(msg, {name: 'dagre'}) } // https://github.com/cytoscape/cytoscape.js-dagre
-    else if (msg.method === 'cose') { runLayout(msg, {name: 'cose', boundingBox: {x1: 0, y1: 0, w: count * 100, h: count * 100 * (size.height / size.width)}}) } // https://js.cytoscape.org/#layouts/cose
+    else if (msg.method === 'cose') { runLayout(msg, {name: 'cose', boundingBox: {x1: 0, y1: 0, w: count * 100, h: count * 100 * (height / width)}}) } // https://js.cytoscape.org/#layouts/cose
     else if (msg.method === 'fcose') { runLayout(msg, {name: 'fcose', idealEdgeLength: () => 300, fixedNodeConstraint: []} as LayoutOptions) } // https://github.com/iVis-at-Bilkent/cytoscape.js-fcose
     else { app.toast(ToastLevel.enum.error, `Unknown auto-layout method '${msg.method}', please report it for a fix.`) }
 }
 
-function runLayout(msg: { nodes: DiagramNode[], edges: DiagramEdge[] }, layout: LayoutOptions): void {
+function runLayout(msg: GetAutoLayout, layout: LayoutOptions): void {
     const nodeElts: ElementDefinition[] = msg.nodes.map(n => ({
         group: 'nodes',
         data: {id: n.id, width: n.size.width, height: n.size.height},

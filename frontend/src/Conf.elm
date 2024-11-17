@@ -58,7 +58,7 @@ constants =
     , sharingTweet = "Hi @" ++ twitter ++ ", I just published my schema at ..., I would love if you can share 🚀"
     , canvasMargins = 20
     , manyTablesLimit = 100
-    , fewTablesLimit = 10
+    , fewTablesLimit = 30
     }
 
 
