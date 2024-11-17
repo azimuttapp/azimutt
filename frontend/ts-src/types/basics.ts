@@ -42,7 +42,7 @@ export const PositionViewport = z.object({
 
 export const AutoLayoutMethod = z.enum(['random', 'grid', 'circle', 'avsdf', 'breadthfirst', 'cose', 'dagre', 'fcose'])
 export type AutoLayoutMethod = z.infer<typeof AutoLayoutMethod>
-export const DiagramNode = z.object({id: z.string(), size: Size, pos: Position}).strict()
+export const DiagramNode = z.object({id: z.string(), size: Size, position: Position}).strict()
 export type DiagramNode = z.infer<typeof DiagramNode>
 export const DiagramEdge = z.object({src: z.string(), ref: z.string()}).strict()
 export type DiagramEdge = z.infer<typeof DiagramEdge>

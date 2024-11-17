@@ -23,7 +23,7 @@ default =
 
 
 type alias DiagramNode =
-    { id : String, size : Size, pos : Position }
+    { id : String, size : Size, position : Position }
 
 
 type alias DiagramEdge =
@@ -63,7 +63,7 @@ encodeDiagramNode value =
     Encode.object
         [ ( "id", value.id |> Encode.string )
         , ( "size", value.size |> Size.encode )
-        , ( "pos", value.pos |> Position.encode )
+        , ( "position", value.position |> Position.encode )
         ]
 
 
@@ -72,7 +72,7 @@ decodeDiagramNode =
     Decode.map3 DiagramNode
         (Decode.field "id" Decode.string)
         (Decode.field "size" Size.decode)
-        (Decode.field "pos" Position.decode)
+        (Decode.field "position" Position.decode)
 
 
 encodeDiagramEdge : DiagramEdge -> Value

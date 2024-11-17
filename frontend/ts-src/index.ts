@@ -485,22 +485,22 @@ function getAutoLayout(msg: GetAutoLayout): void {
     const size = msg.viewport.size
     const count = msg.nodes.length
     // https://blog.js.cytoscape.org/2020/05/11/layouts & https://js.cytoscape.org/#layouts
-    if (msg.method === 'random') { cytoscapeLayout(msg, {name: 'random', boundingBox: {x1: pos.left, y1: pos.top, w: count * 100, h: count * 100 * (size.height / size.width)}}) } // https://js.cytoscape.org/#layouts/random
-    else if (msg.method === 'grid') { cytoscapeLayout(msg, {name: 'grid', condense: true, boundingBox: {x1: pos.left, y1: pos.top, w: size.width, h: size.height}}) } // https://js.cytoscape.org/#layouts/grid
-    else if (msg.method === 'circle') { cytoscapeLayout(msg, {name: 'circle', spacingFactor: 0.3}) } // https://js.cytoscape.org/#layouts/grid
-    else if (msg.method === 'avsdf') { cytoscapeLayout(msg, {name: 'avsdf', nodeSeparation: 225} as LayoutOptions) } // https://github.com/iVis-at-Bilkent/cytoscape.js-avsdf (like circle but better)
-    else if (msg.method === 'breadthfirst') { cytoscapeLayout(msg, {name: 'breadthfirst', circle: true, spacingFactor: 1}) } // https://js.cytoscape.org/#layouts/breadthfirst
-    else if (msg.method === 'dagre') { cytoscapeLayout(msg, {name: 'dagre'}) } // https://github.com/cytoscape/cytoscape.js-dagre
-    else if (msg.method === 'cose') { cytoscapeLayout(msg, {name: 'cose', boundingBox: {x1: 0, y1: 0, w: count * 100, h: count * 100 * (size.height / size.width)}}) } // https://js.cytoscape.org/#layouts/cose
-    else if (msg.method === 'fcose') { cytoscapeLayout(msg, {name: 'fcose', idealEdgeLength: () => 300, fixedNodeConstraint: []} as LayoutOptions) } // https://github.com/iVis-at-Bilkent/cytoscape.js-fcose
+    if (msg.method === 'random') { runLayout(msg, {name: 'random', boundingBox: {x1: pos.left, y1: pos.top, w: count * 100, h: count * 100 * (size.height / size.width)}}) } // https://js.cytoscape.org/#layouts/random
+    else if (msg.method === 'grid') { runLayout(msg, {name: 'grid', condense: true, boundingBox: {x1: pos.left, y1: pos.top, w: size.width, h: size.height}}) } // https://js.cytoscape.org/#layouts/grid
+    else if (msg.method === 'circle') { runLayout(msg, {name: 'circle', spacingFactor: 0.3}) } // https://js.cytoscape.org/#layouts/grid
+    else if (msg.method === 'avsdf') { runLayout(msg, {name: 'avsdf', nodeSeparation: 225} as LayoutOptions) } // https://github.com/iVis-at-Bilkent/cytoscape.js-avsdf (like circle but better)
+    else if (msg.method === 'breadthfirst') { runLayout(msg, {name: 'breadthfirst', circle: true, spacingFactor: 1}) } // https://js.cytoscape.org/#layouts/breadthfirst
+    else if (msg.method === 'dagre') { runLayout(msg, {name: 'dagre'}) } // https://github.com/cytoscape/cytoscape.js-dagre
+    else if (msg.method === 'cose') { runLayout(msg, {name: 'cose', boundingBox: {x1: 0, y1: 0, w: count * 100, h: count * 100 * (size.height / size.width)}}) } // https://js.cytoscape.org/#layouts/cose
+    else if (msg.method === 'fcose') { runLayout(msg, {name: 'fcose', idealEdgeLength: () => 300, fixedNodeConstraint: []} as LayoutOptions) } // https://github.com/iVis-at-Bilkent/cytoscape.js-fcose
     else { app.toast(ToastLevel.enum.error, `Unknown auto-layout method '${msg.method}', please report it for a fix.`) }
 }
 
-function cytoscapeLayout(msg: { nodes: DiagramNode[], edges: DiagramEdge[] }, layout: LayoutOptions): void {
+function runLayout(msg: { nodes: DiagramNode[], edges: DiagramEdge[] }, layout: LayoutOptions): void {
     const nodeElts: ElementDefinition[] = msg.nodes.map(n => ({
         group: 'nodes',
         data: {id: n.id, width: n.size.width, height: n.size.height},
-        position: {x: n.pos.left, y: n.pos.top}
+        position: {x: n.position.left + (n.size.width / 2), y: n.position.top + (n.size.height / 2)} // top left -> center
     }))
     const edgeElts: ElementDefinition[] = msg.edges.map(e => ({
         group: 'edges',
@@ -520,7 +520,11 @@ function cytoscapeLayout(msg: { nodes: DiagramNode[], edges: DiagramEdge[] }, la
         app.gotAutoLayout(cy.nodes().map((n: NodeSingular) => {
             const data = n.data()
             const pos = n.position()
-            return {id: n.id(), size: {width: n.data().width, height: n.data().height}, pos: {left: pos.x - (data.width / 2), top: pos.y - (data.height / 2)}}
+            return {
+                id: n.id(),
+                size: {width: n.data().width, height: n.data().height},
+                position: {left: pos.x - (data.width / 2), top: pos.y - (data.height / 2)} // center -> top left
+            }
         }))
     }} as LayoutOptions).run()
 }
