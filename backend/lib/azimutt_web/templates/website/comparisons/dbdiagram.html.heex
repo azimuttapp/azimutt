@@ -49,7 +49,7 @@
         It makes schema definition very pleasant as it can be generated easily, copy/pasted and even versioned.
         It's made by holistics.io, a Singapore-based business intelligence product company, as an internal tool that was shared publicly.
     </p>
-    <img src={Routes.static_path(@conn, "/images/comparisons/dbdiagram-sample.jpg")} alt="dbdiagram.io sample">
+    <img src={Routes.static_path(@conn, "/images/comparisons/dbdiagram-sample.jpg")} alt="dbdiagram.io diagram sample">
     <%= render "docs/_h2.html", title: "About Azimutt" %>
     <p>
         Azimutt is a full database toolset which started as a visual database exploration tool for large databases (>1000 tables).
@@ -57,7 +57,7 @@
         Like dbdiagram.io, it allows database design using <a href={Routes.website_path(@conn, :aml)} target="_blank" rel="noopener">AML</a>, but it also provides many other features to understand, document, maintain and improve real-world databases.
         It started at Doctolib, a French healthcare unicorn, with Principal Engineers needing to quickly understand the huge data model; it's now independent to speed its growth.
     </p>
-    <img src={Routes.static_path(@conn, "/images/comparisons/azimutt-sample.jpg")} alt="Azimutt sample">
+    <a href={Routes.gallery_path(@conn, :show, "gospeak")} target="_blank" rel="noopener"><img src={Routes.static_path(@conn, "/images/comparisons/azimutt-sample.jpg")} alt="Azimutt diagram sample"></a>
 
     <%= render "docs/_h2.html", title: "Pricing" %>
     <h3>dbdiagram.io</h3>
@@ -224,7 +224,7 @@ posts | All posts
     </p>
     <p>
         With all this, we believe Azimutt is a great alternative to dbdiagram.io, even for simple projects.
-        In either way, you can give a try to both of them, you don't even need to create an account. And Azimutt paid plans have a 2-week free trial to try advanced features!
+        In either way, you can give a try to both of them, you don't even need to create an account. And all Azimutt paid plans have a 2-week free trial to try advanced features!
     </p>
     <p>
         If you need inspiration, you can have a look at the <a href={Routes.gallery_path(@conn, :index)}>Azimutt Gallery</a> for simple or complex projects, built for it or from popular projects;

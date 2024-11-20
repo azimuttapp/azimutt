@@ -355,10 +355,11 @@ defmodule Azimutt do
         name: "Entity-Relationship Diagram",
         keywords: "entity-relationship diagram,erd,database diagram,database visualization tool,database schema explorer,SQL,database",
         tools: [
-          %{id: "dbdiagram", name: "dbdiagram.io", description: "An online Entity-Relationship Diagram using code to define your database schema, as fast as you can type.", pub: "2024-11-15"}
-          # %{id: "drawsql", name: "DrawSQL", description: "A beautiful online Entity-Relationship Diagram tool to design your database from scratch or from SQL dump."},
+          %{id: "dbdiagram", name: "dbdiagram.io", description: "An online Entity-Relationship Diagram using code to define your database schema, as fast as you can type.", pub: "2024-11-15"},
+          %{id: "drawsql", name: "DrawSQL", description: "A beautiful online Entity-Relationship Diagram tool to design your database from scratch or from SQL dump.", pub: "2024-11-20"}
           # %{id: "drawdb", name: "drawDB", description: "A Free and Open Source online Entity-Relationship Diagram tool that can generate SQL."},
-          # %{id: "chartdb", name: "ChartDB", description: "An Open Source online Entity-Relationship Diagram that visualize your database with a single query."}
+          # %{id: "chartdb", name: "ChartDB", description: "An Open Source online Entity-Relationship Diagram that visualize your database with a single query."},
+          # %{id: "quickdbd", name: "QuickDBD", description: "Draw database diagrams by typing."},
         ]
       },
       %{

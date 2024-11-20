@@ -387,11 +387,6 @@ viewHiddenTables defaultSchema tables =
 
 viewEmptyState : Dict TableId ErdTable -> Html Msg
 viewEmptyState tables =
-    let
-        topTables : List TableId
-        topTables =
-            tables |> Dict.values |> List.sortBy (ErdTable.rank >> negate) |> List.take 30 |> List.map .id
-    in
     div [ class "flex h-full justify-center items-center" ]
         [ div [ class "max-w-prose p-6 bg-white border border-gray-200 rounded-lg" ]
             [ div [ class "text-center" ]
@@ -417,19 +412,29 @@ viewEmptyState tables =
                             , text " or start with an overview:"
                             ]
                         , div [ class "my-8 flex justify-around items-center" ]
-                            [ Button.white4 Tw.indigo
-                                [ onClick
-                                    (if Dict.size tables < Conf.constants.manyTablesLimit then
+                            (let
+                                showAll : Msg
+                                showAll =
+                                    if Dict.size tables < Conf.constants.manyTablesLimit then
                                         ShowAllTables "welcome"
 
-                                     else
+                                    else
                                         confirm "Show all tables" (text ("You are about to show " ++ (tables |> String.pluralizeD "table") ++ ". That's a lot. It may slow down your browser and make Azimutt unresponsive. Continue?")) (ShowAllTables "welcome")
-                                    )
+                             in
+                             if Dict.size tables > 30 then
+                                [ Button.white4 Tw.indigo [ onClick showAll ] [ text ("Show the " ++ (tables |> String.pluralizeD "table")) ]
+                                , span [] [ text "or" ]
+                                , let
+                                    topTables : List TableId
+                                    topTables =
+                                        tables |> Dict.values |> List.sortBy (ErdTable.rank >> negate) |> List.take 30 |> List.map .id
+                                  in
+                                  Button.white4 Tw.indigo [ onClick (ShowTables topTables Nothing "welcome") ] [ text ("Show " ++ (topTables |> String.pluralizeL "most central table")) ]
                                 ]
-                                [ text ("Show all " ++ (tables |> String.pluralizeD "table")) ]
-                            , span [] [ text "or" ]
-                            , Button.white4 Tw.indigo [ onClick (ShowTables topTables Nothing "welcome") ] [ text ("Show " ++ (topTables |> String.pluralizeL "most central table")) ]
-                            ]
+
+                             else
+                                [ Button.white4 Tw.indigo [ onClick showAll ] [ text ("Show the " ++ (tables |> String.pluralizeD "table")) ] ]
+                            )
                         , Alert.simple Tw.indigo Icon.InformationCircle [ text "Click on colored column icons to follow relations (in/out)." ]
                         ]
                 , p [ class "mt-3 text-sm text-gray-500" ]

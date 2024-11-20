@@ -1,5 +1,146 @@
 <%= comparison_prose do %>
     <h1><%= @seo.title %></h1>
+    <p class="lead">
+        Are you looking for a DrawSQL alternative?
+        Or simply searching about Entity-Relationship Diagramming tools (ERD)?
+        If you are designing your database schema or trying to explore your current database, you are at the right place.
+    </p>
+    <p>
+        When working with complex databases, choosing the right tool can make a significant difference.
+        Two leading options for visualizing and understanding databases are <b>DrawSQL</b> and <b>Azimutt</b>.
+        While both serve as effective database visualization tools, they cater to different needs and priorities.
+        In this article, we’ll compare the two platforms based on features, use cases, pricing, and overall suitability to help you decide which is the best fit for your requirements.
+    </p>
+    <img src={@seo.image} alt="DrawSQL vs Azimutt">
+    <p>
+        Entity-Relationship Diagrams (ERDs) visually represent entities and their relationships (yes, obvious!).
+        In the context of relational databases, entities correspond to tables with their columns, while relationships are represented by foreign keys.
+        Some ERDs are tailored specifically for database, offering advanced features like primary keys, indexes, constraints, and other database-specific details.
+    </p>
+    <p>
+        DrawSQL and Azimutt are both ERDs specialized at visualizing databases structure, but Azimutt has a wider scope.
+        We will dive into details but here is a quick feature comparison overview:
+    </p>
+    <table>
+        <thead><tr><th></th><th>DrawSQL</th><th>Azimutt</th></tr></thead>
+        <tbody>
+        <tr><th><a href="#diagram-definition-ui-forms-vs-dedicated-language">Define database schema</a></th><td>✅ Yes (UI forms)</td><td>✅ Yes (special language: <a href={Routes.website_path(@conn, :aml)} target="_blank" rel="noopener">AML</a>)</td></tr>
+        <tr><th>Documentation</th><td>✅ Yes (only comments)</td><td>✅ Yes (comments and tags, multi-layout, sticky notes)</td></tr>
+        <tr><th>Database import</th><td>✅ Yes (SQL)</td><td>✅ Yes (db connection, SQL, Prisma, JSON...)</td></tr>
+        <tr><th>Database sync</th><td>❌ No</td><td>✅ Yes</td></tr>
+        <tr><th>Export diagram</th><td>✅ Yes (SQL, JSON, Image)</td><td>✅ Yes (SQL, JSON, AML)</td></tr>
+        <tr><th>Collaboration</th><td>✅ Yes</td><td>✅ Yes</td></tr>
+        <tr><th>Version history</th><td>✅ Yes</td><td>❌ No</td></tr>
+        <tr><th>Scaling</th><td>⚠️ Harder to use with >50 tables</td><td>✅ Handles >1000 tables without issue</td></tr>
+        <tr><th><a href="#single-vs-multi-layouts">Multi-layouts</a></th><td>❌ No, all tables are displayed</td><td>✅ Yes, choose tables/columns for each layout</td></tr>
+        <tr><th>Multi-sources</th><td>❌ No</td><td>✅ Yes, visualize several databases at once</td></tr>
+        <tr><th><a href="#database-access">Database queries</a></th><td>❌ No</td><td>✅ Yes</td></tr>
+        <tr><th>Visual data exploration</th><td>❌ No</td><td>✅ Yes</td></tr>
+        <tr><th>Database linter</th><td>❌ No</td><td>✅ Yes</td></tr>
+        <tr><th>On-Premise</th><td>❌ No</td><td>✅ Yes</td></tr>
+        <tr><th>Open-Source</th><td>❌ No</td><td>✅ Yes</td></tr>
+        <tr><th>Free use</th><td>✅ Yes (account needed)</td><td>✅ Yes (no account needed)</td></tr>
+        <tr><th>Basic plan</th><td>$19/month</td><td>9€/month</td></tr>
+        </tbody>
+    </table>
+    <%= render "docs/_h2.html", title: "About DrawSQL" %>
+    <p>
+        DrawSQL is a cloud-based tool focused on creating beautiful Entity-Relationship Diagrams (ERDs).
+        It offers a simple and intuitive interface to design and share database schemas, making it popular among small teams and projects requiring quick visual representations.
+    </p>
+    <img src={Routes.static_path(@conn, "/images/comparisons/drawsql-sample.jpg")} alt="DrawSQL diagram sample">
+    <%= render "docs/_h2.html", title: "About Azimutt" %>
+    <p>
+        Azimutt is a database exploration and documentation tool designed for large and complex databases.
+        While it supports schema visualization in a simple way, it goes beyond by enabling users to connect to a database, explore it (schema and data), make nice documentation, and even suggest improvements.
+    </p>
+    <a href={Routes.gallery_path(@conn, :show, "gospeak")} target="_blank" rel="noopener"><img src={Routes.static_path(@conn, "/images/comparisons/azimutt-sample.jpg")} alt="Azimutt diagram sample"></a>
+
+    <%= render "docs/_h2.html", title: "Pricing" %>
+    <h3>DrawSQL</h3>
+    <p>
+        DrawSQL has a Free plan but your work will be public, and you are limited to 15 tables.<br>
+        The Starter plan is at $19/month with 50 tables allowed, the Growth plan at $59/month for 5 users and 100 tables, and there is an unlimited plan at $179/month.
+    </p>
+    <h3>Azimutt</h3>
+    <p>
+        Azimutt is Open-Source (<a href="https://github.com/azimuttapp/azimutt/blob/main/LICENSE.txt" target="_blank" rel="noopener">MIT</a>)
+        with the <a href="https://github.com/azimuttapp/azimutt" target="_blank" rel="noopener">code available on GitHub</a> <small>(give us a star 😉)</small>.
+        You can use it on your own, use the online Free plan or buy a license either for Cloud or On-Premise, depending on your requirements.<br>
+        The Solo plan is at 9€/month (unlimited tables), the Team plan at 42€/user/month, and there is an Enterprise plan if you have higher or custom needs.
+        More details on our <a href={Routes.website_path(@conn, :pricing)}>pricing page</a>.
+    </p>
+
+    <%= render "docs/_h2.html", title: "How DrawSQL and Azimutt compares?" %>
+    <p>
+        At first glance, they can appear quite similar, both doing gorgeous diagrams.
+        But this apart, they differ a lot and your experience with one or the other will be really different.
+        Let's dig in.
+    </p>
+
+    <%= render "docs/_h3.html", title: "Diagram definition: UI forms vs dedicated language" %>
+    <p>
+        When starting with DrawSQL and Azimutt, the first difference you notice is how you define your schema.<br>
+        In <b>DrawSQL</b>, like in many other ERD tools, you have <b>guided forms</b> to create a table, then create a column, then define column name, type and settings.<br>
+        In <b>Azimutt</b>, the diagram schema is defined using <a href={Routes.website_path(@conn, :aml)} target="_blank" rel="noopener">AML</a>, a language specifically made for this.
+    </p>
+    <p>
+        This provides a vastly different editing experience.
+        Guided forms are a great fit for less technical users discovering how to define a database schema, they can be quite reassuring.<br>
+        AML, on the other hand, may be more impressive at first as you will start from a blank state and require a bit of learning (like 1 minute ^^).
+        But once used to it, your design speed will be higher (>2x in our tests 🤯) and text editing unlocks copy/paste, search/replace... that are out of reach with UI forms.
+    </p>
+    <div class="relative">
+        <div style="width: 100%; height: 100%; position: absolute; left: -1px; background: rgba(0, 0, 0, 0.3); clip-path: polygon(50% 0, 60% 0, 50% 100%, 40% 100%);"></div>
+        <img src={Routes.static_path(@conn, "/images/comparisons/azimutt-ecommerce-diagram.jpg")} alt="Azimutt e-commerce diagram" class="absolute" style="margin: 0; clip-path: polygon(50% 0, 100% 0, 100% 100%, 40% 100%);">
+        <img src={Routes.static_path(@conn, "/images/comparisons/drawsql-ecommerce-diagram.jpg")} alt="DrawSQL e-commerce diagram">
+    </div>
+    <p>
+        For small diagrams it doesn't make a huge difference, but for bigger ones it can have a big impact.
+        One trick if you want to use DrawSQL but with AML: you can use the
+        <a href={Routes.website_path(@conn, :convert, "aml", "postgres")} target="_blank" rel="noopener">AML to PostgreSQL converter</a>
+        to write AML and get PostgreSQL code to import into DrawSQL 🤫
+    </p>
+
+    <%= render "docs/_h3.html", title: "Single vs Multi layouts" %>
+    <p>
+        Another huge difference between DrawSQL and Azimutt is the single vs multi layouts.
+        Like many ERDs, DrawSQL display THE database diagram with every table and column shown on a single layout.
+        While totally fine when starting out, or with small and simple databases; it can be quite annoying if you have a lot of tables or even some tables with a lot of columns.
+        And this is often the case in real world databases.<br>
+        Azimutt on the other hand, allows you to create and organize any number of layouts where you choose which tables and columns are shown.
+        So you can create diagrams focused on use cases, showing only the relevant parts of your database.<br>
+        A single layout is usually manageable with less than 50 tables, if they have usually less than 20 columns.
+    </p>
+
+    <%= render "docs/_h3.html", title: "Database access" %>
+    <p>
+        Like stated in introduction, Azimutt is not just a database schema diagramming tool but rather a complete solution to explore and understand large and complex databases (who said legacy? 😅).
+        As such, it needs to <b>follow schema evolutions</b> of the database (source refresh), connect to <b>several databases</b> at once (multi-sources) and even <b>query data</b> to dig beside the schema alone.<br>
+        Azimutt even do the extra step of <b>analyzing your database</b> and suggesting improvements such as missing or duplicated indexes and relations, but also checking for inconsistencies in naming, column types and data.
+    </p>
+
+
+    <%= render "docs/_h2.html", title: "When to choose DrawSQL or Azimutt?" %>
+    <p>
+        If you need to draw a <b>simple diagram</b> with a tool only focused on that, <b>DrawSQL</b> with give you one of the nicest result out there.
+        It doesn't need any install, just an account, and it's great for schemas with few tables (free until 15 tables) like side-projects or small apps, or documentation/tutorial illustrations.
+    </p>
+    <p>
+        If you <b>already have a database</b> with tens of tables, <b>Azimutt</b> will most likely be more suited for you.
+        Especially for <b>automatic schema updates</b> as the database evolve but also have <b>use-case focused layouts</b> with documentation and maybe even <b>query your data</b> directly from Azimutt.<br>
+        As an <b>Open-Source</b> tool, you can suggest improvements and even contribute yourself adapt it to your needs if they require small adjustments or are not yet met.
+    </p>
+    <p>
+        As a conclusion, we believe Azimutt is a great alternative to DrawSQL, even for simple projects if you like the <b>AML editing</b> experience.
+        In either way, you can give a try to both of them for free.
+        And even Azimutt paid plans as they all have a 2-week free trial period to try advanced features!
+    </p>
+    <p>
+        If you need inspiration, you can check the <a href={Routes.gallery_path(@conn, :index)}>Azimutt Gallery</a> for projects, simple or complex, built on purpose or from popular projects.
+        For a really complex setup, check the <a href="https://azimutt.app/45f571a6-d9b8-4752-8a13-93ac0d2b7984/c00d0c45-8db2-46b7-9b51-eba661640c3c?token=9a59ccbb-7a58-4c88-9dfc-692de6177be9" target="_blank" rel="noopener">e-commerce demo</a> with 85 tables over 9 databases.
+        Some of our clients even have over 3000 tables handled in Azimutt 😱
+    </p>
 <% end %>
 
 <%= render "comparisons/_footer.html", conn: @conn, tool: @tool %>

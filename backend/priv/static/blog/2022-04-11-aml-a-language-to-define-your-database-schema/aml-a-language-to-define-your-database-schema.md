@@ -252,7 +252,7 @@ admins* | View of `users` table with only admins
 fk admins.id -> users.id
 ```
 
-Hope you liked it! I'm very excited to see it live in [Azimutt](https://azimutt.app/projects) soon.
+Hope you liked it! I'm very excited to see it live in [Azimutt](https://azimutt.app/create?aml) soon.
 
 ![work]({{base_link}}/work.jpg)
 
