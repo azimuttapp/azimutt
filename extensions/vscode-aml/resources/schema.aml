@@ -1,0 +1,9 @@
+users # store users
+  id int pk
+  name varchar index=user_name_idx
+
+posts
+  id int pk
+  title varchar check(`length(title) > 10`)
+  content text | allow markdown
+  author int -> users(id)

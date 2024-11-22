@@ -1,0 +1,26 @@
+{
+  "entities": [
+    {
+      "name": "users",
+      "attrs": [
+        {"name": "id", "type": "int"},
+        {"name": "name", "type": "varchar"}
+      ],
+      "pk": {"attrs": [["id"]]},
+      "indexes": [{"attrs": [["name"]]}]
+    },
+    {
+      "name": "posts",
+      "attrs": [
+        {"name": "id", "type": "int"},
+        {"name": "title", "type": "varchar"},
+        {"name": "content", "type": "text"},
+        {"name": "author", "type": "int"}
+      ],
+      "pk": {"attrs": [["id"]]}
+    }
+  ],
+  "relations": [
+    {"src": {"entity": "posts", "attrs": [["author"]]}, "ref": {"entity": "users", "attrs": [["id"]]}}
+  ]
+}

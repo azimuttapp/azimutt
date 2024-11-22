@@ -1,0 +1,25 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "AML",
+	"scopeName": "source.aml",
+	"patterns": [
+		{"include": "#entity"},
+		{"include": "#attribute"},
+		{"include": "#type"},
+		{"include": "#constraint"},
+		{"include": "#expression"},
+		{"include": "#relation"},
+		{"include": "#doc"},
+		{"include": "#comment"}
+	],
+	"repository": {
+		"entity": {"patterns": [{"name": "entity.function.aml", "match": "^[a-zA-Z_][a-zA-Z0-9_#]*"}]},
+		"attribute": {"patterns": [{"name": "variable.parameter.aml", "match": "^ +[a-zA-Z_][a-zA-Z0-9_#]*"}]},
+		"type": {"patterns": [{"name": "keyword.aml", "match": "\\b(int|varchar|text|uuid|timestamp)\\b"}]},
+		"constraint": {"patterns": [{"name": "keyword.control.aml", "match": "\\b(pk|index|unique|check|rel|type)\\b"}]},
+		"expression": {"patterns": [{"name": "string.interpolated.aml", "match": "`[^`]*`"}]},
+		"relation": {"patterns": [{"name": "keyword.control.aml", "match": "[-<>]{2}"}]},
+		"doc": {"patterns": [{"name": "comment.documentation.aml", "match": "\\|[^#]*"}]},
+		"comment": {"patterns": [{"name": "comment.line.aml", "match": "#.*"}]}
+	}
+}

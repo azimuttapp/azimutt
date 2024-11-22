@@ -10,8 +10,7 @@
   },
   "categories": [
     "Programming Languages",
-    "Snippets",
-    "Other"
+    "Snippets"
   ],
   "repository": {
     "type": "git",
@@ -21,12 +20,42 @@
   "activationEvents": [],
   "browser": "./dist/web/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "aml-web.helloWorld",
-        "title": "Hello World"
-      }
-    ]
+    "languages": [{
+      "id": "aml",
+      "aliases": ["AML", "aml", "Azimutt Markup Language"],
+      "extensions": [".aml"],
+      "icon": {"dark": "./assets/icon.svg", "light": "./assets/icon.svg"},
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "aml",
+      "scopeName": "source.aml",
+      "path": "./syntaxes/aml.tmLanguage.json"
+    }],
+    "snippets": [{
+      "language": "aml",
+      "path": "./snippets.json"
+    }],
+    "commands": [{
+      "command": "vscode-aml.fromJson",
+      "category": "AML",
+      "title": "convert JSON to AML"
+    }, {
+      "command": "vscode-aml.fromSQL",
+      "category": "AML",
+      "title": "convert SQL to AML"
+    }, {
+      "command": "vscode-aml.convert",
+      "category": "AML",
+      "title": "convert AML to"
+    }],
+    "menus": {
+      "commandPalette": [
+        {"command": "vscode-aml.fromJson", "when": "editorLangId == json"},
+        {"command": "vscode-aml.fromSQL", "when": "editorLangId == sql"},
+        {"command": "vscode-aml.convert", "when": "editorLangId == aml"}
+      ]
+    }
   },
   "scripts": {
     "test": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. --extensionTestsPath=dist/web/test/suite/extensionTests.js",
