@@ -5,7 +5,7 @@ This library allows to connect to [Snowflake](https://www.snowflake.com), extrac
 It lists all schemas, tables, columns and relations and format them in a JSON Schema.
 
 This library is made by [Azimutt](https://azimutt.app) to allow people to explore their Snowflake database.
-It's accessible through the [Desktop app](../../desktop) (soon), the [CLI](https://www.npmjs.com/package/azimutt) or even the website using the [gateway](../../gateway) server.
+It's accessible through the [Desktop app](../../extensions/desktop) (soon), the [CLI](https://www.npmjs.com/package/azimutt) or even the website using the [gateway](../../gateway) server.
 
 **Feel free to use it and even submit PR to improve it:**
 

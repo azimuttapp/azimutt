@@ -1,9 +1,8 @@
 packages:
   - "backend"
-  - "browser-extension"
   - "cli"
   - "cli/html-report"
-  - "desktop"
+  - "extensions/*"
   - "frontend"
   - "gateway"
   - "libs/*"

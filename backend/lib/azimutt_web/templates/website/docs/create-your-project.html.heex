@@ -2,7 +2,7 @@
 
 <%= doc_prose do %>
     <p class="lead">
-        Azimutt explorer has several ways to import your schema. The suggested one being the <a href="#from-database">database connection</a>
+        Azimutt explorer has several ways to import your database schema. The suggested one is the <a href="#from-database">database connection</a>
         as it's more reliable and offer more features (see below) but you have many other options if you prefer.
         <img src={Routes.static_path(@conn, "/images/doc/new-project.png")} alt="New Azimutt project">
     </p>
@@ -21,7 +21,7 @@
         Quite awesome if you ask me 😉
     </p>
     <p>
-        For more details, you can have a look at the connectors to see exactly what and how its being done, here are the scripts for
+        For more details, you can have a <a href={Routes.website_path(@conn, :connectors)}>look at the connectors</a> to see exactly what and how its being done, here are the scripts for
         <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/connector-postgres/src/postgres.ts" target="_blank">PostgreSQL</a>,
         <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/connector-mysql/src/mysql.ts" target="_blank">MySQL</a> and
         <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/connector-mongodb/src/mongodb.ts" target="_blank">MongoDB</a>.
@@ -36,7 +36,7 @@
     <p>
         If you just want to explore your database schema, you can upload it as SQL statements (CREATE TABLE, CREATE INDEX, COMMENTS and others).
         You can do it safely as <strong>nothing will be sent to Azimutt servers</strong>,
-        the parsing is made on the frontend and your schema is shown with no business data being sent to Azimutt server.
+        the parsing is made on the frontend and your schema is shown with no business data sent to Azimutt.
         <img src={Routes.static_path(@conn, "/images/doc/new-project-sql.png")} alt="New Azimutt project with SQL file">
     </p>
     <p>
@@ -45,7 +45,7 @@
 
     <%= render "docs/_h2.html", title: "From Prisma" %>
     <p>
-        <a href="https://www.prisma.io" target="_blank" rel="noopener noreferrer" class="underline">Prisma</a> is a Node.jS and TypeScript ORM
+        <a href="https://www.prisma.io" target="_blank" rel="noopener noreferrer" class="underline">Prisma</a> is a Node.js and TypeScript ORM
         that use its own <a href="https://www.prisma.io/docs/orm/prisma-schema" target="_blank" rel="noopener noreferrer" class="underline">schema syntax</a>.
         Same as SQL, you can import the file in Azimutt, local or remote.
     </p>
@@ -53,7 +53,7 @@
     <%= render "docs/_h2.html", title: "From JSON" %>
     <p>
         If you have a database that is not supported yet by Azimutt,
-        you can <a href="https://github.com/azimuttapp/azimutt/issues" target="_blank" rel="noopener noreferrer">create an issue</a> (or vote on the existing one),
+        you can <a href="https://github.com/azimuttapp/azimutt/issues" target="_blank" rel="noopener noreferrer">create an issue</a> (or vote on the existing ones),
         send a Pull Request (look at <a href="https://github.com/azimuttapp/azimutt/tree/main/libs" target="_blank" rel="noopener noreferrer">other connectors</a>) or
         extract its schema on your own and <a href={"#{Routes.elm_path(@conn, :new)}?json"} target="_blank" rel="noopener noreferrer">import it as JSON</a> in Azimutt.
         You just have to format it according to the JSON Schema below the import section.
