@@ -8,7 +8,11 @@
   "engines": {
     "vscode": "^1.95.0"
   },
-  "categories": ["Programming Languages", "Snippets", "Other"],
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Other"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/azimuttapp/azimutt.git",
@@ -37,20 +41,23 @@
     "lint": "eslint src",
     "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. ."
   },
+  "dependencies": {
+    "@azimutt/aml": "^0.1.8"
+  },
   "devDependencies": {
-    "@types/vscode": "^1.95.0",
-    "@types/mocha": "^10.0.9",
-    "@types/assert": "^1.5.10",
-    "eslint": "^9.13.0",
-    "@typescript-eslint/eslint-plugin": "^8.10.0",
-    "@typescript-eslint/parser": "^8.7.0",
-    "mocha": "^10.7.3",
-    "typescript": "^5.6.3",
-    "@vscode/test-web": "^0.0.63",
-    "esbuild": "^0.24.0",
-    "glob": "^11.0.0",
-    "npm-run-all": "^4.1.5",
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
-    "assert": "^2.1.0"
+    "@types/assert": "^1.5.11",
+    "@types/mocha": "^10.0.10",
+    "@types/vscode": "^1.95.0",
+    "@typescript-eslint/eslint-plugin": "^8.15.0",
+    "@typescript-eslint/parser": "^8.15.0",
+    "@vscode/test-web": "^0.0.64",
+    "assert": "^2.1.0",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.15.0",
+    "glob": "^11.0.0",
+    "mocha": "^10.8.2",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.6.3"
   }
 }
