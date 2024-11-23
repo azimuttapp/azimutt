@@ -2,7 +2,7 @@
   "name": "vscode-aml",
   "displayName": "AML - Fast database design",
   "description": "Language support for Azimutt Markup Language (AML)",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "icon": "assets/icon.png",
   "publisher": "azimutt",
   "license": "MIT",
@@ -13,7 +13,11 @@
     "Programming Languages",
     "Snippets"
   ],
-  "keywords": ["database", "diagram", "sql"],
+  "keywords": [
+    "database",
+    "diagram",
+    "sql"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/azimuttapp/azimutt",
@@ -90,13 +94,13 @@
   },
   "scripts": {
     "test": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. --extensionTestsPath=dist/web/test/suite/extensionTests.js",
-    "pretest": "pnpm run compile-web",
-    "vscode:prepublish": "pnpm run package-web",
-    "compile-web": "pnpm run check-types && pnpm run lint && node esbuild.js",
+    "pretest": "npm run compile-web",
+    "vscode:prepublish": "npm run package-web",
+    "compile-web": "npm run check-types && npm run lint && node esbuild.js",
     "watch-web": "npm-run-all -p watch-web:*",
     "watch-web:esbuild": "node esbuild.js --watch",
     "watch-web:tsc": "tsc --noEmit --watch --project tsconfig.json",
-    "package-web": "pnpm run check-types && pnpm run lint && node esbuild.js --production",
+    "package-web": "npm run check-types && npm run lint && node esbuild.js --production",
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
     "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. ."
