@@ -305,6 +305,12 @@ importers:
       '@azimutt/aml':
         specifier: ^0.1.8
         version: 0.1.8
+      '@azimutt/models':
+        specifier: ^0.1.16
+        version: 0.1.16
+      '@azimutt/parser-sql':
+        specifier: ^0.1.3
+        version: 0.1.3
     devDependencies:
       '@esbuild-plugins/node-globals-polyfill':
         specifier: ^0.2.3
@@ -1368,6 +1374,12 @@ packages:
 
   '@azimutt/models@0.1.15':
     resolution: {integrity: sha512-Cog6HffVeKKPqx4KJE2iSYYy3ypE678cl2fIDDaeMsNHU8Agx6fXaOOOm9mj8MY1E7QANTIse2qFls9OXaB5Tg==}
+
+  '@azimutt/models@0.1.16':
+    resolution: {integrity: sha512-cW/ATuEb97Slivnehbq3UyjgTilYpsJpLJ5qkWgBZOI6ldbBld9179ywopz17XvhjVBiZu1NGEm/jDPBXV8xOw==}
+
+  '@azimutt/parser-sql@0.1.3':
+    resolution: {integrity: sha512-whsNHlfTNhGMXgUGZpW5YbCOrulFHMRO2rmM3U91ME/pa8kuYEXQ1U3u/cs3ZvTyS5zdW5p0H+41Okuwq9dQ/A==}
 
   '@azimutt/utils@0.1.6':
     resolution: {integrity: sha512-Qbe+78I1oseQUBJ82HbRK3OZKTiltStd+6bvnrvrnjWYMq739y86PDk4Jo5Ua8lT/i4jv9Gb5Ye584PuIXhXbw==}
@@ -10439,7 +10451,7 @@ snapshots:
 
   '@azimutt/aml@0.1.8':
     dependencies:
-      '@azimutt/models': 0.1.15
+      '@azimutt/models': 0.1.16
       '@azimutt/utils': 0.1.6
       chevrotain: 10.5.0
     transitivePeerDependencies:
@@ -10538,6 +10550,24 @@ snapshots:
       openai: 4.65.0(encoding@0.1.13)(zod@3.23.8)
       zod: 3.23.8
       zod-to-json-schema: 3.23.3(zod@3.23.8)
+    transitivePeerDependencies:
+      - encoding
+
+  '@azimutt/models@0.1.16':
+    dependencies:
+      '@azimutt/utils': 0.1.6
+      openai: 4.65.0(encoding@0.1.13)(zod@3.23.8)
+      zod: 3.23.8
+      zod-to-json-schema: 3.23.3(zod@3.23.8)
+    transitivePeerDependencies:
+      - encoding
+
+  '@azimutt/parser-sql@0.1.3':
+    dependencies:
+      '@azimutt/models': 0.1.16
+      '@azimutt/utils': 0.1.6
+      chevrotain: 10.5.0
+      zod: 3.23.8
     transitivePeerDependencies:
       - encoding
 
