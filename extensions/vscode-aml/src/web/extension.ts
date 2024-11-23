@@ -1,4 +1,11 @@
-import vscode, {TextDocument, TextEditor, TextEditorEdit, ViewColumn, WebviewPanel} from "vscode";
+import vscode, {
+	ExtensionContext,
+	TextDocument,
+	TextDocumentChangeEvent,
+	TextEditor,
+	ViewColumn,
+	WebviewPanel
+} from "vscode";
 import {ParserError, ParserErrorLevel} from "@azimutt/models";
 import {generateSql, parseSql} from "@azimutt/parser-sql";
 import {
@@ -13,28 +20,15 @@ import {
 	ParserResult
 } from "@azimutt/aml";
 
-export function activate(context: vscode.ExtensionContext) {
+let previewPanel: WebviewPanel | undefined = undefined
+
+export function activate(context: ExtensionContext) {
 	console.log('\n\n\nactivate\n\n\n')
-	let previewPanel: WebviewPanel | undefined = undefined
 	context.subscriptions.push(
-		vscode.commands.registerTextEditorCommand('aml.fromJson', (editor: TextEditor, edit: TextEditorEdit) => convertJson(editor, edit)),
-		vscode.commands.registerTextEditorCommand('aml.fromSQL', (editor: TextEditor, edit: TextEditorEdit) => convertSql(editor, edit)),
-		vscode.commands.registerTextEditorCommand('aml.convert', (editor: TextEditor, edit: TextEditorEdit) => convertAml(editor, edit)),
-		vscode.commands.registerTextEditorCommand('aml.preview', (editor: TextEditor, edit: TextEditorEdit) => {
-			vscode.window.showInformationMessage('aml.preview called')
-			if (editor.document.languageId !== 'aml') {
-				vscode.window.showErrorMessage('Needs AML file to preview it.')
-				return
-			}
-			const viewColumn = editor.viewColumn ? editor.viewColumn + 1 : ViewColumn.Two
-			if (!previewPanel) {
-				previewPanel = vscode.window.createWebviewPanel('aml-preview', 'Preview AML', {viewColumn, preserveFocus: true}, {localResourceRoots: []})
-				previewPanel.onDidDispose(() => previewPanel = undefined, null, context.subscriptions)
-			}
-			updateAmlPreview(editor.document, previewPanel, viewColumn)
-			// TODO: update preview when editor text changes or when editor changes to another aml (with debounce)
-			// vscode.window.onDidChangeActiveTextEditor((editor: TextEditor) => {})
-		})
+		vscode.commands.registerTextEditorCommand('aml.fromJson', (editor: TextEditor) => convertJsonToAml(editor)),
+		vscode.commands.registerTextEditorCommand('aml.fromSQL', (editor: TextEditor) => convertSqlToAml(editor)),
+		vscode.commands.registerTextEditorCommand('aml.convert', (editor: TextEditor) => convertAmlToDialect(editor)),
+		vscode.commands.registerTextEditorCommand('aml.preview', (editor: TextEditor) => previewAml(editor, context))
 	)
 }
 
@@ -42,25 +36,16 @@ export function deactivate() {}
 
 // private functions
 
-async function convertJson(editor: TextEditor, edit: TextEditorEdit): Promise<void> {
+async function convertJsonToAml(editor: TextEditor): Promise<void> {
 	if (editor.document.languageId !== 'json') {
 		vscode.window.showErrorMessage('Needs JSON file to convert it to AML.')
 		return
 	}
 
-	const res = parseJsonDatabase(editor.document.getText())
-	const error = formatErrors(res.errors)
-	const db = res.result
-
-	if (db) {
-		error && vscode.window.showWarningMessage(error)
-		await openFile('aml', generateAml(db))
-	} else {
-		error && vscode.window.showErrorMessage(error)
-	}
+	await openFileResult(parseJsonDatabase(editor.document.getText()).map((db: Database) => ({lang: 'aml', content: generateAml(db)})))
 }
 
-async function convertSql(editor: TextEditor, edit: TextEditorEdit): Promise<void> {
+async function convertSqlToAml(editor: TextEditor): Promise<void> {
 	if (editor.document.languageId !== 'sql') {
 		vscode.window.showErrorMessage('Needs SQL file to convert it to AML.')
 		return
@@ -69,24 +54,13 @@ async function convertSql(editor: TextEditor, edit: TextEditorEdit): Promise<voi
 	const dialects = ['PostgreSQL']
 	const dialect = await vscode.window.showQuickPick(dialects, {placeHolder: 'Select target'})
 	if (dialect === 'PostgreSQL') {
-		await writeAml(parseSql(editor.document.getText(), 'postgres'))
+		await openFileResult(parseSql(editor.document.getText(), 'postgres').map((db: Database) => ({lang: 'aml', content: generateAml(db)})))
 	} else {
 		vscode.window.showWarningMessage(`Unable to convert SQL to AML: unsupported ${dialect} dialect.`)
 	}
 }
 
-async function writeAml(res: ParserResult<Database>): Promise<void> {
-	const error = formatErrors(res.errors)
-	const db = res.result
-	if (db) {
-		error && vscode.window.showWarningMessage(error)
-		await openFile('aml', generateAml(db))
-	} else {
-		error && vscode.window.showErrorMessage(error)
-	}
-}
-
-async function convertAml(editor: TextEditor, edit: TextEditorEdit): Promise<void> {
+async function convertAmlToDialect(editor: TextEditor): Promise<void> {
 	if (editor.document.languageId !== 'aml') {
 		vscode.window.showErrorMessage('Needs AML file to convert AML to another language.')
 		return
@@ -118,16 +92,53 @@ async function convertAml(editor: TextEditor, edit: TextEditorEdit): Promise<voi
 	}
 }
 
-function updateAmlPreview(doc: TextDocument, panel: WebviewPanel, col: ViewColumn) {
-	panel.title = 'Preview ' + doc.fileName
-	panel.webview.html = buildAmlPreview(doc.getText())
-	if (panel.viewColumn !== col) {
-		panel.reveal(col)
+function previewAml(editor: TextEditor, context: ExtensionContext) {
+	vscode.window.showInformationMessage('previewAml called')
+	if (editor.document.languageId !== 'aml') {
+		vscode.window.showErrorMessage('Needs AML file to preview it.')
+		return
+	}
+	if (!previewPanel) {
+		previewPanel = vscode.window.createWebviewPanel('aml-preview', 'Preview AML', {viewColumn: ViewColumn.Beside, preserveFocus: true}, {localResourceRoots: []})
+		const subscriptions = [
+			vscode.workspace.onDidOpenTextDocument((document: TextDocument) => {
+				console.log('onDidOpenTextDocument', document.fileName)
+				if (document.languageId === 'aml' && previewPanel) {
+					updateAmlPreview(document, previewPanel)
+				}
+			}, null, context.subscriptions),
+			vscode.workspace.onDidChangeTextDocument((e: TextDocumentChangeEvent) => {
+				console.log('onDidChangeTextDocument', e.document.fileName)
+				if (e.document.languageId === 'aml' && previewPanel) {
+					updateAmlPreview(e.document, previewPanel)
+				}
+			}, null, context.subscriptions)
+		]
+		previewPanel.onDidDispose(() => {
+			console.log('onDidDispose', previewPanel?.title)
+			previewPanel = undefined
+			subscriptions.map(s => s.dispose())
+		}, null, context.subscriptions)
+	}
+	updateAmlPreview(editor.document, previewPanel)
+}
+
+const updateAmlPreview = debounce((document: TextDocument, panel: WebviewPanel) => updateAmlPreviewReal(document, panel), 300)
+const updateAmlPreviewReal = (document: TextDocument, panel: WebviewPanel) => {
+	const html = buildAmlPreview(document.getText())
+	if (html) {
+		panel.title = 'Preview ' + document.fileName
+		panel.webview.html = html
+		if (!panel.visible) {panel.reveal(ViewColumn.Beside, true)}
 	}
 }
 
-function buildAmlPreview(aml: string): string {
-	return `<!DOCTYPE html>
+function buildAmlPreview(aml: string): string | undefined {
+	const res = parseAml(aml)
+	if (res.result) {
+		const mermaid = generateMermaid(res.result)
+		// TODO: render mermaid as svg
+		return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -135,13 +146,27 @@ function buildAmlPreview(aml: string): string {
     <title>AML preview</title>
 </head>
 <body>
-    <pre>${aml}</pre>
+    <pre>${mermaid}</pre>
 </body>
-</html>`;
+</html>`
+	}
 }
 
-async function openFile(lang: string, content: string): Promise<TextDocument> {
-	const doc: TextDocument = await vscode.workspace.openTextDocument({language: lang, content: content})
+// utils functions
+
+async function openFileResult(res: ParserResult<{lang: string, content: string}>): Promise<TextDocument | undefined> {
+	const error = formatErrors(res.errors)
+	const file = res.result
+	if (file) {
+		error && vscode.window.showWarningMessage(error)
+		return await openFile(file.lang, file.content)
+	} else {
+		error && vscode.window.showErrorMessage(error)
+	}
+}
+
+async function openFile(language: string, content: string): Promise<TextDocument> {
+	const doc: TextDocument = await vscode.workspace.openTextDocument({language, content})
 	await vscode.window.showTextDocument(doc)
 	return doc
 }
@@ -164,5 +189,16 @@ function formatErrorLevel(level: ParserErrorLevel): string {
 		case 'info': return '[INFO]'
 		case 'hint': return '[HINT]'
 		default: return '[ERR] '
+	}
+}
+
+function debounce<F extends (...args: Parameters<F>) => ReturnType<F>>(
+	func: F,
+	delay: number
+): (...args: Parameters<F>) => void {
+	let timeout: NodeJS.Timeout
+	return (...args: Parameters<F>): void => {
+		clearTimeout(timeout)
+		timeout = setTimeout(() => func(...args), delay)
 	}
 }
