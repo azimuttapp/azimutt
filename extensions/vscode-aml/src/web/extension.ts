@@ -1,4 +1,4 @@
-import vscode, {TextDocument, TextEditor, TextEditorEdit} from "vscode";
+import vscode, {TextDocument, TextEditor, TextEditorEdit, ViewColumn, WebviewPanel} from "vscode";
 import {ParserError, ParserErrorLevel} from "@azimutt/models";
 import {generateSql, parseSql} from "@azimutt/parser-sql";
 import {
@@ -14,10 +14,26 @@ import {
 } from "@azimutt/aml";
 
 export function activate(context: vscode.ExtensionContext) {
+	let previewPanel: WebviewPanel | undefined = undefined
 	context.subscriptions.push(
-		vscode.commands.registerTextEditorCommand('vscode-aml.fromJson', (editor: TextEditor, edit: TextEditorEdit) => convertJson(editor, edit)),
-		vscode.commands.registerTextEditorCommand('vscode-aml.fromSQL', (editor: TextEditor, edit: TextEditorEdit) => convertSql(editor, edit)),
-		vscode.commands.registerTextEditorCommand('vscode-aml.convert', (editor: TextEditor, edit: TextEditorEdit) => convertAml(editor, edit))
+		vscode.commands.registerTextEditorCommand('aml.fromJson', (editor: TextEditor, edit: TextEditorEdit) => convertJson(editor, edit)),
+		vscode.commands.registerTextEditorCommand('aml.fromSQL', (editor: TextEditor, edit: TextEditorEdit) => convertSql(editor, edit)),
+		vscode.commands.registerTextEditorCommand('aml.convert', (editor: TextEditor, edit: TextEditorEdit) => convertAml(editor, edit)),
+		vscode.commands.registerTextEditorCommand('aml.preview', (editor: TextEditor, edit: TextEditorEdit) => {
+			vscode.window.showInformationMessage('aml.preview called')
+			if (editor.document.languageId !== 'aml') {
+				vscode.window.showErrorMessage('Needs AML file to preview it.')
+				return
+			}
+			const viewColumn = editor.viewColumn ? editor.viewColumn + 1 : ViewColumn.Two
+			if (!previewPanel) {
+				previewPanel = vscode.window.createWebviewPanel('aml-preview', 'Preview AML', {viewColumn, preserveFocus: true}, {localResourceRoots: []})
+				previewPanel.onDidDispose(() => previewPanel = undefined, null, context.subscriptions)
+			}
+			updateAmlPreview(editor.document, previewPanel, viewColumn)
+			// TODO: update preview when editor text changes or when editor changes to another aml (with debounce)
+			// vscode.window.onDidChangeActiveTextEditor((editor: TextEditor) => {})
+		})
 	)
 }
 
@@ -101,6 +117,28 @@ async function convertAml(editor: TextEditor, edit: TextEditorEdit): Promise<voi
 	}
 }
 
+function updateAmlPreview(doc: TextDocument, panel: WebviewPanel, col: ViewColumn) {
+	panel.title = 'Preview ' + doc.fileName
+	panel.webview.html = buildAmlPreview(doc.getText())
+	if (panel.viewColumn !== col) {
+		panel.reveal(col)
+	}
+}
+
+function buildAmlPreview(aml: string): string {
+	return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AML preview</title>
+</head>
+<body>
+    <pre>${aml}</pre>
+</body>
+</html>`;
+}
+
 async function openFile(lang: string, content: string): Promise<TextDocument> {
 	const doc: TextDocument = await vscode.workspace.openTextDocument({language: lang, content: content})
 	await vscode.window.showTextDocument(doc)
@@ -124,5 +162,6 @@ function formatErrorLevel(level: ParserErrorLevel): string {
 		case 'warning': return '[WARN]'
 		case 'info': return '[INFO]'
 		case 'hint': return '[HINT]'
+		default: return '[ERR] '
 	}
 }

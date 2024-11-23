@@ -60,34 +60,47 @@
     ],
     "commands": [
       {
-        "command": "vscode-aml.fromJson",
+        "command": "aml.fromJson",
         "category": "AML",
         "title": "convert JSON to AML"
       },
       {
-        "command": "vscode-aml.fromSQL",
+        "command": "aml.fromSQL",
         "category": "AML",
         "title": "convert SQL to AML"
       },
       {
-        "command": "vscode-aml.convert",
+        "command": "aml.convert",
         "category": "AML",
         "title": "convert AML to"
+      },
+      {
+        "command": "aml.preview",
+        "category": "AML",
+        "title": "preview AML",
+        "icon": "$(open-preview)"
       }
     ],
     "menus": {
       "commandPalette": [
         {
-          "command": "vscode-aml.fromJson",
-          "when": "editorLangId == json"
+          "when": "editorLangId == json",
+          "command": "aml.fromJson"
         },
         {
-          "command": "vscode-aml.fromSQL",
-          "when": "editorLangId == sql"
+          "when": "editorLangId == sql",
+          "command": "aml.fromSQL"
         },
         {
-          "command": "vscode-aml.convert",
-          "when": "editorLangId == aml"
+          "when": "editorLangId == aml",
+          "command": "aml.convert"
+        }
+      ],
+      "editor/title": [
+        {
+          "when": "editorLangId == aml",
+          "command": "aml.preview",
+          "group": "navigation"
         }
       ]
     }

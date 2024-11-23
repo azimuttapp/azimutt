@@ -16,7 +16,11 @@ This Visual Studio Code extension provides language support for [AML](https://az
 
 ## Roadmap
 
-- Add parsing errors and auto-complete
+- Add parsing errors
+- auto-complete
+- quick-fixes (code actions)
+- Go-to-definition for relations (cf https://microsoft.github.io/monaco-editor/typedoc/interfaces/languages.DocumentSymbolProvider.html)
+- hover info
 - Add diagram preview & Open in Azimutt
 - Add AML support in Markdown
 - Connect to a database
@@ -35,7 +39,7 @@ Here are some interesting VS Code documentation you may find helpful:
 
 - [VS Code extension get started](https://code.visualstudio.com/api/get-started/your-first-extension).
 - [Language Configuration Guide](https://code.visualstudio.com/api/language-extensions/language-configuration-guide)
-- [Syntax Highlight Guide](https://code.visualstudio.com/api/language-extensions/syntax-highlight-guide)
+- [Syntax Highlight Guide](https://code.visualstudio.com/api/language-extensions/syntax-highlight-guide) & [Semantic Highlight Guide](https://code.visualstudio.com/api/language-extensions/semantic-highlight-guide)
 - [Snippet Guide](https://code.visualstudio.com/api/language-extensions/snippet-guide)
 
 Tips:
