@@ -14,6 +14,7 @@ import {
 } from "@azimutt/aml";
 
 export function activate(context: vscode.ExtensionContext) {
+	console.log('\n\n\nactivate\n\n\n')
 	let previewPanel: WebviewPanel | undefined = undefined
 	context.subscriptions.push(
 		vscode.commands.registerTextEditorCommand('aml.fromJson', (editor: TextEditor, edit: TextEditorEdit) => convertJson(editor, edit)),
