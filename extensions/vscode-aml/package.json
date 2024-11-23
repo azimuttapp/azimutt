@@ -1,5 +1,5 @@
 {
-  "name": "@azimutt/vscode-aml",
+  "name": "vscode-aml",
   "displayName": "AML - Fast database design",
   "description": "Language support for Azimutt Markup Language (AML)",
   "icon": "assets/icon.png",

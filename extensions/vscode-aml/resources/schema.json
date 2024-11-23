@@ -3,24 +3,94 @@
     {
       "name": "users",
       "attrs": [
-        {"name": "id", "type": "int"},
-        {"name": "name", "type": "varchar"}
+        {"name": "id", "type": "int", "extra": {"autoIncrement": null}},
+        {"name": "name", "type": "varchar(64)"},
+        {"name": "email", "type": "varchar(256)"},
+        {"name": "auth", "type": "auth_kind"},
+        {"name": "settings", "type": "json", "null": true, "attrs": [
+          {"name": "theme", "type": "theme"},
+          {"name": "last_page", "type": "string", "doc": "url of the last visited page"}
+        ]},
+        {"name": "created_at", "type": "timestamp", "default": "`now()`"},
+        {"name": "updated_at", "type": "timestamp", "default": "`now()`"},
+        {"name": "deleted_at", "type": "timestamp", "null": true}
       ],
       "pk": {"attrs": [["id"]]},
-      "indexes": [{"attrs": [["name"]]}]
+      "indexes": [
+        {"attrs": [["email"]], "unique": true},
+        {"name": "user_name_idx", "attrs": [["name"]]}
+      ],
+      "extra": {"color": "blue", "tags": ["pii"], "alias": "u"}
     },
     {
+      "schema": "cms",
       "name": "posts",
       "attrs": [
-        {"name": "id", "type": "int"},
+        {"name": "id", "type": "int", "extra": {"autoIncrement": null}},
         {"name": "title", "type": "varchar"},
+        {"name": "content", "type": "text", "doc": "allow markdown"},
+        {"name": "status", "type": "post_status", "default": "draft"},
+        {"name": "author", "type": "int"},
+        {"name": "tags", "type": "varchar[]"},
+        {"name": "created_at", "type": "timestamp", "default": "`now()`"},
+        {"name": "created_by", "type": "unknown"},
+        {"name": "updated_at", "type": "timestamp", "default": "`now()`"},
+        {"name": "updated_by", "type": "unknown"}
+      ],
+      "pk": {"attrs": [["id"]]},
+      "checks": [
+        {"attrs": [["title"]], "predicate": "length(title) > 10"}
+      ]
+    },
+    {
+      "schema": "cms",
+      "name": "comments",
+      "attrs": [
+        {"name": "id", "type": "int", "extra": {"autoIncrement": null}},
+        {"name": "post_id", "type": "int"},
         {"name": "content", "type": "text"},
-        {"name": "author", "type": "int"}
+        {"name": "created_at", "type": "timestamp", "default": "`now()`"},
+        {"name": "created_by", "type": "unknown"},
+        {"name": "updated_at", "type": "timestamp", "default": "`now()`"},
+        {"name": "updated_by", "type": "unknown"}
+      ],
+      "pk": {"attrs": [["id"]]}
+    },
+    {
+      "schema": "tracking",
+      "name": "events",
+      "attrs": [
+        {"name": "id", "type": "uuid"},
+        {"name": "name", "type": "varchar"},
+        {"name": "payload", "type": "json", "null": true},
+        {"name": "item_kind", "type": "event_item", "null": true},
+        {"name": "item_id", "type": "int", "null": true},
+        {"name": "created_at", "type": "timestamp", "default": "`now()`"}
       ],
       "pk": {"attrs": [["id"]]}
     }
   ],
   "relations": [
-    {"src": {"entity": "posts", "attrs": [["author"]]}, "ref": {"entity": "users", "attrs": [["id"]]}}
-  ]
+    {"src": {"schema": "cms", "entity": "posts", "attrs": [["author"]]}, "ref": {"entity": "users", "attrs": [["id"]]}, "extra": {"inline": true}},
+    {"src": {"schema": "cms", "entity": "posts", "attrs": [["created_by"]]}, "ref": {"entity": "users", "attrs": [["id"]]}, "extra": {"inline": true}},
+    {"src": {"schema": "cms", "entity": "posts", "attrs": [["updated_by"]]}, "ref": {"entity": "users", "attrs": [["id"]]}, "extra": {"inline": true}},
+    {"src": {"schema": "cms", "entity": "comments", "attrs": [["post_id"]]}, "ref": {"schema": "cms", "entity": "posts", "attrs": [["id"]]}, "extra": {"inline": true}},
+    {"src": {"schema": "cms", "entity": "comments", "attrs": [["created_by"]]}, "ref": {"entity": "users", "attrs": [["id"]]}, "extra": {"inline": true}},
+    {"src": {"schema": "cms", "entity": "comments", "attrs": [["updated_by"]]}, "ref": {"entity": "users", "attrs": [["id"]]}, "extra": {"inline": true}},
+    {"src": {"schema": "tracking", "entity": "events", "attrs": [["item_id"]]}, "ref": {"entity": "users", "attrs": [["id"]]}, "polymorphic": {"attribute": ["item_kind"], "value": "users"}, "extra": {"comment": "polymorphic relation"}},
+    {"src": {"schema": "tracking", "entity": "events", "attrs": [["item_id"]]}, "ref": {"schema": "cms", "entity": "posts", "attrs": [["id"]]}, "polymorphic": {"attribute": ["item_kind"], "value": "posts"}},
+    {"src": {"schema": "tracking", "entity": "events", "attrs": [["item_id"]]}, "ref": {"schema": "cms", "entity": "comments", "attrs": [["id"]]}, "polymorphic": {"attribute": ["item_kind"], "value": "comments"}}
+  ],
+  "types": [
+    {"name": "auth_kind", "values": ["password", "google", "twitter", "github"]},
+    {"name": "theme", "values": ["light", "dark"], "extra": {"inline": true}},
+    {"schema": "cms", "name": "post_status", "values": ["draft", "published", "archived"], "extra": {"inline": true}},
+    {"schema": "tracking", "name": "event_item", "values": ["users", "posts", "comments"], "extra": {"inline": true}}
+  ],
+  "extra": {
+    "comments": [
+      {"line": 15, "comment": "CMS tables"},
+      {"line": 39, "comment": "Tracking tables"}
+    ]
+  }
 }

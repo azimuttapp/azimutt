@@ -1,9 +1,50 @@
-users # store users
-  id int pk
-  name varchar index=user_name_idx
+type auth_kind (password, google, twitter, github)
 
-posts
-  id int pk
+users as u {color: blue, tags: [pii]}
+  id int pk {autoIncrement}
+  name varchar(64) index=user_name_idx
+  email varchar(256) unique
+  auth auth_kind
+  settings json nullable
+    theme theme(light, dark)
+    last_page string | url of the last visited page
+  created_at timestamp=`now()`
+  updated_at timestamp=`now()`
+  deleted_at timestamp nullable
+
+# CMS tables
+
+cms.posts
+  id int pk {autoIncrement}
   title varchar check(`length(title) > 10`)
   content text | allow markdown
+  status post_status(draft, published, archived)=draft
   author int -> users(id)
+  tags "varchar[]"
+  created_at timestamp=`now()`
+  created_by -> users(id)
+  updated_at timestamp=`now()`
+  updated_by -> users(id)
+
+cms.comments
+  id int pk {autoIncrement}
+  post_id int -> cms.posts(id)
+  content text
+  created_at timestamp=`now()`
+  created_by -> users(id)
+  updated_at timestamp=`now()`
+  updated_by -> users(id)
+
+# Tracking tables
+
+tracking.events
+  id uuid pk
+  name varchar
+  payload json nullable
+  item_kind event_item(users, posts, comments) nullable
+  item_id int nullable
+  created_at timestamp=`now()`
+
+rel tracking.events(item_id) -item_kind=users> users(id) # polymorphic relation
+rel tracking.events(item_id) -item_kind=posts> cms.posts(id)
+rel tracking.events(item_id) -item_kind=comments> cms.comments(id)

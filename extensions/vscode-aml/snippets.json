@@ -18,15 +18,15 @@
     },
     "Created At": {
         "prefix": "created_at",
-        "body": ["created_at ${1:timestamp}\n"]
+        "body": ["created_at ${1:timestamp}=`${2:now()}`\n"]
     },
     "Updated At": {
         "prefix": "updated_at",
-        "body": ["updated_at ${1:timestamp}\n"]
+        "body": ["updated_at ${1:timestamp}=`${2:now()}`\n"]
     },
     "Timestamps": {
         "prefix": "timestamps",
-        "body": ["created_at ${1:timestamp}", "updated_at ${1:timestamp}\n"]
+        "body": ["created_at ${1:timestamp}=`${2:now()}`", "updated_at ${1:timestamp}=`${2:now()}`\n"]
     },
     "Deleted At": {
         "prefix": "deleted_at",
