@@ -8,6 +8,6 @@ addon-manifest.json
 addon-manifest-prod.json
 addon-manifest-staging.json
 addon-clevercloud.json
-.vscode/
+/.vscode
 charts/azimutt/charts/
 charts/azimutt/Chart.lock

@@ -1,65 +1,49 @@
-# vscode-aml README
+# AML Support for VS Code
 
-This is the README for your extension "vscode-aml". After writing up a brief description, we recommend including the following sections.
+[![](https://vsmarketplacebadges.dev/version/azimutt.vscode-aml.png)](https://marketplace.visualstudio.com/items?itemName=azimutt.vscode-aml)
+
+This Visual Studio Code extension provides language support for [AML](https://azimutt.app/aml), an easy DSL to design database schemas.
+
+![AML in VS Code](./assets/screenshot.png)
+
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- syntax highlighting and snippets (`.aml` files)
+- convert AML to PostgreSQL, JSON, DOT, Mermaid, Markdown (Command Palette)
+- convert SQL and JSON to AML (Command Palette)
 
-For example if there is an image subfolder under your extension project workspace:
 
-\!\[feature X\]\(images/feature-x.png\)
+## Roadmap
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+- Add parsing errors and auto-complete
+- Add diagram preview & Open in Azimutt
+- Add AML support in Markdown
+- Connect to a database
 
-## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+## Issues & Contributing
 
-## Extension Settings
+If you have any issue or bug, please [create an issue](https://github.com/azimuttapp/azimutt/issues).
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+If you want to improve this extension, feel free to reach out or submit a pull request.
 
-For example:
 
-This extension contributes the following settings:
+## Development
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+Here are some interesting VS Code documentation you may find helpful:
 
-## Known Issues
+- [VS Code extension get started](https://code.visualstudio.com/api/get-started/your-first-extension).
+- [Language Configuration Guide](https://code.visualstudio.com/api/language-extensions/language-configuration-guide)
+- [Syntax Highlight Guide](https://code.visualstudio.com/api/language-extensions/syntax-highlight-guide)
+- [Snippet Guide](https://code.visualstudio.com/api/language-extensions/snippet-guide)
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+Tips:
 
-## Release Notes
+- Debug extension via F5 (Run Web Extension)
+- Relaunch the extension from the debug toolbar after changing code in `src/web/extension.ts`
+- Reload (`Ctrl+R` or `Cmd+R` on Mac) the VS Code window with your extension to load your changes
 
-Users appreciate release notes as you update your extension.
+## Publication
 
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+[Publish your extension](https://code.visualstudio.com/api/working-with-extensions/publishing-extension) on the VS Code extension marketplace.

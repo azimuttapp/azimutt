@@ -2,12 +2,10 @@
 	"compilerOptions": {
 		"module": "Node16",
 		"target": "ES2020",
-		"outDir": "dist",
-		"lib": [
-			"ES2020", "WebWorker"
-		],
-		"sourceMap": true,
+		"lib": ["ES2020", "WebWorker"],
 		"rootDir": "src",
+		"outDir": "dist",
+		"sourceMap": true,
 		"strict": true   /* enable all strict type-checking options */
 		/* Additional Checks */
 		// "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */

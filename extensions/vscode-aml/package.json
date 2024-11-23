@@ -2,9 +2,10 @@
   "name": "vscode-aml",
   "displayName": "AML - Fast database design",
   "description": "Language support for Azimutt Markup Language (AML)",
-  "icon": "assets/icon.png",
   "version": "0.0.1",
-  "publisher": "loicknuchel",
+  "icon": "assets/icon.png",
+  "publisher": "azimutt",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -12,11 +13,13 @@
     "Programming Languages",
     "Snippets"
   ],
+  "keywords": ["database", "diagram", "sql"],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/azimuttapp/azimutt.git",
+    "url": "https://github.com/azimuttapp/azimutt",
     "directory": "extensions/vscode-aml"
   },
+  "type": "module",
   "activationEvents": [],
   "browser": "./dist/web/extension.js",
   "contributes": {
