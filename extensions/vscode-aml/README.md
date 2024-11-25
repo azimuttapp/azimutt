@@ -4,7 +4,7 @@
 [![Star Azimutt on GitHub](https://img.shields.io/github/stars/azimuttapp/azimutt)](https://github.com/azimuttapp/azimutt)
 [![Follow @azimuttapp on Twitter](https://img.shields.io/twitter/follow/azimuttapp.svg?style=social)](https://twitter.com/intent/follow?screen_name=azimuttapp)
 
-A VS Code extension to design database schemas with [AML](https://azimutt.app/aml), a simple and extensible DSL that speed your design by 2x ✨
+A VS Code extension to design database schemas with [AML](https://azimutt.app/aml), a simple DSL that speed your design by 2x ✨
 
 ![AML in VS Code](https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/extensions/vscode-aml/assets/screenshot.png)
 
@@ -16,10 +16,10 @@ A VS Code extension to design database schemas with [AML](https://azimutt.app/am
 
 ## Usage
 
-Create an empty `.aml` file or use `AML: New database schema (ERD)` command.
-Write your schema using AML, check [documentation](https://azimutt.app/docs/aml) is needed.
+1. Create an empty `.aml` file or use `AML: New database schema (ERD)` command
+2. Write your schema using AML, check [documentation](https://azimutt.app/docs/aml) is needed
 
-Here is a sample AML:
+Here is how AML looks like:
 
 ```aml
 users
