@@ -6,9 +6,12 @@ Check [Keep a Changelog](http://keepachangelog.com) for recommendations on how t
 
 ## [Unreleased]
 
+
+## 0.1.0
+
 ### Added
 
 - AML syntax highlighting
-- AML snippets
-- Command to convert AML to PostgreSQL, JSON, DOT, Mermaid and Markdown
-- Command to convert SQL and JSON to AML
+- AML suggestions via snippets
+- AML symbol navigation
+- Create AML file with sample content

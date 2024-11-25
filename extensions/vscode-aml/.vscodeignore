@@ -1,5 +1,7 @@
 .vscode/**
 .vscode-test-web/**
+resources/**
+assets/*.svg
 src/**
 out/**
 node_modules/**

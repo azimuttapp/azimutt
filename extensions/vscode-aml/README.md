@@ -4,7 +4,7 @@
 
 This Visual Studio Code extension provides language support for [AML](https://azimutt.app/aml), an easy DSL to design database schemas.
 
-![AML in VS Code](./assets/screenshot.png)
+![AML in VS Code](assets/screenshot.png)
 
 
 ## Features
@@ -60,3 +60,6 @@ Tips:
 ## Publication
 
 [Publish your extension](https://code.visualstudio.com/api/working-with-extensions/publishing-extension) on the VS Code extension marketplace.
+
+- Get Personal Access Token from [azimutt](https://dev.azure.com/azimutt)
+- Manage extension from the [marketplace](https://marketplace.visualstudio.com/manage/publishers/azimutt)
