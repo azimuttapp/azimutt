@@ -28,7 +28,12 @@
     "directory": "extensions/vscode-aml"
   },
   "browser": "./dist/web/extension.js",
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:aml",
+    "onCommand:aml.new",
+    "onCommand:aml.fromJson",
+    "onCommand:aml.fromSQL"
+  ],
   "contributes": {
     "languages": [
       {

@@ -192,13 +192,13 @@ function openInAzimuttUrl(aml: string): string {
 class AmlDocumentSymbolProvider implements DocumentSymbolProvider {
 	provideDocumentSymbols(document: TextDocument, token: CancellationToken): ProviderResult<SymbolInformation[] | DocumentSymbol[]> {
 		const symbols: DocumentSymbol[] = []
-		const regex = /(^|\n)(type\s+)?((?:[a-zA-Z_][a-zA-Z0-9_]*\.)?[a-zA-Z_][a-zA-Z0-9_]*)/g
+		const regex = /(^|\n)(type\s+)?((?:[a-zA-Z_][a-zA-Z0-9_]*\.)?[a-zA-Z_][a-zA-Z0-9_]*)/g // TODO: use `.split('\n')` for "better" parsing
 		let match: RegExpExecArray | null = null
 		while (match = regex.exec(document.getText())) {
-			const [all, lr, keyword, name] = match || []
+			const [all = '', lr = '', keyword = '', name = ''] = match || []
 			if (name === 'rel') { continue }
 			const range = new Range(
-				document.positionAt(match.index + lr.length + (keyword || '').length),
+				document.positionAt(match.index + lr.length + keyword.length),
 				document.positionAt(match.index + all.length)
 			)
 			// see https://microsoft.github.io/monaco-editor/typedoc/interfaces/languages.DocumentSymbol.html

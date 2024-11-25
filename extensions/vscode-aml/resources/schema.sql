@@ -21,13 +21,13 @@ CREATE TABLE cms.posts (
   id int PRIMARY KEY,
   title varchar NOT NULL CHECK (length(title) > 10),
   content text NOT NULL,
-  status post_status NOT NULL DEFAULT 'draft',
+  status cms.post_status NOT NULL DEFAULT 'draft',
   author int NOT NULL REFERENCES users(id),
   tags varchar[] NOT NULL,
   created_at timestamp NOT NULL DEFAULT now(),
-  created_by unknown NOT NULL REFERENCES users(id),
+  created_by int NOT NULL REFERENCES users(id),
   updated_at timestamp NOT NULL DEFAULT now(),
-  updated_by unknown NOT NULL REFERENCES users(id)
+  updated_by int NOT NULL REFERENCES users(id)
 );
 COMMENT ON COLUMN cms.posts.content IS 'allow markdown';
 
@@ -36,9 +36,9 @@ CREATE TABLE cms.comments (
   post_id int NOT NULL REFERENCES cms.posts(id),
   content text NOT NULL,
   created_at timestamp NOT NULL DEFAULT now(),
-  created_by unknown NOT NULL REFERENCES users(id),
+  created_by int NOT NULL REFERENCES users(id),
   updated_at timestamp NOT NULL DEFAULT now(),
-  updated_by unknown NOT NULL REFERENCES users(id)
+  updated_by int NOT NULL REFERENCES users(id)
 );
 
 -- Tracking tables

@@ -29,13 +29,13 @@
         {"name": "id", "type": "int", "extra": {"autoIncrement": null}},
         {"name": "title", "type": "varchar"},
         {"name": "content", "type": "text", "doc": "allow markdown"},
-        {"name": "status", "type": "post_status", "default": "draft"},
+        {"name": "status", "type": "cms.post_status", "default": "draft"},
         {"name": "author", "type": "int"},
         {"name": "tags", "type": "varchar[]"},
         {"name": "created_at", "type": "timestamp", "default": "`now()`"},
-        {"name": "created_by", "type": "unknown"},
+        {"name": "created_by", "type": "int"},
         {"name": "updated_at", "type": "timestamp", "default": "`now()`"},
-        {"name": "updated_by", "type": "unknown"}
+        {"name": "updated_by", "type": "int"}
       ],
       "pk": {"attrs": [["id"]]},
       "checks": [
@@ -50,9 +50,9 @@
         {"name": "post_id", "type": "int"},
         {"name": "content", "type": "text"},
         {"name": "created_at", "type": "timestamp", "default": "`now()`"},
-        {"name": "created_by", "type": "unknown"},
+        {"name": "created_by", "type": "int"},
         {"name": "updated_at", "type": "timestamp", "default": "`now()`"},
-        {"name": "updated_by", "type": "unknown"}
+        {"name": "updated_by", "type": "int"}
       ],
       "pk": {"attrs": [["id"]]}
     },
