@@ -36,7 +36,7 @@ export function activate(context: ExtensionContext) {
 		vscode.commands.registerTextEditorCommand('aml.fromSQL', (editor: TextEditor) => convertSqlToAml(editor)),
 		vscode.commands.registerTextEditorCommand('aml.convert', (editor: TextEditor) => convertAmlToDialect(editor)),
 		vscode.commands.registerTextEditorCommand('aml.preview', (editor: TextEditor) => previewAml(editor, context)),
-		vscode.languages.registerDocumentSymbolProvider({scheme: 'file', language: 'aml'}, new AmlDocumentSymbolProvider()),
+		vscode.languages.registerDocumentSymbolProvider({language: 'aml'}, new AmlDocumentSymbolProvider()),
 	)
 }
 
@@ -169,7 +169,7 @@ const updateAmlPreviewReal = (document: TextDocument, panel: WebviewPanel) => {
 function buildAmlPreview(aml: string): string | undefined {
 	// const res = parseAml(aml)
 	// const content = res.result ? generateMermaid(res.result) : aml // TODO: render mermaid as svg
-	const content = aml
+	const content = aml.trim()
 	return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -178,9 +178,14 @@ function buildAmlPreview(aml: string): string | undefined {
     <title>AML preview</title>
 </head>
 <body>
+	<a href="${openInAzimuttUrl(aml)}" target="_blank">Open in Azimutt</a>
     <pre>${content}</pre>
 </body>
 </html>`
+}
+
+function openInAzimuttUrl(aml: string): string {
+	return 'https://azimutt.app/create?aml=' + encodeURIComponent(aml)
 }
 
 // see https://microsoft.github.io/monaco-editor/typedoc/interfaces/languages.DocumentSymbolProvider.html
@@ -191,7 +196,7 @@ class AmlDocumentSymbolProvider implements DocumentSymbolProvider {
 		let match: RegExpExecArray | null = null
 		while (match = regex.exec(document.getText())) {
 			const [all, lr, keyword, name] = match || []
-			if (name === 'rel') continue
+			if (name === 'rel') { continue }
 			const range = new Range(
 				document.positionAt(match.index + lr.length + (keyword || '').length),
 				document.positionAt(match.index + all.length)

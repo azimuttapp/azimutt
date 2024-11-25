@@ -16,16 +16,17 @@ This Visual Studio Code extension provides language support for [AML](https://az
 
 ## Roadmap
 
-- graph preview
+- diagram preview + open in Azimutt
 - convert AML to PostgreSQL, JSON, DOT, Mermaid, Markdown (Command Palette)
 - convert SQL and JSON to AML (Command Palette)
-- Add parsing errors
-- auto-complete
-- quick-fixes (code actions)
-- Go-to-definition for relations (cf https://microsoft.github.io/monaco-editor/typedoc/interfaces/languages.DocumentSymbolProvider.html)
-- hover info
-- Add diagram preview & Open in Azimutt
-- Add AML support in Markdown
+- Add parsing errors ([createDiagnosticCollection](https://code.visualstudio.com/api/references/vscode-api#languages.createDiagnosticCollection)?)
+- auto-complete (cf [registerCompletionItemProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerCompletionItemProvider.html))
+- rename (cf [registerRenameProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerRenameProvider.html))
+- hover infos (cf [registerHoverProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerHoverProvider.html))
+- go-to-definition (cf [registerDefinitionProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerDefinitionProvider.html) and [registerImplementationProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerImplementationProvider.html))
+- quick-fixes (cf [registerCodeActionProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerCodeActionProvider.html))
+- hints with actions (cf [registerCodeLensProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerCodeLensProvider.html))
+- AML support in Markdown
 - Connect to a database
 
 
