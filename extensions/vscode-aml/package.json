@@ -23,8 +23,8 @@
     "url": "https://github.com/azimuttapp/azimutt",
     "directory": "extensions/vscode-aml"
   },
-  "activationEvents": [],
   "browser": "./dist/web/extension.js",
+  "activationEvents": [],
   "contributes": {
     "languages": [
       {

@@ -63,3 +63,6 @@ Tips:
 
 - Get Personal Access Token from [azimutt](https://dev.azure.com/azimutt)
 - Manage extension from the [marketplace](https://marketplace.visualstudio.com/manage/publishers/azimutt)
+- package the extension: `vsce package`
+- publish the extension: `vsce publish`
+- if needed, install vsce: `npm install -g @vscode/vsce`
