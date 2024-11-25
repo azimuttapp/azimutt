@@ -189,8 +189,8 @@ repos:
       pass_filenames: false
       files: cli/.*\.ts*$
 
-    # No test or build for browser-extension
-    # No test or build for desktop
+    # No test or build for extensions/browser-extension
+    # No test or build for extensions/desktop
 
 - repo: https://github.com/commitizen-tools/commitizen
   rev: v2.32.2

@@ -104,9 +104,9 @@ backend/priv/static/elm/**/dist
 backend/priv/static/elm/**/script.js
 backend/priv/static/elm/**/script.js.map
 
-# flyctl launch added from browser-extension/.gitignore
-browser-extension/**/dist
-browser-extension/**/node_modules
+# flyctl launch added from extensions/browser-extension/.gitignore
+extensions/browser-extension/**/dist
+extensions/browser-extension/**/node_modules
 
 # flyctl launch added from frontend/.gitignore
 frontend/.coverage

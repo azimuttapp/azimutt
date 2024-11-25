@@ -1,0 +1,47 @@
+{
+    "Primary key": {
+        "prefix": "id",
+        "body": ["id ${1|uuid,int,bigint|} pk\n"],
+        "description": "A Primary Key column"
+    },
+    "Many to one": {
+        "prefix": ["fk", "->"],
+        "body": ["-> ${1:entity}(${2:attribute})$0"]
+    },
+    "One to one": {
+        "prefix": ["fk", "--"],
+        "body": ["-- ${1:entity}(${2:attribute})$0"]
+    },
+    "Many to many": {
+        "prefix": ["fk", "<>", "><"],
+        "body": ["<> ${1:entity}(${2:attribute})$0"]
+    },
+    "Created At": {
+        "prefix": "created_at",
+        "body": ["created_at ${1:timestamp}=`${2:now()}`\n"]
+    },
+    "Updated At": {
+        "prefix": "updated_at",
+        "body": ["updated_at ${1:timestamp}=`${2:now()}`\n"]
+    },
+    "Timestamps": {
+        "prefix": "timestamps",
+        "body": ["created_at ${1:timestamp}=`${2:now()}`", "updated_at ${1:timestamp}=`${2:now()}`\n"]
+    },
+    "Deleted At": {
+        "prefix": "deleted_at",
+        "body": ["deleted_at ${1:timestamp} nullable\n"]
+    },
+    "Created By": {
+        "prefix": "created_by",
+        "body": ["created_by -> ${1:users}(id)\n"]
+    },
+    "Updated By": {
+        "prefix": "updated_by",
+        "body": ["updated_by -> ${1:users}(id)\n"]
+    },
+    "Deleted By": {
+        "prefix": "deleted_by",
+        "body": ["deleted_by nullable -> ${1:users}(id)\n"]
+    }
+}

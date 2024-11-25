@@ -5,7 +5,7 @@ This library allows to connect to [Couchbase](https://www.couchbase.com), extrac
 It browses all buckets, scopes and collections, fetch a sample of documents and then infer a schema from them.
 
 This library is made by [Azimutt](https://azimutt.app) to allow people to explore their Couchbase database.
-It's accessible through the [Desktop app](../../desktop) (soon), the [CLI](https://www.npmjs.com/package/azimutt) or even the website using the [gateway](../../gateway) server.
+It's accessible through the [Desktop app](../../extensions/desktop) (soon), the [CLI](https://www.npmjs.com/package/azimutt) or even the website using the [gateway](../../gateway) server.
 
 **Feel free to use it and even submit PR to improve it:**
 

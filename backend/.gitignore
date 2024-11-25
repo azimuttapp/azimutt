@@ -35,3 +35,4 @@ npm-debug.log
 /priv/static/swagger*.json
 /assets/js/*.js
 /uploads
+/.vscode

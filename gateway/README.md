@@ -2,7 +2,7 @@
 
 Small Node server to proxy database connections and enable browsers to access database features.
 
-The other way is to use the [desktop app](../desktop) for this, keeping everything local and accessing local databases.
+The other way is to use the [desktop app](../extensions/desktop) for this, keeping everything local and accessing local databases.
 
 
 ## Set Up

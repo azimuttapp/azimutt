@@ -1,0 +1,25 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "AML",
+	"scopeName": "source.aml",
+	"patterns": [
+		{"include": "#entity"},
+		{"include": "#attribute"},
+		{"include": "#type"},
+		{"include": "#keyword"},
+		{"include": "#expression"},
+		{"include": "#relation"},
+		{"include": "#doc"},
+		{"include": "#comment"}
+	],
+	"repository": {
+		"entity": {"patterns": [{"name": "entity.name.type.class.aml", "match": "^([a-zA-Z_][a-zA-Z0-9_#]*\\.)?([a-zA-Z_][a-zA-Z0-9_#]*\\.)?([a-zA-Z_][a-zA-Z0-9_#]*\\.)?[a-zA-Z_][a-zA-Z0-9_#]*"}]},
+		"attribute": {"patterns": [{"name": "variable.other.property.aml", "match": "^ +[a-zA-Z_][a-zA-Z0-9_#]*"}]},
+		"type": {"patterns": [{"name": "entity.name.type.aml", "match": "\\b(uuid|(var|n)?char2?|character( +varying)?|(tiny|medium|long|ci)?text|(tiny|small|big)?int(eger)?(\\d+)?|numeric|float|double( +precision)?|bool(ean)?|timestamp( +with(out)? +time +zone)?|date(time)?|time( +with(out)? +time +zone)?|interval|json|string|number)\\b"}]},
+		"keyword": {"patterns": [{"name": "keyword.control.aml", "match": "\\b(namespace|nullable|pk|index|unique|check|fk|rel|type)\\b"}]},
+		"expression": {"patterns": [{"name": "string.interpolated.aml", "match": "`[^`]*`"}]},
+		"relation": {"patterns": [{"name": "keyword.control.aml", "match": "[-<>]{2}"}]},
+		"doc": {"patterns": [{"name": "comment.documentation.aml", "match": "\\|[^#\\n]*"}]},
+		"comment": {"patterns": [{"name": "comment.line.aml", "match": "#.*"}]}
+	}
+}

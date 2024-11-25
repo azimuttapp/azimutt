@@ -1,0 +1,155 @@
+{
+  "name": "vscode-aml",
+  "displayName": "AML - Fast database design (ERD)",
+  "description": "Design database schema and view Entity-Relationship Diagram using AML language in your VS Code editor.",
+  "version": "0.1.1",
+  "icon": "assets/icon.png",
+  "publisher": "azimutt",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Visualization",
+    "Snippets"
+  ],
+  "keywords": [
+    "database",
+    "diagram",
+    "sql",
+    "erd",
+    "entity",
+    "relationship"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/azimuttapp/azimutt",
+    "directory": "extensions/vscode-aml"
+  },
+  "browser": "./dist/web/extension.js",
+  "activationEvents": [
+    "onLanguage:aml",
+    "onCommand:aml.new",
+    "onCommand:aml.fromJson",
+    "onCommand:aml.fromSQL"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "aml",
+        "aliases": [
+          "AML",
+          "aml",
+          "Azimutt Markup Language"
+        ],
+        "extensions": [
+          ".aml"
+        ],
+        "icon": {
+          "dark": "./assets/icon.svg",
+          "light": "./assets/icon.svg"
+        },
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "aml",
+        "scopeName": "source.aml",
+        "path": "./syntaxes/aml.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "aml",
+        "path": "./snippets.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "aml.new",
+        "category": "AML",
+        "title": "New database schema (ERD)"
+      },
+      {
+        "command": "aml.fromJson",
+        "category": "AML",
+        "title": "Convert JSON to AML"
+      },
+      {
+        "command": "aml.fromSQL",
+        "category": "AML",
+        "title": "Convert SQL to AML"
+      },
+      {
+        "command": "aml.convert",
+        "category": "AML",
+        "title": "Convert AML to ..."
+      },
+      {
+        "command": "aml.preview",
+        "category": "AML",
+        "title": "Show diagram",
+        "icon": "$(open-preview)"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "when": "editorLangId == json",
+          "command": "aml.fromJson"
+        },
+        {
+          "when": "editorLangId == sql",
+          "command": "aml.fromSQL"
+        },
+        {
+          "when": "editorLangId == aml",
+          "command": "aml.convert"
+        }
+      ],
+      "editor/title": [
+        {
+          "when": "editorLangId == aml",
+          "command": "aml.preview",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "test": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. --extensionTestsPath=dist/web/test/suite/extensionTests.js",
+    "pretest": "npm run compile-web",
+    "vscode:prepublish": "npm run package-web",
+    "compile-web": "npm run check-types && npm run lint && node esbuild.js",
+    "watch-web": "npm-run-all -p watch-web:*",
+    "watch-web:esbuild": "node esbuild.js --watch",
+    "watch-web:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package-web": "npm run check-types && npm run lint && node esbuild.js --production",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. ."
+  },
+  "dependencies": {
+    "@azimutt/aml": "^0.1.8",
+    "@azimutt/models": "^0.1.16",
+    "@azimutt/parser-sql": "^0.1.3"
+  },
+  "devDependencies": {
+    "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
+    "@types/assert": "^1.5.11",
+    "@types/mocha": "^10.0.10",
+    "@types/vscode": "^1.95.0",
+    "@typescript-eslint/eslint-plugin": "^8.15.0",
+    "@typescript-eslint/parser": "^8.15.0",
+    "@vscode/test-web": "^0.0.64",
+    "assert": "^2.1.0",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.15.0",
+    "glob": "^11.0.0",
+    "mocha": "^10.8.2",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.6.3"
+  }
+}

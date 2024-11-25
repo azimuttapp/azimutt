@@ -2,8 +2,8 @@
 
 <%= doc_prose do %>
     <p class="lead">
-        Azimutt goal is to make databases way more accessible for everyone who want or need to understand them.
-        For that we have built several tools, the biggest one being the <a href="#azimutt-explorer">explorer</a>,
+        Azimutt goal is to make databases way more accessible for everyone who need or want to understand them.
+        For that we have built several tools, the main one being the <a href="#azimutt-explorer">explorer</a>,
         but there is also other interesting ones like the <a href="#azimutt-cli">CLI</a> and <a href="#azimutt-converters">converters</a>.
     </p>
 
@@ -17,6 +17,7 @@
         The Gateway is the central piece allowing Azimutt to connect to any database.
         It's a simple Node.js server with all the databases connector allowing Azimutt editor frontend to access databases.
         It can be launched locally using <code>npx azimutt@latest gateway</code>, hosted in your infrastructure or using the Azimutt one if your database is accessible over internet.
+        <a href={Routes.website_path(@conn, :doc, ["gateway"])}>Learn more</a> about it.
     </p>
 
     <%= render "docs/_h2.html", title: "Azimutt CLI" %>
@@ -30,11 +31,13 @@
             <li>Analyze your database</li>
             <li>More to come soon...</li>
         </ul>
+        <a href={Routes.website_path(@conn, :doc, ["cli"])}>Learn more</a> about it.
     </p>
 
     <%= render "docs/_h2.html", title: "Azimutt converters" %>
     <p>Azimutt is doing a lot of work around database schemas. We took this opportunity to build these <a href={Routes.website_path(@conn, :convert, "aml", "postgres")}>standalone converters</a> to be easily accessible:</p>
     <img src={Routes.static_path(@conn, "/images/doc/converter-aml-to-postgresql.png")} alt="Azimutt converter from AML to PostgreSQL">
+    <p><a href={Routes.website_path(@conn, :doc, ["converters"])}>Learn more</a> about them.</p>
 <% end %>
 
 <%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>
