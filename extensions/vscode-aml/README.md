@@ -9,13 +9,16 @@ This Visual Studio Code extension provides language support for [AML](https://az
 
 ## Features
 
-- syntax highlighting and snippets (`.aml` files)
-- convert AML to PostgreSQL, JSON, DOT, Mermaid, Markdown (Command Palette)
-- convert SQL and JSON to AML (Command Palette)
+- syntax highlighting and AML suggestions for `.aml` files
+- create new `.aml` file with sample content
+- symbol navigation
 
 
 ## Roadmap
 
+- graph preview
+- convert AML to PostgreSQL, JSON, DOT, Mermaid, Markdown (Command Palette)
+- convert SQL and JSON to AML (Command Palette)
 - Add parsing errors
 - auto-complete
 - quick-fixes (code actions)
@@ -35,12 +38,17 @@ If you want to improve this extension, feel free to reach out or submit a pull r
 
 ## Development
 
-Here are some interesting VS Code documentation you may find helpful:
+VS Code language extensions are made of several and quite independent part.
+For general knowledge, look at the [extension documentation](https://code.visualstudio.com/api) and more specifically the [language extension overview](https://code.visualstudio.com/api/language-extensions/overview).
 
-- [VS Code extension get started](https://code.visualstudio.com/api/get-started/your-first-extension).
-- [Language Configuration Guide](https://code.visualstudio.com/api/language-extensions/language-configuration-guide)
-- [Syntax Highlight Guide](https://code.visualstudio.com/api/language-extensions/syntax-highlight-guide) & [Semantic Highlight Guide](https://code.visualstudio.com/api/language-extensions/semantic-highlight-guide)
-- [Snippet Guide](https://code.visualstudio.com/api/language-extensions/snippet-guide)
+Here are the different parts of this extension:
+
+- [language-configuration.json](language-configuration.json) for language behavior like brackets, comments and folding (cf [doc](https://code.visualstudio.com/api/language-extensions/language-configuration-guide))
+- [syntaxes/aml.tmLanguage.json](syntaxes/aml.tmLanguage.json) for basic syntax highlighting (cf [doc](https://code.visualstudio.com/api/language-extensions/syntax-highlight-guide)) and, later, [Semantic Highlighting](https://code.visualstudio.com/api/language-extensions/semantic-highlight-guide) in [src/web/extension.ts](src/web/extension.ts)
+- [snippets.json](snippets.json) for basic language suggestions (cf [extension doc](https://code.visualstudio.com/api/language-extensions/snippet-guide) and [snippet doc](https://code.visualstudio.com/docs/editor/userdefinedsnippets))
+- [package.json](package.json) and [src/web/extension.ts](src/web/extension.ts) for defining commands and more advanced behaviors
+  - [AmlDocumentSymbolProvider](src/web/extension.ts) for symbol detection
+  - [previewAml](src/web/extension.ts) for AML preview
 
 Tips:
 

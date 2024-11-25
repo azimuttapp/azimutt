@@ -1,5 +1,12 @@
 import vscode, {
+	CancellationToken,
+	DocumentSymbol,
+	DocumentSymbolProvider,
 	ExtensionContext,
+	ProviderResult,
+	Range,
+	SymbolInformation,
+	SymbolKind,
 	TextDocument,
 	TextDocumentChangeEvent,
 	TextEditor,
@@ -28,7 +35,8 @@ export function activate(context: ExtensionContext) {
 		vscode.commands.registerTextEditorCommand('aml.fromJson', (editor: TextEditor) => convertJsonToAml(editor)),
 		vscode.commands.registerTextEditorCommand('aml.fromSQL', (editor: TextEditor) => convertSqlToAml(editor)),
 		vscode.commands.registerTextEditorCommand('aml.convert', (editor: TextEditor) => convertAmlToDialect(editor)),
-		vscode.commands.registerTextEditorCommand('aml.preview', (editor: TextEditor) => previewAml(editor, context))
+		vscode.commands.registerTextEditorCommand('aml.preview', (editor: TextEditor) => previewAml(editor, context)),
+		vscode.languages.registerDocumentSymbolProvider({scheme: 'file', language: 'aml'}, new AmlDocumentSymbolProvider()),
 	)
 }
 
@@ -175,7 +183,33 @@ function buildAmlPreview(aml: string): string | undefined {
 </html>`
 }
 
-// utils functions
+// see https://microsoft.github.io/monaco-editor/typedoc/interfaces/languages.DocumentSymbolProvider.html
+class AmlDocumentSymbolProvider implements DocumentSymbolProvider {
+	provideDocumentSymbols(document: TextDocument, token: CancellationToken): ProviderResult<SymbolInformation[] | DocumentSymbol[]> {
+		const symbols: DocumentSymbol[] = []
+		const regex = /(^|\n)(type\s+)?((?:[a-zA-Z_][a-zA-Z0-9_]*\.)?[a-zA-Z_][a-zA-Z0-9_]*)/g
+		let match: RegExpExecArray | null = null
+		while (match = regex.exec(document.getText())) {
+			const [all, lr, keyword, name] = match || []
+			if (name === 'rel') continue
+			const range = new Range(
+				document.positionAt(match.index + lr.length + (keyword || '').length),
+				document.positionAt(match.index + all.length)
+			)
+			// see https://microsoft.github.io/monaco-editor/typedoc/interfaces/languages.DocumentSymbol.html
+			symbols.push(new DocumentSymbol(
+				name,
+				``, // TODO: set entity doc if available
+				keyword?.trim() === 'type' ? SymbolKind.Enum : SymbolKind.Class,
+				range,
+				range
+			))
+		}
+		return symbols
+	}
+}
+
+// util functions
 
 /*async function openFileResult(res: ParserResult<{lang: string, content: string}>): Promise<TextDocument | undefined> {
 	const error = formatErrors(res.errors)
