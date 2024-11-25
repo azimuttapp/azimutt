@@ -1,8 +1,8 @@
 {
   "name": "vscode-aml",
-  "displayName": "AML - Fast database design",
-  "description": "Language support for Azimutt Markup Language (AML)",
-  "version": "0.1.0",
+  "displayName": "AML - Fast database design (ERD)",
+  "description": "Design database schema and view Entity-Relationship Diagram using AML language in your VS Code editor.",
+  "version": "0.1.1",
   "icon": "assets/icon.png",
   "publisher": "azimutt",
   "license": "MIT",
@@ -11,12 +11,16 @@
   },
   "categories": [
     "Programming Languages",
+    "Visualization",
     "Snippets"
   ],
   "keywords": [
     "database",
     "diagram",
-    "sql"
+    "sql",
+    "erd",
+    "entity",
+    "relationship"
   ],
   "repository": {
     "type": "git",
@@ -61,27 +65,27 @@
       {
         "command": "aml.new",
         "category": "AML",
-        "title": "New database schema"
+        "title": "New database schema (ERD)"
       },
       {
         "command": "aml.fromJson",
         "category": "AML",
-        "title": "convert JSON to AML"
+        "title": "Convert JSON to AML"
       },
       {
         "command": "aml.fromSQL",
         "category": "AML",
-        "title": "convert SQL to AML"
+        "title": "Convert SQL to AML"
       },
       {
         "command": "aml.convert",
         "category": "AML",
-        "title": "convert AML to"
+        "title": "Convert AML to ..."
       },
       {
         "command": "aml.preview",
         "category": "AML",
-        "title": "preview AML",
+        "title": "Show diagram",
         "icon": "$(open-preview)"
       }
     ],

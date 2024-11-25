@@ -1,18 +1,40 @@
 # AML Support for VS Code
 
-[![](https://vsmarketplacebadges.dev/version/azimutt.vscode-aml.png)](https://marketplace.visualstudio.com/items?itemName=azimutt.vscode-aml)
+[![VS Code Marketplace](https://img.shields.io/vscode-marketplace/v/azimutt.vscode-aml.svg?label=vscode%20marketplace&style=flat-square&color=007ec6)](https://marketplace.visualstudio.com/items?itemName=azimutt.vscode-aml)
+[![Star Azimutt on GitHub](https://img.shields.io/github/stars/azimuttapp/azimutt)](https://github.com/azimuttapp/azimutt)
+[![Follow @azimuttapp on Twitter](https://img.shields.io/twitter/follow/azimuttapp.svg?style=social)](https://twitter.com/intent/follow?screen_name=azimuttapp)
 
-This Visual Studio Code extension provides language support for [AML](https://azimutt.app/aml), an easy DSL to design database schemas.
+A VS Code extension to design database schemas with [AML](https://azimutt.app/aml), a simple and extensible DSL that speed your design by 2x ✨
 
-![AML in VS Code](/extensions/vscode-aml/assets/screenshot.png)
-
+![AML in VS Code](https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/extensions/vscode-aml/assets/screenshot.png)
 
 ## Features
 
-- syntax highlighting and AML suggestions for `.aml` files
-- create new `.aml` file with sample content
-- symbol navigation
+- Syntax highlight and suggestions for AML code (`.aml` files)
+- Symbol navigation in AML
 
+
+## Usage
+
+Create an empty `.aml` file or use `AML: New database schema (ERD)` command.
+Write your schema using AML, check [documentation](https://azimutt.app/docs/aml) is needed.
+
+Here is a sample AML:
+
+```aml
+users
+  id uuid pk
+  name varchar index
+  email varchar unique
+  role user_role(admin, guest)=guest
+
+posts | store all posts
+  id uuid pk
+  title varchar
+  content text | allow markdown formatting
+  author uuid -> users(id) # inline relation
+  created_at timestamp=`now()`
+```
 
 ## Roadmap
 

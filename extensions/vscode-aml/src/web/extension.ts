@@ -54,12 +54,13 @@ users
   id uuid pk
   name varchar index
   email varchar unique
+  role user_role(admin, guest)=guest
 
-posts
+posts | store all posts
   id uuid pk
   title varchar
-  content text
-  author uuid -> users(id)
+  content text | allow markdown formatting
+  author uuid -> users(id) # inline relation
   created_at timestamp=\`now()\`
 `)
 }
