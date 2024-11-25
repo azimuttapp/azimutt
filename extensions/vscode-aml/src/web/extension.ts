@@ -6,8 +6,8 @@ import vscode, {
 	ViewColumn,
 	WebviewPanel
 } from "vscode";
-import {ParserError, ParserErrorLevel} from "@azimutt/models";
-import {generateSql, parseSql} from "@azimutt/parser-sql";
+// import {ParserError, ParserErrorLevel} from "@azimutt/models";
+/*import {generateSql, parseSql} from "@azimutt/parser-sql";
 import {
 	Database,
 	generateAml,
@@ -18,13 +18,13 @@ import {
 	parseAml,
 	parseJsonDatabase,
 	ParserResult
-} from "@azimutt/aml";
+} from "@azimutt/aml";*/
 
 let previewPanel: WebviewPanel | undefined = undefined
 
 export function activate(context: ExtensionContext) {
-	console.log('\n\n\nactivate\n\n\n')
 	context.subscriptions.push(
+		vscode.commands.registerCommand('aml.new', () => newAml()),
 		vscode.commands.registerTextEditorCommand('aml.fromJson', (editor: TextEditor) => convertJsonToAml(editor)),
 		vscode.commands.registerTextEditorCommand('aml.fromSQL', (editor: TextEditor) => convertSqlToAml(editor)),
 		vscode.commands.registerTextEditorCommand('aml.convert', (editor: TextEditor) => convertAmlToDialect(editor)),
@@ -36,13 +36,34 @@ export function deactivate() {}
 
 // private functions
 
+async function newAml() {
+	await openFile('aml', `#
+# Sample AML
+# learn more at https://azimutt.app/aml
+#
+
+users
+  id uuid pk
+  name varchar index
+  email varchar unique
+
+posts
+  id uuid pk
+  title varchar
+  content text
+  author uuid -> users(id)
+  created_at timestamp=\`now()\`
+`)
+}
+
 async function convertJsonToAml(editor: TextEditor): Promise<void> {
 	if (editor.document.languageId !== 'json') {
 		vscode.window.showErrorMessage('Needs JSON file to convert it to AML.')
 		return
 	}
 
-	await openFileResult(parseJsonDatabase(editor.document.getText()).map((db: Database) => ({lang: 'aml', content: generateAml(db)})))
+	vscode.window.showInformationMessage('JSON to AML conversion not implemented yet, work in progress...')
+	// FIXME: await openFileResult(parseJsonDatabase(editor.document.getText()).map((db: Database) => ({lang: 'aml', content: generateAml(db)})))
 }
 
 async function convertSqlToAml(editor: TextEditor): Promise<void> {
@@ -54,7 +75,8 @@ async function convertSqlToAml(editor: TextEditor): Promise<void> {
 	const dialects = ['PostgreSQL']
 	const dialect = await vscode.window.showQuickPick(dialects, {placeHolder: 'Select target'})
 	if (dialect === 'PostgreSQL') {
-		await openFileResult(parseSql(editor.document.getText(), 'postgres').map((db: Database) => ({lang: 'aml', content: generateAml(db)})))
+		vscode.window.showInformationMessage('SQL to AML conversion not implemented yet, work in progress...')
+		// FIXME: await openFileResult(parseSql(editor.document.getText(), 'postgres').map((db: Database) => ({lang: 'aml', content: generateAml(db)})))
 	} else {
 		vscode.window.showWarningMessage(`Unable to convert SQL to AML: unsupported ${dialect} dialect.`)
 	}
@@ -68,7 +90,8 @@ async function convertAmlToDialect(editor: TextEditor): Promise<void> {
 
 	const dialects = ['PostgreSQL', 'JSON', 'DOT', 'Mermaid', 'Markdown']
 	const dialect = await vscode.window.showQuickPick(dialects, {placeHolder: 'Select target'})
-	const res = parseAml(editor.document.getText())
+	vscode.window.showInformationMessage(`AML to ${dialect} conversion not implemented yet, work in progress...`)
+	/* FIXME: const res = parseAml(editor.document.getText())
 	const error = formatErrors(res.errors)
 	const db = res.result
 
@@ -89,7 +112,7 @@ async function convertAmlToDialect(editor: TextEditor): Promise<void> {
 		}
 	} else {
 		error && vscode.window.showErrorMessage(error)
-	}
+	}*/
 }
 
 function previewAml(editor: TextEditor, context: ExtensionContext) {
@@ -102,20 +125,22 @@ function previewAml(editor: TextEditor, context: ExtensionContext) {
 		previewPanel = vscode.window.createWebviewPanel('aml-preview', 'Preview AML', {viewColumn: ViewColumn.Beside, preserveFocus: true}, {localResourceRoots: []})
 		const subscriptions = [
 			vscode.workspace.onDidOpenTextDocument((document: TextDocument) => {
-				console.log('onDidOpenTextDocument', document.fileName)
 				if (document.languageId === 'aml' && previewPanel) {
 					updateAmlPreview(document, previewPanel)
 				}
 			}, null, context.subscriptions),
-			vscode.workspace.onDidChangeTextDocument((e: TextDocumentChangeEvent) => {
-				console.log('onDidChangeTextDocument', e.document.fileName)
-				if (e.document.languageId === 'aml' && previewPanel) {
-					updateAmlPreview(e.document, previewPanel)
+			vscode.workspace.onDidChangeTextDocument((event: TextDocumentChangeEvent) => {
+				if (event.document.languageId === 'aml' && previewPanel) {
+					updateAmlPreview(event.document, previewPanel)
+				}
+			}, null, context.subscriptions),
+			vscode.window.onDidChangeActiveTextEditor((editor: TextEditor | undefined) => {
+				if (editor && editor.document.languageId === 'aml' && previewPanel) {
+					updateAmlPreview(editor.document, previewPanel)
 				}
 			}, null, context.subscriptions)
 		]
 		previewPanel.onDidDispose(() => {
-			console.log('onDidDispose', previewPanel?.title)
 			previewPanel = undefined
 			subscriptions.map(s => s.dispose())
 		}, null, context.subscriptions)
@@ -127,18 +152,17 @@ const updateAmlPreview = debounce((document: TextDocument, panel: WebviewPanel) 
 const updateAmlPreviewReal = (document: TextDocument, panel: WebviewPanel) => {
 	const html = buildAmlPreview(document.getText())
 	if (html) {
-		panel.title = 'Preview ' + document.fileName
+		panel.title = 'Preview ' + document.fileName.split('/').pop()
 		panel.webview.html = html
 		if (!panel.visible) {panel.reveal(ViewColumn.Beside, true)}
 	}
 }
 
 function buildAmlPreview(aml: string): string | undefined {
-	const res = parseAml(aml)
-	if (res.result) {
-		const mermaid = generateMermaid(res.result)
-		// TODO: render mermaid as svg
-		return `<!DOCTYPE html>
+	// const res = parseAml(aml)
+	// const content = res.result ? generateMermaid(res.result) : aml // TODO: render mermaid as svg
+	const content = aml
+	return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -146,15 +170,14 @@ function buildAmlPreview(aml: string): string | undefined {
     <title>AML preview</title>
 </head>
 <body>
-    <pre>${mermaid}</pre>
+    <pre>${content}</pre>
 </body>
 </html>`
-	}
 }
 
 // utils functions
 
-async function openFileResult(res: ParserResult<{lang: string, content: string}>): Promise<TextDocument | undefined> {
+/*async function openFileResult(res: ParserResult<{lang: string, content: string}>): Promise<TextDocument | undefined> {
 	const error = formatErrors(res.errors)
 	const file = res.result
 	if (file) {
@@ -163,7 +186,7 @@ async function openFileResult(res: ParserResult<{lang: string, content: string}>
 	} else {
 		error && vscode.window.showErrorMessage(error)
 	}
-}
+}*/
 
 async function openFile(language: string, content: string): Promise<TextDocument> {
 	const doc: TextDocument = await vscode.workspace.openTextDocument({language, content})
@@ -171,7 +194,7 @@ async function openFile(language: string, content: string): Promise<TextDocument
 	return doc
 }
 
-function formatErrors(errors: ParserError[] | undefined): string | undefined {
+/*function formatErrors(errors: ParserError[] | undefined): string | undefined {
 	if (errors && errors.length > 1) {
 		return `Got ${errors.length} AML parsing issues:${errors.map(e => `\n- ${formatErrorLevel(e.level)} ${e.message}`).join('')}`
 	} else if (errors && errors.length === 1) {
@@ -190,13 +213,14 @@ function formatErrorLevel(level: ParserErrorLevel): string {
 		case 'hint': return '[HINT]'
 		default: return '[ERR] '
 	}
-}
+}*/
 
+type Timeout = ReturnType<typeof setTimeout>
 function debounce<F extends (...args: Parameters<F>) => ReturnType<F>>(
 	func: F,
 	delay: number
 ): (...args: Parameters<F>) => void {
-	let timeout: NodeJS.Timeout
+	let timeout: Timeout
 	return (...args: Parameters<F>): void => {
 		clearTimeout(timeout)
 		timeout = setTimeout(() => func(...args), delay)

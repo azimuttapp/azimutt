@@ -23,7 +23,6 @@
     "url": "https://github.com/azimuttapp/azimutt",
     "directory": "extensions/vscode-aml"
   },
-  "type": "module",
   "activationEvents": [],
   "browser": "./dist/web/extension.js",
   "contributes": {
@@ -59,6 +58,11 @@
       }
     ],
     "commands": [
+      {
+        "command": "aml.new",
+        "category": "AML",
+        "title": "New database schema"
+      },
       {
         "command": "aml.fromJson",
         "category": "AML",
