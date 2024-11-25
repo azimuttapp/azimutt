@@ -124,7 +124,6 @@ async function convertAmlToDialect(editor: TextEditor): Promise<void> {
 }
 
 function previewAml(editor: TextEditor, context: ExtensionContext) {
-	vscode.window.showInformationMessage('previewAml called')
 	if (editor.document.languageId !== 'aml') {
 		vscode.window.showErrorMessage('Needs AML file to preview it.')
 		return
