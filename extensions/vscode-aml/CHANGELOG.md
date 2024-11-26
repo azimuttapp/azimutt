@@ -6,8 +6,21 @@ Check [Keep a Changelog](http://keepachangelog.com) for recommendations on how t
 
 ## [Unreleased]
 
+### Added
 
-## 0.1.0
+- AML conversion commands from/to SQL, JSON, DOT, Mermaid and more
+
+
+## 0.1.1 - 2024-11-25
+
+### Changed
+
+- Improve syntax highlighting to color schema and entities when both present
+- Fix AML icon for `.aml` files
+- Improve README and fix image link
+
+
+## 0.1.0 - 2024-11-25
 
 ### Added
 

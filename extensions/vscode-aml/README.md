@@ -13,6 +13,8 @@ A VS Code extension to design database schemas using [AML](https://azimutt.app/a
 
 - Syntax highlight and suggestions for AML code (`.aml` files)
 - Symbol navigation in AML
+- convert AML to PostgreSQL, JSON, DOT, Mermaid, Markdown (Command Palette)
+- convert SQL and JSON to AML (Command Palette)
 
 
 ## 💡 Usage
@@ -40,8 +42,6 @@ posts | store all posts
 ## 📋 Roadmap
 
 - diagram preview + open in Azimutt
-- convert AML to PostgreSQL, JSON, DOT, Mermaid, Markdown (Command Palette)
-- convert SQL and JSON to AML (Command Palette)
 - Add parsing errors ([createDiagnosticCollection](https://code.visualstudio.com/api/references/vscode-api#languages.createDiagnosticCollection)?)
 - auto-complete (cf [registerCompletionItemProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerCompletionItemProvider.html))
 - rename (cf [registerRenameProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerRenameProvider.html))
@@ -83,10 +83,14 @@ Tips:
 
 ## 🚀 Publication
 
-[Publish your extension](https://code.visualstudio.com/api/working-with-extensions/publishing-extension) on the VS Code extension marketplace.
+[Publish extension](https://code.visualstudio.com/api/working-with-extensions/publishing-extension) on the VS Code marketplace:
 
+- Update `package.json` version and `CHANGELOG.md`
+- Package the extension: `vsce package`
+- Publish the extension: `vsce publish`
+
+Tips:
+
+- Install vsce with `npm install -g @vscode/vsce`
 - Get Personal Access Token from [azimutt](https://dev.azure.com/azimutt)
 - Manage extension from the [marketplace](https://marketplace.visualstudio.com/manage/publishers/azimutt)
-- package the extension: `vsce package`
-- publish the extension: `vsce publish`
-- if needed, install vsce: `npm install -g @vscode/vsce`

@@ -6,6 +6,8 @@ import vscode, {
     ViewColumn,
     WebviewPanel
 } from "vscode";
+import {Database} from "@azimutt/models";
+import {generateMermaid, parseAml} from "./aml";
 import {debounce} from "./utils";
 
 let previewPanel: WebviewPanel | undefined = undefined
@@ -43,19 +45,19 @@ export function previewAml(editor: TextEditor, context: ExtensionContext) {
 }
 
 const updateAmlPreview = debounce((document: TextDocument, panel: WebviewPanel) => updateAmlPreviewReal(document, panel), 300)
-const updateAmlPreviewReal = (document: TextDocument, panel: WebviewPanel) => {
-    const html = buildAmlPreview(document.getText())
-    if (html) {
+async function updateAmlPreviewReal(document: TextDocument, panel: WebviewPanel) {
+    const input = document.getText()
+    const res = await parseAml(input)
+    if (res.result) {
         panel.title = 'Preview ' + document.fileName.split('/').pop()
-        panel.webview.html = html
+        panel.webview.html = await buildAmlPreview(input, res.result)
         if (!panel.visible) {panel.reveal(ViewColumn.Beside, true)}
     }
 }
 
-function buildAmlPreview(aml: string): string | undefined {
-    // const res = parseAml(aml)
-    // const content = res.result ? generateMermaid(res.result) : aml // TODO: render mermaid as svg
-    const content = aml.trim()
+async function buildAmlPreview(input: string, db: Database): Promise<string> {
+    // const darkMode = vscode.window.activeColorTheme.kind === ColorThemeKind.Dark
+    const mermaidCode = await generateMermaid(db)
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -64,8 +66,8 @@ function buildAmlPreview(aml: string): string | undefined {
     <title>AML preview</title>
 </head>
 <body>
-    <a href="${openInAzimuttUrl(aml)}" target="_blank">Open in Azimutt</a>
-    <pre>${content}</pre>
+    <a href="${openInAzimuttUrl(input)}" target="_blank">Open in Azimutt</a>
+    <pre>${mermaidCode}</pre>
 </body>
 </html>`
 }

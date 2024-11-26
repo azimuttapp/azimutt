@@ -1,17 +1,4 @@
 import vscode, {ExtensionContext, TextEditor} from "vscode";
-// import {ParserError, ParserErrorLevel} from "@azimutt/models";
-/*import {generateSql, parseSql} from "@azimutt/parser-sql";
-import {
-    Database,
-    generateAml,
-    generateDot,
-    generateJsonDatabase,
-    generateMarkdown,
-    generateMermaid,
-    parseAml,
-    parseJsonDatabase,
-    ParserResult
-} from "@azimutt/aml";*/
 import {newAml} from "./new";
 import {convertAmlToDialect, convertJsonToAml, convertSqlToAml} from "./convert";
 import {AmlDocumentSymbolProvider} from "./symbols";

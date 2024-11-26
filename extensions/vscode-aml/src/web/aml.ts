@@ -1,5 +1,6 @@
 import {Database, ParserResult} from "@azimutt/models";
 
+// dynamic import to use ESM libs in a CommonJS package (required by VS Code extension)
 const amlLib = import("@azimutt/aml");
 const sqlLib = import("@azimutt/parser-sql");
 
