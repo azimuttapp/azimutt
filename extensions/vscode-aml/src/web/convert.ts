@@ -1,4 +1,16 @@
 import vscode, {TextEditor} from "vscode";
+import {
+    generateAml,
+    generateDot,
+    generateJson,
+    generateMarkdown,
+    generateMermaid,
+    generatePostgres,
+    parseAml,
+    parseJson,
+    parsePostgres
+} from "./aml";
+import {formatErrors, openFile, openFileResult} from "./utils";
 
 export async function convertJsonToAml(editor: TextEditor): Promise<void> {
     if (editor.document.languageId !== 'json') {
@@ -6,8 +18,7 @@ export async function convertJsonToAml(editor: TextEditor): Promise<void> {
         return
     }
 
-    vscode.window.showInformationMessage('JSON to AML conversion not implemented yet, work in progress...')
-    // FIXME: await openFileResult(parseJsonDatabase(editor.document.getText()).map((db: Database) => ({lang: 'aml', content: generateAml(db)})))
+    await openFileResult(await parseJson(editor.document.getText()), async db => ({lang: 'aml', content: await generateAml(db)}))
 }
 
 export async function convertSqlToAml(editor: TextEditor): Promise<void> {
@@ -19,8 +30,7 @@ export async function convertSqlToAml(editor: TextEditor): Promise<void> {
     const dialects = ['PostgreSQL']
     const dialect = await vscode.window.showQuickPick(dialects, {placeHolder: 'Select target'})
     if (dialect === 'PostgreSQL') {
-        vscode.window.showInformationMessage('SQL to AML conversion not implemented yet, work in progress...')
-        // FIXME: await openFileResult(parseSql(editor.document.getText(), 'postgres').map((db: Database) => ({lang: 'aml', content: generateAml(db)})))
+        await openFileResult(await parsePostgres(editor.document.getText()), async db => ({lang: 'aml', content: await generateAml(db)}))
     } else {
         vscode.window.showWarningMessage(`Unable to convert SQL to AML: unsupported ${dialect} dialect.`)
     }
@@ -34,27 +44,26 @@ export async function convertAmlToDialect(editor: TextEditor): Promise<void> {
 
     const dialects = ['PostgreSQL', 'JSON', 'DOT', 'Mermaid', 'Markdown']
     const dialect = await vscode.window.showQuickPick(dialects, {placeHolder: 'Select target'})
-    vscode.window.showInformationMessage(`AML to ${dialect} conversion not implemented yet, work in progress...`)
-    /* FIXME: const res = parseAml(editor.document.getText())
+    const res = await parseAml(editor.document.getText())
     const error = formatErrors(res.errors)
     const db = res.result
 
     if (db) {
         error && vscode.window.showWarningMessage(error)
         if (dialect === 'JSON') {
-            await openFile('json', generateJsonDatabase(db))
+            await openFile('json', await generateJson(db))
         } else if (dialect === 'DOT') {
-            await openFile('dot', generateDot(db))
+            await openFile('dot', await generateDot(db))
         } else if (dialect === 'Mermaid') {
-            await openFile('mermaid', generateMermaid(db))
+            await openFile('mermaid', await generateMermaid(db))
         } else if (dialect === 'Markdown') {
-            await openFile('markdown', generateMarkdown(db))
+            await openFile('markdown', await generateMarkdown(db))
         } else if (dialect === 'PostgreSQL') {
-            await openFile('sql', generateSql(db, 'postgres'))
+            await openFile('sql', await generatePostgres(db))
         } else {
             vscode.window.showWarningMessage(`Unable to convert AML to ${dialect}: unsupported dialect.`)
         }
     } else {
         error && vscode.window.showErrorMessage(error)
-    }*/
+    }
 }

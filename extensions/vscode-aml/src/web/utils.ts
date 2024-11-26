@@ -1,15 +1,17 @@
 import vscode, {TextDocument} from "vscode";
+import {Database, ParserError, ParserErrorLevel, ParserResult} from "@azimutt/models";
 
-/*async function openFileResult(res: ParserResult<{lang: string, content: string}>): Promise<TextDocument | undefined> {
+export async function openFileResult(res: ParserResult<Database>, transform: (db: Database) => Promise<{lang: string, content: string}>): Promise<TextDocument | undefined> {
     const error = formatErrors(res.errors)
-    const file = res.result
-    if (file) {
+    const db = res.result
+    if (db) {
         error && vscode.window.showWarningMessage(error)
+        const file = await transform(db)
         return await openFile(file.lang, file.content)
     } else {
         error && vscode.window.showErrorMessage(error)
     }
-}*/
+}
 
 export async function openFile(language: string, content: string): Promise<TextDocument> {
     const doc: TextDocument = await vscode.workspace.openTextDocument({language, content})
@@ -17,7 +19,7 @@ export async function openFile(language: string, content: string): Promise<TextD
     return doc
 }
 
-/*function formatErrors(errors: ParserError[] | undefined): string | undefined {
+export function formatErrors(errors: ParserError[] | undefined): string | undefined {
     if (errors && errors.length > 1) {
         return `Got ${errors.length} AML parsing issues:${errors.map(e => `\n- ${formatErrorLevel(e.level)} ${e.message}`).join('')}`
     } else if (errors && errors.length === 1) {
@@ -36,7 +38,7 @@ function formatErrorLevel(level: ParserErrorLevel): string {
         case 'hint': return '[HINT]'
         default: return '[ERR] '
     }
-}*/
+}
 
 type Timeout = ReturnType<typeof setTimeout>
 export function debounce<F extends (...args: Parameters<F>) => ReturnType<F>>(
