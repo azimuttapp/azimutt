@@ -8,17 +8,18 @@ import {
 } from "@azimutt/models";
 
 // statements
-export type AmlAst = StatementAst[]
-export type StatementAst = NamespaceStatement | EntityStatement | RelationStatement | TypeStatement | EmptyStatement
+export type AmlAst = StatementsAst
+export type StatementsAst = { statements: StatementAst[] }
+export type StatementAst = { meta: TokenInfo } & (NamespaceStatement | EntityStatement | RelationStatement | TypeStatement | EmptyStatement)
 export type NamespaceStatement = { kind: 'Namespace', line: number, schema?: IdentifierAst, catalog?: IdentifierAst, database?: IdentifierAst } & ExtraAst
 export type EntityStatement = { kind: 'Entity', name: IdentifierAst, view?: TokenInfo, alias?: IdentifierAst, attrs?: AttributeAstNested[] } & NamespaceRefAst & ExtraAst
-export type RelationStatement = { kind: 'Relation', src: AttributeRefCompositeAst, srcCardinality: RelationCardinalityAst, polymorphic?: RelationPolymorphicAst, refCardinality: RelationCardinalityAst, ref: AttributeRefCompositeAst } & ExtraAst & { warning?: TokenInfo }
+export type RelationStatement = { kind: 'Relation', src: AttributeRefCompositeAst, srcCardinality: RelationCardinalityAst, polymorphic?: RelationPolymorphicAst, refCardinality: RelationCardinalityAst, ref: AttributeRefCompositeAst } & ExtraAst
 export type TypeStatement = { kind: 'Type', name: IdentifierAst, content?: TypeContentAst } & NamespaceRefAst & ExtraAst
 export type EmptyStatement = { kind: 'Empty', comment?: CommentAst }
 
 // clauses
-export type AttributeAstFlat = { nesting: {token: TokenInfo, depth: number}, name: IdentifierAst, nullable?: TokenInfo } & AttributeTypeAst & { constraints?: AttributeConstraintAst[] } & ExtraAst
-export type AttributeAstNested = { path: IdentifierAst[], nullable?: TokenInfo } & AttributeTypeAst & { constraints?: AttributeConstraintAst[] } & ExtraAst & { attrs?: AttributeAstNested[], warning?: TokenInfo }
+export type AttributeAstFlat = { meta: TokenInfo, nesting: {token: TokenInfo, depth: number}, name: IdentifierAst, nullable?: TokenInfo } & AttributeTypeAst & { constraints?: AttributeConstraintAst[] } & ExtraAst
+export type AttributeAstNested = { meta: TokenInfo, path: IdentifierAst[], nullable?: TokenInfo } & AttributeTypeAst & { constraints?: AttributeConstraintAst[] } & ExtraAst & { attrs?: AttributeAstNested[], warning?: TokenInfo }
 export type AttributeTypeAst = { type?: IdentifierAst, enumValues?: AttributeValueAst[], defaultValue?: AttributeValueAst }
 export type AttributeConstraintAst = AttributePkAst | AttributeUniqueAst | AttributeIndexAst | AttributeCheckAst | AttributeRelationAst
 export type AttributePkAst = { kind: 'PrimaryKey', token: TokenInfo, name?: IdentifierAst }

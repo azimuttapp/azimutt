@@ -53,6 +53,7 @@ import {
     PropertyValueAst,
     PropertyValueBasic,
     RelationStatement,
+    StatementAst,
     TypeContentAst,
     TypeStatement
 } from "./amlAst";
@@ -61,11 +62,11 @@ import {duplicated, notFound} from "./errors";
 export function buildDatabase(ast: AmlAst, start: number, parsed: number): {db: Database, errors: ParserError[]} {
     const db: Database = {entities: [], relations: [], types: []}
     const errors: ParserError[] = []
-    const statements = ast.filter(s => s.kind !== 'Empty')
+    const statements = ast.statements.filter(s => s.kind !== 'Empty')
     const entityRelations = buildTypesAndEntities(db, errors, statements)
     buildRelations(db, errors, statements, entityRelations) // all entities need to be built to perform some relation checks
     const comments: {line: number, comment: string}[] = []
-    ast.filter(s => s.kind === 'Empty').forEach(stmt => {
+    ast.statements.filter(s => s.kind === 'Empty').forEach(stmt => {
         if (stmt.comment) comments.push({line: stmt.comment.token.position.start.line, comment: stmt.comment.value})
     })
     const done = Date.now()
@@ -76,7 +77,7 @@ export function buildDatabase(ast: AmlAst, start: number, parsed: number): {db: 
         parsingTimeMs: parsed - start,
         formattingTimeMs: done - parsed,
         comments,
-        namespaces: ast.filter(s => s.kind === 'Namespace').map((s, i) => removeUndefined({line: s.line, ...buildNamespace(i, s), comment: s.comment?.value}))
+        namespaces: ast.statements.filter(s => s.kind === 'Namespace').map((s, i) => removeUndefined({line: s.line, ...buildNamespace(i, s), comment: s.comment?.value}))
     })
     return {db: removeEmpty({
         entities: db.entities?.sort((a, b) => a.extra?.line && b.extra?.line ? a.extra.line - b.extra.line : a.name.toLowerCase().localeCompare(b.name.toLowerCase())),
@@ -86,10 +87,10 @@ export function buildDatabase(ast: AmlAst, start: number, parsed: number): {db: 
     }), errors}
 }
 
-function buildTypesAndEntities(db: Database, errors: ParserError[], ast: AmlAst): InlineRelation[] {
+function buildTypesAndEntities(db: Database, errors: ParserError[], statements: StatementAst[]): InlineRelation[] {
     let namespace: Namespace = {}
     const relations: InlineRelation[] = []
-    ast.forEach((stmt, i) => {
+    statements.forEach((stmt, i) => {
         const index = i + 1
         if (stmt.kind === 'Namespace') {
             namespace = buildNamespace(index, stmt)
@@ -121,7 +122,7 @@ function buildTypesAndEntities(db: Database, errors: ParserError[], ast: AmlAst)
     return relations
 }
 
-function buildRelations(db: Database, errors: ParserError[], ast: AmlAst, attrRelations: InlineRelation[]): void {
+function buildRelations(db: Database, errors: ParserError[], statements: StatementAst[], attrRelations: InlineRelation[]): void {
     const aliases: Record<string, EntityRef> = Object.fromEntries(db.entities?.map(e => e.extra?.alias ? [e.extra?.alias, entityToRef(e)] : undefined).filter(isNotUndefined) || [])
     let namespace: Namespace = {}
     attrRelations.forEach(r => addRelation(
@@ -130,7 +131,7 @@ function buildRelations(db: Database, errors: ParserError[], ast: AmlAst, attrRe
         buildRelationAttribute(db.entities || [], aliases, r.statement, r.entity, r.attrs, r.ref),
         mergePositions([r.ref.ref.database, r.ref.ref.catalog, r.ref.ref.schema, r.ref.ref.entity, ...r.ref.ref.attrs, ...r.ref.ref.attrs.flatMap(a => a.path)].map(v => v?.token))
     ))
-    ast.forEach((stmt, i) => {
+    statements.forEach((stmt, i) => {
         const index = i + 1
         if (stmt.kind === 'Namespace') {
             namespace = buildNamespace(index, stmt)

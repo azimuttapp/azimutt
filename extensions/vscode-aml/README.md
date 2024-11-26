@@ -12,7 +12,7 @@ A VS Code extension to design database schemas using [AML](https://azimutt.app/a
 ## 🌟 Features
 
 - Syntax highlight, error reporting and suggestions for AML code (`.aml` files)
-- Symbol navigation in AML
+- AML rename and symbol navigation
 - convert AML to PostgreSQL, JSON, DOT, Mermaid, Markdown (Command Palette)
 - convert SQL and JSON to AML (Command Palette)
 
@@ -43,7 +43,6 @@ posts | store all posts
 
 - diagram preview
 - auto-complete (cf [registerCompletionItemProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerCompletionItemProvider.html))
-- rename (cf [registerRenameProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerRenameProvider.html))
 - hover infos (cf [registerHoverProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerHoverProvider.html))
 - go-to-definition (cf [registerDefinitionProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerDefinitionProvider.html) and [registerImplementationProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerImplementationProvider.html))
 - quick-fixes (cf [registerCodeActionProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerCodeActionProvider.html))
@@ -80,6 +79,13 @@ Tips:
 - Debug extension via F5 (Run Web Extension)
 - Relaunch the extension from the debug toolbar after changing code in `src/web/extension.ts`
 - Reload (`Ctrl+R` or `Cmd+R` on Mac) the VS Code window with your extension to load your changes
+
+If you need to develop on multiple libs at the same time, depend on local libs but publish & revert before commit.
+
+- Remove published lib & depend on local one, ex: `npm uninstall @azimutt/aml && npm install ../../libs/aml`
+- Publish lib locally by building it: `npm run build`
+- Then publish it on npm
+- And finally add it back, ex: `npm uninstall @azimutt/aml && npm install @azimutt/aml`
 
 ## 🚀 Publication
 

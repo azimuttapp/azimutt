@@ -1,5 +1,7 @@
-import vscode, {TextDocument} from "vscode";
-import {Database, ParserError, ParserErrorLevel, ParserResult} from "@azimutt/models";
+import vscode, {Position, Range, TextDocument} from "vscode";
+import {Database, ParserError, ParserErrorLevel, ParserResult, TokenEditor} from "@azimutt/models";
+// @ts-ignore
+import {AttributeAstNested} from "@azimutt/aml/out/amlAst";
 
 export async function openFileResult(res: ParserResult<Database>, transform: (db: Database) => Promise<{lang: string, content: string}>): Promise<TextDocument | undefined> {
     const error = formatErrors(res.errors)
@@ -38,6 +40,23 @@ function formatErrorLevel(level: ParserErrorLevel): string {
         case 'hint': return '[HINT]'
         default: return '[ERR] '
     }
+}
+
+export function flattenAttrs(attrs: AttributeAstNested[] | undefined): AttributeAstNested[] {
+    return (attrs || []).flatMap(a => [a, ...flattenAttrs(a.attrs)])
+}
+
+export function amlPositionToVSRange(position: TokenEditor): Range {
+    return new Range(position.start.line - 1, position.start.column - 1, position.end.line - 1, position.end.column)
+}
+
+export function isInside(vsPos: Position, amlPos: TokenEditor): boolean {
+    const line = vsPos.line + 1
+    const col = vsPos.character + 1
+    const inLines = amlPos.start.line < line && line < amlPos.end.line
+    const startLine = line === amlPos.start.line && amlPos.start.column <= col && (col <= amlPos.end.column || line < amlPos.end.line)
+    const endLine = line === amlPos.end.line && col <= amlPos.end.column && (amlPos.start.column <= col || amlPos.start.line < line)
+    return inLines || startLine || endLine
 }
 
 type Timeout = ReturnType<typeof setTimeout>

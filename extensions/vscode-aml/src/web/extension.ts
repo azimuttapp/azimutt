@@ -4,6 +4,7 @@ import {convertAmlToDialect, convertJsonToAml, convertSqlToAml} from "./convert"
 import {previewAml} from "./preview";
 import {startDiagnostics} from "./diagnostics";
 import {AmlDocumentSymbolProvider} from "./symbols";
+import {AmlRenameProvider} from "./rename";
 
 export function activate(context: ExtensionContext) {
     context.subscriptions.push(
@@ -13,6 +14,7 @@ export function activate(context: ExtensionContext) {
         vscode.commands.registerTextEditorCommand('aml.convert', (editor: TextEditor) => convertAmlToDialect(editor)),
         vscode.commands.registerTextEditorCommand('aml.preview', (editor: TextEditor) => previewAml(editor, context)),
         startDiagnostics(context),
+        vscode.languages.registerRenameProvider({language: 'aml'}, new AmlRenameProvider()),
         // vscode.languages.registerCompletionItemProvider({language: 'aml'}, new AmlCompletionItemProvider(), ' ', '(', '{', ',', '.'),
         vscode.languages.registerDocumentSymbolProvider({language: 'aml'}, new AmlDocumentSymbolProvider()),
     )

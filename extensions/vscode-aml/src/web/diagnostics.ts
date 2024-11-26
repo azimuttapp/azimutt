@@ -4,14 +4,13 @@ import vscode, {
     DiagnosticSeverity,
     Disposable,
     ExtensionContext,
-    Range,
     TextDocument,
     TextDocumentChangeEvent
 } from "vscode";
-import {ParserErrorLevel, TokenEditor} from "@azimutt/models";
+import {ParserErrorLevel} from "@azimutt/models";
 import {isNever} from "@azimutt/utils";
 import {parseAml} from "./aml";
-import {debounce} from "./utils";
+import {amlPositionToVSRange, debounce} from "./utils";
 
 export function startDiagnostics(context: ExtensionContext): Disposable {
     const diagnostics: DiagnosticCollection = vscode.languages.createDiagnosticCollection('aml')
@@ -32,12 +31,8 @@ const analyzeDocument = debounce((document: TextDocument, diagnostics: Diagnosti
 async function analyzeDocumentReal(document: TextDocument, diagnostics: DiagnosticCollection) {
     const input = document.getText()
     const res = await parseAml(input)
-    const errors: Diagnostic[] = (res.errors || []).map(e => new Diagnostic(positionToRange(e.position), e.message, levelToSeverity(e.level)))
+    const errors: Diagnostic[] = (res.errors || []).map(e => new Diagnostic(amlPositionToVSRange(e.position), e.message, levelToSeverity(e.level)))
     diagnostics.set(document.uri, errors)
-}
-
-function positionToRange(position: TokenEditor): Range {
-    return new Range(position.start.line - 1, position.start.column - 1, position.end.line - 1, position.end.column)
 }
 
 function levelToSeverity(level: ParserErrorLevel): DiagnosticSeverity {

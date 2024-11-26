@@ -53,6 +53,7 @@ import {
     RelationPolymorphicAst,
     RelationStatement,
     StatementAst,
+    StatementsAst,
     TokenInfo,
     TokenIssue,
     TypeAliasAst,
@@ -121,7 +122,7 @@ const defaultPos: number = -1 // used when error position is undefined
 
 class AmlParser extends EmbeddedActionsParser {
     // top level
-    amlRule: () => AmlAst
+    statementsRule: () => AmlAst
     // statements
     statementRule: () => StatementAst
     namespaceStatementRule: () => NamespaceStatement
@@ -155,10 +156,10 @@ class AmlParser extends EmbeddedActionsParser {
 
         // statements
 
-        this.amlRule = $.RULE<() => AmlAst>('amlRule', () => {
-            let stmts: StatementAst[] = []
+        this.statementsRule = $.RULE<() => StatementsAst>('statementsRule', () => {
+            const stmts: StatementAst[] = []
             $.MANY(() => stmts.push($.SUBRULE($.statementRule)))
-            return stmts.filter(isNotUndefined) // can be undefined on invalid input :/
+            return {statements: stmts.filter(isNotUndefined)} // can be undefined on invalid input :/
         })
 
         this.statementRule = $.RULE<() => StatementAst>('statementRule', () => $.OR([
@@ -174,8 +175,8 @@ class AmlParser extends EmbeddedActionsParser {
             $.SUBRULE(whitespaceRule)
             const namespace = $.OPTION(() => $.SUBRULE(namespaceRule)) || {}
             const extra = $.SUBRULE($.extraRule)
-            $.CONSUME(NewLine)
-            return {kind: 'Namespace', line: keyword.startLine || defaultPos, ...namespace, ...extra}
+            const end = $.CONSUME(NewLine)
+            return {kind: 'Namespace', meta: tokenInfo2(keyword, end), line: keyword.startLine || defaultPos, ...namespace, ...extra}
         })
 
         this.entityRule = $.RULE<() => EntityStatement>('entityRule', () => {
@@ -189,32 +190,33 @@ class AmlParser extends EmbeddedActionsParser {
             })
             $.SUBRULE2(whitespaceRule)
             const extra = $.SUBRULE($.extraRule)
-            $.CONSUME(NewLine)
+            const end = tokenInfo($.CONSUME(NewLine))
             const attrs: AttributeAstFlat[] = []
             $.MANY(() => {
                 const attr = $.SUBRULE($.attributeRule)
                 if (attr?.name?.value) attrs.push(attr) // name can be '' on invalid input :/
             })
-            return removeEmpty({kind: 'Entity' as const, name: entity, view: view ? tokenInfo(view) : undefined, ...namespace, alias, ...extra, attrs: nestAttributes(attrs)})
+            return removeEmpty({kind: 'Entity' as const, meta: tokenPosN([namespace.database?.token, namespace.catalog?.token, namespace.schema?.token, entity?.token, end, attrs[attrs.length - 1]?.meta]), name: entity, view: view ? tokenInfo(view) : undefined, ...namespace, alias, ...extra, attrs: nestAttributes(attrs)})
         })
 
         this.relationRule = $.RULE<() => RelationStatement>('relationRule', () => {
-            const warning = $.OR([
-                {ALT: () => {$.CONSUME(Relation); return undefined}},
-                {ALT: () => tokenInfo($.CONSUME(ForeignKey), [legacy('"fk" is legacy, replace it with "rel"')])}
+            const {keyword, issues} = $.OR([
+                {ALT: () => ({keyword: $.CONSUME(Relation), issues: []})},
+                {ALT: () => ({keyword: $.CONSUME(ForeignKey), issues: [legacy('"fk" is legacy, replace it with "rel"')]})}
             ])
+            const warning = (issues || []).length > 0 ? tokenInfo(keyword, issues) : undefined
             $.CONSUME(WhiteSpace)
             const src = $.SUBRULE($.attributeRefCompositeRule)
             $.SUBRULE(whitespaceRule)
             const {ref, srcCardinality, refCardinality, polymorphic} = $.SUBRULE(attributeRelationRule) || {} // returns undefined on invalid input :/
             $.SUBRULE2(whitespaceRule)
             const extra = $.SUBRULE($.extraRule)
-            $.CONSUME(NewLine)
-            return removeUndefined({kind: 'Relation' as const, src, ref, srcCardinality, refCardinality, polymorphic, ...extra, warning})
+            const end = $.CONSUME(NewLine)
+            return removeUndefined({kind: 'Relation' as const, meta: tokenInfo2(keyword, end), src, ref, srcCardinality, refCardinality, polymorphic, ...extra, warning})
         })
 
         this.typeRule = $.RULE<() => TypeStatement>('typeRule', () => {
-            $.CONSUME(Type)
+            const keyword = $.CONSUME(Type)
             $.CONSUME(WhiteSpace)
             const {entity, ...namespace} = $.SUBRULE(this.entityRefRule) || {} // returns undefined on invalid input :/
             $.SUBRULE(whitespaceRule)
@@ -226,21 +228,21 @@ class AmlParser extends EmbeddedActionsParser {
             ]))
             $.SUBRULE2(whitespaceRule)
             const extra = $.SUBRULE($.extraRule)
-            $.CONSUME(NewLine)
+            const end = $.CONSUME(NewLine)
             /* if (content === undefined) {
                 const attrs: AttributeAstFlat[] = []
                 // FIXME: $.MANY fails with `TypeError: Cannot read properties of undefined (reading 'call')` at recognizer_engine.ts:517:30 (manyInternalLogic), before calling the callback, no idea why :/
                 $.MANY(() => attrs.push($.SUBRULE($.attributeRule)))
                 if (attrs.length > 0) content = {kind: 'struct', attrs: nestAttributes(attrs)}
             } */
-            return {kind: 'Type', ...namespace, name: entity, content, ...extra}
+            return {kind: 'Type', meta: tokenInfo2(keyword, end), ...namespace, name: entity, content, ...extra}
         })
 
         this.emptyStatementRule = $.RULE<() => EmptyStatement>('emptyStatementRule', () => {
-            $.SUBRULE(whitespaceRule)
+            const start = $.SUBRULE(whitespaceRule)
             const comment = $.OPTION(() => $.SUBRULE($.commentRule))
-            $.CONSUME(NewLine)
-            return removeUndefined({kind: 'Empty' as const, comment})
+            const end = $.CONSUME(NewLine)
+            return removeUndefined({kind: 'Empty' as const, meta: tokenInfo2(start, end), comment})
         })
 
         // clauses
@@ -252,8 +254,8 @@ class AmlParser extends EmbeddedActionsParser {
             const attr = $.SUBRULE(attributeInnerRule)
             $.SUBRULE(whitespaceRule)
             const extra = $.SUBRULE($.extraRule)
-            $.CONSUME(NewLine)
-            return removeUndefined({...attr, nesting, ...extra})
+            const end = tokenInfo($.CONSUME(NewLine))
+            return removeUndefined({...attr, meta: tokenPos2(attr?.meta, end), nesting, ...extra})
         })
         const attributeInnerRule = $.RULE<() => AttributeAstFlat>('attributeInnerRule', () => {
             const name = $.SUBRULE($.identifierRule)
@@ -265,7 +267,7 @@ class AmlParser extends EmbeddedActionsParser {
             const constraints: AttributeConstraintAst[] = []
             $.MANY({DEF: () => constraints.push($.SUBRULE(attributeConstraintRule))})
             const nesting = {token: {offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}, depth: 0} // unused placeholder
-            return removeEmpty({nesting, name, type, enumValues, defaultValue, nullable: nullable ? tokenInfo(nullable) : undefined, constraints: constraints.filter(isNotUndefined)})
+            return removeEmpty({meta: tokenPos2(name.token, constraints[constraints.length - 1]?.token), nesting, name, type, enumValues, defaultValue, nullable: nullable ? tokenInfo(nullable) : undefined, constraints: constraints.filter(isNotUndefined)})
         }, {resyncEnabled: true})
         const attributeTypeRule = $.RULE<() => AttributeTypeAst>('attributeTypeRule', () => {
             const res = $.OPTION(() => {
@@ -628,7 +630,7 @@ export function parseRule<T>(parse: (p: AmlParser) => T, input: string, strict: 
 }
 
 export function parseAmlAst(input: string, opts: { strict?: boolean }): ParserResult<AmlAst> {
-    return parseRule(p => p.amlRule(), input, opts.strict || false)
+    return parseRule(p => p.statementsRule(), input, opts.strict || false)
 }
 
 function formatLexerError(err: ILexingError): ParserError {
@@ -654,6 +656,14 @@ function tokenInfo(token: IToken, issues?: TokenIssue[]): TokenInfo {
 
 function tokenInfo2(start: IToken | undefined, end: IToken | undefined, issues?: TokenIssue[]): TokenInfo {
     return removeEmpty({...mergePositions([start, end].map(t => t ? tokenPosition(t) : undefined)), issues})
+}
+
+function tokenPos2(start: TokenPosition | undefined, end: TokenPosition | undefined, issues?: TokenIssue[]): TokenInfo {
+    return removeEmpty({...mergePositions([start, end]), issues})
+}
+
+function tokenPosN(tokens: (TokenPosition | undefined)[], issues?: TokenIssue[]): TokenInfo {
+    return removeEmpty({...mergePositions(tokens), issues})
 }
 
 function tokenPosition(token: IToken): TokenPosition {

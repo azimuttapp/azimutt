@@ -9,6 +9,7 @@ Check [Keep a Changelog](http://keepachangelog.com) for recommendations on how t
 ### Added
 
 - AML error reporting
+- AML rename schemas, entities and attributes
 - AML conversion commands from/to SQL, JSON, DOT, Mermaid and more
 - Add "Open in Azimutt" link in preview
 

@@ -1,32 +1,40 @@
-users
+identity.users
   id uuid pk
   name varchar index
   email varchar unique
   created_at timestamp=`now()`
 
-categories
+catalog.categories
   id uuid pk
   name varchar
-  parent_category_id uuid -> categories(id)
+  parent_category_id uuid -> catalog.categories(id)
   created_at timestamp=`now()`
-  created_by uuid -> users(id)
+  created_by uuid -> identity.users(id)
 
-products
+catalog.products
   id uuid pk
-  category_id uuid -> categories(id)
+  category_id uuid -> catalog.categories(id)
   name varchar
   price double
   created_at timestamp=`now()`
-  created_by uuid -> users(id)
+  created_by uuid -> identity.users(id)
 
-carts
+shopping.carts
   id uuid pk
-  owner uuid -> users(id)
+  owner uuid -> identity.users(id)
   created_at timestamp=`now()`
 
-cart_items
-  cart_id uuid -> carts(id)
-  product_id uuid -> products(id)
+shopping.cart_items
+  cart_id uuid -> shopping.carts(id)
+  product_id uuid -> catalog.products(id)
   quantity int
   created_at timestamp=`now()`
-  created_by uuid -> users(id)
+  created_by uuid -> identity.users(id)
+
+tracking.events
+  id uuid pk
+  item_id uuid
+  item_kind varchar
+
+rel tracking.events(item_id) -item_kind=users> identity.users(id)
+rel tracking.events(item_id) -item_kind=products> catalog.products(id)

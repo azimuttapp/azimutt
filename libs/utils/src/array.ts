@@ -1,6 +1,6 @@
 // functions sorted alphabetically
 
-export const arraySame = <T>(a1: T[], a2: T[], eq: (a: T, b: T) => boolean): boolean =>
+export const arraySame = <T>(a1: T[], a2: T[], eq: (a: T, b: T) => boolean = (a, b) => a === b): boolean =>
     a1.length === a2.length && a1.every((e, i) => eq(e, a2[i]))
 
 export const collect = <T, U>(arr: T[], f: (t: T) => U | undefined): U[] => arr.map(f).filter((u): u is U => u !== undefined)
@@ -61,6 +61,14 @@ export const findLastIndex = <T>(arr: T[], p: (t: T) => boolean): number => {
         i--
     }
     return -1
+}
+
+export const findMap = <T, U>(arr: T[], p: (t: T) => U | undefined): U | undefined => {
+    for (const i of arr) {
+        const res = p(i)
+        if (res !== undefined) return res
+    }
+    return undefined
 }
 
 export const groupBy = <T, K extends keyof any>(list: T[], getKey: (item: T) => K): Record<K, T[]> =>
