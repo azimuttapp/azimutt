@@ -135,7 +135,8 @@
   "dependencies": {
     "@azimutt/aml": "^0.1.8",
     "@azimutt/models": "^0.1.16",
-    "@azimutt/parser-sql": "^0.1.3"
+    "@azimutt/parser-sql": "^0.1.3",
+    "@azimutt/utils": "^0.1.6"
   },
   "devDependencies": {
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",

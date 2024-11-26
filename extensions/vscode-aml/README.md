@@ -11,7 +11,7 @@ A VS Code extension to design database schemas using [AML](https://azimutt.app/a
 
 ## 🌟 Features
 
-- Syntax highlight and suggestions for AML code (`.aml` files)
+- Syntax highlight, error reporting and suggestions for AML code (`.aml` files)
 - Symbol navigation in AML
 - convert AML to PostgreSQL, JSON, DOT, Mermaid, Markdown (Command Palette)
 - convert SQL and JSON to AML (Command Palette)
@@ -41,8 +41,7 @@ posts | store all posts
 
 ## 📋 Roadmap
 
-- diagram preview + open in Azimutt
-- Add parsing errors ([createDiagnosticCollection](https://code.visualstudio.com/api/references/vscode-api#languages.createDiagnosticCollection)?)
+- diagram preview
 - auto-complete (cf [registerCompletionItemProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerCompletionItemProvider.html))
 - rename (cf [registerRenameProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerRenameProvider.html))
 - hover infos (cf [registerHoverProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerHoverProvider.html))
@@ -52,6 +51,7 @@ posts | store all posts
 - AML support in Markdown (like [Mermaid](https://marketplace.visualstudio.com/items?itemName=edgebus.markdown-mermaid-container))
 - diagram preview for SQL files, then add other languages: Prisma, DBML, [bigER](https://github.com/borkdominik/bigER/wiki/Language)...
 - Connect to a database
+- Create a [Language Server](https://code.visualstudio.com/api/language-extensions/language-server-extension-guide)
 
 
 ## 🤝 Issues & Contributing

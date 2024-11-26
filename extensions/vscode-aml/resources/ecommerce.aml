@@ -1,0 +1,32 @@
+users
+  id uuid pk
+  name varchar index
+  email varchar unique
+  created_at timestamp=`now()`
+
+categories
+  id uuid pk
+  name varchar
+  parent_category_id uuid -> categories(id)
+  created_at timestamp=`now()`
+  created_by uuid -> users(id)
+
+products
+  id uuid pk
+  category_id uuid -> categories(id)
+  name varchar
+  price double
+  created_at timestamp=`now()`
+  created_by uuid -> users(id)
+
+carts
+  id uuid pk
+  owner uuid -> users(id)
+  created_at timestamp=`now()`
+
+cart_items
+  cart_id uuid -> carts(id)
+  product_id uuid -> products(id)
+  quantity int
+  created_at timestamp=`now()`
+  created_by uuid -> users(id)

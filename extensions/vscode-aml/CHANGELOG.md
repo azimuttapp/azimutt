@@ -8,7 +8,9 @@ Check [Keep a Changelog](http://keepachangelog.com) for recommendations on how t
 
 ### Added
 
+- AML error reporting
 - AML conversion commands from/to SQL, JSON, DOT, Mermaid and more
+- Add "Open in Azimutt" link in preview
 
 
 ## 0.1.1 - 2024-11-25

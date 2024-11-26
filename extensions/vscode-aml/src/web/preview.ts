@@ -12,7 +12,7 @@ import {debounce} from "./utils";
 
 let previewPanel: WebviewPanel | undefined = undefined
 
-export function previewAml(editor: TextEditor, context: ExtensionContext) {
+export function previewAml(editor: TextEditor, context: ExtensionContext): void {
     if (editor.document.languageId !== 'aml') {
         vscode.window.showErrorMessage('Needs AML file to preview it.')
         return

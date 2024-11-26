@@ -1,6 +1,6 @@
 import {openFile} from "./utils";
 
-export async function newAml() {
+export async function newAml(): Promise<void> {
     await openFile('aml', `#
 # Sample AML
 # learn more at https://azimutt.app/aml
