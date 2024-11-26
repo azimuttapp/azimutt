@@ -1,20 +1,21 @@
-# AML Support for VS Code
+# AML Support for VS Code 🪄
 
-[![VS Code Marketplace](https://img.shields.io/vscode-marketplace/v/azimutt.vscode-aml.svg?label=vscode%20marketplace&style=flat-square&color=007ec6)](https://marketplace.visualstudio.com/items?itemName=azimutt.vscode-aml)
+[![VS Code Marketplace](https://vsmarketplacebadges.dev/version/azimutt.vscode-aml.png)](https://marketplace.visualstudio.com/items?itemName=azimutt.vscode-aml)
 [![Star Azimutt on GitHub](https://img.shields.io/github/stars/azimuttapp/azimutt)](https://github.com/azimuttapp/azimutt)
 [![Follow @azimuttapp on Twitter](https://img.shields.io/twitter/follow/azimuttapp.svg?style=social)](https://twitter.com/intent/follow?screen_name=azimuttapp)
+[![Tweet](https://img.shields.io/twitter/url.svg?url=https%3A%2F%2Fazimutt.app)](https://twitter.com/intent/tweet?url=https%3A%2F%2Fmarketplace.visualstudio.com%2Fitems%3FitemName%3Dazimutt.vscode-aml&via=azimuttapp&text=Design%20database%20schema%20fast%20in%20VS%20Code!&hashtags=database%2Cdiagram%2Cerd%2Csql)
 
-A VS Code extension to design database schemas with [AML](https://azimutt.app/aml), a simple DSL that speed your design by 2x ✨
+A VS Code extension to design database schemas using [AML](https://azimutt.app/aml), a simple DSL that speed your design by 2x ✨
 
 ![AML in VS Code](https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/extensions/vscode-aml/assets/screenshot.png)
 
-## Features
+## 🌟 Features
 
 - Syntax highlight and suggestions for AML code (`.aml` files)
 - Symbol navigation in AML
 
 
-## Usage
+## 💡 Usage
 
 1. Create an empty `.aml` file or use `AML: New database schema (ERD)` command
 2. Write your schema using AML, check [documentation](https://azimutt.app/docs/aml) is needed
@@ -36,7 +37,7 @@ posts | store all posts
   created_at timestamp=`now()`
 ```
 
-## Roadmap
+## 📋 Roadmap
 
 - diagram preview + open in Azimutt
 - convert AML to PostgreSQL, JSON, DOT, Mermaid, Markdown (Command Palette)
@@ -48,18 +49,19 @@ posts | store all posts
 - go-to-definition (cf [registerDefinitionProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerDefinitionProvider.html) and [registerImplementationProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerImplementationProvider.html))
 - quick-fixes (cf [registerCodeActionProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerCodeActionProvider.html))
 - hints with actions (cf [registerCodeLensProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerCodeLensProvider.html))
-- AML support in Markdown
+- AML support in Markdown (like [Mermaid](https://marketplace.visualstudio.com/items?itemName=edgebus.markdown-mermaid-container))
+- diagram preview for SQL files, then add other languages: Prisma, DBML, [bigER](https://github.com/borkdominik/bigER/wiki/Language)...
 - Connect to a database
 
 
-## Issues & Contributing
+## 🤝 Issues & Contributing
 
 If you have any issue or bug, please [create an issue](https://github.com/azimuttapp/azimutt/issues).
 
 If you want to improve this extension, feel free to reach out or submit a pull request.
 
 
-## Development
+## 🛠️ Development
 
 VS Code language extensions are made of several and quite independent part.
 For general knowledge, look at the [extension documentation](https://code.visualstudio.com/api) and more specifically the [language extension overview](https://code.visualstudio.com/api/language-extensions/overview).
@@ -79,7 +81,7 @@ Tips:
 - Relaunch the extension from the debug toolbar after changing code in `src/web/extension.ts`
 - Reload (`Ctrl+R` or `Cmd+R` on Mac) the VS Code window with your extension to load your changes
 
-## Publication
+## 🚀 Publication
 
 [Publish your extension](https://code.visualstudio.com/api/working-with-extensions/publishing-extension) on the VS Code extension marketplace.
 
