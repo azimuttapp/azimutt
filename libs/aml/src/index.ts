@@ -8,10 +8,12 @@ import {
     ParserResult
 } from "@azimutt/models";
 import packageJson from "../package.json";
+import * as amlAst from "./amlAst";
 import {isTokenInfo} from "./amlAst";
 import {parseAmlAst} from "./amlParser";
 import {buildDatabase} from "./amlBuilder";
 import {genDatabase} from "./amlGenerator";
+import {samples} from "./amlSamples";
 import {codeAction, codeLens, completion, createMarker, language} from "./extensions/monaco";
 import {generateDot} from "./dotGenerator";
 import {generateMermaid} from "./mermaidGenerator";
@@ -44,6 +46,7 @@ function generateAml(database: Database, legacy: boolean = false): string {
     return genDatabase(database, legacy)
 }
 
+const ast = {...amlAst, parseAmlAst}
 const monaco = {language, completion, codeAction, codeLens, createMarker}
 const version = packageJson.version
 
@@ -51,4 +54,4 @@ const version = packageJson.version
 // make it available locally: `npm run build:browser && cp out/bundle.min.js ../../backend/priv/static/elm/aml.min.js && cp out/bundle.min.js.map ../../backend/priv/static/elm/aml.min.js.map`
 // update `backend/lib/azimutt_web/templates/website/_editors-script.html.heex` to use local files
 export * from "@azimutt/models"
-export {parseAml, generateAml, parseJsonDatabase, generateJsonDatabase, schemaJsonDatabase, generateDot, generateMermaid, generateMarkdown, monaco, version}
+export {parseAml, generateAml, parseJsonDatabase, generateJsonDatabase, schemaJsonDatabase, generateDot, generateMermaid, generateMarkdown, samples, ast, monaco, version}

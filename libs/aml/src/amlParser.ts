@@ -196,7 +196,8 @@ class AmlParser extends EmbeddedActionsParser {
                 const attr = $.SUBRULE($.attributeRule)
                 if (attr?.name?.value) attrs.push(attr) // name can be '' on invalid input :/
             })
-            return removeEmpty({kind: 'Entity' as const, meta: tokenPosN([namespace.database?.token, namespace.catalog?.token, namespace.schema?.token, entity?.token, end, attrs[attrs.length - 1]?.meta]), name: entity, view: view ? tokenInfo(view) : undefined, ...namespace, alias, ...extra, attrs: nestAttributes(attrs)})
+            const meta = tokenPosN([namespace.database?.token, namespace.catalog?.token, namespace.schema?.token, entity?.token, end, attrs[attrs.length - 1]?.meta])
+            return removeEmpty({kind: 'Entity' as const, meta, name: entity, view: view ? tokenInfo(view) : undefined, ...namespace, alias, ...extra, attrs: nestAttributes(attrs)})
         })
 
         this.relationRule = $.RULE<() => RelationStatement>('relationRule', () => {
@@ -270,6 +271,7 @@ class AmlParser extends EmbeddedActionsParser {
             return removeEmpty({meta: tokenPos2(name.token, constraints[constraints.length - 1]?.token), nesting, name, type, enumValues, defaultValue, nullable: nullable ? tokenInfo(nullable) : undefined, constraints: constraints.filter(isNotUndefined)})
         }, {resyncEnabled: true})
         const attributeTypeRule = $.RULE<() => AttributeTypeAst>('attributeTypeRule', () => {
+            // FIXME: allow type with schema (ex: "  status cms.post_status")
             const res = $.OPTION(() => {
                 const type = $.SUBRULE($.identifierRule)
                 const enumValues = $.OPTION2(() => {

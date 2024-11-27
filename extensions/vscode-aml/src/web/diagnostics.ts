@@ -10,7 +10,7 @@ import vscode, {
 import {ParserErrorLevel} from "@azimutt/models";
 import {isNever} from "@azimutt/utils";
 import {parseAml} from "./aml";
-import {amlPositionToVSRange, debounce} from "./utils";
+import {tokenToRange, debounce} from "./utils";
 
 export function startDiagnostics(context: ExtensionContext): Disposable {
     const diagnostics: DiagnosticCollection = vscode.languages.createDiagnosticCollection('aml')
@@ -31,7 +31,7 @@ const analyzeDocument = debounce((document: TextDocument, diagnostics: Diagnosti
 async function analyzeDocumentReal(document: TextDocument, diagnostics: DiagnosticCollection) {
     const input = document.getText()
     const res = await parseAml(input)
-    const errors: Diagnostic[] = (res.errors || []).map(e => new Diagnostic(amlPositionToVSRange(e.position), e.message, levelToSeverity(e.level)))
+    const errors: Diagnostic[] = (res.errors || []).map(e => new Diagnostic(tokenToRange(e.position), e.message, levelToSeverity(e.level)))
     diagnostics.set(document.uri, errors)
 }
 
