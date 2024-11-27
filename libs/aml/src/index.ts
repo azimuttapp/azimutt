@@ -14,6 +14,7 @@ import {parseAmlAst} from "./amlParser";
 import {buildDatabase} from "./amlBuilder";
 import {genDatabase} from "./amlGenerator";
 import {samples} from "./amlSamples";
+import * as editor from "./editor";
 import {codeAction, codeLens, completion, createMarker, language} from "./extensions/monaco";
 import {generateDot} from "./dotGenerator";
 import {generateMermaid} from "./mermaidGenerator";
@@ -46,7 +47,7 @@ function generateAml(database: Database, legacy: boolean = false): string {
     return genDatabase(database, legacy)
 }
 
-const ast = {...amlAst, parseAmlAst}
+const ast = {...amlAst, parseAmlAst, ...editor}
 const monaco = {language, completion, codeAction, codeLens, createMarker}
 const version = packageJson.version
 

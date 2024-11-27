@@ -15,6 +15,7 @@ A VS Code extension to design database schemas using [AML](https://azimutt.app/a
 - AML rename and symbol navigation
 - convert AML to PostgreSQL, JSON, DOT, Mermaid, Markdown (Command Palette)
 - convert SQL and JSON to AML (Command Palette)
+- Open any AML file in [Azimutt](https://azimutt.app)
 
 
 ## 💡 Usage
@@ -41,10 +42,10 @@ posts | store all posts
 
 ## 📋 Roadmap
 
+- keep parsed docs in memory (avoid multiple parsing)
 - diagram preview
-- auto-complete (cf [registerCompletionItemProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerCompletionItemProvider.html))
-- hover infos (cf [registerHoverProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerHoverProvider.html))
 - go-to-definition (cf [registerDefinitionProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerDefinitionProvider.html) and [registerImplementationProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerImplementationProvider.html))
+- hover infos (cf [registerHoverProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerHoverProvider.html))
 - quick-fixes (cf [registerCodeActionProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerCodeActionProvider.html))
 - hints with actions (cf [registerCodeLensProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerCodeLensProvider.html))
 - AML support in Markdown (like [Mermaid](https://marketplace.visualstudio.com/items?itemName=edgebus.markdown-mermaid-container))

@@ -1,11 +1,9 @@
-import {arraySame, findMap, isObject} from "@azimutt/utils";
+import {isObject} from "@azimutt/utils";
 import {
-    EditorPosition,
     isParserErrorLevel,
     isTokenPosition,
     ParserErrorLevel,
     RelationCardinality,
-    TokenEditor,
     TokenPosition
 } from "@azimutt/models";
 
@@ -73,119 +71,3 @@ export const isTokenIssue = (value: unknown): value is TokenIssue => isObject(va
 export const amlKeywords = ['namespace', 'as', 'nullable', 'pk', 'fk', 'index', 'unique', 'check', 'rel', 'type']
 export type PropertyValueBasic = null | number | boolean | string
 export type PropertyValue = PropertyValueBasic | PropertyValueBasic[]
-
-// functions
-
-export type AmlToken = DatabaseToken | CatalogToken | SchemaToken | EntityToken | AttributeToken | TypeToken
-export type DatabaseToken = { kind: 'Database', position: TokenPosition, database: IdentifierAst }
-export type CatalogToken = { kind: 'Catalog', position: TokenPosition, catalog: IdentifierAst, database?: IdentifierAst }
-export type SchemaToken = { kind: 'Schema', position: TokenPosition, schema: IdentifierAst, catalog?: IdentifierAst, database?: IdentifierAst }
-export type EntityToken = { kind: 'Entity', position: TokenPosition, entity: IdentifierAst } & NamespaceRefAst
-export type AttributeToken = { kind: 'Attribute', position: TokenPosition, path: IdentifierAst[], entity: IdentifierAst } & NamespaceRefAst
-export type TypeToken = { kind: 'Type', position: TokenPosition, type: IdentifierAst } & NamespaceRefAst
-// add more: keyword, alias, propertyName...
-
-export function findTokenAt(ast: AmlAst, position: EditorPosition): AmlToken | undefined {
-    const s = ast.statements.find(s => isInside(position, s.meta.position))
-    if (s?.kind === 'Entity') {
-        if (inside(position, s.name)) return entityToken({...s, entity: s.name})
-        if (s.schema && inside(position, s.schema)) return schemaToken(s.schema, s)
-        // TODO: if (s.catalog && inside(position, s.catalog)) return {kind: 'Catalog', range: toRange(s.catalog), catalog: s.catalog.value, database: s.database?.value}
-        // TODO: if (s.database && inside(position, s.database)) return {kind: 'Database', range: toRange(s.database), database: s.database.value}
-        const a = flattenAttrs(s.attrs).find(a => isInside(position, a.meta.position))
-        if (a) {
-            const name = a.path[a.path.length - 1]
-            if (name && inside(position, name)) return attributeToken(a.path, {...s, entity: s.name})
-            const r = findMap(a.constraints || [], c => {
-                if (c.kind === 'Relation') {
-                    if (inside(position, c.ref.entity)) return entityToken(c.ref)
-                    if (c.ref.schema && inside(position, c.ref.schema)) return schemaToken(c.ref.schema, c.ref)
-                    // TODO: rename attribute
-                }
-            })
-            if (r) return r
-        }
-    } else if (s?.kind === 'Relation') {
-        if (inside(position, s.src.entity)) return entityToken(s.src)
-        if (inside(position, s.ref.entity)) return entityToken(s.ref)
-        if (s.src.schema && inside(position, s.src.schema)) return schemaToken(s.src.schema, s.src)
-        if (s.ref.schema && inside(position, s.ref.schema)) return schemaToken(s.ref.schema, s.ref)
-        const src = findMap(s.src.attrs, ({path = [], ...a}) => {
-            if (inside(position, a)) return attributeToken([a], s.src)
-            const i = path.findIndex(p => inside(position, p))
-            if (i >= 0) return attributeToken([a, ...path.slice(0, i + 1)], s.src)
-        })
-        if (src) return src
-        const ref = findMap(s.ref.attrs, ({path = [], ...a}) => {
-            if (inside(position, a)) return attributeToken([a], s.ref)
-            const i = path.findIndex(p => inside(position, p))
-            if (i >= 0) return attributeToken([a, ...path.slice(0, i + 1)], s.ref)
-        })
-        if (ref) return ref
-    }
-    // TODO: else if (s?.kind === 'Type') {}
-    // TODO: else if (s?.kind === 'Namespace') {}
-    return undefined
-}
-
-export function collectTokenPositions(ast: AmlAst, token: AmlToken): TokenPosition[] {
-    const tokens: IdentifierAst[] = []
-    ast.statements.forEach(statement => {
-        if (statement.kind === 'Entity') {
-            if (token.kind === 'Entity' && sameEntity(token, {...statement, entity: statement.name})) tokens.push(statement.name)
-            if (token.kind === 'Schema' && statement.schema && sameSchema(token, statement)) tokens.push(statement.schema)
-            flattenAttrs(statement.attrs).forEach(attr => {
-                if (token.kind === 'Attribute' && sameAttribute(token, {...statement, entity: statement.name}, attr.path)) tokens.push(attr.path[attr.path.length - 1])
-                attr.constraints?.forEach(c => {
-                    if (c.kind === 'Relation') {
-                        if (token.kind === 'Entity' && sameEntity(token, c.ref)) tokens.push(c.ref.entity)
-                        if (token.kind === 'Schema' && token.schema.value === c.ref.schema?.value) tokens.push(c.ref.schema)
-                        c.ref.attrs.forEach(a => {
-                            if (token.kind === 'Attribute' && sameAttribute(token, c.ref, [a, ...a.path || []])) tokens.push(a)
-                        })
-                    }
-                })
-            })
-        } else if (statement.kind === 'Relation') {
-            if (token.kind === 'Entity' && sameEntity(token, statement.src)) tokens.push(statement.src.entity)
-            if (token.kind === 'Entity' && sameEntity(token, statement.ref)) tokens.push(statement.ref.entity)
-            if (token.kind === 'Schema' && statement.src.schema && sameSchema(token, statement.src)) tokens.push(statement.src.schema)
-            if (token.kind === 'Schema' && statement.ref.schema && sameSchema(token, statement.ref)) tokens.push(statement.ref.schema)
-            statement.src.attrs.forEach(a => {
-                if (token.kind === 'Attribute' && sameAttribute(token, statement.src, [a, ...a.path || []])) tokens.push(a)
-            })
-            statement.ref.attrs.forEach(a => {
-                if (token.kind === 'Attribute' && sameAttribute(token, statement.ref, [a, ...a.path || []])) tokens.push(a)
-            })
-        }
-    })
-    return tokens.map(t => t.token)
-}
-
-function sameSchema(token: SchemaToken, ref: NamespaceRefAst): boolean {
-    return token.database?.value === ref.database?.value && token.catalog?.value === ref.catalog?.value && token.schema.value === ref.schema?.value
-}
-function sameEntity(token: EntityToken, ref: EntityRefAst): boolean {
-    return token.database?.value === ref.database?.value && token.catalog?.value === ref.catalog?.value && token.schema?.value === ref.schema?.value && token.entity.value === ref.entity.value
-}
-function sameAttribute(token: AttributeToken, ref: EntityRefAst, path: IdentifierAst[]): boolean {
-    return token.database?.value === ref.database?.value && token.catalog?.value === ref.catalog?.value && token.schema?.value === ref.schema?.value && token.entity.value === ref.entity.value && samePath(token.path, path)
-}
-
-export function flattenAttrs(attrs: AttributeAstNested[] | undefined): AttributeAstNested[] {
-    return (attrs || []).flatMap(a => [a, ...flattenAttrs(a.attrs)])
-}
-
-export function isInside(position: EditorPosition, token: TokenEditor): boolean {
-    const line = position.line
-    const col = position.column
-    const inLines = token.start.line < line && line < token.end.line
-    const startLine = line === token.start.line && token.start.column <= col && (col <= token.end.column || line < token.end.line)
-    const endLine = line === token.end.line && col <= token.end.column && (token.start.column <= col || token.start.line < line)
-    return inLines || startLine || endLine
-}
-const inside = (position: EditorPosition, value: {token: TokenInfo}): boolean => isInside(position, value.token.position)
-const samePath = (p1: IdentifierAst[], p2: IdentifierAst[]): boolean => arraySame(p1, p2, (a, b) => a.value === b.value)
-const schemaToken = (schema: IdentifierAst, n: NamespaceRefAst): SchemaToken => ({kind: 'Schema', position: schema.token, schema: schema, catalog: n.catalog, database: n.database})
-const entityToken = (ref: EntityRefAst): EntityToken => ({kind: 'Entity', position: ref.entity.token, entity: ref.entity, schema: ref.schema, catalog: ref.catalog, database: ref.database})
-const attributeToken = (path: IdentifierAst[], ref: EntityRefAst): AttributeToken => ({kind: 'Attribute', position: path[path.length - 1].token, path, entity: ref.entity, schema: ref.schema, catalog: ref.catalog, database: ref.database})

@@ -36,9 +36,9 @@ async function analyzeDocumentReal(document: TextDocument, diagnostics: Diagnost
 }
 
 function levelToSeverity(level: ParserErrorLevel): DiagnosticSeverity {
-    if (level === 'error') return DiagnosticSeverity.Error
-    if (level === 'warning') return DiagnosticSeverity.Warning
-    if (level === 'info') return DiagnosticSeverity.Information
-    if (level === 'hint') return DiagnosticSeverity.Hint
+    if (level === 'error') { return DiagnosticSeverity.Error }
+    else if (level === 'warning') { return DiagnosticSeverity.Warning }
+    else if (level === 'info') { return DiagnosticSeverity.Information }
+    else if (level === 'hint') { return DiagnosticSeverity.Hint }
     return isNever(level)
 }
