@@ -8,6 +8,7 @@ import vscode, {
 } from "vscode";
 import {Database} from "@azimutt/models";
 import {generateMermaid, parseAml} from "./aml";
+import {openInAzimuttUrl} from "./open";
 import {debounce} from "./utils";
 
 let previewPanel: WebviewPanel | undefined = undefined
@@ -70,8 +71,4 @@ async function buildAmlPreview(input: string, db: Database): Promise<string> {
     <pre>${mermaidCode}</pre>
 </body>
 </html>`
-}
-
-function openInAzimuttUrl(aml: string): string {
-    return 'https://azimutt.app/create?aml=' + encodeURIComponent(aml)
 }

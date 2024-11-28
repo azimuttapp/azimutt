@@ -1,0 +1,19 @@
+users
+  id uuid pk
+  name varchar index
+  email varchar unique
+  role user_role(admin, guest)=guest
+
+posts | store all posts
+  id uuid pk
+  title varchar
+  content text | allow markdown formatting
+  author uuid -> users(id) # inline relation
+  created_at timestamp=`now()`
+
+comments
+  id uuid pk
+  post_id uuid -> posts(id)
+  content text
+  author uuid -> users(id)
+  created_at timestamp=`now()`

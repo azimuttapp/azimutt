@@ -20,10 +20,10 @@ A VS Code extension to design database schemas using [AML](https://azimutt.app/a
 
 ## 💡 Usage
 
-1. Create an empty `.aml` file or use `AML: New database schema (ERD)` command
-2. Write your schema using AML, check [documentation](https://azimutt.app/docs/aml) is needed
+1. Create an empty `.aml` file or use command: `AML: New database schema (ERD)` (suggests samples)
+2. Write your schema using AML, use suggestions (`Ctrl+Space`) or check [documentation](https://azimutt.app/docs/aml) if needed
 
-Here is how AML looks like:
+Here is how AML looks:
 
 ```aml
 users
@@ -52,6 +52,8 @@ posts | store all posts
 - diagram preview for SQL files, then add other languages: Prisma, DBML, [bigER](https://github.com/borkdominik/bigER/wiki/Language)...
 - Connect to a database
 - Create a [Language Server](https://code.visualstudio.com/api/language-extensions/language-server-extension-guide)
+
+Any idea, suggestion or issue? [Let us know](https://github.com/azimuttapp/azimutt/issues).
 
 
 ## 🤝 Issues & Contributing

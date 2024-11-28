@@ -152,6 +152,14 @@ export function computeSuggestions(beforeCursor: string, prevLine: string, db: D
     const relations: Relation[] = db.relations || []
     const types: Type[] = db.types || []
     let res: string[] | undefined // storing match result
+    if (beforeCursor === '') {
+        suggestions.push({kind: 'entity', insert: '${1:entity}\n  id uuid pk\n  ', label: 'Add entity'})
+        suggestions.push({kind: 'relation', insert: 'rel ${1:from_entity}(${2:from_attribute}) -> ${3:to_entity}(${4:to_attribute})', label: 'Add relation'})
+    }
+    if (res = completionMatch(beforeCursor, /^ +$/)) {
+        const indent = beforeCursor.length % 2 === 0 ? '' : ' '
+        suggestions.push({kind: 'attribute', insert: indent + '${1:name} ${2:type}', label: 'Add attribute'})
+    }
     if (res = entityWrittenMatch(beforeCursor)) {
         const [name] = res
         if (name === 'rel') {

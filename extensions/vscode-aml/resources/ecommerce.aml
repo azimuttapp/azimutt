@@ -2,34 +2,62 @@ identity.users
   id uuid pk
   name varchar index
   email varchar unique
+  role user_role(guest, admin)
   created_at timestamp=`now()`
+
+identity.credentials
+  provider_id provider(email, google, facebook) pk
+  provider_key varchar | password for email, user_id for oauth providers
+  user_id uuid -> identity.users(id)
+  salt varchar nullable | in case of password
 
 catalog.categories
   id uuid pk
-  name varchar
   parent_category_id uuid -> catalog.categories(id)
+  name varchar
   created_at timestamp=`now()`
   created_by uuid -> identity.users(id)
 
 catalog.products
   id uuid pk
   category_id uuid -> catalog.categories(id)
-  name varchar
+  name varchar index
+  description text
   price double
   created_at timestamp=`now()`
   created_by uuid -> identity.users(id)
 
 shopping.carts
   id uuid pk
-  owner uuid -> identity.users(id)
-  created_at timestamp=`now()`
-
-shopping.cart_items
-  cart_id uuid -> shopping.carts(id)
-  product_id uuid -> catalog.products(id)
-  quantity int
   created_at timestamp=`now()`
   created_by uuid -> identity.users(id)
+
+shopping.cart_items
+  cart_id uuid pk -> shopping.carts(id)
+  product_id uuid pk -> catalog.products(id)
+  price double
+  quantity int check(`quantity > 0`)
+  created_at timestamp=`now()`
+  created_by uuid -> identity.users(id)
+
+billing.orders
+  id uuid pk
+  created_at timestamp=`now()`
+  created_by uuid -> identity.users(id)
+
+billing.order_lines
+  order_id uuid pk -> billing.orders(id)
+  product_id uuid pk -> catalog.products(id)
+  price double
+  quantity int check(`quantity > 0`)
+
+support.reviews
+  id uuid pk
+  user_id uuid -> identity.users(id)
+  product_id uuid -> catalog.products(id)
+  rating int | between 1 and 5
+  comment text
+  created_at timestamp=`now()`
 
 tracking.events
   id uuid pk
