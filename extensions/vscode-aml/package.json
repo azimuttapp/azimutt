@@ -2,7 +2,7 @@
   "name": "vscode-aml",
   "displayName": "AML - Fast database design (ERD)",
   "description": "Design database schema and view Entity-Relationship Diagram using AML language in your VS Code editor. Convert to SQL, JSON and other languages.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "license": "MIT",
   "icon": "assets/icon.png",
   "publisher": "azimutt",
@@ -142,7 +142,7 @@
     "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. ."
   },
   "dependencies": {
-    "@azimutt/aml": "^0.1.9",
+    "@azimutt/aml": "^0.1.10",
     "@azimutt/models": "^0.1.16",
     "@azimutt/parser-sql": "^0.1.3",
     "@azimutt/utils": "^0.1.7"

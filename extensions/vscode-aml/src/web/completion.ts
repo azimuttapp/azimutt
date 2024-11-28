@@ -42,16 +42,16 @@ function suggestionToCompletionItem(s: Suggestion): CompletionItem {
 }
 
 function completionItem(kind: SuggestionKind) {
-    if (kind === 'entity') return CompletionItemKind.User
-    if (kind === 'attribute') return CompletionItemKind.Class
-    if (kind === 'pk') return CompletionItemKind.User
-    if (kind === 'index') return CompletionItemKind.Property
-    if (kind === 'unique') return CompletionItemKind.Issue
-    if (kind === 'check') return CompletionItemKind.Operator
-    if (kind === 'property') return CompletionItemKind.Property
-    if (kind === 'value') return CompletionItemKind.Value
-    if (kind === 'relation') return CompletionItemKind.Interface
-    if (kind === 'type') return CompletionItemKind.TypeParameter
-    if (kind === 'default') return CompletionItemKind.File
+    if (kind === 'entity') { return CompletionItemKind.User }
+    if (kind === 'attribute') { return CompletionItemKind.Class }
+    if (kind === 'pk') { return CompletionItemKind.User }
+    if (kind === 'index') { return CompletionItemKind.Property }
+    if (kind === 'unique') { return CompletionItemKind.Issue }
+    if (kind === 'check') { return CompletionItemKind.Operator }
+    if (kind === 'property') { return CompletionItemKind.Property }
+    if (kind === 'value') { return CompletionItemKind.Value }
+    if (kind === 'relation') { return CompletionItemKind.Interface }
+    if (kind === 'type') { return CompletionItemKind.TypeParameter }
+    if (kind === 'default') { return CompletionItemKind.File }
     return CompletionItemKind.File
 }
