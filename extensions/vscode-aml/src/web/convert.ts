@@ -21,14 +21,16 @@ export async function convertJsonToAml(editor: TextEditor): Promise<void> {
     await openFileResult(await parseJson(editor.document.getText()), async db => ({lang: 'aml', content: await generateAml(db)}))
 }
 
+const SQL_DIALECTS = ['PostgreSQL'] as const
+type SQLDialect = typeof SQL_DIALECTS[number]
+
 export async function convertSqlToAml(editor: TextEditor): Promise<void> {
     if (editor.document.languageId !== 'sql') {
         vscode.window.showErrorMessage('Needs SQL file to convert it to AML.')
         return
     }
 
-    const dialects = ['PostgreSQL']
-    const dialect = await vscode.window.showQuickPick(dialects, {placeHolder: 'Select target'})
+    const dialect = await vscode.window.showQuickPick(SQL_DIALECTS, {placeHolder: 'Select source language'}) as SQLDialect
     if (dialect === 'PostgreSQL') {
         await openFileResult(await parsePostgres(editor.document.getText()), async db => ({lang: 'aml', content: await generateAml(db)}))
     } else {
@@ -36,14 +38,16 @@ export async function convertSqlToAml(editor: TextEditor): Promise<void> {
     }
 }
 
+const EXPORT_DIALECTS = ['PostgreSQL', 'JSON', 'DOT', 'Mermaid', 'Markdown'] as const
+type ExportDialect = typeof EXPORT_DIALECTS[number]
+
 export async function convertAmlToDialect(editor: TextEditor): Promise<void> {
     if (editor.document.languageId !== 'aml') {
         vscode.window.showErrorMessage('Needs AML file to convert AML to another language.')
         return
     }
 
-    const dialects = ['PostgreSQL', 'JSON', 'DOT', 'Mermaid', 'Markdown']
-    const dialect = await vscode.window.showQuickPick(dialects, {placeHolder: 'Select target'})
+    const dialect = await vscode.window.showQuickPick(EXPORT_DIALECTS, {placeHolder: 'Select target format'}) as ExportDialect
     const res = await parseAml(editor.document.getText())
     const error = formatErrors(res.errors)
     const db = res.result

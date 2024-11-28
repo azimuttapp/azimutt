@@ -68,6 +68,8 @@ async function buildAmlPreview(input: string, db: Database): Promise<string> {
 </head>
 <body>
     <a href="${openInAzimuttUrl(input)}" target="_blank">Open in Azimutt</a>
+    <h1>WORK IN PROGRESS</h1>
+    <p>Just showing you Mermaid code, in case you want to use it on <a href="https://mermaid.live" target="_blank">mermaid.live</a>:</p>
     <pre>${mermaidCode}</pre>
 </body>
 </html>`

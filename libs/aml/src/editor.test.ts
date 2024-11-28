@@ -7,19 +7,27 @@ import {
     attributeIndentationMatch,
     attributeNameWrittenMatch,
     attributeNestedMatch,
-    attributePropsKeyMatch, attributePropsValueMatch,
+    attributePropsKeyMatch,
+    attributePropsValueMatch,
     attributeRootMatch,
     AttributeToken,
     attributeTypeWrittenMatch,
     collectTokenPositions,
-    entityPropsKeyMatch, entityPropsValueMatch,
+    entityPropsKeyMatch,
+    entityPropsValueMatch,
     EntityToken,
     entityWrittenMatch,
     findTokenAt,
     isInside,
-    relationLinkWrittenMatch, relationPropsKeyMatch, relationPropsValueMatch,
+    relationLinkWrittenMatch,
+    relationPropsKeyMatch,
+    relationPropsValueMatch,
     relationSrcWrittenMatch,
-    SchemaToken, suggestAttributeType, suggestExtra, Suggestion, suggestRelationRef
+    SchemaToken,
+    suggestAttributeType,
+    suggestExtra,
+    Suggestion,
+    suggestRelationRef
 } from "./editor";
 
 const aml = `# AML

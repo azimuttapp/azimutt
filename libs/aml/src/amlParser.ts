@@ -122,7 +122,7 @@ const defaultPos: number = -1 // used when error position is undefined
 
 class AmlParser extends EmbeddedActionsParser {
     // top level
-    statementsRule: () => AmlAst
+    statementsRule: () => StatementsAst
     // statements
     statementRule: () => StatementAst
     namespaceStatementRule: () => NamespaceStatement
