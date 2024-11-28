@@ -416,12 +416,9 @@ class PostgresParser extends EmbeddedActionsParser {
         // statements
 
         this.statementsRule = $.RULE<() => StatementsAst>('statementsRule', () => {
-            const statements: StatementAst[] = []
-            $.MANY(() => {
-                const stmt = $.SUBRULE($.statementRule)
-                stmt && statements.push(stmt) // `stmt` can be undefined on invalid input
-            })
-            return {statements}
+            const stmts: StatementAst[] = []
+            $.MANY(() => stmts.push($.SUBRULE($.statementRule)))
+            return {statements: stmts.filter(isNotUndefined)} // can be undefined on invalid input :/
         })
 
         this.statementRule = $.RULE<() => StatementAst>('statementRule', () => $.OR([

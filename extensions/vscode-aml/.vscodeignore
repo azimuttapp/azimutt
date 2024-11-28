@@ -3,8 +3,10 @@
 resources/**
 src/**
 out/**
-node_modules/**
+local/**
 dist/test/**
+dist/web/test/**
+node_modules/**
 .gitignore
 vsc-extension-quickstart.md
 webpack.config.js

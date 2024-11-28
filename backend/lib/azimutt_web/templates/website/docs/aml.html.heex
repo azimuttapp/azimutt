@@ -338,7 +338,7 @@ order_lines
     <%= render "docs/_h2.html", title: "Other database schema DSLs" %>
     <p>Of course, AML is not the only DSL for database design, here are some alternatives:</p>
     <ul>
-        <li><a href="https://dbml.dbdiagram.io" target="_blank" rel="noopener noreferrer">DBML</a></li>
+        <li><a href={Routes.website_path(@conn, :comparison, "database-design-language", "dbml")} target="_blank" rel="noopener">DBML</a></li>
         <li><a href="https://www.quickdatabasediagrams.com" target="_blank" rel="noopener noreferrer">Quick DBD syntax</a></li>
         <li><a href="https://github.com/oracle/quicksql" target="_blank" rel="noopener noreferrer">Quick SQL</a></li>
         <li><a href="https://docs.eraser.io/docs/syntax-1" target="_blank" rel="noopener noreferrer">Eraser syntax</a></li>
