@@ -41,7 +41,7 @@ export type TypeCustomAst = { kind: 'Custom', definition: ExpressionAst }
 export type NamespaceRefAst = { database?: IdentifierAst, catalog?: IdentifierAst, schema?: IdentifierAst }
 export type EntityRefAst = { entity: IdentifierAst } & NamespaceRefAst
 export type AttributePathAst = IdentifierAst & { path?: IdentifierAst[] }
-export type AttributeRefAst = EntityRefAst & { attr: AttributePathAst, warning?: TokenInfo }
+export type AttributeRefAst = EntityRefAst & { attr: AttributePathAst, warning?: TokenInfo } // TODO: used? to remove?
 export type AttributeRefCompositeAst = EntityRefAst & { attrs: AttributePathAst[], warning?: TokenInfo }
 export type AttributeValueAst = NullAst | DecimalAst | IntegerAst | BooleanAst | ExpressionAst | IdentifierAst // TODO: add date
 
