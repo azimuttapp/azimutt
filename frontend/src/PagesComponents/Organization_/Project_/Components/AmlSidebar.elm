@@ -304,9 +304,7 @@ viewSourceEditor model source =
             ( model.errors |> List.filterBy .level ParserError.Error, model.errors |> List.filterBy .level ParserError.Warning )
     in
     div [ class "mt-3" ]
-        [ -- , node "intl-date" [ attribute "lang" "fr-FR", attribute "year" (String.fromInt 2024), attribute "month" (String.fromInt 9) ] []
-          -- , node "aml-editor" [ value (contentStr source), onInput (AUpdateSource source.id >> AmlSidebarMsg), onBlur (ASourceUpdated source.id |> AmlSidebarMsg) ] []
-          Editor.basic "source-editor" (Source.contentStr source) (AUpdateSource source.id >> AmlSidebarMsg) (ASourceUpdated source.id |> AmlSidebarMsg) """Write your schema using AML syntax
+        [ Editor.basic "source-editor" (Source.contentStr source) (AUpdateSource source.id >> AmlSidebarMsg) (ASourceUpdated source.id |> AmlSidebarMsg) """Write your schema using AML syntax
 
 Ex:
 
