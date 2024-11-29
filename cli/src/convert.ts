@@ -8,7 +8,7 @@ import {
     ParserResult,
     TokenEditor
 } from "@azimutt/models";
-// import {generateAml, parseAml} from "@azimutt/aml";
+// TODO: import {generateAml, parseAml} from "@azimutt/aml";
 import {track} from "@azimutt/gateway";
 import {fileRead, fileWrite} from "./utils/file.js";
 import {logger} from "./utils/logger.js";
@@ -42,13 +42,20 @@ export async function convertFile(path: string, opts: Opts): Promise<void> {
 }
 
 function parseDialect(dialect: string, content: string): ParserResult<Database> {
-    if (dialect === 'aml') return ParserResult.failure([{message: 'AML parser not available', kind: 'NotImplemented', level: 'error', offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}]) // parseAml(content)
+    if (dialect === 'aml') {
+        // `npm run exec -- convert test.aml -f aml -t sql -o test.aml.sql` => "Error [ERR_MODULE_NOT_FOUND]: Cannot find module 'libs/aml/out/amlAst' imported from libs/aml/out/index.js"
+        // TODO: console.log('parseAml', parseAml(content))
+        return ParserResult.failure([{message: 'AML parser not available', kind: 'NotImplemented', level: 'error', offset: {start: 0, end: 0}, position: {start: {line: 0, column: 0}, end: {line: 0, column: 0}}}])
+    }
     if (dialect === 'json') return parseJsonDatabase(content)
     return ParserResult.failure([parserError(`Can't parse ${dialect} dialect`, 'BadArgument')])
 }
 
 function generateDialect(dialect: string, db: Database): Result<string, string> {
-    if (dialect === 'aml') return Result.failure('AML generator not available') // Result.success(generateAml(db))
+    if (dialect === 'aml') {
+        // TODO: console.log('generateAml', generateAml(db))
+        return Result.failure('AML generator not available')
+    }
     if (dialect === 'json') return Result.success(generateJsonDatabase(db))
     return Result.failure(`Can't generate ${dialect} dialect`)
 }
