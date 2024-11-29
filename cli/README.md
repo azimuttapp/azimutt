@@ -162,6 +162,8 @@ Issues:
 
 View it on [npm](https://www.npmjs.com/package/azimutt).
 
+If any issue, unpublish the package with: `npm unpublish azimutt@0.1.33`
+
 ## Dev
 
 If you need to develop on multiple libs at the same time (ex: want to update a connector and try it through the CLI), depend on local libs but publish & revert before commit.

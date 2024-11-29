@@ -1,6 +1,6 @@
 {
   "name": "azimutt",
-  "version": "0.1.32",
+  "version": "0.1.34",
   "description": "Export database schema from relational or document databases. Import it to https://azimutt.app",
   "keywords": [
     "database",

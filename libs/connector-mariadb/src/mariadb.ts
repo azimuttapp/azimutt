@@ -149,7 +149,7 @@ function buildEntity(table: RawTable, columns: RawColumn[], primaryKeyColumns: R
         kind: table.table_kind === 'VIEW' || table.table_kind === 'SYSTEM VIEW' ? 'view' as const : undefined,
         def: table.definition || undefined,
         attrs: columns.slice(0)
-            .sort((a, b) => (a.column_index || 0) - (b.column_index || 0))
+            .sort((a, b) => a.column_index > b.column_index ? 1 : a.column_index < b.column_index ? -1 : 0)
             .map(c => buildAttribute(c, jsonColumns[c.column_name], polyColumns[c.column_name])),
         pk: primaryKeyColumns.length > 0 ? buildPrimaryKey(primaryKeyColumns) : undefined,
         indexes: indexes.map(buildIndex),
@@ -175,7 +175,7 @@ function buildEntity(table: RawTable, columns: RawColumn[], primaryKeyColumns: R
 export type RawColumn = {
     table_schema: string
     table_name: string
-    column_index: number
+    column_index: number | bigint
     column_name: string
     column_type: string
     column_nullable: 'YES' | 'NO'
@@ -232,7 +232,7 @@ export type RawConstraintColumn = {
     table_schema: string
     table_name: string
     column_name: string
-    column_index: number
+    column_index: number | bigint
     ref_schema: string | null
     ref_table: string | null
     ref_column: string | null
@@ -278,7 +278,7 @@ function buildPrimaryKey(columns: RawConstraintColumn[]): PrimaryKey {
     return removeUndefined({
         name: first.constraint_name === 'PRIMARY' ? undefined : first.constraint_name || undefined,
         attrs: columns.slice(0)
-            .sort((a, b) => (a.column_index || 0) - (b.column_index || 0))
+            .sort((a, b) => a.column_index > b.column_index ? 1 : a.column_index < b.column_index ? -1 : 0)
             .map(c => [c.column_name]),
         doc: undefined,
         stats: undefined,
@@ -291,7 +291,7 @@ function buildIndex(columns: RawConstraintColumn[]): Index {
     return removeUndefined({
         name: first.constraint_name || undefined,
         attrs: columns.slice(0)
-            .sort((a, b) => (a.column_index || 0) - (b.column_index || 0))
+            .sort((a, b) => a.column_index > b.column_index ? 1 : a.column_index < b.column_index ? -1 : 0)
             .map(c => [c.column_name]),
         unique: first.constraint_type === 'UNIQUE' ? true : undefined, // false when not specified
         partial: undefined,
