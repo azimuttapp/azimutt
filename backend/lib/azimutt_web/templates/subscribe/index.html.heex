@@ -28,7 +28,7 @@
             <% end %>
           </div>
         <% end %>
-        <a href={Routes.organization_path(@conn, :new, redirect: Routes.subscribe_path(@conn, :index, @plan.id, @freq))} class="flex w-full items-center justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0">
+        <a href={Routes.organization_path(@conn, :new, redirect: Routes.subscribe_path(@conn, :price, @plan.id, @freq))} class="flex w-full items-center justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0">
             Create new organization
         </a>
     </div>

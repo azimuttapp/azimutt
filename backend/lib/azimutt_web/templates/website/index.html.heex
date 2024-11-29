@@ -5,9 +5,9 @@
             <div class="my-32">
                 <%= if Azimutt.Services.BlackFridaySrv.should_display? do %>
                     <div class="flex justify-center mb-8 -mt-36">
-                        <p class="relative rounded-full px-4 py-1.5 text-sm leading-6 text-gray-600 ring-1 ring-inset ring-gray-900/10 hover:ring-gray-900/20">
-                            <span class="hidden md:inline mr-1"><b>✨ BlackFriday Offer!</b> Get <span class="underline">50% OFF</span> for one year with code <%= Azimutt.Services.BlackFridaySrv.code %></span>
-                            <a href="/login" class="font-semibold text-indigo-600"><span class="absolute inset-0" aria-hidden="true"></span> Claim discount! <span aria-hidden="true">→</span></a>
+                        <p class="relative rounded-full px-4 py-1.5 text-sm leading-6 text-indigo-600 bg-indigo-600/10 ring-1 ring-inset ring-indigo-600/10 hover:ring-indigo-600/20">
+                            <span class="hidden md:inline mr-1"><b>✨ BlackFriday Offer!</b> Get <span class="underline"><%= Azimutt.Services.BlackFridaySrv.discount %>% OFF</span> for a year with code <b><%= Azimutt.Services.BlackFridaySrv.code %></b></span>
+                            <a href={Routes.subscribe_path(@conn, :index)} class="font-semibold text-indigo-600"><span class="absolute inset-0" aria-hidden="true"></span> Claim discount! <span aria-hidden="true">→</span></a>
                         </p>
                     </div>
                 <% else %>

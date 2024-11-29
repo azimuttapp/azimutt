@@ -1,10 +1,18 @@
 defmodule AzimuttWeb.SubscribeController do
   use AzimuttWeb, :controller
+  alias Azimutt.Accounts
   alias Azimutt.Organizations
   alias Azimutt.Utils.Result
   action_fallback AzimuttWeb.FallbackController
 
-  def index(conn, %{"plan" => plan_id, "freq" => freq}) do
+  def index(conn, params) do
+    source = params["source"] || "user-subscribe"
+    current_user = conn.assigns.current_user
+    organization = Accounts.get_user_default_organization(current_user)
+    conn |> redirect(to: Routes.organization_billing_path(conn, :index, organization, source: source))
+  end
+
+  def price(conn, %{"plan" => plan_id, "freq" => freq}) do
     current_user = conn.assigns.current_user
     organizations = Organizations.list_organizations(current_user) |> Enum.sort(fn a, b -> org_order(a) < org_order(b) end)
 

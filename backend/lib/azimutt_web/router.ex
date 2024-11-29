@@ -102,10 +102,11 @@ defmodule AzimuttWeb.Router do
   # authed dashboard routes
   scope "/", AzimuttWeb do
     pipe_through([:browser, :require_authed_user, :organization_root_layout, AllowCrossOriginIframe])
+    get("/login/redirect", UserSessionController, :redirect_to)
     get("/home", UserDashboardController, :index)
     get("/billing", UserDashboardController, :billing)
-    get("/login/redirect", UserSessionController, :redirect_to)
-    get("/subscribe/:plan/:freq", SubscribeController, :index)
+    get("/subscribe", SubscribeController, :index)
+    get("/subscribe/:plan/:freq", SubscribeController, :price)
 
     scope "/email-confirm" do
       pipe_through([:hfull_root_layout])
