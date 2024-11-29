@@ -18,5 +18,5 @@ export const fileWrite = (path: string, content: string): Promise<void> => fs.pr
 export const userHome = (): string => os.homedir()
 export const pathResolve = (path: string): string => path.startsWith('~/') ? path.replace(/^~/, userHome()) : path
 
-export const __filename = fileURLToPath(import.meta.url);
-export const __dirname = dirname(__filename);
+// export const __filename = fileURLToPath(import.meta.url);
+// export const __dirname = dirname(__filename);

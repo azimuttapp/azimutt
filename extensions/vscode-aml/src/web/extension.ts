@@ -1,4 +1,5 @@
-import vscode, {ExtensionContext, TextEditor} from "vscode";
+import * as vscode from "vscode";
+import {ExtensionContext, TextEditor} from "vscode";
 import {newAml} from "./new";
 import {convertAmlToDialect, convertJsonToAml, convertSqlToAml} from "./convert";
 import {openInAzimutt} from "./open";

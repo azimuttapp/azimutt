@@ -1,4 +1,5 @@
-import vscode, {
+import * as vscode from "vscode";
+import {
     ExtensionContext,
     TextDocument,
     TextDocumentChangeEvent,

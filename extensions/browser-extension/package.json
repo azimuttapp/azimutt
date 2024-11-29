@@ -1,20 +1,11 @@
 {
   "name": "azimutt-browser-extension",
+  "description": "Explore any SQL schema on GitHub with one click.",
   "version": "1.0.0",
-  "type": "module",
-  "homepage": "https://azimutt.app",
-  "author": {
-    "name": "Loïc Knuchel",
-    "email": "loicknuchel@gmail.com",
-    "url": "https://loicknuchel.fr"
-  },
   "license": "MIT",
-  "private": true,
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/azimuttapp/azimutt.git",
-    "directory": "extensions/browser-extension"
-  },
+  "homepage": "https://azimutt.app",
+  "keywords": [],
+  "type": "module",
   "scripts": {
     "start": "./build.watch.js",
     "lint": "tsc --noEmit",
@@ -28,5 +19,15 @@
     "esbuild": "^0.14.54",
     "esbuild-plugin-copy": "^1.6.0",
     "typescript": "^5.6.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/azimuttapp/azimutt",
+    "directory": "extensions/browser-extension"
+  },
+  "author": {
+    "name": "Loïc Knuchel",
+    "email": "loicknuchel@gmail.com",
+    "url": "https://loicknuchel.fr"
   }
 }

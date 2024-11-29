@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "strict": false,
     "lib": ["ES2021", "DOM"],
+    "strict": false
   }
 }

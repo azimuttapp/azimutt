@@ -25,6 +25,9 @@ importers:
       '@azimutt/models':
         specifier: workspace:^
         version: link:../libs/models
+      '@azimutt/parser-sql':
+        specifier: workspace:^
+        version: link:../libs/parser-sql
       '@azimutt/utils':
         specifier: workspace:^
         version: link:../libs/utils

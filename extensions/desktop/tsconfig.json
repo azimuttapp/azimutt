@@ -1,19 +1,18 @@
 {
   "compilerOptions": {
-    "target": "ES2021",
-    "allowJs": true,
     "module": "commonjs",
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "noImplicitAny": true,
-    "sourceMap": true,
+    "target": "ES2021",
     "baseUrl": ".",
     "outDir": "dist",
-    "moduleResolution": "node",
+    "esModuleInterop": true,
     "resolveJsonModule": true,
+    "sourceMap": true,
+    "allowJs": true,
+    "noImplicitAny": true,
     "paths": {
       "*": ["node_modules/*"]
-    }
+    },
+    "skipLibCheck": true
   },
   "include": ["src/**/*", "*.ts"]
 }
