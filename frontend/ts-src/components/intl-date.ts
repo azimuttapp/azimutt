@@ -2,6 +2,7 @@ export function loadIntlDate(): void {
     customElements.define('intl-date', IntlDate)
 }
 
+// example from https://guide.elm-lang.org/interop/custom_elements
 //
 //   <intl-date lang="sr-RS" year="2012" month="5">
 //   <intl-date lang="en-GB" year="2012" month="5">

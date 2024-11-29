@@ -37,7 +37,7 @@ import {
 } from "@azimutt/models";
 import {generateAml, parseAml} from "@azimutt/aml";
 import {parsePrisma} from "@azimutt/parser-prisma";
-import {DiagramEdge, DiagramNode, Dialect, HtmlId, Platform, ToastLevel, ViewPosition} from "./types/basics";
+import {Dialect, HtmlId, Platform, ToastLevel, ViewPosition} from "./types/basics";
 import * as Uuid from "./types/uuid";
 import {
     CreateProject,
@@ -76,13 +76,13 @@ import {Env} from "./utils/env";
 import {loadPolyfills} from "./utils/polyfills";
 import * as url from "./utils/url";
 import {Utils} from "./utils/utils";
-// import {loadIntlDate} from "./components/intl-date";
-// import {loadAzEditor} from "./components/az-editor";
-// import {loadAmlEditor} from "./components/aml-editor";
+import {loadIntlDate} from "./components/intl-date";
+import {loadElmTextarea} from "./components/elm-textarea";
+// import {loadElmMonaco} from "./components/elm-monaco";
 
-// loadIntlDate() // should be before the Elm init
-// loadAzEditor() // should be before the Elm init
-// loadAmlEditor() // should be before the Elm init
+loadIntlDate() // should be before the Elm init
+loadElmTextarea() // should be before the Elm init
+// loadElmMonaco() // should be before the Elm init
 const platform = Utils.getPlatform()
 const logger = new ConsoleLogger(window.env)
 const flags: ElmFlags = {now: Date.now(), conf: {env: window.env, platform, role: window.role, desktop: !!window.desktop}, params: buildFlagParams()}

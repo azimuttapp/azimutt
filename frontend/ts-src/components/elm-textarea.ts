@@ -1,10 +1,10 @@
 // https://github.com/elm-community/js-integration-examples/blob/master/more/webcomponents/README.md
 
-export function loadAzEditor(): void {
-    customElements.define('az-editor', AzEditor)
+export function loadElmTextarea(): void {
+    customElements.define('elm-textarea', ElmTextarea)
 }
 
-class AzEditor extends HTMLElement {
+class ElmTextarea extends HTMLElement {
     private textarea: HTMLTextAreaElement
     private counter: HTMLSpanElement
 
@@ -39,13 +39,16 @@ class AzEditor extends HTMLElement {
     }
 
     connectedCallback() { // component added to the DOM
-        console.log('AzEditor.connectedCallback')
+        console.log('ElmTextarea.connectedCallback')
+        const value = this.getAttribute('value') || ''
+        console.log('connectedCallback.value', value)
+        this.textarea.value = value
         this.updateCounter()
         this.textarea.addEventListener('input', this.updateCounter.bind(this))
     }
 
     disconnectedCallback() { // component removed from the DOM
-        console.log('AzEditor.disconnectedCallback')
+        console.log('ElmTextarea.disconnectedCallback')
         this.textarea.removeEventListener('input', this.updateCounter.bind(this))
     }
 
@@ -55,6 +58,7 @@ class AzEditor extends HTMLElement {
     }
 
     attributeChangedCallback(name: string, oldValue: string, newValue: string) {
+        console.log('ElmTextarea.attributeChangedCallback', name, newValue)
         if (name === 'value') {
             this.textarea.value = newValue
             this.updateCounter()

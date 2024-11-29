@@ -2,11 +2,11 @@
 
 // https://github.com/elm-community/js-integration-examples/blob/master/more/webcomponents/README.md
 
-export function loadAmlEditor(): void {
-    customElements.define('aml-editor', AmlEditor)
+export function loadElmMonaco(): void {
+    customElements.define('elm-monaco', ElmMonaco)
 }
 
-class AmlEditor extends HTMLElement {
+class ElmMonaco extends HTMLElement {
     private container: HTMLDivElement
     private editor: monaco.editor.IStandaloneCodeEditor | undefined
 
@@ -22,7 +22,7 @@ class AmlEditor extends HTMLElement {
     }
 
     connectedCallback() { // component added to the DOM
-        console.log('AmlEditor.connectedCallback')
+        console.log('ElmMonaco.connectedCallback')
         console.log('create monaco editor')
         this.editor = monaco.editor.create(this.container, {
             automaticLayout: true,
@@ -34,7 +34,7 @@ class AmlEditor extends HTMLElement {
     }
 
     disconnectedCallback() { // component removed from the DOM
-        console.log('AmlEditor.disconnectedCallback')
+        console.log('ElmMonaco.disconnectedCallback')
         this.editor?.dispose()
     }
 
@@ -44,7 +44,7 @@ class AmlEditor extends HTMLElement {
     }
 
     attributeChangedCallback(name: string, oldValue: string, newValue: string) {
-        console.log('AmlEditor.attributeChangedCallback', name, newValue)
+        console.log('ElmMonaco.attributeChangedCallback', name, newValue)
     }
 }
 */
