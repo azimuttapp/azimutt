@@ -42,7 +42,7 @@ class ElmTextarea extends HTMLElement {
         console.log('ElmTextarea.connectedCallback')
         const value = this.getAttribute('value') || ''
         console.log('connectedCallback.value', value)
-        this.textarea.value = value
+        this.textarea.value = value // value is empty here, not sure why as it should have a value from the start (cf frontend/src/PagesComponents/Organization_/Project_/Components/AmlSidebar.elm:308)
         this.updateCounter()
         this.textarea.addEventListener('input', this.updateCounter.bind(this))
     }
@@ -57,8 +57,8 @@ class ElmTextarea extends HTMLElement {
         return ['value', 'readonly', 'disabled']
     }
 
-    attributeChangedCallback(name: string, oldValue: string, newValue: string) {
-        console.log('ElmTextarea.attributeChangedCallback', name, newValue)
+    attributeChangedCallback(name: string, oldValue: string, newValue: string) { // can't see this function triggered :/
+        console.log('ElmTextarea.attributeChangedCallback', name, newValue, this.getAttribute('value') || '')
         if (name === 'value') {
             this.textarea.value = newValue
             this.updateCounter()

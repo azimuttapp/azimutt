@@ -1,6 +1,7 @@
 /*import * as monaco from "monaco-editor";
 
 // https://github.com/elm-community/js-integration-examples/blob/master/more/webcomponents/README.md
+// https://microsoft.github.io/monaco-editor/playground.html?source=v0.52.0#example-creating-the-editor-web-component
 
 export function loadElmMonaco(): void {
     customElements.define('elm-monaco', ElmMonaco)
