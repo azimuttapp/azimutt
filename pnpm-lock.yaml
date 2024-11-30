@@ -424,8 +424,8 @@ importers:
         specifier: ^0.1.2
         version: 0.1.2
       '@azimutt/connector-mariadb':
-        specifier: ^0.1.7
-        version: 0.1.7
+        specifier: ^0.1.8
+        version: 0.1.8
       '@azimutt/connector-mongodb':
         specifier: ^0.1.4
         version: 0.1.4(socks@2.8.3)
@@ -445,11 +445,11 @@ importers:
         specifier: ^0.1.4
         version: 0.1.4
       '@azimutt/models':
-        specifier: ^0.1.16
-        version: 0.1.16
+        specifier: ^0.1.17
+        version: 0.1.17
       '@azimutt/utils':
-        specifier: ^0.1.7
-        version: 0.1.7
+        specifier: ^0.1.8
+        version: 0.1.8
       '@fastify/cors':
         specifier: 9.0.1
         version: 9.0.1
@@ -1293,8 +1293,8 @@ packages:
   '@azimutt/connector-couchbase@0.1.2':
     resolution: {integrity: sha512-14c77x/V0ZYeXinzvfpcZ9Q/Z/O4BzWjr477SdmuXkM00OGkenOYuIcj0ri5TvNpdS/9P8fVoASCfXsA4AxHgg==}
 
-  '@azimutt/connector-mariadb@0.1.7':
-    resolution: {integrity: sha512-fGKgn2FKxjj0/aVqilkFmNY58PmYGMYYG/Qn2xwGldL9WmfX1mxkEvqljNvJv4Q2ikfI33ODCjQ7XgKqUyH4Ug==}
+  '@azimutt/connector-mariadb@0.1.8':
+    resolution: {integrity: sha512-6jPTj5nJ+yCmmN0yaVZQAm7vT46/qMS+M0hzSx+5bi4Tz+HgdMEoX+wsAHWTk1YOQiwvIQxL6mGXSPINrxjCHA==}
 
   '@azimutt/connector-mongodb@0.1.4':
     resolution: {integrity: sha512-cExHFYICE1/riBcuhINSe9BmX45+gLgYWvsY4G/tPu3SjtN8e0nqxx5B7Z5EzmnIXT5TvSbox6KWdtghWWsWiQ==}
@@ -1314,11 +1314,11 @@ packages:
   '@azimutt/connector-sqlserver@0.1.4':
     resolution: {integrity: sha512-I5U33eYIgm22RXGtSWhF9rA2NTv18cym28X0/DopmQqD9A1ZCDRnlES8FDJRee5ngASgsgYm4glp0aQXhd32/Q==}
 
-  '@azimutt/models@0.1.16':
-    resolution: {integrity: sha512-cW/ATuEb97Slivnehbq3UyjgTilYpsJpLJ5qkWgBZOI6ldbBld9179ywopz17XvhjVBiZu1NGEm/jDPBXV8xOw==}
+  '@azimutt/models@0.1.17':
+    resolution: {integrity: sha512-AKpAoUyU1cz3icPUekRESwveGT9ei1usQneIOXVjwWK3byamOyCfPCBwVHX6ACKZs9jUw8N2ZltNM5iLeQLxhA==}
 
-  '@azimutt/utils@0.1.7':
-    resolution: {integrity: sha512-AS0/5dK+YVk0cmQDe+ONgODpeHzCQEjaDIe5fp/EoKMTOBU9niaB2HpAxyeu6zZg0svHCFkAc3sfGc3k+pPcjQ==}
+  '@azimutt/utils@0.1.8':
+    resolution: {integrity: sha512-NYFiQDyBwT5XMMGXIxsF1Aou/M0rkNtqEJYlcdXQ7M36EHvjrjWg4aSQY3zefMXz9uJFij+J9ybJt2jzQvRq+A==}
 
   '@azure/abort-controller@2.1.2':
     resolution: {integrity: sha512-nBrLsEWm4J2u5LpAPjxADTlq3trDgVZZXHNKabeXZtpq3d3AbN/KGO82R87rdDz5/lYB024rtEf10/q0urNgsA==}
@@ -9839,8 +9839,8 @@ snapshots:
 
   '@azimutt/connector-bigquery@0.1.2':
     dependencies:
-      '@azimutt/models': 0.1.16
-      '@azimutt/utils': 0.1.7
+      '@azimutt/models': 0.1.17
+      '@azimutt/utils': 0.1.8
       '@google-cloud/bigquery': 7.7.0(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -9848,25 +9848,25 @@ snapshots:
 
   '@azimutt/connector-couchbase@0.1.2':
     dependencies:
-      '@azimutt/models': 0.1.16
-      '@azimutt/utils': 0.1.7
+      '@azimutt/models': 0.1.17
+      '@azimutt/utils': 0.1.8
       couchbase: 4.3.1
     transitivePeerDependencies:
       - encoding
       - supports-color
 
-  '@azimutt/connector-mariadb@0.1.7':
+  '@azimutt/connector-mariadb@0.1.8':
     dependencies:
-      '@azimutt/models': 0.1.16
-      '@azimutt/utils': 0.1.7
+      '@azimutt/models': 0.1.17
+      '@azimutt/utils': 0.1.8
       mariadb: 3.3.1
     transitivePeerDependencies:
       - encoding
 
   '@azimutt/connector-mongodb@0.1.4(socks@2.8.3)':
     dependencies:
-      '@azimutt/models': 0.1.16
-      '@azimutt/utils': 0.1.7
+      '@azimutt/models': 0.1.17
+      '@azimutt/utils': 0.1.8
       mongodb: 6.8.0(socks@2.8.3)
     transitivePeerDependencies:
       - '@aws-sdk/credential-providers'
@@ -9880,24 +9880,24 @@ snapshots:
 
   '@azimutt/connector-mysql@0.1.5':
     dependencies:
-      '@azimutt/models': 0.1.16
-      '@azimutt/utils': 0.1.7
+      '@azimutt/models': 0.1.17
+      '@azimutt/utils': 0.1.8
       mysql2: 3.3.5
     transitivePeerDependencies:
       - encoding
 
   '@azimutt/connector-oracle@0.1.3':
     dependencies:
-      '@azimutt/models': 0.1.16
-      '@azimutt/utils': 0.1.7
+      '@azimutt/models': 0.1.17
+      '@azimutt/utils': 0.1.8
       oracledb: 6.6.0
     transitivePeerDependencies:
       - encoding
 
   '@azimutt/connector-postgres@0.1.11(pg-native@3.0.1)':
     dependencies:
-      '@azimutt/models': 0.1.16
-      '@azimutt/utils': 0.1.7
+      '@azimutt/models': 0.1.17
+      '@azimutt/utils': 0.1.8
       pg: 8.12.0(pg-native@3.0.1)
       postgres-array: 3.0.2
     transitivePeerDependencies:
@@ -9906,8 +9906,8 @@ snapshots:
 
   '@azimutt/connector-snowflake@0.1.2(asn1.js@5.4.1)':
     dependencies:
-      '@azimutt/models': 0.1.16
-      '@azimutt/utils': 0.1.7
+      '@azimutt/models': 0.1.17
+      '@azimutt/utils': 0.1.8
       snowflake-sdk: 1.10.1(asn1.js@5.4.1)(encoding@0.1.13)
     transitivePeerDependencies:
       - asn1.js
@@ -9917,23 +9917,23 @@ snapshots:
 
   '@azimutt/connector-sqlserver@0.1.4':
     dependencies:
-      '@azimutt/models': 0.1.16
-      '@azimutt/utils': 0.1.7
+      '@azimutt/models': 0.1.17
+      '@azimutt/utils': 0.1.8
       mssql: 11.0.1
     transitivePeerDependencies:
       - encoding
       - supports-color
 
-  '@azimutt/models@0.1.16':
+  '@azimutt/models@0.1.17':
     dependencies:
-      '@azimutt/utils': 0.1.7
+      '@azimutt/utils': 0.1.8
       openai: 4.65.0(encoding@0.1.13)(zod@3.23.8)
       zod: 3.23.8
       zod-to-json-schema: 3.23.3(zod@3.23.8)
     transitivePeerDependencies:
       - encoding
 
-  '@azimutt/utils@0.1.7': {}
+  '@azimutt/utils@0.1.8': {}
 
   '@azure/abort-controller@2.1.2':
     dependencies:

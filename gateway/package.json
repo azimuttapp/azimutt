@@ -1,6 +1,6 @@
 {
   "name": "@azimutt/gateway",
-  "version": "0.1.21",
+  "version": "0.1.22",
   "description": "A Gateway to proxy database access for Azimutt frontend",
   "keywords": [
     "database",
@@ -42,15 +42,15 @@
   "dependencies": {
     "@azimutt/connector-bigquery": "^0.1.2",
     "@azimutt/connector-couchbase": "^0.1.2",
-    "@azimutt/connector-mariadb": "^0.1.7",
+    "@azimutt/connector-mariadb": "^0.1.8",
     "@azimutt/connector-mongodb": "^0.1.4",
     "@azimutt/connector-mysql": "^0.1.5",
     "@azimutt/connector-oracle": "^0.1.3",
     "@azimutt/connector-postgres": "^0.1.11",
     "@azimutt/connector-snowflake": "^0.1.2",
     "@azimutt/connector-sqlserver": "^0.1.4",
-    "@azimutt/models": "^0.1.16",
-    "@azimutt/utils": "^0.1.7",
+    "@azimutt/models": "^0.1.17",
+    "@azimutt/utils": "^0.1.8",
     "@fastify/cors": "9.0.1",
     "@sinclair/typebox": "0.29.6",
     "ajv": "8.17.1",

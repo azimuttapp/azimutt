@@ -22,6 +22,8 @@ function stringifyInner(value: unknown, indent: undefined | number | string | ((
         return value ? 'true' : 'false'
     } else if (typeof value === 'string' || value instanceof String) {
         return JSON.stringify(value) // 🤷 (escaping was not worth coding ^^)
+    } else if (typeof value === 'bigint') {
+        return value.toString()
     } else if (Array.isArray(value)) {
         const {inner, end, depth} = stringifyIndent(indent, path, value, nesting)
         const items = value.map((v, i) => {

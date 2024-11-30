@@ -55,6 +55,10 @@ describe('json', () => {
                 expect(stringify(v, '---')).toEqual(JSON.stringify(v, null, '---') || '')
             })
         })
+        test('more permissive than JSON.stringify', () => {
+            expect(stringify(BigInt('2'))).toEqual('2')
+            expect(() => JSON.stringify(BigInt('2'))).toThrow(TypeError)
+        })
         test('custom', () => {
             const db = {
                 entities: [{

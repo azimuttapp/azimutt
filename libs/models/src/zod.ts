@@ -1,5 +1,5 @@
 import {z, ZodError, ZodIssue, ZodType} from "zod";
-import {limitDepth, getValueDeep, groupBy, pluralizeL, Result} from "@azimutt/utils";
+import {limitDepth, getValueDeep, groupBy, pluralizeL, Result, stringify} from "@azimutt/utils";
 
 export const zodParse = <T>(typ: ZodType<T>, label?: string) => (value: T): Result<T, string> => {
     const res = typ.safeParse(value)
@@ -40,17 +40,17 @@ function zodIssueToString(issue: ZodIssue, value: any): string {
 
 function zodIssueMessageToString(issue: ZodIssue, value: any): string {
     if (issue.code === z.ZodIssueCode.unrecognized_keys) {
-        return `invalid additional key${issue.keys.length > 1 ? 's:' : ''} ${issue.keys.map(k => `'${k}' (${JSON.stringify(getValueDeep(value, issue.path.concat(k)))})`).join(', ')}`
+        return `invalid additional key${issue.keys.length > 1 ? 's:' : ''} ${issue.keys.map(k => `'${k}' (${stringify(getValueDeep(value, issue.path.concat(k)))})`).join(', ')}`
     } else if (issue.code === z.ZodIssueCode.invalid_type) {
-        return `expect '${issue.expected}' but got '${issue.received}' (${JSON.stringify(getValueDeep(value, issue.path))})`
+        return `expect '${issue.expected}' but got '${issue.received}' (${stringify(getValueDeep(value, issue.path))})`
     } else if (issue.code === z.ZodIssueCode.invalid_literal) {
-        return `expect ${JSON.stringify(issue.expected)} but got ${JSON.stringify(getValueDeep(value, issue.path))}`
+        return `expect ${stringify(issue.expected)} but got ${stringify(getValueDeep(value, issue.path))}`
     } else if (issue.code === z.ZodIssueCode.invalid_enum_value) {
-        return `expect \`${issue.options.map(o => JSON.stringify(o)).join(' | ')}\` but got ${JSON.stringify(getValueDeep(value, issue.path))}`
+        return `expect \`${issue.options.map(o => stringify(o)).join(' | ')}\` but got ${stringify(getValueDeep(value, issue.path))}`
     } else if (issue.code === z.ZodIssueCode.invalid_union_discriminator) {
-        return `expect \`${issue.options.map(o => JSON.stringify(o)).join(' | ')}\` but got ${JSON.stringify(getValueDeep(value, issue.path))}`
+        return `expect \`${issue.options.map(o => stringify(o)).join(' | ')}\` but got ${stringify(getValueDeep(value, issue.path))}`
     } else if (issue.code === z.ZodIssueCode.invalid_union) {
-        return `invalid union for ${JSON.stringify(limitDepth(getValueDeep(value, issue.path), 3))}`
+        return `invalid union for ${stringify(limitDepth(getValueDeep(value, issue.path), 3))}`
     } else {
         return issue.message
     }

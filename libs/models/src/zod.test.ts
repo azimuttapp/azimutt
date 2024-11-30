@@ -1,6 +1,6 @@
 import {describe, expect, test} from "@jest/globals";
 import {z} from "zod";
-import {zodParse} from "./index";
+import {zodParse} from "./zod";
 
 describe('zod', () => {
     const user = {id: 1, name: 'Loïc', roles: ['admin'], org: {id: 1, name: 'Azimutt', admin: {id: 1, name: 'Loïc'}}, version: 1}
@@ -35,7 +35,7 @@ describe('zod', () => {
         })
         test('required', () => {
             const {id, ...data} = user
-            expect(zodParse(User)(data as any).toJson()).toEqual({failure: "Invalid User, at .id: expect 'number' but got 'undefined' (undefined)"})
+            expect(zodParse(User)(data as any).toJson()).toEqual({failure: "Invalid User, at .id: expect 'number' but got 'undefined' ()"})
         })
         test('bad type', () => {
             const data = {...user, name: 2}
