@@ -12,6 +12,7 @@
     "erd",
     "entity-relationship diagram"
   ],
+  "type": "commonjs",
   "main": "./out/index.js",
   "types": "./out/index.d.ts",
   "scripts": {

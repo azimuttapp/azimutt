@@ -21,10 +21,11 @@
     "Visualization",
     "Snippets"
   ],
+  "type": "commonjs",
+  "browser": "./dist/web/extension.js",
   "engines": {
     "vscode": "^1.95.0"
   },
-  "browser": "./dist/web/extension.js",
   "activationEvents": [
     "onLanguage:aml",
     "onCommand:aml.new",

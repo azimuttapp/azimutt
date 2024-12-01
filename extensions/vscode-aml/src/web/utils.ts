@@ -1,4 +1,5 @@
-import vscode, {Position, Range, TextDocument} from "vscode";
+import * as vscode from "vscode";
+import {Position, Range, TextDocument} from "vscode";
 import {Database, EditorPosition, ParserError, ParserErrorLevel, ParserResult, TokenEditor} from "@azimutt/models";
 
 export async function openFileResult(res: ParserResult<Database>, transform: (db: Database) => Promise<{lang: string, content: string}>): Promise<TextDocument | undefined> {
