@@ -1,20 +1,10 @@
 {
   "name": "@azimutt/connector-snowflake",
-  "version": "0.1.2",
   "description": "Connect to Snowflake, extract schema, run analysis and queries",
-  "keywords": [],
-  "homepage": "https://azimutt.app",
-  "author": {
-    "name": "Loïc Knuchel",
-    "email": "loicknuchel@gmail.com",
-    "url": "https://loicknuchel.fr"
-  },
+  "version": "0.1.2",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/azimuttapp/azimutt.git",
-    "directory": "libs/connector-snowflake"
-  },
+  "homepage": "https://azimutt.app",
+  "keywords": [],
   "main": "./out/index.js",
   "types": "./out/index.d.ts",
   "scripts": {
@@ -36,5 +26,15 @@
     "jest": "^29.7.0",
     "ts-jest": "^29.2.5",
     "typescript": "^5.6.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azimuttapp/azimutt.git",
+    "directory": "libs/connector-snowflake"
+  },
+  "author": {
+    "name": "Loïc Knuchel",
+    "email": "loicknuchel@gmail.com",
+    "url": "https://loicknuchel.fr"
   }
 }

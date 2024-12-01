@@ -1,20 +1,10 @@
 {
   "name": "@azimutt/parser-dbml",
-  "version": "0.1.0",
   "description": "Parse and Generate DBML.",
-  "keywords": [],
-  "homepage": "https://azimutt.app",
-  "author": {
-    "name": "Loïc Knuchel",
-    "email": "loicknuchel@gmail.com",
-    "url": "https://loicknuchel.fr"
-  },
+  "version": "0.1.0",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/azimuttapp/azimutt.git",
-    "directory": "libs/parser-dbml"
-  },
+  "homepage": "https://azimutt.app",
+  "keywords": [],
   "type": "module",
   "main": "./out/index.js",
   "types": "./out/index.d.ts",
@@ -45,5 +35,15 @@
     "rollup": "^4.25.0",
     "ts-jest": "^29.2.5",
     "typescript": "^5.6.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azimuttapp/azimutt.git",
+    "directory": "libs/parser-dbml"
+  },
+  "author": {
+    "name": "Loïc Knuchel",
+    "email": "loicknuchel@gmail.com",
+    "url": "https://loicknuchel.fr"
   }
 }

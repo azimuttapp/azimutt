@@ -1,7 +1,10 @@
 {
   "name": "azimutt-editor",
-  "version": "2.0.0",
   "description": "Next-Gen ERD: Design, Explore, Document and Analyze your database.",
+  "version": "2.0.0",
+  "license": "MIT",
+  "private": true,
+  "homepage": "https://azimutt.app",
   "keywords": [
     "erd",
     "entity-relationship diagram",
@@ -9,22 +12,6 @@
     "database schema",
     "diagram"
   ],
-  "homepage": "https://azimutt.app",
-  "author": {
-    "name": "Loïc Knuchel",
-    "email": "loicknuchel@gmail.com",
-    "url": "https://loicknuchel.fr"
-  },
-  "license": "MIT",
-  "private": true,
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/azimuttapp/azimutt.git",
-    "directory": "frontend"
-  },
-  "bugs": {
-    "url": "https://github.com/azimuttapp/azimutt/issues"
-  },
   "scripts": {
     "setup": "elm-spa build",
     "start": "pnpm --parallel run \"/^\\w+:start$/\"",
@@ -91,5 +78,18 @@
     "tailwindcss": "^3.4.14",
     "ts-jest": "^29.2.5",
     "typescript": "^5.6.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azimuttapp/azimutt.git",
+    "directory": "frontend"
+  },
+  "bugs": {
+    "url": "https://github.com/azimuttapp/azimutt/issues"
+  },
+  "author": {
+    "name": "Loïc Knuchel",
+    "email": "loicknuchel@gmail.com",
+    "url": "https://loicknuchel.fr"
   }
 }

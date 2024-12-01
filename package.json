@@ -1,7 +1,9 @@
 {
   "name": "azimutt",
-  "version": "2.0.0",
   "description": "Next-Gen ERD: Design, Explore, Document and Analyze your database.",
+  "version": "2.0.0",
+  "license": "MIT",
+  "homepage": "https://azimutt.app",
   "keywords": [
     "erd",
     "entity-relationship diagram",
@@ -9,20 +11,6 @@
     "database schema",
     "diagram"
   ],
-  "homepage": "https://azimutt.app",
-  "author": {
-    "name": "Loïc Knuchel",
-    "email": "loicknuchel@gmail.com",
-    "url": "https://loicknuchel.fr"
-  },
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/azimuttapp/azimutt.git"
-  },
-  "bugs": {
-    "url": "https://github.com/azimuttapp/azimutt/issues"
-  },
   "scripts": {
     "setup": "pnpm install && pnpm -r --if-present run setup",
     "start": "pnpm --parallel --filter \"@azimutt/gateway\" --filter \"azimutt-backend\" --filter \"azimutt-editor\" run start",
@@ -33,6 +21,18 @@
     "build": "pnpm --filter=!\"./extensions/desktop\" -r run build",
     "update": "pnpm -r update && pnpm install && pnpm -r --if-present run update",
     "build:docker": "pnpm install && pnpm --filter \"azimutt-backend\" run setup && pnpm --filter \"@azimutt/*\" run build:docker && pnpm --filter \"azimutt-editor\" run build:docker"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azimuttapp/azimutt.git"
+  },
+  "bugs": {
+    "url": "https://github.com/azimuttapp/azimutt/issues"
+  },
+  "author": {
+    "name": "Loïc Knuchel",
+    "email": "loicknuchel@gmail.com",
+    "url": "https://loicknuchel.fr"
   },
   "engines": {
     "pnpm": "9.5.0"

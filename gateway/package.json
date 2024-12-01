@@ -1,7 +1,9 @@
 {
   "name": "@azimutt/gateway",
-  "version": "0.1.22",
   "description": "A Gateway to proxy database access for Azimutt frontend",
+  "version": "0.1.22",
+  "license": "MIT",
+  "homepage": "https://azimutt.app",
   "keywords": [
     "database",
     "database tool",
@@ -10,23 +12,8 @@
     "erd",
     "entity-relationship diagram"
   ],
-  "homepage": "https://azimutt.app",
-  "author": {
-    "name": "Loïc Knuchel",
-    "email": "loicknuchel@gmail.com",
-    "url": "https://loicknuchel.fr"
-  },
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/azimuttapp/azimutt.git",
-    "directory": "gateway"
-  },
   "main": "./out/index.js",
   "types": "./out/index.d.ts",
-  "bugs": {
-    "url": "https://github.com/azimuttapp/azimutt/issues"
-  },
   "scripts": {
     "start": "tsx watch ./src/start.ts .env | pino-pretty --colorize",
     "test": "vitest run",
@@ -75,5 +62,18 @@
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
     "vitest": "^2.1.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azimuttapp/azimutt.git",
+    "directory": "gateway"
+  },
+  "bugs": {
+    "url": "https://github.com/azimuttapp/azimutt/issues"
+  },
+  "author": {
+    "name": "Loïc Knuchel",
+    "email": "loicknuchel@gmail.com",
+    "url": "https://loicknuchel.fr"
   }
 }

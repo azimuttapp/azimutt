@@ -1,23 +1,10 @@
 {
   "name": "azimutt-backend",
-  "version": "2.0.0",
   "description": "Next-Gen ERD: Design, Explore, Document and Analyze your database.",
-  "homepage": "https://azimutt.app",
-  "author": {
-    "name": "Loïc Knuchel",
-    "email": "loicknuchel@gmail.com",
-    "url": "https://loicknuchel.fr"
-  },
+  "version": "2.0.0",
   "license": "MIT",
   "private": true,
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/azimuttapp/azimutt.git",
-    "directory": "backend"
-  },
-  "bugs": {
-    "url": "https://github.com/azimuttapp/azimutt/issues"
-  },
+  "homepage": "https://azimutt.app",
   "scripts": {
     "setup": "mix local.hex --force && mix deps.get && mix ecto.setup",
     "start": "mix phx.server",
@@ -29,5 +16,18 @@
   },
   "dependencies": {
     "azimutt-editor": "workspace:^"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azimuttapp/azimutt.git",
+    "directory": "backend"
+  },
+  "bugs": {
+    "url": "https://github.com/azimuttapp/azimutt/issues"
+  },
+  "author": {
+    "name": "Loïc Knuchel",
+    "email": "loicknuchel@gmail.com",
+    "url": "https://loicknuchel.fr"
   }
 }

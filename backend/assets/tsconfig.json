@@ -1,14 +1,12 @@
 {
   "compilerOptions": {
-    "target": "es2017",
     "module": "es2022",
     "moduleResolution": "node",
-    "strict": true,
+    "target": "es2017",
     "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true
   },
-  "include": [
-    "js/**/*"
-  ]
+  "include": ["js/**/*"]
 }

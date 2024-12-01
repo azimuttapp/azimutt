@@ -1,20 +1,10 @@
 {
   "name": "@azimutt/models",
-  "version": "0.1.17",
   "description": "Define a standard database models for Azimutt.",
-  "keywords": [],
-  "homepage": "https://azimutt.app",
-  "author": {
-    "name": "Loïc Knuchel",
-    "email": "loicknuchel@gmail.com",
-    "url": "https://loicknuchel.fr"
-  },
+  "version": "0.1.17",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/azimuttapp/azimutt.git",
-    "directory": "libs/models"
-  },
+  "homepage": "https://azimutt.app",
+  "keywords": [],
   "main": "./out/index.js",
   "types": "./out/index.d.ts",
   "scripts": {
@@ -37,5 +27,15 @@
     "jest": "^29.7.0",
     "ts-jest": "^29.2.5",
     "typescript": "^5.6.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azimuttapp/azimutt.git",
+    "directory": "libs/models"
+  },
+  "author": {
+    "name": "Loïc Knuchel",
+    "email": "loicknuchel@gmail.com",
+    "url": "https://loicknuchel.fr"
   }
 }
