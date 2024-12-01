@@ -1,4 +1,4 @@
-module Services.Urls exposing (amlDocs, amlEditor, amlHome, amlV1Converter, cliNpm, pricing)
+module Services.Urls exposing (amlDocs, amlEditor, amlHome, amlV1Converter, cliNpm, pricing, vscodeExt)
 
 
 amlHome : String
@@ -24,6 +24,11 @@ amlV1Converter =
 cliNpm : String
 cliNpm =
     "https://www.npmjs.com/package/azimutt"
+
+
+vscodeExt : String
+vscodeExt =
+    "https://marketplace.visualstudio.com/items?itemName=azimutt.vscode-aml"
 
 
 pricing : String

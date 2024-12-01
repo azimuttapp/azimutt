@@ -375,7 +375,9 @@ viewWarnings warnings =
 viewHelp : Html msg
 viewHelp =
     p [ class "mt-2 text-sm text-gray-500" ]
-        [ text "Write your schema using "
+        [ text "Write your database schema using "
         , extLink Urls.amlDocs [ class "link" ] [ text "AML syntax" ]
-        , text "."
+        , text ". You can also use the "
+        , extLink Urls.vscodeExt [ class "link" ] [ text "VS Code extension" ]
+        , text " for best editing experience."
         ]

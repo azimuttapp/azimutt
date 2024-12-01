@@ -1,9 +1,10 @@
 <%
   aml_doc = Routes.website_path(@conn, :doc, ["aml"])
   aml_npm = "https://www.npmjs.com/package/@azimutt/aml"
+  aml_vscode = Azimutt.config(:vscode_extension_url)
   aml_converter = Routes.website_path(@conn, :converter, "aml")
   aml_azimutt = Routes.elm_path(@conn, :create)
-  cli_convert = "https://github.com/azimuttapp/azimutt/blob/main/cli/README.md#convert"
+  # cli_convert = "https://github.com/azimuttapp/azimutt/blob/main/cli/README.md#convert"
 %>
 <div class="relative isolate overflow-hidden bg-gradient-to-b from-indigo-100/20 pt-10 pb-24">
     <div class="mx-auto max-w-7xl lg:grid lg:grid-cols-2 lg:gap-x-8 lg:px-8">
@@ -121,13 +122,13 @@ COMMENT ON COLUMN posts.content IS 'in markdown';</code></pre>
             <dl class="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-2">
                 <div class="flex flex-col">
                     <dt class="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900">
-                        <Icon.arrow_path kind="outline" class="h-5 w-5 flex-none text-indigo-600" />
-                        In converters
+                        <Icon.command_line kind="outline" class="h-5 w-5 flex-none text-indigo-600" />
+                        In Visual Studio Code
                     </dt>
                     <dd class="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
-                        <p class="flex-auto">Azimutt offers free converters from/to many formats: AML, SQL, JSON, DBML, Mermaid and more. Use our converters to quickly get what you need.</p>
+                        <p class="flex-auto">VS Code extension providing syntax highlighting, inline errors, smart suggestions, symbol rename and even conversions to SQL, JSON, DOT, Mermaid and more...</p>
                         <p class="mt-6">
-                            <a href={aml_converter} class="text-sm font-semibold leading-6 text-indigo-600">Use converters <span aria-hidden="true">→</span></a>
+                            <a href={aml_vscode} target="_blank" rel="noopener noreferrer" class="text-sm font-semibold leading-6 text-indigo-600">Get extension <span aria-hidden="true">→</span></a>
                         </p>
                     </dd>
                 </div>
@@ -145,13 +146,13 @@ COMMENT ON COLUMN posts.content IS 'in markdown';</code></pre>
                 </div>
                 <div class="flex flex-col">
                     <dt class="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900">
-                        <Icon.command_line kind="outline" class="h-5 w-5 flex-none text-indigo-600" />
-                        With the CLI
+                        <Icon.arrow_path kind="outline" class="h-5 w-5 flex-none text-indigo-600" />
+                        With converters
                     </dt>
                     <dd class="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
-                        <p class="flex-auto">The Azimutt CLI is a toolbox to work with databases, and now you can also convert dialects from one to another with a single command.</p>
+                        <p class="flex-auto">Azimutt offers free converters from/to many formats: AML, SQL, JSON, DBML, Mermaid and more. Use our converters to quickly get what you need.</p>
                         <p class="mt-6">
-                            <a href={cli_convert} target="_blank" rel="noopener noreferrer" class="text-sm font-semibold leading-6 text-indigo-600">View command <span aria-hidden="true">→</span></a>
+                            <a href={aml_converter} class="text-sm font-semibold leading-6 text-indigo-600">Use converters <span aria-hidden="true">→</span></a>
                         </p>
                     </dd>
                 </div>
