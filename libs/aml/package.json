@@ -34,11 +34,11 @@
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^12.1.1",
     "@types/jest": "^29.5.14",
-    "@types/node": "^22.9.0",
+    "@types/node": "^22.10.1",
     "jest": "^29.7.0",
-    "rollup": "^4.25.0",
+    "rollup": "^4.28.0",
     "ts-jest": "^29.2.5",
-    "typescript": "^5.6.3"
+    "typescript": "^5.7.2"
   },
   "repository": {
     "type": "git",

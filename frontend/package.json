@@ -46,7 +46,7 @@
     "@sentry/browser": "7.114.0",
     "@sentry/tracing": "7.114.0",
     "canvas-confetti": "1.9.3",
-    "cytoscape": "^3.30.3",
+    "cytoscape": "^3.30.4",
     "cytoscape-avsdf": "^1.0.0",
     "cytoscape-dagre": "^2.5.0",
     "cytoscape-fcose": "^2.2.0",
@@ -62,7 +62,7 @@
     "@types/cytoscape-dagre": "^2.3.3",
     "@types/cytoscape-fcose": "^2.2.4",
     "@types/jest": "^29.5.14",
-    "@types/node": "^22.9.0",
+    "@types/node": "^22.10.1",
     "concurrently": "^8.2.2",
     "elm-book": "^1.0.1",
     "elm-coverage": "^0.4.1",
@@ -75,9 +75,9 @@
     "esbuild": "^0.23.1",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
-    "tailwindcss": "^3.4.14",
+    "tailwindcss": "^3.4.15",
     "ts-jest": "^29.2.5",
-    "typescript": "^5.6.3"
+    "typescript": "^5.7.2"
   },
   "repository": {
     "type": "git",
