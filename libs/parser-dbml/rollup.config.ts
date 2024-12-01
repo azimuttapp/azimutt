@@ -8,10 +8,6 @@ import resolve from "@rollup/plugin-node-resolve"
 export default {
     input: 'src/index.ts',
     output: [{
-        file: 'out/bundle.js',
-        format: 'cjs',
-        sourcemap: true,
-    }, {
         file: 'out/bundle.min.js',
         format: 'iife',
         sourcemap: true,
