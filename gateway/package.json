@@ -1,7 +1,7 @@
 {
   "name": "@azimutt/gateway",
   "description": "A Gateway to proxy database access for Azimutt frontend",
-  "version": "0.1.22",
+  "version": "0.1.23",
   "license": "MIT",
   "homepage": "https://azimutt.app",
   "keywords": [
@@ -29,7 +29,7 @@
   "dependencies": {
     "@azimutt/connector-bigquery": "^0.1.2",
     "@azimutt/connector-couchbase": "^0.1.2",
-    "@azimutt/connector-mariadb": "^0.1.8",
+    "@azimutt/connector-mariadb": "^0.1.9",
     "@azimutt/connector-mongodb": "^0.1.4",
     "@azimutt/connector-mysql": "^0.1.5",
     "@azimutt/connector-oracle": "^0.1.3",

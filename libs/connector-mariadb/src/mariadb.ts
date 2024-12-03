@@ -107,9 +107,9 @@ export type RawTable = {
     table_kind: 'BASE TABLE' | 'VIEW' | 'SYSTEM VIEW'
     table_engine: 'MEMORY' | 'MyISAM' | 'InnoDB' | null
     table_comment: string // default: '' and 'VIEW'
-    table_rows: number | null // null for views
-    table_size: number | null // null for views
-    index_size: number | null // null for views
+    table_rows: number | bigint | null // null for views
+    table_size: number | bigint | null // null for views
+    index_size: number | bigint | null // null for views
     row_size: number | null // null for views
     auto_increment_next: number | null
     table_options: string | null // ex: 'max_rows=2802'
@@ -156,9 +156,9 @@ function buildEntity(table: RawTable, columns: RawColumn[], primaryKeyColumns: R
         checks: checks.map(buildCheck).filter(isNotUndefined),
         doc: table.table_comment === 'VIEW' ? undefined : table.table_comment || undefined,
         stats: removeUndefined({
-            rows: table.table_rows || undefined,
-            size: table.table_size || undefined,
-            sizeIdx: table.index_size || undefined,
+            rows: asNumber(table.table_rows),
+            size: asNumber(table.table_size),
+            sizeIdx: asNumber(table.index_size),
             sizeToast: undefined,
             sizeToastIdx: undefined,
             scanSeq: undefined,
@@ -171,6 +171,8 @@ function buildEntity(table: RawTable, columns: RawColumn[], primaryKeyColumns: R
         extra: undefined
     })
 }
+
+const asNumber = (i: bigint | number | null): number | undefined => i !== null ? (typeof i === 'bigint' ? Number(i) : i) : undefined
 
 export type RawColumn = {
     table_schema: string
