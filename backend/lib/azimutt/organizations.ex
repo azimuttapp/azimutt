@@ -410,7 +410,7 @@ defmodule Azimutt.Organizations do
           if plan == "enterprise" do
             %{plan: plan, plan_freq: freq, plan_status: sub.status, plan_seats: sub.metadata.seats || sub.quantity}
           else
-            %{plan: plan, plan_freq: freq, plan_status: sub.status, plan_seats: sub.quantity}
+            %{plan: plan, plan_freq: freq, plan_status: sub.status, plan_seats: sub.metadata.seats || sub.quantity}
           end
         else
           %{plan: "free", plan_freq: freq, plan_status: sub.status, plan_seats: 1}
