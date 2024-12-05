@@ -1,7 +1,35 @@
 <%= render "docs/_header.html", conn: @conn, page: @page %>
 
 <%= doc_prose do %>
-    <p class="lead">Work In Progress 😅</p>
+    <p class="lead">
+        This is one of the Azimutt features that makes it feel a bit like magic.<br>
+        But it's also an often missed one 😅
+        If you have ideas about how to make it better and more discoverable, let us know ^^
+    </p>
+    <p>
+        Contrary to all the other Entity-Relationship Diagram (ERD) tools, Azimutt was built with large databases in mind, and so won't show everything from the start.
+        This made <a href={Routes.website_path(@conn, :doc, ["search"])}>search</a> and <a href={Routes.website_path(@conn, :doc, ["layouts"])}>multi-layout</a> necessary,
+        but also schema navigation using relations to display related entities one by one, and build the diagram you need.
+    </p>
+    <img src={Routes.static_path(@conn, "/images/doc/follow-relation.gif")} alt="Follow relation in Azimutt layout">
+    <p>
+        As shown above, you can click on primary keys and foreign keys to display related entities.
+        The icons are colored to highlight them and show a possible action from them.
+    </p>
+    <p>This is why it's important to have all the relations defined. Either in the database using foreign keys or adding them only in Azimutt.</p>
+
+    <%= render "docs/_h2.html", title: "Adding relations" %>
+    <p>This is done using <a href={Routes.website_path(@conn, :doc, ["aml", "relations"])}>AML</a> even though, you have UI helper for it:</p>
+    <img src={Routes.static_path(@conn, "/images/doc/relation-add-ui.gif")} alt="Add relation with UI">
+    <p>Relations can also be added directly with AML (<code>rel events(project_id) -> projects(id)</code>):</p>
+    <img src={Routes.static_path(@conn, "/images/doc/relation-add-aml.gif")} alt="Add relation with AML">
+    <p>With this, you can generate all relations from your source code or anywhere else and easily import them in Azimutt. You can even version and diff them if you want.</p>
+    <p>There is also suggestions directly inside the diagram in case you missed some:</p>
+    <img src={Routes.static_path(@conn, "/images/doc/relation-add-suggestion.gif")} alt="Add relation from suggestion">
+    <p>And you can see all suggestions from the <a href={Routes.website_path(@conn, :doc, ["database-analysis"])}>analysis</a>, and add them easily:</p>
+    <img src={Routes.static_path(@conn, "/images/doc/relation-add-analysis.png")} alt="Add relation from analysis">
+    Azimutt does its best to <a href={Routes.website_path(@conn, :doc, ["infer-relations"])}>infer relations</a> and let you add them easily.
+    If you see other ways, tell us, it will benefit everyone!
 <% end %>
 
 <%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

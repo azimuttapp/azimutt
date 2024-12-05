@@ -1,7 +1,47 @@
 <%= render "docs/_header.html", conn: @conn, page: @page %>
 
 <%= doc_prose do %>
-    <p class="lead">Work In Progress 😅</p>
+    <p class="lead">In order to handle large and messy databases, a good search is a key component to find anything you want, and even find things you don't know about yet.</p>
+    <img src={Routes.static_path(@conn, "/images/doc/layout-search.png")} alt="Azimutt search suggestions" />
+    <p>
+        The Azimutt search is looking at everything in your database schema to help you find the relevant parts.
+        Entity and attribute names of course, but also index and constraint names, attribute types as well as SQL comments, Azimutt notes and tags.
+        It uses strict and fuzzy matching to be as tolerant as possible.
+    </p>
+    <p>
+        From the search, you also have access to suggestions of entities not shown in the layout (most referenced).
+        You can also open the full list of your schema entities if you want to browse them (also accessible from the bottom right burger icon):
+    </p>
+    <img src={Routes.static_path(@conn, "/images/doc/entity-list.png")} alt="List of all entities" />
+    <p>
+        From this list, you can display the entity in the layout using the "eye" icon, or look at its details by clicking on it (and then its attribute details).
+    </p>
+    <figure>
+        <img src={Routes.static_path(@conn, "/images/doc/details-entity.png")} alt="Detail bar for an entity" />
+        <figcaption>Details for the "dashboard_tab" entity</figcaption>
+    </figure>
+    <figure>
+        <img src={Routes.static_path(@conn, "/images/doc/details-attribute.png")} alt="Detail bar for an attribute" />
+        <figcaption>Details for the "dashboard_id" attribute in the "dashboard_tab" entity</figcaption>
+    </figure>
+
+    <%= render "docs/_h2.html", title: "Roadmap" %>
+    <p>
+        The Azimutt search is good enough with its everywhere search and fuzzy matching.
+        Yet, there is room for improvements such as:
+    </p>
+    <ul>
+        <li><b>boolean search</b>: lets you write expressions for specific match like Google or LinkedIn (ex: specific item or tags, or even empty doc)</li>
+        <li><b>semantic search</b>: to match similar words, even with very different letters like "users" and "accounts"</li>
+        <li>
+            <b>data search</b>: if you connected your database, virtually search on all attribute values for your query
+            (with safeguard for performance, like: only entities with &lt;10k lines or indexed attributes)
+        </li>
+    </ul>
+    <p>
+        There are on the roadmap, but as it's quite long, they will be prioritized based on customer needs.
+        If you need them, don't hesitate to <a href={"mailto:#{Azimutt.config(:support_email)}"} target="_blank" rel="noopener">reach out</a>.
+    </p>
 <% end %>
 
 <%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

@@ -1,7 +1,50 @@
 <%= render "docs/_header.html", conn: @conn, page: @page %>
 
 <%= doc_prose do %>
-    <p class="lead">Work In Progress 😅</p>
+    <p class="lead">
+        Schema exploration is the heart of Azimutt.
+        And especially if you have a large database (>100 entities), Azimutt is probably your only acceptable visual exploration option.
+        Our biggest customers have databases with around 3000 entities 😱
+    </p>
+    <p>
+        Most diagram tools are made to show you the database diagram: one view with all the entities.
+        It may be fine if you have just a few, but with larger databases it's a nightmare, when the tool is just crashing 🤯
+    </p>
+    <figure class="w-96 mx-auto">
+        <img src={Routes.static_path(@conn, "/images/doc/layout-too-many.jpg")} alt="ERD layout with too many entities" />
+        <figcaption>A diagram with 716 entities (yes, I counted them all ^^)</figcaption>
+    </figure>
+    <p>On the opposite, when loading your database schema in Azimutt, it won't show anything:</p>
+    <img src={Routes.static_path(@conn, "/images/doc/layout-empty.png")} alt="Azimutt starts with an empty layout">
+    <p>From this, you mainly have two choices depending on your situation:</p>
+    <ul>
+        <li>
+            <b>Get a general overview</b>:
+            display central entities (most incoming relations) or all to get an overview of your schema.
+            It's a good starting point before exploring more precisely some parts by <a href={Routes.website_path(@conn, :doc, ["follow-relations"])}>following relations</a>.
+        </li>
+        <li>
+            <b>Looking for specific things</b>:
+            hit the top left <a href={Routes.website_path(@conn, :doc, ["search"])}>search</a> to find entities using entity, attribute and constraint names, but also SQL comments and even types, using a flexible fuzzy matching.
+            You will have some suggestions if you need inspiration.
+        </li>
+    </ul>
+    <img src={Routes.static_path(@conn, "/images/doc/layout-search.png")} alt="Azimutt search suggestions">
+    <p>
+        Once you have one or several entities on the layout, they are your starting point.
+        Explore the surroundings by <a href={Routes.website_path(@conn, :doc, ["follow-relations"])}>following the relations</a> of shown entities using colored icons in front of the attribute names: foreign keys (outgoing relations) and primary keys (incoming relations).
+    </p>
+    <img src={Routes.static_path(@conn, "/images/doc/follow-relation.gif")} alt="Follow relation in Azimutt layout">
+    <p>
+        Sometimes, you need to go from one entity to another but don't know how. And this is when you will be amazed by the <a href={Routes.website_path(@conn, :doc, ["find-path"])}>find-path feature</a>.
+        It will do for you a graph traversal ignoring some entities and attributes you can configure and report all the found paths (under a certain length).
+    </p>
+    <img src={Routes.static_path(@conn, "/images/doc/find-path.png")} alt="Azimutt find path between two entities">
+    <p>
+        Azimutt was built around <a href={Routes.website_path(@conn, :doc, ["layouts"])}>layouts</a> where you can explore some parts of the database.
+        They can be either short-lived for a debug exploration or consciously made and organized to serve as documentation.
+    </p>
+    <p>Now let's dig in:</p>
 <% end %>
 
 <%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

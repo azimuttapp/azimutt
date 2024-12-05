@@ -38,9 +38,7 @@
     <p>Let us know if you have a naming convention not well-supported, we will be happy to add it. You can even submit a PR 😉 (tests are the most important part).</p>
 
     <%= render "docs/_h2.html", title: "Join clauses" %>
-    <%= doc_warning do %>
-      Not implemented yet!
-    <% end %>
+    <%= doc_warning do %>Not implemented yet!<% end %>
     <p>
         As naming conventions are not always followed, another way to find relations is by inspecting database queries.
         In the case of relational databases, a JOIN clause may hint for a relation.
@@ -49,9 +47,7 @@
     <p>Let us know if this is crucial for you, so we can prioritize it over other features.</p>
 
     <%= render "docs/_h2.html", title: "Unique ids" %>
-    <%= doc_warning do %>
-        Not implemented yet!
-    <% end %>
+    <%= doc_warning do %>Not implemented yet!<% end %>
     <p>
         For databases without joins and which don't follow clear naming conventions, like MongoDB or Couchbase, documenting relations is still a big issue.
         After several discussions, it should be possible to infer relations using unique ids (like UUIDs or MongoDB ObjectId).<br>

@@ -9,6 +9,8 @@ A VS Code extension to design database schemas using [AML](https://azimutt.app/a
 
 ![AML in VS Code](https://raw.githubusercontent.com/azimuttapp/azimutt/refs/heads/main/extensions/vscode-aml/assets/screenshot.png)
 
+If you like this extension, please [leave us a review](https://marketplace.visualstudio.com/items?itemName=azimutt.vscode-aml&ssr=false#review-details), it's very helpful for us 🙏
+
 ## 🌟 Features
 
 - Syntax highlight, error reporting and suggestions for AML code (`.aml` files)

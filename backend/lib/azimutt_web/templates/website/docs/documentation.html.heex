@@ -1,0 +1,145 @@
+<%= render "docs/_header.html", conn: @conn, page: @page %>
+
+<%= doc_prose do %>
+    <p class="lead">
+        We all know documentation is important.
+        But we also all know that gathering, organizing and making knowledge accessible is quite hard.
+        Making often documentation not so useful and thus no documentation at all most of the time.
+    </p>
+    <p>
+        Instead of promising a great and exhaustive documentation, Azimutt focuses on a contextual and approachable one, made by and for operational people.
+        Like in Wikipedia, it will have huge differences depending on the areas but people will be able to easily improve it whenever needed and keep it alive.
+    </p>
+    <img src={Routes.static_path(@conn, "/images/doc/documentation.png")} alt="Azimutt layout documentation" />
+    <p>
+        It's important to keep the knowledge of your data model and avoid huge productivity losses in frequent retro-engineering (been there, saw that, it's painful 😅).
+        But also, this business knowledge about your data is crucial if you ever want to feed some AI assistant to better handle your data or make them more accessible.
+        The more you have relevant information, the more powerful it will be.
+    </p>
+    <p>
+        Azimutt database documentation is split in two parts:
+    </p>
+    <ul>
+        <li><a href="#schema-documentation">Schema documentation</a>: for the data model itself</li>
+        <li><a href="#layout-documentation">Layout documentation</a>: for specific parts or use cases, even <a href={"#{Routes.website_path(@conn, :doc, ["sources"])}#multi-sources"}>cross-database</a> ^^</li>
+    </ul>
+    <p>
+        Of course, this documentation is not locked inside Azimutt.
+        It's accessible with the <a href="/api/v1/swagger" target="_blank" rel="noopener">API</a> so you can sync Azimutt with anything else, as a source or a destination, once or periodically.
+    </p>
+
+    <%= render "docs/_h2.html", title: "Schema documentation" %>
+    <p>
+        Azimutt documentation is attached to a specific entity or attribute.
+        Due to its <a href={Routes.website_path(@conn, :doc, ["sources"])}>multi-sources</a> capability, it's not tied to a specific source or database,
+        but to a fully-qualified entity (schema and entity name, and soon database, catalog, schema and entity name).
+        This means, you can have documentation items not linked to any entity (if it has been removed at some point, the documentation is still kept but not accessible).
+    </p>
+    <figure>
+        <img src={Routes.static_path(@conn, "/images/doc/documentation-entity.png")} alt="Azimutt entity documentation" />
+        <figcaption>"report_dashboard" entity documentation</figcaption>
+    </figure>
+
+    <%= render "docs/_h3.html", title: "Comments" %>
+    <p>
+        They are retrieved from your database and can't be changed in the UI to avoid confusion.
+        Some companies use them as a source of truth. If you do so, they will be immediately available in Azimutt.
+    </p>
+
+    <%= render "docs/_h3.html", title: "Notes" %>
+    <p>
+        They are a free <b>Markdown</b> text you can attach to any entity or attribute.
+        Like git commit messages, the first line is a short description meant to be shown on the diagram.
+        The rest is a description you can use and structure as you like with Markdown offering you titles, bold, italic, links, lists and even code block and images.
+    </p>
+
+    <%= render "docs/_h3.html", title: "Tags" %>
+    <p>
+        While notes are unstructured text where you can detail anything, tags are labels you can associate with entities and attributes.
+        They are useful to build group of entities or attributes, for example you can use them for:
+    </p>
+    <ul>
+        <li><b>ownership</b>: saying who is responsible for what (ex: <code>owner:team1</code>)</li>
+        <li><b>data sensitivity</b>: to categorize data (ex: <code>pii</code>)</li>
+        <li><b>communication</b>: to inform other people (ex: <code>deprecated</code> or <code>improve-doc</code>)</li>
+    </ul>
+    <p>Or anything you may need to flag your entity or attribute with.</p>
+
+    <%= render "docs/_h3.html", title: "Custom properties" %>
+    <%= doc_warning do %>Not implemented yet!<% end %>
+    <p>
+        Tags are great for categories but miss semantic and a common structure.
+        Properties bring that, with semantic fields users will see and be able to fill with custom types.
+        You will be able to define custom properties in the project and assign them either to entities, attributes or both. They could hold:
+    </p>
+    <ul>
+        <li>short text</li>
+        <li>long text (Markdown)</li>
+        <li>list of values</li>
+        <li>number, with range</li>
+        <li>url</li>
+        <li>boolean</li>
+        <li>date</li>
+        <li>date and time</li>
+    </ul>
+    <p>
+        It can be a good idea to define a common structure and conventions for notes, tags and properties, either for entities and attributes in your Azimutt project.
+        We are looking to provide suggestions for them but still waiting more examples and feedback to publish them.
+        <a href={"mailto:#{Azimutt.config(:support_email)}"} target="_blank" rel="noopener">Contact us</a> if you want to discuss good practices on this topic.
+    </p>
+
+    <%= render "docs/_h2.html", title: "Layout documentation" %>
+    <p>
+        Contrary to schema documentation that directly describe the data model and is accessible from anywhere, sometimes you need to explain a use case or something very specific about the data model.
+        It can be for onboarding new people in the company or a team, explaining a project or even showing the scope of a team.
+        In this case, making a dedicated <a href={Routes.website_path(@conn, :doc, ["layouts"])}>layout</a> can be a good idea.
+    </p>
+
+    <%= render "docs/_h3.html", title: "Layout hierarchy" %>
+    <p>
+        When creating layouts for documentation, it can be good to think about how they will be organized to have an understandable structure.<br>
+        In Azimutt you can structure layout in folders by using <code>/</code>, for example: <code>teams / ID / overview</code>.
+    </p>
+    <img src={Routes.static_path(@conn, "/images/doc/layout-hierarchy.png")} alt="Organizing Azimutt layouts in a hierarchy" />
+    <p>
+        We are still gathering feedback and examples on layout structures from customers, and will publish our recommendations for it.
+        In the meantime, don't hesitate to <a href={"mailto:#{Azimutt.config(:support_email)}"} target="_blank" rel="noopener">ask us</a> if you want our help to define it.<br>
+        So far, we saw that a 3 level structure is quite flexible with levels as: <b>category</b>, <b>item</b> and <b>layouts</b>.
+        Categories can be: onboarding, teams, products, use cases, domains. And it's clearly a good idea to have each team with at least one layout documenting the scope they are working on.
+        More on structure <a href={"#{Routes.website_path(@conn, :doc, ["layouts"])}#structuration"}>here</a>.
+    </p>
+
+    <%= render "docs/_h3.html", title: "Color" %>
+    <p>
+        It may seem trivial but color can carry visual meaning.
+        By default, Azimutt assign a color based on the first word of the entity name, but you can change it give some meaning.
+        The color is not given globally to the entity but just inside the specific layout.
+        Allowing entities to have different colors depending on the layout and what the author want to show with it.
+    </p>
+
+    <%= render "docs/_h3.html", title: "Memos" %>
+    <p>
+        Like notes, memos are free <b>Markdown</b> text, but instead to be attached to an entity or attribute, they are placed in a layout.
+        They are very visible, they can even have a colored background, and be resized.
+    </p>
+    <p>
+        They are perfect to explain what the layout is about, its context and how to read it (entities and relations alone can be harsh to grasp).
+        They can also explain a situation for several entities, this is especially useful when you put the entities, a group and a memo of the same color.<br>
+        With memos, you can push the details to putting code or SQL queries inside, even with data using Markdown tables if needed.
+        Or even give feedback and discuss a choice or issue directly in the layout (until discussions and reactions will be directly handled in Azimutt ^^).
+    </p>
+    <p>
+        They are really versatile to add context and explanations in a very visual way.
+        More on memos <a href={"#{Routes.website_path(@conn, :doc, ["layouts"])}#memos"}>here</a>.
+    </p>
+
+    <%= render "docs/_h3.html", title: "Groups" %>
+    <p>
+        Layout groups are a colored background behind several entities.
+        They make very clear the entities belong to a same concept and even give it a name as you can see on the screen above.
+        Beside the very visual highlight and the semantic grouping, they don't do much yet.
+        But <a href={"#{Routes.website_path(@conn, :doc, ["layouts"])}#groups"}>more</a> is planned with them.
+    </p>
+<% end %>
+
+<%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

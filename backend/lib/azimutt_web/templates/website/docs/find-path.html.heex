@@ -1,7 +1,23 @@
 <%= render "docs/_header.html", conn: @conn, page: @page %>
 
 <%= doc_prose do %>
-    <p class="lead">Work In Progress 😅</p>
+    <p class="lead">If you ever need to link two entities but don't know how, this will be your lifesaver!</p>
+    <p>
+        Azimutt find-path will do a graph traversal following relations from one entity to the other and give you all the possible paths.
+        And will even make the SELECT query with the correct JOINs for you 🥳
+    </p>
+    <img src={Routes.static_path(@conn, "/images/doc/find-path.png")} alt="Azimutt find path between two entities">
+    <p>
+        It's really great, but you will be surprised how many paths are possible, even with a short path 🤯<br>
+        That's an issue with relational database which are heavily linked graphs, often with big hubs (like "users") that join any part of the graph with few links, even though they don't make sense.<br>
+        To avoid that, we added settings to ignore some tables and columns and make this search more useful:
+    </p>
+    <img src={Routes.static_path(@conn, "/images/doc/find-path-settings.png")} alt="Azimutt find path settings">
+    <p>
+        By default, the "created_by", "updated_by" and "deleted_by" attributes are ignored, but you may want to adjust that for your case.
+        It's often an iterative process to remove entities and attributes you don't want from the results to reduce it until it's small enough, and you found your way.
+    </p>
+    <p>Find-path is accessible from the top right bolt or on any entity context menu (right-click on the header).</p>
 <% end %>
 
 <%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

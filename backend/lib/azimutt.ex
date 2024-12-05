@@ -428,66 +428,60 @@ defmodule Azimutt do
     # path must be unique and not change as they are used for urls (SEO) and template names.
     [
       %{path: ["what-is-azimutt"], name: "What is Azimutt?"},
+      %{path: ["create-your-project"], name: "Create your project", children: [%{path: ["export-your-database-schema"], name: "Export your database schema"}]},
       %{
-        path: ["getting-started"],
-        name: "Getting started",
+        path: ["schema-exploration"],
+        name: "Schema exploration",
+        pub: "2024-12-05",
         children: [
-          %{path: ["create-your-project"], name: "Create your project", children: [%{path: ["export-your-database-schema"], name: "Export your database schema"}]},
+          %{path: ["search"], name: "Search", pub: "2024-12-05"},
+          %{path: ["follow-relations"], name: "Follow relations", pub: "2024-12-05"},
+          %{path: ["find-path"], name: "Find path", pub: "2024-12-05"}
+        ]
+      },
+      %{path: ["documentation"], name: "Documentation", pub: "2024-12-05"},
+      %{
+        path: ["database-design"],
+        name: "Database design",
+        pub: "2024-10-07",
+        mod: "2024-12-05",
+        children: [
           %{
-            path: ["schema-exploration"],
-            name: "Schema exploration",
+            path: ["aml"],
+            name: "AML",
+            pub: "2024-10-07",
+            mod: "2024-12-05",
             children: [
-              %{path: ["search"], name: "Search"},
-              %{path: ["follow-relations"], name: "Follow relations"},
-              %{path: ["find-path"], name: "Find path"}
-            ]
-          },
-          %{path: ["schema-documentation"], name: "Schema documentation"},
-          %{
-            path: ["database-design"],
-            name: "Database design",
-            children: [
+              %{path: ["aml", "entities"], name: "Entities", pub: "2024-10-07"},
+              %{path: ["aml", "relations"], name: "Relations", pub: "2024-10-07"},
+              %{path: ["aml", "types"], name: "Types", pub: "2024-10-07"},
+              %{path: ["aml", "namespaces"], name: "Namespaces", pub: "2024-10-07"},
+              %{path: ["aml", "identifiers"], name: "Identifiers", pub: "2024-10-07"},
+              %{path: ["aml", "properties"], name: "Properties", pub: "2024-10-07"},
+              %{path: ["aml", "documentation"], name: "Documentation", pub: "2024-10-07"},
+              %{path: ["aml", "comments"], name: "Comments", pub: "2024-10-07"},
               %{
-                path: ["aml"],
-                name: "AML",
+                path: ["aml", "migration"],
+                name: "Migration from v1",
+                pub: "2024-10-07",
                 children: [
-                  %{path: ["aml", "entities"], name: "Entities"},
-                  %{path: ["aml", "relations"], name: "Relations"},
-                  %{path: ["aml", "types"], name: "Types"},
-                  %{path: ["aml", "namespaces"], name: "Namespaces"},
-                  %{path: ["aml", "identifiers"], name: "Identifiers"},
-                  %{path: ["aml", "properties"], name: "Properties"},
-                  %{path: ["aml", "documentation"], name: "Documentation"},
-                  %{path: ["aml", "comments"], name: "Comments"},
-                  %{
-                    path: ["aml", "migration"],
-                    name: "Migration from v1",
-                    children: [
-                      %{path: ["aml", "v1"], name: "AML v1 (legacy)"}
-                    ]
-                  }
+                  %{path: ["aml", "v1"], name: "AML v1 (legacy)"}
                 ]
               }
             ]
           }
         ]
       },
-      %{
-        path: ["main-features"],
-        name: "Main features",
-        children: [
-          %{path: ["layouts"], name: "Layouts"},
-          %{path: ["sources"], name: "Sources"},
-          %{path: ["data-exploration"], name: "Data exploration"},
-          %{path: ["database-analysis"], name: "Database analysis"},
-          %{path: ["ai"], name: "AI integration"},
-          %{path: ["keyboard-shortcuts"], name: "Keyboard shortcuts"},
-          %{path: ["collaboration"], name: "Collaboration"},
-          %{path: ["export"], name: "Export"},
-          %{path: ["project-settings"], name: "Project settings"},
-          %{path: ["api"], name: "API"}
-        ]
-      },
+      %{path: ["layouts"], name: "Layouts"},
+      %{path: ["sources"], name: "Sources"},
+      %{path: ["data-exploration"], name: "Data exploration"},
+      %{path: ["database-analysis"], name: "Database analysis"},
+      %{path: ["ai"], name: "AI integration"},
+      %{path: ["keyboard-shortcuts"], name: "Keyboard shortcuts"},
+      %{path: ["collaboration"], name: "Collaboration"},
+      %{path: ["export"], name: "Export"},
+      %{path: ["project-settings"], name: "Project settings"},
+      %{path: ["api"], name: "API"},
       %{
         path: ["internals"],
         name: "Inside Azimutt",
@@ -502,6 +496,7 @@ defmodule Azimutt do
           %{path: ["cli"], name: "CLI"},
           %{path: ["gateway"], name: "Gateway"},
           %{path: ["converters"], name: "Converters"},
+          %{path: ["vscode"], name: "VS Code extension", pub: "2024-12-05"},
           %{path: ["badge"], name: "GitHub badge"}
         ]
       },
