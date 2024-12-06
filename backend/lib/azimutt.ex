@@ -386,6 +386,7 @@ defmodule Azimutt do
           # %{id: "datagrip", name: "DataGrip", description: "A powerful cross-platform tool for relational and NoSQL databases by JetBrains."},
           # %{id: "navicat", name: "Navicat", description: "Navicat is a robust, all-in-one solution for database development from a single application."},
           # %{id: "beekeeperstudio", name: "Beekeeper Studio", description: "The SQL Editor and Database Manager Of Your Dreams, easy to use and good looking SQL Client."}
+          # %{id: "pgadmin", name: "pgAdmin", description: "The most popular and feature rich Open Source administration and development platform for PostgreSQL."}
         ]
       },
       %{
@@ -401,6 +402,7 @@ defmodule Azimutt do
         name: "Data Catalog",
         keywords: "data catalog",
         tools: [
+          # %{id: "openmetadata", name: "OpenMetadata", description: "Open and unified metadata platform for data discovery, observability, and governance."},
           # %{id: "amundsen", name: "Amundsen", description: "Open source data discovery and metadata engine for analysts, data engineers and developers."},
           # %{id: "atlan", name: "Atlan", description: "Atlan is a metadata platform designed to cater to the needs of data-driven teams."}
         ]
@@ -439,7 +441,7 @@ defmodule Azimutt do
           %{path: ["find-path"], name: "Find path", pub: "2024-12-05"}
         ]
       },
-      %{path: ["documentation"], name: "Documentation", pub: "2024-12-05"},
+      %{path: ["documentation"], name: "Database documentation", pub: "2024-12-05"},
       %{
         path: ["database-design"],
         name: "Database design",
@@ -472,7 +474,7 @@ defmodule Azimutt do
           }
         ]
       },
-      %{path: ["layouts"], name: "Layouts"},
+      %{path: ["layouts"], name: "Layouts", pub: "2024-12-06"},
       %{path: ["sources"], name: "Sources"},
       %{path: ["data-exploration"], name: "Data exploration"},
       %{path: ["database-analysis"], name: "Database analysis"},

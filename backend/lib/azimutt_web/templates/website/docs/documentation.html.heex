@@ -20,8 +20,24 @@
         Azimutt database documentation is split in two parts:
     </p>
     <ul>
-        <li><a href="#schema-documentation">Schema documentation</a>: for the data model itself</li>
-        <li><a href="#layout-documentation">Layout documentation</a>: for specific parts or use cases, even <a href={"#{Routes.website_path(@conn, :doc, ["sources"])}#multi-sources"}>cross-database</a> ^^</li>
+        <li>
+            <a href="#schema-documentation">Schema documentation</a>: for the data model itself
+            <ul>
+                <li><a href="#comments">Comments</a></li>
+                <li><a href="#notes">Notes</a></li>
+                <li><a href="#tags">Tags</a></li>
+                <li><a href="#custom-properties">Custom properties</a></li>
+            </ul>
+        </li>
+        <li>
+            <a href="#layout-documentation">Layout documentation</a>: for specific parts or use cases, even <a href={"#{Routes.website_path(@conn, :doc, ["sources"])}#multi-sources"}>cross-database</a> ^^
+            <ul>
+                <li><a href="#layout-hierarchy">Layout hierarchy</a></li>
+                <li><a href="#color">Color</a></li>
+                <li><a href="#memos">Memos</a></li>
+                <li><a href="#groups">Groups</a></li>
+            </ul>
+        </li>
     </ul>
     <p>
         Of course, this documentation is not locked inside Azimutt.

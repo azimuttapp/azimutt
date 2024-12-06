@@ -2,6 +2,10 @@
 
 <%= doc_prose do %>
     <p class="lead">Work In Progress 😅</p>
+    <p>
+        See <a href={Routes.website_path(@conn, :converters)} target="_blank" rel="noopener">all converters</a>,
+        for example <a href={Routes.website_path(@conn, :convert, "aml", "postgres")} target="_blank" rel="noopener">AML to PostgreSQL</a>.
+    </p>
 <% end %>
 
 <%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>
