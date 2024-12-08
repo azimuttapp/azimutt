@@ -9,6 +9,7 @@
     "erd",
     "database tool"
   ],
+  "type": "commonjs",
   "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",

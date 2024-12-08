@@ -1,4 +1,4 @@
-import vscode from "vscode";
+import * as vscode from "vscode";
 import {openFile} from "./utils";
 
 const amlLib = import("@azimutt/aml");

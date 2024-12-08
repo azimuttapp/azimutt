@@ -1,4 +1,5 @@
-import vscode, {TextEditor, Uri} from "vscode";
+import * as vscode from "vscode";
+import {TextEditor, Uri} from "vscode";
 
 export async function openInAzimutt(editor: TextEditor): Promise<void> {
     if (editor.document.languageId !== 'aml') {

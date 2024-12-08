@@ -82,6 +82,7 @@ program.command('convert')
     .requiredOption('-f, --from <from>', 'The dialect of the file to convert from')
     .requiredOption('-t, --to <to>', 'The dialect to convert to')
     .option('-o, --out <out>', 'The file to write')
+    .option('--debug', 'Add debug logs and show the full stacktrace instead of a shorter error')
     .action((path, args) => exec(convertFile(path, args), args))
 
 program.command('diff')
