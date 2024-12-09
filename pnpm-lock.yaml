@@ -16,6 +16,9 @@ importers:
 
   cli:
     dependencies:
+      '@azimutt/aml':
+        specifier: workspace:^
+        version: link:../libs/aml
       '@azimutt/gateway':
         specifier: workspace:^
         version: link:../gateway

@@ -5,6 +5,7 @@
   "license": "MIT",
   "homepage": "https://azimutt.app",
   "keywords": [],
+  "type": "commonjs",
   "main": "./out/index.js",
   "types": "./out/index.d.ts",
   "scripts": {

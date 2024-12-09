@@ -1,4 +1,5 @@
-import vscode, {TextEditor} from "vscode";
+import * as vscode from "vscode";
+import {TextEditor} from "vscode";
 import {
     generateAml,
     generateDot,

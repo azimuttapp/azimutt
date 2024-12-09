@@ -6,7 +6,6 @@
     "target": "ES2021",
     "rootDir": "./src",
     "outDir": "./out",
-    "types": ["node"],
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "sourceMap": true,
