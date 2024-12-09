@@ -1,7 +1,7 @@
 <%= cond do %>
     <% @converter == "aml" -> %>
         A very simple language made by Azimutt to ease and speed database design.
-        In addition, you can use <a href={Routes.website_path(@conn, :aml)} class="underline">AML</a> inside Azimutt or as a <a href="https://www.npmjs.com/package/@azimutt/aml" target="_blank" rel="noopener noreferrer" class="underline">standalone library</a> for your own projects.
+        In addition, you can use <a href={Routes.website_path(@conn, :aml)} class="underline">AML</a> inside Azimutt or as a <a href={Azimutt.config(:npm_aml_url)} target="_blank" rel="noopener noreferrer" class="underline">standalone library</a> for your own projects.
     <% @converter == "dbml" -> %>
         <a href="https://github.com/holistics/dbml" target="_blank" rel="noopener noreferrer" class="underline">DBML</a> is a DSL made by <a href="https://www.holistics.io" target="_blank" rel="noopener noreferrer" class="underline">Holistics</a> to define and document database schemas and structures.
         It's used on <a href="https://dbdiagram.io" target="_blank" rel="noopener noreferrer" class="underline">dbdiagram.io</a>, an Entity-Relationship Diagram tool.

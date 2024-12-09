@@ -1,6 +1,6 @@
 <%
   aml_doc = Routes.website_path(@conn, :doc, ["aml"])
-  aml_npm = "https://www.npmjs.com/package/@azimutt/aml"
+  aml_npm = Azimutt.config(:npm_aml_url)
   aml_vscode = Azimutt.config(:vscode_extension_url)
   aml_converter = Routes.website_path(@conn, :converter, "aml")
   aml_azimutt = Routes.elm_path(@conn, :create)

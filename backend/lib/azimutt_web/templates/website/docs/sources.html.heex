@@ -1,15 +1,158 @@
 <%= render "docs/_header.html", conn: @conn, page: @page %>
 
 <%= doc_prose do %>
-    <p class="lead">Work In Progress 😅</p>
+    <p class="lead">
+        Sources, and especially multiple sources, is what makes Azimutt special.
+        They allow a powerful and flexible management to follow your project lifecycle.
+    </p>
+    <p>
+        Azimutt doesn't just have a single database schema shown in one or several <a href={Routes.website_path(@conn, :doc, ["layouts"])}>layouts</a>.
+        Instead, it can have several sources that are merged together to form the available schema for layouts, allowing to:
+    </p>
+    <ul>
+        <li>Refresh them as they evolve</li>
+        <li>Make layouts with entities from different databases</li>
+        <li>Choose which one you want to see at any time</li>
+    </ul>
+    <img src={Routes.static_path(@conn, "/images/doc/sources.png")} alt="Multiple sources are merged into one schema" />
+
+    <p>On <a href={Routes.website_path(@conn, :doc, ["create-your-project"])}>project creation</a>, you choose your first source from the available ones:</p>
+    <img src={Routes.static_path(@conn, "/images/doc/project-new.png")} alt="Creating a new Azimutt project" />
+    <p>After that, you can access them, and add more, from the project settings (top right cog icon):</p>
+    <img src={Routes.static_path(@conn, "/images/doc/source-new.jpg")} alt="Creating a new source" />
+    <p>Now let's dig into more details:</p>
+    <ul>
+        <li><a href="#source-kinds">Source kinds</a></li>
+        <li><a href="#project-lifecycle">Project lifecycle</a></li>
+        <li><a href="#refresh-source">Refresh source</a></li>
+        <li><a href="#roadmap">Roadmap</a></li>
+    </ul>
+
+    <%= render "docs/_h2.html", title: "Source kinds" %>
+    <p>
+        Azimutt has many kind of sources allowing you to use what you already have in the easiest way.
+        Ultimately, all the sources are transformed into a Database schema to be used seamlessly together.
+        You can expect more source kinds in the future, like Ruby on Rails models or specialized languages like Mermaid or DBML.
+    </p>
+
+    <%= render "docs/_h3.html", title: "Database source" %>
+    <p>
+        This is the one we recommend.
+        The schema extraction is reliable and provides more features like statistics (entity size and number of rows, attribute common values...), better inspection (JSON column, polymorphic relations) and enable data exploration.
+        This is the one you will get the most out of Azimutt.
+    </p>
+    <p>
+        To use it, you just have to provide your connection url (with user and password) for a <a href={Routes.website_path(@conn, :connectors)}>supported database</a>.
+    </p>
+    <p>
+        We know it's a very sensitive information, that's why we take <a href={Routes.website_path(@conn, :doc, ["data-privacy"])}>data privacy</a> very seriously.
+        We have built different storage options specifically for database urls:
+    </p>
+    <ul>
+        <li>In browser (default): your database url will be stored encrypted in your browser storage, Azimutt servers never access it, even with the cloud version</li>
+        <li>In memory: if you don't want to store your database url anywhere, Azimutt can just keep it in-memory (thanks JavaScript SPA!), but you will have to fill it again at each page reload</li>
+        <li>In project: if you want to share it with other people easily, Azimutt can keep it in the project and anyone accessing the project can use it. Useful for local and dev urls for example</li>
+    </ul>
+
+    <%= render "docs/_h3.html", title: "SQL source" %>
+    <p>
+        This is the historical source for Azimutt: your SQL schema (DDL) with all the CREATE TABLE but also comments, foreign keys and indexes...
+        It's good enough but parsing SQL for all the dialects is quite tricky, we do our best and improve the parser for each error we find (if you tell us ^^).
+    </p>
+    <p>
+        If you have your database schema generated in SQL by your ORM it can be a good solution, or as a fallback from the database connection if you can't or don't want to connect your database.
+    </p>
+    <p>
+        You can either import a local file or reference a remote one, but it should be accessible from the Azimutt frontend.
+        This is especially useful for Open Source project who want to provide an easy database exploration to their users using the <a href={Routes.website_path(@conn, :doc, ["badge"])}>Azimutt badge</a>.
+    </p>
+
+    <%= render "docs/_h3.html", title: "AML source" %>
+    <p>
+        <a href={Routes.website_path(@conn, :aml)}>AML</a> is the dedicated language we created to make database schema design enjoyable.
+        It's awesome (yes!) and it's currently the only way to update your schema inside Azimutt.
+    </p>
+    <p>If you want to design a database schema or extend an existing one, select this source kind.</p>
+    <p>
+        BTW, it's also available as a <a href={Azimutt.config(:npm_aml_url)} target="_blank" rel="noopener">standalone lib</a> to use it in your own projects,
+        and we made a <a href={Routes.website_path(@conn, :doc, ["vscode"])}>VS Code extension</a> to provide the best editing experience possible ✨<br>
+        If you miss anything, tell us, we are happy to improve further!
+    </p>
+
+    <%= render "docs/_h3.html", title: "JSON source" %>
+    <p>
+        This one is the ultimate truth 💎<br>
+        All the others are first converted to this one before being used.
+        It's useful if your source is not already handled by Azimutt, for example ORM entities, a specific format or even a service.
+        You can extract the schema from your source and format it according to the <a href="https://github.com/azimuttapp/azimutt/blob/main/frontend/src/DataSources/JsonMiner/JsonSchema.elm#L37">Azimutt JSON Schema</a> to inject it in Azimutt.
+    </p>
+    <p>It requires more work than just a simple export, but it makes Azimutt easily extensible if you need.</p>
+    <p>💡 If you are looking to integrate a new database, you are probably better <a href={Routes.website_path(@conn, :connector, "new")}>making a connector</a> and integrate it in a gateway you launch locally.</p>
+
+    <%= render "docs/_h3.html", title: "Prisma source" %>
+    <p>This one is an example of how Azimutt can include other dialects. If you have a <a href="https://www.prisma.io/docs/orm/prisma-schema/overview">Prisma schema</a>, you can directly import it to Azimutt 🎉</p>
+
+    <%= render "docs/_h2.html", title: "Project lifecycle" %>
+    <p>The flexible source management allows Azimutt to follow your project lifecycle.</p>
+    <p>
+        At the very beginning, you can create a project with a single AML source to design your new database schema.
+        When it grows, you can split it in several AML sources to keep them reasonably sized or just semantically isolated.
+    </p>
+    <p>
+        When your database is implemented, you can import it as a source and refresh it regularly to make sure it's always in sync.
+        You can even schedule the sync using the <a href={"#{Routes.website_path(@conn, :doc, ["api"])}#http-api"}>Azimutt API</a>.
+        You can start with your development database and then move to the staging one or even the production one if it makes sense.
+    </p>
+    <p>
+        When you work on new features, you can create a dedicated AML source that could be disabled by default to not confuse your teammates (until <a href="#source-visibility-per-layout">layout visibility</a> is integrated).
+        And when it's implemented in your database, refresh its source and remove your feature specific AML source for cleanup.
+    </p>
 
     <%= render "docs/_h2.html", title: "Refresh source" %>
-    <%= render "docs/_h2.html", title: "Multi-sources" %>
     <p>
-        Azimutt is quite unique with its multi-sources capability.
-        They are all independent and can be refreshed on their own, overriding only their own schema.
-        What is accessible from the search and layouts, is the global merge of all sources.
+        As there is no way to modify imported sources in Azimutt, so you can safely refresh them by importing them again.
+        For that, just click on the update icon (the pen) in the source list.
+        You will have a popup where you can refresh it, depending on its kind:
     </p>
+    <ul>
+        <li>For database connection: make sure the required gateway is available (start one locally if needed with <code>npx azimutt@latest gateway</code>) and fetch the schema again</li>
+        <li>For remote files: just fetch them again, of course it needs to still be accessible ^^</li>
+        <li>For local files: you will have to import them again. Make sure to select the same one (for example the "structure.sql" in your project)</li>
+    </ul>
+    <p>
+        You can do that without any worries, Azimutt will fetch the new schema, show you the main differences with the current one (added/updated/removed entities/relations/types)
+        and you can choose to update the source with the new schema or not:
+    </p>
+    <img src={Routes.static_path(@conn, "/images/doc/source-refresh.png")} alt="Refresh a source schema" />
+
+    <%= render "docs/_h2.html", title: "Roadmap" %>
+    <p>
+        As a tool made to handle real word situations, sources were built from the start, in the initial 2 months MVP in 2020.
+        At this time there were only SQL file sources, but they already could be refreshed and activated or not.
+        Azimutt evolved, got new source kind like Database connection, AML and others, but some initial choices, still in place, needs to be reconsidered.
+    </p>
+    <ul>
+        <li>
+            <%= render "docs/_b.html", title: "Source visibility per layout" %>: today sources are visible or not for the whole project, which make changing a source visibility very impactful (if saved).
+            Especially as the project grows with many layouts made by several people across the whole organization.
+            Hiding a source could make some layout less relevant, especially when using some AML sources to design new features.
+            But it introduces a challenge to make clear in layouts which sources are active or not in each layout.
+        </li>
+        <li>
+            <%= render "docs/_b.html", title: "Namespace mapping" %>: entities are merged together from all the active sources based on their namespace (schema + name, soon database + catalog + schema + name).
+            This is useful to extend a database schema with AML, you just have to create an entity with the same namespace and add the new columns (no solution yet to remove them ^^).
+            This is also useful when importing multiple identical databases (dev, staging, prod) and have a unified schema.
+            But it's not ideal when importing different databases with the same schema (<code>public</code> or <code>dto</code> for example), it's less obvious when the entity comes from and worse, if two entities have the same name they will be merged 😱
+            Namespace mapping will allow to change one or several namespaces for a source, for example "public -> catalog" for the catalog database and "public -> shopping" for the shopping database.
+        </li>
+        <li>
+            <%= render "docs/_b.html", title: "More editor sources" %>: for now, only AML sources can be edited in Azimutt.
+            This can be quite frustrating when importing SQL or Prisma files to not being able to edit them in Azimutt.
+            It was made on purpose to guarantee they are the same as the imported file and a refresh won't erase changes.
+            But allowing to have them not as imported files but editors could be more convenient in some situations.
+            Azimutt could also support other input language like DBML and Mermaid for more compatibility.
+        </li>
+    </ul>
 <% end %>
 
 <%= render "docs/_footer.html", conn: @conn, page: @page, prev: @prev, next: @next %>

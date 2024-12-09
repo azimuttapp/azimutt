@@ -216,7 +216,7 @@ console.log('database', database)</code></pre>
 
     <%= render "docs/_h3.html", title: "AML tooling" %>
     <p>
-        AML package is <a href="https://www.npmjs.com/package/@azimutt/aml" target="_blank" rel="noopener">@azimutt/aml</a>,
+        AML package is <a href={Azimutt.config(:npm_aml_url)} target="_blank" rel="noopener">@azimutt/aml</a>,
         here is how to parse/generate AML into <a href="https://github.com/azimuttapp/azimutt/blob/main/libs/models/src/database.ts" target="_blank" rel="noopener">JSON</a>:
     </p>
     <pre><code class="hljs ts">import {generateAml, parseAml} from "@azimutt/aml"

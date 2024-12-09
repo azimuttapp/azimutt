@@ -46,7 +46,7 @@
     <%= render "docs/_h2.html", title: "From Prisma" %>
     <p>
         <a href="https://www.prisma.io" target="_blank" rel="noopener noreferrer" class="underline">Prisma</a> is a Node.js and TypeScript ORM
-        that use its own <a href="https://www.prisma.io/docs/orm/prisma-schema" target="_blank" rel="noopener noreferrer" class="underline">schema syntax</a>.
+        that use its own <a href="https://www.prisma.io/docs/orm/prisma-schema/overview" target="_blank" rel="noopener noreferrer" class="underline">schema syntax</a>.
         Same as SQL, you can import the file in Azimutt, local or remote.
     </p>
 
@@ -65,7 +65,7 @@
         If you are looking to design your database, and not explore an existing one.<br>
         You can <a href={"#{Routes.elm_path(@conn, :create)}?aml"} target="_blank" rel="noopener noreferrer">create an empty project</a>
         and use <a href={Routes.website_path(@conn, :aml)}>AML</a> to design it.<br>
-        You can always add other sources from any kind after with the Azimutt <a href={"#{Routes.website_path(@conn, :doc, ["sources"])}#multi-sources"}>multi-source feature</a>.
+        You can always add other sources from any kind after with the Azimutt <a href={Routes.website_path(@conn, :doc, ["sources"])}>multi-source feature</a>.
     </p>
 
     <%= render "docs/_h2.html", title: "Import project" %>

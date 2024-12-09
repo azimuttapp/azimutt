@@ -30,7 +30,7 @@
             </ul>
         </li>
         <li>
-            <a href="#layout-documentation">Layout documentation</a>: for specific parts or use cases, even <a href={"#{Routes.website_path(@conn, :doc, ["sources"])}#multi-sources"}>cross-database</a> ^^
+            <a href="#layout-documentation">Layout documentation</a>: for specific parts or use cases, even <a href={Routes.website_path(@conn, :doc, ["sources"])}>cross-database</a> ^^
             <ul>
                 <li><a href="#layout-hierarchy">Layout hierarchy</a></li>
                 <li><a href="#color">Color</a></li>
@@ -41,7 +41,7 @@
     </ul>
     <p>
         Of course, this documentation is not locked inside Azimutt.
-        It's accessible with the <a href="/api/v1/swagger" target="_blank" rel="noopener">API</a> so you can sync Azimutt with anything else, as a source or a destination, once or periodically.
+        It's accessible with the <a href={"#{Routes.website_path(@conn, :doc, ["api"])}#http-api"}>API</a> so you can sync Azimutt with anything else, as a source or a destination, once or periodically.
     </p>
 
     <%= render "docs/_h2.html", title: "Schema documentation" %>
