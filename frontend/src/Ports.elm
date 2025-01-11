@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, copyToClipboard, createProject, createProjectTmp, deleteProject, deleteSource, downloadFile, fireworks, focus, fullscreen, getAmlSchema, getAutoLayout, getCode, getColumnStats, getDatabaseSchema, getPrismaSchema, getProject, getTableStats, listenHotkeys, llmGenerateSql, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableRowSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, copyToClipboard, createProject, createProjectTmp, deleteProject, deleteSource, downloadFile, fireworks, focus, fullscreen, getAmlSchema, getAutoLayout, getCode, getColumnStats, getDatabaseSchema, getPrismaSchema, getProject, getTableStats, listenHotkeys, llmGenerateSql, llmLayoutFromSql, llmLayoutPrompt, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableRowSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
 
 import DataSources.JsonMiner.JsonSchema as JsonSchema exposing (JsonSchema)
 import Dict exposing (Dict)
@@ -24,12 +24,14 @@ import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.ParserError as ParserError exposing (ParserError)
 import Models.Position as Position
 import Models.Project as Project exposing (Project)
+import Models.Project.ColumnName as ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnStats as ColumnStats exposing (ColumnStats)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
+import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableRow as TableRow exposing (TableRow)
 import Models.Project.TableStats as TableStats exposing (TableStats)
@@ -234,9 +236,19 @@ observeSizes ids =
         messageToJs (ObserveSizes ids)
 
 
-llmGenerateSql : OpenAIKey -> OpenAIModel -> String -> DatabaseKind -> Source -> Cmd msg
-llmGenerateSql apiKey model prompt dialect source =
-    messageToJs (LlmGenerateSql apiKey model prompt dialect source)
+llmGenerateSql : OpenAIKey -> OpenAIModel -> DatabaseKind -> Source -> String -> Cmd msg
+llmGenerateSql apiKey model dialect source prompt =
+    messageToJs (LlmGenerateSql apiKey model dialect source prompt)
+
+
+llmLayoutPrompt : OpenAIKey -> OpenAIModel -> List Table -> String -> Cmd msg
+llmLayoutPrompt apiKey model tables prompt =
+    messageToJs (LlmLayoutPrompt apiKey model tables prompt)
+
+
+llmLayoutFromSql : OpenAIKey -> OpenAIModel -> List Table -> String -> Cmd msg
+llmLayoutFromSql apiKey model tables sql =
+    messageToJs (LlmLayoutFromSql apiKey model tables sql)
 
 
 listenHotkeys : Dict String (List Hotkey) -> Cmd msg
@@ -304,7 +316,9 @@ type ElmMsg
     | GetCode Dialect JsonSchema
     | GetAutoLayout AutoLayoutMethod Area (List DiagramNode) (List DiagramEdge)
     | ObserveSizes (List HtmlId)
-    | LlmGenerateSql OpenAIKey OpenAIModel String DatabaseKind Source
+    | LlmGenerateSql OpenAIKey OpenAIModel DatabaseKind Source String
+    | LlmLayoutPrompt OpenAIKey OpenAIModel (List Table) String
+    | LlmLayoutFromSql OpenAIKey OpenAIModel (List Table) String
     | ListenKeys (Dict String (List Hotkey))
     | Confetti HtmlId
     | ConfettiPride
@@ -333,6 +347,7 @@ type JsMsg
     | GotKeyHold String Bool
     | GotToast String String
     | GotTableShow TableId (Maybe Position.Grid)
+    | GotTablesShow String (List { id : TableId, columns : List ColumnName })
     | GotTableHide TableId
     | GotTableToggleColumns TableId
     | GotTablePosition TableId Position.Grid
@@ -466,8 +481,14 @@ elmEncoder elm =
         ObserveSizes ids ->
             Encode.object [ ( "kind", "ObserveSizes" |> Encode.string ), ( "ids", ids |> Encode.list Encode.string ) ]
 
-        LlmGenerateSql apiKey model prompt dialect source ->
-            Encode.object [ ( "kind", "LlmGenerateSql" |> Encode.string ), ( "apiKey", apiKey |> OpenAIKey.encode ), ( "model", model |> OpenAIModel.encode ), ( "prompt", prompt |> Encode.string ), ( "dialect", dialect |> DatabaseKind.encode ), ( "source", source |> Source.encode ) ]
+        LlmGenerateSql apiKey model dialect source prompt ->
+            Encode.object [ ( "kind", "LlmGenerateSql" |> Encode.string ), ( "apiKey", apiKey |> OpenAIKey.encode ), ( "model", model |> OpenAIModel.encode ), ( "dialect", dialect |> DatabaseKind.encode ), ( "source", source |> Source.encode ), ( "prompt", prompt |> Encode.string ) ]
+
+        LlmLayoutPrompt apiKey model tables prompt ->
+            Encode.object [ ( "kind", "LlmLayoutPrompt" |> Encode.string ), ( "apiKey", apiKey |> OpenAIKey.encode ), ( "model", model |> OpenAIModel.encode ), ( "tables", tables |> Encode.list Table.encode ), ( "prompt", prompt |> Encode.string ) ]
+
+        LlmLayoutFromSql apiKey model tables sql ->
+            Encode.object [ ( "kind", "LlmLayoutFromSql" |> Encode.string ), ( "apiKey", apiKey |> OpenAIKey.encode ), ( "model", model |> OpenAIModel.encode ), ( "tables", tables |> Encode.list Table.encode ), ( "sql", sql |> Encode.string ) ]
 
         ListenKeys keys ->
             Encode.object [ ( "kind", "ListenKeys" |> Encode.string ), ( "keys", keys |> Encode.dict identity (Encode.list Hotkey.encode) ) ]
@@ -561,6 +582,18 @@ jsDecoder =
 
                 "GotTableShow" ->
                     Decode.map2 GotTableShow (Decode.field "id" TableId.decode) (Decode.maybeField "position" Position.decodeGrid)
+
+                "GotTablesShow" ->
+                    Decode.map2 GotTablesShow
+                        (Decode.field "from" Decode.string)
+                        (Decode.field "tables"
+                            (Decode.list
+                                (Decode.map2 (\id columns -> { id = id, columns = columns })
+                                    (Decode.field "id" TableId.decode)
+                                    (Decode.field "columns" (Decode.list ColumnName.decode))
+                                )
+                            )
+                        )
 
                 "GotTableHide" ->
                     Decode.map GotTableHide (Decode.field "id" TableId.decode)
@@ -673,6 +706,9 @@ unhandledJsMsgError msg =
 
                 GotTableShow _ _ ->
                     "GotTableShow"
+
+                GotTablesShow _ _ ->
+                    "GotTablesShow"
 
                 GotTableHide _ ->
                     "GotTableHide"

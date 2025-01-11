@@ -1,4 +1,4 @@
-module Track exposing (SQLParsing, amlSourceCreated, dataExplorerDetailsOpened, dataExplorerDetailsResult, dataExplorerOpened, dataExplorerQueryOpened, dataExplorerQueryResult, dbAnalysisOpened, detailSidebarClosed, detailSidebarOpened, docOpened, externalLink, findPathOpened, findPathResults, generateSqlFailed, generateSqlOpened, generateSqlQueried, generateSqlReplied, generateSqlSucceeded, groupCreated, groupDeleted, groupRenamed, jsonError, layoutCreated, layoutDeleted, layoutLoaded, layoutRenamed, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, projectLoaded, searchClicked, sourceAdded, sourceCreated, sourceDeleted, sourceEditorClosed, sourceEditorOpened, sourceRefreshed, sqlSourceCreated, tableRowOpened, tableRowResult, tableRowShown, tableShown, tagsCreated, tagsDeleted, tagsUpdated)
+module Track exposing (SQLParsing, amlSourceCreated, dataExplorerDetailsOpened, dataExplorerDetailsResult, dataExplorerOpened, dataExplorerQueryOpened, dataExplorerQueryResult, dbAnalysisOpened, detailSidebarClosed, detailSidebarOpened, docOpened, externalLink, findPathOpened, findPathResults, generateSqlFailed, generateSqlOpened, generateSqlQueried, generateSqlReplied, generateSqlSucceeded, groupCreated, groupDeleted, groupRenamed, jsonError, layoutCreated, layoutDeleted, layoutFromSqlOpened, layoutFromSqlQueried, layoutFromSqlReplied, layoutLoaded, layoutPromptOpened, layoutPromptQueried, layoutPromptReplied, layoutRenamed, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, projectLoaded, searchClicked, sourceAdded, sourceCreated, sourceDeleted, sourceEditorClosed, sourceEditorOpened, sourceRefreshed, sqlSourceCreated, tableRowOpened, tableRowResult, tableRowShown, tableShown, tagsCreated, tagsDeleted, tagsUpdated)
 
 import DataSources.Helpers exposing (SourceLine)
 import DataSources.SqlMiner.SqlAdapter exposing (SqlSchema)
@@ -18,10 +18,12 @@ import Libs.Result as Result
 import Models.OpenAIModel as OpenAIModel exposing (OpenAIModel)
 import Models.OrganizationId exposing (OrganizationId)
 import Models.Project exposing (Project)
+import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind as SourceKind
+import Models.Project.TableId exposing (TableId)
 import Models.Project.TableRow as TableRow
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.QueryResult exposing (QueryResult)
@@ -252,6 +254,36 @@ tableRowOpened previous source query project =
 tableRowResult : QueryResult -> { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } -> Cmd msg
 tableRowResult res project =
     sendEvent "data_explorer__table_row__result" (queryResultDetails res) (Just project)
+
+
+layoutPromptOpened : ProjectInfo -> Cmd msg
+layoutPromptOpened project =
+    sendEvent "editor__layout_prompt__opened" [] (Just project)
+
+
+layoutPromptQueried : ProjectInfo -> String -> Cmd msg
+layoutPromptQueried project prompt =
+    sendEvent "editor__layout_prompt__queried" [ ( "prompt_length", prompt |> String.length |> Encode.int ) ] (Just project)
+
+
+layoutPromptReplied : Maybe ProjectInfo -> List { id : TableId, columns : List ColumnName } -> Cmd msg
+layoutPromptReplied project tables =
+    sendEvent "editor__layout_prompt__replied" [ ( "nb_tables", tables |> List.length |> Encode.int ), ( "nb_columns", tables |> List.concatMap .columns |> List.length |> Encode.int ) ] project
+
+
+layoutFromSqlOpened : ProjectInfo -> Cmd msg
+layoutFromSqlOpened project =
+    sendEvent "editor__layout_from_sql__opened" [] (Just project)
+
+
+layoutFromSqlQueried : ProjectInfo -> String -> Cmd msg
+layoutFromSqlQueried project query =
+    sendEvent "editor__layout_from_sql__queried" [ ( "query_length", query |> String.length |> Encode.int ) ] (Just project)
+
+
+layoutFromSqlReplied : Maybe ProjectInfo -> List { id : TableId, columns : List ColumnName } -> Cmd msg
+layoutFromSqlReplied project tables =
+    sendEvent "editor__layout_from_sql__replied" [ ( "nb_tables", tables |> List.length |> Encode.int ), ( "nb_columns", tables |> List.concatMap .columns |> List.length |> Encode.int ) ] project
 
 
 generateSqlOpened : ProjectInfo -> Maybe Source -> Cmd msg

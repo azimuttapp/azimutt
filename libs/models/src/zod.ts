@@ -12,7 +12,7 @@ export const zodStringify = <T>(typ: ZodType<T>, label?: string) => (value: T): 
 const pathToString = (path: (string | number)[]): string => path.length === 0 ? '_root_' : `.${path.join('.')}`
 const normalizePath = (path: (string | number)[]): string => pathToString(path.map(p => typeof p === 'number' ? '?' : p))
 
-function zodErrorToString<T>(e: ZodError, typ: ZodType<T>, label: string | undefined, value: any): string {
+export function zodErrorToString<T>(e: ZodError, typ: ZodType<T>, label: string | undefined, value: any): string {
     const name = label || typ.description || 'ZodType'
     const len = e.issues.length
     if (len === 0) {

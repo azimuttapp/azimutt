@@ -12,12 +12,12 @@ import Libs.Ned as Ned
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Task as T
 import Models.Area as Area
-import Models.AutoLayout as AutoLayout
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnId as ColumnId exposing (ColumnId)
+import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Relation as Relation
@@ -36,7 +36,6 @@ import PagesComponents.Organization_.Project_.Models.ErdTableProps exposing (Erd
 import PagesComponents.Organization_.Project_.Models.HideColumns as HideColumns exposing (HideColumns)
 import PagesComponents.Organization_.Project_.Models.PositionHint as PositionHint exposing (PositionHint(..))
 import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns exposing (ShowColumns)
-import PagesComponents.Organization_.Project_.Updates.Canvas exposing (launchAutoLayout)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Ports
 import Services.Lenses exposing (mapCanvas, mapColumns, mapColumnsT, mapRelatedTables, mapTables, mapTablesL, mapTablesLTM, mapTablesT, setHighlighted, setHoverTable, setPosition, setShown)
@@ -81,36 +80,36 @@ placeTableAtCenter viewport canvas table =
     canvas.position |> Position.moveDiagram delta
 
 
-showTable : Time.Posix -> TableId -> Maybe PositionHint -> String -> Erd -> ( Erd, Extra Msg )
-showTable now id hint from erd =
+showTable : Time.Posix -> TableId -> List ColumnName -> Maybe PositionHint -> String -> Erd -> ( Erd, Extra Msg )
+showTable now id columns hint from erd =
     case erd |> Erd.getTableI id of
         Just table ->
             if erd |> Erd.isShown id then
                 ( erd, "Table " ++ TableId.show erd.settings.defaultSchema id ++ " already shown" |> Toasts.info |> Toast |> Extra.msg )
 
             else
-                erd |> performShowTable now table hint |> Tuple.mapSecond (Extra.newLL [ Ports.observeTableSize table.id, Track.tableShown 1 from (Just erd) ])
+                erd |> performShowTable now table columns hint |> Tuple.mapSecond (Extra.newLL [ Ports.observeTableSize table.id, Track.tableShown 1 from (Just erd) ])
 
         Nothing ->
             ( erd, "Can't show table " ++ TableId.show erd.settings.defaultSchema id ++ ": not found" |> Toasts.error |> Toast |> Extra.msg )
 
 
-showTables : Time.Posix -> List TableId -> Maybe PositionHint -> String -> Erd -> ( Erd, Extra Msg )
-showTables now ids hint from erd =
-    ids
-        |> List.indexedMap (\i id -> ( id, erd |> Erd.getTableI id, hint |> Maybe.map (PositionHint.move { dx = 0, dy = Conf.ui.table.headerHeight * toFloat i }) ))
+showTables : Time.Posix -> List { id : TableId, columns : List ColumnName } -> Maybe PositionHint -> String -> Erd -> ( Erd, Extra Msg )
+showTables now tables hint from erd =
+    tables
+        |> List.indexedMap (\i t -> ( t, erd |> Erd.getTableI t.id, hint |> Maybe.map (PositionHint.move { dx = 0, dy = Conf.ui.table.headerHeight * toFloat i }) ))
         |> List.foldl
-            (\( id, maybeTable, tableHint ) ( ( e, h ), ( found, shown, notFound ) ) ->
+            (\( t, maybeTable, tableHint ) ( ( e, h ), ( found, shown, notFound ) ) ->
                 case maybeTable of
                     Just table ->
-                        if erd |> Erd.isShown id then
-                            ( ( e, h ), ( found, id :: shown, notFound ) )
+                        if erd |> Erd.isShown t.id then
+                            ( ( e, h ), ( found, t.id :: shown, notFound ) )
 
                         else
-                            ( e |> performShowTable now table tableHint |> Tuple.mapSecond (\m -> m ++ h), ( id :: found, shown, notFound ) )
+                            ( e |> performShowTable now table t.columns tableHint |> Tuple.mapSecond (\m -> m ++ h), ( t.id :: found, shown, notFound ) )
 
                     Nothing ->
-                        ( ( e, h ), ( found, shown, id :: notFound ) )
+                        ( ( e, h ), ( found, shown, t.id :: notFound ) )
             )
             ( ( erd, [] ), ( [], [], [] ) )
         |> (\( ( e, h ), ( found, shown, notFound ) ) ->
@@ -139,7 +138,7 @@ showAllTables now from erd =
 
         newTables : List ErdTableLayout
         newTables =
-            tablesToShow |> List.map (\t -> t |> ErdTableLayout.init erd.settings shownIds (erd.relationsByTable |> Dict.getOrElse t.id []) erd.settings.collapseTableColumns Nothing)
+            tablesToShow |> List.map (\t -> ErdTableLayout.init erd.settings shownIds (erd.relationsByTable |> Dict.getOrElse t.id []) erd.settings.collapseTableColumns Nothing t [])
 
         newErd : Erd
         newErd =
@@ -218,7 +217,7 @@ showRelatedTables now id erd =
                         toShow |> List.foldl (\( t, h ) ( cur, res ) -> ( cur + h + padding.dy, ( t, Just (PlaceAt (Position.grid { left = left, top = cur })) ) :: res )) ( top, [] ) |> Tuple.second
 
                     ( newErd, extra ) =
-                        shows |> List.foldl (\( t, h ) ( e, cs ) -> showTable now t h "related" e |> Tuple.mapSecond (Extra.combine cs)) ( erd, Extra.none )
+                        shows |> List.foldl (\( t, h ) ( e, cs ) -> showTable now t [] h "related" e |> Tuple.mapSecond (Extra.combine cs)) ( erd, Extra.none )
 
                     ( back, forward ) =
                         ( shows |> List.map (\( t, _ ) -> HideTable t) |> Batch
@@ -427,8 +426,8 @@ performHideTable now id erd =
         |> Maybe.withDefault ( erd, Extra.none )
 
 
-performShowTable : Time.Posix -> ErdTable -> Maybe PositionHint -> Erd -> ( Erd, List ( Msg, Msg ) )
-performShowTable now table hint erd =
+performShowTable : Time.Posix -> ErdTable -> List ColumnName -> Maybe PositionHint -> Erd -> ( Erd, List ( Msg, Msg ) )
+performShowTable now table columns hint erd =
     erd
         |> Erd.mapCurrentLayoutTWithTime now
             (mapTablesT
@@ -443,6 +442,7 @@ performShowTable now table hint erd =
                                 erd.settings.collapseTableColumns
                                 hint
                                 table
+                                columns
                     in
                     ( erdTable :: tables, [ ( HideTable table.id, UnHideTable_ 0 erdTable ) ] )
                 )

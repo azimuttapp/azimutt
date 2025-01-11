@@ -69,9 +69,11 @@ type alias Confirm msg =
 
 type alias Prompt msg =
     { color : Color
-    , icon : Icon
+    , icon : Maybe Icon
     , title : String
     , message : Html msg
+    , placeholder : String
+    , multiline : Bool
     , confirm : String
     , cancel : String
     , onConfirm : String -> Cmd msg

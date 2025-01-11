@@ -208,11 +208,11 @@ viewTable goToList goToSchema goToTable goToColumn showTable loadLayout openData
             , table.item.comment |> Maybe.mapOrElse viewComment (div [] [])
             , notes |> viewNotes
             , tags |> viewTags
-            , inLayouts |> List.nonEmptyMap (\l -> viewProp [ text "In layouts" ] (l |> List.sort |> List.map (viewLayout loadLayout))) (div [] [])
-            , table.item.origins |> List.nonEmptyMap (\origin -> viewProp [ text "From sources" ] (origin |> List.sortBy .name |> List.map (\o -> viewSource openDataExplorer table.item.id Nothing (stats |> Dict.get (SourceId.toString o.id) |> Maybe.andThen Result.toMaybe |> Maybe.map .rows) o))) (div [] [])
+            , viewTableConstraints table.item
             , outRelations |> List.nonEmptyMap (\r -> viewProp [ text "References" ] (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
             , inRelations |> List.nonEmptyMap (\r -> viewProp [ text "Referenced by" ] (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
-            , viewTableConstraints table.item
+            , inLayouts |> List.nonEmptyMap (\l -> viewProp [ text "In layouts" ] (l |> List.sort |> List.map (viewLayout loadLayout))) (div [] [])
+            , table.item.origins |> List.nonEmptyMap (\origin -> viewProp [ text "From sources" ] (origin |> List.sortBy .name |> List.map (\o -> viewSource openDataExplorer table.item.id Nothing (stats |> Dict.get (SourceId.toString o.id) |> Maybe.andThen Result.toMaybe |> Maybe.map .rows) o))) (div [] [])
             , viewTableStats table.item.origins table.item.stats stats
             , viewProp [ text (table.item.columns |> String.pluralizeD "column") ]
                 [ ul [ role "list", class "-mx-3 relative z-0 divide-y divide-gray-200" ]
@@ -291,12 +291,12 @@ viewColumn goToList goToSchema goToTable goToColumn showTable loadLayout openDat
             , column.item.comment |> Maybe.mapOrElse viewComment (div [] [])
             , notes |> viewNotes
             , tags |> viewTags
-            , viewColumnStats column.item.origins column.item.stats stats
-            , inLayouts |> List.nonEmptyMap (\l -> viewProp [ text "In layouts" ] (l |> List.sort |> List.map (viewLayout loadLayout))) (div [] [])
-            , column.item.origins |> List.nonEmptyMap (\origin -> viewProp [ text "From sources" ] (origin |> List.sortBy .name |> List.map (viewSource openDataExplorer table.item.id (Just column.item.path) Nothing))) (div [] [])
+            , viewColumnConstraints table.item column.item
             , column.item.outRelations |> List.nonEmptyMap (\r -> viewProp [ text "References" ] (r |> List.sortBy ErdColumnRef.toId |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
             , column.item.inRelations |> List.nonEmptyMap (\r -> viewProp [ text "Referenced by" ] (r |> List.sortBy ErdColumnRef.toId |> List.map (viewColumnRelation goToColumn defaultSchema))) (div [] [])
-            , viewColumnConstraints table.item column.item
+            , inLayouts |> List.nonEmptyMap (\l -> viewProp [ text "In layouts" ] (l |> List.sort |> List.map (viewLayout loadLayout))) (div [] [])
+            , column.item.origins |> List.nonEmptyMap (\origin -> viewProp [ text "From sources" ] (origin |> List.sortBy .name |> List.map (viewSource openDataExplorer table.item.id (Just column.item.path) Nothing))) (div [] [])
+            , viewColumnStats column.item.origins column.item.stats stats
             ]
         ]
 

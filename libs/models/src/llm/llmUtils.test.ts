@@ -1,6 +1,7 @@
+import {z} from "zod";
 import {describe, expect, test} from "@jest/globals";
 import {Entity, Relation} from "../database";
-import {cleanSqlAnswer, entityToPrompt} from "./llmUtils";
+import {cleanJsonAnswer, cleanSqlAnswer, entityToPrompt} from "./llmUtils";
 
 describe('llmUtils', () => {
     test('entityToPrompt', () => {
@@ -31,16 +32,25 @@ describe('llmUtils', () => {
         expect(entityToPrompt(entity, relations)).toEqual(`CREATE TABLE events (${attributes.join(', ')});`)
     })
     test('cleanSqlAnswer', () => {
-        expect(cleanSqlAnswer('SELECT * FROM users;')).toBe('SELECT * FROM users;')
-        expect(cleanSqlAnswer('```sql\nSELECT * FROM users;\n```')).toBe('SELECT * FROM users;')
+        expect(cleanSqlAnswer('SELECT * FROM users;')).toEqual('SELECT * FROM users;')
+        expect(cleanSqlAnswer('```sql\nSELECT * FROM users;\n```')).toEqual('SELECT * FROM users;')
         expect(cleanSqlAnswer('```sql\n' +
             'SELECT name, email\n' +
             'FROM public.users\n' +
             'WHERE provider = \'github\'\n' +
             'ORDER BY name ASC;\n' +
-            '```')).toBe('SELECT name, email\n' +
+            '```')).toEqual('SELECT name, email\n' +
             'FROM public.users\n' +
             'WHERE provider = \'github\'\n' +
             'ORDER BY name ASC;')
+    })
+    test('cleanJsonAnswer', async () => {
+        const type = z.string().array()
+        expect(await cleanJsonAnswer('[]', type)).toEqual([])
+        expect(await cleanJsonAnswer('["bla", "bla"]', type)).toEqual(['bla', 'bla'])
+        expect(await cleanJsonAnswer('```\n[]\n```', type)).toEqual([])
+        expect(await cleanJsonAnswer('```json\n[]\n```', type)).toEqual([])
+        await expect(cleanJsonAnswer('bla bla', type)).rejects.toEqual('Invalid JSON: bla bla')
+        await expect(cleanJsonAnswer('[{}]', type)).rejects.toEqual("Invalid format at .0: expect 'string' but got 'object' ({})")
     })
 })

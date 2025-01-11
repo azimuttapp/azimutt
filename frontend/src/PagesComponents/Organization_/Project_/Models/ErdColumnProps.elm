@@ -8,6 +8,7 @@ import Models.ColumnOrder as ColumnOrder
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath)
 import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
+import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
@@ -78,26 +79,33 @@ nest columns =
             )
 
 
-initAll : ProjectSettings -> List ErdRelation -> ErdTable -> List ErdColumnProps
-initAll settings relations table =
+initAll : ProjectSettings -> List ErdRelation -> ErdTable -> List ColumnName -> List ErdColumnProps
+initAll settings relations table defaultColumns =
     let
         tableRelations : List ErdRelation
         tableRelations =
             relations |> List.filter (\r -> r.src.table == table.id)
+
+        tableColumns : List ErdColumn
+        tableColumns =
+            -- if not empty, use these as default, otherwise take the most relevant ones
+            defaultColumns |> List.filterMap (\c -> table.columns |> Dict.get c)
+
+        showColumns : List ErdColumn
+        showColumns =
+            if tableColumns |> List.isEmpty then
+                table.columns
+                    |> Dict.values
+                    |> List.filterNot (ProjectSettings.hideColumn settings.hiddenColumns)
+                    |> List.zipWithIndex
+                    |> ColumnOrder.sortBy settings.columnOrder table tableRelations
+                    |> List.take settings.hiddenColumns.max
+                    |> List.map (\( c, _ ) -> c)
+
+            else
+                tableColumns
     in
-    table.columns
-        |> Dict.values
-        |> List.filterNot (ProjectSettings.hideColumn settings.hiddenColumns)
-        |> List.zipWithIndex
-        |> ColumnOrder.sortBy settings.columnOrder table tableRelations
-        |> List.take settings.hiddenColumns.max
-        |> List.map
-            (\( c, _ ) ->
-                { name = c.path.head
-                , children = ErdColumnPropsNested []
-                , highlighted = False
-                }
-            )
+    showColumns |> List.map (\c -> { name = c.path.head, children = ErdColumnPropsNested [], highlighted = False })
 
 
 find : ColumnPath -> List ErdColumnProps -> Maybe ErdColumnProps

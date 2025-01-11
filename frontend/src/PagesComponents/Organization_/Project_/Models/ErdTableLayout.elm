@@ -3,6 +3,7 @@ module PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (Er
 import Dict exposing (Dict)
 import Libs.List as List
 import Models.Area as Area
+import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Group exposing (Group)
 import Models.Project.ProjectSettings exposing (ProjectSettings)
 import Models.Project.TableId exposing (TableId)
@@ -48,11 +49,11 @@ unpack layout =
     }
 
 
-init : ProjectSettings -> Set TableId -> List ErdRelation -> Bool -> Maybe PositionHint -> ErdTable -> ErdTableLayout
-init settings shownTables relations collapsed hint table =
+init : ProjectSettings -> Set TableId -> List ErdRelation -> Bool -> Maybe PositionHint -> ErdTable -> List ColumnName -> ErdTableLayout
+init settings shownTables relations collapsed hint table columns =
     { id = table.id
     , props = ErdTableProps.init collapsed hint table
-    , columns = ErdColumnProps.initAll settings relations table
+    , columns = ErdColumnProps.initAll settings relations table columns
     , relatedTables = buildRelatedTables shownTables relations
     }
 

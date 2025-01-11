@@ -5,6 +5,7 @@ import {
     DatabaseUrl,
     Delta,
     LegacyColumnId,
+    LegacyColumnName,
     LegacyColumnRef,
     LegacyColumnStats,
     LegacyDatabase,
@@ -15,6 +16,7 @@ import {
     LegacyProjectId,
     LegacyProjectInfo,
     LegacyProjectStorage,
+    LegacyProjectTable,
     LegacyProjectTokenId,
     LegacySource,
     LegacySourceId,
@@ -171,8 +173,12 @@ export type ObserveSizes = { kind: 'ObserveSizes', ids: HtmlId[] }
 export const ObserveSizes = z.object({kind: z.literal('ObserveSizes'), ids: HtmlId.array()}).strict()
 export type ListenKeys = { kind: 'ListenKeys', keys: { [id: HotkeyId]: Hotkey[] } }
 export const ListenKeys = z.object({kind: z.literal('ListenKeys'), keys: z.record(HotkeyId, Hotkey.array())}).strict()
-export type LlmGenerateSql = { kind: 'LlmGenerateSql', apiKey: OpenAIKey, model: OpenAIModel, prompt: string, dialect: DatabaseKind, source: LegacySource }
-export const LlmGenerateSql = z.object({kind: z.literal('LlmGenerateSql'), apiKey: OpenAIKey, model: OpenAIModel, prompt: z.string(), dialect: DatabaseKind, source: LegacySource}).strict()
+export type LlmGenerateSql = { kind: 'LlmGenerateSql', apiKey: OpenAIKey, model: OpenAIModel, dialect: DatabaseKind, source: LegacySource, prompt: string }
+export const LlmGenerateSql = z.object({kind: z.literal('LlmGenerateSql'), apiKey: OpenAIKey, model: OpenAIModel, dialect: DatabaseKind, source: LegacySource, prompt: z.string()}).strict()
+export type LlmLayoutPrompt = { kind: 'LlmLayoutPrompt', apiKey: OpenAIKey, model: OpenAIModel, tables: LegacyProjectTable[], prompt: string }
+export const LlmLayoutPrompt = z.object({kind: z.literal('LlmLayoutPrompt'), apiKey: OpenAIKey, model: OpenAIModel, tables: LegacyProjectTable.array(), prompt: z.string()}).strict()
+export type LlmLayoutFromSql = { kind: 'LlmLayoutFromSql', apiKey: OpenAIKey, model: OpenAIModel, tables: LegacyProjectTable[], sql: string }
+export const LlmLayoutFromSql = z.object({kind: z.literal('LlmLayoutFromSql'), apiKey: OpenAIKey, model: OpenAIModel, tables: LegacyProjectTable.array(), sql: z.string()}).strict()
 export type Confetti = { kind: 'Confetti', id: HtmlId }
 export const Confetti = z.object({kind: z.literal('Confetti'), id: HtmlId}).strict()
 export type ConfettiPride = { kind: 'ConfettiPride' }
@@ -181,8 +187,8 @@ export type Fireworks = { kind: 'Fireworks' }
 export const Fireworks = z.object({kind: z.literal('Fireworks')}).strict()
 export type Track = { kind: 'Track', event: TrackEvent }
 export const Track = z.object({kind: z.literal('Track'), event: TrackEvent}).strict()
-export type ElmMsg = Click | MouseDown | Focus | Blur | ScrollTo | Fullscreen | SetMeta | AutofocusWithin | Toast | GetProject | CreateProjectTmp | UpdateProjectTmp | CreateProject | UpdateProject | MoveProjectTo | DeleteProject | DeleteSource | ProjectDirty | DownloadFile | CopyToClipboard | GetLocalFile | GetDatabaseSchema | GetTableStats | GetColumnStats | RunDatabaseQuery | GetAmlSchema | GetPrismaSchema | GetCode | GetAutoLayout | ObserveSizes | ListenKeys | LlmGenerateSql | Confetti | ConfettiPride | Fireworks | Track
-export const ElmMsg = z.discriminatedUnion('kind', [Click, MouseDown, Focus, Blur, ScrollTo, Fullscreen, SetMeta, AutofocusWithin, Toast, GetProject, CreateProjectTmp, UpdateProjectTmp, CreateProject, UpdateProject, MoveProjectTo, DeleteProject, DeleteSource, ProjectDirty, DownloadFile, CopyToClipboard, GetLocalFile, GetDatabaseSchema, GetTableStats, GetColumnStats, RunDatabaseQuery, GetAmlSchema, GetPrismaSchema, GetCode, GetAutoLayout, ObserveSizes, ListenKeys, LlmGenerateSql, Confetti, ConfettiPride, Fireworks, Track]).describe('ElmMsg')
+export type ElmMsg = Click | MouseDown | Focus | Blur | ScrollTo | Fullscreen | SetMeta | AutofocusWithin | Toast | GetProject | CreateProjectTmp | UpdateProjectTmp | CreateProject | UpdateProject | MoveProjectTo | DeleteProject | DeleteSource | ProjectDirty | DownloadFile | CopyToClipboard | GetLocalFile | GetDatabaseSchema | GetTableStats | GetColumnStats | RunDatabaseQuery | GetAmlSchema | GetPrismaSchema | GetCode | GetAutoLayout | ObserveSizes | ListenKeys | LlmGenerateSql | LlmLayoutPrompt | LlmLayoutFromSql | Confetti | ConfettiPride | Fireworks | Track
+export const ElmMsg = z.discriminatedUnion('kind', [Click, MouseDown, Focus, Blur, ScrollTo, Fullscreen, SetMeta, AutofocusWithin, Toast, GetProject, CreateProjectTmp, UpdateProjectTmp, CreateProject, UpdateProject, MoveProjectTo, DeleteProject, DeleteSource, ProjectDirty, DownloadFile, CopyToClipboard, GetLocalFile, GetDatabaseSchema, GetTableStats, GetColumnStats, RunDatabaseQuery, GetAmlSchema, GetPrismaSchema, GetCode, GetAutoLayout, ObserveSizes, ListenKeys, LlmGenerateSql, LlmLayoutPrompt, LlmLayoutFromSql, Confetti, ConfettiPride, Fireworks, Track]).describe('ElmMsg')
 
 export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }
 export const GotSizes = z.object({kind: z.literal('GotSizes'), sizes: ElementSize.array()}).strict()
@@ -224,6 +230,8 @@ export type GotToast = { kind: 'GotToast', level: ToastLevel, message: string }
 export const GotToast = z.object({kind: z.literal('GotToast'), level: ToastLevel, message: z.string()}).strict()
 export type GotTableShow = { kind: 'GotTableShow', id: LegacyTableId, position?: Position }
 export const GotTableShow = z.object({kind: z.literal('GotTableShow'), id: LegacyTableId, position: Position.optional()}).strict()
+export type GotTablesShow = { kind: 'GotTablesShow', from: 'prompt' | 'sql', tables: {id: LegacyTableId, columns: LegacyColumnName[]}[] }
+export const GotTablesShow = z.object({kind: z.literal('GotTablesShow'), from: z.enum(['prompt', 'sql']), tables: z.object({id: LegacyTableId, columns: LegacyColumnName.array()}).strict().array()}).strict()
 export type GotTableHide = { kind: 'GotTableHide', id: LegacyTableId }
 export const GotTableHide = z.object({kind: z.literal('GotTableHide'), id: LegacyTableId}).strict()
 export type GotTableToggleColumns = { kind: 'GotTableToggleColumns', id: LegacyTableId }
@@ -250,5 +258,5 @@ export type GotLlmSqlGeneratedError = { kind: 'GotLlmSqlGeneratedError', error: 
 export const GotLlmSqlGeneratedError = z.object({kind: z.literal('GotLlmSqlGeneratedError'), error: z.string()}).strict()
 export type Error = { kind: 'Error', message: string }
 export const Error = z.object({kind: z.literal('Error'), message: z.string()}).strict()
-export type JsMsg = GotSizes | GotProject | ProjectDeleted | GotLocalFile | GotDatabaseSchema | GotDatabaseSchemaError | GotTableStats | GotTableStatsError | GotColumnStats | GotColumnStatsError | GotDatabaseQueryResult | GotAmlSchema | GotPrismaSchema | GotPrismaSchemaError | GotCode | GotAutoLayout | GotHotkey | GotKeyHold | GotToast | GotTableShow | GotTableHide | GotTableToggleColumns | GotTablePosition | GotTableMove | GotTableSelect | GotTableColor | GotColumnShow | GotColumnHide | GotColumnMove | GotFitToScreen | GotLlmSqlGenerated | GotLlmSqlGeneratedError | Error
-export const JsMsg = z.discriminatedUnion('kind', [GotSizes, GotProject, ProjectDeleted, GotLocalFile, GotDatabaseSchema, GotDatabaseSchemaError, GotTableStats, GotTableStatsError, GotColumnStats, GotColumnStatsError, GotDatabaseQueryResult, GotAmlSchema, GotPrismaSchema, GotPrismaSchemaError, GotCode, GotAutoLayout, GotHotkey, GotKeyHold, GotToast, GotTableShow, GotTableHide, GotTableToggleColumns, GotTablePosition, GotTableMove, GotTableSelect, GotTableColor, GotColumnShow, GotColumnHide, GotColumnMove, GotFitToScreen, GotLlmSqlGenerated, GotLlmSqlGeneratedError, Error]).describe('JsMsg')
+export type JsMsg = GotSizes | GotProject | ProjectDeleted | GotLocalFile | GotDatabaseSchema | GotDatabaseSchemaError | GotTableStats | GotTableStatsError | GotColumnStats | GotColumnStatsError | GotDatabaseQueryResult | GotAmlSchema | GotPrismaSchema | GotPrismaSchemaError | GotCode | GotAutoLayout | GotHotkey | GotKeyHold | GotToast | GotTableShow | GotTablesShow | GotTableHide | GotTableToggleColumns | GotTablePosition | GotTableMove | GotTableSelect | GotTableColor | GotColumnShow | GotColumnHide | GotColumnMove | GotFitToScreen | GotLlmSqlGenerated | GotLlmSqlGeneratedError | Error
+export const JsMsg = z.discriminatedUnion('kind', [GotSizes, GotProject, ProjectDeleted, GotLocalFile, GotDatabaseSchema, GotDatabaseSchemaError, GotTableStats, GotTableStatsError, GotColumnStats, GotColumnStatsError, GotDatabaseQueryResult, GotAmlSchema, GotPrismaSchema, GotPrismaSchemaError, GotCode, GotAutoLayout, GotHotkey, GotKeyHold, GotToast, GotTableShow, GotTablesShow, GotTableHide, GotTableToggleColumns, GotTablePosition, GotTableMove, GotTableSelect, GotTableColor, GotColumnShow, GotColumnHide, GotColumnMove, GotFitToScreen, GotLlmSqlGenerated, GotLlmSqlGeneratedError, Error]).describe('JsMsg')

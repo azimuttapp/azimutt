@@ -138,7 +138,7 @@ viewTable conf zoom args layout meta tableLayout table =
                                             ShowTable col.column.table hint "relation"
 
                                         _ ->
-                                            ShowTables (cols |> List.map (.column >> .table)) hint "relation"
+                                            ShowTables (cols |> List.map (\c -> { id = c.column.table, columns = [] })) hint "relation"
                                )
                 , nestedIconClick = ToggleNestedColumn table.id
                 , hiddenColumnsHover = \id on -> PopoverOpen (B.cond on id "")

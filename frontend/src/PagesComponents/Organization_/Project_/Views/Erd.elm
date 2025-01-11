@@ -3,8 +3,11 @@ module PagesComponents.Organization_.Project_.Views.Erd exposing (ErdArgs, argsT
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Alert as Alert
+import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
+import Components.Molecules.Dropdown as Dropdown
 import Components.Organisms.Table exposing (TableHover)
 import Components.Organisms.TableRow as TableRow exposing (TableRowHover, TableRowRelation, TableRowRelationColumn, TableRowSuccess)
+import Components.Slices.LlmKey exposing (promptLlmKey)
 import Conf
 import Dict exposing (Dict)
 import Html exposing (Html, button, div, h2, input, p, span, text)
@@ -16,14 +19,14 @@ import Html.Lazy as Lazy
 import Libs.Bool as B
 import Libs.Dict as Dict
 import Libs.Html exposing (bText, extLink, sendTweet)
-import Libs.Html.Attributes exposing (css)
+import Libs.Html.Attributes exposing (css, role)
 import Libs.Html.Events exposing (PointerEvent, onContextMenu, onDblClick, onPointerDown, onWheel)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
-import Libs.Nel exposing (Nel)
+import Libs.Nel as Nel exposing (Nel)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (Color, focus)
 import Libs.Time as Time
@@ -31,22 +34,28 @@ import Libs.Tuple as Tuple
 import Models.Area as Area
 import Models.DbSource as DbSource
 import Models.ErdProps exposing (ErdProps)
+import Models.OpenAIKey exposing (OpenAIKey)
+import Models.OpenAIModel exposing (OpenAIModel)
 import Models.Position as Position
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath as ColumnPath exposing (ColumnPath, ColumnPathStr)
+import Models.Project.Comment exposing (Comment)
 import Models.Project.Group as Group exposing (Group)
 import Models.Project.Metadata exposing (Metadata)
+import Models.Project.ProjectSettings exposing (LlmSettings)
 import Models.Project.RowValue exposing (RowValue)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
+import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableMeta as TableMeta exposing (TableMeta)
 import Models.Project.TableRow as TableRow exposing (TableRow, TableRowColumn)
+import Models.ProjectInfo exposing (ProjectInfo)
 import Models.RelationStyle exposing (RelationStyle)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
-import PagesComponents.Organization_.Project_.Models exposing (GroupEdit, GroupMsg(..), MemoEdit, MemoMsg(..), Msg(..), VirtualRelation, confirm)
+import PagesComponents.Organization_.Project_.Models exposing (GroupEdit, GroupMsg(..), MemoEdit, MemoMsg(..), Msg(..), ProjectSettingsMsg(..), VirtualRelation, confirm)
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.DragState exposing (DragState)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
@@ -68,9 +77,12 @@ import PagesComponents.Organization_.Project_.Views.Erd.Table as Table exposing 
 import PagesComponents.Organization_.Project_.Views.Erd.TableRow as TableRow exposing (viewTableRow)
 import PagesComponents.Organization_.Project_.Views.Modals.ErdContextMenu as ErdContextMenu
 import PagesComponents.Organization_.Project_.Views.Modals.GroupContextMenu as GroupContextMenu
+import Ports
 import Services.Urls as Urls
 import Set exposing (Set)
+import Shared exposing (Prompt)
 import Time
+import Track
 
 
 type alias ErdArgs =
@@ -184,7 +196,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
             , div [ class "az-virtual-relation pointer-events-none" ] [ virtualRelationInfo |> Maybe.mapOrElse (\i -> viewVirtualRelation erd.settings.relationStyle i) viewEmptyRelation ]
             ]
         , if layout |> ErdLayout.isEmpty then
-            viewEmptyState erd.tables
+            viewEmptyState openedDropdown (Conf.ids.erd ++ "-empty") erd
 
           else
             div [] []
@@ -385,15 +397,15 @@ viewHiddenTables defaultSchema tables =
         )
 
 
-viewEmptyState : Dict TableId ErdTable -> Html Msg
-viewEmptyState tables =
+viewEmptyState : HtmlId -> HtmlId -> Erd -> Html Msg
+viewEmptyState openedDropdown htmlId erd =
     div [ class "flex h-full justify-center items-center" ]
         [ div [ class "max-w-prose p-6 bg-white border border-gray-200 rounded-lg" ]
             [ div [ class "text-center" ]
                 [ Icon.outline2x Template "mx-auto text-primary-500"
                 , h2 [ class "mt-2 text-lg font-medium text-gray-900" ]
                     [ text "Hello from Azimutt 👋" ]
-                , if tables |> Dict.isEmpty then
+                , if erd.tables |> Dict.isEmpty then
                     p [ class "mt-3 text-sm text-gray-500" ]
                         [ text "Azimutt allows you to create and explore your database schema. Start writing your schema using "
                         , extLink Urls.amlDocs [ class "link" ] [ text "AML syntax" ]
@@ -406,7 +418,7 @@ viewEmptyState tables =
                     div []
                         [ p [ class "mt-3 text-sm text-gray-500" ]
                             [ text "Explore your "
-                            , bText (tables |> String.pluralizeD "table")
+                            , bText (erd.tables |> String.pluralizeD "table")
                             , text " database with Azimutt. Create layouts, show tables you want and share them. Use the "
                             , button [ onClick (Focus Conf.ids.searchInput), css [ "link", focus [ "outline-none" ] ] ] [ text "search bar" ]
                             , text " or start with an overview:"
@@ -415,25 +427,50 @@ viewEmptyState tables =
                             (let
                                 showAll : Msg
                                 showAll =
-                                    if Dict.size tables < Conf.constants.manyTablesLimit then
+                                    if Dict.size erd.tables < Conf.constants.manyTablesLimit then
                                         ShowAllTables "welcome"
 
                                     else
-                                        confirm "Show all tables" (text ("You are about to show " ++ (tables |> String.pluralizeD "table") ++ ". That's a lot. It may slow down your browser and make Azimutt unresponsive. Continue?")) (ShowAllTables "welcome")
-                             in
-                             if Dict.size tables > 30 then
-                                [ Button.white4 Tw.indigo [ onClick showAll ] [ text ("Show the " ++ (tables |> String.pluralizeD "table")) ]
-                                , span [] [ text "or" ]
-                                , let
-                                    topTables : List TableId
-                                    topTables =
-                                        tables |> Dict.values |> List.sortBy (ErdTable.rank >> negate) |> List.take 30 |> List.map .id
-                                  in
-                                  Button.white4 Tw.indigo [ onClick (ShowTables topTables Nothing "welcome") ] [ text ("Show " ++ (topTables |> String.pluralizeL "most central table")) ]
-                                ]
+                                        confirm "Show all tables" (text ("You are about to show " ++ (erd.tables |> String.pluralizeD "table") ++ ". That's a lot. It may slow down your browser and make Azimutt unresponsive. Continue?")) (ShowAllTables "welcome")
 
-                             else
-                                [ Button.white4 Tw.indigo [ onClick showAll ] [ text ("Show the " ++ (tables |> String.pluralizeD "table")) ] ]
+                                tableSelection : List (Html Msg)
+                                tableSelection =
+                                    if Dict.size erd.tables > 30 then
+                                        [ span [] [ text "or" ]
+                                        , let
+                                            topTables : List { id : TableId, columns : List ColumnName }
+                                            topTables =
+                                                erd.tables |> Dict.values |> List.sortBy (ErdTable.rank >> negate) |> List.take 30 |> List.map (\t -> { id = t.id, columns = [] })
+                                          in
+                                          Button.white4 Tw.indigo [ onClick (ShowTables topTables Nothing "welcome") ] [ text ("Show only main tables (" ++ (topTables |> List.length |> String.fromInt) ++ ")") ]
+                                        ]
+
+                                    else
+                                        []
+
+                                toggleId : HtmlId
+                                toggleId =
+                                    htmlId ++ "-layout-toggle"
+                             in
+                             [ Button.white4 Tw.indigo [ onClick showAll ] [ text ("Show all tables (" ++ (erd.tables |> Dict.size |> String.fromInt) ++ ")") ] ]
+                                ++ tableSelection
+                                ++ [ Dropdown.dropdown { id = toggleId, direction = BottomLeft, isOpen = openedDropdown == toggleId }
+                                        (\m -> Button.white4 Tw.indigo [ id m.id, onClick (DropdownToggle m.id) ] [ span [ class "sr-only" ] [ text "Generate layout" ], text "AI", Icon.outline Icon.Sparkles "h-5 w-5 ml-1" ])
+                                        (\_ ->
+                                            let
+                                                prompt : String -> String -> ProjectInfo -> (OpenAIKey -> OpenAIModel -> List Table -> String -> Cmd Msg) -> (ProjectInfo -> Cmd Msg) -> (ProjectInfo -> String -> Cmd Msg) -> Msg
+                                                prompt title placeholder project exec trackOpen trackQueried =
+                                                    Batch
+                                                        [ useLlm PromptOpen (PSLlmKeyUpdate >> ProjectSettingsMsg) erd.settings.llm (\k m -> multilinePrompt title placeholder (\s -> Cmd.batch [ exec k m (erd |> buildTables) s, trackQueried project s ]))
+                                                        , trackOpen project |> Send
+                                                        ]
+                                            in
+                                            div [ class "py-1", role "none" ]
+                                                [ ContextMenu.btn "" (prompt "Which layout do you want to build?" "Your layout prompt..." erd.project Ports.llmLayoutPrompt Track.layoutPromptOpened Track.layoutPromptQueried) [] [ Icon.outline Icon.Sparkles "h-5 w-5 inline mr-1", text "Prompt to generate layout" ]
+                                                , ContextMenu.btn "" (prompt "Generate layout from SQL query:" "Your SQL query..." erd.project Ports.llmLayoutFromSql Track.layoutFromSqlOpened Track.layoutFromSqlQueried) [] [ Icon.outline Icon.Sparkles "h-5 w-5 inline mr-1", text "Generate layout from SQL query" ]
+                                                ]
+                                        )
+                                   ]
                             )
                         , Alert.simple Tw.indigo Icon.InformationCircle [ text "Click on colored column icons to follow relations (in/out)." ]
                         ]
@@ -447,6 +484,50 @@ viewEmptyState tables =
                 ]
             ]
         ]
+
+
+useLlm : (Prompt msg -> String -> msg) -> (String -> msg) -> Maybe LlmSettings -> (OpenAIKey -> OpenAIModel -> msg) -> msg
+useLlm openPrompt updateLlmKey llmM exec =
+    llmM |> Maybe.map (\llm -> exec llm.key llm.model) |> Maybe.withDefault (promptLlmKey openPrompt updateLlmKey)
+
+
+buildTables : Erd -> List Table
+buildTables erd =
+    erd.tables
+        |> Dict.values
+        |> List.map ErdTable.unpack
+        |> List.map
+            (\t ->
+                -- merge Azimutt notes & tags into table comments to feed then into LLM
+                (erd.metadata |> Dict.get t.id)
+                    |> (\doc ->
+                            { t
+                                | comment =
+                                    ((t.comment |> Maybe.map .text |> Maybe.filter String.nonEmpty |> Maybe.toList)
+                                        ++ (doc |> Maybe.andThen .notes |> Maybe.filter String.nonEmpty |> Maybe.toList)
+                                        ++ (doc |> Maybe.filter (.tags >> List.nonEmpty) |> Maybe.map (\d -> "Tags: " ++ String.join "," d.tags) |> Maybe.toList)
+                                    )
+                                        |> Nel.fromList
+                                        |> Maybe.map (\n -> { text = n |> Nel.toList |> String.join "\n\n" })
+                            }
+                       )
+            )
+
+
+multilinePrompt : String -> String -> (String -> Cmd Msg) -> Msg
+multilinePrompt title placeholder message =
+    PromptOpen
+        { color = Tw.blue
+        , icon = Nothing
+        , title = title
+        , message = text "If you have sub-optimal or bad results, try again and let us know so we can improve."
+        , placeholder = placeholder
+        , multiline = True
+        , confirm = "Generate"
+        , cancel = "Back"
+        , onConfirm = message
+        }
+        ""
 
 
 handleErdPointerDown : ErdConf -> CursorMode -> PointerEvent -> Msg

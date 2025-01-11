@@ -27,6 +27,7 @@ import Models.ParserError exposing (ParserError)
 import Models.Position as Position
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnId exposing (ColumnId)
+import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnPath exposing (ColumnPath)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnStats exposing (ColumnStats)
@@ -243,7 +244,7 @@ type Msg
     | DeleteProject ProjectInfo
     | GoToTable TableId
     | ShowTable TableId (Maybe PositionHint) String
-    | ShowTables (List TableId) (Maybe PositionHint) String
+    | ShowTables (List { id : TableId, columns : List ColumnName }) (Maybe PositionHint) String
     | ShowAllTables String
     | HideTable TableId
     | UnHideTable_ Int ErdTableLayout
@@ -464,9 +465,11 @@ prompt : String -> Html Msg -> String -> (String -> Msg) -> Msg
 prompt title content input message =
     PromptOpen
         { color = Tw.blue
-        , icon = QuestionMarkCircle
+        , icon = Just QuestionMarkCircle
         , title = title
         , message = content
+        , placeholder = ""
+        , multiline = False
         , confirm = "Ok"
         , cancel = "Cancel"
         , onConfirm = message >> T.send
@@ -478,9 +481,11 @@ simplePrompt : String -> (String -> Msg) -> Msg
 simplePrompt label message =
     PromptOpen
         { color = Tw.blue
-        , icon = QuestionMarkCircle
+        , icon = Just QuestionMarkCircle
         , title = label
         , message = text ""
+        , placeholder = ""
+        , multiline = False
         , confirm = "Ok"
         , cancel = "Cancel"
         , onConfirm = message >> T.send

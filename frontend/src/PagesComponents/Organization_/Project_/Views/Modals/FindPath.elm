@@ -146,16 +146,17 @@ viewInputComboboxes openedDropdown fieldId selectedValue buildMsg tables =
                 (tables
                     |> Dict.values
                     |> List.filter (\t -> t.label |> String.toLower |> String.contains lValue)
+                    |> List.map (\table -> TableId.toString table.id)
                     |> List.map
-                        (\table ->
-                            li [ role "option", onClick (buildMsg table.label), tabindex -1, class "group relative cursor-pointer select-none py-2 pl-3 pr-9 text-gray-900 hover:text-white hover:bg-primary-600" ]
-                                (if table.label == selectedValue then
-                                    [ span [ class "block truncate font-semibold" ] [ text table.label ]
+                        (\label ->
+                            li [ role "option", onClick (buildMsg label), tabindex -1, class "group relative cursor-pointer select-none py-2 pl-3 pr-9 text-gray-900 hover:text-white hover:bg-primary-600" ]
+                                (if label == selectedValue then
+                                    [ span [ class "block truncate font-semibold" ] [ text label ]
                                     , span [ class "absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-600 group-hover:text-white" ] [ Icon.solid Check "" ]
                                     ]
 
                                  else
-                                    [ span [ class "block truncate" ] [ text table.label ]
+                                    [ span [ class "block truncate" ] [ text label ]
                                     , span [] []
                                     ]
                                 )

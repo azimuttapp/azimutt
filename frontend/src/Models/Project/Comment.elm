@@ -22,7 +22,7 @@ short content =
         |> String.split "\n"
         |> List.head
         |> Maybe.withDefault ""
-        |> String.left 50
+        |> String.left 120
         |> (\show -> Bool.cond (show == trimmed) show (show ++ "… double click to see all"))
 
 

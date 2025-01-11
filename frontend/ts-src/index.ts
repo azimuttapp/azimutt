@@ -6,12 +6,15 @@ import dagre from "cytoscape-dagre";
 import fcose from "cytoscape-fcose";
 import {AnyError, errorToString} from "@azimutt/utils";
 import {
+    AttributeName,
     attributePathFromId,
     AttributeRef,
+    autoLayout,
     columnStatsToLegacy,
     databaseFromLegacy,
     databaseToLegacy,
     DatabaseUrl,
+    EntityId,
     entityRefFromId,
     legacyBuildProjectDraft,
     legacyBuildProjectJson,
@@ -28,9 +31,11 @@ import {
     OpenAIConnector,
     ParserError,
     ProjectId,
+    projectTableToEntity,
     queryResultsToLegacy,
     SourceId,
     sourceToDatabase,
+    sqlEntities,
     SqlStatement,
     tableStatsToLegacy,
     textToSql
@@ -58,6 +63,8 @@ import {
     HotkeyId,
     ListenKeys,
     LlmGenerateSql,
+    LlmLayoutFromSql,
+    LlmLayoutPrompt,
     ObserveSizes,
     ProjectDirty,
     RunDatabaseQuery,
@@ -137,6 +144,8 @@ app.on('GetCode', getCode)
 app.on('GetAutoLayout', getAutoLayout)
 app.on('ObserveSizes', observeSizes)
 app.on('LlmGenerateSql', llmGenerateSql)
+app.on('LlmLayoutPrompt', llmLayoutPrompt)
+app.on('LlmLayoutFromSql', llmLayoutFromSql)
 app.on('ListenKeys', listenHotkeys)
 app.on('Confetti', msg => Utils.launchConfetti(msg.id))
 app.on('ConfettiPride', _ => Utils.launchConfettiPride())
@@ -517,10 +526,10 @@ function runLayout(msg: GetAutoLayout, layout: LayoutOptions): void {
             const pos = n.position()
             return {
                 id: n.id(),
-                size: {width: n.data().width, height: n.data().height},
+                size: {width: data.width, height: data.height},
                 position: {left: pos.x - (data.width / 2), top: pos.y - (data.height / 2)} // center -> top left
             }
-        }))
+        }).filter(p => !Number.isNaN(p.position.left)))
     }} as LayoutOptions).run()
 }
 
@@ -582,10 +591,31 @@ function keydownHotkey(e: KeyboardEvent) {
 
 function llmGenerateSql(msg: LlmGenerateSql) {
     const llm = new OpenAIConnector({apiKey: msg.apiKey, model: msg.model})
-    textToSql(llm, msg.dialect, msg.prompt, sourceToDatabase(msg.source)).then(
-        (query: SqlStatement) => app.gotLlmSqlGenerated(query),
-        (err: any) => app.gotLlmSqlGeneratedError(errorToString(err))
-    )
+    textToSql(llm, msg.dialect, msg.prompt, sourceToDatabase(msg.source)).then((query: SqlStatement) => {
+        app.gotLlmSqlGenerated(query)
+    }, (err: any) => app.gotLlmSqlGeneratedError(errorToString(err)))
+}
+
+function llmLayoutPrompt(msg: LlmLayoutPrompt) {
+    const llm = new OpenAIConnector({apiKey: msg.apiKey, model: msg.model})
+    autoLayout(llm, msg.tables.map(projectTableToEntity), msg.prompt).then((entities: EntityId[]) => {
+        if (entities.length > 0) {
+            app.showTables('prompt', entities.map(id => ({id, columns: []})))
+        } else {
+            app.toast(ToastLevel.enum.info, 'No table found :/')
+        }
+    }, (err: any) => app.toast(ToastLevel.enum.error, 'LLM AutoLayout error:' + errorToString(err)))
+}
+
+function llmLayoutFromSql(msg: LlmLayoutFromSql) {
+    const llm = new OpenAIConnector({apiKey: msg.apiKey, model: msg.model})
+    sqlEntities(llm, msg.tables.map(projectTableToEntity), msg.sql).then((entities: { id: EntityId, columns: AttributeName[] }[]) => {
+        if (entities.length > 0) {
+            app.showTables('sql', entities)
+        } else {
+            app.toast(ToastLevel.enum.info, 'No table found :/')
+        }
+    }, (err: any) => app.toast(ToastLevel.enum.error, 'LLM SQLEntities error:' + errorToString(err)))
 }
 
 function listenHotkeys(msg: ListenKeys) {

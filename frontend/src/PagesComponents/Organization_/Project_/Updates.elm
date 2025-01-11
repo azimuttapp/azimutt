@@ -140,14 +140,14 @@ update urlLayout zone now urlInfos organizations projects msg model =
                     ( model, GoToTable id |> Extra.msg )
 
                 else
-                    model |> mapErdMT (showTable now id hint from) |> setDirtyM
+                    model |> mapErdMT (showTable now id [] hint from) |> setDirtyM
 
             else
                 ( model, Extra.cmdL [ PlanDialog.layoutTablesModalBody projectRef |> CustomModalOpen |> T.send, Track.planLimit Feature.layoutTables model.erd ] )
 
-        ShowTables ids hint from ->
-            if projectRef |> Organization.canShowTables (model.erd |> Maybe.mapOrElse .currentLayout "") (model.erd |> Erd.countLayoutTables) (ids |> List.length) then
-                model |> mapErdMT (showTables now ids hint from) |> setDirtyM
+        ShowTables tables hint from ->
+            if projectRef |> Organization.canShowTables (model.erd |> Maybe.mapOrElse .currentLayout "") (model.erd |> Erd.countLayoutTables) (tables |> List.length) then
+                model |> mapErdMT (showTables now tables hint from) |> setDirtyM
 
             else
                 ( model, Extra.cmdL [ PlanDialog.layoutTablesModalBody projectRef |> CustomModalOpen |> T.send, Track.planLimit Feature.layoutTables model.erd ] )
@@ -652,6 +652,18 @@ handleJsMessage now urlLayout msg model =
 
         GotTableShow id hint ->
             ( model, ShowTable id (hint |> Maybe.map PlaceAt) "port" |> Extra.msg )
+
+        GotTablesShow from tables ->
+            let
+                track : Cmd msg
+                track =
+                    if from == "sql" then
+                        Track.layoutFromSqlReplied (model.erd |> Maybe.map .project) tables
+
+                    else
+                        Track.layoutPromptReplied (model.erd |> Maybe.map .project) tables
+            in
+            ( model, Batch [ ShowTables tables Nothing "port", Send track ] |> Extra.msg )
 
         GotTableHide id ->
             ( model, HideTable id |> Extra.msg )

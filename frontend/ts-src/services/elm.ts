@@ -3,6 +3,7 @@ import {
     Color,
     Delta,
     LegacyColumnId,
+    LegacyColumnName,
     LegacyColumnRef,
     LegacyColumnStats,
     LegacyDatabase,
@@ -61,6 +62,8 @@ export class ElmApp {
         GetAutoLayout: [],
         ObserveSizes: [],
         LlmGenerateSql: [],
+        LlmLayoutPrompt: [],
+        LlmLayoutFromSql: [],
         ListenKeys: [],
         Confetti: [],
         ConfettiPride: [],
@@ -124,6 +127,7 @@ export class ElmApp {
     gotKeyHold = (key: string, start: boolean): void => this.send({kind: 'GotKeyHold', key, start})
     toast = (level: ToastLevel, message: string): void => this.send({kind: 'GotToast', level, message})
     showTable = (id: LegacyTableId, position?: Position): void => this.send({kind: 'GotTableShow', id, position})
+    showTables = (from: 'prompt' | 'sql', tables: {id: LegacyTableId, columns: LegacyColumnName[]}[]): void => this.send({kind: 'GotTablesShow', from, tables})
     hideTable = (id: LegacyTableId): void => this.send({kind: 'GotTableHide', id})
     toggleTableColumns = (id: LegacyTableId): void => this.send({kind: 'GotTableToggleColumns', id})
     setTablePosition = (id: LegacyTableId, position: Position): void => this.send({kind: 'GotTablePosition', id, position})

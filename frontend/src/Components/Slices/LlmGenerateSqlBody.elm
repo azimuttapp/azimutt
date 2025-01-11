@@ -5,6 +5,7 @@ import Components.Atoms.Badge as Badge
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon
 import Components.Molecules.Tooltip as Tooltip
+import Components.Slices.LlmKey exposing (promptLlmKey)
 import Components.Slices.PlanDialog as PlanDialog
 import Conf
 import Dict
@@ -15,7 +16,6 @@ import Html exposing (Html, br, div, h3, label, option, p, select, text, textare
 import Html.Attributes exposing (autofocus, class, disabled, for, id, name, placeholder, rows, selected, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Dict as Dict
-import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (css)
 import Libs.List as List
 import Libs.Maybe as Maybe
@@ -107,7 +107,7 @@ update openPrompt updateLlmKey erd msg model =
                             |> Maybe.map
                                 (\( ( _, _, kind ), source ) ->
                                     ( { model | loading = True }
-                                    , Cmd.batch [ Ports.llmGenerateSql llm.key llm.model model.prompt kind source, Track.generateSqlQueried erd.project source llm.model model.prompt ]
+                                    , Cmd.batch [ Ports.llmGenerateSql llm.key llm.model kind source model.prompt, Track.generateSqlQueried erd.project source llm.model model.prompt ]
                                     )
                                 )
                             |> Maybe.withDefault ( { model | generatedSql = Err "No selected database source" |> Just }, Cmd.none )
@@ -118,27 +118,6 @@ update openPrompt updateLlmKey erd msg model =
             ( { model | loading = False, generatedSql = Just result }
             , Track.generateSqlReplied erd.project (model.source |> findSource erd) (getLlmModel erd) model.prompt result
             )
-
-
-promptLlmKey : (Prompt msg -> String -> msg) -> (String -> msg) -> msg
-promptLlmKey openPrompt updateLlmKey =
-    openPrompt
-        { color = Tw.blue
-        , icon = Icon.Key
-        , title = "OpenAI API Key"
-        , message =
-            p []
-                [ text "Please enter your OpenAI API Key to use it within Azimutt."
-                , br [] []
-                , text "You can get it on "
-                , extLink "https://platform.openai.com/api-keys" [ class "link" ] [ text "platform.openai.com/api-keys" ]
-                , text "."
-                ]
-        , confirm = "Save"
-        , cancel = "Cancel"
-        , onConfirm = updateLlmKey >> T.send
-        }
-        ""
 
 
 view : (Msg -> msg) -> (Cmd msg -> msg) -> (List msg -> msg) -> (String -> msg) -> (SourceId -> SqlQueryOrigin -> msg) -> msg -> HtmlId -> ProjectRef -> Erd -> Model -> Html msg

@@ -5,11 +5,12 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, div, h3, input, p, span, text)
-import Html.Attributes exposing (autofocus, class, id, name, placeholder, type_, value)
+import Html exposing (Html, div, h3, input, p, span, text, textarea)
+import Html.Attributes exposing (autofocus, class, cols, id, name, placeholder, rows, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, css, role)
+import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (Color, TwClass, batch, bg_100, focus, sm, text_600)
 
@@ -62,11 +63,12 @@ confirm model isOpen =
 type alias PromptModel msg =
     { id : HtmlId
     , color : Color
-    , icon : Icon
+    , icon : Maybe Icon
     , title : String
     , message : Html msg
     , placeholder : String
     , value : String
+    , multiline : Bool
     , onUpdate : String -> msg
     , confirm : String
     , cancel : String
@@ -93,9 +95,14 @@ prompt model isOpen =
         , onBackgroundClick = model.onCancel
         }
         [ div [ css [ "px-6 pt-6", sm [ "flex items-start" ] ] ]
-            [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full", bg_100 model.color, sm [ "mx-0 h-10 w-10" ] ] ]
-                [ Icon.outline model.icon (text_600 model.color)
-                ]
+            [ model.icon
+                |> Maybe.mapOrElse
+                    (\icon ->
+                        div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full", bg_100 model.color, sm [ "mx-0 h-10 w-10" ] ] ]
+                            [ Icon.outline icon (text_600 model.color)
+                            ]
+                    )
+                    (text "")
             , div [ css [ "mt-3 text-center", sm [ "mt-0 ml-4 text-left" ] ] ]
                 [ h3 [ class "text-lg leading-6 font-medium text-gray-900", id titleId ]
                     [ text model.title ]
@@ -103,7 +110,20 @@ prompt model isOpen =
                     [ p [ class "text-sm text-gray-500" ] [ model.message ]
                     ]
                 , div [ class "mt-1" ]
-                    [ input [ type_ "text", name fieldId, id fieldId, value model.value, onInput model.onUpdate, placeholder model.placeholder, autofocus True, css [ "shadow-sm block w-full border-gray-300 rounded-md", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ] []
+                    [ if model.multiline then
+                        let
+                            lines : List String
+                            lines =
+                                model.value |> String.split "\n"
+
+                            maxCol : Int
+                            maxCol =
+                                lines |> List.map String.length |> List.maximum |> Maybe.withDefault 0
+                        in
+                        textarea [ name fieldId, id fieldId, rows (lines |> List.length |> max 5 |> min 30), cols (maxCol |> max 40 |> min 120), value model.value, onInput model.onUpdate, placeholder model.placeholder, autofocus True, css [ "shadow-sm block w-full border-gray-300 rounded-md", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ] []
+
+                      else
+                        input [ type_ "text", name fieldId, id fieldId, value model.value, onInput model.onUpdate, placeholder model.placeholder, autofocus True, css [ "shadow-sm block w-full border-gray-300 rounded-md", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ] []
                     ]
                 ]
             ]
@@ -216,11 +236,12 @@ doc =
                         , prompt
                             { id = "modal-title"
                             , color = Tw.blue
-                            , icon = QuestionMarkCircle
+                            , icon = Just QuestionMarkCircle
                             , title = "Please enter your name"
                             , message = text "This will be useful later ;)"
                             , placeholder = ""
                             , value = state.input
+                            , multiline = False
                             , onUpdate = setInput
                             , confirm = "Ok"
                             , cancel = "Cancel"

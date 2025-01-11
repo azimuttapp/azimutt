@@ -1,6 +1,8 @@
-import {groupBy, partition} from "@azimutt/utils";
+import {ZodError, ZodType} from "zod";
+import {errorToString, groupBy, partition} from "@azimutt/utils";
 import {Attribute, Database, Entity, Relation} from "../database";
 import {attributePathToId, entityRefToId, entityToId} from "../databaseUtils";
+import {zodErrorToString} from "../zod";
 
 export function dbToPrompt(db: Database): string {
     // TODO: depending on selected model, decide if db can be fully integrated or should be compressed (no types, filter tables...) or have additional data (sample values, stats...)
@@ -32,4 +34,16 @@ export function cleanSqlAnswer(answer: string): string {
     const mdCode = answer.trim().match(/^(?:```)?(?:sql)?\n?(.+?)\n?(?:```)?$/s)
     if (mdCode) return mdCode[1]
     return answer.trim()
+}
+
+export function cleanJsonAnswer<T>(answer: string, type: ZodType<T>): Promise<T> {
+    const mdCode = answer.trim().match(/^(?:```)?(?:json)?\n?(.+?)\n?(?:```)?$/s)
+    const json = mdCode ? mdCode[1].trim() : answer.trim()
+    try {
+        return Promise.resolve(type.parse(JSON.parse(json)))
+    } catch (e) {
+        if (e instanceof SyntaxError) return Promise.reject('Invalid JSON: ' + answer)
+        if (e instanceof ZodError) return Promise.reject(zodErrorToString(e, type, undefined, JSON.parse(json)).replace('ZodType,', 'format'))
+        return Promise.reject('Invalid LLM JSON: ' + errorToString(e))
+    }
 }

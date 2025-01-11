@@ -77,7 +77,7 @@ export type RulesConf = z.infer<typeof RulesConf>
 
 export type RuleAnalyzed = {rule: Rule, conf: RuleConf, violations: RuleViolation[]}
 
-// TODO: split rules by kind? (schema, query, data...)
+// TODO: split rules by kind? (schema, snapshot, trends)
 export function analyzeDatabase(conf: RulesConf, now: Timestamp, db: Database, queries: DatabaseQuery[], history: AnalyzeHistory[], reference: AnalyzeReportResult | undefined, ruleNames: string[]): Record<RuleId, RuleAnalyzed> {
     // TODO: use uuid or bigint for single primary key, not int or varchar ones
     // TODO: use uuidv7 for sorted uuids, not v4
@@ -109,6 +109,7 @@ export function analyzeDatabase(conf: RulesConf, now: Timestamp, db: Database, q
     // TODO: warn queries sans where clause ^^
     // TODO: locks using https://www.postgresql.org/docs/current/view-pg-locks.html
     // TODO: no "SELECT *" query
+    // TODO: warn in invalid indexes (pg_index.indisvalid, cd https://www.postgresql.org/docs/current/catalog-pg-index.html)
     const rules = ruleNames.length > 0 ? analyzeRules.filter(r => ruleNames.indexOf(r.id) !== -1 || ruleNames.indexOf(r.name) !== -1) : analyzeRules
     return Object.fromEntries(rules.map(r => {
         const ruleConf = Object.assign({}, r.conf, conf.rules?.[r.id])
