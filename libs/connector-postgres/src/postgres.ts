@@ -156,7 +156,7 @@ export const getBlockSize = (opts: ConnectorSchemaOpts) => async (conn: Conn): P
 
 export type RawTable = {
     table_id: number
-    // table_owner: string // TODO: `permission denied for table pg_authid`
+    table_owner: string
     table_schema: string
     table_name: string
     table_kind: 'r' | 'v' | 'm' // r: table, v: view, m: materialized view
@@ -203,7 +203,7 @@ export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
     const sCols = await getTableColumns('pg_catalog', 'pg_stat_all_tables', opts)(conn) // check column presence to include them or not
     return conn.query<RawTable>(`
         SELECT c.oid                       AS table_id
-             -- , u.rolname                   AS table_owner
+             , u.rolname                   AS table_owner
              , n.nspname                   AS table_schema
              , c.relname                   AS table_name
              , c.relkind                   AS table_kind
@@ -238,7 +238,7 @@ export const getTables = (opts: ConnectorSchemaOpts) => async (conn: Conn): Prom
              , io.tidx_blks_read           AS toast_idx_blocks
         FROM pg_class c
                  JOIN pg_namespace n ON n.oid = c.relnamespace
-                 -- JOIN pg_authid u ON u.oid = c.relowner
+                 JOIN pg_roles u ON u.oid = c.relowner
                  LEFT JOIN pg_description d ON d.objoid = c.oid AND d.objsubid = 0
                  LEFT JOIN pg_class tc ON tc.oid = c.reltoastrelid
                  LEFT JOIN pg_namespace tn ON tn.oid = tc.relnamespace
@@ -294,7 +294,7 @@ function buildEntity(blockSize: number, table: RawTable, columns: RawColumn[], c
 // https://www.postgresql.org/docs/current/catalog-pg-type.html#CATALOG-TYPCATEGORY-TABLE
 export type RawColumn = {
     table_id: number
-    // table_owner: string // TODO: `permission denied for table pg_authid`
+    table_owner: string
     table_schema: string
     table_name: string
     table_kind: 'r' | 'v' | 'm' // r: table, v: view, m: materialized view
@@ -330,7 +330,7 @@ export const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
     // `a.atttypid != 0`: avoid deleted columns
     return conn.query<RawColumn>(`
         SELECT c.oid                                AS table_id
-             -- , u.rolname                            AS table_owner
+             , u.rolname                            AS table_owner
              , n.nspname                            AS table_schema
              , c.relname                            AS table_name
              , c.relkind                            AS table_kind
@@ -353,7 +353,7 @@ export const getColumns = (opts: ConnectorSchemaOpts) => async (conn: Conn): Pro
         FROM pg_attribute a
                  JOIN pg_class c ON c.oid = a.attrelid
                  JOIN pg_namespace n ON n.oid = c.relnamespace
-                 -- JOIN pg_authid u ON u.oid = c.relowner
+                 JOIN pg_roles u ON u.oid = c.relowner
                  JOIN pg_type t ON t.oid = a.atttypid
                  LEFT JOIN pg_attrdef ad ON ad.adrelid = c.oid AND ad.adnum = a.attnum
                  LEFT JOIN pg_description d ON d.objoid = c.oid AND d.objsubid = a.attnum
@@ -620,7 +620,7 @@ function buildRelation(r: RawRelation, columnsByIndex: Record<EntityId, { [i: nu
 export type RawTypeKind = 'b' | 'c' | 'd' | 'e' | 'p' | 'r' | 'm' // b: base, c: composite, d: domain, e: enum, p: pseudo-type, r: range, m: multirange
 export type RawTypeCategory = 'A' | 'B' | 'C' | 'D' | 'E' | 'G' | 'I' | 'N' | 'P' | 'R' | 'S' | 'T' | 'U' | 'V' | 'X' | 'Z' // A: array, B: bool, C: composite, D: date, E: enum, G: geo, I: inet, N: numeric, P: pseudo, R: range, S: string, T: timespan, U: user-defined, V: bit, X: unknown, Z: internal
 export type RawType = {
-    // type_owner: string // TODO: `permission denied for table pg_authid`
+    type_owner: string
     type_schema: string
     type_name: string
     type_kind: RawTypeKind
@@ -643,7 +643,7 @@ export const getTypes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promi
     // `tt.oid IS NULL`: avoid array types
     return conn.query<RawType>(`
         SELECT min(n.nspname)                                        AS type_schema
-             -- , min(o.rolname)                                        AS type_owner
+             , min(o.rolname)                                        AS type_owner
              , t.typname                                             AS type_name
              , t.typtype                                             AS type_kind
              , t.typcategory                                         AS type_category
@@ -654,7 +654,7 @@ export const getTypes = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promi
              , min(d.description)                                    AS type_comment
         FROM pg_type t
                  JOIN pg_namespace n ON n.oid = t.typnamespace
-                 -- JOIN pg_authid o ON o.oid = t.typowner
+                 JOIN pg_roles o ON o.oid = t.typowner
                  LEFT JOIN pg_class c ON c.oid = t.typrelid
                  LEFT JOIN pg_type tt ON tt.oid = t.typelem AND tt.typarray = t.oid
                  LEFT JOIN pg_enum e ON e.enumtypid = t.oid
