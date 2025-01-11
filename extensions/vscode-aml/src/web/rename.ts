@@ -1,12 +1,12 @@
 import {CancellationToken, Position, ProviderResult, Range, RenameProvider, TextDocument, WorkspaceEdit} from "vscode";
 // @ts-ignore
 import {AmlAst, AmlToken, TokenInfo} from "@azimutt/aml/out/amlAst";
-import {parseAmlAst} from "./aml";
+import {getDocument} from "./cache";
 import {positionToAml, tokenToRange} from "./utils";
 
 const amlLib = import("@azimutt/aml");
 
-export class AmlRenameProvider implements RenameProvider {
+export class AmlRename implements RenameProvider {
     // https://code.visualstudio.com/api/references/vscode-api#RenameProvider, no idea of `placeholder` use...
     prepareRename?(document: TextDocument, position: Position, token: CancellationToken): ProviderResult<Range | { range: Range; placeholder: string; }> {
         return useAmlAst(document, async ast => {
@@ -23,9 +23,9 @@ export class AmlRenameProvider implements RenameProvider {
 }
 
 async function useAmlAst<T>(document: TextDocument, f: (ast: AmlAst) => T | Promise<T>): Promise<T> {
-    const res = await parseAmlAst(document.getText())
-    if (res.result) {
-        return f(res.result)
+    const res = await getDocument(document)
+    if (res.ast) {
+        return f(res.ast)
     } else {
         const err = res.errors?.[0]?.message
         return Promise.reject('Unable to rename' + (err ? ': ' + err : ' 😅'))

@@ -12,20 +12,19 @@ import {
 } from "vscode";
 // @ts-ignore
 import {Suggestion, SuggestionKind} from "@azimutt/aml/out/editor";
+import {getDocument} from "./cache";
 
 const amlLib = import("@azimutt/aml");
 
-export class AmlCompletionItemProvider implements CompletionItemProvider {
+export class AmlCompletion implements CompletionItemProvider {
     provideCompletionItems(document: TextDocument, position: Position, token: CancellationToken, context: CompletionContext): ProviderResult<CompletionItem[] | CompletionList<CompletionItem>> {
-        return amlLib.then(aml => {
-            const res = aml.parseAml(document.getText())
-            if (res.result) {
-                const beforeCursor = document.lineAt(position.line).text.slice(0, position.character)
+        return amlLib.then(aml => getDocument(document).then(doc => {
+            if (doc.schema) {
+                const line = document.lineAt(position.line).text.slice(0, position.character)
                 const prevLine = position.line > 0 ? document.lineAt(position.line - 1).text : ''
-                const suggestions = aml.ast.computeSuggestions(beforeCursor, prevLine, res.result)
-                return suggestions.map(suggestionToCompletionItem)
+                return aml.ast.computeSuggestions(line, prevLine, doc.schema).map(suggestionToCompletionItem)
             }
-        })
+        }))
     }
 
     resolveCompletionItem?(item: CompletionItem, token: CancellationToken): ProviderResult<CompletionItem> {

@@ -1,44 +1,35 @@
-import vscode, {
-    Diagnostic,
-    DiagnosticCollection,
-    DiagnosticSeverity,
-    Disposable,
-    ExtensionContext,
-    TextDocument,
-    TextDocumentChangeEvent
-} from "vscode";
-import {ParserErrorLevel} from "@azimutt/models";
-import {isNever} from "@azimutt/utils";
-import {parseAml} from "./aml";
-import {tokenToRange, debounce} from "./utils";
+import {Diagnostic, DiagnosticSeverity} from "vscode";
+import {groupBy, isNever} from "@azimutt/utils";
+import {EntityId, entityRefToId, ParserError, ParserErrorLevel} from "@azimutt/models";
+// @ts-ignore
+import {EntityStatement, TokenInfo} from "@azimutt/aml/out/amlAst";
+import {AmlDocument} from "./cache";
+import {tokenToRange} from "./utils";
 
-export function startDiagnostics(context: ExtensionContext): Disposable {
-    const diagnostics: DiagnosticCollection = vscode.languages.createDiagnosticCollection('aml')
-    vscode.workspace.onDidOpenTextDocument((document: TextDocument) => {
-        if (document.languageId === 'aml') {
-            analyzeDocument(document, diagnostics)
-        }
-    }, null, context.subscriptions)
-    vscode.workspace.onDidChangeTextDocument((event: TextDocumentChangeEvent) => {
-        if (event.document.languageId === 'aml') {
-            analyzeDocument(event.document, diagnostics)
-        }
-    }, null, context.subscriptions)
-    return new Disposable(() => diagnostics.dispose())
+export function computeDiagnostics(doc: AmlDocument): Diagnostic[] {
+    const entities: EntityStatement[] = doc.ast?.statements.filter(s => s.kind === 'Entity') || []
+    const entitiesById: Record<EntityId, EntityStatement[]> = groupBy(entities, entityId)
+    return doc.errors.concat(
+        duplicateEntities(entitiesById),
+        // TODO: duplicateAttributes()
+        // TODO: badRelationRef()
+        // TODO: badTypeForRelation()
+    ).map(e => new Diagnostic(tokenToRange(e.position), e.message, levelToSeverity(e.level)))
 }
 
-const analyzeDocument = debounce((document: TextDocument, diagnostics: DiagnosticCollection) => analyzeDocumentReal(document, diagnostics), 300)
-async function analyzeDocumentReal(document: TextDocument, diagnostics: DiagnosticCollection) {
-    const input = document.getText()
-    const res = await parseAml(input)
-    const errors: Diagnostic[] = (res.errors || []).map(e => new Diagnostic(tokenToRange(e.position), e.message, levelToSeverity(e.level)))
-    diagnostics.set(document.uri, errors)
+function duplicateEntities(entitiesById: Record<EntityId, EntityStatement[]>): ParserError[] {
+    return Object.values(entitiesById).filter(e => e.length > 1).flatMap(dups => dups.slice(1).map(e => {
+        return warning(`'${e.name.value}' already defined at line ${dups[0].name.token.position.start.line}`, e.name.token)
+    }))
 }
+
+const warning = (message: string, pos: TokenInfo): ParserError => ({...pos, message, kind: '', level: ParserErrorLevel.enum.warning})
+const entityId = (e: EntityStatement): EntityId => entityRefToId({database: e.database?.value, catalog: e.catalog?.value, schema: e.schema?.value, entity: e.name.value})
 
 function levelToSeverity(level: ParserErrorLevel): DiagnosticSeverity {
-    if (level === 'error') { return DiagnosticSeverity.Error }
-    else if (level === 'warning') { return DiagnosticSeverity.Warning }
-    else if (level === 'info') { return DiagnosticSeverity.Information }
-    else if (level === 'hint') { return DiagnosticSeverity.Hint }
+    if (level === ParserErrorLevel.enum.error) { return DiagnosticSeverity.Error }
+    else if (level === ParserErrorLevel.enum.warning) { return DiagnosticSeverity.Warning }
+    else if (level === ParserErrorLevel.enum.info) { return DiagnosticSeverity.Information }
+    else if (level === ParserErrorLevel.enum.hint) { return DiagnosticSeverity.Hint }
     return isNever(level)
 }

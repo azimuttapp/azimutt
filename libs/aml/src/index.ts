@@ -9,7 +9,7 @@ import {
 } from "@azimutt/models";
 import packageJson from "../package.json";
 import * as amlAst from "./amlAst";
-import {isTokenInfo} from "./amlAst";
+import {AmlAst, isTokenInfo} from "./amlAst";
 import {parseAmlAst} from "./amlParser";
 import {buildDatabase} from "./amlBuilder";
 import {genDatabase} from "./amlGenerator";
@@ -28,8 +28,11 @@ function parseAml(content: string, opts: {
     strict?: boolean, // stop at first error (instead of adding missing tokens to continue parsing)
     context?: Database // know external context to be more accurate on duplicate warnings and missing targets
 } = {}): ParserResult<Database> {
-    const start = Date.now()
-    return parseAmlAst(content.trimEnd() + '\n', opts).flatMap(ast => {
+    return amlToDatabase(parseAmlAst(content.trimEnd() + '\n', opts), Date.now())
+}
+
+function amlToDatabase(astRes: ParserResult<AmlAst>, start: number): ParserResult<Database> {
+    return astRes.flatMap(ast => {
         const parsed = Date.now()
         const astErrors: ParserError[] = []
         mapEntriesDeep(ast, (path, value) => {
@@ -47,7 +50,7 @@ function generateAml(database: Database, legacy: boolean = false): string {
     return genDatabase(database, legacy)
 }
 
-const ast = {...amlAst, parseAmlAst, ...editor}
+const ast = {...amlAst, parseAmlAst, amlToDatabase, ...editor}
 const monaco = {language, completion, codeAction, codeLens, createMarker}
 const version = packageJson.version
 
