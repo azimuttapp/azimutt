@@ -12,7 +12,7 @@ While Azimutt is primarily a database schema explorer allowing you to better nav
 
 I reviewed a lot of tools to build a [choice guide](./how-to-choose-your-entity-relationship-diagram) and could experiment many ways to define it. Most of them were quite bad with inputs for each information and a lot of buttons to add/edit/delete/move everything. Only two use a simple language to define your schema. You could write it as full text, allowing copy/paste, code generation and even versioning. The experience was incredible. It seems obvious now, as we are not writing code just for fun but because it's the most efficient way to express ourselves with various levels of strictness or abstraction. And so AML was born in my mind.
 
-AML stands for **Azimutt Markup Language**. Its goal is clear: define a SQL database structure in the easiest and lightest way possible. It's meant to be intuitive and used without any prior learning.
+[AML](/aml) stands for **Azimutt Markup Language**. Its goal is clear: define a SQL database structure in the easiest and lightest way possible. It's meant to be intuitive and used without any prior learning.
 
 ## Azimutt Markup Language
 

@@ -50,7 +50,10 @@ posts | store all posts
 - hover infos (cf [registerHoverProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerHoverProvider.html))
 - quick-fixes (cf [registerCodeActionProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerCodeActionProvider.html))
 - hints with actions (cf [registerCodeLensProvider](https://microsoft.github.io/monaco-editor/typedoc/functions/languages.registerCodeLensProvider.html))
+- better suggestions
+  - when suggest a relation, add the target column type (with db specificities: serial->integer...)
 - database linter suggestions
+  - warn on relations with not matching types (handle db specificities: serial=integer, bigserial=bigint, smallserial=smallint)
 - AI recommendations
 - AML support in Markdown (like [Mermaid](https://marketplace.visualstudio.com/items?itemName=edgebus.markdown-mermaid-container))
 - diagram preview for SQL files, then add other languages: Prisma, DBML, [bigER](https://github.com/borkdominik/bigER/wiki/Language)...

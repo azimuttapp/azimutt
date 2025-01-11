@@ -360,6 +360,7 @@ defmodule Azimutt do
           # %{id: "drawdb", name: "drawDB", description: "A Free and Open Source online Entity-Relationship Diagram tool that can generate SQL."},
           # %{id: "chartdb", name: "ChartDB", description: "An Open Source online Entity-Relationship Diagram that visualize your database with a single query."},
           # %{id: "quickdbd", name: "QuickDBD", description: "Draw database diagrams by typing."},
+          # %{id: "powerdesigner", name: "PowerDesigner", description: "Industry-leading data modeling tool manufactured by SAP."},
         ]
       },
       %{
@@ -385,8 +386,8 @@ defmodule Azimutt do
           # %{id: "dbeaver", name: "DBeaver", description: "A free cross-platform database tool with support of many databases: MySQL, PostgreSQL, SQLite..."},
           # %{id: "datagrip", name: "DataGrip", description: "A powerful cross-platform tool for relational and NoSQL databases by JetBrains."},
           # %{id: "navicat", name: "Navicat", description: "Navicat is a robust, all-in-one solution for database development from a single application."},
-          # %{id: "beekeeperstudio", name: "Beekeeper Studio", description: "The SQL Editor and Database Manager Of Your Dreams, easy to use and good looking SQL Client."}
-          # %{id: "pgadmin", name: "pgAdmin", description: "The most popular and feature rich Open Source administration and development platform for PostgreSQL."}
+          # %{id: "beekeeperstudio", name: "Beekeeper Studio", description: "The SQL Editor and Database Manager Of Your Dreams, easy to use and good looking SQL Client."},
+          # %{id: "pgadmin", name: "pgAdmin", description: "The most popular and feature rich Open Source administration and development platform for PostgreSQL."},
         ]
       },
       %{

@@ -6,7 +6,7 @@
         <div class="lg:col-span-2 lg:col-start-1 lg:row-start-2 lg:row-span-4 lg:mx-auto lg:grid lg:w-full lg:max-w-7xl lg:grid-cols-2 lg:gap-x-8 lg:px-8">
             <div class="lg:pr-4">
                 <div class="prose max-w-xl text-base leading-7 text-gray-700 lg:max-w-lg">
-                    <p><span class="underline decoration-dashed" title="Azimutt Markup Language">AML</span> is the <span class="underline decoration-dashed" title="Domain Specific Language">DSL</span> to define your database schema you <span class="underline">already know</span>:</p>
+                    <p><a href={Routes.website_path(@conn, :aml)} title="Azimutt Markup Language">AML</a> is the <span class="underline decoration-dashed" title="Domain Specific Language">DSL</span> to define your database schema you <span class="underline">already know</span>:</p>
                     <pre><code class="hljs aml">users
   id uuid pk
   email varchar unique
@@ -26,7 +26,7 @@ posts
                         <li>Copy/Paste anything</li>
                     </ul>
                     <p>Try it, there will be no turning back!</p>
-                    <p>See <a href={Routes.website_path(@conn, :aml)}>AML page</a> for more details.</p>
+                    <p>See <a href={Routes.website_path(@conn, :doc, ["aml"])}>AML doc</a> for more details.</p>
                 </div>
             </div>
         </div>
