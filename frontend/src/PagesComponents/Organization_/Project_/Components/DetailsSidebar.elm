@@ -269,7 +269,7 @@ view wrap showTable showColumn hideColumn loadLayout openDataExplorer tableStats
 
 viewTableList : (Msg -> msg) -> (TableId -> msg) -> HtmlId -> Erd -> List ErdTable -> String -> Html msg
 viewTableList wrap showTable htmlId erd tables search =
-    Details.viewList (ShowTable >> wrap) showTable (SearchUpdate >> wrap) htmlId erd.settings.defaultSchema tables search
+    Details.viewList (ShowTable >> wrap) showTable (SearchUpdate >> wrap) htmlId erd.settings.defaultSchema tables erd.metadata erd.layouts search
 
 
 viewSchema : (Msg -> msg) -> (TableId -> msg) -> Erd -> SchemaData -> Html msg

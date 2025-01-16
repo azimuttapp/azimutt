@@ -71,6 +71,7 @@ import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposi
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdUnique exposing (ErdUnique)
 import Services.Lenses exposing (setLayouts, setPrimaryKey, setUniques)
+import Services.Search as Search
 import Simple.Fuzzy
 import Time exposing (Posix)
 
@@ -79,8 +80,8 @@ type alias Heading item props =
     { item : item, prev : Maybe item, next : Maybe item, shown : Maybe props }
 
 
-viewList : (TableId -> msg) -> (TableId -> msg) -> (String -> msg) -> HtmlId -> SchemaName -> List ErdTable -> String -> Html msg
-viewList goToTable showTable updateSearch htmlId defaultSchema tables search =
+viewList : (TableId -> msg) -> (TableId -> msg) -> (String -> msg) -> HtmlId -> SchemaName -> List ErdTable -> Metadata -> Dict LayoutName ErdLayout -> String -> Html msg
+viewList goToTable showTable updateSearch htmlId defaultSchema tables metadata layouts search =
     let
         searchId : HtmlId
         searchId =
@@ -100,7 +101,26 @@ viewList goToTable showTable updateSearch htmlId defaultSchema tables search =
             ]
         , nav [ class "mt-3 flex-1 min-h-0 overflow-y-auto", ariaLabel "Table list" ]
             (tables
-                |> List.filter (\t -> t.id |> TableId.show defaultSchema |> Simple.Fuzzy.match search)
+                |> List.filter
+                    (\t ->
+                        if search == Search.notInLayouts then
+                            Search.tableNotInLayouts layouts t
+
+                        else if search == Search.noNotes then
+                            Search.tableNoNotes metadata t
+
+                        else if search |> String.startsWith Search.hasNotes then
+                            Search.tableHasNotes (search |> String.dropLeft 6) metadata t
+
+                        else if search == Search.noTag then
+                            Search.tableNoTag metadata t
+
+                        else if search |> String.startsWith Search.hasTag then
+                            Search.tableHasTag (search |> String.dropLeft 4) metadata t
+
+                        else
+                            t.id |> TableId.toString |> Simple.Fuzzy.match search
+                    )
                 |> List.groupBy (\t -> t.name |> String.toUpper |> String.left 1)
                 |> Dict.toList
                 |> List.sortBy Tuple.first
@@ -1090,6 +1110,8 @@ doc =
                                             "html-id"
                                             s.defaultSchema
                                             (docErd.tables |> Dict.values)
+                                            s.metadata
+                                            Dict.empty
                                             s.search
                                         ]
                                 )

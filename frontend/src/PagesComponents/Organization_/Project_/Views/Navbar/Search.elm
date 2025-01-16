@@ -6,7 +6,7 @@ import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
 import Conf
 import Dict exposing (Dict)
-import Html exposing (Attribute, Html, button, div, input, kbd, label, span, text)
+import Html exposing (Attribute, Html, button, div, input, kbd, label, li, span, text, ul)
 import Html.Attributes exposing (autocomplete, class, for, id, name, placeholder, tabindex, type_, value)
 import Html.Events exposing (onBlur, onFocus, onInput, onMouseDown)
 import Libs.Bool as B
@@ -20,19 +20,31 @@ import Models.Project.ColumnPath as ColumnPath
 import Models.Project.Metadata as Metadata exposing (Metadata)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableMeta exposing (TableMeta)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Models exposing (Msg(..), SearchModel, confirm)
+import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
+import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
+import Services.Search as Search
 import Set exposing (Set)
 import Simple.Fuzzy
 
 
-viewNavbarSearch : SchemaName -> SearchModel -> Dict TableId ErdTable -> List ErdRelation -> Metadata -> List ErdTableLayout -> HtmlId -> HtmlId -> Html Msg
-viewNavbarSearch defaultSchema search tables relations metadata shownTables htmlId openedDropdown =
+viewNavbarSearch : Erd -> SearchModel -> HtmlId -> HtmlId -> Html Msg
+viewNavbarSearch erd search htmlId openedDropdown =
     let
+        defaultSchema : SchemaName
+        defaultSchema =
+            erd.settings.defaultSchema
+
+        shownTables : List ErdTableLayout
+        shownTables =
+            erd |> Erd.currentLayout |> .tables
+
         shown : Set TableId
         shown =
             shownTables |> List.map .id |> Set.fromList
@@ -74,21 +86,21 @@ viewNavbarSearch defaultSchema search tables relations metadata shownTables html
                     if search.text == "" then
                         div []
                             [ span [ role "menuitem", tabindex -1, css [ "flex w-full items-center", ContextMenu.itemDisabledStyles ] ]
-                                [ text "Type to search into tables (", Icon.solid Icons.table "", text "), columns (", Icon.solid Icons.column "", text ") and relations (", Icon.solid Icons.columns.foreignKey "", text ")" ]
+                                [ text "Search into tables (", Icon.solid Icons.table "", text "), columns (", Icon.solid Icons.column "", text ") and relations (", Icon.solid Icons.columns.foreignKey "", text "), use '?' for advanced search" ]
                             , button
                                 [ type_ "button"
-                                , onMouseDown (B.cond (Dict.size tables < Conf.constants.manyTablesLimit) (ShowAllTables "search") (confirm "Show all tables" (text ("You are about to show " ++ (tables |> pluralizeD "table") ++ ". That's a lot. It may slow down your browser and make Azimutt unresponsive. Continue?")) (ShowAllTables "search")))
+                                , onMouseDown (B.cond (Dict.size erd.tables < Conf.constants.manyTablesLimit) (ShowAllTables "search") (confirm "Show all tables" (text ("You are about to show " ++ (erd.tables |> pluralizeD "table") ++ ". That's a lot. It may slow down your browser and make Azimutt unresponsive. Continue?")) (ShowAllTables "search")))
                                 , role "menuitem"
                                 , tabindex -1
                                 , css [ "flex w-full items-center", focus [ "outline-none" ], ContextMenu.itemStyles ]
                                 ]
-                                [ text ("Show all tables (" ++ (tables |> Dict.size |> String.fromInt) ++ ")") ]
+                                [ text ("Show all tables (" ++ (erd.tables |> Dict.size |> String.fromInt) ++ ")") ]
                             , button [ type_ "button", onMouseDown (DetailsSidebarMsg DetailsSidebar.Toggle), role "menuitem", tabindex -1, css [ "flex w-full items-center", focus [ "outline-none" ], ContextMenu.itemStyles ] ]
                                 [ text "Browse table list" ]
                             , let
                                 topTables : List ErdTable
                                 topTables =
-                                    tables |> Dict.values |> List.sortBy (ErdTable.rank >> negate) |> List.filter (\t -> shown |> Set.member t.id |> not) |> List.take 15
+                                    erd.tables |> Dict.values |> List.sortBy (ErdTable.rank >> negate) |> List.filter (\t -> shown |> Set.member t.id |> not) |> List.take 15
                               in
                               if topTables |> List.isEmpty then
                                 div [] []
@@ -100,8 +112,24 @@ viewNavbarSearch defaultSchema search tables relations metadata shownTables html
                                     )
                             ]
 
+                    else if search.text == "?" then
+                        div []
+                            [ div [ role "menuitem", tabindex -1, css [ "flex w-full items-center", ContextMenu.itemDisabledStyles ] ]
+                                [ text "Azimutt has some special search patterns:"
+                                ]
+                            , div [ role "menuitem", tabindex -1, css [ "flex w-full items-center", ContextMenu.itemDisabledStyles ] ]
+                                [ ul [ class "list-disc list-inside" ]
+                                    [ li [] [ text "'!layout' for tables not present in any layout" ]
+                                    , li [] [ text "'!notes' for tables and columns without notes" ]
+                                    , li [] [ text "'notes:bla bla' for tables and columns with 'bla bla' in notes" ]
+                                    , li [] [ text "'!tag' for tables and columns without any tag" ]
+                                    , li [] [ text "'tag:name' for tables and columns with 'name' tag" ]
+                                    ]
+                                ]
+                            ]
+
                     else
-                        performSearch tables relations metadata (String.toLower search.text)
+                        performSearch erd (String.toLower search.text)
                             |> (\results ->
                                     if results |> List.isEmpty then
                                         div []
@@ -165,45 +193,118 @@ viewSearchResult searchId defaultSchema shown active index res =
                 viewItem "relation" relation.src.table Icons.columns.foreignKey [ text relation.name ] True
 
 
-performSearch : Dict TableId ErdTable -> List ErdRelation -> Metadata -> String -> List SearchResult
-performSearch tables relations metadata lQuery =
+filterColumns : List a -> Int -> Metadata -> List ErdTable -> (Maybe TableMeta -> ErdColumn -> Bool) -> List SearchResult
+filterColumns tableResults maxResults metadata tables filter =
+    if (tableResults |> List.length) < maxResults then
+        tables |> List.concatMap (\t -> (metadata |> Dict.get t.id) |> (\m -> (t.columns |> Dict.values) |> List.filter (filter m) |> List.map (FoundColumn t)))
+
+    else
+        []
+
+
+performSearch : Erd -> String -> List SearchResult
+performSearch erd lQuery =
     let
         maxResults : Int
         maxResults =
             30
 
-        tableResults : List ( Float, SearchResult )
-        tableResults =
-            tables |> Dict.values |> List.filterMap (\t -> t |> tableMatch lQuery (metadata |> Metadata.getNotes t.id Nothing))
-
-        columnResults : List ( Float, SearchResult )
-        columnResults =
-            if (tableResults |> List.length) < maxResults then
-                tables
-                    |> Dict.values
-                    |> List.concatMap
-                        (\table ->
-                            metadata
-                                |> Dict.get table.id
-                                |> (\n ->
-                                        table.columns
-                                            |> Dict.values
-                                            |> List.filterMap (\c -> c |> columnMatch lQuery (n |> Maybe.andThen (.columns >> ColumnPath.get c.path) |> Maybe.andThen .notes) table)
-                                   )
-                        )
-
-            else
-                []
-
-        relationResults : List ( Float, SearchResult )
-        relationResults =
-            if ((tableResults |> List.length) + (columnResults |> List.length)) < maxResults then
-                relations |> List.filterMap (relationMatch lQuery)
-
-            else
-                []
+        tables : List ErdTable
+        tables =
+            erd.tables
+                |> Dict.values
+                |> List.sortBy (\t -> t.id |> TableId.toString)
     in
-    (tableResults ++ columnResults ++ relationResults) |> List.sortBy (\( r, _ ) -> negate r) |> List.take maxResults |> List.map Tuple.second
+    if lQuery == Search.notInLayouts then
+        tables |> List.filter (Search.tableNotInLayouts erd.layouts) |> List.map FoundTable |> List.take maxResults
+
+    else if lQuery == Search.noNotes then
+        let
+            tableResults : List SearchResult
+            tableResults =
+                tables |> List.filter (Search.tableNoNotes erd.metadata) |> List.map FoundTable
+
+            columnResults : List SearchResult
+            columnResults =
+                filterColumns tableResults maxResults erd.metadata tables Search.columnNoNotes
+        in
+        (tableResults ++ columnResults) |> List.take maxResults
+
+    else if lQuery |> String.startsWith Search.hasNotes then
+        let
+            text : String
+            text =
+                lQuery |> String.dropLeft 6
+
+            tableResults : List SearchResult
+            tableResults =
+                tables |> List.filter (Search.tableHasNotes text erd.metadata) |> List.map FoundTable
+
+            columnResults : List SearchResult
+            columnResults =
+                filterColumns tableResults maxResults erd.metadata tables (Search.columnHasNotes text)
+        in
+        (tableResults ++ columnResults) |> List.take maxResults
+
+    else if lQuery == Search.noTag then
+        let
+            tableResults : List SearchResult
+            tableResults =
+                tables |> List.filter (Search.tableNoTag erd.metadata) |> List.map FoundTable
+
+            columnResults : List SearchResult
+            columnResults =
+                filterColumns tableResults maxResults erd.metadata tables Search.columnNoTag
+        in
+        (tableResults ++ columnResults) |> List.take maxResults
+
+    else if lQuery |> String.startsWith Search.hasTag then
+        let
+            tag : String
+            tag =
+                lQuery |> String.dropLeft 4
+
+            tableResults : List SearchResult
+            tableResults =
+                tables |> List.filter (Search.tableHasTag tag erd.metadata) |> List.map FoundTable
+
+            columnResults : List SearchResult
+            columnResults =
+                filterColumns tableResults maxResults erd.metadata tables (Search.columnHasTag tag)
+        in
+        (tableResults ++ columnResults) |> List.take maxResults
+
+    else
+        let
+            tableResults : List ( Float, SearchResult )
+            tableResults =
+                tables |> List.filterMap (\t -> t |> tableMatch lQuery (erd.metadata |> Metadata.getNotes t.id Nothing))
+
+            columnResults : List ( Float, SearchResult )
+            columnResults =
+                if (tableResults |> List.length) < maxResults then
+                    tables
+                        |> List.concatMap
+                            (\table ->
+                                (erd.metadata |> Dict.get table.id)
+                                    |> (\n ->
+                                            (table.columns |> Dict.values)
+                                                |> List.filterMap (\c -> c |> columnMatch lQuery (n |> Maybe.andThen (.columns >> ColumnPath.get c.path) |> Maybe.andThen .notes) table)
+                                       )
+                            )
+
+                else
+                    []
+
+            relationResults : List ( Float, SearchResult )
+            relationResults =
+                if ((tableResults |> List.length) + (columnResults |> List.length)) < maxResults then
+                    erd.relations |> List.filterMap (relationMatch lQuery)
+
+                else
+                    []
+        in
+        (tableResults ++ columnResults ++ relationResults) |> List.sortBy (\( r, _ ) -> negate r) |> List.take maxResults |> List.map Tuple.second
 
 
 tableMatch : String -> Maybe Notes -> ErdTable -> Maybe ( Float, SearchResult )

@@ -1,4 +1,4 @@
-module Libs.Dict exposing (alter, any, count, filterMap, find, findMap, from, fromIndexedList, fromListBy, fromListIndexedMap, fromListMap, fuse, getOrElse, getResult, mapBoth, mapKeys, mapValues, nonEmpty, notMember, set, updateT, zip)
+module Libs.Dict exposing (all, alter, any, count, filterMap, find, findMap, from, fromIndexedList, fromListBy, fromListIndexedMap, fromListMap, fuse, getOrElse, getResult, mapBoth, mapKeys, mapValues, nonEmpty, notMember, set, updateT, zip)
 
 import Dict exposing (Dict)
 import Libs.List as List
@@ -72,6 +72,11 @@ mapBoth f g dict =
 any : (comparable -> v -> Bool) -> Dict comparable v -> Bool
 any predicate dict =
     find predicate dict /= Nothing
+
+
+all : (comparable -> v -> Bool) -> Dict comparable v -> Bool
+all predicate dict =
+    find (\k v -> predicate k v |> not) dict /= Nothing
 
 
 find : (comparable -> v -> Bool) -> Dict comparable v -> Maybe v

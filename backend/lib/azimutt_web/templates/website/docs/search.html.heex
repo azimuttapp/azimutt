@@ -25,6 +25,18 @@
         <figcaption>Details for the "dashboard_id" attribute in the "dashboard_tab" entity</figcaption>
     </figure>
 
+    <%= render "docs/_h2.html", title: "Advanced search" %>
+    <p>Azimutt has some special searches for specific purposes:</p>
+    <ul>
+        <li><b>?</b>: the simplest search, show other special searches 😉</li>
+        <li><b>!layout</b>: show entities not present in any layout</li>
+        <li><b>!notes</b>: show entities and attributes with no filled notes</li>
+        <li><b>notes:*</b>: show entities and attributes having the provided text in their notes</li>
+        <li><b>!tag</b>: show entities and attributes with no tag</li>
+        <li><b>tag:*</b>: show entities and attributes with the requested tag (exact match)</li>
+    </ul>
+    <p>Let us know what you think about theses and if you need improvements.</p>
+
     <%= render "docs/_h2.html", title: "Roadmap" %>
     <p>
         The Azimutt search is good enough with its everywhere search and fuzzy matching.

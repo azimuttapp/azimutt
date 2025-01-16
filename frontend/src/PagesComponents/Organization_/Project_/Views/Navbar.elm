@@ -30,7 +30,7 @@ import PagesComponents.Helpers as Helpers
 import PagesComponents.Organization_.Project_.Components.ExportDialog as ExportDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), HelpMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), SchemaAnalysisMsg(..), VirtualRelation, VirtualRelationMsg(..))
-import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Views.Navbar.Search exposing (viewNavbarSearch)
 import PagesComponents.Organization_.Project_.Views.Navbar.Title as Title exposing (viewNavbarTitle)
@@ -92,7 +92,7 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
             [ div [ class "relative flex items-center justify-between h-16" ]
                 [ div [ css [ "flex items-center px-2", lg [ "px-0" ] ] ]
                     [ viewNavbarBrand (erd.project.organization |> Maybe.map .id |> Maybe.orElse urlOrganization |> Maybe.filter (\id -> userOrganizations |> List.member id)) (eConf.dashboardLink && notCleverCloud)
-                    , Lazy.lazy8 viewNavbarSearch erd.settings.defaultSchema model.search erd.tables erd.relations erd.metadata (erd |> Erd.currentLayout |> .tables) (htmlId ++ "-search") (openedDropdown |> String.filterStartsWith (htmlId ++ "-search"))
+                    , Lazy.lazy4 viewNavbarSearch erd model.search (htmlId ++ "-search") (openedDropdown |> String.filterStartsWith (htmlId ++ "-search"))
                     , viewNavbarHelp
                     ]
                 , div [ class "flex-1 flex justify-center px-2" ]
