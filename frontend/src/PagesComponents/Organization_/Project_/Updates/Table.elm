@@ -38,7 +38,7 @@ import PagesComponents.Organization_.Project_.Models.PositionHint as PositionHin
 import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns exposing (ShowColumns)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import Ports
-import Services.Lenses exposing (mapCanvas, mapColumns, mapColumnsT, mapRelatedTables, mapTables, mapTablesL, mapTablesLTM, mapTablesT, setHighlighted, setHoverTable, setPosition, setShown)
+import Services.Lenses exposing (mapCanvas, mapColumns, mapColumnsT, mapGroups, mapRelatedTables, mapTables, mapTablesL, mapTablesLTM, mapTablesT, setHighlighted, setHoverTable, setPosition, setShown)
 import Services.Toasts as Toasts
 import Set exposing (Set)
 import Time
@@ -419,7 +419,14 @@ performHideTable now id erd =
     (erd |> Erd.currentLayout |> .tables |> List.zipWithIndex |> List.find (\( t, _ ) -> t.id == id))
         |> Maybe.map
             (\( table, index ) ->
-                ( erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.removeBy .id id) >> mapTables updateRelatedTables)
+                ( erd
+                    |> Erd.mapCurrentLayoutWithTime now
+                        -- remove table from layout
+                        (mapTables (List.removeBy .id id)
+                            -- remove table from groups, and group if last table inside
+                            >> mapGroups (List.map (mapTables (List.remove id)) >> List.filter (.tables >> List.nonEmpty))
+                            >> mapTables updateRelatedTables
+                        )
                 , Extra.history ( UnHideTable_ index table, HideTable id )
                 )
             )
