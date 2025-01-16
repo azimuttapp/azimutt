@@ -25,6 +25,7 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform as Platform exposing (Platform)
+import Libs.Models.Tag as Tag
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.String as String
@@ -47,7 +48,7 @@ type alias Model msg =
     , isView : Bool
     , comment : Maybe String
     , notes : Maybe String
-    , isDeprecated : Bool
+    , tags : List String
     , columns : List Column
     , hiddenColumns : List Column
     , dropdown : Maybe (Html msg)
@@ -69,6 +70,7 @@ type alias Column =
     , default : Maybe String
     , comment : Maybe String
     , notes : Maybe String
+    , tags : List String
     , isPrimaryKey : Bool
     , inRelations : List Relation
     , outRelations : List Relation
@@ -76,7 +78,6 @@ type alias Column =
     , uniques : List UniqueConstraint
     , indexes : List IndexConstraint
     , checks : List CheckConstraint
-    , isDeprecated : Bool
     , children : Maybe NestedColumns
     }
 
@@ -179,6 +180,13 @@ viewHeader model =
         dropdownId : HtmlId
         dropdownId =
             model.htmlId ++ "-dropdown"
+
+        classes : List ( String, Bool )
+        classes =
+            [ ( "line-through", List.member Tag.deprecated model.tags )
+            , ( "text-amber-600", List.member Tag.fixme model.tags )
+            , ( text_500 model.state.color, List.member Tag.highlight model.tags )
+            ]
     in
     div
         [ title model.label
@@ -199,13 +207,18 @@ viewHeader model =
                 ++ Bool.cond model.conf.layout [ onDblClick (\_ -> model.actions.headerDblClick) model.platform, onContextMenu model.actions.headerRightClick model.platform ] []
             )
             ([ if model.isView then
-                span [ class "text-xl italic underline decoration-dotted", classList [ ( "line-through", model.isDeprecated ) ] ] [ text model.label ] |> Tooltip.t "This is a view"
+                span [ class "text-xl italic underline decoration-dotted", classList classes ] [ text model.label ] |> Tooltip.t "This is a view"
 
                else
-                span [ class "text-xl", classList [ ( "line-through", model.isDeprecated ) ] ] [ text model.label ]
+                span [ class "text-xl", classList classes ] [ text model.label ]
              ]
                 |> List.appendOn model.comment viewComment
                 |> List.appendOn model.notes (viewNotes model Nothing)
+                |> List.prependOn
+                    (Maybe.when (model.tags |> List.member Tag.fixme) Icons.warning
+                        |> Maybe.orElse (model.tags |> List.find (String.startsWith Tag.icon) |> Maybe.map (String.dropLeft 5 >> Icons.fromText))
+                    )
+                    (\i -> span [ classList classes ] [ Icon.outline i "w-4 h-4 mr-1 inline opacity-75" ])
             )
         , if model.conf.layout then
             model.dropdown
@@ -346,6 +359,7 @@ viewColumnIcon model column =
             , Bool.maybe (column.indexes |> List.nonEmpty) ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", "))
             , Bool.maybe (column.checks |> List.nonEmpty) ((column.checks |> String.pluralizeL "check") ++ ": " ++ (column.checks |> List.map (\c -> c.predicate |> Maybe.withDefault c.name) |> String.join ", "))
             , column.children |> Maybe.map (\(NestedColumns count _) -> "Has " ++ String.fromInt count ++ " nested columns")
+            , Bool.maybe (List.member Tag.fixme column.tags) "FIXME"
             ]
                 |> List.filterMap (\a -> a)
                 |> String.join ", "
@@ -376,6 +390,12 @@ viewColumnIcon model column =
 
     else if column.checks |> List.nonEmpty then
         div [] [ Icon.solid Icons.columns.check "w-4 h-4" |> Tooltip.t tooltip ]
+
+    else if List.member Tag.fixme column.tags then
+        div [] [ Icon.outline Icons.warning "w-4 h-4 opacity-75 text-amber-600" |> Tooltip.t tooltip ]
+
+    else if column.tags |> List.any (String.startsWith Tag.icon) then
+        div [] [ Icon.outline (Icons.fromText (column.tags |> List.find (String.startsWith Tag.icon) |> Maybe.mapOrElse (String.dropLeft 5) "")) "w-4 h-4 opacity-75" ]
 
     else
         div [] [ Icon.solid Icon.Empty "w-4 h-4" ]
@@ -448,8 +468,17 @@ viewColumnIconDropdownItem message content =
 
 viewColumnName : Model msg -> Column -> Html msg
 viewColumnName model column =
-    div [ css [ "ml-1 flex flex-grow", Bool.cond column.isPrimaryKey "font-bold" "", Bool.cond column.isDeprecated "line-through" "" ] ]
-        ([ span [ class "relative inline-block" ] [ text (ColumnPath.name column.path), column |> viewColumnSuggestions model ] ]
+    div [ css [ "ml-1 flex flex-grow", Bool.cond column.isPrimaryKey "font-bold" "", Bool.cond (List.member Tag.deprecated model.tags || List.member Tag.deprecated column.tags) "line-through" "" ] ]
+        ([ span
+            [ class "relative inline-block"
+            , classList
+                [ ( text_500 model.state.color ++ " underline", List.member Tag.highlight column.tags )
+                , ( "text-amber-600", List.member Tag.fixme column.tags )
+                ]
+            ]
+            [ text (ColumnPath.name column.path) ]
+         ]
+            |> List.appendIf (column.suggestedRelations |> List.nonEmpty) (column |> viewColumnSuggestions model)
             |> List.appendOn column.comment viewComment
             |> List.appendOn column.notes (viewNotes model (Just column.path))
         )
@@ -467,27 +496,29 @@ viewColumnSuggestions model column =
             { table = model.id, column = column.path }
     in
     if column.suggestedRelations |> List.nonEmpty then
-        div [ class "absolute -right-1 top-1" ]
-            [ Dropdown.dropdown { id = dropdownId, direction = BottomRight, isOpen = model.state.openedDropdown == dropdownId }
-                (\m ->
-                    button
-                        [ type_ "button"
-                        , id m.id
-                        , onClick (model.actions.headerDropdownClick m.id)
-                        , ariaExpanded m.isOpen
-                        , ariaHaspopup "true"
-                        , class "block h-1.5 w-1.5 rounded-full bg-red-500 ring-2 ring-white"
-                        ]
-                        []
-                )
-                (\_ ->
-                    div []
-                        ((column.suggestedRelations |> List.concatMap (viewRelationSuggestion model columnRef))
-                            ++ [ ContextMenu.btn "" (model.actions.addRelation columnRef) [] [ text "Add relation" ]
-                               , ContextMenu.btn "" (model.actions.notRelation columnRef) [] [ text "Not a relation" ]
-                               ]
-                        )
-                )
+        div [ class "inline relative", style "padding-left" "5px" ]
+            [ div [ class "absolute", style "left" "0px", style "top" "0px" ]
+                [ Dropdown.dropdown { id = dropdownId, direction = BottomRight, isOpen = model.state.openedDropdown == dropdownId }
+                    (\m ->
+                        button
+                            [ type_ "button"
+                            , id m.id
+                            , onClick (model.actions.headerDropdownClick m.id)
+                            , ariaExpanded m.isOpen
+                            , ariaHaspopup "true"
+                            , class "block h-1.5 w-1.5 rounded-full bg-red-500 ring-2 ring-white"
+                            ]
+                            []
+                    )
+                    (\_ ->
+                        div []
+                            ((column.suggestedRelations |> List.concatMap (viewRelationSuggestion model columnRef))
+                                ++ [ ContextMenu.btn "" (model.actions.addRelation columnRef) [] [ text "Add relation" ]
+                                   , ContextMenu.btn "" (model.actions.notRelation columnRef) [] [ text "Not a relation" ]
+                                   ]
+                            )
+                    )
+                ]
             ]
 
     else
@@ -587,7 +618,7 @@ updateDocState transform =
 
 sampleColumn : Column
 sampleColumn =
-    { index = 0, path = Nel "" [], kind = "", kindDetails = Nothing, nullable = False, default = Nothing, comment = Nothing, notes = Nothing, isPrimaryKey = False, inRelations = [], outRelations = [], suggestedRelations = [], uniques = [], indexes = [], checks = [], isDeprecated = False, children = Nothing }
+    { index = 0, path = Nel "" [], kind = "", kindDetails = Nothing, nullable = False, default = Nothing, comment = Nothing, notes = Nothing, tags = [], isPrimaryKey = False, inRelations = [], outRelations = [], suggestedRelations = [], uniques = [], indexes = [], checks = [], children = Nothing }
 
 
 sample : Model (Msg x)
@@ -598,7 +629,7 @@ sample =
     , isView = False
     , comment = Nothing
     , notes = Nothing
-    , isDeprecated = False
+    , tags = []
     , columns =
         [ { sampleColumn | path = Nel "id" [], kind = "integer", isPrimaryKey = True, inRelations = [ { column = { table = ( "demo", "accounts" ), column = ColumnPath.fromString "user" }, nullable = True, tableShown = False } ] }
         , { sampleColumn | path = Nel "name" [], kind = "character varying(120)", comment = Just "Should be unique", notes = Just "A nice note", uniques = [ { name = "users_name_unique" } ] }
@@ -606,7 +637,7 @@ sample =
         , { sampleColumn | path = Nel "bio" [], kind = "text", checks = [ { name = "users_bio_min_length", predicate = Just "len(bio) > 3" } ] }
         , { sampleColumn | path = Nel "organization" [], kind = "integer", nullable = True, outRelations = [ { column = { table = ( "demo", "organizations" ), column = ColumnPath.fromString "id" }, nullable = True, tableShown = False } ] }
         , { sampleColumn | path = Nel "plan" [], kind = "object", children = Just (NestedColumns 1 []) }
-        , { sampleColumn | path = Nel "created" [], kind = "timestamp without time zone", default = Just "CURRENT_TIMESTAMP", isDeprecated = True }
+        , { sampleColumn | path = Nel "created" [], kind = "timestamp without time zone", default = Just "CURRENT_TIMESTAMP" }
         ]
     , hiddenColumns = []
     , dropdown =

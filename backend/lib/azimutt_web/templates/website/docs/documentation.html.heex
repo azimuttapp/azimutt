@@ -79,7 +79,27 @@
         <li><b>data sensitivity</b>: to categorize data (ex: <code>pii</code>)</li>
         <li><b>communication</b>: to inform other people (ex: <code>deprecated</code> or <code>improve-doc</code>)</li>
     </ul>
-    <p>Or anything you may need to flag your entity or attribute with.</p>
+    <p>
+        Or anything you may need to flag your entity or attribute with.<br>
+        Some tags have a special behavior:
+    </p>
+    <ul>
+        <li><code>deprecated</code>: on entity or attribute, add a line-through to indicate it shouldn't be used anymore</li>
+        <li><code>fixme</code>: on entity or attribute, add a warning icon with orange text to indicate it should be improved</li>
+        <li><code>highlight</code>: on entity or attribute, add colored text and underline to draw attention on it</li>
+        <li>
+            <code>icon:*</code>: on entity or attribute, add an icon in front of the name. Possible values:
+            <% icons = "archive at bar-chart bell chat check clock cloud code euro experiment database desktop document dollar exclamation eye flag folder forbid grid hand hashtag heart home image info list lock lock-open mail phone paperclip pen pie-chart refresh search settings share sparkles star tag terminal thumb-down thumb-up trash user" %>
+            <%= for icon <- icons |> String.split(" ") do %>
+                <span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10"><%= icon %></span>
+            <% end %><br>
+            <i>* icons are based on <a href="https://v1.heroicons.com" target="_blank">heroicons v1</a>, let us know if you need more.</i>
+        </li>
+    </ul>
+    <figure>
+        <img src={Routes.static_path(@conn, "/images/doc/documentation-tags-special.png")} alt="Azimutt special tags" />
+        <figcaption>Tags with special behavior in Azimutt</figcaption>
+    </figure>
 
     <%= render "docs/_h3.html", title: "Custom properties" %>
     <%= doc_warning do %>Not implemented yet!<% end %>

@@ -13,7 +13,6 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform as Platform exposing (Platform)
-import Libs.Models.Tag as Tag
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
 import Models.Position as Position
@@ -100,7 +99,7 @@ viewTable conf zoom args layout meta tableLayout table =
             , isView = table.view
             , comment = table.comment |> Maybe.map .text
             , notes = meta.notes
-            , isDeprecated = meta.tags |> List.member Tag.deprecated
+            , tags = meta.tags
             , columns = tableLayout.columns |> ErdColumnProps.flatten |> List.filterMap (\c -> columns |> List.findBy .path c.path)
             , hiddenColumns = hiddenColumns |> List.sortBy .index
             , dropdown = Just dropdown
@@ -204,6 +203,7 @@ buildColumn useBasicTypes tableMeta layout column =
     , default = column.defaultLabel
     , comment = column.comment |> Maybe.map .text
     , notes = columnMeta |> Maybe.andThen .notes
+    , tags = columnMeta |> Maybe.mapOrElse .tags []
     , isPrimaryKey = column.isPrimaryKey
     , inRelations = column.inRelations |> List.map (buildColumnRelation layout)
     , outRelations = column.outRelations |> List.map (buildColumnRelation layout)
@@ -211,7 +211,6 @@ buildColumn useBasicTypes tableMeta layout column =
     , uniques = column.uniques |> List.map (\u -> { name = u })
     , indexes = column.indexes |> List.map (\i -> { name = i })
     , checks = column.checks
-    , isDeprecated = (tableMeta.tags |> List.member Tag.deprecated) || (columnMeta |> Maybe.any (.tags >> List.member Tag.deprecated))
     , children =
         column.columns
             |> Maybe.map
