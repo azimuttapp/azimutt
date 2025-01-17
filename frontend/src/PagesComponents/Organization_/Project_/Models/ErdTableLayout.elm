@@ -7,6 +7,7 @@ import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Group exposing (Group)
 import Models.Project.ProjectSettings exposing (ProjectSettings)
 import Models.Project.TableId exposing (TableId)
+import Models.Project.TableMeta exposing (TableMeta)
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps, ErdColumnPropsFlat)
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
@@ -49,10 +50,10 @@ unpack layout =
     }
 
 
-init : ProjectSettings -> Set TableId -> List ErdRelation -> Bool -> Maybe PositionHint -> ErdTable -> List ColumnName -> ErdTableLayout
-init settings shownTables relations collapsed hint table columns =
+init : ProjectSettings -> Set TableId -> List ErdRelation -> Bool -> Maybe PositionHint -> Maybe TableMeta -> ErdTable -> List ColumnName -> ErdTableLayout
+init settings shownTables relations collapsed hint meta table columns =
     { id = table.id
-    , props = ErdTableProps.init collapsed hint table
+    , props = ErdTableProps.init collapsed hint meta table
     , columns = ErdColumnProps.initAll settings relations table columns
     , relatedTables = buildRelatedTables shownTables relations
     }

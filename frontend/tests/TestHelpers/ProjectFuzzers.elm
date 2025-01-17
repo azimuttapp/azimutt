@@ -173,7 +173,7 @@ columnRef =
 
 tableMeta : Fuzzer TableMeta
 tableMeta =
-    Fuzz.map3 TableMeta (Fuzz.maybe stringSmall) (listSmall stringSmall) (dictSmall columnPathStr columnMeta)
+    Fuzz.map4 TableMeta (Fuzz.maybe stringSmall) (listSmall stringSmall) (Fuzz.maybe color) (dictSmall columnPathStr columnMeta)
 
 
 columnMeta : Fuzzer ColumnMeta

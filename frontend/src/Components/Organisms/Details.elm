@@ -1,10 +1,13 @@
-module Components.Organisms.Details exposing (DocState, Heading, NotesModel, SharedDocState, TagsModel, buildColumnHeading, buildSchemaHeading, buildTableHeading, doc, docInit, viewColumn, viewColumn2, viewList, viewSchema, viewTable)
+module Components.Organisms.Details exposing (ColorModel, DocState, Heading, NotesModel, SharedDocState, TagsModel, buildColumnHeading, buildSchemaHeading, buildTableHeading, doc, docInit, viewColumn, viewColumn2, viewList, viewSchema, viewTable)
 
 import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon as Icon exposing (Icon)
 import Components.Atoms.Icons as Icons
 import Components.Atoms.Markdown as Markdown
+import Components.Molecules.ContextMenu exposing (Direction(..))
+import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Tooltip as Tooltip
+import Components.Organisms.ColorPicker as ColorPicker
 import Conf
 import DataSources.DbMiner.DbQuery as DbQuery
 import Dict exposing (Dict)
@@ -28,7 +31,6 @@ import Libs.Nel as Nel exposing (Nel)
 import Libs.Result as Result
 import Libs.String as String exposing (pluralize)
 import Libs.Tailwind as Tw exposing (TwClass)
-import Libs.Time as Time
 import Models.Project as Project
 import Models.Project.CheckName exposing (CheckName)
 import Models.Project.Column exposing (docColumn)
@@ -73,7 +75,6 @@ import PagesComponents.Organization_.Project_.Models.ErdUnique exposing (ErdUniq
 import Services.Lenses exposing (setLayouts, setPrimaryKey, setUniques)
 import Services.Search as Search
 import Simple.Fuzzy
-import Time exposing (Posix)
 
 
 type alias Heading item props =
@@ -193,17 +194,20 @@ viewTable :
     -> (LayoutName -> msg)
     -> (SourceId -> SqlQueryOrigin -> msg)
     -> (SourceName -> msg)
+    -> (HtmlId -> msg)
+    -> HtmlId
     -> SourceName
     -> SchemaName
     -> Heading SchemaName Never
     -> Heading ErdTable ErdTableLayout
     -> NotesModel msg
     -> TagsModel msg
+    -> ColorModel msg
     -> List LayoutName
     -> Maybe TableMeta
     -> Dict SourceIdStr (Result String TableStats)
     -> Html msg
-viewTable goToList goToSchema goToTable goToColumn showTable loadLayout openDataExplorer _ _ defaultSchema schema table notes tags inLayouts meta stats =
+viewTable goToList goToSchema goToTable goToColumn showTable loadLayout openDataExplorer _ toggleDropdown openedDropdown _ defaultSchema schema table notes tags color inLayouts meta stats =
     let
         columnValues : Dict ColumnPathStr ColumnValue
         columnValues =
@@ -228,6 +232,7 @@ viewTable goToList goToSchema goToTable goToColumn showTable loadLayout openData
             , table.item.comment |> Maybe.mapOrElse viewComment (div [] [])
             , notes |> viewNotes
             , tags |> viewTags
+            , color |> viewColor toggleDropdown openedDropdown
             , viewTableConstraints table.item
             , outRelations |> List.nonEmptyMap (\r -> viewProp [ text "References" ] (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
             , inRelations |> List.nonEmptyMap (\r -> viewProp [ text "Referenced by" ] (r |> List.sortBy .table |> List.map (viewTableRelation goToTable defaultSchema))) (div [] [])
@@ -499,7 +504,7 @@ viewNotes model =
     let
         inputId : HtmlId
         inputId =
-            "edit-notes"
+            "notes-edit"
     in
     div [ class "mt-1 flex flex-row" ]
         [ Icon.outline Icons.notes "opacity-50 mr-1" |> Tooltip.r "Azimutt notes"
@@ -542,7 +547,7 @@ viewTags model =
     let
         inputId : HtmlId
         inputId =
-            "edit-tags"
+            "tags-edit"
     in
     div [ class "mt-1 flex flex-row" ]
         [ Icon.outline Icons.tags "opacity-50 mr-1" |> Tooltip.r "Azimutt tags"
@@ -569,6 +574,37 @@ viewTags model =
                  else
                     div [ onClick (model.edit inputId model.tags), class "w-full cursor-pointer" ] (model.tags |> List.map (\t -> Badge.basic Tw.gray [ class "mr-1" ] [ text t ]))
                 )
+        ]
+
+
+type alias ColorModel msg =
+    { color : Maybe Tw.Color
+    , save : Maybe Tw.Color -> msg
+    , apply : Tw.Color -> msg
+    }
+
+
+viewColor : (HtmlId -> msg) -> HtmlId -> ColorModel msg -> Html msg
+viewColor toggleDropdown openedDropdown model =
+    let
+        dropdownId : HtmlId
+        dropdownId =
+            "default-color-edit"
+    in
+    div [ class "mt-1 flex flex-row" ]
+        [ Icon.outline Icons.color "opacity-50 mr-1" |> Tooltip.r "Default color"
+        , div [ class "flex" ]
+            [ Dropdown.dropdown { id = dropdownId, direction = BottomRight, isOpen = openedDropdown == dropdownId }
+                (\m ->
+                    model.color
+                        |> Maybe.map (\color -> button [ type_ "button", id m.id, onClick (toggleDropdown m.id), class "block w-6 h-6 rounded-full", css [ Tw.bg_500 color ] ] [])
+                        |> Maybe.withDefault (button [ type_ "button", id m.id, onClick (toggleDropdown m.id), class "block text-sm text-gray-400 italic underline" ] [ text "No default color" ])
+                )
+                (\_ -> ColorPicker.view (Just >> Maybe.filter (\c -> c /= Tw.gray) >> model.save))
+            , model.color
+                |> Maybe.map (\color -> button [ type_ "button", onClick (model.apply color), class "ml-2 text-sm text-gray-400 italic underline" ] [ text "Apply everywhere" ])
+                |> Maybe.withDefault (div [] [])
+            ]
         ]
 
 
@@ -1082,6 +1118,7 @@ docInit =
             [ ( ( "", "users" )
               , { notes = Just "Azimutt notes for **users**"
                 , tags = [ "first", "other" ]
+                , color = Nothing
                 , columns = Dict.fromList [ ( "id", { notes = Just "Azimutt notes for **users.id**", tags = [] } ) ]
                 }
               )
@@ -1159,6 +1196,8 @@ doc =
                                                     (\layout -> logAction ("loadLayout " ++ layout))
                                                     (\_ q -> logAction ("query: " ++ q.sql))
                                                     (\source -> docSetState { s | openedCollapse = Bool.cond (s.openedCollapse == "viewTable-" ++ source) "" ("viewTable-" ++ source) })
+                                                    (\id -> logAction ("toggleDropdown " ++ id))
+                                                    ""
                                                     (s.openedCollapse |> String.stripLeft "viewTable-")
                                                     s.defaultSchema
                                                     schema
@@ -1174,6 +1213,10 @@ doc =
                                                     , edit = \_ tags -> docSetState { s | editTags = tags |> Tag.tagsToString |> Just }
                                                     , update = \content -> docSetState { s | editTags = s.editTags |> Maybe.map (\_ -> content) }
                                                     , save = \content -> docSetState { s | metadata = s.metadata |> Metadata.putTags table.item.id Nothing (content |> Tag.tagsFromString) }
+                                                    }
+                                                    { color = Nothing
+                                                    , save = \_ -> docSetState s
+                                                    , apply = \_ -> docSetState s
                                                     }
                                                     (docErd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberBy .id table.item.id) |> Dict.keys)
                                                     Nothing
@@ -1235,11 +1278,6 @@ doc =
             , docComponent "pageHeading" (\_ -> pageHeading)
             , docComponent "directory" (\_ -> directory)
             ]
-
-
-docNow : Posix
-docNow =
-    Time.zero
 
 
 docErd : Erd

@@ -1,4 +1,4 @@
-module Components.Atoms.Icons exposing (column, columns, comment, fromText, notes, sources, table, tags, warning)
+module Components.Atoms.Icons exposing (color, column, columns, comment, fromText, notes, sources, table, tags, warning)
 
 import Components.Atoms.Icon as Icon exposing (Icon)
 
@@ -26,6 +26,11 @@ notes =
 tags : Icon
 tags =
     Icon.Hashtag
+
+
+color : Icon
+color =
+    Icon.ColorSwatch
 
 
 warning : Icon

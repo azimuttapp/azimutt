@@ -12,7 +12,7 @@ import Libs.Tailwind as Tw exposing (Color, bg_500, focus, hover)
 
 view : (Color -> msg) -> Html msg
 view pickColor =
-    div [ css [ "group-hover:grid grid-cols-6 gap-1 p-1 pl-2" ] ]
+    div [ css [ "grid grid-cols-6 gap-1 p-1 pl-2" ] ]
         (Tw.selectable
             |> List.map
                 (\c ->

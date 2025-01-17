@@ -60,6 +60,7 @@ import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint(..))
 import PagesComponents.Organization_.Project_.Updates.Canvas exposing (applyAutoLayout, fitCanvas, handleWheel, launchAutoLayout, squashViewHistory, zoomCanvas)
+import PagesComponents.Organization_.Project_.Updates.Color exposing (handleColor)
 import PagesComponents.Organization_.Project_.Updates.Drag exposing (handleDrag)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import PagesComponents.Organization_.Project_.Updates.FindPath exposing (handleFindPath)
@@ -358,6 +359,9 @@ update urlLayout zone now urlInfos organizations projects msg model =
 
         TagsMsg message ->
             model |> handleTags message
+
+        ColorMsg message ->
+            model |> handleColor now projectRef message
 
         MemoMsg message ->
             model |> handleMemo now urlInfos message

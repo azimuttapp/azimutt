@@ -126,6 +126,7 @@ export const EntityDoc = z.object({
     alias: z.string().optional(),
     doc: Markdown.optional(),
     tags: TagName.array().optional(),
+    color: Color.optional(),
     props: z.record(UserPropertyName, UserPropertyValue).optional(),
     attrs: z.record(AttributePathId, AttributeDoc).optional(),
 }).strict()

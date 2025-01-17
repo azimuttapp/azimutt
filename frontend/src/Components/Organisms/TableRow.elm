@@ -59,7 +59,7 @@ import Models.Project.SourceId as SourceId exposing (SourceId, SourceIdStr)
 import Models.Project.SourceKind as SourceKind exposing (SourceKind(..))
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
-import Models.Project.TableMeta exposing (TableMeta)
+import Models.Project.TableMeta as TableMeta exposing (TableMeta)
 import Models.Project.TableName exposing (TableName)
 import Models.Project.TableRow as TableRow exposing (State(..), TableRow, TableRowColumn)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
@@ -1092,11 +1092,7 @@ docErdTable =
 
 docTableMeta : Maybe TableMeta
 docTableMeta =
-    Just
-        { notes = Nothing
-        , tags = []
-        , columns = Dict.empty
-        }
+    Just TableMeta.empty
 
 
 docTable : SchemaName -> TableName -> List ( ColumnName, ColumnType, Bool ) -> Table

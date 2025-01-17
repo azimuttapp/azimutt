@@ -402,12 +402,14 @@ export const LegacyColumnMeta = z.object({
 export interface LegacyTableMeta {
     notes?: LegacyNotes
     tags?: LegacyTag[]
+    color?: Color
     columns: { [column: LegacyColumnPathStr]: LegacyColumnMeta }
 }
 
 export const LegacyTableMeta = z.object({
     notes: LegacyNotes.optional(),
     tags: LegacyTag.array().optional(),
+    color: Color.optional(),
     columns: z.record(LegacyColumnPathStr, LegacyColumnMeta)
 }).strict()
 

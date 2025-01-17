@@ -138,7 +138,7 @@ showAllTables now from erd =
 
         newTables : List ErdTableLayout
         newTables =
-            tablesToShow |> List.map (\t -> ErdTableLayout.init erd.settings shownIds (erd.relationsByTable |> Dict.getOrElse t.id []) erd.settings.collapseTableColumns Nothing t [])
+            tablesToShow |> List.map (\t -> ErdTableLayout.init erd.settings shownIds (erd.relationsByTable |> Dict.getOrElse t.id []) erd.settings.collapseTableColumns Nothing (erd.metadata |> Dict.get t.id) t [])
 
         newErd : Erd
         newErd =
@@ -448,6 +448,7 @@ performShowTable now table columns hint erd =
                                 (erd.relationsByTable |> Dict.getOrElse table.id [])
                                 erd.settings.collapseTableColumns
                                 hint
+                                (erd.metadata |> Dict.get table.id)
                                 table
                                 columns
                     in

@@ -5,6 +5,7 @@ import Libs.String as String
 import Libs.Tailwind as Tw exposing (Color)
 import Models.Position as Position
 import Models.Project.TableId exposing (TableId)
+import Models.Project.TableMeta exposing (TableMeta)
 import Models.Project.TableProps exposing (TableProps)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
@@ -34,12 +35,12 @@ create props =
     }
 
 
-init : Bool -> Maybe PositionHint -> ErdTable -> ErdTableProps
-init collapsed hint table =
+init : Bool -> Maybe PositionHint -> Maybe TableMeta -> ErdTable -> ErdTableProps
+init collapsed hint meta table =
     { positionHint = hint
     , position = Position.zeroGrid
     , size = Size.zeroCanvas
-    , color = computeColor table.id
+    , color = meta |> Maybe.andThen .color |> Maybe.withDefault (computeColor table.id)
     , selected = False
     , collapsed = collapsed
     , showHiddenColumns = False

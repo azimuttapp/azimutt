@@ -52,6 +52,7 @@ import PagesComponents.Organization_.Project_.Components.LlmGenerateSqlDialog as
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
+import PagesComponents.Organization_.Project_.Models.ColorMsg exposing (ColorMsg)
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.DragState exposing (DragState)
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
@@ -286,6 +287,7 @@ type Msg
     | SetLayout_ ErdLayout
     | NotesMsg NotesMsg
     | TagsMsg TagsMsg
+    | ColorMsg ColorMsg
     | GroupMsg GroupMsg
     | MemoMsg MemoMsg
     | ShowTableRow RowQuery (Maybe TableRow.SuccessState) (Maybe PositionHint) String
