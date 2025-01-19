@@ -49,6 +49,7 @@ viewPrompt opened model =
         , placeholder = model.content.placeholder
         , value = model.input
         , multiline = model.content.multiline
+        , choices = model.content.choices
         , onUpdate = PromptUpdate
         , confirm = model.content.confirm
         , cancel = model.content.cancel

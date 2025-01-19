@@ -22,9 +22,10 @@ import PagesComponents.Organization_.Project_.Components.LlmGenerateSqlDialog as
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSharing as ProjectSharing
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
-import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), GroupMsg(..), HelpMsg(..), MemoMsg(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), VirtualRelationMsg(..))
+import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), GroupMsg(..), HelpMsg(..), LinkMsg(..), MemoMsg(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
+import PagesComponents.Organization_.Project_.Models.LinkLayoutId as LinkLayoutId exposing (LinkLayoutId)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId exposing (MemoId)
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg(..))
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
@@ -196,7 +197,7 @@ hideElement model =
         |> Maybe.orElse (model |> currentTableRow |> Maybe.map DeleteTableRow)
         |> Maybe.orElse (model |> currentColumn |> Maybe.map HideColumn)
         |> Maybe.orElse (model |> currentTable |> Maybe.map HideTable)
-        |> Maybe.orElse (model |> selectedItems |> Maybe.map (\( tables, rows, memos ) -> ((tables |> List.map HideTable) ++ (rows |> List.map DeleteTableRow) ++ (memos |> List.map (MDelete >> MemoMsg))) |> Batch))
+        |> Maybe.orElse (model |> selectedItems |> Maybe.map (\( ( tables, rows ), ( memos, links ) ) -> ((tables |> List.map HideTable) ++ (rows |> List.map DeleteTableRow) ++ (memos |> List.map (MDelete >> MemoMsg)) ++ (links |> List.map (LLDelete >> LinkMsg))) |> Batch))
         |> Maybe.withDefault ("Can't find an element to hide :(" |> Toasts.info |> Toast)
         |> Extra.msg
 
@@ -216,18 +217,21 @@ currentColumnRow model =
     model.hoverTableRow |> Maybe.andThen (\( id, col ) -> col |> Maybe.map (\c -> ( id, c )))
 
 
-selectedItems : Model -> Maybe ( List TableId, List TableRow.Id, List MemoId )
+selectedItems : Model -> Maybe ( ( List TableId, List TableRow.Id ), ( List MemoId, List LinkLayoutId ) )
 selectedItems model =
     model.erd
         |> Maybe.map Erd.currentLayout
         |> Maybe.map
             (\l ->
-                ( l.tables |> List.filter (.props >> .selected) |> List.map .id
-                , l.tableRows |> List.filter .selected |> List.map .id
-                , l.memos |> List.filter .selected |> List.map .id
+                ( ( l.tables |> List.filter (.props >> .selected) |> List.map .id
+                  , l.tableRows |> List.filter .selected |> List.map .id
+                  )
+                , ( l.memos |> List.filter .selected |> List.map .id
+                  , l.links |> List.filter .selected |> List.map .id
+                  )
                 )
             )
-        |> Maybe.filter (\( tables, rows, memos ) -> List.nonEmpty tables || List.nonEmpty rows || List.nonEmpty memos)
+        |> Maybe.filter (\( ( tables, rows ), ( memos, links ) ) -> List.nonEmpty tables || List.nonEmpty rows || List.nonEmpty memos || List.nonEmpty links)
 
 
 currentTableRow : Model -> Maybe TableRow.Id
@@ -269,6 +273,7 @@ cancelElement model =
         |> Maybe.orElse (model.erd |> Maybe.andThen (Erd.currentLayout >> .tables >> List.find (.props >> .selected)) |> Maybe.map (\t -> SelectItem (TableId.toHtmlId t.id) False))
         |> Maybe.orElse (model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.find .selected) |> Maybe.map (\r -> SelectItem (TableRow.toHtmlId r.id) False))
         |> Maybe.orElse (model.erd |> Maybe.andThen (Erd.currentLayout >> .memos >> List.find .selected) |> Maybe.map (\m -> SelectItem (MemoId.toHtmlId m.id) False))
+        |> Maybe.orElse (model.erd |> Maybe.andThen (Erd.currentLayout >> .links >> List.find .selected) |> Maybe.map (\m -> SelectItem (LinkLayoutId.toHtmlId m.id) False))
         |> Maybe.orElse
             (model.dataExplorer.display
                 |> Maybe.map

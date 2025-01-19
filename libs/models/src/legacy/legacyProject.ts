@@ -47,6 +47,8 @@ export type LegacyTableRowId = number
 export const LegacyTableRowId = z.number()
 export type LegacyMemoId = number
 export const LegacyMemoId = z.number()
+export type LegacyLinkLayoutId = number
+export const LegacyLinkLayoutId = z.number()
 export type LegacyLayoutName = string
 export const LegacyLayoutName = z.string()
 export type LegacyZoomLevel = number
@@ -431,6 +433,24 @@ export const LegacyMemo = z.object({
     selected: z.boolean().optional()
 }).strict()
 
+export interface LegacyLinkLayout {
+    id: LegacyLinkLayoutId
+    target: string
+    position: Position
+    size: Size
+    color?: Color
+    selected?: boolean
+}
+
+export const LegacyLinkLayout = z.object({
+    id: LegacyLinkLayoutId,
+    target: z.string(),
+    position: Position,
+    size: Size,
+    color: Color.optional(),
+    selected: z.boolean().optional()
+}).strict()
+
 export type LegacySqlQueryOrigin = {sql: string, origin: string, db: string}
 export const LegacySqlQueryOrigin = z.object({sql: z.string(), origin: z.string(), db: z.string()}).strict()
 
@@ -546,6 +566,7 @@ export interface LegacyLayout {
     tableRows?: LegacyTableRow[]
     groups?: LegacyGroup[]
     memos?: LegacyMemo[]
+    links?: LegacyLinkLayout[]
     createdAt: Timestamp
     updatedAt: Timestamp
 }
@@ -556,6 +577,7 @@ export const LegacyLayout = z.object({
     tableRows: LegacyTableRow.array().optional(),
     groups: LegacyGroup.array().optional(),
     memos: LegacyMemo.array().optional(),
+    links: LegacyLinkLayout.array().optional(),
     createdAt: Timestamp,
     updatedAt: Timestamp
 }).strict()

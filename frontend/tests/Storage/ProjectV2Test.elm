@@ -95,7 +95,7 @@ project0 =
     , sources = [ Source src1 "source 1" (SqlLocalFile { name = "structure.sql", size = 10000, modified = time 1102 }) Array.empty Dict.empty [] Dict.empty True Nothing (time 1100) (time 1101) ]
     , ignoredRelations = Dict.empty
     , metadata = Dict.empty
-    , layouts = Dict.fromList [ ( "initial layout", Layout [] [] [] [] (time 1200) (time 1201) ) ]
+    , layouts = Dict.fromList [ ( "initial layout", Layout [] [] [] [] [] (time 1200) (time 1201) ) ]
     , tableRowsSeq = 1
     , settings = ProjectSettings.init defaultSchema
     , storage = ProjectStorage.Local
@@ -130,8 +130,8 @@ project1 =
     , metadata = Dict.empty
     , layouts =
         Dict.fromList
-            [ ( "initial layout", Layout [ TableProps ( "public", "users" ) (gridPos 30 40) Size.zeroCanvas Tw.red [ ColumnPath.fromString "id" ] True False False ] [] [] [] (time 1200) (time 1201) )
-            , ( "empty", Layout [] [] [] [] (time 1202) (time 1203) )
+            [ ( "initial layout", Layout [ TableProps ( "public", "users" ) (gridPos 30 40) Size.zeroCanvas Tw.red [ ColumnPath.fromString "id" ] True False False ] [] [] [] [] (time 1200) (time 1201) )
+            , ( "empty", Layout [] [] [] [] [] (time 1202) (time 1203) )
             ]
     , tableRowsSeq = 1
     , settings = ProjectSettings (FindPathSettings 4 "" "") defaultSchema [] False "" (HiddenColumns "created.+, updated.+, deleted.+" 15 False False) OrderByProperty Bezier True False Nothing
@@ -233,9 +233,9 @@ project2 =
     , metadata = Dict.empty
     , layouts =
         Dict.fromList
-            [ ( "initial layout", Layout [ TableProps ( "public", "users" ) (gridPos 30 40) Size.zeroCanvas Tw.red [ ColumnPath.fromString "id" ] True False False ] [] [] [] (time 1200) (time 1201) )
-            , ( "empty", Layout [] [] [] [] (time 1202) (time 1203) )
-            , ( "users", Layout [ TableProps ( "public", "users" ) (gridPos 90 100) Size.zeroCanvas Tw.red [ ColumnPath.fromString "id", ColumnPath.fromString "name" ] True False False ] [] [] [] (time 1202) (time 1203) )
+            [ ( "initial layout", Layout [ TableProps ( "public", "users" ) (gridPos 30 40) Size.zeroCanvas Tw.red [ ColumnPath.fromString "id" ] True False False ] [] [] [] [] (time 1200) (time 1201) )
+            , ( "empty", Layout [] [] [] [] [] (time 1202) (time 1203) )
+            , ( "users", Layout [ TableProps ( "public", "users" ) (gridPos 90 100) Size.zeroCanvas Tw.red [ ColumnPath.fromString "id", ColumnPath.fromString "name" ] True False False ] [] [] [] [] (time 1202) (time 1203) )
             ]
     , tableRowsSeq = 1
     , settings = ProjectSettings (FindPathSettings 4 "users" "created_by") defaultSchema [] False "" (HiddenColumns "created.+, updated.+, deleted.+" 15 False False) OrderByProperty Bezier True False Nothing

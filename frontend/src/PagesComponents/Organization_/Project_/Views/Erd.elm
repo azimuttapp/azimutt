@@ -57,7 +57,7 @@ import Models.Size as Size
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Models exposing (GroupEdit, GroupMsg(..), MemoEdit, MemoMsg(..), Msg(..), ProjectSettingsMsg(..), VirtualRelation, confirm)
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode exposing (CursorMode)
-import PagesComponents.Organization_.Project_.Models.DragState exposing (DragState)
+import PagesComponents.Organization_.Project_.Models.DragState as DragState exposing (DragState)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
@@ -66,9 +66,12 @@ import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRe
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
+import PagesComponents.Organization_.Project_.Models.LinkLayout exposing (LinkLayout)
+import PagesComponents.Organization_.Project_.Models.LinkLayoutId as LinkLayoutId
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
 import PagesComponents.Organization_.Project_.Updates.Drag as Drag
+import PagesComponents.Organization_.Project_.Views.Erd.LinkLayout as LinkLayout
 import PagesComponents.Organization_.Project_.Views.Erd.Memo as Memo
 import PagesComponents.Organization_.Project_.Views.Erd.Relation as Relation exposing (viewEmptyRelation, viewRelation, viewVirtualRelation)
 import PagesComponents.Organization_.Project_.Views.Erd.RelationRow exposing (viewRelationRow)
@@ -142,6 +145,10 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
         memos =
             draggedLayout.memos
 
+        links : List LinkLayout
+        links =
+            draggedLayout.links
+
         ( displayedTables, hiddenTables ) =
             layoutTables |> List.partition (\t -> t.props.size /= Size.zeroCanvas)
 
@@ -166,6 +173,10 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
                                             )
                                 )
                     )
+
+        otherLayouts : String
+        otherLayouts =
+            erd.layouts |> Dict.remove erd.currentLayout |> Dict.keys |> List.sort |> String.join "~"
     in
     div
         ([ id Conf.ids.erd
@@ -179,7 +190,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
          ]
             ++ B.cond (conf.move && ErdLayout.nonEmpty layout) [ onWheel OnWheel platform ] []
             ++ B.cond ((conf.move || conf.select) && virtualRelation == Nothing && editMemo == Nothing) [ onPointerDown (handleErdPointerDown conf cursorMode) platform ] []
-            ++ B.cond (conf.layout && virtualRelation == Nothing && editMemo == Nothing && ErdLayout.nonEmpty layout) [ onDblClick (CanvasProps.eventCanvas erdElem canvas >> Position.onGrid >> MCreate >> MemoMsg) platform, onContextMenu (\e -> ContextMenuCreate (ErdContextMenu.view platform erdElem canvas layout e) e) platform ] []
+            ++ B.cond (conf.layout && virtualRelation == Nothing && editMemo == Nothing && ErdLayout.nonEmpty layout) [ onDblClick (CanvasProps.eventCanvas erdElem canvas >> Position.onGrid >> MCreate >> MemoMsg) platform, onContextMenu (\e -> ContextMenuCreate (ErdContextMenu.view platform erdElem canvas otherLayouts layout e) e) platform ] []
         )
         [ div [ class "az-canvas origin-top-left", Position.styleTransformDiagram canvas.position canvas.zoom ]
             -- use HTML order instead of z-index, must be careful with it, this allows to have tooltips & popovers always on top
@@ -190,6 +201,7 @@ viewErd conf erdElem erd selectionBox virtualRelation editMemo args dragging =
             , tableRowRelations |> viewRelationRows conf erd.settings.relationStyle hoverTableRow
             , tableRows |> viewTableRows now platform conf cursorMode erd.settings.defaultSchema openedDropdown openedPopover erd hoverTableRow tableRowRelations
             , erd.relations |> Lazy.lazy5 viewRelations conf erd.settings.defaultSchema erd.settings.relationStyle displayedTables
+            , links |> viewLinks platform conf cursorMode (dragging |> Maybe.any DragState.hasMoved) otherLayouts
             , layoutTables |> viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.defaultSchema selected erd.settings.columnBasicTypes erd.tables erd.metadata layout
             , memos |> viewMemos platform conf cursorMode editMemo
             , div [ class "az-selection-box pointer-events-none" ] (selectionBox |> Maybe.filter (\_ -> layout |> ErdLayout.nonEmpty) |> Maybe.mapOrElse SelectionBox.view [])
@@ -325,6 +337,20 @@ viewMemos platform conf cursorMode editMemo memos =
                 (\memo ->
                     ( MemoId.toHtmlId memo.id
                     , Lazy.lazy5 Memo.viewMemo platform conf cursorMode (editMemo |> Maybe.filterBy .id memo.id) memo
+                    )
+                )
+        )
+
+
+viewLinks : Platform -> ErdConf -> CursorMode -> Bool -> String -> List LinkLayout -> Html Msg
+viewLinks platform conf cursorMode dragging otherLayouts links =
+    Keyed.node "div"
+        [ class "az-links" ]
+        (links
+            |> List.map
+                (\link ->
+                    ( LinkLayoutId.toHtmlId link.id
+                    , Lazy.lazy6 LinkLayout.viewLink platform conf cursorMode dragging otherLayouts link
                     )
                 )
         )
@@ -523,6 +549,7 @@ multilinePrompt title placeholder message =
         , message = text "If you have sub-optimal or bad results, try again and let us know so we can improve."
         , placeholder = placeholder
         , multiline = True
+        , choices = []
         , confirm = "Generate"
         , cancel = "Back"
         , onConfirm = message

@@ -25,6 +25,7 @@ promptLlmKey openPrompt updateLlmKey =
                 ]
         , placeholder = ""
         , multiline = False
+        , choices = []
         , confirm = "Save"
         , cancel = "Cancel"
         , onConfirm = updateLlmKey >> T.send

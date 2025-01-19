@@ -14,24 +14,29 @@ import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableId exposing (TableId)
-import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), GroupMsg(..), MemoMsg(..), Msg(..), SchemaAnalysisMsg(..))
+import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), GroupMsg(..), LinkMsg(..), MemoMsg(..), Msg(..), SchemaAnalysisMsg(..), simplePromptSelect)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 
 
-view : Platform -> ErdProps -> CanvasProps -> ErdLayout -> PointerEvent -> Html Msg
-view platform erdElem canvasProps layout event =
+view : Platform -> ErdProps -> CanvasProps -> String -> ErdLayout -> PointerEvent -> Html Msg
+view platform erdElem canvasProps otherLayouts layout event =
     let
         selectedTables : List TableId
         selectedTables =
             layout.tables |> List.filter (\t -> t.props.selected) |> List.map .id
+
+        pos : Position.Grid
+        pos =
+            event |> CanvasProps.eventCanvas erdElem canvasProps |> Position.onGrid
     in
     div [ class "z-max" ]
         [ ContextMenu.btnHotkey "" (Focus Conf.ids.searchInput) [] [ text "Add more tables" ] platform (Conf.hotkeys |> Dict.getOrElse "search-open" [])
         , ContextMenu.btn "" (AmlSidebarMsg AToggle) [] [ text "Update your schema" ]
         , ContextMenu.btnHotkey "" (DataExplorerMsg (DataExplorer.Open Nothing Nothing)) [] [ text "Explore your database content" ] platform []
         , ContextMenu.btnHotkey "" (NewLayoutMsg (NewLayout.Open NewLayoutBody.Create)) [] [ text "New layout" ] platform (Conf.hotkeys |> Dict.getOrElse "create-layout" [])
-        , ContextMenu.btnHotkey "" (event |> CanvasProps.eventCanvas erdElem canvasProps |> Position.onGrid |> MCreate |> MemoMsg) [] [ text "New memo" ] platform (Conf.hotkeys |> Dict.getOrElse "new-memo" [])
+        , ContextMenu.btnHotkey "" (pos |> MCreate |> MemoMsg) [] [ text "New memo" ] platform (Conf.hotkeys |> Dict.getOrElse "new-memo" [])
+        , ContextMenu.btnHotkey "" (simplePromptSelect "Link to layout:" (otherLayouts |> String.split "~") (LLCreate pos >> LinkMsg)) [] [ text "New link" ] platform []
         , selectedTables |> List.head |> Maybe.mapOrElse (\_ -> ContextMenu.btnHotkey "" (GCreate selectedTables |> GroupMsg) [] [ text "New group" ] platform (Conf.hotkeys |> Dict.getOrElse "create-group" [])) (div [] [])
         , ContextMenu.btnHotkey "" SelectAll [] [ text "Select all" ] platform (Conf.hotkeys |> Dict.getOrElse "select-all" [])
         , ContextMenu.btn "" FitToScreen [] [ text "Fit diagram to screen" ]

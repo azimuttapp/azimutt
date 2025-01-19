@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), GroupEdit, GroupMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, emptyModel, prompt, simplePrompt)
+module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), GroupEdit, GroupMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), LinkMsg(..), MemoEdit, MemoMsg(..), ModalDialog, Model, Msg(..), NavbarModel, NotesDialog, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, emptyModel, prompt, promptSelect, simplePrompt, simplePromptSelect)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Organisms.Table exposing (TableHover)
@@ -64,6 +64,8 @@ import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.FindPathDialog exposing (FindPathDialog)
 import PagesComponents.Organization_.Project_.Models.HideColumns exposing (HideColumns)
+import PagesComponents.Organization_.Project_.Models.LinkLayout exposing (LinkLayout)
+import PagesComponents.Organization_.Project_.Models.LinkLayoutId exposing (LinkLayoutId)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
 import PagesComponents.Organization_.Project_.Models.NotesMsg exposing (NotesMsg)
@@ -268,6 +270,7 @@ type Msg
     | TablePosition TableId Position.Grid
     | TableRowPosition TableRow.Id Position.Grid
     | MemoPosition MemoId Position.Grid
+    | LinkPosition LinkLayoutId Position.Grid
     | TableOrder TableId Int
     | TableColor TableId Color Bool
     | MoveColumn ColumnRef Int
@@ -290,6 +293,7 @@ type Msg
     | ColorMsg ColorMsg
     | GroupMsg GroupMsg
     | MemoMsg MemoMsg
+    | LinkMsg LinkMsg
     | ShowTableRow RowQuery (Maybe TableRow.SuccessState) (Maybe PositionHint) String
     | DeleteTableRow TableRow.Id
     | UnDeleteTableRow_ Int TableRow
@@ -370,6 +374,14 @@ type MemoMsg
     | MSetColor MemoId (Maybe Color)
     | MDelete MemoId
     | MUnDelete Int Memo
+
+
+type LinkMsg
+    = LLCreate Position.Grid LayoutName
+    | LLUpdate LinkLayoutId LayoutName
+    | LLSetColor LinkLayoutId (Maybe Color)
+    | LLDelete LinkLayoutId
+    | LLUnDelete Int LinkLayout
 
 
 type AmlSidebarMsg
@@ -472,6 +484,7 @@ prompt title content input message =
         , message = content
         , placeholder = ""
         , multiline = False
+        , choices = []
         , confirm = "Ok"
         , cancel = "Cancel"
         , onConfirm = message >> T.send
@@ -488,8 +501,43 @@ simplePrompt label message =
         , message = text ""
         , placeholder = ""
         , multiline = False
+        , choices = []
         , confirm = "Ok"
         , cancel = "Cancel"
         , onConfirm = message >> T.send
         }
         ""
+
+
+promptSelect : String -> List String -> String -> (String -> Msg) -> Msg
+promptSelect label choices input message =
+    PromptOpen
+        { color = Tw.blue
+        , icon = Just QuestionMarkCircle
+        , title = label
+        , message = text ""
+        , placeholder = ""
+        , multiline = False
+        , choices = choices
+        , confirm = "Ok"
+        , cancel = "Cancel"
+        , onConfirm = message >> T.send
+        }
+        input
+
+
+simplePromptSelect : String -> List String -> (String -> Msg) -> Msg
+simplePromptSelect label choices message =
+    PromptOpen
+        { color = Tw.blue
+        , icon = Just QuestionMarkCircle
+        , title = label
+        , message = text ""
+        , placeholder = ""
+        , multiline = False
+        , choices = choices
+        , confirm = "Ok"
+        , cancel = "Cancel"
+        , onConfirm = message >> T.send
+        }
+        (choices |> List.head |> Maybe.withDefault "")

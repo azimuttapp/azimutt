@@ -1,4 +1,4 @@
-module Track exposing (SQLParsing, amlSourceCreated, dataExplorerDetailsOpened, dataExplorerDetailsResult, dataExplorerOpened, dataExplorerQueryOpened, dataExplorerQueryResult, dbAnalysisOpened, detailSidebarClosed, detailSidebarOpened, docOpened, externalLink, findPathOpened, findPathResults, generateSqlFailed, generateSqlOpened, generateSqlQueried, generateSqlReplied, generateSqlSucceeded, groupCreated, groupDeleted, groupRenamed, jsonError, layoutCreated, layoutDeleted, layoutFromSqlOpened, layoutFromSqlQueried, layoutFromSqlReplied, layoutLoaded, layoutPromptOpened, layoutPromptQueried, layoutPromptReplied, layoutRenamed, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, projectLoaded, searchClicked, sourceAdded, sourceCreated, sourceDeleted, sourceEditorClosed, sourceEditorOpened, sourceRefreshed, sqlSourceCreated, tableRowOpened, tableRowResult, tableRowShown, tableShown, tagsCreated, tagsDeleted, tagsUpdated)
+module Track exposing (SQLParsing, amlSourceCreated, dataExplorerDetailsOpened, dataExplorerDetailsResult, dataExplorerOpened, dataExplorerQueryOpened, dataExplorerQueryResult, dbAnalysisOpened, detailSidebarClosed, detailSidebarOpened, docOpened, externalLink, findPathOpened, findPathResults, generateSqlFailed, generateSqlOpened, generateSqlQueried, generateSqlReplied, generateSqlSucceeded, groupCreated, groupDeleted, groupRenamed, jsonError, layoutCreated, layoutDeleted, layoutFromSqlOpened, layoutFromSqlQueried, layoutFromSqlReplied, layoutLoaded, layoutPromptOpened, layoutPromptQueried, layoutPromptReplied, layoutRenamed, linkCreated, linkDeleted, memoDeleted, memoSaved, notFound, notesCreated, notesDeleted, notesUpdated, planLimit, projectDraftCreated, projectLoaded, searchClicked, sourceAdded, sourceCreated, sourceDeleted, sourceEditorClosed, sourceEditorOpened, sourceRefreshed, sqlSourceCreated, tableRowOpened, tableRowResult, tableRowShown, tableShown, tagsCreated, tagsDeleted, tagsUpdated)
 
 import DataSources.Helpers exposing (SourceLine)
 import DataSources.SqlMiner.SqlAdapter exposing (SqlSchema)
@@ -168,6 +168,16 @@ memoSaved createMode content erd =
 memoDeleted : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
 memoDeleted erd =
     sendEvent "editor_memo_deleted" [] (erd |> Maybe.map .project)
+
+
+linkCreated : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
+linkCreated erd =
+    sendEvent "editor_link_created" [] (erd |> Maybe.map .project)
+
+
+linkDeleted : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg
+linkDeleted erd =
+    sendEvent "editor_link_deleted" [] (erd |> Maybe.map .project)
 
 
 findPathOpened : Maybe { e | project : { p | organization : Maybe { o | id : OrganizationId }, id : ProjectId } } -> Cmd msg

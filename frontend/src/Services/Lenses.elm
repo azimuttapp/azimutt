@@ -49,6 +49,9 @@ module Services.Lenses exposing
     , mapLayoutsDTL
     , mapLayoutsDTM
     , mapLinkedBy
+    , mapLinks
+    , mapLinksLT
+    , mapLinksT
     , mapList
     , mapLlm
     , mapLlmGenerateSqlT
@@ -111,6 +114,7 @@ module Services.Lenses exposing
     , mapTablesL
     , mapTablesLTM
     , mapTablesT
+    , mapTargetT
     , mapToasts
     , mapToastsT
     , mapTokenFormM
@@ -175,6 +179,7 @@ module Services.Lenses exposing
     , setLayoutOnLoad
     , setLayouts
     , setLinkedBy
+    , setLinks
     , setList
     , setLlm
     , setLlmGenerateSql
@@ -237,6 +242,7 @@ module Services.Lenses exposing
     , setTableRowsSeq
     , setTables
     , setTags
+    , setTarget
     , setText
     , setTo
     , setToasts
@@ -822,6 +828,26 @@ setLinkedBy =
 mapLinkedBy : (v -> v) -> { item | linkedBy : v } -> { item | linkedBy : v }
 mapLinkedBy =
     map_ .linkedBy setLinkedBy
+
+
+setLinks : v -> { item | links : v } -> { item | links : v }
+setLinks =
+    set_ .links (\value item -> { item | links = value })
+
+
+mapLinks : (v -> v) -> { item | links : v } -> { item | links : v }
+mapLinks =
+    map_ .links setLinks
+
+
+mapLinksT : (v -> ( v, a )) -> { item | links : v } -> ( { item | links : v }, a )
+mapLinksT =
+    mapT_ .links setLinks
+
+
+mapLinksLT : (v -> k) -> k -> (v -> ( v, t )) -> { item | links : List v } -> ( { item | links : List v }, Maybe t )
+mapLinksLT =
+    mapLT_ .links setLinks
 
 
 setList : v -> { item | list : v } -> { item | list : v }
@@ -1433,6 +1459,16 @@ mapTableRowsSeq =
 setTags : v -> { item | tags : v } -> { item | tags : v }
 setTags =
     set_ .tags (\value item -> { item | tags = value })
+
+
+setTarget : v -> { item | target : v } -> { item | target : v }
+setTarget =
+    set_ .target (\value item -> { item | target = value })
+
+
+mapTargetT : (v -> ( v, a )) -> { item | target : v } -> ( { item | target : v }, a )
+mapTargetT =
+    mapT_ .target setTarget
 
 
 setText : v -> { item | text : v } -> { item | text : v }

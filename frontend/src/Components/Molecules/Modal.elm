@@ -5,11 +5,12 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, div, h3, input, p, span, text, textarea)
-import Html.Attributes exposing (autofocus, class, cols, id, name, placeholder, rows, type_, value)
+import Html exposing (Html, div, h3, input, option, p, select, span, text, textarea)
+import Html.Attributes exposing (autofocus, class, cols, id, name, placeholder, rows, selected, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, css, role)
+import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (Color, TwClass, batch, bg_100, focus, sm, text_600)
@@ -69,6 +70,7 @@ type alias PromptModel msg =
     , placeholder : String
     , value : String
     , multiline : Bool
+    , choices : List String
     , onUpdate : String -> msg
     , confirm : String
     , cancel : String
@@ -110,7 +112,11 @@ prompt model isOpen =
                     [ p [ class "text-sm text-gray-500" ] [ model.message ]
                     ]
                 , div [ class "mt-1" ]
-                    [ if model.multiline then
+                    [ if List.nonEmpty model.choices then
+                        select [ name fieldId, id fieldId, onInput model.onUpdate, placeholder model.placeholder, autofocus True, class "col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pl-3 pr-8 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6" ]
+                            (model.choices |> List.map (\c -> option [ selected (c == model.value) ] [ text c ]))
+
+                      else if model.multiline then
                         let
                             lines : List String
                             lines =
@@ -242,6 +248,7 @@ doc =
                             , placeholder = ""
                             , value = state.input
                             , multiline = False
+                            , choices = []
                             , onUpdate = setInput
                             , confirm = "Ok"
                             , cancel = "Cancel"

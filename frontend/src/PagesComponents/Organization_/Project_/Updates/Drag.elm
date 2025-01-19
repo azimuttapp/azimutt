@@ -18,11 +18,12 @@ import PagesComponents.Organization_.Project_.Models.DragState exposing (DragSta
 import PagesComponents.Organization_.Project_.Models.Erd as Erd
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
+import PagesComponents.Organization_.Project_.Models.LinkLayoutId as LinkLayoutId exposing (LinkLayoutId)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId exposing (MemoId)
 import PagesComponents.Organization_.Project_.Updates.Extra as Extra exposing (Extra)
 import PagesComponents.Organization_.Project_.Updates.Utils exposing (setDirtyM)
-import Services.Lenses exposing (mapCanvasT, mapErdM, mapErdMTM, mapMemos, mapProps, mapSelectionBox, mapTableRows, mapTables, setArea, setPosition, setSelectionBox)
+import Services.Lenses exposing (mapCanvasT, mapErdM, mapErdMTM, mapLinks, mapMemos, mapProps, mapSelectionBox, mapTableRows, mapTables, setArea, setPosition, setSelectionBox)
 import Time
 
 
@@ -96,6 +97,7 @@ moveInLayout drag zoom layout =
             (drag.id |> TableId.fromHtmlId |> Maybe.andThen (\id -> layout.tables |> List.find (\t -> t.id == id)) |> Maybe.mapOrElse (.props >> .selected) False)
                 || (drag.id |> TableRow.fromHtmlId |> Maybe.andThen (\id -> layout.tableRows |> List.find (\r -> r.id == id)) |> Maybe.mapOrElse .selected False)
                 || (drag.id |> MemoId.fromHtmlId |> Maybe.andThen (\id -> layout.memos |> List.find (\m -> m.id == id)) |> Maybe.mapOrElse .selected False)
+                || (drag.id |> LinkLayoutId.fromHtmlId |> Maybe.andThen (\id -> layout.links |> List.find (\m -> m.id == id)) |> Maybe.mapOrElse .selected False)
 
         delta : Delta
         delta =
@@ -120,12 +122,17 @@ moveInLayout drag zoom layout =
         moveMemos : Dict MemoId ( Position.Grid, ( Msg, Msg ) )
         moveMemos =
             layout.memos |> List.filterMap (\m -> shouldMove m.id MemoId.toHtmlId m Msg.MemoPosition) |> Dict.fromList
+
+        moveLinks : Dict LinkLayoutId ( Position.Grid, ( Msg, Msg ) )
+        moveLinks =
+            layout.links |> List.filterMap (\m -> shouldMove m.id LinkLayoutId.toHtmlId m Msg.LinkPosition) |> Dict.fromList
     in
     ( layout
         |> mapTables (List.map (\t -> moveTables |> Dict.get t.id |> Maybe.mapOrElse (\( pos, _ ) -> t |> mapProps (setPosition pos)) t))
         |> mapTableRows (List.map (\r -> moveTableRows |> Dict.get r.id |> Maybe.mapOrElse (\( pos, _ ) -> r |> setPosition pos) r))
         |> mapMemos (List.map (\m -> moveMemos |> Dict.get m.id |> Maybe.mapOrElse (\( pos, _ ) -> m |> setPosition pos) m))
-    , (Dict.values moveTables ++ Dict.values moveTableRows ++ Dict.values moveMemos) |> List.map Tuple.second |> Extra.historyL
+        |> mapLinks (List.map (\l -> moveLinks |> Dict.get l.id |> Maybe.mapOrElse (\( pos, _ ) -> l |> setPosition pos) l))
+    , (Dict.values moveTables ++ Dict.values moveTableRows ++ Dict.values moveMemos ++ Dict.values moveLinks) |> List.map Tuple.second |> Extra.historyL
     )
 
 

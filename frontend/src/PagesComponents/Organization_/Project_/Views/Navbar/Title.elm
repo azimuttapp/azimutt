@@ -270,7 +270,7 @@ viewLayoutFolders currentLayout folderPrefix folders =
 viewLayoutItem : Bool -> String -> LayoutName -> ErdLayout -> Html Msg
 viewLayoutItem isCurrent folderName layoutName layout =
     button [ type_ "button", onClick (layoutName |> LLoad "fit" |> LayoutMsg), role "menuitem", tabindex -1, css [ "w-full text-left", B.cond isCurrent ContextMenu.itemCurrentStyles ContextMenu.itemStyles, focus [ "outline-none" ] ] ]
-        [ text folderName, text " ", small [] [ text ("(" ++ ((List.length layout.tables + List.length layout.tableRows + List.length layout.memos) |> String.pluralize "item") ++ ")") ] ]
+        [ text folderName, text " ", small [] [ text ("(" ++ (List.length layout.tables |> String.pluralize "entity") ++ ")") ] ]
 
 
 viewLayoutFolder : Bool -> String -> Int -> Html msg

@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, copyToClipboard, createProject, createProjectTmp, deleteProject, deleteSource, downloadFile, fireworks, focus, fullscreen, getAmlSchema, getAutoLayout, getCode, getColumnStats, getDatabaseSchema, getPrismaSchema, getProject, getTableStats, listenHotkeys, llmGenerateSql, llmLayoutFromSql, llmLayoutPrompt, mouseDown, moveProjectTo, observeLayout, observeMemoSize, observeSize, observeTableRowSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, copyToClipboard, createProject, createProjectTmp, deleteProject, deleteSource, downloadFile, fireworks, focus, fullscreen, getAmlSchema, getAutoLayout, getCode, getColumnStats, getDatabaseSchema, getPrismaSchema, getProject, getTableStats, listenHotkeys, llmGenerateSql, llmLayoutFromSql, llmLayoutPrompt, mouseDown, moveProjectTo, observeLayout, observeLinkSize, observeMemoSize, observeSize, observeTableRowSize, observeTableSize, observeTablesSize, onJsMessage, projectDirty, readLocalFile, runDatabaseQuery, scrollTo, setMeta, toast, track, unhandledJsMsgError, updateProject, updateProjectTmp)
 
 import DataSources.JsonMiner.JsonSchema as JsonSchema exposing (JsonSchema)
 import Dict exposing (Dict)
@@ -43,6 +43,7 @@ import Models.Size as Size
 import Models.SqlQuery as SqlQuery exposing (SqlQuery, SqlQueryOrigin)
 import Models.TrackEvent as TrackEvent exposing (TrackEvent)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
+import PagesComponents.Organization_.Project_.Models.LinkLayoutId as LinkLayoutId exposing (LinkLayoutId)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId exposing (MemoId)
 import Storage.ProjectV2 exposing (decodeProject)
@@ -213,6 +214,11 @@ observeMemoSize id =
     observeSizes [ MemoId.toHtmlId id ]
 
 
+observeLinkSize : LinkLayoutId -> Cmd msg
+observeLinkSize id =
+    observeSizes [ LinkLayoutId.toHtmlId id ]
+
+
 observeTableRowSize : TableRow.Id -> Cmd msg
 observeTableRowSize id =
     observeSizes [ TableRow.toHtmlId id ]
@@ -224,6 +230,7 @@ observeLayout layout =
         ((layout.tables |> List.map (.id >> TableId.toHtmlId))
             ++ (layout.tableRows |> List.map (.id >> TableRow.toHtmlId))
             ++ (layout.memos |> List.map (.id >> MemoId.toHtmlId))
+            ++ (layout.links |> List.map (.id >> LinkLayoutId.toHtmlId))
         )
 
 

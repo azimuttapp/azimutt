@@ -56,6 +56,8 @@ import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
+import PagesComponents.Organization_.Project_.Models.LinkLayout exposing (LinkLayout)
+import PagesComponents.Organization_.Project_.Models.LinkLayoutId as LinkLayoutId
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint(..))
@@ -68,6 +70,7 @@ import PagesComponents.Organization_.Project_.Updates.Groups exposing (handleGro
 import PagesComponents.Organization_.Project_.Updates.Help exposing (handleHelp)
 import PagesComponents.Organization_.Project_.Updates.Hotkey exposing (handleHotkey)
 import PagesComponents.Organization_.Project_.Updates.Layout exposing (handleLayout)
+import PagesComponents.Organization_.Project_.Updates.LinkLayout exposing (handleLink)
 import PagesComponents.Organization_.Project_.Updates.Memo exposing (handleMemo)
 import PagesComponents.Organization_.Project_.Updates.Notes exposing (handleNotes)
 import PagesComponents.Organization_.Project_.Updates.Project exposing (createProject, moveProject, triggerSaveProject, updateProject)
@@ -85,7 +88,7 @@ import Random
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvasT, mapColorT, mapColumnsT, mapContextMenuM, mapDataExplorerT, mapDetailsSidebarT, mapEmbedSourceParsingMT, mapErdM, mapErdMT, mapErdMTM, mapErdMTW, mapExportDialogT, mapHoverTable, mapLlmGenerateSqlT, mapMemos, mapMemosT, mapMobileMenuOpen, mapModalMF, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapPositionT, mapProject, mapProjectT, mapPromptM, mapProps, mapPropsT, mapSaveT, mapSchemaAnalysisM, mapSearch, mapSharingT, mapShowHiddenColumns, mapTableRows, mapTableRowsT, mapTables, mapTablesL, mapTablesT, mapToastsT, setActive, setCanvas, setCollapsed, setColors, setColumns, setConfirm, setContentF, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverTable, setHoverTableRow, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvasT, mapColorT, mapColumnsT, mapContextMenuM, mapDataExplorerT, mapDetailsSidebarT, mapEmbedSourceParsingMT, mapErdM, mapErdMT, mapErdMTM, mapErdMTW, mapExportDialogT, mapHoverTable, mapLinks, mapLinksT, mapLlmGenerateSqlT, mapMemos, mapMemosT, mapMobileMenuOpen, mapModalMF, mapNavbar, mapOpened, mapOpenedDialogs, mapOrganizationM, mapPlan, mapPosition, mapPositionT, mapProject, mapProjectT, mapPromptM, mapProps, mapPropsT, mapSaveT, mapSchemaAnalysisM, mapSearch, mapSharingT, mapShowHiddenColumns, mapTableRows, mapTableRowsT, mapTables, mapTablesL, mapTablesT, mapToastsT, setActive, setCanvas, setCollapsed, setColors, setColumns, setConfirm, setContentF, setContextMenu, setCurrentLayout, setCursorMode, setDragging, setHoverTable, setHoverTableRow, setInput, setLast, setLayoutOnLoad, setModal, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setText)
 import Services.PrismaSource as PrismaSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
@@ -253,6 +256,9 @@ update urlLayout zone now urlInfos organizations projects msg model =
         MemoPosition id position ->
             model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapMemosT (List.mapByTE .id id (mapPositionT (\p -> ( position, Extra.history ( MemoPosition id p, msg ) )))))) |> setDirtyM
 
+        LinkPosition id position ->
+            model |> mapErdMTM (Erd.mapCurrentLayoutTWithTime now (mapLinksT (List.mapByTE .id id (mapPositionT (\p -> ( position, Extra.history ( LinkPosition id p, msg ) )))))) |> setDirtyM
+
         TableOrder id index ->
             model
                 |> mapErdMTM
@@ -365,6 +371,9 @@ update urlLayout zone now urlInfos organizations projects msg model =
 
         MemoMsg message ->
             model |> handleMemo now urlInfos message
+
+        LinkMsg message ->
+            model |> handleLink now message
 
         ShowTableRow query previous hint from ->
             (model.erd |> Maybe.andThen (Erd.currentLayout >> .tableRows >> List.find (\r -> r.source == query.source && r.table == query.table && r.primaryKey == query.primaryKey)))
@@ -727,6 +736,7 @@ updateSizes changes model =
                     (Erd.mapCurrentLayout
                         (\l ->
                             l
+                                |> mapLinks (updateLinks l.canvas.zoom changes)
                                 |> mapMemos (updateMemos l.canvas.zoom changes)
                                 |> mapTableRows (updateTableRows l.canvas.zoom erdViewport changes)
                                 |> mapTables (updateTables l.canvas.zoom erdViewport changes)
@@ -750,6 +760,23 @@ updateSizes changes model =
                     ( e, Extra.none )
             )
             Extra.none
+
+
+updateLinks : ZoomLevel -> List SizeChange -> List LinkLayout -> List LinkLayout
+updateLinks zoom changes links =
+    changes
+        |> List.foldl
+            (\c ->
+                List.map
+                    (\link ->
+                        if c.id == LinkLayoutId.toHtmlId link.id then
+                            link |> setSize (c.size |> Size.viewportToCanvas zoom)
+
+                        else
+                            link
+                    )
+            )
+            links
 
 
 updateMemos : ZoomLevel -> List SizeChange -> List Memo -> List Memo

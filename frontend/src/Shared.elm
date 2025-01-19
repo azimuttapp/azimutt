@@ -74,6 +74,7 @@ type alias Prompt msg =
     , message : Html msg
     , placeholder : String
     , multiline : Bool
+    , choices : List String
     , confirm : String
     , cancel : String
     , onConfirm : String -> Cmd msg

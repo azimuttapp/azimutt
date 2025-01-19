@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout, ErdLayoutItem, create, createMemo, empty, getSelected, isEmpty, mapSelected, nonEmpty, setSelected, unpack)
+module PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout, ErdLayoutItem, create, createLink, createMemo, empty, getSelected, isEmpty, mapSelected, nonEmpty, setSelected, unpack)
 
 import Dict exposing (Dict)
 import Libs.Dict as Dict
@@ -8,14 +8,17 @@ import Models.Position as Position
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.Group exposing (Group)
 import Models.Project.Layout exposing (Layout)
+import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableRow as TableRow exposing (TableRow)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout as ErdTableLayout exposing (ErdTableLayout)
+import PagesComponents.Organization_.Project_.Models.LinkLayout exposing (LinkLayout)
+import PagesComponents.Organization_.Project_.Models.LinkLayoutId as LinkLayoutId exposing (LinkLayoutId)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId as MemoId exposing (MemoId)
-import Services.Lenses as Lenses exposing (mapMemos, mapProps, mapTableRows, mapTables)
+import Services.Lenses as Lenses exposing (mapLinks, mapMemos, mapProps, mapTableRows, mapTables)
 import Set
 import Time
 
@@ -26,6 +29,7 @@ type alias ErdLayout =
     , tableRows : List TableRow
     , groups : List Group
     , memos : List Memo
+    , links : List LinkLayout
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
     }
@@ -42,6 +46,7 @@ empty now =
     , tableRows = []
     , groups = []
     , memos = []
+    , links = []
     , createdAt = now
     , updatedAt = now
     }
@@ -49,7 +54,7 @@ empty now =
 
 isEmpty : ErdLayout -> Bool
 isEmpty layout =
-    List.isEmpty layout.tables && List.isEmpty layout.tableRows && List.isEmpty layout.memos
+    List.isEmpty layout.tables && List.isEmpty layout.tableRows && List.isEmpty layout.memos && List.isEmpty layout.links
 
 
 nonEmpty : ErdLayout -> Bool
@@ -64,6 +69,7 @@ create relationsByTable layout =
     , tableRows = layout.tableRows
     , groups = layout.groups
     , memos = layout.memos
+    , links = layout.links
     , createdAt = layout.createdAt
     , updatedAt = layout.updatedAt
     }
@@ -75,6 +81,7 @@ unpack layout =
     , tableRows = layout.tableRows
     , groups = layout.groups
     , memos = layout.memos
+    , links = layout.links
     , createdAt = layout.createdAt
     , updatedAt = layout.updatedAt
     }
@@ -85,6 +92,7 @@ getSelected layout =
     (layout.tables |> List.filter (.props >> .selected) |> List.map (.id >> TableId.toHtmlId))
         ++ (layout.tableRows |> List.filter .selected |> List.map (.id >> TableRow.toHtmlId))
         ++ (layout.memos |> List.filter .selected |> List.map (.id >> MemoId.toHtmlId))
+        ++ (layout.links |> List.filter .selected |> List.map (.id >> LinkLayoutId.toHtmlId))
 
 
 setSelected : List HtmlId -> ErdLayout -> ErdLayout
@@ -93,6 +101,7 @@ setSelected htmlIds layout =
         |> mapTables (List.map (\t -> t |> mapProps (Lenses.mapSelected (\_ -> htmlIds |> List.member (TableId.toHtmlId t.id)))))
         |> mapTableRows (List.map (\r -> r |> Lenses.mapSelected (\_ -> htmlIds |> List.member (TableRow.toHtmlId r.id))))
         |> mapMemos (List.map (\m -> m |> Lenses.mapSelected (\_ -> htmlIds |> List.member (MemoId.toHtmlId m.id))))
+        |> mapLinks (List.map (\l -> l |> Lenses.mapSelected (\_ -> htmlIds |> List.member (LinkLayoutId.toHtmlId l.id))))
 
 
 mapSelected : (ErdLayoutItem -> Bool -> Bool) -> ErdLayout -> ErdLayout
@@ -101,6 +110,7 @@ mapSelected transform layout =
         |> mapTables (List.map (\t -> t |> mapProps (Lenses.mapSelected (transform { id = TableId.toHtmlId t.id, position = t.props.position, size = t.props.size }))))
         |> mapTableRows (List.map (\r -> r |> Lenses.mapSelected (transform { id = TableRow.toHtmlId r.id, position = r.position, size = r.size })))
         |> mapMemos (List.map (\m -> m |> Lenses.mapSelected (transform { id = MemoId.toHtmlId m.id, position = m.position, size = m.size })))
+        |> mapLinks (List.map (\l -> l |> Lenses.mapSelected (transform { id = LinkLayoutId.toHtmlId l.id, position = l.position, size = l.size })))
 
 
 createMemo : ErdLayout -> Position.Grid -> Memo
@@ -114,6 +124,22 @@ createMemo layout position =
     , content = ""
     , position = position |> Position.moveGrid { dx = -75, dy = -75 }
     , size = Size 150 150 |> Size.canvas
+    , color = Nothing
+    , selected = False
+    }
+
+
+createLink : ErdLayout -> Position.Grid -> LayoutName -> LinkLayout
+createLink layout position target =
+    let
+        id : LinkLayoutId
+        id =
+            (layout.links |> List.map .id |> List.maximum |> Maybe.withDefault 0) + 1
+    in
+    { id = id
+    , target = target
+    , position = position |> Position.moveGrid { dx = 0, dy = 0 }
+    , size = Size 245 75 |> Size.canvas
     , color = Nothing
     , selected = False
     }

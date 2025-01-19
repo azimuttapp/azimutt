@@ -62,6 +62,8 @@ import Models.Project.UniqueName exposing (UniqueName)
 import Models.RelationStyle as RelationStyle exposing (RelationStyle)
 import Models.Size as Size
 import Models.SqlQuery exposing (SqlQueryOrigin)
+import PagesComponents.Organization_.Project_.Models.LinkLayout exposing (LinkLayout)
+import PagesComponents.Organization_.Project_.Models.LinkLayoutId exposing (LinkLayoutId)
 import PagesComponents.Organization_.Project_.Models.Memo exposing (Memo)
 import PagesComponents.Organization_.Project_.Models.MemoId exposing (MemoId)
 import TestHelpers.Fuzzers exposing (color, databaseKind, dbValue, dictSmall, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, positionDiagram, positionGrid, posix, setSmall, sizeCanvas, stringSmall, text, uuid, zoomLevel)
@@ -183,7 +185,7 @@ columnMeta =
 
 layout : Fuzzer Layout
 layout =
-    Fuzz.map6 Layout (listSmall tableProps) (listSmall tableRow) (listSmall group) (listSmall memo) posix posix
+    Fuzz.map7 Layout (listSmall tableProps) (listSmall tableRow) (listSmall group) (listSmall memo) (listSmall linkLayout) posix posix
 
 
 canvasProps : Fuzzer CanvasProps
@@ -208,6 +210,16 @@ memo =
 
 memoId : Fuzzer MemoId
 memoId =
+    intPosSmall
+
+
+linkLayout : Fuzzer LinkLayout
+linkLayout =
+    Fuzz.map6 LinkLayout linkLayoutId stringSmall positionGrid sizeCanvas (Fuzz.maybe color) Fuzz.bool
+
+
+linkLayoutId : Fuzzer LinkLayoutId
+linkLayoutId =
     intPosSmall
 
 

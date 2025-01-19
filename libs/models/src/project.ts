@@ -45,7 +45,7 @@ export type Source = z.infer<typeof Source>
  * Layout part
  */
 
-// entity, row, note...
+// entity, row, memo, link...
 export const LayoutItem = z.object({
 
 })
