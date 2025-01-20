@@ -166,7 +166,7 @@ defmodule AzimuttWeb.Api.SourceController do
          {:ok, json} <- Jason.decode(content),
          {:ok, source} <- json["sources"] |> Enum.find(fn s -> s["id"] == source_id end) |> Result.from_nillable(),
          :ok <- if(source["kind"]["kind"] == "AmlEditor", do: {:error, {:forbidden, "AML sources can't be updated via API."}}, else: :ok),
-         json_updated = json |> Map.put("sources", json["sources"] |> Enum.map(fn s -> if(s["id"] == source_id, do: update_source(s, body), else: s) end)),
+         json_updated = json |> Map.put("sources", json["sources"] |> Enum.map(fn s -> if(s["id"] == source_id, do: update_source(s, body, now), else: s) end)),
          {:ok, content_updated} <- Jason.encode(json_updated),
          {:ok, %Project{} = _project_updated} <- Projects.update_project_file(project, content_updated, current_user, now),
          do: conn |> render("show.json", source: source, ctx: ctx)
@@ -209,11 +209,12 @@ defmodule AzimuttWeb.Api.SourceController do
     |> Map.put("updatedAt", DateTime.to_unix(now, :millisecond))
   end
 
-  defp update_source(source, params) do
+  defp update_source(source, params, now) do
     source
     |> Map.put("tables", params["tables"])
     |> Map.put("relations", params["relations"])
     |> Mapx.put_no_nil("types", params["types"])
+    |> Map.put("updatedAt", DateTime.to_unix(now) * 1000)
   end
 
   def swagger_definitions do

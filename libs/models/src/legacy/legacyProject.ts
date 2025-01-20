@@ -1,8 +1,10 @@
 import {z} from "zod";
-import {groupBy, removeEmpty, removeUndefined} from "@azimutt/utils";
+import {groupBy, removeEmpty, removeUndefined, zip} from "@azimutt/utils";
 import {Color, Position, Size, Slug, Timestamp, Uuid} from "../common";
 import {
+    attributeDbStatsToLegacy,
     checkFromLegacy,
+    columnNameToLegacy,
     columnValueFromLegacy,
     indexFromLegacy,
     LegacyColumnDbStats,
@@ -18,11 +20,13 @@ import {
     primaryKeyFromLegacy,
     relationFromLegacy,
     tableDbStatsFromLegacy,
+    tableDbStatsToLegacy,
     uniqueFromLegacy
 } from "./legacyDatabase";
 import {zodParse} from "../zod";
-import {Attribute, Database, DatabaseKind, Entity, Type} from "../database";
+import {Attribute, Check, Database, DatabaseKind, Entity, Index, PrimaryKey, Relation, Type} from "../database";
 import {parseDatabaseUrl} from "../databaseUrl";
+import {attributeValueToString} from "../databaseUtils";
 import {OpenAIKey, OpenAIModel} from "../llm";
 
 // MUST stay in sync with backend/lib/azimutt_web/utils/project_schema.ex
@@ -257,7 +261,7 @@ export const LegacyProjectCheck = z.object({
     origins: LegacyOrigin.array().optional()
 }).strict()
 
-// TODO: mutualise with LegacyTable in libs/models/src/legacy/legacyDatabase.ts:80
+// TODO: mutualise with LegacyTable in libs/models/src/legacy/legacyDatabase.ts:80 (incompatible `comment` field :/)
 export interface LegacyProjectTable {
     schema: LegacySchemaName
     table: LegacyTableName
@@ -338,6 +342,18 @@ export interface LegacySource {
     fromSample?: string
     createdAt: Timestamp
     updatedAt: Timestamp
+}
+
+export const LegacySourceContent = z.object({
+    tables: LegacyProjectTable.array(),
+    relations: LegacyProjectRelation.array(),
+    types: LegacyProjectType.array().optional(),
+}).strict()
+
+export interface LegacySourceContent {
+    tables: LegacyProjectTable[]
+    relations: LegacyProjectRelation[]
+    types?: LegacyProjectType[]
 }
 
 export const LegacySource = z.object({
@@ -899,6 +915,14 @@ export function sourceToDatabase(s: LegacySource): Database {
     })
 }
 
+export function databaseToSourceContent(db: Database): LegacySourceContent {
+    return removeUndefined({
+        tables: (db.entities || []).map(entityToProjectTable),
+        relations: (db.relations || []).flatMap(relationToProjectRelation),
+        types: db.types?.map(typeToProjectType),
+    })
+}
+
 export function projectTableToEntity(t: LegacyProjectTable): Entity {
     return removeUndefined({
         database: undefined,
@@ -914,6 +938,58 @@ export function projectTableToEntity(t: LegacyProjectTable): Entity {
         doc: t.comment?.text,
         stats: t.stats ? tableDbStatsFromLegacy(t.stats) : undefined,
         extra: undefined,
+    })
+}
+
+export function entityToProjectTable(e: Entity): LegacyProjectTable {
+    const uniques = (e.indexes || []).filter(i => i.unique).map(uniqueToProjectLegacy)
+    const indexes = (e.indexes || []).filter(i => !i.unique).map(indexToProjectLegacy)
+    const checks = (e.checks || []).map(checkToProjectLegacy)
+    return removeUndefined({
+        schema: e.schema || '',
+        table: e.name,
+        view: e.kind !== undefined ? e.kind !== 'table' : undefined,
+        definition: e.def,
+        columns: (e.attrs || []).map(attributeToProjectColumn),
+        primaryKey: e.pk ? primaryKeyToProjectLegacy(e.pk) : undefined,
+        uniques: uniques.length > 0 ? uniques : undefined,
+        indexes: indexes.length > 0 ? indexes : undefined,
+        checks: checks.length > 0 ? checks: undefined,
+        comment: e.doc ? {text: e.doc} : undefined,
+        stats: e.stats ? tableDbStatsToLegacy(e.stats) : undefined,
+        origins: undefined,
+    })
+}
+
+export function primaryKeyToProjectLegacy(pk: PrimaryKey): LegacyProjectPrimaryKey {
+    return removeUndefined({
+        name: pk.name,
+        columns: pk.attrs.map(columnNameToLegacy),
+        origins: undefined,
+    })
+}
+
+export function uniqueToProjectLegacy(i: Index): LegacyProjectUnique {
+    return removeUndefined({
+        name: i.name || '',
+        columns: i.attrs.map(columnNameToLegacy),
+        definition: i.definition
+    })
+}
+
+export function indexToProjectLegacy(i: Index): LegacyProjectIndex {
+    return removeUndefined({
+        name: i.name || '',
+        columns: i.attrs.map(columnNameToLegacy),
+        definition: i.definition
+    })
+}
+
+export function checkToProjectLegacy(c: Check): LegacyProjectCheck {
+    return removeUndefined({
+        name: c.name || '',
+        columns: c.attrs.map(columnNameToLegacy),
+        predicate: c.predicate || undefined
     })
 }
 
@@ -939,10 +1015,44 @@ export function projectColumnToAttribute(c: LegacyProjectColumn): Attribute {
     })
 }
 
+export function attributeToProjectColumn(a: Attribute): LegacyProjectColumn {
+    return removeUndefined({
+        name: a.name,
+        type: a.type,
+        nullable: a.null,
+        default: a.default ? attributeValueToString(a.default) : undefined,
+        comment: a.doc ? {text: a.doc} : undefined,
+        // values?: string[]
+        columns: a.attrs?.map(attributeToProjectColumn),
+        stats: a.stats ? attributeDbStatsToLegacy(a.stats) : undefined,
+        origins: undefined,
+    })
+}
+
+export function relationToProjectRelation(r: Relation): LegacyProjectRelation[] {
+    return zip(r.src.attrs, r.ref.attrs).map(([src, ref]) => {
+        return removeUndefined({
+            name: r.name || '',
+            src: { table: `${r.src.schema}.${r.src.entity}`, column: src.join(':') },
+            ref: { table: `${r.ref.schema}.${r.ref.entity}`, column: ref.join(':') },
+            origins: undefined,
+        })
+    })
+}
+
 export function projectTypeFromLegacy(t: LegacyProjectType): Type {
     if ('enum' in t.value) {
         return removeUndefined({schema: t.schema || undefined, name: t.name, values: t.value.enum || undefined})
     } else {
         return removeUndefined({schema: t.schema || undefined, name: t.name, definition: t.value.definition})
     }
+}
+
+export function typeToProjectType(t: Type): LegacyProjectType {
+    return removeUndefined({
+        schema: t.schema || '',
+        name: t.name,
+        value: t.values ? {enum: t.values} : t.definition ? {definition: t.definition} : {definition: ''},
+        origins: undefined,
+    })
 }

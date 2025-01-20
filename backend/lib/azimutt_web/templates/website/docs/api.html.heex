@@ -1,17 +1,112 @@
 <%= render "docs/_header.html", conn: @conn, page: @page %>
 
 <%= doc_prose do %>
-    <p class="lead">Work In Progress 😅</p>
+    <p class="lead">
+        Azimutt is made for large and complex databases, which often require some kind of automation to be handled well.
+        It offers two kind of API with different purpose:
+    </p>
+    <ul>
+        <li><a href="#http-api">HTTP API</a>: sync Azimutt with the rest of your tools</li>
+        <li><a href="#javascript-api">JavaScript API</a>: script your actions within the editor</li>
+    </ul>
 
     <%= render "docs/_h2.html", title: "HTTP API" %>
-    <p class="lead">Work In Progress 😅</p>
-    <p>See <a href="/api/v1/swagger" target="_blank" rel="noopener">Swagger spec</a>.</p>
+    <p class="lead">You can use the Azimutt HTTP API to import, export or update projects from code. For example to sync Azimutt with other sources you may have.</p>
+    <p>Check the whole <a href="/api/v1/swagger" target="_blank" rel="noopener">Swagger spec</a> for available endpoints, the two main parts are:</p>
+    <ul>
+        <li><a href="#source-management">Source management</a></li>
+        <li><a href="#schema-documentation">Schema documentation</a></li>
+    </ul>
+    <p>If you miss some endpoints, let us know and we will add them.</p>
+    <p>
+        The API authentication with made through a custom header token that will impersonate you.
+        You can create one from your <a href={"#{Routes.user_settings_path(@conn, :show)}#auth-tokens-social-heading"} target="_blank" rel="noopener">user settings</a> (see "Your authentication tokens" at the bottom, hover the gray box to see it).
+        Then put it on a <code>auth-token</code> request header, it will authenticate you through the API.
+    </p>
+    <p><img src={Routes.static_path(@conn, "/images/doc/api-user-token.png")} alt="Create your API token"></p>
 
-    <%= render "docs/_h3.html", title: "Source schema" %>
-    <p class="lead">Work In Progress 😅</p>
+    <%= render "docs/_h3.html", title: "Source management" %>
+    <p class="lead">The Source API let you fetch sources of a project and perform CRUD operations.</p>
+    <p>Here is how to use the API with TypeScript:</p>
+    <pre><code class="hljs js">function getSources(orgId: string, projectId: string, authToken: string): Promise&lt;SourceInfo[]> {
+  return fetch(
+    `https://azimutt.app/api/v1/organizations/${orgId}/projects/${projectId}/sources`,
+    {headers: {'auth-token': authToken}}
+  ).then(res => res.json())
+}
+</code></pre>
+
+    <%= render "docs/_h4.html", title: "Automatically update your source" %>
+    <p>
+        The main usage for this API is to keep your source always up-to-date with your database.
+        For example, you can push your database schema to Azimutt at every change using a GitHub action and Azimutt libraries.
+    </p>
+    <p>
+        Here is a sample script for PostgreSQL using <a href="https://www.npmjs.com/package/@azimutt/connector-postgres" target="_blank" rel="noopener noreferrer">@azimutt/connector-postgres</a> and
+        <a href="https://www.npmjs.com/package/@azimutt/models" target="_blank" rel="noopener noreferrer">@azimutt/models</a>:
+    </p>
+    <pre><code class="hljs js">import {Database, databaseToSourceContent, LegacySource, LegacySourceContent, parseDatabaseUrl} from "@azimutt/models"
+import {postgres} from "@azimutt/connector-postgres"
+
+const azimuttApi = 'https://azimutt.app/api/v1'
+const authToken = '2c7cb13d-d2b2-42f8-8eef-f447ab3591db' // from https://azimutt.app/settings
+const organizationId = '1749e94e-158a-8419-936f-dc22fff4dac8' // from Azimutt url
+const projectId = '2711536a-c539-4096-b685-d42bc93f93fe' // from Azimutt url
+const sourceId = '072fd32c-e11d-8a14-a674-0842600f9ae0' // from API source list
+const databaseUrl = 'postgresql://postgres:postgres@localhost/azimutt_dev' // you should have it ^^
+
+const database: Database = await postgres.getSchema(
+  'source updater',
+  parseDatabaseUrl(databaseUrl),
+  {logger: {
+    debug: (text: string): void => console.debug(text),
+    log: (text: string): void => console.log(text),
+    warn: (text: string): void => console.warn(text),
+    error: (text: string): void => console.error(text),
+  }}
+)
+const source: LegacySourceContent = databaseToSourceContent(database)
+await updateSource(organizationId, projectId, sourceId, source, authToken)
+
+function updateSource(orgId: string, projectId: string, sourceId: string, content: LegacySourceContent, authToken: string): Promise&lt;LegacySource> {
+  return fetch(`${azimuttApi}/organizations/${orgId}/projects/${projectId}/sources/${sourceId}`, {
+    method: 'PUT',
+    headers: {'auth-token': authToken, 'Content-Type': 'application/json'},
+    body: JSON.stringify(content)
+  }).then(res => res.json())
+}
+</code></pre>
 
     <%= render "docs/_h3.html", title: "Schema documentation" %>
-    <p class="lead">Work In Progress 😅</p>
+    <p class="lead">The documentation API let you get or set all the documentation from Azimutt.</p>
+    <p>
+        A good use case is to sync Azimutt with another documentation tool, having one or the other as a golden source (one way sync).
+        Here is the minimal code you may need:
+    </p>
+    <pre><code class="hljs js">type Metadata = {[tableId: string]: TableDoc & {columns: {[columnPath: string]: ColumnDoc}}}
+type TableDoc = {notes?: string, tags?: string[], color?: string}
+type ColumnDoc = {notes?: string, tags?: string[]}
+
+function getDocumentation(orgId: string, projectId: string, authToken: string): Promise&lt;Metadata> {
+  return fetch(`${azimuttApi}/organizations/${orgId}/projects/${projectId}/metadata`, {
+    headers: {'auth-token': authToken}
+  }).then(res => res.json())
+}
+
+function putDocumentation(orgId: string, projectId: string, doc: Metadata, authToken: string) {
+  return fetch(`${azimuttApi}/organizations/${orgId}/projects/${projectId}/metadata`, {
+    method: 'PUT',
+    headers: {'auth-token': authToken, 'Content-Type': 'application/json'},
+    body: JSON.stringify(doc)
+  }).then(res => res.json())
+}
+
+const doc = await getDocumentation(orgId, projectId, authToken)
+// doc['public.users'] = {notes: 'Some notes', tags: ['api'], color: 'blue', columns: {name: {notes: 'Some notes', tags: ['api']}}}
+// delete doc['public.users']
+await putDocumentation(orgId, projectId, doc, authToken)
+</code></pre>
+    <p>These methods get and update the whole documentation, there is also endpoints for a specific table or column if you need more granular access.</p>
 
     <%= render "docs/_h2.html", title: "JavaScript API" %>
     <p class="lead">Work In Progress 😅</p>

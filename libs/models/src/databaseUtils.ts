@@ -268,6 +268,7 @@ export function attributeValueToString(value: AttributeValue): string {
     if (typeof value === 'number') return value.toString()
     if (typeof value === 'boolean') return value.toString()
     if (value instanceof Date) return value.toISOString()
+    if (value === undefined) return  'null'
     if (value === null) return  'null'
     return JSON.stringify(value)
 }

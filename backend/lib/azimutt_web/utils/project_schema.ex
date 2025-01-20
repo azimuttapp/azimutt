@@ -18,6 +18,7 @@ defmodule AzimuttWeb.Utils.ProjectSchema do
     "properties" => %{
       "notes" => %{"type" => "string"},
       "tags" => %{"type" => "array", "items" => %{"type" => "string"}},
+      "color" => %{"enum" => ["indigo", "violet", "purple", "fuchsia", "pink", "rose", "red", "orange", "amber", "yellow", "lime", "green", "emerald", "teal", "cyan", "sky", "blue"]},
       "columns" => %{"type" => "object", "additionalProperties" => @column_meta}
     }
   }
@@ -128,7 +129,8 @@ defmodule AzimuttWeb.Utils.ProjectSchema do
       "comment" => @comment,
       "values" => %{"type" => "array", "items" => %{"type" => "string"}},
       # MUST include the column inside the `definitions` attribute in the global schema
-      "columns" => %{"type" => "array", "items" => %{"$ref" => "#/definitions/column"}}
+      "columns" => %{"type" => "array", "items" => %{"$ref" => "#/definitions/column"}},
+      "stats" => %{"type" => "object"}
     }
   }
 
@@ -140,12 +142,14 @@ defmodule AzimuttWeb.Utils.ProjectSchema do
       "schema" => %{"type" => "string"},
       "table" => %{"type" => "string"},
       "view" => %{"type" => "boolean"},
+      "definition" => %{"type" => "string"},
       "columns" => %{"type" => "array", "items" => @column},
       "primaryKey" => @primary_key,
       "uniques" => %{"type" => "array", "items" => @unique},
       "indexes" => %{"type" => "array", "items" => @index},
       "checks" => %{"type" => "array", "items" => @check},
-      "comment" => @comment
+      "comment" => @comment,
+      "stats" => %{"type" => "object"}
     }
   }
 

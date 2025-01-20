@@ -4,6 +4,7 @@ import {
     Attribute,
     AttributePath,
     AttributeRef,
+    AttributeStats,
     AttributeValue,
     Check,
     Database,
@@ -15,6 +16,7 @@ import {
     Relation,
     Type
 } from "../database";
+import {attributeValueToString} from "../databaseUtils";
 import {ValueSchema} from "../inferSchema";
 import {DateTime} from "../common";
 
@@ -295,13 +297,7 @@ function columnToLegacy(a: Attribute): LegacyColumn {
         comment: a.doc,
         values: a.stats?.distinctValues?.map(columnValueToLegacy),
         columns: a.attrs?.map(columnToLegacy),
-        stats: a.stats ? removeUndefined({
-            nulls: a.stats.nulls,
-            bytesAvg: a.stats.bytesAvg,
-            cardinality: a.stats.cardinality,
-            commonValues: a.stats.commonValues?.map(v => ({value: columnValueToLegacy(v.value), freq: v.freq})),
-            histogram: a.stats.histogram?.map(columnValueToLegacy),
-        }) : undefined,
+        stats: a.stats ? attributeDbStatsToLegacy(a.stats) : undefined,
     })
 }
 
@@ -310,10 +306,17 @@ export function columnValueFromLegacy(v: LegacyColumnValue): AttributeValue {
 }
 
 export function columnValueToLegacy(v: AttributeValue): LegacyColumnValue {
-    if (v === undefined) return 'null'
-    if (v === null) return 'null'
-    if (typeof v === 'object') return JSON.stringify(v)
-    return v.toString() // TODO: improve?
+    return attributeValueToString(v)
+}
+
+export function attributeDbStatsToLegacy(s: AttributeStats): LegacyColumnDbStats {
+    return removeUndefined({
+        nulls: s.nulls,
+        bytesAvg: s.bytesAvg,
+        cardinality: s.cardinality,
+        commonValues: s.commonValues?.map(v => ({value: columnValueToLegacy(v.value), freq: v.freq})),
+        histogram: s.histogram?.map(columnValueToLegacy),
+    })
 }
 
 export function primaryKeyFromLegacy(pk: LegacyPrimaryKey): PrimaryKey {
@@ -322,7 +325,7 @@ export function primaryKeyFromLegacy(pk: LegacyPrimaryKey): PrimaryKey {
         attrs: pk.columns.map(columnNameFromLegacy)
     })
 }
-function primaryKeyToLegacy(pk: PrimaryKey): LegacyPrimaryKey {
+export function primaryKeyToLegacy(pk: PrimaryKey): LegacyPrimaryKey {
     return removeUndefined({
         name: pk.name,
         columns: pk.attrs.map(columnNameToLegacy)
@@ -333,7 +336,7 @@ export function columnNameFromLegacy(n: LegacyColumnName): AttributePath {
     return n.split(legacyColumnPathSeparator)
 }
 
-function columnNameToLegacy(p: AttributePath): LegacyColumnName {
+export function columnNameToLegacy(p: AttributePath): LegacyColumnName {
     return p.join(legacyColumnPathSeparator)
 }
 
@@ -346,7 +349,7 @@ export function uniqueFromLegacy(u: LegacyUnique): Index {
     })
 }
 
-function uniqueToLegacy(i: Index): LegacyUnique {
+export function uniqueToLegacy(i: Index): LegacyUnique {
     return removeUndefined({
         name: i.name,
         columns: i.attrs.map(columnNameToLegacy),
@@ -362,7 +365,7 @@ export function indexFromLegacy(i: LegacyIndex): Index {
     })
 }
 
-function indexToLegacy(i: Index): LegacyIndex {
+export function indexToLegacy(i: Index): LegacyIndex {
     return removeUndefined({
         name: i.name,
         columns: i.attrs.map(columnNameToLegacy),
@@ -378,7 +381,7 @@ export function checkFromLegacy(c: LegacyCheck): Check {
     })
 }
 
-function checkToLegacy(c: Check): LegacyCheck {
+export function checkToLegacy(c: Check): LegacyCheck {
     return removeUndefined({
         name: c.name,
         columns: c.attrs.map(columnNameToLegacy),

@@ -1,7 +1,7 @@
 {
   "name": "@azimutt/models",
   "description": "Define a standard database models for Azimutt.",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "license": "MIT",
   "homepage": "https://azimutt.app",
   "keywords": [],

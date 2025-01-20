@@ -36,7 +36,7 @@
     "@azimutt/connector-postgres": "^0.1.11",
     "@azimutt/connector-snowflake": "^0.1.2",
     "@azimutt/connector-sqlserver": "^0.1.4",
-    "@azimutt/models": "^0.1.17",
+    "@azimutt/models": "^0.1.19",
     "@azimutt/utils": "^0.1.8",
     "@fastify/cors": "9.0.1",
     "@sinclair/typebox": "0.29.6",
