@@ -1,12 +1,32 @@
 defmodule AzimuttWeb.UserSettingsController do
   use AzimuttWeb, :controller
   alias Azimutt.Accounts
+  alias Azimutt.Organizations
   alias Azimutt.Utils.Result
   alias AzimuttWeb.UserAuth
   action_fallback AzimuttWeb.FallbackController
 
   def show(conn, _params) do
     {now, current_user} = {DateTime.utc_now(), conn.assigns.current_user}
+    conn |> show_html(current_user, now)
+  end
+
+  def auth(conn, _params) do
+    current_user = conn.assigns.current_user
+    now = DateTime.utc_now()
+    auth_token_changeset = Accounts.change_auth_token(current_user)
+    conn |> render("auth.html", auth_tokens: Accounts.list_auth_tokens(current_user, now), auth_token_changeset: auth_token_changeset)
+  end
+
+  def delete_account(conn, _params) do
+    current_user = conn.assigns.current_user
+    now = DateTime.utc_now()
+
+    # Accounts.delete_user(current_user, now)
+    # |> Result.fold(
+    #   fn _ -> conn |> put_flash(:error, "Can't delete your account :/") end,
+    #   fn _ -> conn |> put_flash(:info, "Account deleted") end
+    # ) |> redirect(to: Routes.page_path(conn, :index))
     conn |> show_html(current_user, now)
   end
 
@@ -144,7 +164,7 @@ defmodule AzimuttWeb.UserSettingsController do
     conn
     |> render("show.html",
       user: user,
-      auth_tokens: Accounts.list_auth_tokens(user, now),
+      organizations: Organizations.list_organizations(user),
       infos_changeset: infos_changeset,
       email_changeset: email_changeset,
       password_changeset: password_changeset,
