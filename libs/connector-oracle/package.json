@@ -1,7 +1,7 @@
 {
   "name": "@azimutt/connector-oracle",
   "description": "Connect to Oracle, extract schema, run analysis and queries",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "license": "MIT",
   "homepage": "https://azimutt.app",
   "keywords": [],

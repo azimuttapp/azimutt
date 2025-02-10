@@ -112,21 +112,22 @@ const toEntityId = <T extends { TABLE_OWNER: string; TABLE_NAME: string }>(value
 const groupByEntity = <T extends { TABLE_OWNER: string; TABLE_NAME: string }>(values: T[]): Record<EntityId, T[]> => groupBy(values, toEntityId)
 
 export type RawDatabase = {
-    DATABASE: string
-    VERSION: string
-    BYTES: number
+    DATABASE: string | undefined
+    VERSION: string | undefined
+    BYTES: number | undefined
 }
 
 export const getDatabase = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<RawDatabase> => {
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/V-DATABASE.html
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/V-VERSION.html
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/DBA_DATA_FILES.html
-    const db: RawDatabase = {DATABASE: '', VERSION: '', BYTES: 0}
-    return conn.query<RawDatabase>(`
-        SELECT (SELECT NAME FROM V$DATABASE)           AS DATABASE
-             , (SELECT BANNER FROM V$VERSION)          AS VERSION
-             , (SELECT SUM(BYTES) FROM DBA_DATA_FILES) AS BYTES`, [], 'getDatabase'
-    ).then(res => res[0] || db).catch(handleError(`Failed to get database infos`, db, opts))
+    const DATABASE: string | undefined = await conn.query<{NAME: string}>(`SELECT NAME FROM V$DATABASE`, [], 'getDatabaseName')
+        .then(res => res[0]?.NAME, handleError(`Failed to get database name`, undefined, {...opts, ignoreErrors: true}))
+    const VERSION: string | undefined = await conn.query<{VERSION: string}>(`SELECT BANNER AS VERSION FROM V$VERSION FETCH NEXT 1 ROW ONLY`, [], 'getDatabaseVersion')
+        .then(res => res[0]?.VERSION, handleError(`Failed to get database version`, undefined, {...opts, ignoreErrors: true}))
+    const BYTES: number | undefined = await conn.query<{BYTES: number}>(`SELECT SUM(BYTES) AS BYTES FROM DBA_DATA_FILES`, [], 'getDatabaseSize')
+        .then(res => res[0]?.BYTES, handleError(`Failed to get database size`, undefined, {...opts, ignoreErrors: true}))
+    return {DATABASE, VERSION, BYTES}
 }
 
 export type RawBlockSizes = { TABLESPACE_NAME: string, BLOCK_SIZE: number }
@@ -139,6 +140,7 @@ export const getBlockSizes = (opts: ConnectorSchemaOpts) => async (conn: Conn): 
         .catch(handleError(`Failed to get block sizes`, {}, opts))
 }
 
+// used to ignore objects owned by Oracle users (see scopeWhere schemaFilter)
 export const getOracleUsers = (opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<string[]> => {
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_USERS.html
     return conn.query<{USERNAME: string}>(`SELECT USERNAME FROM ALL_USERS WHERE ORACLE_MAINTAINED='Y'`, [], 'getOracleUsers')
@@ -430,31 +432,33 @@ export const getIndexes = (opts: ScopeOpts) => async (conn: Conn): Promise<RawIn
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_INDEXES.html
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_IND_COLUMNS.html
     // `i.INDEX_NAME NOT IN`: ignore indexes from primary keys
-    return conn.query<RawIndex>(`
-        SELECT i.TABLESPACE_NAME                                                     AS INDEX_TABLESPACE
-             , i.INDEX_NAME                                                          AS INDEX_NAME
-             , i.INDEX_TYPE                                                          AS INDEX_TYPE
-             , i.TABLE_OWNER                                                         AS TABLE_OWNER
-             , i.TABLE_NAME                                                          AS TABLE_NAME
-             , i.TABLE_TYPE                                                          AS TABLE_TYPE
-             , LISTAGG(c.COLUMN_NAME, ',') WITHIN GROUP (ORDER BY c.COLUMN_POSITION) AS COLUMN_NAMES
-             , JSON_OBJECTAGG(KEY c.COLUMN_NAME VALUE t.DATA_DEFAULT_VC)             AS COLUMN_VALUES
-             , MIN(i.UNIQUENESS)                                                     AS IS_UNIQUE
-             , MIN(i.DISTINCT_KEYS)                                                  AS CARDINALITY
-             , MIN(i.NUM_ROWS)                                                       AS INDEX_ROWS
-             , MIN(i.LAST_ANALYZED)                                                  AS ANALYZED_LAST
-             , MIN(i.GENERATED)                                                      AS GENERATED
-             , MIN(i.PARTITIONED)                                                    AS PARTITIONED
-             , MIN(i.CONSTRAINT_INDEX)                                               AS IS_CONSTRAINT
-             , MIN(i.VISIBILITY)                                                     AS VISIBILITY
-        FROM ALL_INDEXES i
-                 JOIN ALL_IND_COLUMNS c ON c.INDEX_OWNER = i.OWNER AND c.INDEX_NAME = i.INDEX_NAME
-                 LEFT JOIN ALL_TAB_COLS t ON t.OWNER = i.OWNER AND t.TABLE_NAME = i.TABLE_NAME AND t.COLUMN_NAME = c.COLUMN_NAME
-        WHERE i.DROPPED != 'YES'
-          AND ${scopeWhere({schema: 'i.TABLE_OWNER', entity: 'i.TABLE_NAME'}, opts)}
-          AND i.INDEX_NAME NOT IN (SELECT co.CONSTRAINT_NAME FROM ALL_CONSTRAINTS co WHERE co.CONSTRAINT_TYPE = 'P' AND ${scopeWhere({schema: 'co.OWNER', entity: 'co.TABLE_NAME'}, opts)})
-        GROUP BY i.TABLESPACE_NAME, i.INDEX_NAME, i.INDEX_TYPE, i.TABLE_OWNER, i.TABLE_NAME, i.TABLE_TYPE`, [], 'getIndexes'
-    ).catch(handleError(`Failed to get indexes`, [], opts))
+    const cCols = await getTableColumns('SYS', 'ALL_TAB_COLS', opts)(conn) // check column presence to include them or not
+    const values = cCols.includes('DATA_DEFAULT_VC') ? 'JSON_OBJECTAGG(KEY c.COLUMN_NAME VALUE t.DATA_DEFAULT_VC)' : "'{}'                                                     "
+    const query =
+        `SELECT i.TABLESPACE_NAME                                                     AS INDEX_TABLESPACE
+              , i.INDEX_NAME                                                          AS INDEX_NAME
+              , i.INDEX_TYPE                                                          AS INDEX_TYPE
+              , i.TABLE_OWNER                                                         AS TABLE_OWNER
+              , i.TABLE_NAME                                                          AS TABLE_NAME
+              , i.TABLE_TYPE                                                          AS TABLE_TYPE
+              , LISTAGG(c.COLUMN_NAME, ',') WITHIN GROUP (ORDER BY c.COLUMN_POSITION) AS COLUMN_NAMES
+              , ${values}             AS COLUMN_VALUES
+              , MIN(i.UNIQUENESS)                                                     AS IS_UNIQUE
+              , MIN(i.DISTINCT_KEYS)                                                  AS CARDINALITY
+              , MIN(i.NUM_ROWS)                                                       AS INDEX_ROWS
+              , MIN(i.LAST_ANALYZED)                                                  AS ANALYZED_LAST
+              , MIN(i.GENERATED)                                                      AS GENERATED
+              , MIN(i.PARTITIONED)                                                    AS PARTITIONED
+              , MIN(i.CONSTRAINT_INDEX)                                               AS IS_CONSTRAINT
+              , MIN(i.VISIBILITY)                                                     AS VISIBILITY
+         FROM ALL_INDEXES i
+                  JOIN ALL_IND_COLUMNS c ON c.INDEX_OWNER = i.OWNER AND c.INDEX_NAME = i.INDEX_NAME
+                  LEFT JOIN ALL_TAB_COLS t ON t.OWNER = i.OWNER AND t.TABLE_NAME = i.TABLE_NAME AND t.COLUMN_NAME = c.COLUMN_NAME
+         WHERE i.DROPPED != 'YES'
+           AND ${scopeWhere({schema: 'i.TABLE_OWNER', entity: 'i.TABLE_NAME'}, opts)}
+           AND i.INDEX_NAME NOT IN (SELECT co.CONSTRAINT_NAME FROM ALL_CONSTRAINTS co WHERE co.CONSTRAINT_TYPE = 'P' AND ${scopeWhere({schema: 'co.OWNER', entity: 'co.TABLE_NAME'}, opts)})
+         GROUP BY i.TABLESPACE_NAME, i.INDEX_NAME, i.INDEX_TYPE, i.TABLE_OWNER, i.TABLE_NAME, i.TABLE_TYPE`
+    return conn.query<RawIndex>(query, [], 'getIndexes').catch(handleError(`Failed to get indexes`, [], opts))
 }
 
 function buildIndex(blockSize: number, index: RawIndex): Index {
@@ -566,6 +570,7 @@ export const getTypes = (opts: ScopeOpts) => async (conn: Conn): Promise<RawType
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_TYPES.html
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_TYPE_ATTRS.html
     // https://docs.oracle.com/en/database/oracle/oracle-database/23/refrn/ALL_SOURCE.html
+    // /!\ LISTAGG functions can product "ORA-01489: result of string concatenation is too long", mostly on DEFINITION column
     return conn.query<RawType>(`
         SELECT t.OWNER                                                                AS TYPE_OWNER
              , t.TYPE_NAME                                                            AS TYPE_NAME
@@ -580,7 +585,7 @@ export const getTypes = (opts: ScopeOpts) => async (conn: Conn): Promise<RawType
                  LEFT JOIN ALL_TYPE_ATTRS a ON a.OWNER = t.OWNER AND a.TYPE_NAME = t.TYPE_NAME
         WHERE ${scopeWhere({schema: 't.OWNER'}, opts)}
         GROUP BY t.OWNER, t.TYPE_NAME, t.TYPECODE, t.ATTRIBUTES`, [], 'getTypes'
-    ).catch(handleError(`Failed to get types`, [], opts))
+    ).catch(handleError(`Failed to get types`, [], {...opts, ignoreErrors: true}))
 }
 
 function buildType(t: RawType): Type {
@@ -649,6 +654,11 @@ export const getDistinctValues = (ref: EntityRef, attribute: AttributePath, opts
         FROM ${sqlTable}
         WHERE ${sqlColumn} IS NOT NULL
         ORDER BY value FETCH FIRST ${sampleSize} ROWS ONLY`, [], 'getDistinctValues'
-    ).then(rows => rows.map(row => row.VALUE))
-        .catch(handleError(`Failed to get distinct values for '${attributeRefToId({...ref, attribute})}'`, [], opts))
+    ).then(rows => rows.map(row => row.VALUE), handleError(`Failed to get distinct values for '${attributeRefToId({...ref, attribute})}'`, [], opts))
+}
+
+const getTableColumns = (schema: string | undefined, table: string, opts: ConnectorSchemaOpts) => async (conn: Conn): Promise<string[]> => {
+    const query = `SELECT COLUMN_NAME AS ATTR FROM ALL_TAB_COLS WHERE TABLE_NAME = :0${schema ? ` AND OWNER = :1` : ''};`
+    return conn.query<{ ATTR: string }>(query, schema ? [table, schema] : [table], 'getTableColumns')
+        .then(res => res.map(r => r.ATTR), handleError(`Failed to get table columns`, [], opts))
 }
