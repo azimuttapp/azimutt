@@ -189,12 +189,13 @@ export class Backend {
 
     private gatewayPost = async <Body, Response>(path: string, body: Body, zod: ZodType<Response>): Promise<Response> => {
         const gateway_local = 'http://localhost:4177'
-        return Http.getJson(`${gateway_local}/ping`, GatewayPing).then(_ => {
+        const now = Date.now()
+        return Http.getJson(`${gateway_local}/ping?time=${now}`, GatewayPing, {cache: 'no-store'}).then(_ => {
             return Http.postJson(`${gateway_local}/gateway${path}`, body, zod)
                 .catch(err => Promise.reject(`Local gateway: ${errorToString(err)}`))
         }, _ => {
             const gateway_remote = window.gateway_url || ''
-            return Http.getJson(`${gateway_remote}/ping`, GatewayPing)
+            return Http.getJson(`${gateway_remote}/ping?time=${now}`, GatewayPing, {cache: 'no-store'})
                 .then(_ => Http.postJson(`${gateway_remote}/gateway${path}`, body, zod))
                 .catch(err => Promise.reject(`${gateway_remote.includes('azimutt.app') ? 'Azimutt gateway' : 'Custom gateway'}: ${errorToString(err)}, forgot to start the local gateway? (npx azimutt@latest gateway)`))
         })

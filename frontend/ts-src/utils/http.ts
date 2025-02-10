@@ -2,7 +2,7 @@ import {ZodType} from "zod";
 import {zodParse} from "@azimutt/models";
 import * as Json from "./json";
 
-export const getJson = <Response>(url: string, zod: ZodType<Response>): Promise<Response> => customFetch('GET', url, undefined, zod)
+export const getJson = <Response>(url: string, zod: ZodType<Response>, headers?: RequestInit): Promise<Response> => customFetch('GET', url, undefined, zod, headers)
 export const postJson = <Body, Response>(url: string, body: Body, zod: ZodType<Response>): Promise<Response> => customFetch('POST', url, body, zod)
 export const postNoContent = <Body>(url: string, body: Body): Promise<void> => customFetch('POST', url, body)
 export const postMultipart = <Response>(url: string, body: FormData, zod: ZodType<Response>): Promise<Response> => customFetch('POST', url, body, zod)
@@ -12,9 +12,10 @@ export const deleteNoContent = (url: string): Promise<void> => customFetch('DELE
 
 type Method = 'GET' | 'POST' | 'PUT' | 'DELETE'
 
-function customFetch<Body, Response>(method: Method, path: string, body?: Body, zod?: ZodType<Response>): Promise<Response> {
+function customFetch<Body, Response>(method: Method, path: string, body?: Body, zod?: ZodType<Response>, headers?: RequestInit): Promise<Response> {
     const url = path.startsWith('http') ? path : `${window.location.origin}${path}`
-    let opts: RequestInit = path.startsWith('http') ? {method} : {method, credentials: 'include'}
+    let opts: RequestInit = headers ? headers : {}
+    opts = path.startsWith('http') ? {...opts, method} : {...opts, method, credentials: 'include'}
     if (body instanceof FormData) {
         opts = {...opts, body: body}
     } else if (typeof body === 'object' && body !== null) {
