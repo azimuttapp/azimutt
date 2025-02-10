@@ -40,10 +40,18 @@
                                         <span class="text-yellow-500">$db_url</span>
                                     </span>
                                 </span>
-                                <svg class="shrink-0 h-5 w-5 transition text-gray-500 group-hover:text-white cursor-pointer" onclick="navigator.clipboard.writeText('npx azimutt explore $db_url')" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z"></path>
-                                    <path d="M3 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v6h-4.586l1.293-1.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L10.414 13H15v3a2 2 0 01-2 2H5a2 2 0 01-2-2V5zM15 11h2a1 1 0 110 2h-2v-2z"></path>
-                                </svg>
+                                <div class="group relative">
+                                    <div class="absolute bottom-[calc(100%+1.5rem)] left-[50%] -translate-x-[50%] hidden group-hover:block w-auto">
+                                        <div class="bottom-full right-0 rounded bg-black px-4 py-1 text-xs text-white whitespace-nowrap">
+                                            You need <b>npm</b> to run <b>npx</b> command
+                                            <svg class="absolute left-0 top-full h-2 w-full text-black" x="0px" y="0px" viewBox="0 0 255 255" xml:space="preserve"><polygon class="fill-current" points="0,0 127.5,127.5 255,0" /></svg>
+                                        </div>
+                                    </div>
+                                    <svg class="shrink-0 h-5 w-5 transition text-gray-500 group-hover:text-white cursor-pointer" onclick="navigator.clipboard.writeText('npx azimutt explore $db_url')" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z"></path>
+                                        <path d="M3 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v6h-4.586l1.293-1.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L10.414 13H15v3a2 2 0 01-2 2H5a2 2 0 01-2-2V5zM15 11h2a1 1 0 110 2h-2v-2z"></path>
+                                    </svg>
+                                </div>
                             </code>
                             <code class="inline-flex items-center space-x-4 bg-gray-800 text-white whitespace-nowrap text-left text-sm sm:text-base rounded-lg p-4 pl-6">
                                 <span class="flex gap-4">
@@ -53,10 +61,18 @@
                                         <span class="text-yellow-500">$db_url</span>
                                     </span>
                                 </span>
-                                <svg class="shrink-0 h-5 w-5 transition text-gray-500 group-hover:text-white cursor-pointer" onclick="navigator.clipboard.writeText('npx azimutt analyze $db_url')" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z"></path>
-                                    <path d="M3 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v6h-4.586l1.293-1.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L10.414 13H15v3a2 2 0 01-2 2H5a2 2 0 01-2-2V5zM15 11h2a1 1 0 110 2h-2v-2z"></path>
-                                </svg>
+                                <div class="group relative">
+                                    <div class="absolute bottom-[calc(100%+1.5rem)] left-[50%] -translate-x-[50%] hidden group-hover:block w-auto">
+                                        <div class="bottom-full right-0 rounded bg-black px-4 py-1 text-xs text-white whitespace-nowrap">
+                                            You need <b>npm</b> to run <b>npx</b> command
+                                            <svg class="absolute left-0 top-full h-2 w-full text-black" x="0px" y="0px" viewBox="0 0 255 255" xml:space="preserve"><polygon class="fill-current" points="0,0 127.5,127.5 255,0" /></svg>
+                                        </div>
+                                    </div>
+                                    <svg class="shrink-0 h-5 w-5 transition text-gray-500 group-hover:text-white cursor-pointer" onclick="navigator.clipboard.writeText('npx azimutt analyze $db_url')" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z"></path>
+                                        <path d="M3 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v6h-4.586l1.293-1.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L10.414 13H15v3a2 2 0 01-2 2H5a2 2 0 01-2-2V5zM15 11h2a1 1 0 110 2h-2v-2z"></path>
+                                    </svg>
+                                </div>
                             </code>
                         </div>
                         <%= if @current_user do %>
