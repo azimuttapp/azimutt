@@ -16,6 +16,7 @@ import {
     attributesRefSame,
     attributesRefToId,
     attributeTypeParse,
+    attributeValueToString,
     DatabaseKind,
     EntityId,
     EntityRef,
@@ -365,6 +366,19 @@ describe('databaseUtils', () => {
             {path: ['details', 'address', 'city'], name: 'city', type: 'varchar'},
             {path: ['details', 'created'], name: 'created', type: 'varchar'},
         ])
+    })
+    test('attributeValueToString', () => {
+        expect(attributeValueToString('str')).toEqual('str')
+        expect(attributeValueToString(42)).toEqual('42')
+        expect(attributeValueToString(BigInt(42))).toEqual('42')
+        expect(attributeValueToString(NaN)).toEqual('NaN')
+        expect(attributeValueToString(Infinity)).toEqual('Infinity')
+        expect(attributeValueToString(true)).toEqual('true')
+        expect(attributeValueToString(new String('str'))).toEqual('str')
+        expect(attributeValueToString(new Number(42))).toEqual('42')
+        expect(attributeValueToString(new Boolean(true))).toEqual('true')
+        expect(attributeValueToString(new Date(1739896885465))).toEqual('2025-02-18T16:41:25.465Z')
+        expect(attributeValueToString(new Date('bad'))).toEqual('null')
     })
     test('parseJsonDatabase', () => {
         expect(parseJsonDatabase(`{}`)).toEqual({result: {}})

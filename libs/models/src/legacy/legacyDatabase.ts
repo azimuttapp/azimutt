@@ -1,5 +1,5 @@
 import {z} from "zod";
-import {removeEmpty, removeUndefined, stringify, zip} from "@azimutt/utils";
+import {errorToString, removeEmpty, removeUndefined, stringify, zip} from "@azimutt/utils";
 import {
     Attribute,
     AttributePath,
@@ -16,7 +16,7 @@ import {
     Relation,
     Type
 } from "../database";
-import {attributeValueToString} from "../databaseUtils";
+import {attributePathToId, attributeValueToString, entityToId} from "../databaseUtils";
 import {ValueSchema} from "../inferSchema";
 import {DateTime} from "../common";
 
@@ -227,7 +227,7 @@ function tableToLegacy(e: Entity): LegacyTable {
     return removeUndefined({
         schema: e.schema || '',
         table: e.name,
-        columns: (e.attrs || []).map(columnToLegacy),
+        columns: (e.attrs || []).map(a => columnToLegacy(e, a, [])),
         view: e.kind === 'view' || e.kind === 'materialized view' || undefined,
         definition: e.def,
         primaryKey: e.pk ? primaryKeyToLegacy(e.pk) : undefined,
@@ -288,17 +288,21 @@ function columnFromLegacy(c: LegacyColumn): Attribute {
     })
 }
 
-function columnToLegacy(a: Attribute): LegacyColumn {
-    return removeEmpty({
-        name: a.name,
-        type: a.type,
-        nullable: a.null,
-        default: a.default ? columnValueToLegacy(a.default) : undefined,
-        comment: a.doc,
-        values: a.stats?.distinctValues?.map(columnValueToLegacy),
-        columns: a.attrs?.map(columnToLegacy),
-        stats: a.stats ? attributeDbStatsToLegacy(a.stats) : undefined,
-    })
+function columnToLegacy(e: Entity, a: Attribute, parents: string[]): LegacyColumn {
+    try {
+        return removeEmpty({
+            name: a.name,
+            type: a.type,
+            nullable: a.null,
+            default: a.default ? columnValueToLegacy(a.default) : undefined,
+            comment: a.doc,
+            values: a.stats?.distinctValues?.map(columnValueToLegacy),
+            columns: a.attrs?.map(aa => columnToLegacy(e, aa, [...parents, a.name])),
+            stats: a.stats ? attributeDbStatsToLegacy(a.stats) : undefined,
+        })
+    } catch (err) {
+        throw new Error(`Error in columnToLegacy for entity ${entityToId(e)} and attribute ${attributePathToId([...parents, a.name])}: ${errorToString(err)}`)
+    }
 }
 
 export function columnValueFromLegacy(v: LegacyColumnValue): AttributeValue {

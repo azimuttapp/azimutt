@@ -264,13 +264,17 @@ function flattenAttribute(attr: Attribute, p: AttributePath = []): (Attribute & 
 }
 
 export function attributeValueToString(value: AttributeValue): string {
+    if (value === null) return  'null'
+    if (value === undefined) return  'null'
     if (typeof value === 'string') return value
     if (typeof value === 'number') return value.toString()
+    if (typeof value === 'bigint') return value.toString()
     if (typeof value === 'boolean') return value.toString()
-    if (value instanceof Date) return value.toISOString()
-    if (value === undefined) return  'null'
-    if (value === null) return  'null'
-    return JSON.stringify(value)
+    if (value instanceof String) return value.toString()
+    if (value instanceof Number) return value.toString()
+    if (value instanceof Boolean) return value.toString()
+    if (value instanceof Date) return isNaN(value.getTime()) ? 'null' : value.toISOString()
+    return JSON.stringify(value) || 'null'
 }
 
 export const indexEntities = (entities: Entity[]): Record<EntityId, Entity> =>
