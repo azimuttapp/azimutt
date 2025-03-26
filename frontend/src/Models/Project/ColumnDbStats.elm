@@ -34,7 +34,7 @@ encode value =
         , ( "bytesAvg", value.bytesAvg |> Encode.maybe Encode.float )
         , ( "cardinality", value.cardinality |> Encode.maybe Encode.float )
         , ( "commonValues", value.commonValues |> Encode.maybe (Encode.list encodeValue) )
-        , ( "histogram", value.histogram |> Encode.maybe (Encode.list Encode.string) )
+        , ( "histogram", Encode.null ) -- don't store histogram, bad chars can break Azimutt :/, old: value.histogram |> Encode.maybe (Encode.list Encode.string) )
         ]
 
 

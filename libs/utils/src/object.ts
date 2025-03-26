@@ -1,7 +1,25 @@
-import {isEmpty} from "./validation";
 import {anySame} from "./any";
+import {Diff} from "./array";
+import {isEmpty} from "./validation";
 
 // functions sorted alphabetically
+
+export const objDiff = <T>(obj1: Record<string, T>, obj2: Record<string, T>): Diff<T> => {
+    const left: T[] = []
+    const both: {left: T, right: T}[] = []
+    const other = {...obj2}
+    Object.entries(obj1).forEach(([k, v1]) => {
+        const v2 = other[k]
+        if (v2 === undefined) {
+            left.push(v1)
+        } else {
+            both.push({left: v1, right: v2})
+        }
+        delete other[k]
+    })
+    const right: T[] = Object.values(other)
+    return {left, right, both}
+}
 
 export function equalDeep<T>(a: T, b: T): boolean {
     if (typeof a === 'string' || typeof a === 'number' || typeof a === 'boolean' || typeof a === 'symbol' || a === null || a === undefined) {
@@ -104,6 +122,26 @@ export function removeFieldsDeep(obj: any, keysToRemove: string[]): any {
     }
 
     return obj
+}
+
+export function collectFieldsDeep(obj: any, keysToCollect: string[]): any[] {
+    if (Array.isArray(obj)) {
+        return obj.map(item => collectFieldsDeep(item, keysToCollect)).flat()
+    }
+
+    if (typeof obj === 'object' && obj !== null) {
+        const res: any[] = []
+        Object.keys(obj).forEach(key => {
+            if (keysToCollect.indexOf(key) >= 0) {
+                res.push(obj[key])
+            } else {
+                res.push(...collectFieldsDeep(obj[key], keysToCollect))
+            }
+        })
+        return res
+    }
+
+    return []
 }
 
 export function removeUndefined<K extends keyof any, V, T extends Record<K, V>>(obj: T): T {

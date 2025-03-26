@@ -4,6 +4,7 @@ import {
     collectOne,
     diffBy,
     distinct,
+    duplicates,
     findLastIndex,
     groupBy,
     indexBy,
@@ -25,6 +26,9 @@ describe('array', () => {
     })
     test('distinct', () => {
         expect(distinct([1, 1, 2, 3, 5, 3])).toEqual([1, 2, 3, 5])
+    })
+    test('duplicates', () => {
+        expect(duplicates([1, 1, 2, 3, 5, 3, 1])).toEqual([1, 3])
     })
     test('diffBy', () => {
         expect(diffBy(

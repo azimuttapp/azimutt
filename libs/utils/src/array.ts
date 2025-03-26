@@ -33,6 +33,34 @@ export const distinctBy = <T>(arr: T[], by: (t: T) => string | number): T[] => {
     })
 }
 
+export const duplicates = <T>(arr: T[]): T[] => {
+    const seen = new Set<T>()
+    const dups = new Set<T>()
+    return arr.filter(t => {
+        if (seen.has(t)) {
+            if (dups.has(t)) return false
+            dups.add(t)
+            return true
+        }
+        seen.add(t)
+        return false
+    })
+}
+export const duplicatesBy = <T>(arr: T[], by: (t: T) => string | number): T[] => {
+    const seen = new Set<string | number>()
+    const dups = new Set<string | number>()
+    return arr.filter(t => {
+        const key = by(t)
+        if (seen.has(key)) {
+            if (dups.has(key)) return false
+            dups.add(key)
+            return true
+        }
+        seen.add(key)
+        return false
+    })
+}
+
 export type Diff<T> = {left: T[], right: T[], both: {left: T, right: T}[]}
 export const diffBy = <T>(arr1: T[], arr2: T[], f: (t: T, i: number) => string): Diff<T> => {
     const left: T[] = []
