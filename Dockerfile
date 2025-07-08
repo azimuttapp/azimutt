@@ -16,6 +16,7 @@
 ARG ELIXIR_VERSION=1.14.3
 ARG OTP_VERSION=25.2.2
 ARG DEBIAN_VERSION=bullseye-20230109-slim
+ARG ELM_VERSION=0.19.1
 
 ARG S3_KEY_ID
 ARG S3_HOST
@@ -28,18 +29,37 @@ ARG STRIPE_API_KEY
 ARG STRIPE_WEBHOOK_SIGNING_SECRET
 ARG PHX_SERVER
 ARG DATABASE_URL
+ARG PLATFORM=amd64
 
-ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
+ARG BUILDER_IMAGE="hexpm/elixir-${PLATFORM}:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
-FROM --platform=linux/amd64 ${BUILDER_IMAGE} as builder
+# Create the two potential builder images which will grab the elm binary
+# Whichever is chosen will be copied into the final builder image by
+# inheriting the platform specific builder
+FROM --platform=linux/${PLATFORM} ${BUILDER_IMAGE} AS builder_amd64
+ONBUILD RUN wget -O - 'https://github.com/elm/compiler/releases/download/${ELM_VERSION}/binary-for-linux-64-bit.gz' | gunzip -c >/usr/local/bin/elm
 
+FROM --platform=linux/${PLATFORM} ${BUILDER_IMAGE} AS builder_arm64
+COPY --from=kovarcodes/elmonarm:latest --chown=nobody:root /usr/local/bin/elm /usr/local/bin/elm
+
+FROM --platform=linux/${PLATFORM} builder_${PLATFORM} AS builder
+
+ARG NVM_VERSION=0.39.7
+ARG NPM_VERSION=9.8.1
+ARG PNPM_VERSION=9.5.0
+ARG NODE_VERSION=21.6.0
 
 # install build dependencies
-RUN apt-get update -y && apt-get install -y build-essential git nodejs npm curl wget && apt-get clean && rm -f /var/lib/apt/lists/*_*
-RUN curl -fsSL https://deb.nodesource.com/setup_19.x | bash - && apt-get install -y nodejs
-RUN npm install -g npm@9.8.1
-RUN wget -O - 'https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz' | gunzip -c >/usr/local/bin/elm
+RUN apt-get update -y && apt-get install -y build-essential git nodejs npm curl wget libnuma-dev && apt-get clean && rm -f /var/lib/apt/lists/*_*
+
+
+RUN curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/v${NVM_VERSION}/install.sh" | bash
+ENV NVM_DIR="/root/.nvm"
+RUN . "$NVM_DIR/nvm.sh" && nvm install ${NODE_VERSION}
+ENV PATH="$NVM_DIR/versions/node/v${NODE_VERSION}/bin/:${PATH}"
+
+RUN npm install -g npm@${NPM_VERSION}
 
 # make the elm compiler executable
 RUN chmod +x /usr/local/bin/elm
@@ -80,7 +100,7 @@ COPY pnpm-lock.yaml .
 COPY libs/ libs
 COPY frontend/ frontend
 
-RUN npm install -g pnpm@9.5.0
+RUN npm install -g pnpm@${PNPM_VERSION}
 RUN npm run build:docker
 
 # Compile the release
@@ -100,7 +120,9 @@ RUN mix release
 
 # start a new build stage so that the final image will only contain
 # the compiled release and other runtime necessities
-FROM --platform=linux/amd64 ${RUNNER_IMAGE}
+FROM --platform=linux/${PLATFORM} ${RUNNER_IMAGE}
+
+# WORKDIR /app
 
 RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
@@ -124,14 +146,12 @@ ENV DATABASE_URL=${DATABASE_URL}
 ENV MIX_ENV="prod"
 ENV PHX_SERVER="true"
 
-WORKDIR "/app"
-RUN chown nobody /app
-
-
 # Only copy the final release from the build stage
-COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/azimutt ./
+COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/azimutt /app
 RUN mkdir -p ./app/bin/priv/static/
-COPY --from=builder --chown=nobody:root /app/priv/static/blog ./bin/priv/static/blog
+COPY --from=builder --chown=nobody:root /app/priv/static/blog /app/bin/priv/static/blog
+
+RUN chown nobody /app
 
 USER nobody
 
