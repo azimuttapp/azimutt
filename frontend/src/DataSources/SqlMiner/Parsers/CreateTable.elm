@@ -200,7 +200,7 @@ parseCreateTableColumnForeignKey constraint =
 
 parseCreateTablePrimaryKey : RawSql -> Result ParseError ParsedPrimaryKey
 parseCreateTablePrimaryKey sql =
-    case sql |> Regex.matches "^PRIMARY KEY \\((?<columns>[^)]+)\\)(?:\\s+USING [^ ]+)?$" of
+    case sql |> Regex.matches "^PRIMARY\\s+KEY(?:\\s+CLUSTERED)?\\s*\\((?<columns>[^)]+)\\)(?:\\s*USING [^ ]+)?(?:\\s*WITH \\([^)]+\\))?(?:\\s*ON [^ ]+)?$" of
         (Just columns) :: [] ->
             columns
                 |> String.split ","
