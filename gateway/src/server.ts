@@ -23,6 +23,14 @@ export async function startServer(config: Config): Promise<FastifyInstance> {
 
     if (config.CORS_ALLOW_ORIGIN) {
         await server.register(cors, {origin: config.CORS_ALLOW_ORIGIN, credentials: true})
+
+        // Chrome's Private Network Access (PNA) policy blocks public origins from fetching loopback/private addresses unless the server explicitly opts in.
+        // The browser sends a preflight with `Access-Control-Request-Private-Network: true` and requires `Access-Control-Allow-Private-Network: true` in the response, independently of standard CORS.
+        server.addHook('onSend', async (request, reply) => {
+          if (request.headers['access-control-request-private-network'] === 'true') {
+            reply.header('Access-Control-Allow-Private-Network', 'true')
+          }
+        })
     }
     await server.register(routes(config))
     await server.ready()

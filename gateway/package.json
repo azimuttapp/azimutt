@@ -1,7 +1,7 @@
 {
   "name": "@azimutt/gateway",
   "description": "A Gateway to proxy database access for Azimutt frontend",
-  "version": "0.1.25",
+  "version": "0.1.26",
   "license": "MIT",
   "homepage": "https://azimutt.app",
   "keywords": [
