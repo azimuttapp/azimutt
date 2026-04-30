@@ -36,7 +36,7 @@ FROM ${BUILDER_IMAGE} as builder
 
 
 # install build dependencies
-RUN apt-get update -y && apt-get install -y build-essential git curl wget libpq-dev && apt-get clean && rm -f /var/lib/apt/lists/*_*
+RUN apt-get update -y && apt-get install -y --no-install-recommends build-essential ca-certificates curl git gnupg libpq-dev wget && apt-get clean && rm -f /var/lib/apt/lists/*_*
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y nodejs
 RUN npm install -g npm@9.8.1
 # Elm 0.19.1 via @lydell/elm: ships native binaries for linux_arm64, darwin_arm64,
