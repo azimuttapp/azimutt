@@ -32,6 +32,9 @@ defmodule AzimuttWeb.UserAuth do
 
   @attribution_cookie "_azimutt_attribution"
   @attribution_options [sign: true, max_age: 30 * @days, same_site: "Lax"]
+  # referers that are NOT real traffic sources: self-hosted/local Azimutt instances on private
+  # networks (RFC1918), loopback and link-local. These made up ~99% of attribution events.
+  @internal_referer_regex ~r{^https?://(localhost|\[?::1\]?|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2[0-9]|3[01])\.)}i
 
   @doc """
   Logs the user in.
@@ -304,28 +307,36 @@ defmodule AzimuttWeb.UserAuth do
         if value != nil && value != "", do: acc |> Map.put(attr, value), else: acc
       end)
 
-    referer = conn |> get_req_header("referer") |> Enum.filter(fn h -> !String.contains?(h, Azimutt.config(:host)) end) |> List.first()
+    referer =
+      conn
+      |> get_req_header("referer")
+      |> Enum.filter(fn h -> !String.contains?(h, Azimutt.config(:host)) && !internal_referer?(h) end)
+      |> List.first()
+
     headers = if referer != nil, do: %{"referer" => referer}, else: %{}
     attributes = params |> Map.merge(headers)
 
-    if attributes |> map_size() > 0 do
+    # Record attribution only for the FIRST touch of an anonymous visitor: one event per visitor
+    # (gated by the absence of the attribution cookie), and only real external traffic sources
+    # (internal referers from self-hosted/local instances are filtered out above). Logged-in users
+    # are not traffic sources, so they are skipped entirely.
+    if conn.assigns.current_user == nil && map_size(attributes) > 0 && get_attribution(conn) == nil do
       details = attributes |> Map.put("path", conn.request_path)
       event = Tracking.attribution(conn.assigns.current_user, details)
 
-      if conn.assigns.current_user == nil do
-        cookie =
-          details
-          |> Map.put("date", DateTime.utc_now())
-          |> Map.put("event", event |> Result.map(fn e -> e.id end) |> Result.or_else(nil))
+      cookie =
+        details
+        |> Map.put("date", DateTime.utc_now())
+        |> Map.put("event", event |> Result.map(fn e -> e.id end) |> Result.or_else(nil))
 
-        conn |> put_resp_cookie(@attribution_cookie, cookie, @attribution_options)
-      else
-        conn
-      end
+      conn |> put_resp_cookie(@attribution_cookie, cookie, @attribution_options)
     else
       conn
     end
   end
+
+  defp internal_referer?(referer) when is_binary(referer), do: String.match?(referer, @internal_referer_regex)
+  defp internal_referer?(_), do: false
 
   def get_attribution(conn) do
     conn = fetch_cookies(conn, signed: [@attribution_cookie])
