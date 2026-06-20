@@ -56,6 +56,24 @@ suite =
             , testStatement ( parseCreateTable, "with multiple constraints" )
                 "CREATE TABLE t1 (id int constraint t1_pk primary key constraint t1_t2_fk references t2);"
                 { parsedTable | schema = Nothing, table = "t1", columns = Nel { parsedColumn | name = "id", kind = "int", primaryKey = Just "t1_pk", foreignKey = Just ( Just "t1_t2_fk", { schema = Nothing, table = "t2", column = Nothing } ) } [] }
+            , testStatement ( parseCreateTable, "test" )
+                """CREATE TABLE [dbo].[comments](
+                   [id] [bigint] IDENTITY(1,1) NOT NULL,
+                   [created_at] [datetimeoffset](7) NULL,
+                   [updated_at] [datetimeoffset](7) NULL,
+                   [deleted_at] [datetimeoffset](7) NULL,
+                   [user_id] [nvarchar](max) NULL,
+                   [order_id] [bigint] NOT NULL,
+                   [machine_id] [bigint] NOT NULL,
+                   [repair_id] [bigint] NOT NULL,
+                   [inspection_id] [bigint] NOT NULL,
+                   [issue_id] [bigint] NOT NULL,
+                   [note_id] [bigint] NOT NULL,
+                   [demand_id] [bigint] NOT NULL,
+                   [text] [varchar](max) NOT NULL,
+                   PRIMARY KEY CLUSTERED ([id] ASC) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+                   ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY];"""
+                parsedTable
             ]
         , describe "parseCreateTableColumn"
             [ testSql ( parseCreateTableColumn, "basic" )
