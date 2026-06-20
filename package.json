@@ -37,5 +37,13 @@
   "engines": {
     "pnpm": "9.5.0"
   },
-  "packageManager": "pnpm@9.5.0+sha256.dbdf5961c32909fb030595a9daa1dae720162e658609a8f92f2fa99835510ca5"
+  "packageManager": "pnpm@9.5.0+sha256.dbdf5961c32909fb030595a9daa1dae720162e658609a8f92f2fa99835510ca5",
+  "pnpm": {
+    "overrides": {
+      "elm": "npm:@lydell/elm@0.19.1-14"
+    },
+    "neverBuiltDependencies": [
+      "elm-coverage"
+    ]
+  }
 }
