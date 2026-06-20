@@ -224,11 +224,15 @@ defmodule Azimutt.Admin do
     |> Repo.all()
   end
 
+  # Windows kept short on purpose: these per-user GROUP BY + count(distinct day) scans
+  # are unindexable aggregation work, and a 90-day window (325k events, inflated by the
+  # now-stopped attribution firehose in the 60-90d band) exceeded the 15s DB query
+  # timeout and made /admin time out. 30/60-day windows keep them ~100-150ms.
   def last_active_users(n) do
     """
     SELECT u.id, u.name, u.avatar, u.email, count(distinct to_char(e.created_at, 'yyyy-mm-dd')) as active_days, count(*) as nb_events, max(e.created_at) as last_activity
     FROM events e JOIN users u on u.id = e.created_by
-    WHERE e.created_at > NOW() - INTERVAL '90 days'
+    WHERE e.created_at > NOW() - INTERVAL '30 days'
     GROUP BY u.id
     ORDER BY last_activity DESC
     LIMIT $1;
@@ -240,7 +244,7 @@ defmodule Azimutt.Admin do
     """
     SELECT u.id, u.name, u.avatar, u.email, count(distinct to_char(e.created_at, 'yyyy-mm-dd')) as active_days, count(*) as nb_events, max(e.created_at) as last_activity
     FROM events e JOIN users u on u.id = e.created_by
-    WHERE e.created_at > NOW() - INTERVAL '90 days'
+    WHERE e.created_at > NOW() - INTERVAL '30 days'
     GROUP BY u.id
     ORDER BY active_days DESC, nb_events DESC
     LIMIT $1;
@@ -248,11 +252,13 @@ defmodule Azimutt.Admin do
     |> raw_query([n])
   end
 
+  # 60-day window (not 30): "lost" = active in the window but quiet for the last 30 days,
+  # so it needs a band older than 30 days to find anyone.
   def lost_active_users(n) do
     """
     SELECT u.id, u.name, u.avatar, u.email, count(distinct to_char(e.created_at, 'yyyy-mm-dd')) as active_days, count(*) as nb_events, max(e.created_at) as last_activity
     FROM events e JOIN users u on u.id = e.created_by
-    WHERE e.created_at > NOW() - INTERVAL '90 days'
+    WHERE e.created_at > NOW() - INTERVAL '60 days'
     GROUP BY u.id
     HAVING count(distinct to_char(e.created_at, 'yyyy-mm-dd')) >= 5 AND max(e.created_at) < NOW() - INTERVAL '30 days'
     ORDER BY last_activity DESC
@@ -265,7 +271,7 @@ defmodule Azimutt.Admin do
     """
     SELECT u.id, u.name, u.avatar, u.email, count(distinct to_char(e.created_at, 'yyyy-mm-dd')) as active_days, count(*) as nb_events, max(e.created_at) as last_activity
     FROM events e JOIN users u on u.id = e.created_by
-    WHERE e.created_at > NOW() - INTERVAL '90 days'
+    WHERE e.created_at > NOW() - INTERVAL '60 days'
     GROUP BY u.id
     HAVING max(e.created_at) < NOW() - INTERVAL '30 days'
     ORDER BY last_activity DESC

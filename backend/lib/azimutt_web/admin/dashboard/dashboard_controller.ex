@@ -9,6 +9,10 @@ defmodule AzimuttWeb.Admin.DashboardController do
     three_months_ago = DateTime.utc_now() |> Timex.shift(months: -3)
     one_year_ago = DateTime.utc_now() |> Timex.shift(months: -12)
 
+    # The admin dashboard runs several aggregates over the large `events` table. Kept
+    # lightened (the 360-day monthly chart and the "returning users" series are disabled
+    # - the heaviest count(distinct) scans) and relies on the events(created_at, created_by)
+    # index so each query stays an index-only scan well under the DB pool timeout.
     conn
     |> render("index.html",
       users_count: Admin.count_users(),
@@ -20,9 +24,9 @@ defmodule AzimuttWeb.Admin.DashboardController do
       connected_chart:
         Dataset.chartjs_daily_data(
           [
-            Admin.daily_connected_users() |> Dataset.from_values("Daily users"),
-            Admin.daily_connected_users_returning() |> Dataset.from_values("Daily returning users")
-            # Admin.daily_used_projects() |> Dataset.from_values("Daily projects"),
+            Admin.daily_connected_users() |> Dataset.from_values("Daily users")
+            # Admin.daily_connected_users_returning() |> Dataset.from_values("Daily returning users")
+            # Admin.daily_used_projects() |> Dataset.from_values("Daily projects")
           ],
           three_months_ago,
           now
@@ -30,24 +34,25 @@ defmodule AzimuttWeb.Admin.DashboardController do
       weekly_connected_chart:
         Dataset.chartjs_weekly_data(
           [
-            Admin.weekly_connected_users() |> Dataset.from_values("Weekly users"),
-            Admin.weekly_connected_users_returning() |> Dataset.from_values("Weekly returning users")
-            # Admin.weekly_used_projects() |> Dataset.from_values("Weekly projects"),
+            Admin.weekly_connected_users() |> Dataset.from_values("Weekly users")
+            # Admin.weekly_connected_users_returning() |> Dataset.from_values("Weekly returning users")
+            # Admin.weekly_used_projects() |> Dataset.from_values("Weekly projects")
           ],
           one_year_ago,
           now
         ),
-      monthly_connected_chart:
-        Dataset.chartjs_monthly_data([
-          Admin.monthly_connected_users() |> Dataset.from_values("Monthly users"),
-          Admin.monthly_connected_users_returning() |> Dataset.from_values("Monthly returning users")
-          # Admin.monthly_used_projects() |> Dataset.from_values("Monthly projects"),
-        ]),
+      # monthly_connected_chart temporarily disabled (360-day window is the heaviest query).
+      # Re-enable here and in index.html.heex when needed:
+      #   monthly_connected_chart:
+      #     Dataset.chartjs_monthly_data([
+      #       Admin.monthly_connected_users() |> Dataset.from_values("Monthly users"),
+      #       Admin.monthly_connected_users_returning() |> Dataset.from_values("Monthly returning users")
+      #     ]),
       created_chart:
         Dataset.chartjs_daily_data(
           [
             Admin.daily_created_users() |> Dataset.from_values("Created users")
-            # Admin.daily_created_projects() |> Dataset.from_values("Created projects"),
+            # Admin.daily_created_projects() |> Dataset.from_values("Created projects")
             # Admin.daily_created_non_personal_organizations() |> Dataset.from_values("Created organizations")
           ],
           three_months_ago,
@@ -67,13 +72,13 @@ defmodule AzimuttWeb.Admin.DashboardController do
         Dataset.chartjs_daily_data(
           [
             # Admin.daily_event("user_login") |> Dataset.from_values("login")
-            # Admin.daily_event("editor_project_draft_created") |> Dataset.from_values("project_draft_created"),
+            # Admin.daily_event("editor_project_draft_created") |> Dataset.from_values("project_draft_created")
             Admin.daily_event("project_created") |> Dataset.from_values("project_created")
-            # Admin.daily_event("editor_layout_created") |> Dataset.from_values("layout_created"),
-            # Admin.daily_event("editor_notes_created") |> Dataset.from_values("notes_created"),
-            # Admin.daily_event("editor_memo_created") |> Dataset.from_values("memo_created"),
-            # Admin.daily_event("editor_source_created") |> Dataset.from_values("source_created"),
-            # Admin.daily_event("editor_db_analysis_opened") |> Dataset.from_values("db_analysis_opened"),
+            # Admin.daily_event("editor_layout_created") |> Dataset.from_values("layout_created")
+            # Admin.daily_event("editor_notes_created") |> Dataset.from_values("notes_created")
+            # Admin.daily_event("editor_memo_created") |> Dataset.from_values("memo_created")
+            # Admin.daily_event("editor_source_created") |> Dataset.from_values("source_created")
+            # Admin.daily_event("editor_db_analysis_opened") |> Dataset.from_values("db_analysis_opened")
             # Admin.daily_event("editor_find_path_opened") |> Dataset.from_values("find_path_opened")
           ],
           three_months_ago,
