@@ -83,7 +83,13 @@ import {Env} from "./utils/env";
 import {loadPolyfills} from "./utils/polyfills";
 import * as url from "./utils/url";
 import {Utils} from "./utils/utils";
+import {loadIntlDate} from "./components/intl-date";
+import {loadElmTextarea} from "./components/elm-textarea";
+// import {loadElmMonaco} from "./components/elm-monaco";
 
+loadIntlDate() // should be before the Elm init
+loadElmTextarea() // should be before the Elm init
+// loadElmMonaco() // should be before the Elm init
 const platform = Utils.getPlatform()
 const logger = new ConsoleLogger(window.env)
 const flags: ElmFlags = {now: Date.now(), conf: {env: window.env, platform, role: window.role, desktop: !!window.desktop}, params: buildFlagParams()}
