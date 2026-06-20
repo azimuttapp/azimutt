@@ -9,82 +9,90 @@ defmodule AzimuttWeb.Admin.DashboardController do
     three_months_ago = DateTime.utc_now() |> Timex.shift(months: -3)
     one_year_ago = DateTime.utc_now() |> Timex.shift(months: -12)
 
-    conn
-    |> render("index.html",
-      users_count: Admin.count_users(),
-      projects_count: Admin.count_projects(),
-      organizations_count: Admin.count_non_personal_organizations(),
-      paid_count: Admin.count_paid_organizations(),
-      clever_cloud_count: Admin.count_clever_cloud_resources(),
-      heroku_count: Admin.count_heroku_resources(),
-      connected_chart:
-        Dataset.chartjs_daily_data(
-          [
-            Admin.daily_connected_users() |> Dataset.from_values("Daily users"),
-            Admin.daily_connected_users_returning() |> Dataset.from_values("Daily returning users")
-            # Admin.daily_used_projects() |> Dataset.from_values("Daily projects"),
-          ],
-          three_months_ago,
-          now
-        ),
-      weekly_connected_chart:
-        Dataset.chartjs_weekly_data(
-          [
-            Admin.weekly_connected_users() |> Dataset.from_values("Weekly users"),
-            Admin.weekly_connected_users_returning() |> Dataset.from_values("Weekly returning users")
-            # Admin.weekly_used_projects() |> Dataset.from_values("Weekly projects"),
-          ],
-          one_year_ago,
-          now
-        ),
-      monthly_connected_chart:
-        Dataset.chartjs_monthly_data([
-          Admin.monthly_connected_users() |> Dataset.from_values("Monthly users"),
-          Admin.monthly_connected_users_returning() |> Dataset.from_values("Monthly returning users")
-          # Admin.monthly_used_projects() |> Dataset.from_values("Monthly projects"),
-        ]),
-      created_chart:
-        Dataset.chartjs_daily_data(
-          [
-            Admin.daily_created_users() |> Dataset.from_values("Created users")
-            # Admin.daily_created_projects() |> Dataset.from_values("Created projects"),
-            # Admin.daily_created_non_personal_organizations() |> Dataset.from_values("Created organizations")
-          ],
-          three_months_ago,
-          now
-        ),
-      pro_events:
-        Dataset.chartjs_daily_data(
-          [
-            Admin.daily_event("plan_limit") |> Dataset.from_values("plan_limit"),
-            Admin.daily_event("billing_loaded") |> Dataset.from_values("billing_loaded"),
-            Admin.daily_event("stripe_open_billing_portal") |> Dataset.from_values("open_billing_portal")
-          ],
-          three_months_ago,
-          now
-        ),
-      feature_events:
-        Dataset.chartjs_daily_data(
-          [
-            # Admin.daily_event("user_login") |> Dataset.from_values("login")
-            # Admin.daily_event("editor_project_draft_created") |> Dataset.from_values("project_draft_created"),
-            Admin.daily_event("project_created") |> Dataset.from_values("project_created")
-            # Admin.daily_event("editor_layout_created") |> Dataset.from_values("layout_created"),
-            # Admin.daily_event("editor_notes_created") |> Dataset.from_values("notes_created"),
-            # Admin.daily_event("editor_memo_created") |> Dataset.from_values("memo_created"),
-            # Admin.daily_event("editor_source_created") |> Dataset.from_values("source_created"),
-            # Admin.daily_event("editor_db_analysis_opened") |> Dataset.from_values("db_analysis_opened"),
-            # Admin.daily_event("editor_find_path_opened") |> Dataset.from_values("find_path_opened")
-          ],
-          three_months_ago,
-          now
-        ),
-      last_active_users: Admin.last_active_users(50),
-      most_active_users: Admin.most_active_users(50),
-      lost_active_users: Admin.lost_active_users(50),
-      lost_users: Admin.lost_users(50),
-      plan_limit_users: Admin.plan_limit_users(50),
-      billing_loaded_users: Admin.billing_loaded_users(50)
-    )
+    # The admin dashboard runs ~15 aggregates over the large `events` table. Running them
+    # sequentially summed past the 15s DB pool timeout and /admin returned 500, so we run
+    # them concurrently. Concurrency is bounded below the DB pool (pool_size 10) so other
+    # requests still get a connection. Temporarily lightened: the 360-day monthly chart and
+    # the "returning users" series are disabled (the heaviest count(distinct) scans).
+    assigns =
+      [
+        users_count: fn -> Admin.count_users() end,
+        projects_count: fn -> Admin.count_projects() end,
+        organizations_count: fn -> Admin.count_non_personal_organizations() end,
+        paid_count: fn -> Admin.count_paid_organizations() end,
+        clever_cloud_count: fn -> Admin.count_clever_cloud_resources() end,
+        heroku_count: fn -> Admin.count_heroku_resources() end,
+        connected_chart: fn ->
+          Dataset.chartjs_daily_data(
+            [
+              Admin.daily_connected_users() |> Dataset.from_values("Daily users")
+              # Admin.daily_connected_users_returning() |> Dataset.from_values("Daily returning users")
+            ],
+            three_months_ago,
+            now
+          )
+        end,
+        weekly_connected_chart: fn ->
+          Dataset.chartjs_weekly_data(
+            [
+              Admin.weekly_connected_users() |> Dataset.from_values("Weekly users")
+              # Admin.weekly_connected_users_returning() |> Dataset.from_values("Weekly returning users")
+            ],
+            one_year_ago,
+            now
+          )
+        end,
+        # monthly_connected_chart temporarily disabled (360-day window is the heaviest query).
+        # Re-enable here and in index.html.heex when needed:
+        #   monthly_connected_chart: fn ->
+        #     Dataset.chartjs_monthly_data([
+        #       Admin.monthly_connected_users() |> Dataset.from_values("Monthly users"),
+        #       Admin.monthly_connected_users_returning() |> Dataset.from_values("Monthly returning users")
+        #     ])
+        #   end,
+        created_chart: fn ->
+          Dataset.chartjs_daily_data(
+            [
+              Admin.daily_created_users() |> Dataset.from_values("Created users")
+            ],
+            three_months_ago,
+            now
+          )
+        end,
+        pro_events: fn ->
+          Dataset.chartjs_daily_data(
+            [
+              Admin.daily_event("plan_limit") |> Dataset.from_values("plan_limit"),
+              Admin.daily_event("billing_loaded") |> Dataset.from_values("billing_loaded"),
+              Admin.daily_event("stripe_open_billing_portal") |> Dataset.from_values("open_billing_portal")
+            ],
+            three_months_ago,
+            now
+          )
+        end,
+        feature_events: fn ->
+          Dataset.chartjs_daily_data(
+            [
+              Admin.daily_event("project_created") |> Dataset.from_values("project_created")
+            ],
+            three_months_ago,
+            now
+          )
+        end,
+        last_active_users: fn -> Admin.last_active_users(50) end,
+        most_active_users: fn -> Admin.most_active_users(50) end,
+        lost_active_users: fn -> Admin.lost_active_users(50) end,
+        lost_users: fn -> Admin.lost_users(50) end,
+        plan_limit_users: fn -> Admin.plan_limit_users(50) end,
+        billing_loaded_users: fn -> Admin.billing_loaded_users(50) end
+      ]
+      |> Task.async_stream(fn {key, fun} -> {key, fun.()} end,
+        max_concurrency: 8,
+        timeout: 30_000,
+        ordered: false
+      )
+      |> Enum.map(fn {:ok, key_value} -> key_value end)
+
+    render(conn, "index.html", assigns)
   end
 end

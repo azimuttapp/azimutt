@@ -28,9 +28,7 @@
     <div class="overflow-hidden rounded-md bg-slate-800 px-4 py-5 shadow">
         <canvas class="line-chart"><%= @weekly_connected_chart |> Jason.encode!() %></canvas>
     </div>
-    <div class="overflow-hidden rounded-md bg-slate-800 px-4 py-5 shadow">
-        <canvas class="line-chart"><%= @monthly_connected_chart |> Jason.encode!() %></canvas>
-    </div>
+    <!-- monthly chart temporarily disabled (360-day window too heavy); re-enable with @monthly_connected_chart in dashboard_controller.ex -->
 </div>
 
 <div class="my-3 grid grid-cols-3 gap-5">
