@@ -2,8 +2,8 @@
     <nav class="space-y-1">
         <%= for {label, icon, url} <- [
             {"Account", "user-circle", Routes.user_settings_path(@conn, :show)},
+            {"Auth", "key", Routes.user_settings_path(@conn, :auth)},
             # {"Account", "cog", "#"},
-            # {"Password", "key", "#"},
             # {"Notifications", "bell", "#"},
             # {"Plan & Billing", "credit-card", "#"},
             # {"Integrations", "squares-plus", "#"}
