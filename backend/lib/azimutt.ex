@@ -331,7 +331,7 @@ defmodule Azimutt do
   def converters do
     [
       %{id: "aml", name: "AML", parse: true, generate: true},
-      %{id: "dbml", name: "DBML", parse: false, generate: false},
+      %{id: "dbml", name: "DBML", parse: true, generate: false},
       %{id: "json", name: "JSON", parse: true, generate: true},
       %{id: "postgres", name: "PostgreSQL", parse: true, generate: true},
       %{id: "mysql", name: "MySQL", parse: false, generate: false},
