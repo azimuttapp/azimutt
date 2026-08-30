@@ -8,9 +8,9 @@ import DataSources.JsonMiner.JsonAdapter as JsonAdapter
 import DataSources.JsonMiner.JsonSchema exposing (JsonSchema)
 import DataSources.JsonMiner.Models.JsonTable as JsonTable
 import Dict exposing (Dict)
-import Html exposing (Html, br, button, div, h3, label, option, p, select, text)
-import Html.Attributes exposing (class, disabled, for, id, name, selected, value)
-import Html.Events exposing (onClick, onInput)
+import Html exposing (Html, br, button, div, h3, label, node, option, p, select, text)
+import Html.Attributes exposing (attribute, class, disabled, for, id, name, selected, value)
+import Html.Events exposing (onBlur, onClick, onInput)
 import Libs.Bool as Bool
 import Libs.Dict as Dict
 import Libs.Html exposing (extLink)
@@ -304,7 +304,9 @@ viewSourceEditor model source =
             ( model.errors |> List.filterBy .level ParserError.Error, model.errors |> List.filterBy .level ParserError.Warning )
     in
     div [ class "mt-3" ]
-        [ Editor.basic "source-editor" (Source.contentStr source) (AUpdateSource source.id >> AmlSidebarMsg) (ASourceUpdated source.id |> AmlSidebarMsg) """Write your schema using AML syntax
+        [ div [] [ node "intl-date" [ attribute "lang" "fr-FR", attribute "year" (String.fromInt 2024), attribute "month" (String.fromInt 9) ] [] ]
+        , div [] [ node "elm-textarea" [ value (Source.contentStr source), onInput (AUpdateSource source.id >> AmlSidebarMsg), onBlur (ASourceUpdated source.id |> AmlSidebarMsg) ] [] ]
+        , Editor.basic "source-editor" (Source.contentStr source) (AUpdateSource source.id >> AmlSidebarMsg) (ASourceUpdated source.id |> AmlSidebarMsg) """Write your schema using AML syntax
 
 Ex:
 
